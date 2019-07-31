@@ -74,7 +74,7 @@ Now let’s test our health replication in another local deployment.
 
 </br>
 </br>
-**> Next:** [3: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
+### **> Next:** [3: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
 <br/>
 <br/>
 

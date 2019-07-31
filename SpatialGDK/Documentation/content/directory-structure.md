@@ -1,6 +1,6 @@
 <%(TOC)%>
 # Directory structure
-The table below lists the contents of the GDK for Unreal repository after running `Setup.bat` to build the Unreal engine as part of [Getting started]({{urlRoot}}/content/get-started/build-unreal-fork#step-4-build-unreal-engine).
+The table below lists the contents of the GDK for Unreal repository after running `Setup.bat` to build the Unreal engine as part of [Getting started]({{urlRoot}}/content/get-started/build-unreal-fork#step-2-clone-the-unreal-engine-fork-repository).
 
 | Directory | Purpose
 |-----------|---------
@@ -15,5 +15,5 @@ The table below lists the contents of the GDK for Unreal repository after runnin
 | `SpatialGDK/Source/SpatialGDK/Public` | Contains the public source code of the GDK uplugin.
 | `SpatialGDK/Source/SpatialGDK/Private` | Contains the private source code of the GDK uplugin.
 | `SpatialGDK/Source/SpatialGDK/Public/WorkerSdk/` | Not tracked in git. Contains the [C API worker SDK](https://docs.improbable.io/reference/latest/capi/introduction) headers which are used while building the GDK. You install these when you run `Setup.bat`
-| `SpatialGDK/Source/SpatialGDKEditorToolbar/` | Contains the [SpatialOS GDK toolbar]({{urlRoot}}/content/toolbars.md) that appears within the Unreal Editor GUI, from which you can take snapshots, generate schemas, start and stop deployments, and access the SpatialOS Inspector.
+| `SpatialGDK/Source/SpatialGDKEditorToolbar/` | Contains the [SpatialOS GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars.md) that appears within the Unreal Editor GUI, from which you can take snapshots, generate schemas, start and stop deployments, and access the SpatialOS Inspector.
 | `ci/` | Contains scripts we use internally for our continuous integration.

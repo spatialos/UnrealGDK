@@ -19,42 +19,95 @@ Note that this SpatialOS documentation assumes you are developing a SpatialOS ga
 
 ## GDK for Unreal terms
 
+### Actor groups
+To facilitate offloading, we've created the concept of Actor groups to help you configure which Actor types a given server-worker type will have authority over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type.
+
+> **Find out more:**
+> 
+> [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups)
+
 ### Actor handover
 Actor handover (`handover`) is a GDK-specific `UPROPERTY` tag. It allows games built in Unreal (which uses single-server architecture) to take advantage of SpatialOS’ distributed, persistent server architecture. See [Actor property handover between server-workers]({{urlRoot}}/content/actor-handover.md).
+
+### Authority
+
+A [server-worker instance](#server-workers) has authority over an Actor if it has authority over the equivalent [entity](#entity)’s [SpatialOS component] `Position`. Having authority means it can make changes to the Actor by sending updates to the [SpatialOS Runtime](#spatialos-runtime). 
+
+Client-worker instances never have authority over Actors. However, like in native Unreal, they can have [ownership](#ownership). 
+
+In a game with just one server-worker instance (which is the default for the GDK), that server-worker instance has authority over all the Actors in the game. In a game with more than one server-worker instance, different server-worker instances have authority over different Actors:
+
+* with offloading, the server-worker instance that has authority over an Actor always stays the same. <!-- TODO add link to offloading doc -->
+* with [zoning](#zoning) (currently in pre-alpha), the server-worker instance that has authority over an Actor can change as the Actor moves around, but only one instance can have authority over an Actor at any one time.
+
+> **Find out more:**
+> 
+> [How to set up authority]({{urlRoot}}/content/authority)
 
 ### Dynamic Typebindings
 To enable the network stacks of Unreal and SpatialOS to interoperate, we've implemented [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings.md). `Dynamic Typebindings` operate at runtime so your that your iteration speed is not affected despite your network code running on a completely different represenetations than Unreal's.
 
 ### Cross-server RPCs
-These handle the scenario where a [server-worker](#workers) needs to execute an operation on an Actor that another server-worker has [authority](#authority) over. When a cross-server RPC is invoked by a non-authoritative server-worker, the execution is routed through SpatialOS to the authoritative server-worker - this authoritative server-worker executes the RPC. (See the documentation on [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)).
+These handle the scenario where a [server-worker](#worker) needs to execute an operation on an Actor that another server-worker has [authority](#authority) over. When a cross-server RPC is invoked by a non-authoritative server-worker, the execution is routed through SpatialOS to the authoritative server-worker - this authoritative server-worker executes the RPC. (See the documentation on [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)).
 
 ### Global State Manager
 The Global State Manager (GSM):
 
-*  Makes sure that [Singleton Actors](#singleton-actor) are replicated properly, by only allowing the [server-worker](#workers) with [authority](#authority) over the GSM to execute the initial replication of these Actors. See documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors.md).
+*  Makes sure that [Singleton Actors](#singleton-actor) are replicated properly, by only allowing the [server-worker](#worker) with [authority](#authority) over the GSM to execute the initial replication of these Actors. See documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors.md).
 *  Maintains the configuration of a [deployment’s](#deployment) currently-loaded [game world](#game-world). (Note that this is the Unreal game world not the [SpatialOS world](#spatialos-world).)<br/>  
 
-The GSM lists both the URL of the [Map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) that the [server-workers](#workers) have loaded and the `AcceptingPlayers` flag. (This flag controls whether or not client-servers can spawn anything in the game world.)
+The GSM lists both the URL of the [Map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) that the [server-workers](#worker) have loaded and the `AcceptingPlayers` flag. (This flag controls whether or not client-servers can spawn anything in the game world.)
 
->Related:
+> **Find out more**
 >
 > [Server travel]({{urlRoot}}/content/map-travel.md) 
 
 ### GSM
 Short for [Global State Manager](#global-state-manager).
 
+### Interest
+
+Interest means that a [client-worker instance](#worker-types-and-worker-instances) receives updates about an Actor that it doesn’t [own](#ownership). This helps the worker instance correctly manipulate the Actors that it _does_ own, and render the [SpatialOS world](#spatialos-world).
+
+You can define interest in three ways, which you can use alongside each other:
+
+* `NetCullDistanceSquared`
+* `ActorInterestComponent`
+* `AlwaysInterested`
+
+<!-- TODO update this when we have interest for server-worker instances as well -->
+
+> **Find out more**
+> 
+> [Game client interest management]({{urlRoot}}/content/game-client-interest-management)
+
+### Offloading
+
+Offloading is the new architecture that the SpatialOS GDK for Unreal provides to allocate the authority of specific [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups) from the main Unreal server-worker instance to a different server-worker instance. By using offloading, you can save the resources of the main Unreal server-worker instance when you want to build richer game features.
+
+> **Find out more**
+> 
+> [Offloading overview]({{urlRoot}}/content/workers/offloading-concept)
+
 ### SchemaDatabase
 
 The SchemaDatabase is a `uasset` file (named `SchemaDatabase.uasset`) that contains information about UObjects and associated [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) in your project. Information is automatically added to the `SchemaDatabase` by the GDK whenever you generate schema. It is a generated file which you cannot manually edit. 
 
 ### Schema generation
+
 A SpatialOS GDK for Unreal toolbar command (within the Unreal Editor) which takes a set of Unreal classes and generates SpatialOS [schema](#schema) that enables automatic communication between Unreal and SpatialOS. 
 
->Related:
->[SpatialOS GDK for Unreal toolbar]({{urlRoot}}/content/toolbars#spatialos-gdk-for-unreal-toolbar)
+> **Find out more**
+> 
+> [SpatialOS GDK for Unreal toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#spatialos-gdk-for-unreal-toolbar)
 
 ### Singleton Actor
-A server-side authoritative Actor that is restricted to one instantiation on SpatialOS. See documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors.md).
+
+You can use a Singleton Actor to define a single source of truth for operations or data, or both, across a game world that uses multiple [server-worker instances](#server-workers). Within a game world, SpatialOS makes sure that there is only ever one instance of an entity that represents a Singleton Actor, no matter how many server-worker instances you have. 
+
+> **Find out more**
+> 
+> [Singleton Actors]({{urlRoot}}/content/singleton-actors)
 
 ### Spatial Type
 Spatial Type (`SpatialType`) is a SpatialOS-specific [class specifier (Unreal documentation)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers) which is used to expose network-relevant class information to SpatialOS. There are different categories of Spatial Type, depending on the Actor’s function in your game.
@@ -69,39 +122,13 @@ Below is a subset of SpatialOS terms most relevant to the GDK for Unreal. See th
 
 Note that this SpatialOS documentation glossary assumes you are developing a SpatialOS game using the [Worker SDK and Platform SDK](https://docs.improbable.io/reference/latest/shared/get-started/working-with-spatialos),  so it may reference content relevant to that workflow only. While some of the concepts underpin the GDK for Unreal, the two workflows are not always the same.
 
-### Access control list (ACL)
-In order to read from a [component](#spatialos-component), or make changes to a component, [workers](#workers) need to have [access](#authority), which they get through an access control list. 
-Access control lists are a component in the standard schema library: `EntityAcl`. Every [entity](#spatialos-entity) needs to have one. The ACL determines:
-
-* which types of workers have read access to an entity
-* for each component on the entity, which types of workers can have write access
-
 ### Assembly
 An assembly is what’s created when you build your project. It contains all the files that your game uses.
-This includes executable files for the [client-workers](#workers) and [server-workers](#workers), and the assets these workers use (for example, textures used by a client to visualize the game).
+This includes executable files for the [client-workers](#worker) and [server-workers](#worker), and the assets these workers use (for example, textures used by a client to visualize the game).
 When you run a [cloud deployment](#deployment), you have to specify an assembly to use.
 
-### Authority
-Also known as “write access”.
-
-* Write access:<br/>
-Many [workers](#workers) can connect to a [SpatialOS world](#spatialos-world). For each [component](#spatialos-component) on a [SpatialOS entity](#spatialos-entity), there can be no more than one worker with write access to it. This worker is the only one able to modify the component’s state and handle commands for it.
-Workers with write access are said to “have authority” and be “authoritative”; workers without write access are said to be “non-authoritative”.
-Which [types of workers](#worker-types) can have write access is governed by each entity’s [access control list (ACL)](#access-control-list-acl). A write ACL is specified per component. The write authority is managed by SpatialOS, and can change regularly due to [load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing).
-<br/>
-* Read access:<br/>
-Read access allows [workers](#workers) to know the state of a [SpatialOS component](#spatialos-component). The [access control list (ACL)](#access-control-list-acl) also controls which workers have read-access to a [SpatialOS entity](#spatialos-entity). Read access does not allow a worker to change a component. Read access is at the entity level; if a worker can read from an entity, it is allowed to read from all components on that entity. 
-
-### Check out
-Each individual [worker](#workers) checks out only part of the [SpatialOS world](#spatialos-world). This happens on a [chunk](#chunk)-by-chunk basis. A worker “checking out a chunk” means that: 
-
-* the worker has a local representation of every [entity](#spatialos-entity) in that chunk. 
-* the SpatialOS Runtime sends updates about those entities to the worker.
-
-A worker checks out all chunks that it is [interested in](#interest).
-
 ### Chunk
-A [world](#spatialos-world) is split up into chunks: the grid squares of the world. A chunk is the smallest area of space the world can be subdivided into. Every [entity](#spatialos-entity) is in exactly one chunk.
+A [world](#spatialos-world) is split up into chunks: the grid squares of the world. A chunk is the smallest area of space the world can be subdivided into. Every [entity](#entity) is in exactly one chunk.
 You set the size of chunks for your world in [launch configuration files](https://docs.improbable.io/reference/latest/shared/reference/file-formats/launch-config).
 
 ### Component
@@ -114,7 +141,7 @@ See [Spatial command-line tool (CLI)](#spatialos-command-line-tool-cli).
 The configuration files contain information on how elements of your project must work. There are four configuration files:
 
 * The [launch configuration file - `*.json`](#launch-configuration-file) contains the information that the “launch a deployment” commands use to use to  run a [deployment](#deployment).
-* The [worker configuration file - `*.worker.json`](#worker-configuration-file) tells SpatialOS how to build, launch, and interact with [workers](#workers).
+* The [worker configuration file - `*.worker.json`](#worker-configuration-file) tells SpatialOS how to build, launch, and interact with [workers](#worker).
 * The [project definition file - `spatialos.json`](#project-definition-file) 
 * The [worker packages file - `spatialos_worker_packages.json`](https://docs.improbable.io/reference/latest/shared/reference/file-formats/spatial-worker-packages)
 
@@ -127,98 +154,92 @@ The [Console](https://console.improbable.io/) is the main landing page for manag
 * All of the [SpatialOS assemblies](#assembly) you’ve uploaded
 * Links to the [Inspector](#inspector), [Launcher](#launcher), and the logs and metrics page for your deployments.
 
-> Related:
+> **Find out more**
 >
 > * [Logs](https://docs.improbable.io/reference/latest/shared/operate/logs#cloud-deployments)
 > * [Metrics](https://docs.improbable.io/reference/latest/shared/operate/metrics)
 
 ### Deployment
-When you want to try out your game, you need to deploy it. This means launching SpatialOS itself. SpatialOS sets up the [world](#spatialos-world) based on a [snapshot](#snapshot), then starts up the [server-workers](#workers) needed to run the world. 
+When you want to try out your game, you need to upload both its built-out server-side and client-side code to SpatialOS. We call this “launching a deployment”. 
+
+When you launch a deployment to SpatialOS, it sets up an instance of the [SpatialOS Runtime](#spatialos-runtime) to run your game with the code you upload. The Runtime sets up the game’s [SpatialOS world](#spatialos-world) based on a [snapshot](#snapshot], then starts up the [server-worker instance(s)](#server-workers] needed to run the world. You can then share game clients via the [Launcher](#launcher).
 
 There are two types of deployment: local and cloud.
 
-Local deployments allow you to start the SpatialOS [Runtime](#spatialos-runtime) locally to test changes quickly. Find out more about local deployments in the [SpatialOS documentation](https://docs.improbable.io/reference/latest/shared/deploy/deploy-local).  
+* Cloud deployments run in the cloud on Improbable-hosted servers, known as nodes[nodes](#node).
+* You can use a local deployment to test your server-side and client-side code on your development machine. When you launch a local deployment, you start a local version of the SpatialOS Runtime. (Note that the Launcher does not work with local deployments.)
 
-As their name suggests, cloud deployments run in the cloud on [nodes](#node). They allow you to share your game with other people and run your game at a scale not possible on one local machine. Once a cloud deployment is running, you can connect clients to it using the [Launcher](#launcher).
+> **Find out more:**
+> 
+> * [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
+> * [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
+> * [Example project: launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment)
+> * [Example project: launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
+> * [The Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher)
+
+### Dynamically-spawned entity
+
+[Entities](#entity) can be either dynamically-spawned or non-dynamic:
+
+* Dynamically-spawned entities correspond to Actors that your game creates during runtime. For example, your game might spawn pick-ups in a level; these are dynamically-spawned entities.
+* Non-dynamic entities correspond to Actors that are already in your game’s [snapshot](#snapshot) or in your game’s Unreal level. 
 
 ### Entity
-See [SpatialOS entity](#spatialos-entity).
+
+Entities equate to replicated Actors in Unreal. They are the network-enabled objects that you place or that are spawned into your [SpatialOS world](#spatialos-world). 
+Entities are made up of a collection of [SpatialOS components](#spatialos-component).
+
+All of the data that you want the [SpatialOS Runtime](#spatialos-runtime) to store in the [SpatialOS Runtime](#spatialos-runtime), and [worker instances](#worker-types-and-worker-instances) to make updates to and receive updates about, is associated with entities, specifically one type of their constituent components.
 
 ### Game world
 
->Not to be confused with [SpatialOS world](#spatialos-world).
+> Not to be confused with [SpatialOS world](#spatialos-world).
 
 Everything in your Unreal game that a player can see or interact with. 
 
 ### Inspector
 The Inspector is a web-based tool that you use to explore the internal state of a [SpatialOS world](#spatialos-world). It gives you a real-time view of what’s happening in a [local or cloud deployment](#deployment). Among other things, it displays:
 
-* which [workers](#workers) are connected to the deployment.
+* which [workers](#worker) are connected to the deployment.
 * how much [load](https://docs.improbable.io/reference/latest/shared/glossary#load-balancing) the workers are under.
-* which [SpatialOS entities](#spatialos-entity) are in the SpatialOS world.
+* which [entities](#entity) are in the SpatialOS world.
 * what their [SpatialOS components](#spatialos-component)’ [properties]({{urlRoot}}/content/spatialos-concepts/world-entities-components#entities-and-components) are.
 * which workers are authoritative over each SpatialOS component.
 
->Related:
+> **Find out more**
 >
->[The Inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector)
-
-### Interest
-There are two types of interest: entity interest and component interest.
-
-#### Entity interest
-A [worker](#workers) is interested in all [chunks](#chunk) that contain [entities](#spatialos-entity) it has
-[write access](#authority) to a [component](#spatialos-component) on. It's *also* interested in chunks within a configurable
-radius of those entities: this makes sure that workers are aware of entities nearby. You can set this radius
-in the [worker configuration file](#worker-configuration-file).
-If a worker is interested in a chunk, it will [check out](#check-out) all the entities in that chunk.
-
-#### Component interest
-Each [worker](#workers), in its [worker configuration file](#worker-configuration-file), specifies which [components](#spatialos-component) it is
-interested in. SpatialOS only sends updates about components to a worker which is interested in that component.
-
-> Related:
->
-> * [Entity interest settings](https://docs.improbable.io/reference/latest/shared/worker-configuration/bridge-config#entity-interest)
-> * [Component delivery settings](https://docs.improbable.io/reference/latest/shared/worker-configuration/bridge-config#component-delivery)
-
+> [The Inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector)
 
 ### Launch
 
->Not to be confused with [the Launcher](#launcher).
+> Not to be confused with [the Launcher](#launcher).
 
 In SpatialOS, “launch” means start a game [deployment](#deployment). See also [launch configuration file](#launch-configuration-file).
 
 ### Launch configuration
 The launch configuration is how you set up the start of your game’s [deployment](#deployment) (its launch). It is represented in the launch configuration file.
-See [workers](#workers) and [launch configuration file](#launch-configuration-file).
+See [workers](#worker) and [launch configuration file](#launch-configuration-file).
 
 ### Launch configuration file
 The [launch configuration file](#launch-configuration-file) is a `.json` file containing the information that the “launch a deployment” commands use to start a [deployment](#deployment).
 
->Related:
+> **Find out more**
 >
->[Launch configuration file](https://docs.improbable.io/reference/latest/shared/reference/file-formats/launch-config)
+> [Launch configuration file](https://docs.improbable.io/reference/latest/shared/reference/file-formats/launch-config)
 
 ### Launcher
 The Launcher is a tool that can download and start clients that connect to [cloud deployments](#deployment). It's available as an application for Windows and macOS. From the [Console](#console), you can use the Launcher to connect a game client to your own cloud deployment or generate a share link so anyone with the link can download a game client and join your game.
 The Launcher downloads the client executable from the [SpatialOS assembly](#assembly) you uploaded.
 
-> Related:
+> **Find out more**
 >
 > [The Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher)
 
-### Load balancing
-One of the features of SpatialOS is load balancing: dynamically adjusting how many [components](#spatialos-component) on [entities](#spatialos-entity) in the [world](#spatialos-world) each [worker](#workers) has [write access](#authority) to, so that workers don’t get overloaded.
+### Locator
 
-Load balancing only applies to [server-workers](#workers).
-When an instance of a worker is struggling with a high workload, SpatialOS can start up new instances of the worker, and give them write access to some components on entities.
+There are two types of connection between a worker instance and the [SpatialOS Runtime](#spatialos-runtime): Locator and [Receptionist](#receptionist).
 
-This means that an [entity](#spatialos-entity) won’t necessarily stay on the same worker instance, even if that entity doesn’t move. SpatialOS may change which components on which entities a worker instance has write access to: so entities move “from” one worker instance to another. Even though the entity may be staying still, the worker instance’s [area of interest](#interest) is moving.
-
->Related pages:
->
-> [Configuring load balancing](https://docs.improbable.io/reference/latest/shared/worker-configuration/loadbalancer-config)
+You use the Locator to connect a [client-worker instance](#worker-types-and-worker-instances) to a cloud [deployment](#deployment). An authenticated Locator service lists cloud deployments and connects the client-worker instance to the right one.
 
 ### Network operations
 
@@ -230,22 +251,34 @@ For more information, see the SpatialOS documentation on [operations](https://do
 
 ### Node
 
->Not to be confused with [worker](#workers).
+> Not to be confused with [worker](#worker).
 
 A node refers to a single machine used by a [cloud deployment](#deployment). Its name indicates the role it plays in your deployment. You can see these on the advanced tab of your deployment details in the [Console](#console).
+
+### Ownership
+
+The GDK mimics Unreal’s [owning connections](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/OwningConnections/index.html) so that client-worker instances can manipulate certain Actors.
 
 ### Ops
 
 See [Network operations](#network-operations).
 
 ### Persistence
-Most [entities](#spatialos-entity) in your [game world](#game-world) need to keep existing if you stop a game [deployment](#deployment) and start a new one. However,  some entities don’t need to keep existing from one deployment to another; you may want per-deployment player abilities and a per-deployment score, for example.
+Most [entities](#entity) in your [game world](#game-world) need to keep existing if you stop a game [deployment](#deployment) and start a new one. However,  some entities don’t need to keep existing from one deployment to another; you may want per-deployment player abilities and a per-deployment score, for example.
 
 To facilitate this continuity in an entity's state between deployments, there is a `persistence` component in the standard [schema](#schema) library. It’s optional, but all entities that you want to persist in the world must have this component. Persistence means that entities are saved into [snapshots](#snapshot).
 
->Related:
+> **Find out more**
 >
->[The persistence component in the standard schema library](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library#persistence-optional)
+> [The persistence component in the standard schema library](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library#persistence-optional)
+
+### Placeholder entities
+
+Placeholder entities are useful if you have multiple server-worker instances, for visualizing your [worker instance’s](#worker-types-and-worker-instances) areas of [authority](#authority). The GDK can auto-populate your [local deployment](#deployment) with placeholder entities via the Editor Settings panel which you can access from the [Unreal toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars). From the **Play** menu, select **SpatialOS settings** and scroll down to **SpatialOS GDK for Unreal**.
+
+<!--
+TODO link to Editor Settings doc when it’s ready, and then remove the instructions from this glossary entry https://improbableio.atlassian.net/browse/UNR-1207
+-->
 
 ### Project name
 Your project name is a unique identifier for your game project as a deployment. It’s generated for you when you sign up for SpatialOS. It’s usually something like `beta_someword_anotherword_000`.
@@ -254,74 +287,104 @@ Note that your project name is (usually) not the same as the name of the directo
 
 ### Project definition file
 This is a `spatialos.json` file which lives in your project's spatial directory. 
-It lists the SpatialOS [project name](#project-name) assigned to you by Improbable when you sign up as well as the version of [SpatialOS SDK](#spatialos-sdk) your project uses.
+It lists the SpatialOS [project name](#project-name) assigned to you by Improbable when you sign up as well as the version of [SpatialOS SDK](#spatialos-sdks) your project uses.
 
->Related
+> **Find out more**
 >
->[Project defnition file - `spatialos.json`](https://docs.improbable.io/reference/latest/shared/reference/file-formats/spatialos-json)
+> [Project defnition file - `spatialos.json`](https://docs.improbable.io/reference/latest/shared/reference/file-formats/spatialos-json)
 
 ### Queries
-Queries allow [workers](#workers) to get information about the [world](#spatialos-world) outside the region they’re [interested in](#interest). For more information, see [queries](https://docs.improbable.io/reference/latest/shared/glossary#queries).
+Queries allow [workers](#worker) to get information about the [world](#spatialos-world) outside the region they’re [interested in](#interest). For more information, see [queries](https://docs.improbable.io/reference/latest/shared/glossary#queries).
 
-> Entity queries are useful if you need to get information about an entity at a particular time.
-> If you need regular updates about an entity, use [streaming queries](#streaming-queries) instead.
+Entity queries are useful if you need to get information about an entity at a particular time.
 
-### Read access
-See [authority](#authority).
+### Receptionist
+
+There are two types of connection between a worker instance and the [SpatialOS Runtime](#spatialos-runtime): Receptionist and [Locator](#locator).
+
+You use the Receptionist connection for:
+
+* connecting a server-worker instance to a local or cloud deployment
+* connecting a client-worker instance to a local deployment, or to a cloud deployment via `spatial cloud connect external <deployment_name>` (see [`spatial cloud connect external`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-cloud-connect-external)
+
+> **Find out more**
+> 
+> * [Command line connection arguments]({{urlRoot}}/content/command-line-arguments#connection-arguments)
+> * [Map travel]({{urlRoot}}/content/map-travel)
 
 ### Schema
-The schema is where you define all the [SpatialOS components](#spatialos-component) in your [SpatialOS world](#spatialos-world).
 
-You define your schema in `.schema` files that are written in [schemalang](https://docs.improbable.io/reference/latest/shared/glossary#schemalang). Schema files are stored in the `schema` folder in the root directory of your SpatialOS project.
+Schema is a set of data definitions which represent your game's objects and the commands and events to interface with them in SpatialOS. Schema is defined in `.schema` files and written in the SpatialOS language “schemalang”. 
 
-SpatialOS uses the schema to generate code. You can use this generated code in your [workers](#workers) to interact with [SpatialOS entities](#spatialos-entity) in the SpatialOS world.
+You do not have to write or edit schema files manually: the GDK generates schema files and their contents based on the Actors your have set up for schema generation, using the native Unreal tag `Replicated`. (However, you do have to manually start the schema generation via the GDK toolbar.)
 
-> Related:
->
-> * [SpatialOS concepts: schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema)
-> * [Reference: schema]({{urlRoot}}/content/how-to-use-schema)
+SpatialOS uses schema to generate APIs specific to the SpatialOS components on entities in your project. You can then use these APIs in your game's [worker types](#spatialos-component) so their instances can interact with [SpatialOS components](#spatialos-component).
+
+> **Find out more**
+> 
+> * [How to use schema]({{urlRoot}}/content/how-to-use-schema)
+> * Setting up Actors for schema generation: [Spatial Type]({{urlRoot}}/content/spatial-type)
+
+### Simulated player
+
+A simulated player is a client-worker instance that is controlled by simulated player logic as opposed to real player input. You can use simulated players to scale-test your game. They launch inside a standalone cloud deployment and connect to a target cloud deployment.
+
+> **Find out more**
+> 
+> [Simulated players]({{urlRoot}}/content/simulated-players)
+
+### Snapshot
+A snapshot is a representation of the state of a [SpatialOS world](#spatialos-world) at a given point in time. It stores each [persistent](#persistence) [entity](#entity) and the values of their [SpatialOS components](#spatialos-component)' [properties]({{urlRoot}}/content/spatialos-concepts/world-entities-components#entities-and-components).
+
+You use a snapshot as the starting point (using an an “initial snapshot”) for your [SpatialOS world](#spatialos-world) when you [deploy your game](#deployment).
+
+> **Find out more**
+> 
+> * [SpatialOS concepts: snapshots]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots)
+> * [Reference: snapshots]({{urlRoot}}/content/how-to-use-snapshots)
 
 ### SpatialOS command-line tool (CLI)
-The SpatialOS command-line tool (also known as the “CLI”) provides a set of commands that you use to interact with a [SpatialOS project](https://docs.improbable.io/reference/latest/shared/reference/project-structure#structure-of-a-spatialos-project). Among other things, you use it to [deploy](#deployment) your game (using [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch) or [`spatial cloud launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-cloud-launch)). You can run the CLI commands `spatial build` and `spatial local launch` from the [GDK toolbar]({{urlRoot}}/content/toolbars#spatialos-gdk-for-unreal-toolbar) in the Unreal Editor.
+The SpatialOS command-line tool (also known as the “CLI”) provides a set of commands that you use to interact with a [SpatialOS project](https://docs.improbable.io/reference/latest/shared/reference/project-structure#structure-of-a-spatialos-project). Among other things, you use it to [deploy](#deployment) [locally]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) or [in the cloud]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment).
 
-> Related:
+> **Find out more**
 > 
 > * [An introduction to the SpatialOS command-line tool](https://docs.improbable.io/reference/latest/shared/spatial-cli-introduction). Note that the GDK does not support any `spatial worker` commands.
 > * [SpatialOS CLI reference](https://docs.improbable.io/reference/latest/shared/spatialos-cli-introduction)
 
-
 ### SpatialOS component
-> Not to be confused with [Unreal Actor Components (Unreal documentation](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors/Components)
 
-A [SpatialOS entity](#spatialos-entity) is defined by a set of components. Common components in a game might be things like `Health`, `Position`, or `PlayerControls`. They're the storage mechanism for data about the [world](#spatialos-world) that you want to be shared between [workers](#workers).
-Components can contain:
+> Not the same as [Unreal Actor Components](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors/Components) (Unreal documentation).
 
-* [properties](https://docs.improbable.io/reference/latest/shared/glossary#property), which describe persistent values that change over time (for example, a property for a `Health` component could be “the current health value for this entity”.)
-* [events](https://docs.improbable.io/reference/latest/shared/glossary#event), which are transient things that can happen to an entity (for example, `StartedWalking`)
-* [commands](https://docs.improbable.io/reference/latest/shared/glossary#command) that another worker can call to ask the component to do something, optionally returning a value (for example, `Teleport`)
+Each [entity](#entity) is made up of SpatialOS components. Common SpatialOS components in a game might be `Health`, `Position`, or `PlayerControls`. In the GDK, you don’t need to manually create entities or components; [schema generation](#schema-generation) does this automatically, based on the Unreal Actors that you set up.
 
-A SpatialOS entity can have as many components as you like, but it must have at least [`Position`](https://docs.improbable.io/reference/latest/shared/glossary#position) and [`EntityAcl`](#access-control-list-acl). Most entities will have the [`Metadata`](https://docs.improbable.io/reference/latest/shared/glossary#metadata) component.
+There are three types of data that a SpatialOS component can contain:
 
-SpatialOS components are defined as files in your [schema](#schema).
-[Entity access control lists](#access-control-list-acl) govern which workers can [read from](#read-access) or [write to](#write-access) each component on an entity.
+* [Properties](#spatialos-component-property), which describe persistent values that change over time (for example, a property for a `Health` component could be “the current health value for this entity”.) SpatialOS components’ properties approximate to replicated properties in Unreal.
+* [Events](https://docs.improbable.io/reference/latest/shared/glossary#event), which are transient occurrences that can happen to an entity (for example, `StartedWalking`).
+* [Commands](https://docs.improbable.io/reference/latest/shared/glossary#command) that a worker instance can call to ask the SpatialOS component to do something, optionally returning a value (for example, `Teleport`).
 
-> Related:
->
-> * [Designing components](https://docs.improbable.io/reference/latest/shared/design/design-components)
-> * [Component best practices](https://docs.improbable.io/reference/latest/shared/design/component-best-practices)
-> * [SpatialOS concepts: schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema)
+Each component can have many properties, events and commands. and an entity can have many components, but it must have at least a property component called `Position`.
 
-### SpatialOS entity
-All of the objects inside a [SpatialOS world](#spatialos-world) are SpatialOS entities: they’re the basic building blocks of the world. Examples include players, NPCs, and objects in the world like trees. A SpatialOS entity approximates to an Unreal Actor.  
+All of the data that you want the [SpatialOS Runtime](#spatialos-runtime) to store, and you want [worker instances](#worker-types-and-worker-instances) to make updates to and receive updates about, is associated with properties in entities’ components.
 
-SpatialOS entities are made up of [SpatialOS components](#spatialos-component), which store data associated with that entity.
+> **Find out more**
+> 
+> Setting up Actors for schema generation: [Spatial Type](https://docs.improbable.io/unreal/alpha/content/spatial-type)
+> <br><br>
+> If you plan to extend the functionality of the GDK using the [SpatialOS Worker SDK](#spatialos-sdks) - for example, if you want to create [non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types) - you’ll need to know about the [standard schema library](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library).
 
-[Workers](#workers) can only see the entities they're [interested in](#interest).
+### SpatialOS component property
 
-> Related:
->
-> * [SpatialOS concepts: entities]({{urlRoot}}/content/spatialos-concepts/world-entities-components#entities-and-components)
-> * [Designing SpatialOS entities](https://docs.improbable.io/reference/latest/shared/design/design-entities)
+[SpatialOS components](#spatialos-component) can contain properties, which describe persistent values that change over time.
+
+The worker instance with [authority](#authority) over a particular Actor can send property updates. These are received by worker instances that have [interest](#interest) in the Actor.
+
+For Actors that a worker instance has interest in, that worker instance can:
+
+* read the current value of its components’ properties
+* watch for changes to the value of these properties
+
+The value of a component’s property forms part of the data about an entity. This data is stored in the [SpatialOS Runtime](#spatialos-runtime).
 
 ### SpatialOS Runtime
 
@@ -329,118 +392,106 @@ SpatialOS entities are made up of [SpatialOS components](#spatialos-component), 
 
 Also sometimes just called “SpatialOS”. 
 
-A SpatialOS Runtime instance manages the [SpatialOS world](#spatialos-world) of each [deployment](#deployment) by storing all [SpatialOS entities](#spatialos-entity) and the current state of their [SpatialOS components](#spatialos-component). [Workers](#workers) interact with the SpatialOS Runtime to read and modify the components of an entity as well as send messages between each other.
+A SpatialOS Runtime instance manages the [SpatialOS world](#spatialos-world) of each [deployment](#deployment) by storing all [entities](#entity) and the current state of their [SpatialOS components](#spatialos-component). [Workers](#worker) interact with the SpatialOS Runtime to read and modify the components of an entity as well as send messages between each other.
 
-### SpatialOS SDK
-This is a set of low-level tools in several programming languages which you can use to integrate your game project with SpatialOS. It consists of the Worker SDK (or “Worker module”) and Platform SDK (or “Platform module”). 
-If you are using the GDK for Unreal, you do not need to use the Worker SDK or Platform SDK, however, you can use the Worker SDK to extend or complement the functionality of the GDK for Unreal. 
+### SpatialOS SDKs
 
-> Related:
->
-> Worker SDK: [Game development tools overview](https://docs.improbable.io/reference/latest/shared/dev-tools-intro)
-> [Platform SDK overview](https://docs.improbable.io/reference/latest/platform-sdk/introduction)
+The SpatialOS SDKs are the Worker SDK and the Platform SDK, which are low-level SpatialOS integrations available as APIs. 
+
+You can use the Worker SDK to extend the functionality of the GDK, or to create low-level [worker types](#worker-types-and-worker-instances) for game logic that doesn’t require Unreal.
+
+You can use the Platform SDK to build tools, workflows and services that integrate with the SpatialOS platform.
+
+> **Find out more**
+> 
+> * [Worker SDK: SpatialOS SDKs and data: overview](https://docs.improbable.io/reference/latest/shared/sdks-and-data-overview)
+> * [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
 
 ### SpatialOS world
 
->Not to be confused with the Unreal [game world](#game-world).
+> This is not the same as the Unreal [game world](#game-world).
 
-Also known as "the world".
+Also known as “the world”.
 
-The world is a central concept in SpatialOS. It’s the canonical source of truth about your game. All the world's data is stored within [entities](#entity) - specifically, within their [components](#component).
-SpatialOS manages the world, keeping track of all the entities and what state they’re in.
+The world is a central concept in SpatialOS. All the world’s data is associated with [entities](#entity) - specifically, their [SpatialOS components](#spatialos-component). SpatialOS manages the world, keeping track of all the entities and what state they’re in and storing this data in the [SpatialOS Runtime](#spatialos-runtime).
 
-Changes to the world are made by [workers](#workers). Each worker has a view onto the world (the part of the world that they're [interested](#interest) in), and SpatialOS sends them updates when anything changes in that view.
+[Worker instances](#worker-types-and-worker-instances) make changes to the world by sending updates to the [SpatialOS Runtime](#spatialos-runtime). Each worker instance has a view onto the world (the part of the world that it has [interest](#interest) in) and receives updates from the Runtime when anything changes in that view.
 
-It's important to recognise this fundamental separation between the SpatialOS world and the view of that world that a worker [checks out](#check-out). Workers send updates to SpatialOS when they want to change the world: they don't control the canonical state of the world; they must use SpatialOS APIs to change it.
+### Worker
 
-### Snapshot
-A snapshot is a representation of the state of a [SpatialOS world](#spatialos-world) at a given point in time. It stores each [persistent](#persistence) [SpatialOS entity](#spatialos-entity) and the values of their [SpatialOS components](#spatialos-component)' [properties]({{urlRoot}}/content/spatialos-concepts/world-entities-components#entities-and-components).
+Workers are server-side and client-side software. They perform the computation associated with a [SpatialOS world](#spatialos-world): they are responsible for iterating on the game simulation and updating the definitive state of the game.
 
-You use a snapshot as the starting point (using an an “initial snapshot”) for your [SpatialOS world](#spatialos-world) when you [deploy your game](#deployment).
+#### Worker types and worker instances
 
-> Related:
+When you develop your game, you set up _worker types_. These are like molds for the _worker instances_ which actually do the computation.
+
+Worker instances are the programs that compute and connect a SpatialOS world. In general, you use one or more server-worker instances to compute the world, and each player’s client software uses a client-worker instance to interact with the world. 
+
+When you create a worker type using the [Worker SDK](#spatialos-sdks), each worker type has a [worker configuration file](https://docs.improbable.io/reference/latest/shared/project-layout/introduction) (<worker_type>.worker.json) where you define how SpatialOS should build, launch, and interact with instances of this worker type. With the GDK for Unreal, the GDK creates worker types for you, so, to get going, you don’t have to manually set them up. You can, however, add additional non-Unreal server-worker types using the Worker SDK.
+
+> **Find out more**
 > 
-> * [SpatialOS concepts: snapshots]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots)
-> * [Reference: snapshots]({{urlRoot}}/content/how-to-use-snapshots)
+> [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
 
-### Streaming queries
-Streaming queries allow workers to get information about the [world](#spatialos-world) outside the region they’re [interested in](#interest), so that they know about entities that they don’t have checked out (for example, entities that are far away, or that don’t have a physical position).
+<!-- TODO How do you set up worker types in Unreal https://improbableio.atlassian.net/browse/DOC-1064 -->
+<!-- TODO Offloading info added here:  https://improbableio.atlassian.net/browse/DOC-1064 -->
 
-> Streaming queries are useful if you need to get information about an entity periodically - for example, so that a player can see and interact with it.
+#### Server-workers
+
+A server-worker [instance](#worker-types-and-worker-instances) equates to a server in native Unreal networking but, unlike Unreal networking, in SpatialOS you can have more than one server-worker instance (see [Zoning](#zoning)). A server-worker instance’s lifecycle is managed by SpatialOS. When you run a SpatialOS [deployment](#deployment) of your game, the [SpatialOS Runtime]#spatialos-runtime) starts and stops server-worker instances.
+
+The GDK sets up one server-worker type for you by default. This default server-worker type is an Unreal server-worker, computing Unreal functionality - you can add additional non-Unreal server-worker types.
+
+For example, you could set up an additional server-worker type to implement player logic and another to implement AI logic. 
+
+**Note:** In a local deployment, the server-worker instances run on your development computer. In a cloud deployment, the server-worker instances run in the cloud. For more information, see [Deployment](#deployment).
+
+> **Find out more**
 > 
-> If you just need information about an entity at one particular time, use [queries](#queries) instead.
+> [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
 
-### Workers
-The [SpatialOS Runtime](#spatialos-runtime) manages the [SpatialOS world](#spatialos-world): it keeps track of all the [SpatialOS entities](#spatialos-entity) and their
-[SpatialOS components](#spatialos-component). But on its own, it doesn’t make any changes to the world.
+<!-- TODO How do you set up worker types in Unreal https://improbableio.atlassian.net/browse/DOC-1064 -->
+<!-- TODO Offloading info added here:  https://improbableio.atlassian.net/browse/DOC-1064 -->
 
-Workers are programs that connect to a SpatialOS world. They perform the computation associated with a world: they can read what’s happening, watch for changes, and make changes of their own.
+#### Client-workers
 
-There are two types of workers; server-workers and client-workers. 
+Each player’s game client - that is, the client software - uses a [client-worker instance](#worker-types-and-worker-instances) to interact with the SpatialOS world. A client-worker instance allows the game client to visualize what’s happening in the SpatialOS world as well as allowing game player’s input to that world. 
 
-A server-worker approximates to a server in native Unreal networking but, unlike Unreal networking, in SpatialOS you can have have more than one server-worker.
-
-* **Server-worker**
-    A server-worker is a [worker](#workers) whose lifecycle is managed by SpatialOS. When running a [deployment](#deployment), the SpatialOS Runtime starts and stops server-workers based on your chosen [load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#load-balancing) configuration.
-
-    You usually set up server-workers to implement game logic and physics simulation. You can have one server-worker connected to your [deployment](#deployment), or dozens, depending on the size and complexity of your [SpatialOS world](#spatialos-world).
-    If you run a [local deployment](#deployment), the server-workers run on your development computer. If you run a [cloud deployment](#deployment), the server-workers run in the cloud.
-* **Client-worker**
-
-    While the lifecycle of a server-worker is managed by the SpatialOS Runtime, the lifecycle of a client-worker is managed by the game client.
-    You usually set up client-workers to visualize what’s happening in the [SpatialOS world](#spatialos-world). They also deal with player input.
-
-    > Related:
-    >
-    > * [External worker (client-worker) launch configuration](https://docs.improbable.io/reference/latest/shared/worker-configuration/launch-configuration#external-worker-launch-configuration)
-
-**More about workers**</br>
-In order to achieve huge scale, SpatialOS divides up the SpatialOS entities in the world between workers, balancing the work so none of them are overloaded. For each SpatialOS entity in the world, it decides which worker should have [write access](#authority) to each SpatialOS component on the SpatialOS entity. To prevent multiple workers writing to a component at the same time, only one worker at a time can have write access to a SpatialOS component.
-
-As the world changes over time, the position of SpatialOS entities and the amount of updates associated with them changes. Server-workers report back to SpatialOS how much load they're under, and SpatialOS adjusts which workers have write access to components on which SpatialOS entities. SpatialOS then starts up new workers when needed. This is [load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#load-balancing).
-Around the SpatialOS entities which they have write access to, every worker has an area of the world they are [interested in](#interest).
-
-A worker can read the current state of components of the SpatialOS entities within this area, and SpatialOS sends [updates and messages](https://docs.improbable.io/reference/latest/shared/glossary#sending-an-update) about these SpatialOS entities to the worker.
-
-If the worker has write access to a SpatialOS component, it can [send updates and messages](https://docs.improbable.io/reference/latest/shared/glossary#sending-an-update):
-it can update [properties](https://docs.improbable.io/reference/latest/shared/glossary#property), send and handle [commands](https://docs.improbable.io/reference/latest/shared/glossary#command) and trigger [events](https://docs.improbable.io/reference/latest/shared/glossary#event).
-
-> Related:
->
-> * [SpatialOS concepts: workers and load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing)
+The lifecycle of a client-worker instance is managed by the game client. The GDK sets up a client-worker type for you by default.
 
 ### Worker configuration
 The worker configuration is how you set up your workers. It is represented in the worker configuration file.
-See [workers](#workers) and [worker configuration file](#worker-configuration-file).
+See [workers](#worker) and [worker configuration file](#worker-configuration-file).
 
 ### Worker configuration file
 
-> First, see [workers](#workers).
+> First, see [workers](#worker).
 
 Each worker needs a worker configuration file. This file tells SpatialOS how to build, launch, and interact with the workers.
 The file’s name must be `spatialos.<worker_type>.worker.json`: for example, `spatialos.MyWorkerType.worker.json`.
 Once you’ve chosen a label for the worker type (for example, myWorkerType), you use this exact label consistently throughout your project to identify this worker type.
 
-> Related:
+> **Find out more**
 >
->[Worker configuration file `worker.json`](https://docs.improbable.io/reference/latest/shared/worker-configuration/worker-configuration)
+> [Worker configuration file `worker.json`](https://docs.improbable.io/reference/latest/shared/worker-configuration/worker-configuration)
 
 ### Worker types
 
-> First, see [workers](#workers).
+> First, see [workers](#worker).
 
 There are two generic types of worker that define how you would want to connect these workers and what kind of capabilities they have:
 
-* [server-worker](#workers)
-* [client-worker](#workers)
+* [server-worker](#server-workers)
+* [client-worker](#client-workers)
 
 Within these broad types, you can define your own worker sub-types to create more specialized workers.
 
-### Write access
-See [authority](#authority).
+### Zoning
 
+Zoning is when you split out the computation of the SpatialOS world spatially, so that each [worker instance](#worker-types-and-worker-instances) of a particular type is responsible for computing the objects in a particular area.
 
-<br/>------<br/>
-_2019-03-15 Page updated with editorial review_
 <br/>
-_2019-03-15 Added layers, non-Unreal layers, network operations (ops)_
+<br/>------<br/>
+_2019-07-30 Added Actor groups, offloading_
+<br/>_2019-06-15 Added layers, non-Unreal layers, network operations (ops)_
+<br/>_2019-03-15 Page updated with editorial review_
