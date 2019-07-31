@@ -408,6 +408,11 @@ FString USpatialWorkerConnection::GetWorkerId() const
 	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
 }
 
+FString USpatialWorkerConnection::GetWorkerLabel() const
+{
+	return GameInstance.Get() ? GameInstance->GetSpatialWorkerLabel() : FString("UNKNOWN");
+}
+
 const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 {
 	return CachedWorkerAttributes;

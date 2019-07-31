@@ -59,6 +59,7 @@ public:
 	void SendMetrics(const SpatialGDK::SpatialMetrics& Metrics);
 
 	FString GetWorkerId() const;
+	FString GetWorkerLabel() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
 	FReceptionistConfig ReceptionistConfig;
