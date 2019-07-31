@@ -13,7 +13,7 @@ In the GDK you can use `ClientTravel` to connect to a SpatialOS deployment, wher
 
 By specifying a URL as the first command line parameter when launching a client you can automatically connect clients to a deployment. There are two options available in SpatialOS, the [receptionist](#using-receptionist) flow for local deployments and the [locator](#using-locator) flow for cloud deployments. Alternatively you can connect from an offline client to a deployment in-game by using APlayerController::ClientTravel ([OpenLevel](https://api.unrealengine.com/INT/BlueprintAPI/Game/OpenLevel/index.html) in blueprints).
 
-Please refer to the [Connection Arguments]({{urlRoot}}/content/command-line-arguments#connection-arguments) section for all possible SpatialOS URL options.
+Please refer to the [Map Travel URL options]({{urlRoot}}/content/command-line-arguments#map-travel-url-options) section for all possible SpatialOS URL options.
 
 #### Using Receptionist - Local Deployments
 The Receptionist is a SpatialOS service which allows you to connect to a deployment using the host IP and port of the SpatialOS deployment. You can specify these parameters in command line arguments when booting a client and you will connect automatically via receptionist. An example of the receptionist being used to automatically connect a client on boot can be found in the `LaunchClient.bat` script found in our [UnrealGDKExampleProject](https://github.com/spatialos/UnrealGDKExampleProject).
@@ -32,13 +32,13 @@ The Locator is a SpatialOS service which allows you to connect to cloud deployme
 
 Using the locator flow is very similar to using the receptionist, except with different URL options. You must add the `locator` option, and specify the appropriate options.  The `locator` workflow makes use of the new [Authentication flow](https://docs.improbable.io/reference/latest/shared/auth/integrate-authentication-platform-sdk).
 
-**Locator**: Add the options `locator`, `playerIdentityToken` and `loginToken`. For more information about the options, see [Connection Arguments]({{urlRoot}}/content/command-line-arguments#connection-arguments).
+**Locator**: Add the options `locator`, `playeridentity` and `login`. For more information about the options, see [Map Travel URL options]({{urlRoot}}/content/command-line-arguments#map-travel-url-options).
 ```
 FURL TravelURL;
 TravelURL.Host = TEXT("locator.improbable.io");
 TravelURL.AddOption(TEXT("locator"));
-TravelURL.AddOption(TEXT("playerIdentityToken=MY_PLAYER_IDENTITY_TOKEN"));
-TravelURL.AddOption(TEXT("loginToken=MY_LOGIN_TOKEN"));
+TravelURL.AddOption(TEXT("playeridentity=MY_PLAYER_IDENTITY_TOKEN"));
+TravelURL.AddOption(TEXT("login=MY_LOGIN_TOKEN"));
 
 PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false /*bSeamless*/);
 ```
@@ -60,10 +60,10 @@ To connect a client to a deployment from an offline state, you must use [`Client
 The `LaunchClient.bat` helper script (which we have provided with the UnrealGDKExampleProject) already includes the local host IP `127.0.0.1` which means client launched this way will attempt to connect automatically using the [receptionist](#using-receptionist) flow.
 
 #### With the SpatialOS Launcher
-When launching a client from the SpatialOS Console using the [Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher#the-launcher), the client will connect to the running SpatialOS cloud deployment by default. It has the `Locator` URL required to connect to said deployment included as command-line arguments. When these `Locator` arguments are present, client will attempt to connect automatically. Please note the launcher login tokens are only valid for 15 minutes.
+When launching a client from the SpatialOS Console using the [Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher#the-launcher), the client will connect to the running SpatialOS cloud deployment by default. It has the `Locator` parameters required to connect to said deployment included as command-line arguments. When these `Locator` arguments are present, client will attempt to connect automatically. Please note the launcher login tokens are only valid for 15 minutes.
 
 ## URL Options
-Please see the [Connection Arguments]({{urlRoot}}/content/command-line-arguments#connection-arguments) section for a list of all URL options that can be used with SpatialOS.
+Please see the [Map Travel URL options]({{urlRoot}}/content/command-line-arguments#map-travel-url-options) section for a list of all URL options that can be used with SpatialOS.
 
 <br/>------<br/>
 _2019-06-13 Page updated with limited editorial review: Added Locator information_
