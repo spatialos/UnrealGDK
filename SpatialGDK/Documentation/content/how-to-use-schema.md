@@ -30,7 +30,7 @@ Within the Unreal Editor, you can generate schema using a full scan, or generate
 
     To generate schema for all classes in your project that have replicated properties or RPCs:<br/>
 
-    In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
+    In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
     <br/> ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
     <br/>When you select **Schema (Full Scan)**, the GDK iterates through all classes in your project that have replicated properties or RPCs to generate the schema files, and then updates the `SchemaDatabase`. <br/>
@@ -41,7 +41,7 @@ Within the Unreal Editor, you can generate schema using a full scan, or generate
 
     To generate schema for classes that have replicated properties or RPCs and that are currently loaded by the Editor: <br/>
 
-    Select **Schema** in the [GDK toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK iterates through classes that have replicated properties or RPCs and that are currently loaded by the Editor, generates the schema files and updates the `SchemaDatabase`.<br/>
+    Select **Schema** in the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons). The GDK iterates through classes that have replicated properties or RPCs and that are currently loaded by the Editor, generates the schema files and updates the `SchemaDatabase`.<br/>
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_<br/>
 
@@ -62,6 +62,12 @@ As the GDK automatically generates all the schema you need, you do not have to w
 
 When you generate schema, the GDK verifies that any classes referenced in the `SchemaDatabase` still exist. If you delete a class, the GDK removes it from the `SchemaDatabase` the next time you generate schema.
 
+## How to exclude directories from schema
+
+To exclude directories from schema generation, add them to `Directories to never cook`. This can be done within the Unreal Editor under **Project Settings > Project Packaging > Packaging > Directories to never cook**. 
+
+Note that you will not be able to use assets without generated schema in a Spatial deployment, so make sure to exclude only those directories that do not store assets that you are using in your game.
+
 ## Schema and source control
 
 If you are using the built-in [Unreal source control system](https://docs.unrealengine.com/en-US/Engine/UI/SourceControl) Unreal locks this file on checkout, meaning other users are unable to write to it. To prevent this, mark the `SchemaDatabase` as writable locally on each machine, and only check out the file when you are ready to commit any changes made to it.
@@ -75,4 +81,4 @@ This means that if you have a class that only exists on one user's machine (for 
 To prevent this, commit newly created or modified classes to source control alongside the `SchemaDatabase`.
 
 <br/>------------<br/>
-_2019-07-02 Page updated with editorial review_
+_2019-07-26 Page updated with editorial review_

@@ -9,15 +9,16 @@ In a game running on SpatialOS, the SpatialOS game world is a core concept. It�
 
 ## Entities and components
 
-Entities are the objects in your game. All of the data that you want to share between SpatialOS game servers has to be stored in SpatialOS entities. Each entity is made up of SpatialOS components; it's the components which store this data, in their properties.
+Entities are the objects in your game. All of the data that you want to share between SpatialOS game servers has to be stored in entities. Each entity is made up of SpatialOS components; it's the components which store this data, in their properties.
 
-> Entities equate to Actors in Unreal. SpatialOS components’ properties equate to replicated properties in Unreal. Note that SpatialOS components are not the same as Components in Unreal.
+> Entities equate to replicated Actors in Unreal. SpatialOS components’ properties equate to replicated properties in Unreal. Note that SpatialOS components are not the same as Components in Unreal.
 
-For example, in a world with rabbits and lettuces, you'd have the SpatialOS entities  `Rabbit` and `Lettuce`, each with certain SpatialOS components. These components in turn would have certain properties:
+For example, in a world with rabbits and lettuces, you'd have the entities  `Rabbit` and `Lettuce`, each with certain SpatialOS components. These components in turn would have certain properties:
 
 ![Entities example]({{assetRoot}}assets/screen-grabs/component-details.png)
+<br>_Image: Entities, components, and component properties_
 
-_Image: Entities, components, and component properties_
+The value of a component’s property forms part of the data about an entity. This data is stored in the SpatialOS Runtime.
 
 ## Why is a SpatialOS game world necessary?
 

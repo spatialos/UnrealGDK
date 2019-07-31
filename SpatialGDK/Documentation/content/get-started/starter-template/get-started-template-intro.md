@@ -23,7 +23,7 @@ We recommend setting up the [Example Project]({{urlRoot}}/content/get-started/ex
 
 </br>
 
- **> Next:** [1. Set up]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup)
+ ### **> Next:** [1. Set up]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup)
 
 <br/>
 

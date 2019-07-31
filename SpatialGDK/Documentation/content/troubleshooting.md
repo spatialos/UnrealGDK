@@ -9,7 +9,7 @@ There could be a few different reasons for this. The list below provides some of
 2. As described in Unreal's [replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors), your game needs to create an Actor on server-worker instances before it can replicate to client-worker instances.
 
 3. Ensure that your call to `SpawnActor` is happening on your server-worker instance.<br/>
-Validate that the SpatialOS entity that represents your Actor appears in the Inspector. If it doesn't, then it's likely that it's not marked up for replication correctly.
+Validate that the entity that represents your Actor appears in the Inspector. If it doesn't, then it's likely that it's not marked up for replication correctly.
 
 1. Mark your Actor for replication as described in [Unreal's Actor replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors). You can validate that your Actor is replicated in `USpatialNetDriver::ServerReplicateActors`.
 

@@ -33,7 +33,7 @@ This SpatialOS networking means you can use multiple servers to simulate your ga
 SpatialOS with Unreal is seamless. The GDK:
 
 * represents your game’s Actors on SpatialOS servers as SpatialOS [entities]({{urlRoot}}/content/spatialos-concepts/world-entities-components#entities-and-components).
-* sets up your game to run SpatialOS servers, known as [worker instances]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#worker-instances-and-worker-types). These are the engines to compute your game.
+* sets up your game to run SpatialOS servers, known as [worker instances]({{urlRoot}}/content/spatialos-concepts/workers-and-zoning#worker-instances-and-worker-types). These are the engines to compute your game.
 * makes sure worker instances can send and receive updates about entity [components]({{urlRoot}}/content/spatialos-concepts/world-entities-components#entities-and-components) to and from each other. Worker instances’ authority over entities is handled by the GDK and SpatialOS. 
 
 For more information on how SpatialOS works with the GDK and Unreal Engine, see [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in.md).
