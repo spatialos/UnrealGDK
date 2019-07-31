@@ -11,7 +11,7 @@ This topic is for advanced users only. Before reading this page, make sure you a
 ### In the GDK
 In the GDK you can use `ClientTravel` to connect to a SpatialOS deployment, where that connection is to a local deployment or a cloud deployment. You can also change the current SpatialOS deployment the client is connected to.
 
-By specifying a URL as the first command line parameter when launching a client you can automatically connect clients to a deployment. There are two options available in SpatialOS, the [receptionist](#using-receptionist) flow for local deployments and the [locator](#using-locator) flow for cloud deployments. Alternatively you can connect from an offline client to a deployment in-game by using APlayerController::ClientTravel ([OpenLevel](https://api.unrealengine.com/INT/BlueprintAPI/Game/OpenLevel/index.html) in blueprints).
+By specifying a URL as the first command line parameter when launching a client you can automatically connect clients to a deployment. There are two options available in SpatialOS, the [receptionist](#using-receptionist-local-deployments) flow for local deployments and the [locator](#using-locator-cloud-deployments) flow for cloud deployments. Alternatively you can connect from an offline client to a deployment in-game by using APlayerController::ClientTravel ([OpenLevel](https://api.unrealengine.com/INT/BlueprintAPI/Game/OpenLevel/index.html) in blueprints).
 
 Please refer to the [Map Travel URL options]({{urlRoot}}/content/command-line-arguments#map-travel-url-options) section for all possible SpatialOS URL options.
 
