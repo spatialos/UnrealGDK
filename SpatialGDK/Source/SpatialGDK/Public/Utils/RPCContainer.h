@@ -8,9 +8,47 @@
 
 #include "CoreMinimal.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogRPCContainer, Log, All);
+
 struct FPendingRPCParams;
+struct FRPCErrorInfo;
 using FPendingRPCParamsPtr = TUniquePtr<FPendingRPCParams>;
-DECLARE_DELEGATE_RetVal_OneParam(bool, FProcessRPCDelegate, const FPendingRPCParams&)
+DECLARE_DELEGATE_RetVal_OneParam(FRPCErrorInfo, FProcessRPCDelegate, const FPendingRPCParams&)
+
+enum class ERPCError : uint8_t
+{
+	Success,
+
+	// Shared across Sender and Receiver
+	UnresolvedTargetObject,
+	MissingFunctionInfo,
+	UnresolvedParameters,
+
+	// Sender specific
+	NoActorChannel,
+	SpatialActorChannelNotListening,
+	NoNetConnection,
+	NoAuthority,
+	InvalidRPCType,
+
+	// Specific to packing
+	NoOwningController,
+	NoControllerChannel,
+	UnresolvedController,
+	ControllerChannelNotListening
+};
+
+struct FRPCErrorInfo
+{
+	bool Success() const
+	{
+		return (ErrorCode == ERPCError::Success);
+	}
+
+	UObject* TargetObject;
+	UFunction* Function;
+	ERPCError ErrorCode;
+};
 
 struct FPendingRPCParams
 {

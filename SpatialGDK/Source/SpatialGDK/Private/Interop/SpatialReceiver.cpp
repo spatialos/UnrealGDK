@@ -1235,7 +1235,8 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
 			{
 				// Apply if possible, queue otherwise
-				if (ApplyRPC(*Params))
+				FRPCErrorInfo ErrorInfo = ApplyRPC(*Params);
+				if (ErrorInfo.Success())
 				{
 					continue;
 				}
@@ -1323,7 +1324,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	bool bAppliedRPC = false;
 	if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
 	{
-		if (ApplyRPC(TargetObject, Function, Payload, FString()))
+		FRPCErrorInfo ErrorInfo = ApplyRPC(TargetObject, Function, Payload, FString());
+		if (ErrorInfo.Success())
 		{
 			bAppliedRPC = true;
 		}
@@ -1441,9 +1443,9 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
-bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId)
+FRPCErrorInfo USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId)
 {
-	bool bApplied = false;
+	ERPCError Result = ERPCError::Success;
 
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	FMemory::Memzero(Parms, Function->ParmsSize);
@@ -1482,7 +1484,11 @@ bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, cons
 		}
 
 		TargetObject->ProcessEvent(Function, Parms);
-		bApplied = true;
+		Result = ERPCError::Success;
+	}
+	else
+	{
+		Result = ERPCError::UnresolvedParameters;
 	}
 
 	// Destroy the parameters.
@@ -1491,34 +1497,26 @@ bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, cons
 	{
 		It->DestroyValue_InContainer(Parms);
 	}
-	return bApplied;
+	return FRPCErrorInfo{ TargetObject, Function, Result };
 }
 
-bool USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
+FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
-		return false;
+		return FRPCErrorInfo{ nullptr, nullptr, ERPCError::UnresolvedTargetObject };
 	}
 
+	UObject* TargetObject = TargetObjectWeakPtr.Get();
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return false;
+		return FRPCErrorInfo{ TargetObject, nullptr, ERPCError::MissingFunctionInfo };
 	}
 
-	if (ApplyRPC(TargetObjectWeakPtr.Get(), Function, Params.Payload, FString{}))
-	{
-		return true;
-	}
-	else
-	{
-		FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Queueing received RPC %s::%s for %s"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), *TimeDiff.ToString());
-		return false;
-	}
+	return ApplyRPC(TargetObject, Function, Params.Payload, FString{});
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
@@ -1662,7 +1660,8 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPC
 
 		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
 		{
-			if (ApplyRPC(Actor, Function, RPC, FString()))
+			FRPCErrorInfo ErrorInfo = ApplyRPC(Actor, Function, RPC, FString());
+			if (ErrorInfo.Success())
 			{
 				continue;
 			}
