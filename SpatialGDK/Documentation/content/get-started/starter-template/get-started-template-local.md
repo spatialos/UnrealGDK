@@ -54,7 +54,7 @@ This section shows you how to  start one SpatialOS server-worker instance and tw
    _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, set the number of players to **2** and ensure that the check box next to **Run Dedicated Server** is selected.<br/>
-   ![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
+   ![]({{assetRoot}}assets/set-up-template/spatialos-multiplayer-options.png)<br/>
    _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
 1. Under **Modes**, select **New Editor Window (PIE)** to run the game.  You should see two clients start. You can switch between two Editor windows to see and interact with each game client.
 	If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to run the game.

@@ -14,23 +14,23 @@ Once you have done this, you are ready to get going with the Multiserver Shooter
 **Let's get started!**<br/>
 <br/>
 
-### Step 2: Clone the Unreal GDK Third Person Shooter repository
+### Step 2: Clone the Unreal GDK Example Project repository
 
-Clone the Unreal GDK Third Person Shooter repository and checkout the tutorial branch using one of the following commands:
+Clone the Unreal GDK Example Project repository and checkout the tutorial branch using one of the following commands:
 
 |          |      |
 | -------- | ---- |
-| **HTTPS:** | `git clone https://github.com/spatialos/UnrealGDKThirdPersonShooter.git -b tutorial`|
-| **SSH:** | `git clone git@github.com:spatialos/UnrealGDKThirdPersonShooter.git -b tutorial`|
+| **HTTPS:** | `git clone https://github.com/spatialos/UnrealGDKExampleProject.git -b tutorial-start`|
+| **SSH:** | `git clone git@github.com:spatialos/UnrealGDKExampleProject.git -b tutorial-start`|
 
-This repository contains a version of Unreal’s Third Person template that has been ported to the SpatialOS GDK. It includes a character model with a gun and hit detection logic.
+This repository is an example shooter game which uses the SpatialOS GDK for Unreal.
 
-> **Note:**  A completed version of this tutorial is available in the `tutorial-complete` branch.
+> **Note:**  A completed version of this tutorial is available in the `release` branch.
 
 <br/>
 ### Step 3: Clone the GDK into the `Plugins` directory
 
-1. Navigate to `UnrealGDKThirdPersonShooter\Game` and create a `Plugins` directory.
+1. Navigate to `UnrealGDKExampleProject\Game` and create a `Plugins` directory.
 1. In a terminal window,  change directory to the  `Plugins` directory and clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository using one of the following commands:
 
 |          |      |
@@ -40,7 +40,7 @@ This repository contains a version of Unreal’s Third Person template that has 
 
 The GDK's [default branch (GitHub documentation)](https://help.github.com/en/articles/setting-the-default-branch) is `release`. This means that, at any point during the development of your game, you can get the latest release of the GDK by running `git pull` inside the `UnrealGDK` directory. When you pull the latest changes, you must also run `git pull` inside the `UnrealEngine` directory, so that your GDK and your Unreal Engine fork remain in sync.
 
-> **Note:**  You need to ensure that the root folder of the Unreal GDK repository is called `UnrealGDK` so its path is: `UnrealGDKThirdPersonShooter\Game\Plugins\UnrealGDK\`.
+> **Note:**  You need to ensure that the root folder of the Unreal GDK repository is called `UnrealGDK` so its path is: `UnrealGDKExampleProject\Game\Plugins\UnrealGDK\`.
 
 <br/>
 
@@ -48,11 +48,12 @@ The GDK's [default branch (GitHub documentation)](https://help.github.com/en/art
 
 In this step, you're going to build the Unreal GDK's dependencies.
 
-1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository (`ThirdPersonShooter\Plugins\UnrealGDK\...`), and double-click `Setup.bat`. If you haven't already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in. 
-1. In **File Explorer**, navigate to the ThirdPersonShooter directory, right-click `ThirdPersonShooter.uproject` and select Generate Visual Studio Project files.
-1. In the same directory, double-click `ThirdPersonShooter.sln` to open it with Visual Studio.
-1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
-1. When Visual Studio has finished building your project, right-click **ThirdPersonShooter** and select **Set as StartUp Project**.
+1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository (`UnrealGDKExampleProject\Plugins\UnrealGDK\...`), and double-click `Setup.bat`. If you haven't already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in. 
+1. In **File Explorer**, navigate to the UnrealGDKExampleProject directory, right-click `GDKShooter.uproject` and select Generate Visual Studio Project files.
+1. In the same directory, double-click `GDKShooter.sln` to open it with Visual Studio.
+1. In the Solution Explorer window, right-click on **GDKShooter
+** and select **Build**.
+1. When Visual Studio has finished building your project, right-click **GDKShooter** and select **Set as StartUp Project**.
 1. Press F5 on your keyboard or select **Local Windows Debugger** in the Visual Studio toolbar to open your project in the Unreal Editor.<br/>
 ![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)<br/>
 _Image: The Visual Studio toolbar_<br/><br/>
@@ -70,15 +71,17 @@ In this section you’ll run a [local deployment](https://docs.improbable.io/ref
 
 1. In the Unreal Editor, on the Unreal toolbar, open the **Play** drop-down menu.<br/>
 1. Under **Multiplayer Options**, enter the number of players as **2**.
-1. Enter the number of servers as **2**.
 1. Ensure the box next to **Run Dedicated Server** is checked.<br/>
-![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
+![]({{assetRoot}}assets/set-up-template/spatialos-multiplayer-options.png)<br/>
 _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/><br/>
 1. From the Unreal toolbar's **Play** drop-down menu, select **SpatialOS Settings...** to open the SpatialOS Editor Settings panel.
 1. In the panel, under the **Launch** drop-down menu, select the following drop-down menus: **Launch configuration file description** > **Workers** > **0**.
-1. Locate the **Rectangle grid row count** field beolow this and set it to **2**.
-1. In the Unreal Editor, in the SpatialOS GDK toolbar, select **Start** (the green play icon). This opens a terminal window and runs the [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime).
-1. It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
+1. Locate the **Rectangle grid row count** field below this and set it to **2**.
+1. Also, locate the **Instances to launch in editor** field in the same section and set it to **2**.
+ ![]({{assetRoot}}assets/set-up-template/spatialos-editor-settings.png)<br/>
+1. In the Unreal Editor, in the SpatialOS GDK toolbar, select **Start** (the green play icon). This runs the [`spatial local launch`] any logs will appear in the Output Log window.
+(https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime).
+1. It's ready when you see `SpatialOS Local deployment started!`.
 1. From the Unreal Editor toolbar, select **Play** to run the game. This starts two SpatialOS server-worker instances and two SpatialOS client-worker instances locally, in your Unreal Editor.
 <br/>The two server-worker instances are acting as two Unreal servers and the two client-worker instances are acting as two Unreal game clients (as would be used by two game players).
 <br/>(You can find out about workers in the [glossary](https://docs.improbable.io/unreal/alpha/content/glossary#workers).)
