@@ -31,7 +31,6 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ActorGroupManager.h"
-#include "Utils/EngineVersionCheck.h"
 #include "Utils/EntityPool.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
@@ -120,6 +119,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// If it fails to load, don't attempt to connect to spatial.
 	if (!ClassInfoManager->TryInit(this, ActorGroupManager))
 	{
+		Error = TEXT("Failed to load Spatial SchemaDatabase! Make sure that schema has been generated for your project");
 		return false;
 	}
 
@@ -137,7 +137,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		FLocalDeploymentManager* LocalDeploymentManager = GDKServices->GetLocalDeploymentManager();
 
 		// Wait for a running local deployment before connecting. If the deployment has already started then just connect.
-		if (!LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping() || LocalDeploymentManager->IsDeploymentStarting())
+		if (LocalDeploymentManager->ShouldWaitForDeployment())
 		{
 			UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Waiting for local SpatialOS deployment to start before connecting..."));
 			SpatialDeploymentStartHandle = LocalDeploymentManager->OnDeploymentStart.AddLambda([WeakThis = TWeakObjectPtr<USpatialNetDriver>(this), URL]
@@ -449,11 +449,12 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 
 			// Extract map name and options
 			FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
+			FURL LastURL = WorldContext.PendingNetGame->URL;
 
-			FURL RedirectURL = FURL(&WorldContext.LastURL, *GlobalStateManager->DeploymentMapURL, (ETravelType)WorldContext.TravelType);
-			RedirectURL.Host = WorldContext.LastURL.Host;
-			RedirectURL.Port = WorldContext.LastURL.Port;
-			RedirectURL.Op.Append(WorldContext.LastURL.Op);
+			FURL RedirectURL = FURL(&LastURL, *GlobalStateManager->DeploymentMapURL, (ETravelType)WorldContext.TravelType);
+			RedirectURL.Host = LastURL.Host;
+			RedirectURL.Port = LastURL.Port;
+			RedirectURL.Op.Append(LastURL.Op);
 			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
 
 			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
@@ -1380,7 +1381,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	if (GetDefault<USpatialGDKSettings>()->bPackRPCs && Sender != nullptr)
 	{
-		Sender->FlushPackedUnreliableRPCs();
+		Sender->FlushPackedRPCs();
 	}
 
 	// Tick the timer manager
@@ -1912,8 +1913,8 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		Worker_Op* AuthorityChangedOp = nullptr;
 		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AuthorityChangedOp);
 
-		// If we are going to get both ops, we expect them in the same Worker_OpList
-		check(AddComponentOp != nullptr || (AuthorityChangedOp == nullptr));
+		Worker_Op* ComponentUpdateOp = nullptr;
+		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_COMPONENT_UPDATE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &ComponentUpdateOp);
 
 		if (AddComponentOp != nullptr)
 		{
@@ -1923,6 +1924,11 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		if (AuthorityChangedOp != nullptr)
 		{
 			FoundOps.Add(AuthorityChangedOp);
+		}
+
+		if (ComponentUpdateOp != nullptr)
+		{
+			FoundOps.Add(ComponentUpdateOp);
 		}
 	}
 

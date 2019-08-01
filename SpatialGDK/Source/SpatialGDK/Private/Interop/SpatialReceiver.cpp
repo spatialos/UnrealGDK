@@ -118,6 +118,9 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
+	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -129,11 +132,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
-		return;
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-		Schema_Object* FieldsObject = Schema_GetComponentDataFields(Op.data.schema_type);
-		RegisterListeningEntityIfReady(Op.entity_id, FieldsObject);
 		return;
 	}
 
@@ -176,6 +174,18 @@ void USpatialReceiver::FlushRemoveComponentOps()
 	}
 
 	QueuedRemoveComponentOps.Empty();
+}
+
+void USpatialReceiver::RemoveComponentOpsForEntity(Worker_EntityId EntityId)
+{
+	for (auto& RemoveComponentOp : QueuedRemoveComponentOps)
+	{
+		if (RemoveComponentOp.entity_id == EntityId)
+		{
+			// Zero component op to prevent array resize
+			RemoveComponentOp = Worker_RemoveComponentOp{};
+		}
+	}
 }
 
 void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op)
@@ -473,8 +483,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 	else
 	{
+		UClass* Class = UnrealMetadataComp->GetNativeEntityClass();
+		if (Class == nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("The received actor with entity id %lld couldn't be loaded. The actor (%s) will not be spawned."),
+				EntityId, *UnrealMetadataComp->ClassPath);
+			return;
+		}
+
 		// Make sure ClassInfo exists
-		ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadataComp->GetNativeEntityClass());
+		ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 		// If the received actor is torn off, don't bother spawning it.
 		// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
@@ -627,7 +645,6 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 #else
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
 #endif
-			CleanupDeletedEntity(EntityId);
 		}
 		return;
 	}
@@ -642,7 +659,6 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 #else
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
 #endif
-			CleanupDeletedEntity(EntityId);
 		}
 		return;
 	}
@@ -652,6 +668,10 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	if (Actor->IsFullNameStableForNetworking())
 	{
 		QueryForStartupActor(Actor, EntityId);
+
+		// We can't call CleanupDeletedEntity here as we need the NetDriver to maintain the EntityId
+		// to Actor Channel mapping for the DestoryActor to function correctly
+		PackageMap->RemoveEntityActor(EntityId);
 		return;
 	}
 
@@ -761,7 +781,7 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	}
 	NetDriver->StopIgnoringAuthoritativeDestruction();
 
-	CleanupDeletedEntity(EntityId);
+	check(PackageMap->GetObjectFromEntityId(EntityId) == nullptr);
 }
 
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
@@ -1030,13 +1050,6 @@ void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorCh
 
 void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
-	if (Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID ||
-		Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
-	{
-		Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
-		RegisterListeningEntityIfReady(Op.entity_id, FieldsObject);
-	}
-
 	if (StaticComponentView->GetAuthority(Op.entity_id, Op.update.component_id) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping update because this was short circuited"), Op.entity_id, Op.update.component_id);
@@ -1057,6 +1070,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
+	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
@@ -1163,15 +1177,20 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 		}
 	}
 
-	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
+	// Always process unpacked RPCs since some cannot be packed.
+	ProcessRPCEventField(EntityId, Op, RPCEndpointComponentId, /* bPacked */ false);
 
-	Schema_FieldId EventId = SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID;
-	// Client and Server Unreliable RPCs can be packed, in which case they're sent using a different event ID.
-	if (GetDefault<USpatialGDKSettings>()->bPackRPCs && Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
+	if (GetDefault<USpatialGDKSettings>()->bPackRPCs)
 	{
-		EventId = SpatialConstants::UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID;
+		// Only process packed RPCs if packing is enabled
+		ProcessRPCEventField(EntityId, Op, RPCEndpointComponentId, /* bPacked */ true);
 	}
+}
 
+void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp& Op, Worker_ComponentId RPCEndpointComponentId, bool bPacked)
+{
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
+	const Schema_FieldId EventId = bPacked ? SpatialConstants::UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID : SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID;
 	uint32 EventCount = Schema_GetObjectCount(EventsObject, EventId);
 
 	for (uint32 i = 0; i < EventCount; i++)
@@ -1182,7 +1201,7 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 
 		FUnrealObjectRef ObjectRef(EntityId, Payload.Offset);
 
-		if (GetDefault<USpatialGDKSettings>()->bPackRPCs)
+		if (bPacked)
 		{
 			// When packing unreliable RPCs into one update, they also always go through the PlayerController.
 			// This means we need to retrieve the actual target Entity ID from the payload.
@@ -1202,14 +1221,13 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 		}
 
 		FPendingRPCParamsPtr Params = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
-		if(UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
+		if (UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
 			const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 			UFunction* Function = ClassInfo.RPCs[Payload.Index];
 			const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type)
-				&& !IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, ESchemaComponentType::SCHEMA_Invalid))
+			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
 			{
 				// Apply if possible, queue otherwise
 				if (ApplyRPC(*Params))
@@ -1291,15 +1309,25 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	}
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-
 	UFunction* Function = Info.RPCs[Payload.Index];
+	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
 
-	FPendingRPCParamsPtr Params = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
+	bool bAppliedRPC = false;
+	if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
+	{
+		if (ApplyRPC(TargetObject, Function, Payload, FString()))
+		{
+			bAppliedRPC = true;
+		}
+	}
 
-	QueueIncomingRPC(MoveTemp(Params));
+	if (!bAppliedRPC)
+	{
+		QueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload)));
+	}
 
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
@@ -1406,25 +1434,6 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	}
 
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
-}
-
-void USpatialReceiver::RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object)
-{
-	if (Schema_GetBoolCount(Object, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
-	{
-		bool bReady = GetBoolFromSchema(Object, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
-		if (bReady)
-		{
-			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
-			{
-				Channel->StartListening();
-				if (UObject* TargetObject = Channel->GetActor())
-				{
-					Sender->SendOutgoingRPCs();
-				}
-			}
-		}
-	}
 }
 
 bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId)
@@ -1637,8 +1646,7 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPC
 		const FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor);
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
-		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type)
-			&& !IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, ESchemaComponentType::SCHEMA_Invalid))
+		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
 		{
 			if (ApplyRPC(Actor, Function, RPC, FString()))
 			{
@@ -1686,17 +1694,18 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 
 void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 {
-	ESchemaComponentType Type = ESchemaComponentType::SCHEMA_Invalid;
-
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
-	if (TargetObjectWeakPtr.IsValid())
+	if (!TargetObjectWeakPtr.IsValid())
 	{
-		UObject* TargetObject = TargetObjectWeakPtr.Get();
-		const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-		UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
-		const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-		Type = RPCInfo.Type;
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("The object has been deleted, dropping the RPC"));
+		return;
 	}
+
+	UObject* TargetObject = TargetObjectWeakPtr.Get();
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
+	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
+	ESchemaComponentType Type = RPCInfo.Type;
 
 	IncomingRPCs.QueueRPC(MoveTemp(Params), Type);
 }

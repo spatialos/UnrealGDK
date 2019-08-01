@@ -299,6 +299,16 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 	FSubobjectSchemaData SubobjectSchemaData;
 
+	// Use previously generated component IDs when possible.
+	const FSubobjectSchemaData* const ExistingSchemaData = SubobjectClassPathToSchema.Find(Class->GetPathName());
+	if (ExistingSchemaData != nullptr && !ExistingSchemaData->GeneratedSchemaName.IsEmpty()
+		&& ExistingSchemaData->GeneratedSchemaName != ClassPathToSchemaName[Class->GetPathName()])
+	{
+		UE_LOG(LogSchemaGenerator, Error, TEXT("Saved generated schema name does not match in-memory version for class %s - schema %s : %s"),
+			*Class->GetPathName(), *ExistingSchemaData->GeneratedSchemaName, *ClassPathToSchemaName[Class->GetPathName()]);
+		UE_LOG(LogSchemaGenerator, Error, TEXT("Schema generation may have resulted in component name clash, recommend you perform a full schema generation"));
+	}
+
 	for (uint32 i = 1; i <= DynamicComponentsPerClass; i++)
 	{
 		FDynamicSubobjectSchemaData DynamicSubobjectComponents;
@@ -315,7 +325,16 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 			Writer.PrintNewLine();
 
-			Worker_ComponentId ComponentId = IdGenerator.Next();
+			Worker_ComponentId ComponentId = 0;
+			if (ExistingSchemaData != nullptr)
+			{
+				ComponentId = ExistingSchemaData->GetDynamicSubobjectComponentId(i - 1, PropertyGroupToSchemaComponentType(Group));
+			}
+
+			if (ComponentId == 0)
+			{
+				ComponentId = IdGenerator.Next();
+			}
 			FString ComponentName = SchemaReplicatedDataName(Group, Class) + TEXT("Dynamic") + FString::FromInt(i);
 
 			Writer.Printf("component {0} {", *ComponentName);
@@ -331,7 +350,16 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		{
 			Writer.PrintNewLine();
 
-			Worker_ComponentId ComponentId = IdGenerator.Next();
+			Worker_ComponentId ComponentId = 0;
+			if (ExistingSchemaData != nullptr)
+			{
+				ComponentId = ExistingSchemaData->GetDynamicSubobjectComponentId(i - 1, SCHEMA_Handover);
+			}
+
+			if (ComponentId == 0)
+			{
+				ComponentId = IdGenerator.Next();
+			}
 			FString ComponentName = SchemaHandoverDataName(Class) + TEXT("Dynamic") + FString::FromInt(i);
 
 			Writer.Printf("component {0} {", *ComponentName);
@@ -347,7 +375,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 	}
 
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
-
+	SubobjectSchemaData.GeneratedSchemaName = ClassPathToSchemaName[Class->GetPathName()];
 	SubobjectClassPathToSchema.Add(Class->GetPathName(), SubobjectSchemaData);
 }
 
@@ -457,17 +485,15 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		Writer.Outdent().Print("}");
 	}
 
-	GenerateSubobjectSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath, ActorSchemaData);
+	GenerateSubobjectSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath, ActorSchemaData, ActorClassPathToSchema.Find(Class->GetPathName()));
 
 	ActorClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
 
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
 }
 
-FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, UClass* ActorClass, int MapIndex)
+FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, UClass* ActorClass, int MapIndex, const FActorSpecificSubobjectSchemaData* ExistingSchemaData)
 {
-	const FActorSpecificSubobjectSchemaData* const SubobjectSchemaData = nullptr;
-	
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
 	FActorSpecificSubobjectSchemaData SubobjectData;
@@ -484,9 +510,9 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		}
 
 		Worker_ComponentId ComponentId = 0;
-		if (SubobjectSchemaData != nullptr && SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] != 0)
+		if (ExistingSchemaData != nullptr && ExistingSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] != 0)
 		{
-			ComponentId = SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)];
+			ComponentId = ExistingSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)];
 		}
 		else
 		{
@@ -509,9 +535,9 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 	if (HandoverData.Num() > 0)
 	{
 		Worker_ComponentId ComponentId = 0;
-		if (SubobjectSchemaData != nullptr && SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] != 0)
+		if (ExistingSchemaData != nullptr && ExistingSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] != 0)
 		{
-			ComponentId = SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover];
+			ComponentId = ExistingSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover];
 		}
 		else
 		{
@@ -533,7 +559,7 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 	return SubobjectData;
 }
 
-void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath, FActorSchemaData& ActorSchemaData)
+void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath, FActorSchemaData& ActorSchemaData, const FActorSchemaData* ExistingSchemaData)
 {
 	FCodeWriter Writer;
 
@@ -561,7 +587,20 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 		if (SchemaGeneratedClasses.Contains(SubobjectClass))
 		{
 			bHasComponents = true;
-			SubobjectData = GenerateSchemaForStaticallyAttachedSubobject(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, 0);
+
+			const FActorSpecificSubobjectSchemaData* ExistingSubobjectSchemaData = nullptr;
+			if (ExistingSchemaData != nullptr)
+			{
+				for (auto& SubobjectIt : ExistingSchemaData->SubobjectData)
+				{
+					if (SubobjectIt.Value.Name == SubobjectTypeInfo->Name)
+					{
+						ExistingSubobjectSchemaData = &SubobjectIt.Value;
+						break;
+					}
+				}
+			}
+			SubobjectData = GenerateSchemaForStaticallyAttachedSubobject(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, 0, ExistingSubobjectSchemaData);
 		}
 		else
 		{

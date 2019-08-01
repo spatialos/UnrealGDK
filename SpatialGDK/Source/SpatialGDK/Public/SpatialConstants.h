@@ -113,6 +113,7 @@ namespace SpatialConstants
 	const Worker_ComponentId NOT_STREAMED_COMPONENT_ID						= 9986;
 	const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
 	const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
+	const Worker_ComponentId ALWAYS_RELEVANT_COMPONENT_ID					= 9983;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -121,7 +122,7 @@ namespace SpatialConstants
 	const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
 	const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
 
-	const Schema_FieldId STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID	= 1;
+	const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
 
 	const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID                      = 1;
 	const Schema_FieldId ACTOR_TEAROFF_ID									= 3;

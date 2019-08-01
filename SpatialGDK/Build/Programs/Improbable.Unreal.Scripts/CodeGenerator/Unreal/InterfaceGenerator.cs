@@ -188,8 +188,13 @@ USpatialDispatcher::FCallbackId {ClassName}::OnCommandResponse(const TFunction<v
 {{
 {Text.Indent(1, $@"return SpatialDispatcher->OnCommandResponse({component.ComponentId}, [Callback](const Worker_CommandResponseOp& Op)
 {{
-{Text.Indent(1, $@"auto Response = {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::Response({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Name)}::Response::Type::Deserialize(Schema_GetCommandResponseObject(Op.response.schema_type)));
+{Text.Indent(1, $@"if (Op.command_id == {command.CommandIndex})
+{{
+{Text.Indent(1, $@"auto Response = Op.status_code == Worker_StatusCode::WORKER_STATUS_CODE_SUCCESS  ?
+{Text.Indent(1, $@"{Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::Response({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Name)}::Response::Type::Deserialize(Schema_GetCommandResponseObject(Op.response.schema_type))) :
+{Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::Response();")}
 Callback({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::ResponseOp(Op.entity_id, Op.request_id, Op.status_code, Op.message, Op.command_id, Response));")}
+}}")}
 }});")}
 }}
 "))}"))}";

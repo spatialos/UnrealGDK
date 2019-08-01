@@ -15,6 +15,7 @@ LOG_FILE=$2
 shift 2
 
 # 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
+mkdir -p /improbable/logs/UnrealWorker/
 useradd $NEW_USER -m -d /improbable/logs/UnrealWorker/Logs 2>/dev/null
 chown -R $NEW_USER:$NEW_USER $(pwd) 2>/dev/null
 chmod -R o+rw /improbable/logs 2>/dev/null
