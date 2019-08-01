@@ -34,7 +34,7 @@ namespace
 	FPendingRPCParamsPtr CreateMockParameters(UObject* TargetObject, ESchemaComponentType Type)
 	{
 		// Use PayloadData as a place to store RPC type
-		RPCPayload Payload(0, GeneratePayloadFunctionIndex(), SpyUtils::TypeToArray(Type));
+		RPCPayload Payload(0, GeneratePayloadFunctionIndex(), SpyUtils::SchemaTypeToByteArray(Type));
 		int ReliableRPCIndex = 0;
 
 		FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);

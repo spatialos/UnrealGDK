@@ -10,8 +10,8 @@
 
 namespace SpyUtils
 {
-	TArray<uint8> TypeToArray(ESchemaComponentType Type);
-	ESchemaComponentType ArrayToType(const TArray<uint8>& Array);
+	TArray<uint8> SchemaTypeToByteArray(ESchemaComponentType Type);
+	ESchemaComponentType ByteArrayToSchemaType(const TArray<uint8>& Array);
 } // namespace SpyUtils
 
 UCLASS()
