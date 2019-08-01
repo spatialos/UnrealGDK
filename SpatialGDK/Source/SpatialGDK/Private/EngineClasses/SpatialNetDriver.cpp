@@ -1475,7 +1475,7 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 
 	if (!CreateSpatialNetConnection(InUrl, UniqueId, OnlinePlatformName, &SpatialConnection))
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to create SpatialNetConnection!");
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to create SpatialNetConnection!"));
 		return;
 	}
 
@@ -1506,7 +1506,7 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 	USpatialNetConnection* OwnershipConnection = nullptr;
 	if (!CreateSpatialNetConnection(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), &OwnershipConnection))
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to create SpatialNetConnection!");
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to create SpatialNetConnection!"));
 		return;
 	}
 
