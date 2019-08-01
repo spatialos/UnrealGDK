@@ -8,7 +8,7 @@
 #include "Utils/RPCContainer.h"
 #include "Schema/RPCPayload.h"
 
-#include <Core.h>
+#include "CoreMinimal.h"
 
 #define RPCCONTAINER_TEST(TestName) \
 	TEST(FRPCContainer, TestName)
