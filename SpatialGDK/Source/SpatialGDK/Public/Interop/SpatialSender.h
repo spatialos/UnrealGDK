@@ -109,7 +109,7 @@ public:
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessRPC(FPendingRPCParamsPtr Params);
-	void QueueOutgoingRPC(FPendingRPCParamsPtr Params);
+	void ProcessOrQueueOutgoingRPC(FPendingRPCParamsPtr Params);
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 
 	void FlushPackedRPCs();

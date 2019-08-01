@@ -68,6 +68,10 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	ActorGroupManager = InNetDriver->ActorGroupManager;
 	TimerManager = InTimerManager;
+
+	FProcessRPCDelegate Delegate;
+	Delegate.BindUObject(this, &USpatialSender::SendRPC);
+	OutgoingRPCs.BindProcessingFunction(Delegate);
 }
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
@@ -1126,7 +1130,7 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	}
 }
 
-void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)
+void USpatialSender::ProcessOrQueueOutgoingRPC(FPendingRPCParamsPtr Params)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
@@ -1142,7 +1146,7 @@ void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
 	const FUnrealObjectRef& TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
-	OutgoingRPCs.QueueRPC(MoveTemp(Params), RPCInfo.Type);
+	OutgoingRPCs.ProcessOrQueueRPC(MoveTemp(Params), RPCInfo.Type);
 }
 
 FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const
@@ -1364,9 +1368,7 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 
 void USpatialSender::SendOutgoingRPCs()
 {
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(this, &USpatialSender::SendRPC);
-	OutgoingRPCs.ProcessRPCs(Delegate);
+	OutgoingRPCs.ProcessRPCs();
 }
 
 // Authority over the ClientRPC Schema component is dictated by the owning connection of a client.
@@ -1417,19 +1419,8 @@ void USpatialSender::ProcessRPC(FPendingRPCParamsPtr Params)
 	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject.Get(), Function);
 
-	bool bRPCProcessed = false;
-	if (!OutgoingRPCs.ObjectHasRPCsQueuedOfType(Params->ObjectRef.Entity, RPCInfo.Type))
-	{
-		FRPCErrorInfo ErrorInfo = SendRPC(*Params);
-		if (ErrorInfo.Success())
-		{
-			bRPCProcessed = true;
-		}
-	}
-	if (!bRPCProcessed)
-	{
-		QueueOutgoingRPC(MoveTemp(Params));
-	}
+	ProcessOrQueueOutgoingRPC(MoveTemp(Params));
+
 	// Try to send all pending RPCs unconditionally
 	SendOutgoingRPCs();
 }

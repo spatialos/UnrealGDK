@@ -42,6 +42,10 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
 	TimerManager = InTimerManager;
+
+	FProcessRPCDelegate Delegate;
+	Delegate.BindUObject(this, &USpatialReceiver::ApplyRPC);
+	IncomingRPCs.BindProcessingFunction(Delegate);
 }
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
@@ -1225,25 +1229,11 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 			}
 		}
 
-		FPendingRPCParamsPtr Params = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
 		if (UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
-			const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-			UFunction* Function = ClassInfo.RPCs[Payload.Index];
-			const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-
-			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
-			{
-				// Apply if possible, queue otherwise
-				FRPCErrorInfo ErrorInfo = ApplyRPC(*Params);
-				if (ErrorInfo.Success())
-				{
-					continue;
-				}
-			}
+			ProcessOrQueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload)));
 		}
 
-		QueueIncomingRPC(MoveTemp(Params));
 	}
 }
 
@@ -1321,21 +1311,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
 
-	bool bAppliedRPC = false;
-	if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
-	{
-		FRPCErrorInfo ErrorInfo = ApplyRPC(TargetObject, Function, Payload, FString());
-		if (ErrorInfo.Success())
-		{
-			bAppliedRPC = true;
-		}
-	}
-
-	if (!bAppliedRPC)
-	{
-		QueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload)));
-	}
-
+	ProcessOrQueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload)));
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
 
@@ -1658,16 +1634,7 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPC
 		const FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor);
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
-		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
-		{
-			FRPCErrorInfo ErrorInfo = ApplyRPC(Actor, Function, RPC, FString());
-			if (ErrorInfo.Success())
-			{
-				continue;
-			}
-		}
-
-		QueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(RPC)));
+		ProcessOrQueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(RPC)));
 	}
 }
 
@@ -1705,7 +1672,7 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 	}
 }
 
-void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
+void USpatialReceiver::ProcessOrQueueIncomingRPC(FPendingRPCParamsPtr Params)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
@@ -1720,7 +1687,7 @@ void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	ESchemaComponentType Type = RPCInfo.Type;
 
-	IncomingRPCs.QueueRPC(MoveTemp(Params), Type);
+	IncomingRPCs.ProcessOrQueueRPC(MoveTemp(Params), Type);
 }
 
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)
@@ -1792,9 +1759,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 
 void USpatialReceiver::ResolveIncomingRPCs()
 {
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(this, &USpatialReceiver::ApplyRPC);
-	IncomingRPCs.ProcessRPCs(Delegate);
+	IncomingRPCs.ProcessRPCs();
 }
 
 void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved)

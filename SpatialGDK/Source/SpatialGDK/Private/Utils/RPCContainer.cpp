@@ -87,19 +87,27 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 {
 }
 
-void FRPCContainer::QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type)
+void FRPCContainer::ProcessOrQueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type)
 {
+	if (!ObjectHasRPCsQueuedOfType(Params->ObjectRef.Entity, Type))
+	{
+		if (ApplyFunction(*Params))
+		{
+			return;
+		}
+	}
+
 	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Type).FindOrAdd(Params->ObjectRef.Entity);
 	ArrayOfParams.Push(MoveTemp(Params));
 }
 
-void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArrayOfParams& RPCList)
+void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 {
 	// TODO: UNR-1651 Find a way to drop queued RPCs
 	int NumProcessedParams = 0;
 	for (auto& Params : RPCList)
 	{
-		if (ApplyFunction(FunctionToApply, *Params))
+		if (ApplyFunction(*Params))
 		{
 			NumProcessedParams++;
 		}
@@ -111,7 +119,7 @@ void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArr
 	RPCList.RemoveAt(0, NumProcessedParams);
 }
 
-void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply)
+void FRPCContainer::ProcessRPCs()
 {
 	for (auto& RPCs : QueuedRPCs)
 	{
@@ -119,7 +127,7 @@ void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply)
 		for(auto It = MapOfQueues.CreateIterator(); It; ++It)
 		{
 			FArrayOfParams& RPCList = It.Value();
-			ProcessRPCs(FunctionToApply, RPCList);
+			ProcessRPCs(RPCList);
 			if (RPCList.Num() == 0)
 			{
 				It.RemoveCurrent();
@@ -140,10 +148,16 @@ bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, E
 
 	return false;
 }
-
-bool FRPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, const FPendingRPCParams& Params)
+ 
+void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 {
-	FRPCErrorInfo ErrorInfo = FunctionToApply.Execute(Params);
+	ProcessingFunction = Function;
+}
+
+bool FRPCContainer::ApplyFunction(const FPendingRPCParams& Params)
+{
+	check(ProcessingFunction.IsBound());
+	FRPCErrorInfo ErrorInfo = ProcessingFunction.Execute(Params);
 	if (ErrorInfo.Success())
 	{
 		return true;

@@ -189,7 +189,7 @@ private:
 
 	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs);
 
-	void QueueIncomingRPC(FPendingRPCParamsPtr Params);
+	void ProcessOrQueueIncomingRPC(FPendingRPCParamsPtr Params);
 
 	void ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);

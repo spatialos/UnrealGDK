@@ -65,17 +65,20 @@ struct FPendingRPCParams
 class FRPCContainer
 {
 public:
-	void QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type);
-	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply);
-	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const;
+	void BindProcessingFunction(const FProcessRPCDelegate& Function);
+
+	void ProcessOrQueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type);
+	void ProcessRPCs();
 
 private:
 	using FArrayOfParams = TArray<FPendingRPCParamsPtr>;
 	using FRPCMap = TMap<Worker_EntityId_Key, FArrayOfParams>;
 	using RPCContainerType = TMap<ESchemaComponentType, FRPCMap>;
 
-	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArrayOfParams& RPCList);
-	static bool ApplyFunction(const FProcessRPCDelegate& FunctionToApply, const FPendingRPCParams& Params);
+	void ProcessRPCs(FArrayOfParams& RPCList);
+	bool ApplyFunction(const FPendingRPCParams& Params);
+	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const;
 
 	RPCContainerType QueuedRPCs;
+	FProcessRPCDelegate ProcessingFunction;
 };
