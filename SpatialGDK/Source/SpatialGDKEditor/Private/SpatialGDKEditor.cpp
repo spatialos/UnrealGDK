@@ -95,13 +95,6 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
 	bool bResult = SpatialGDKGenerateSchema();
-
-	if (bFullScan)
-	{
-		Progress.EnterProgressFrame(10.f);
-		LoadedAssets.Empty();
-		CollectGarbage(RF_NoFlags, true);
-	}
 	
 	// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
 	if (ErroredBlueprints.Num() > 0)
@@ -111,6 +104,13 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		{
 			UE_LOG(LogSpatialGDKEditor, Error, TEXT("%s"), *GetPathNameSafe(Blueprint));
 		}
+	}
+
+	if (bFullScan)
+	{
+		Progress.EnterProgressFrame(10.f);
+		LoadedAssets.Empty();
+		CollectGarbage(RF_NoFlags, true);
 	}
 
 	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;

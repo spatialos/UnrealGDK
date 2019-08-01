@@ -17,9 +17,11 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/SpatialSender.h"
-#include "Interop/SpatialReceiver.h"
 #include "Interop/GlobalStateManager.h"
+#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
+#include "Schema/ClientRPCEndpoint.h"
+#include "Schema/ServerRPCEndpoint.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/RepLayoutUtils.h"
@@ -77,7 +79,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bCreatingNewEntity(false)
 	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, bInterestDirty(false)
-	, bIsListening(false)
 	, bNetOwned(false)
 	, NetDriver(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
@@ -125,6 +126,10 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		if (Actor->GetTearOff())
 		{
 			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
+			// Since the entity deletion is delayed, this creates a situation,
+			// when the Actor is torn off, but still replicates. 
+			// Disabling replication makes RPC calls impossible for this Actor.
+			Actor->SetReplicates(false);
 		}
 		else
 		{
@@ -160,6 +165,9 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 		}
 	}
 #endif
+
+	// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects
+	Receiver->CleanupDeletedEntity(EntityId);
 
 #if ENGINE_MINOR_VERSION <= 20
 	return UActorChannel::CleanUp(bForDestroy);
@@ -542,6 +550,26 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	}
 }
 
+bool USpatialActorChannel::IsListening() const
+{
+	if (NetDriver->IsServer())
+	{
+		if (SpatialGDK::ClientRPCEndpoint* Endpoint = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ClientRPCEndpoint>(EntityId))
+		{
+			return Endpoint->bReady;
+		}
+	}
+	else
+	{
+		if (SpatialGDK::ServerRPCEndpoint* Endpoint = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ServerRPCEndpoint>(EntityId))
+		{
+			return Endpoint->bReady;
+		}
+	}
+
+	return false;
+}
+
 const FClassInfo* USpatialActorChannel::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
 {
 	const FClassInfo* Info = nullptr;
@@ -579,7 +607,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	bool bCreatedReplicator = false;
 
 #if ENGINE_MINOR_VERSION <= 20
-	bCreatedReplicator = ReplicationMap.Contains(Object);
+	bCreatedReplicator = !ReplicationMap.Contains(Object);
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 #else
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
@@ -638,6 +666,13 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	if (RepChanged.Num() > 0)
 	{
 		FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Object) };
+
+		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
+		if (!ObjectRef.IsValid())
+		{
+			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Attempted to replicate an invalid ObjectRef. This may be a dynamic component that couldn't attach: %s"), *Object->GetName());
+			return false;
+		}
 		
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
 		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr);
@@ -1000,6 +1035,21 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		return;
 	}
 
+	UpdateEntityACLToNewOwner();
+
+	for (AActor* Child : Actor->Children)
+	{
+		Worker_EntityId ChildEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Child);
+
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(ChildEntityId))
+		{
+			Channel->ServerProcessOwnershipChange();
+		}
+	}
+}
+
+void USpatialActorChannel::UpdateEntityACLToNewOwner()
+{
 	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 
 	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
