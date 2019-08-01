@@ -1408,13 +1408,13 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 	}
 }
 
-bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** Conn)
+bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn)
 {
-	check(*Conn == nullptr);
-	*Conn = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
-	check(*Conn != nullptr);
+	check(*OutConn == nullptr);
+	*OutConn = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
+	check(*OutConn != nullptr);
 
-	USpatialNetConnection* SpatialConnection = *Conn;
+	USpatialNetConnection* SpatialConnection = *OutConn;
 
 	// We create a "dummy" connection that corresponds to this player. This connection won't transmit any data.
 	// We may not need to keep it in the future, but for now it looks like path of least resistance is to have one UPlayer (UConnection) per player.
