@@ -60,12 +60,12 @@
 					return InnerNetDriver; \
 		return (const USpatialNetDriver*)nullptr; \
 	}(); \
-	const int32 EntityId = LocalNetDriver && LocalNetDriver->PackageMap ? LocalNetDriver->PackageMap->GetEntityIdFromObject(Actor) : SpatialConstants::INVALID_ENTITY_ID; \
+	const int32 LocalEntityId = LocalNetDriver && LocalNetDriver->PackageMap ? LocalNetDriver->PackageMap->GetEntityIdFromObject(Actor) : SpatialConstants::INVALID_ENTITY_ID; \
 	UE_LOG(CategoryName, Verbosity, TEXT("[%s] [L:%s R:%s] [%s ID:%d] ") Format, \
 		LocalNetDriver && LocalNetDriver->Connection ? *LocalNetDriver->Connection->GetWorkerLabel() : TEXT("No Connection"), \
 		_SPATIALLOG_NETROLESTRING(SafeActor->GetLocalRole()), \
 		_SPATIALLOG_NETROLESTRING(SafeActor->GetRemoteRole()), \
 		*GetNameSafe(SafeActor), \
-		EntityId, \
+		LocalEntityId, \
 		##__VA_ARGS__); \
 }
