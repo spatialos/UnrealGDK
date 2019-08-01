@@ -25,14 +25,12 @@ struct SPATIALGDK_API FPendingRPCParams
 class SPATIALGDK_API FRPCContainer
 {
 public:
+	// Moveable, not copyable.
 	FRPCContainer() = default;
-
 	FRPCContainer(const FRPCContainer&) = delete;
-	FRPCContainer& operator=(const FRPCContainer&) = delete;
-
 	FRPCContainer(FRPCContainer&&) = default;
+	FRPCContainer& operator=(const FRPCContainer&) = delete;
 	FRPCContainer& operator=(FRPCContainer&&) = default;
-
 	~FRPCContainer() = default;
 
 	void QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type);
