@@ -1496,7 +1496,7 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 	check(PlayerController != nullptr);
 	checkf(!WorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
 
-	PlayerController->SetFlags(GetFlags() & RF_Transient);
+	PlayerController->SetFlags(GetFlags() | RF_Transient);
 
 	FString URLString = FURL().ToString();
 	URLString += TEXT("?workerAttribute=") + WorkerAttribute;
