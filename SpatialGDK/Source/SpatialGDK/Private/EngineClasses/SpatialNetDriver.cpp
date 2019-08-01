@@ -1505,7 +1505,6 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 	CreateSpatialNetConnection(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), &OwnershipConnection);
 	OwnershipConnection->PlayerController = PlayerController;
 
-	PlayerController->CleanupPlayerState();
 	PlayerController->NetPlayerIndex = 0;
 	// We need to lie about our authority briefly here so that SetReplicates will succeed.  Really our authority is ROLE_SimulatedProxy.
 	// This will be set correctly in the SpatialReceiver::ReceiveActor call
