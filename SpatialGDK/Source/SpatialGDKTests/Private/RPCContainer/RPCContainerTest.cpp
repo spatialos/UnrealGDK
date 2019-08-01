@@ -50,7 +50,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_
 	FPendingRPCParamsPtr Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
 	FRPCContainer RPCs;
 
-	TestFalse("No queued RPCs of such type", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
+	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
 
     return true;
 }
@@ -64,7 +64,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_que
 
 	RPCs.QueueRPC(MoveTemp(Params), AnySchemaComponentType);
 
-	TestTrue("Queued RPCs of such type", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
+	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
 
     return true;
 }
@@ -80,7 +80,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_
 	RPCs.QueueRPC(MoveTemp(Params1), AnyOtherSchemaComponentType);
 	RPCs.QueueRPC(MoveTemp(Params2), AnyOtherSchemaComponentType);
 
-	TestTrue("Queued RPCs of such type", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnyOtherSchemaComponentType));
+	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnyOtherSchemaComponentType));
 
     return true;
 }
@@ -98,7 +98,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_n
 	Delegate.BindUObject(TargetObject, &UObjectDummy::ProcessRPC);
 	RPCs.ProcessRPCs(Delegate);
 
-	TestFalse("No queued RPCs of such type", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
+	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
 
     return true;
 }
@@ -118,7 +118,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_storinng_multiple_values_of_same_type_WHEN_p
 	Delegate.BindUObject(TargetObject, &UObjectDummy::ProcessRPC);
 	RPCs.ProcessRPCs(Delegate);
 
-	TestFalse("No queued RPCs of such type", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnyOtherSchemaComponentType));
+	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnyOtherSchemaComponentType));
 
     return true;
 }
@@ -138,8 +138,8 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 	RPCs.QueueRPC(MoveTemp(ParamsUnreliable), AnyOtherSchemaComponentType);
 	RPCs.QueueRPC(MoveTemp(ParamsReliable), AnySchemaComponentType);
 
-	TestTrue("Queued RPCs of such type", RPCs.ObjectHasRPCsQueuedOfType(ObjecRefUnreliable.Entity, AnyOtherSchemaComponentType));
-	TestTrue("Queued RPCs of such type", RPCs.ObjectHasRPCsQueuedOfType(ObjecRefReliable.Entity, AnySchemaComponentType));
+	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRefUnreliable.Entity, AnyOtherSchemaComponentType));
+	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRefReliable.Entity, AnySchemaComponentType));
 
     return true;
 }
@@ -160,8 +160,8 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	Delegate.BindUObject(TargetObject, &UObjectDummy::ProcessRPC);
 	RPCs.ProcessRPCs(Delegate);
 
-	TestFalse("No queued RPCs of such type", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnyOtherSchemaComponentType));
-	TestFalse("No queued RPCs of such type", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
+	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnyOtherSchemaComponentType));
+	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
 
     return true;
 }
