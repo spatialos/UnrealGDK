@@ -1459,10 +1459,8 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 		return false;
 	}
 
-	FString LevelName = GetWorld()->GetCurrentLevel()->GetOutermost()->GetName();
 	SpatialConnection->SetClientWorldPackageName(GetWorld()->GetCurrentLevel()->GetOutermost()->GetFName());
 
-	FString GameName = GameMode->GetClass()->GetPathName();
 	FString RedirectURL;
 	GameMode->GameWelcomePlayer(SpatialConnection, RedirectURL);
 
@@ -1480,7 +1478,7 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 	}
 
 	FString ErrorMsg;
-	SpatialConnection->PlayerController = World->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, SpatialConnection->PlayerId, ErrorMsg);
+	SpatialConnection->PlayerController = GetWorld()->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, SpatialConnection->PlayerId, ErrorMsg);
 
 	if (SpatialConnection->PlayerController == nullptr)
 	{
@@ -1514,9 +1512,9 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 
 	PlayerController->NetPlayerIndex = 0;
 	// We need to lie about our authority briefly here so that SetReplicates will succeed.  Really our authority is ROLE_SimulatedProxy.
-	// This will be set correctly in the SpatialReceiver::ReceiveActor call
 	PlayerController->Role = ROLE_Authority;
 	PlayerController->SetReplicates(true);
+	PlayerController->Role = ROLE_SimulatedProxy;
 	PlayerController->SetPlayer(OwnershipConnection);
 }
 

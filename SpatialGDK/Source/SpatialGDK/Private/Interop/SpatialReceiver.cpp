@@ -589,6 +589,9 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Taken from PostNetInit
 		if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 		{
+			// Whenever we receive an actor over the wire, the expectation is that it is not in an authoritative
+			// state.  This is because it should already have had authoritative BeginPlay() called.  If we have
+			// authority here, we are calling BeginPlay() with authority on this actor a 2nd time, which is always incorrect.
 			check(!EntityActor->HasAuthority());
 			EntityActor->DispatchBeginPlay();
 		}
