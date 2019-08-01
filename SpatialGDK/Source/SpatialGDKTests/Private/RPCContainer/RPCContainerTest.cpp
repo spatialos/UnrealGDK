@@ -41,7 +41,7 @@ namespace
 
 		return MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload), ReliableRPCIndex);
 	}
-}
+} // anonymous namespace
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_queued)
 {
