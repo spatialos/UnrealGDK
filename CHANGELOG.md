@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 
+### Features:
+- Visual Studio 2019 is now supported.
+
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 
