@@ -69,7 +69,7 @@ Now let’s test our new cross-server functionality in another local deployment.
 ### Step 4: Deploy the project locally
 
 1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS Local deployment started!`.
-1. From the Unreal Editor toolbar, click **Play** to run the game.
+1. From the Unreal Editor toolbar, select **Play** to run the game.
 1. Using the Inspector to track the location of your two players, notice that you can now shoot between two Unreal servers and cause damage across their boundaries (provided the two players are on different teams!).
 
 ![]({{assetRoot}}assets/tutorial/cross-server-shooting.gif)<br/>
