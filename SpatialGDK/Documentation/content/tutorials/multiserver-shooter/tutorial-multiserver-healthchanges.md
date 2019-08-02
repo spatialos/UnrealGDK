@@ -54,20 +54,22 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 </br>
 Notice that the workflow you just used mirrors that of native Unreal.
 
-### Step 2: Generate schema
-Because you've modified code related to replication, you need to generate schema first. </br></br>
+### Step 2: Generate schema and rebuild your project
+Because you've modified code related to replication, SpatialOS requires you to generate schema. Also, because you have changed code in a GDK function, Unreal Engine requires you to rebuild your project. (Note: SpatialOS does not require you to generate a snapshot, this is because as you did this when you set up the Example Project and you only need to set up a snapshot once per project.) </br>
 
-To generate schema: In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**.</br>
+To generate schema:
+
+* In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**.</br>
 (See the [schema documentation]({{urlRoot}}/content/how-to-use-schema#how-to-generate-schema) for information on when and how to generate schema). 
 
+To rebuild your project:
 
-<!-- @ElleEsse: Old content? - think it probably shouldn't be in here but commenting out for now....
-1. Open **GDKShooter.sln** with Visual Studio.
-1. In the Solution Explorer window, right-click on **GDKShooter** and select **Build**.
-1. Open **GDKShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`. --!>
+1. In Visual Studio, open **GDKShooter.sln**.
+1. In the Solution Explorer window, right-click on **GDKShooter** and select **Build**.	
 
-Now test the health replication in a local deployment.
-
+</br>
+</br>
+Now let's test the health replication in a local deployment.
 </br>
 </br>
 ### **> Next:** [2: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)

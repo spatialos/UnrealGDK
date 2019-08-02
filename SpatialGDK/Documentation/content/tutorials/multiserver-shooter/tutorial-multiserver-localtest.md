@@ -75,12 +75,12 @@ Now let’s test our new cross-server functionality in another local deployment.
 ![]({{assetRoot}}assets/tutorial/cross-server-shooting.gif)<br/>
 _Image: Players running and shooting between two Unreal Servers_
 
-
+</br>
+</br>
 Now you can upload your game to the cloud.
 </br>
 </br>
-### **> Next:** 
-[3: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
+### **> Next:** [3: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
 <br/>
 <br/>
 

@@ -3,11 +3,7 @@
 ## 3: Test changes in the cloud
 ### Step 1: Build your workers
 
-## Step 4: Test your changes in the cloud
-
-### Build your assemblies
-
-An assembly is what’s created when you run `BuildWorker.bat`. They’re `.zip` files that contain all the files that your game uses when running in the cloud.
+When you build your workers, you create an assembly. They’re `.zip` files that contain all the files that the SpatialOS Runtime uses when your run your game in the cloud. To do this you run a batch file,  `BuildWorker.bat`.
 
 **Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
 
@@ -73,7 +69,7 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
 When you’re done shooting your friends, you can click the **Stop** button in the [Console](https://console.improbable.io) to stop your deployment.
 
 <br/>
-** Next steps:**
+**Next steps:**
 
 * If you want to create a new game using the GDK, you should get the [Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro). 
 * If you want to port your existing game to the GDK, follow the [Porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide).
