@@ -87,17 +87,18 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 {
 }
 
-void FRPCContainer::ProcessOrQueueRPC(FPendingRPCParamsPtr Params)
+void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, SpatialGDK::RPCPayload&& InPayload)
 {
-	if (!ObjectHasRPCsQueuedOfType(Params->ObjectRef.Entity, Params->Type))
+	FPendingRPCParams Params {InTargetObjectRef, InType, MoveTemp(InPayload)};
+	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
-		if (ApplyFunction(*Params))
+		if (ApplyFunction(Params))
 		{
 			return;
 		}
 	}
 
-	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Params->Type).FindOrAdd(Params->ObjectRef.Entity);
+	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Params.Type).FindOrAdd(Params.ObjectRef.Entity);
 	ArrayOfParams.Push(MoveTemp(Params));
 }
 
@@ -107,7 +108,7 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 	int NumProcessedParams = 0;
 	for (auto& Params : RPCList)
 	{
-		if (ApplyFunction(*Params))
+		if (ApplyFunction(Params))
 		{
 			NumProcessedParams++;
 		}

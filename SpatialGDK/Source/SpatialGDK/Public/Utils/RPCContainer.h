@@ -12,7 +12,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogRPCContainer, Log, All);
 
 struct FPendingRPCParams;
 struct FRPCErrorInfo;
-using FPendingRPCParamsPtr = TUniquePtr<FPendingRPCParams>;
 DECLARE_DELEGATE_RetVal_OneParam(FRPCErrorInfo, FProcessRPCDelegate, const FPendingRPCParams&)
 
 enum class ERPCError : uint8_t
@@ -51,8 +50,16 @@ struct FRPCErrorInfo
 };
 
 struct FPendingRPCParams
-{
+{ 
 	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, SpatialGDK::RPCPayload&& InPayload);
+
+	// Moveable, not copyable.
+	FPendingRPCParams() = delete;
+	FPendingRPCParams(const FPendingRPCParams&) = delete;
+	FPendingRPCParams(FPendingRPCParams&&) = default;
+	FPendingRPCParams& operator=(const FPendingRPCParams&) = delete;
+	FPendingRPCParams& operator=(FPendingRPCParams&&) = default;
+	~FPendingRPCParams() = default;
 
 	FUnrealObjectRef ObjectRef;
 	SpatialGDK::RPCPayload Payload;
@@ -66,11 +73,11 @@ class FRPCContainer
 public:
 	void BindProcessingFunction(const FProcessRPCDelegate& Function);
 
-	void ProcessOrQueueRPC(FPendingRPCParamsPtr Params);
+	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, SpatialGDK::RPCPayload&& InPayload);
 	void ProcessRPCs();
 
 private:
-	using FArrayOfParams = TArray<FPendingRPCParamsPtr>;
+	using FArrayOfParams = TArray<FPendingRPCParams>;
 	using FRPCMap = TMap<Worker_EntityId_Key, FArrayOfParams>;
 	using RPCContainerType = TMap<ESchemaComponentType, FRPCMap>;
 
