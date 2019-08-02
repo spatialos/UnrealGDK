@@ -175,7 +175,7 @@ For more details, see the [Cloud deployment workflow page]({{urlRoot}}/content/c
 
 
 <br/>------<br/>
-_2019-08-02 Page updated with editorial review_
+_2019-07-31 Page updated with limited editorial review_
 <br>
 
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1241)
