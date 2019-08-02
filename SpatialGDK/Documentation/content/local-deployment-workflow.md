@@ -6,8 +6,7 @@ If you haven't already, please follow the [GDK Starter Template guide]({{urlRoot
 
 <!-- This is a live embed of a google drawing -->
 
-<img src="https://docs.google.com/drawings/d/e/2PACX-1vSCfvXabpgHPgNyb_9nr1rjcaHomevciDajOG1YNXol1a_qfa5Bll8swtncY_zcEiH1ZVMLH3v07PS8/pub?w=708&amp;h=1117">
-
+ <%(Lightbox image="https://docs.google.com/drawings/d/e/2PACX-1vQCTOucXKMkDJ3-Vpg17_tpUS7IxOXD6Mps-FzWe2tQl3vw5alQPngCnw339cFy3u2NvrcBxhYASKsS/pub?w=710&h=1033")%>
 
 <br/>------<br/>
-_2019-04-15 Page added with editorial review_
+_2019-07-20 Page updated: deployment now restarts automatically game modifications._

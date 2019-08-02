@@ -105,8 +105,8 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td>Ability System</td>
-    <td class="caveats"></td>
-    <td>Supported with workarounds described <a href="{{urlRoot}}/content/ability-system">here</a>. Replicated ability components not supported.</td>
+    <td class="supported"></td>
+    <td></td>
   </tr>
 
   <!-- ------ Property Replication ------ -->
@@ -161,20 +161,15 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 <!-- ------ Actor Replication ------ -->
   
    <tr>
-    <td rowspan="7"><b><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors">Actor Replication</a><b></td>
-    <td>Client and server RPCs (C++)</td>
-    <td class="caveats"></td>
-    <td>Ordering is not respected, and RPCs can be unreliable under heavy load. This is planned to be addressed in Q3 2019.</td>
+    <td rowspan="6"><b><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors">Actor Replication</a><b></td>
+    <td>RPCs - Ordering</td>
+    <td class="supported"></td>
+    <td></td>
   </tr>
   <tr>
-    <td>Client and Server RPCs (Blueprint)</td>
+    <td>RPCs - Reliability</td>
     <td class="caveats"></td>
-    <td>Ordering is not respected, and RPCs can be unreliable under heavy load. This is planned to be addressed in Q3 2019.</td>
-  </tr>
-  <tr>
-    <td>Multicast RPCs</td>
-    <td class="caveats"></td>
-    <td>RPCs cannot be reliable. (This is due to the distributed systems nature of SpatialOS.)</td>
+    <td>RPCs can be unreliable under heavy load. Planned to be resolved in Q3 2019.</td>
   </tr>
   <tr>
     <td>Actor Roles</td>
@@ -188,7 +183,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td>Dynamic Component Replication</td>
-    <td class="indev"></td>
+    <td class="supported"></td>
     <td></td>
   </tr>
   <tr>
@@ -360,8 +355,8 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 </tr>
   <tr>
     <td>UE4 4.22 Support</td>
-    <td class="indev"></td>
-    <td><a href="https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview">Preview available</a>, full support in July-August 2019.</td>
+    <td class="supported"></td>
+    <td></td>
 </tr>
 
 <!-- ------ Platforms ------ -->

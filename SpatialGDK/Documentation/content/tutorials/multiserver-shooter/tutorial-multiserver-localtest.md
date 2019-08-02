@@ -80,7 +80,7 @@ Now that you're free of the single-server paradigm, have a think about the huge,
 Speaking of hosting, let’s upload your game.
 </br>
 </br>
-**> Next:** 
+### **> Next:** 
 [4: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
 <br/>
 <br/>

@@ -40,7 +40,7 @@ When launching a cloud deployment you must provide three parameters:
 
 * **the assembly name**, which identifies the worker assemblies to use.
 * **a launch configuration**, which declares the world and load balancing configuration.
-* **a name for your deployment**, which is used to label the deployment in the [Console](https://console.improbable.io).
+* **a name for your deployment**, which is used to label the deployment in the [Console]({{urlRoot}}/content/glossary#console).
 
 1. In a  terminal window, in the same directory you used to upload your game, run: `spatial cloud launch --snapshot=snapshots/default.snapshot <assembly_name> two_worker_test.json <deployment_name>` 
     <br/>where `assembly_name` is the name you gave the assembly in the previous step and `deployment_name` is a name of your choice. A valid launch command would look like this:

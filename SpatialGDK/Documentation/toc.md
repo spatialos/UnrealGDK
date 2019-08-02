@@ -8,20 +8,20 @@
             - The Example Project
                 - [Introduction]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)
                 - [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
-                - [2: Launch a local deployment with multiple clients]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
+                - [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
                 - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment)
                 - [4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
             - The Starter Template
                 - [Introduction]({{urlRoot}}/content/get-started/\starter-template/get-started-template-intro)
                 - [1: Set up]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup)
-                - [2: Launch a local deployment with multiple clients]({{urlRoot}}/content/get-started/starter-template/get-started-template-local)
+                - [2: Launch a local deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-local)
                 - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-cloud)
                 - [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
-    - Technical overview
-        - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
-        - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
-        - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)
     - Tutorials and guides
+        - Offloading example project
+            - [Introduction]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-intro)
+            - [1. Set up]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-setup)
+            - [2. Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
         - Multiple deployments for session-based games
             - [Introduction]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro)
             - [1: Clone the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone)
@@ -36,25 +36,36 @@
             - [2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
             - [3: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
             - [4: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
+        - Database sync worker tutorial
+            - [Introduction]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-intro)
+            - [1. Set up]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-setup)
+            - [2. Communicating with the Database Sync Worker]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-communicating)
+            - [3. Syncing with the database]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-syncing)
+            - [4. Testing your changes]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-testing)
         - Port your project to SpatialOS
             - [Introduction]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
             - [1. Set up your project]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-setup)
             - [2. Modify and build your project]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-build)
             - [3. Launch a local deployment]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-deployment)
             - [Logs and modifications]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-logs)
-    - [Unreal features support]({{urlRoot}}/unreal-features-support)
-    - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
+    - Technical overview
+        - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
+        - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
+        - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)
     - SpatialOS concepts
         - [Introduction]({{urlRoot}}/content/spatialos-concepts/introduction)
         - [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos)
         - [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components)
-        - [Workers and load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing)
+        - [Workers and zoning]({{urlRoot}}/content/spatialos-concepts/workers-and-zoning)
         - [Authority and interest]({{urlRoot}}/content/spatialos-concepts/authority-and-interest)
         - [Schema and snapshots]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots)
     - [Glossary]({{urlRoot}}/content/glossary)
-    - [Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>Reference</h3>
+    - Unreal Editor interface
+        - [Toolbars]({{urlRoot}}/content/unreal-editor-interface/toolbars)
+        - [SpatialOS Editor Settings panel]({{urlRoot}}/content/unreal-editor-interface/editor-settings)
+        - [SpatialOS Runtime settings panel]({{urlRoot}}/content/unreal-editor-interface/runtime-settings)
     - Actors and entities
         - [Schema]({{urlRoot}}/content/how-to-use-schema)
         - [Spatial Type]({{urlRoot}}/content/spatial-type)
@@ -63,15 +74,25 @@
         - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
     - Authority and interest
         - [Authority]({{urlRoot}}/content/authority)
+        - [Game client interest management]({{urlRoot}}/content/game-client-interest-management)
         - [Actor handover]({{urlRoot}}/content/actor-handover)
         - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
     - Workers
-        - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
-    - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots) 
-    - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
+        - [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
+        - Offloading Unreal worker types
+            - [Overview]({{urlRoot}}/content/workers/offloading-concept)
+            - [Set up offloading]({{urlRoot}}/content/workers/set-up-offloading)
+    - APIs and helper scripts
+        - [Helper scripts]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts)
+        - [Actor group ownership helpers]({{urlRoot}}/content/apis-and-helper-scripts/actor-group-ownership-helpers)
+    - Debug workers from Visual Studio
+        - [Overview]({{urlRoot}}/content/workflows/debug-from-vs-overview)
+        - [Auto-start server-workers]({{urlRoot}}/content/workflows/autostart-server-workers)
+        - [Set up Visual Studio]({{urlRoot}}/content/workflows/set-up-vs) 
+    - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots)
     - [Map travel]({{urlRoot}}/content/map-travel)
     - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
-    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
+    - [Simulated players]({{urlRoot}}/content/simulated-players)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
 - <h3>Workflows</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
@@ -79,7 +100,10 @@
     - Deployment workflows
         - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
         - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
-- <h3>Pricing and support</h3>
+- <h3>Support</h3>
+    - [Unreal features support]({{urlRoot}}/unreal-features-support)
+    - [Known issues]({{urlRoot}}/known-issues)
+    - [Versioning scheme]({{urlRoot}}/content/pricing-and-support/versioning-scheme)
     - [Pricing]({{urlRoot}}/content/pricing-and-support/pricing)
     - [Support]({{urlRoot}}/content/pricing-and-support/support)
 - <h3>Get involved</h3>

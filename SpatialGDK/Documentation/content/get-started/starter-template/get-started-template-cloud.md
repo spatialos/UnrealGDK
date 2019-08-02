@@ -15,6 +15,8 @@ When you signed up for SpatialOS, your account was automatically associated with
 2. In File Explorer, navigate to the `<YourProject>/spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 3. Replace the `name` field with the project name shown in the Console. This tells SpatialOS which SpatialOS project you intend to upload to.
 
+> **Note:** Ensure you don't change the `name` field of any dependencies, only the `name` field at the top of the file which is currently set to `demo`
+
 <%(#Expandable title="What is the Console?")%>
 
 The Console is a web-based tool for managing cloud deployments. It gives you access to information about your games’ SpatialOS project names, the SpatialOS assemblies you have uploaded, the internal state of any games you have running (via the Inspector), as well as logs and metrics. 
@@ -54,6 +56,9 @@ Build a client-worker assembly by running the following command:
 Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject
 ```
 
+You can replace `Development` with the [Unreal build configuration](https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html) of your choice (i.e `Editor`, `Test`, `Shipping`). For all options provided by the `BuildWorker.bat`, see the [Helper scripts page]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts).
+
+
 <%(/Expandable)%>
 
 **Troubleshooting**
@@ -76,52 +81,68 @@ A valid upload command looks like this:
 spatial cloud upload myassembly
 ```
 
+<%(#Expandable title="Troubleshooting: No upload progress")%>
+This step can take a long time on slower connections < 5mbp/s as the full upload size is around ~800mb
+If you start your upload and see no progress or extremely slow progress, don't panic.  
+There is a known issue with the uploader where progress does not change during upload of large files, you'll notice a big jump as it completes uploads those files
+<%(/Expandable)%>
+
 #### Step 4: Launch your cloud deployment
 
-The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. You can only do this through the SpatialOS command-line interface (also known as the “CLI”).
+The next step is to launch a cloud deployment using the assembly that you just uploaded. You can do this in the Unreal Editor.
 
-<%(#Expandable title="What is the CLI?")%>
+> **Tip:** You can also launch a cloud deployment via the CLI. This is useful if you want to launch cloud deployments as part of continuous integration. For more information, see the generic steps for [launching a cloud deployment]({{urlRoot}}/content/cloud-deployment-workflow#launch-cloud-deployment).
 
-The SpatilOS command-line tool (CLI) provides a set of commands that you use to interact with a SpatialOS project. Among other functions, you use it to deploy your game. You installed the CLI in step 1, when you set up your dependencies and installed SpatialOS.
+To launch a cloud deployment:
 
-Find out more in the [glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
+1. On the GDK toolbar, click **Deploy**. <br/><br/>![GDK toolbar "Deploy" button]({{assetRoot}}assets/screen-grabs/toolbar/gdk-toolbar-deploy.png)<br/><br/>
+    This opens the cloud deployment dialog box:
+    <%(Lightbox title ="Cloud Deployment" image="{{assetRoot}}assets/screen-grabs/cloud-deploy.png")%> <br/>
+1. Enter your project name (see [Set up your SpatialOS project name](#step-1-set-up-your-spatialos-project-name)). 
+1. In the **Assembly Name** field, enter the name you gave your assembly in the [previous step](#step-3-upload-your-workers).
+1. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
+1. Add the absolute path to the **Launch Config File** `/<ProjectRoot>/spatial/one_worker_test.json`  
+1. Add the absolute path to the **Snapshot File** `/<ProjectRoot>/spatial/snapshots/default.snapshot`
+1. (Optional) If needed, change the **Region**.
+
+#### Optional: Launch Simulated Players
+
+[Simulated players]({{urlRoot}}/content/simulated-players) are game clients mimicking real players of your game from the perspective of connection flow and server-worker load. This means they’re useful for scale testing. 
+
+To create an additional deployment with simulated players, in the **Simulated Players** section:
+
+1. Check the box next to **Add simulated players**.
+1. In the **Deployment Name** field, enter a name for your simulated player deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
+1. In the **Number of Simulated Players** field, choose the number of simulated players you want to start. 
+1. (Optional) If needed, change the **Region**.
+
+<%(#Expandable title="Developing Simulated Players")%>
+
+A basic implementation of Simulated Players is included in this project. You can find out more about it by exploring the source (look for `SimulatedPlayerCharacter_BP`) and try it out by deploying them. For more information on developing Simulated Players for you project, see the [reference page]({{urlRoot}}/content/simulated-players).
+
 <%(/Expandable)%>
 
-When launching a cloud deployment via the CLI, you must provide four parameters as part of the `spatial cloud launch` command:
+Click **Launch Deployment**.
 
-- **The snapshot file** -  defines the starting state of the game world.
-- **The assembly name** - identifies which workers to use for your deployment.
-- **A launch configuration file** - defines the SpatialOS game world and load balancing configuration.
-- **A name for your deployment** -  labels the deployment in the Console.
+<%(Callout type="tip" message="You can set default values for all the fields in the Deploy window, using the Cloud section of the [SpatialOS Editor Settings panel]({{urlRoot}}/content/unreal-editor-interface/editor-settings) ")%>
 
-<%(#Expandable title="What is a launch configuration file?")%>
+Your deployment(s) won’t launch instantly. A console window is displayed where you can see their progress.
 
-Use this file to list the settings of a deployment. These include: how big the SpatialOS game world is, which worker types SpatialOS must use in the deployment, which worker types can create and delete Actors, and your game template. You installed the Launcher in step 1, when you set up your dependencies and installed SpatialOS.
+When your deployment(s) have launched, you can open the [Console](https://console.improbable.io/) to view them.
 
-You can find out more about the launch configuration file in the [glossary]({{urlRoot}}/content/glossary#launch-configuration).
+<%(#Expandable title="Cloud workflow reference diagram")%>
+
+ <%(Lightbox image="https://docs.google.com/drawings/d/e/2PACX-1vQVcAihbYTNe7TjNsIvkfqIR34Vgw5RESKxboxbvgY5VcgxiI-SZT_M2kuGE8RYMU6sAYWqdkoCjMWt/pub?w=758&h=1162")%>
+
+For more details, see the [Cloud deployment workflow page]({{urlRoot}}/content/cloud-deployment-workflow).
+
 <%(/Expandable)%>
 
-1. In a  command line window, navigate to `<ProjectRoot>\spatial\` and run the following command
-
-```
-spatial cloud launch --snapshot=snapshots\default.snapshot <assembly_name> one_worker_test.json <deployment_name>
-```
-
-Where:
-
-- `default.snapshot` is the snapshot file we have provided for this Example project.
-- `<assembly_name>` is the name you gave the assembly in the previous step. 
-- `one_worker_test.json` is the launch configuration file we provided with the GDK Template
-- `<deployment_name>` is a name of your choice - you create this name when you run this command. 
-
-A valid launch command looks like this: 
-
-```
-spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker_test.json mydeployment
-```
-
-**> Next:** [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
+### **> Next:** [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
 
 <br/>
 
-<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>
+<br/>------------<br/>
+*2019-07-22 Page updated with limited editorial review.*<br/>
+
+[//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1241)

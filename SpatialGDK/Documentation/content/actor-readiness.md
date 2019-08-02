@@ -8,7 +8,7 @@ When you use native Unreal networking, you cannot guarantee that a client receiv
 
 This means you might develop your game with assumptions about when Actors are ready to interact with on clients without creating validity checks to ensure this. (The order in which clients receive Actors can change in adverse network conditions, such as high latency or packet loss, but during development or local playtests these networking issues often don’t arise.)
 
-In the GDK, [server-worker and client-worker instances]({{urlRoot}}/content/glossary#workers) communicate with each other via SpatialOS. Unlike native Unreal, where Actors arrive on clients in a similar order each time in stable networking conditions, SpatialOS can cause Actors to arrive in a different order, with different latencies each time you run your game. This means you need to define validity checks to determine when an Actor is ready to interact with.
+In the GDK, [server-worker and client-worker instances]({{urlRoot}}/content/glossary#worker) communicate with each other via SpatialOS. Unlike native Unreal, where Actors arrive on clients in a similar order each time in stable networking conditions, SpatialOS can cause Actors to arrive in a different order, with different latencies each time you run your game. This means you need to define validity checks to determine when an Actor is ready to interact with.
 
 ## Defining validity checks
 A validity check could be, for example, whether the Actor exists on the client-worker instance, whether a particular reference within the Actor is valid (for example the Pawn having a reference to the PlayerController), or whether a setup function has run.
@@ -23,9 +23,9 @@ The following examples show you how to define validity checks to signal that an 
 Whenever you want to modify an Actor, you _must_ check that the server-worker instance has [authority]({{urlRoot}}/content/glossary#authority) over the Actor. The server-worker instance has authority over an Actor if the Actor's `Role` is set to `ROLE_Authority`.
 
 In the GDK, when an Actor is created on the server-worker instance:
- 
+
 0. The server-worker instance has authority over the Actor for the duration of the Actor's `BeginPlay` call.
-0. After this call, the server-worker instance loses authority while the [SpatialOS Runtime]({{urlRoot}}/content/glossary#spatialos-runtime) creates an [entity]({{urlRoot}}/content/glossary#spatialos-entity) for this Actor.
+0. After this call, the server-worker instance loses authority while the [SpatialOS Runtime]({{urlRoot}}/content/glossary#spatialos-runtime) creates an [entity]({{urlRoot}}/content/glossary#entity) for this Actor.
 0. When SpatialOS has created the entity, it returns authority over the Actor to the server-worker instance. At this point, the Actor's `Role` changes back to `ROLE_Authority` and [`OnAuthorityGained` is triggered]({{urlRoot}}/content/authority#onauthoritygained) on the Actor. This is an event you can override. 
 
 For more information on authority, refer to the [authority]({{urlRoot}}/content/authority) documentation.
@@ -40,7 +40,6 @@ For example:
 void AMyContoller::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
-
 	// Interact with the Pawn
 }
 ```
@@ -54,7 +53,6 @@ For example:
 ```
 UPROPERTY(ReplicatedUsing=OnRep_MyActorReference);
 AActor* MyActorReference;
-
 UFUNCTION()
 void OnRep_MyActorReference();
 ```

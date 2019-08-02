@@ -59,7 +59,7 @@ Actor on **non-owning client**:
 
 ## GDK authority
 
-As the GDK works with multiple [server-workers]({{urlRoot}}/content/glossary#workers), rather than a single server, authority needs to be dictated by SpatialOS so that authority is shared between server-workers. This means server-workers have authority over some Actors but don’t have authority over other Actors, depending on how SpatialOS assigns authority. **This is a key difference between the GDK and native Unreal networking!**
+As the GDK works with multiple [server-workers]({{urlRoot}}/content/glossary#worker), rather than a single server, authority needs to be dictated by SpatialOS so that authority is shared between server-workers. This means server-workers have authority over some Actors but don’t have authority over other Actors, depending on how SpatialOS assigns authority. **This is a key difference between the GDK and native Unreal networking!**
 
 > We use the term “authoritative” when a server-worker has authority over an Actor and “non-authoritative” when it doesn’t.
 
@@ -77,14 +77,14 @@ Actor on **non-authoritative server-worker**:
 * `Role = ROLE_SimulatedProxy`
 * `RemoteRole = ROLE_Authority`
 
-Actor on **[client-worker]({{urlRoot}}/content/glossary#workers)**:
+Actor on **[client-worker]({{urlRoot}}/content/glossary#worker)**:
 
 * `Role = ROLE_SimulatedProxy`
 * `RemoteRole = ROLE_Authority`
 
 The GDK models owning connections using a schema component which represents the `ClientRPC`s. The worker authoritative over the `ClientRPC` schema [component]({{urlRoot}}/content/glossary#spatialos-component) is the client which owns the Actor.
 
-In the same example as above, with the `PlayerController`, `Character` and gun, the client-worker would be authoritative over the `ClientRPC` schema component on the `PlayerController`, `Character` and gun [entities]({{urlRoot}}/content/glossary#spatialos-entity). Authority over this schema component dictates the assignment of `ROLE_AutonomousProxy`.
+In the same example as above, with the `PlayerController`, `Character` and gun, the client-worker would be authoritative over the `ClientRPC` schema component on the `PlayerController`, `Character` and gun [entities]({{urlRoot}}/content/glossary#entity). Authority over this schema component dictates the assignment of `ROLE_AutonomousProxy`.
 
 Actor on **authoritative server-worker** with an **owning connection**:
 
