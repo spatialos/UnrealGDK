@@ -1,6 +1,6 @@
 <%(TOC)%>
-# Multiserver shooter tutorial
-## 4: Test changes in the cloud
+# Multiserver zoning shooter tutorial
+## 3: Test changes in the cloud
 ### Step 1: Build your workers
 
 ## Step 4: Test your changes in the cloud
