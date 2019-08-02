@@ -10,7 +10,7 @@ In this tutorial you’ll implement cross-server remote procedure calls (RPCs) f
 
 ![]({{assetRoot}}assets/tutorial/cross-server-shooting.gif)
 
-The exercise demonstrates that the workflows and iteration speed you’re used to as an Unreal developer are almost entirely unaltered by the GDK: it’s just like regular Unreal!
+The tutorial demonstrates that the workflows and iteration speed you’re used to as an Unreal developer are almost entirely unaltered by the GDK: it’s just like regular Unreal.
 </br>
 </br>
 ### **> Next:** 
