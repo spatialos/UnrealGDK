@@ -80,4 +80,5 @@ When you’re done shooting your friends, you can click the **Stop** button in t
 
 
 <br/>------<br/>
-_2019-08-02 Page updated with limited editorial review_
+_2019-08-02 Page updated with limited editorial review: updated project name._</br>
+_2019-03-20 Page updated with limited editorial review._
