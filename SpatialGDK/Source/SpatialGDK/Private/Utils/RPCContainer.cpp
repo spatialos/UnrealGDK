@@ -61,13 +61,13 @@ namespace
 	void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params, bool DroppingRPC = false)
 	{
 		FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
-		if (ErrorInfo.TargetObject == nullptr)
+		if (!ErrorInfo.TargetObject.IsValid())
 		{
-			UE_LOG(LogRPCContainer, Warning, TEXT("Function UNKNOWN::UNKNOWN queued for %s Reason: %s"), *ErrorInfo.TargetObject->GetName(), *TimeDiff.ToString(), *ERPCErrorToString(ErrorInfo.ErrorCode));
+			UE_LOG(LogRPCContainer, Warning, TEXT("Function UNKNOWN::UNKNOWN queued for %s Reason: %s"), *TimeDiff.ToString(), *ERPCErrorToString(ErrorInfo.ErrorCode));
 		}
 		else
 		{
-			if (ErrorInfo.Function == nullptr)
+			if (!ErrorInfo.Function.IsValid())
 			{
 				UE_LOG(LogRPCContainer, Warning, TEXT("Function %s::UNKNOWN queued for %s Reason: %s"), *ErrorInfo.TargetObject->GetName(), *TimeDiff.ToString(), *ERPCErrorToString(ErrorInfo.ErrorCode));
 			}
@@ -172,14 +172,18 @@ bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 	else
 	{
 		FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
-		if (TimeDiff.GetSeconds() > SECONDS_TO_DROP_RPC)
+		bool bDropRPC = TimeDiff.GetSeconds() > SECONDS_TO_DROP_RPC;
+
+#if !UE_BUILD_SHIPPING
+		LogRPCError(ErrorInfo, Params, bDropRPC);
+#endif
+
+		if (bDropRPC)
 		{
-			LogRPCError(ErrorInfo, Params, true);
 			return true;
 		}
 		else
 		{
-			LogRPCError(ErrorInfo, Params, false);
 			return false;
 		}
 	}

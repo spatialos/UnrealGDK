@@ -44,8 +44,8 @@ struct FRPCErrorInfo
 		return (ErrorCode == ERPCError::Success);
 	}
 
-	UObject* TargetObject;
-	UFunction* Function;
+	TWeakObjectPtr<UObject> TargetObject;
+	TWeakObjectPtr<UFunction> Function;
 	ERPCError ErrorCode;
 };
 
