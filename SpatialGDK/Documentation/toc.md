@@ -30,7 +30,7 @@
             - [4: Configure the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure)
             - [5: Launch multiple session-based deployments]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch)
             - [6: Play your game]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-play)
-        - Multiserver Shooter tutorial
+        - Multiserver shooter tutorial
             - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
             - [1: Set up]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-setup)
             - [2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
