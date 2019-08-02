@@ -37,7 +37,7 @@ This repository contains the SpatialOS GDK for Unreal's Example Project which us
 | **HTTPS:** | `git clone https://github.com/spatialos/UnrealGDK.git`|
 | **SSH:** | `git clone git@github.com:spatialos/UnrealGDK.git`|
 
-The GDK's [default branch (GitHub documentation)](https://help.github.com/en/articles/setting-the-default-branch) is `release`. This means that, at any point during the development of your game, you can get the latest release of the GDK by running `git pull` inside the `UnrealGDK` directory. When you pull the latest changes, you must also run `git pull` inside the `UnrealEngine` directory, so that your GDK and your Unreal Engine fork remain in sync.
+The GDK's [default branch](https://help.github.com/en/articles/setting-the-default-branch) is `release`. This means that, at any point during the development of your game, you can get the latest release of the GDK by running `git pull` inside the `UnrealGDK` directory. When you pull the latest changes, you must also run `git pull` inside the `UnrealEngine` directory, so that your GDK and your Unreal Engine fork remain in sync.
 
 > **Note:**  You need to ensure that the root folder of the Unreal GDK repository is called `UnrealGDK` so its path is: `UnrealGDKExampleProject\Game\Plugins\UnrealGDK\`.
 
