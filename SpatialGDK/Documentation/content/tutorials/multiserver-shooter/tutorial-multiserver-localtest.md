@@ -22,7 +22,7 @@ _Image: A local Inspector showing two server-worker instances (two Unreal server
 1. Using the Inspector to track the location of your two players, notice that if you position them in the same area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
 
 <br/>
-### Step 3: Enable cross server RPCs
+### Step 3: Enable cross-server RPCs
 
 To damage a player on a different server, the actor shooting the bullet must send a cross-server RPC to the actor getting hit by the bullet. You will implement this by overriding the [TakeDamage (Unreal documentation)](https://api.unrealengine.com/INT/API/Runtime/Engine/GameFramework/APawn/TakeDamage/index.html) function in the `GDKCharcter` class.
 
@@ -73,14 +73,14 @@ Now let’s test our new cross-server functionality in another local deployment.
 1. Using the Inspector to track the location of your two players, notice that you can now shoot between two Unreal servers and cause damage across their boundaries (provided the two players are on different teams!).
 
 ![]({{assetRoot}}assets/tutorial/cross-server-shooting.gif)<br/>
-*Image: Players running and shooting between two Unreal Servers*
+_Image: Players running and shooting between two Unreal Servers_
 
 
-Speaking of hosting, let’s upload your game.
+Now you can upload your game to the cloud.
 </br>
 </br>
 ### **> Next:** 
-[4: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
+[3: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
 <br/>
 <br/>
 
