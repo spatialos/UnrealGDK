@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Multiserver Shooter Tutorial
+# Multiserver shooter Tutorial
 ## 2: Replicate health changes</br>
 ### Step 1: Make the change
 
