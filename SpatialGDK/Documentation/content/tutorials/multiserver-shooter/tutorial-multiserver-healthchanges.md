@@ -1,10 +1,10 @@
 <%(TOC)%>
-# Multiserver shooter Tutorial
-## 2: Replicate health changes</br>
+# Multiserver zoning shooter tutorial
+## 1: Replicate health changes</br>
 ### Step 1: Make the change
 
 
-In this project each `GDKCharacter` contains a `UHealthComponent` with a variable called `CurrentHealth`, which keeps track of that character's health. On your servers, `CurrentHealth` is reduced whenever a character is shot, but this reduction is not replicated on the clients connected to the game. This is because the `CurrentHealth` variable is not setup for replication.
+In the Example Project each `GDKCharacter` contains a `UHealthComponent` with a variable called `CurrentHealth`, which keeps track of that character's health. On your servers, `CurrentHealth` is reduced whenever a character is shot, but this reduction is not replicated on the clients connected to the game. This is because the `CurrentHealth` variable is not setup for replication.
 
 To resolve this you need to mark the `CurrentHealth` property for replication, just as you would in the native [Unreal Actor replication](https://docs.unrealengine.com/en-us/Resources/ContentExamples/Networking/1_1) workflow. To do this:
 
@@ -54,18 +54,23 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 </br>
 Notice that the workflow you just used mirrors that of native Unreal.
 
-### Step 2: Rebuild your project
-Because you have changed code in a function, you now need to rebuild your project. Additionally, because you've modified code related to replication, you need to generate schema. To do this:
+### Step 2: Generate schema
+Because you've modified code related to replication, you need to generate schema first. </br></br>
 
+To generate schema: In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**.</br>
+(See the [schema documentation]({{urlRoot}}/content/how-to-use-schema#how-to-generate-schema) for information on when and how to generate schema). 
+
+
+<!-- @ElleEsse: Old content? - think it probably shouldn't be in here but commenting out for now....
 1. Open **GDKShooter.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **GDKShooter** and select **Build**.
-1. Open **GDKShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
+1. Open **GDKShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`. --!>
 
-Now let’s test our health replication in another local deployment.
+Now test the health replication in a local deployment.
 
 </br>
 </br>
-### **> Next:** [3: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
+### **> Next:** [2: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
 <br/>
 <br/>
 
