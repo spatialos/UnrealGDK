@@ -1419,7 +1419,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
-FRPCErrorInfo USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId)
+ERPCError USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId)
 {
 	ERPCError Result = ERPCError::Unknown;
 
@@ -1473,7 +1473,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Funct
 	{
 		It->DestroyValue_InContainer(Parms);
 	}
-	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };
+	return Result;
 }
 
 FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
@@ -1492,7 +1492,8 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Receive, ERPCError::MissingFunctionInfo };
 	}
 
-	return ApplyRPC(TargetObject, Function, Params.Payload, FString{});
+	ERPCError ErrorCode = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{});
+	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, ErrorCode };
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)

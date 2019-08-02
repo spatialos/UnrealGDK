@@ -765,17 +765,19 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::MissingFunctionInfo };
 	}
 
-	return SendRPC(TargetObject, Function, Params.Payload);
+	ERPCError ErrorCode = SendRPCInternal(TargetObject, Function, Params.Payload);
+
+	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ErrorCode };
 }
 
-FRPCErrorInfo USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload)
+ERPCError USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload)
 {
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
 
 	if (!Channel)
 	{
 		UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
-		return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::NoActorChannel };
+		return ERPCError::NoActorChannel;
 	}
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
@@ -794,7 +796,7 @@ FRPCErrorInfo USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function
 #if !UE_BUILD_SHIPPING
 			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
-			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::Success };
+			return ERPCError::Success;
 		}
 		else
 		{
@@ -815,7 +817,7 @@ FRPCErrorInfo USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function
 
 		if (UnresolvedObject)
 		{
-			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::UnresolvedTargetObject };
+			return ERPCError::UnresolvedTargetObject;
 		}
 
 		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
@@ -837,7 +839,7 @@ FRPCErrorInfo USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function
 				EntityId, CommandRequest.component_id, *Function->GetName());
 		}
 
-		return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::Success };
+		return ERPCError::Success;
 	}
 	case SCHEMA_NetMulticastRPC:
 	case SCHEMA_ClientReliableRPC:
@@ -848,7 +850,7 @@ FRPCErrorInfo USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function
 		FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
 		if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 		{
-			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::UnresolvedTargetObject };
+			return ERPCError::UnresolvedTargetObject;
 		}
 
 		if (RPCInfo.Type != SCHEMA_NetMulticastRPC && !Channel->IsListening())
@@ -856,7 +858,7 @@ FRPCErrorInfo USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function
 			// If the Entity endpoint is not yet ready to receive RPCs -
 			// treat the corresponding object as unresolved and queue RPC
 			// However, it doesn't matter in case of Multicast
-			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::SpatialActorChannelNotListening };
+			return ERPCError::SpatialActorChannelNotListening;
 		}
 
 		EntityId = TargetObjectRef.Entity;
@@ -901,14 +903,14 @@ FRPCErrorInfo USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function
 			{
 				NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
 			}
-			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result };
+			return Result;
 #endif // !UE_BUILD_SHIPPING
 		}
 		else
 		{
 			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 			{
-				return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::NoAuthority };
+				return ERPCError::NoAuthority;
 			}
 
 			const UObject* UnresolvedParameter = nullptr;
@@ -916,19 +918,19 @@ FRPCErrorInfo USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function
 
 			if (UnresolvedParameter)
 			{
-				return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::UnresolvedParameters };
+				return ERPCError::UnresolvedParameters;
 			}
 
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 #if !UE_BUILD_SHIPPING
 			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
-			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::Success };
+			return ERPCError::Success;
 		}
 	}
 	default:
 		checkNoEntry();
-		return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::InvalidRPCType };
+		return ERPCError::InvalidRPCType;
 	}
 }
 
