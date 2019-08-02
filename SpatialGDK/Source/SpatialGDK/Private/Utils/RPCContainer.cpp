@@ -58,29 +58,40 @@ namespace
 		}
 	}
 
-	void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params, bool DroppingRPC = false)
+	void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params, bool DroppingRPC)
 	{
 		FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
-		if (!ErrorInfo.TargetObject.IsValid())
+
+		FString OutputLog = "Function ";
+
+		if (ErrorInfo.TargetObject.IsValid())
 		{
-			UE_LOG(LogRPCContainer, Warning, TEXT("Function UNKNOWN::UNKNOWN queued for %s Reason: %s"), *TimeDiff.ToString(), *ERPCErrorToString(ErrorInfo.ErrorCode));
+			OutputLog.Append(FString::Printf(TEXT("%s::"), *ErrorInfo.TargetObject->GetName()));
 		}
 		else
 		{
-			if (!ErrorInfo.Function.IsValid())
-			{
-				UE_LOG(LogRPCContainer, Warning, TEXT("Function %s::UNKNOWN queued for %s Reason: %s"), *ErrorInfo.TargetObject->GetName(), *TimeDiff.ToString(), *ERPCErrorToString(ErrorInfo.ErrorCode));
-			}
-			else
-			{
-				UE_LOG(LogRPCContainer, Warning, TEXT("Function %s::%s queued for %s Reason: %s"), *ErrorInfo.TargetObject->GetName(), *ErrorInfo.Function->GetName(), *TimeDiff.ToString(), *ERPCErrorToString(ErrorInfo.ErrorCode));
-			}
+			OutputLog.Append(TEXT("UNKNOWN::"));
+		}
+
+		if (ErrorInfo.Function.IsValid())
+		{
+			OutputLog.Append(FString::Printf(TEXT("%s "), *ErrorInfo.Function->GetName()));
+		}
+		else
+		{
+			OutputLog.Append(TEXT("UNKNOWN "));
 		}
 
 		if (DroppingRPC)
 		{
-			UE_LOG(LogRPCContainer, Error, TEXT("Dropping the RPC"));
+			OutputLog.Append(FString::Printf(TEXT("dropped after %s Reason: %s"), *TimeDiff.ToString(), *ERPCErrorToString(ErrorInfo.ErrorCode)));
 		}
+		else
+		{
+			OutputLog.Append(FString::Printf(TEXT("queued for %s Reason: %s"), *TimeDiff.ToString(), *ERPCErrorToString(ErrorInfo.ErrorCode)));
+		}
+
+		UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 	}
 }
 
