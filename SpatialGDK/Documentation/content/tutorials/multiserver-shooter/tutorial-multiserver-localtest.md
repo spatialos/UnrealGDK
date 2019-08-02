@@ -86,4 +86,5 @@ Speaking of hosting, let’s upload your game.
 
 
 <br/>------<br/>
-_2019-08-02 Page updated with limited editorial review_
+_2019-08-02 Page updated with limited editorial review: re-number steps._</br>
+_2019-04-30 Page updated with limited editorial review._
