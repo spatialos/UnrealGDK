@@ -75,7 +75,6 @@ Now let’s test our new cross-server functionality in another local deployment.
 ![]({{assetRoot}}assets/tutorial/cross-server-shooting.gif)<br/>
 *Image: Players running and shooting between two Unreal Servers*
 
-Now that you're free of the single-server paradigm, have a think about the huge, seamless multiplayer worlds you can build and host using the Unreal GDK.
 
 Speaking of hosting, let’s upload your game.
 </br>
