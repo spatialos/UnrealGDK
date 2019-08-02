@@ -77,4 +77,6 @@ _Image: The Inspector showing the state of your local deployment_<br/>
 
 <br/>
 
-<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>
+<br/>------------<br/>
+2019-08-02 Page updated with editorial review: amended link.<br/>
+2019-07-16 Page updated with editorial review.<br/>
