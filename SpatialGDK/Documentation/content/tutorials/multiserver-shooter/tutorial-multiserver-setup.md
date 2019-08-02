@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Multiserver Shooter tutorial
+# Multiserver shooter tutorial
 ## 1: Set up
 ### Step 1: Check you have the prerequistes
 
