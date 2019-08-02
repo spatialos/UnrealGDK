@@ -62,6 +62,8 @@ namespace
 	{
 		FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
 
+		// The format is expected to be:
+		// Function <objectName>::<functionName> queued on server/client for sending/execution (and dropped). Reason: <reason>
 		FString OutputLog = "Function ";
 
 		if (ErrorInfo.TargetObject.IsValid())
@@ -82,14 +84,36 @@ namespace
 			OutputLog.Append(TEXT("UNKNOWN "));
 		}
 
-		if (DroppingRPC)
+		if (ErrorInfo.bIsServer)
 		{
-			OutputLog.Append(FString::Printf(TEXT("dropped after %s Reason: %s"), *TimeDiff.ToString(), *ERPCErrorToString(ErrorInfo.ErrorCode)));
+			OutputLog.Append(TEXT("queued on server for "));
 		}
 		else
 		{
-			OutputLog.Append(FString::Printf(TEXT("queued for %s Reason: %s"), *TimeDiff.ToString(), *ERPCErrorToString(ErrorInfo.ErrorCode)));
+			OutputLog.Append(TEXT("queued on client for "));
 		}
+
+		if (ErrorInfo.QueueType == ERPCQueueType::Send)
+		{
+			OutputLog.Append(TEXT("sending for "));
+		}
+		else
+		{
+			OutputLog.Append(TEXT("execution for "));
+		}
+
+		OutputLog.Append(FString::Printf(TEXT("%s"), *TimeDiff.ToString()));
+
+		if (DroppingRPC)
+		{
+			OutputLog.Append(TEXT(" and dropped. "));
+		}
+		else
+		{
+			OutputLog.Append(TEXT(". "));
+		}
+
+		OutputLog.Append(FString::Printf(TEXT("Reason: %s"), *ERPCErrorToString(ErrorInfo.ErrorCode)));
 
 		UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 	}

@@ -1473,7 +1473,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Funct
 	{
 		It->DestroyValue_InContainer(Parms);
 	}
-	return FRPCErrorInfo{ TargetObject, Function, Result };
+	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };
 }
 
 FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
@@ -1481,7 +1481,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
-		return FRPCErrorInfo{ nullptr, nullptr, ERPCError::UnresolvedTargetObject };
+		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Receive, ERPCError::UnresolvedTargetObject };
 	}
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
@@ -1489,7 +1489,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, nullptr, ERPCError::MissingFunctionInfo };
+		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Receive, ERPCError::MissingFunctionInfo };
 	}
 
 	return ApplyRPC(TargetObject, Function, Params.Payload, FString{});

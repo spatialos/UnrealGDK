@@ -39,6 +39,12 @@ enum class ERPCError : uint8_t
 	Unknown
 };
 
+enum class ERPCQueueType : uint8_t
+{
+	Send,
+	Receive
+};
+
 struct FRPCErrorInfo
 {
 	bool Success() const
@@ -48,6 +54,8 @@ struct FRPCErrorInfo
 
 	TWeakObjectPtr<UObject> TargetObject;
 	TWeakObjectPtr<UFunction> Function;
+	bool bIsServer;
+	ERPCQueueType QueueType;
 	ERPCError ErrorCode;
 };
 
