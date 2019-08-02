@@ -1421,7 +1421,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 
 FRPCErrorInfo USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId)
 {
-	ERPCError Result = ERPCError::Success;
+	ERPCError Result = ERPCError::Unknown;
 
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	FMemory::Memzero(Parms, Function->ParmsSize);

@@ -54,7 +54,7 @@ namespace
 			return TEXT("Controller Channel Not Listening");
 
 		default:
-			return TEXT("");
+			return TEXT("Unknown");
 		}
 	}
 

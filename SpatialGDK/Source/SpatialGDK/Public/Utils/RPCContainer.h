@@ -34,7 +34,9 @@ enum class ERPCError : uint8_t
 	NoOwningController,
 	NoControllerChannel,
 	UnresolvedController,
-	ControllerChannelNotListening
+	ControllerChannelNotListening,
+
+	Unknown
 };
 
 struct FRPCErrorInfo
