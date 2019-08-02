@@ -23,7 +23,7 @@ Clone the Unreal GDK Example Project repository and checkout the tutorial branch
 | **HTTPS:** | `git clone https://github.com/spatialos/UnrealGDKExampleProject.git -b tutorial-start`|
 | **SSH:** | `git clone git@github.com:spatialos/UnrealGDKExampleProject.git -b tutorial-start`|
 
-This repository is an example shooter game which uses the SpatialOS GDK for Unreal.
+This repository contains the SpatialOS GDK for Unreal's Example Project which uses the SpatialOS GDK for Unreal plugin.
 
 > **Note:**  A completed version of this tutorial is available in the `release` branch.
 
