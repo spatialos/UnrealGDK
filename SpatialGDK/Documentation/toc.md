@@ -18,7 +18,7 @@
                 - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-cloud)
                 - [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
     - Tutorials and guides
-        - Offloading Example project
+        - Offloading in the Example Project
             - [Introduction]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-intro)
             - [1. Set up]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-setup)
             - [2. Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
