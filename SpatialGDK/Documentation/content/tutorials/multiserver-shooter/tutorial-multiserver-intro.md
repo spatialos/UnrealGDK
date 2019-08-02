@@ -6,7 +6,7 @@
 **What the tutorial covers**<br/>
 >**This tutorial uses the Example Project from the GDK’s [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)**.
 
-In this tutorial you’ll implement cross-server remote procedure calls (RPCs) for simple first-person shooter functionality in the Example Project. The end result will be a multiplayer, cloud-hosted Unreal game running across multiple [server-workers]({{urlRoot}}/content/glossary#worker) that players can seamlessly move between and shoot across. It will look something like this:
+In this tutorial you’ll implement cross-server remote procedure calls (RPCs) for simple first-person shooter functionality in the Example Project. The end result will be a multiplayer, cloud-hosted Unreal game running across multiple [server-workers]({{urlRoot}}/content/glossary#worker) that players can seamlessly move between and shoot across. It demonstrates multiserver [zoning]({{urlRoot}}/content/glossary#worker) and looks something like this:
 
 ![]({{assetRoot}}assets/tutorial/cross-server-shooting.gif)
 
