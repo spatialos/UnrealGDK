@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Multiserver Shooter tutorial
+# Multiserver shooter tutorial
 ## 4: Test changes in the cloud
 ### Step 1: Build your workers
 
