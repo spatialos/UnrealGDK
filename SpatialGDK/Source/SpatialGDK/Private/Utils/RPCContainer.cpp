@@ -15,50 +15,50 @@ namespace
 		switch (Error)
 		{
 		case ERPCError::Success:
-			return "";
+			return TEXT("");
 
 		case ERPCError::UnresolvedTargetObject:
-			return "Unresolved Target Object";
+			return TEXT("Unresolved Target Object");
 
 		case ERPCError::MissingFunctionInfo:
-			return "Missing UFunction info";
+			return TEXT("Missing UFunction info");
 
 		case ERPCError::UnresolvedParameters:
-			return "Unresolved Parameters";
+			return TEXT("Unresolved Parameters");
 
 		case ERPCError::NoActorChannel:
-			return "No Actor Channel";
+			return TEXT("No Actor Channel");
 
 		case ERPCError::SpatialActorChannelNotListening:
-			return "Spatial Actor Channel Not Listening";
+			return TEXT("Spatial Actor Channel Not Listening");
 
 		case ERPCError::NoNetConnection:
-			return "No Net Connection";
+			return TEXT("No Net Connection");
 
 		case ERPCError::NoAuthority:
-			return "No Authority";
+			return TEXT("No Authority");
 
 		case ERPCError::InvalidRPCType:
-			return "Invalid RPC Type";
+			return TEXT("Invalid RPC Type");
 
 		case ERPCError::NoOwningController:
-			return "No Owning Controller";
+			return TEXT("No Owning Controller");
 
 		case ERPCError::NoControllerChannel:
-			return "No Controller Channel";
+			return TEXT("No Controller Channel");
 
 		case ERPCError::UnresolvedController:
-			return "Unresolved Controller";
+			return TEXT("Unresolved Controller");
 
 		case ERPCError::ControllerChannelNotListening:
-			return "Controller Channel Not Listening";
+			return TEXT("Controller Channel Not Listening");
 
 		default:
-			return "";
+			return TEXT("");
 		}
 	}
 
-	void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params)
+	void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params, bool DroppingRPC = false)
 	{
 		FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
 		if (ErrorInfo.TargetObject == nullptr)
@@ -76,10 +76,15 @@ namespace
 				UE_LOG(LogRPCContainer, Warning, TEXT("Function %s::%s queued for %s Reason: %s"), *ErrorInfo.TargetObject->GetName(), *ErrorInfo.Function->GetName(), *TimeDiff.ToString(), *ERPCErrorToString(ErrorInfo.ErrorCode));
 			}
 		}
+
+		if (DroppingRPC)
+		{
+			UE_LOG(LogRPCContainer, Error, TEXT("Dropping the RPC"));
+		}
 	}
 }
 
-FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, SpatialGDK::RPCPayload&& InPayload)
+FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, RPCPayload&& InPayload)
 	: ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
 	, Timestamp(FDateTime::Now())
@@ -87,9 +92,10 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 {
 }
 
-void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, SpatialGDK::RPCPayload&& InPayload)
+void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ESchemaComponentType Type, RPCPayload&& Payload)
 {
-	FPendingRPCParams Params {InTargetObjectRef, InType, MoveTemp(InPayload)};
+	FPendingRPCParams Params {TargetObjectRef, Type, MoveTemp(Payload)};
+
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
 		if (ApplyFunction(Params))
@@ -155,7 +161,7 @@ void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 	ProcessingFunction = Function;
 }
 
-bool FRPCContainer::ApplyFunction(const FPendingRPCParams& Params)
+bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 {
 	check(ProcessingFunction.IsBound());
 	FRPCErrorInfo ErrorInfo = ProcessingFunction.Execute(Params);
@@ -165,7 +171,16 @@ bool FRPCContainer::ApplyFunction(const FPendingRPCParams& Params)
 	}
 	else
 	{
-		LogRPCError(ErrorInfo, Params);
-		return false;
+		FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
+		if (TimeDiff.GetSeconds() > SECONDS_TO_DROP_RPC)
+		{
+			LogRPCError(ErrorInfo, Params, true);
+			return true;
+		}
+		else
+		{
+			LogRPCError(ErrorInfo, Params, false);
+			return false;
+		}
 	}
 }

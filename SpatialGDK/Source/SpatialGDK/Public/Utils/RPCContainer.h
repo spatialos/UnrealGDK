@@ -82,9 +82,11 @@ private:
 	using RPCContainerType = TMap<ESchemaComponentType, FRPCMap>;
 
 	void ProcessRPCs(FArrayOfParams& RPCList);
-	bool ApplyFunction(const FPendingRPCParams& Params);
+	bool ApplyFunction(FPendingRPCParams& Params);
 	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const;
 
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
+
+	static const int32 SECONDS_TO_DROP_RPC = 5;
 };
