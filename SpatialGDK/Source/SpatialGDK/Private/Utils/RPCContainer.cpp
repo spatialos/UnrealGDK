@@ -79,17 +79,17 @@ namespace
 	}
 }
 
-FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload, int InReliableRPCIndex /* = 0 */)
-	: ReliableRPCIndex(InReliableRPCIndex)
-	, ObjectRef(InTargetObjectRef)
+FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, SpatialGDK::RPCPayload&& InPayload)
+	: ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
 	, Timestamp(FDateTime::Now())
+	, Type(InType)
 {
 }
 
-void FRPCContainer::ProcessOrQueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type)
+void FRPCContainer::ProcessOrQueueRPC(FPendingRPCParamsPtr Params)
 {
-	if (!ObjectHasRPCsQueuedOfType(Params->ObjectRef.Entity, Type))
+	if (!ObjectHasRPCsQueuedOfType(Params->ObjectRef.Entity, Params->Type))
 	{
 		if (ApplyFunction(*Params))
 		{
@@ -97,7 +97,7 @@ void FRPCContainer::ProcessOrQueueRPC(FPendingRPCParamsPtr Params, ESchemaCompon
 		}
 	}
 
-	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Type).FindOrAdd(Params->ObjectRef.Entity);
+	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Params->Type).FindOrAdd(Params->ObjectRef.Entity);
 	ArrayOfParams.Push(MoveTemp(Params));
 }
 

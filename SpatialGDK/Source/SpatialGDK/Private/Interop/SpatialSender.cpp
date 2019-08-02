@@ -1130,23 +1130,24 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	}
 }
 
-void USpatialSender::ProcessOrQueueOutgoingRPC(FPendingRPCParamsPtr Params)
+void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload)
 {
-	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
 		return;
 	}
+
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
-
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
-
+	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	const FUnrealObjectRef& TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
-	OutgoingRPCs.ProcessOrQueueRPC(MoveTemp(Params), RPCInfo.Type);
+	OutgoingRPCs.ProcessOrQueueRPC(MakeUnique<FPendingRPCParams>(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload)));
+
+	// Try to send all pending RPCs unconditionally
+	OutgoingRPCs.ProcessRPCs();
 }
 
 FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const
@@ -1366,11 +1367,6 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 	ObjectToUnresolved.Remove(Object);
 }
 
-void USpatialSender::SendOutgoingRPCs()
-{
-	OutgoingRPCs.ProcessRPCs();
-}
-
 // Authority over the ClientRPC Schema component is dictated by the owning connection of a client.
 // This function updates the authority of that component as the owning connection can change.
 bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
@@ -1405,22 +1401,4 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 
 	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	Connection->SendComponentUpdate(EntityId, &Update);
-}
-
-void USpatialSender::ProcessRPC(FPendingRPCParamsPtr Params)
-{
-	TWeakObjectPtr<UObject> TargetObject = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
-	if (!TargetObject.IsValid())
-	{
-		// Target object was destroyed before the RPC could be (re)sent
-		return;
-	}
-	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject.Get());
-	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
-	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject.Get(), Function);
-
-	ProcessOrQueueOutgoingRPC(MoveTemp(Params));
-
-	// Try to send all pending RPCs unconditionally
-	SendOutgoingRPCs();
 }

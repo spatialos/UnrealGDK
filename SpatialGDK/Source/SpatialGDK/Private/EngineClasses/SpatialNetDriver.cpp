@@ -1092,8 +1092,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	if (UnresolvedObjects.Num() == 0)
 	{
 		FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(CallingObject);
-		FPendingRPCParamsPtr RPCParams = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload), ReliableRPCIndex);
-		Sender->ProcessRPC(MoveTemp(RPCParams));
+		Sender->ProcessOrQueueOutgoingRPC(ObjectRef, MoveTemp(Payload));
 	}
 	else
 	{

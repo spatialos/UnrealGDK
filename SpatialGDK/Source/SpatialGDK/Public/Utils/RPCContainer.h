@@ -52,14 +52,13 @@ struct FRPCErrorInfo
 
 struct FPendingRPCParams
 {
-	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload, int InReliableRPCIndex = 0);
+	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, SpatialGDK::RPCPayload&& InPayload);
 
-	// TODO: UNR-1653 Redesign bCheckRPCOrder Tests functionality
-	int ReliableRPCIndex;
 	FUnrealObjectRef ObjectRef;
 	SpatialGDK::RPCPayload Payload;
 
 	FDateTime Timestamp;
+	ESchemaComponentType Type;
 };
 
 class FRPCContainer
@@ -67,7 +66,7 @@ class FRPCContainer
 public:
 	void BindProcessingFunction(const FProcessRPCDelegate& Function);
 
-	void ProcessOrQueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type);
+	void ProcessOrQueueRPC(FPendingRPCParamsPtr Params);
 	void ProcessRPCs();
 
 private:

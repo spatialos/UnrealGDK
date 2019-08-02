@@ -1231,7 +1231,7 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 
 		if (UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
-			ProcessOrQueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload)));
+			ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload));
 		}
 
 	}
@@ -1311,7 +1311,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
 
-	ProcessOrQueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload)));
+	ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload));
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
 
@@ -1634,7 +1634,7 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPC
 		const FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor);
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
-		ProcessOrQueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(RPC)));
+		ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(RPC));
 	}
 }
 
@@ -1672,9 +1672,9 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 	}
 }
 
-void USpatialReceiver::ProcessOrQueueIncomingRPC(FPendingRPCParamsPtr Params)
+void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload)
 {
-	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("The object has been deleted, dropping the RPC"));
@@ -1683,11 +1683,11 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(FPendingRPCParamsPtr Params)
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
+	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	ESchemaComponentType Type = RPCInfo.Type;
 
-	IncomingRPCs.ProcessOrQueueRPC(MoveTemp(Params), Type);
+	IncomingRPCs.ProcessOrQueueRPC(MakeUnique<FPendingRPCParams>(InTargetObjectRef, Type, MoveTemp(InPayload)));
 }
 
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)
@@ -1698,7 +1698,7 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
 	// TODO: UNR-1650 We're trying to resolve all queues, which introduces more overhead.
-	ResolveIncomingRPCs();
+	IncomingRPCs.ProcessRPCs();
 }
 
 void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
@@ -1755,11 +1755,6 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 	}
 
 	IncomingRefsMap.Remove(ObjectRef);
-}
-
-void USpatialReceiver::ResolveIncomingRPCs()
-{
-	IncomingRPCs.ProcessRPCs();
 }
 
 void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved)

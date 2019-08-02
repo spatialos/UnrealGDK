@@ -103,13 +103,11 @@ public:
 	void ProcessPositionUpdates();
 
 	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
-	void SendOutgoingRPCs();
 
 	bool UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute);
 	void UpdateInterestComponent(AActor* Actor);
 
-	void ProcessRPC(FPendingRPCParamsPtr Params);
-	void ProcessOrQueueOutgoingRPC(FPendingRPCParamsPtr Params);
+	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 
 	void FlushPackedRPCs();

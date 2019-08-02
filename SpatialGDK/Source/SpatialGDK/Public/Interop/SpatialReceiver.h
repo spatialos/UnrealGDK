@@ -189,12 +189,10 @@ private:
 
 	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs);
 
-	void ProcessOrQueueIncomingRPC(FPendingRPCParamsPtr Params);
+	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
 
 	void ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
-
-	void ResolveIncomingRPCs();
 
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
 
