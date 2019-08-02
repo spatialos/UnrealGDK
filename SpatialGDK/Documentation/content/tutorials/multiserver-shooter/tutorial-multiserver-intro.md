@@ -1,7 +1,7 @@
 # Tutorials and guides
 ## Multiserver zoning shooter tutorial
 
-<%(Callout type="warn" message="This tutorial is available as a preview to demonstrate early multiserver functionality in the GDK. Please note we do not yet recommend development of multiserver games. For more information, please follow our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) pages.")%>	
+<%(Callout type="warn" message="This tutorial is available as a preview to demonstrate early multiserver [zoning]({{urlRoot}}/content/glossary#zoning) functionality in the GDK. Please note we do not yet recommend development of multiserver games using zoning. For more information, please follow our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) pages.")%>	
 
 **What the tutorial covers**<br/>
 >**This tutorial uses the Example Project from the GDK’s [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)**.
