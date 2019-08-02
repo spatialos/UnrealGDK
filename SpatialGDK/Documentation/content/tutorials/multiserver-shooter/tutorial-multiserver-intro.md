@@ -1,5 +1,5 @@
 # Tutorials and guides
-## Multiserver Shooter tutorial
+## Multiserver shooter tutorial
 
 <%(Callout type="warn" message="This tutorial is available as a preview to demonstrate early multiserver functionality in the GDK. Please note we do not yet recommend development of multiserver games. For more information, please follow our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) pages.")%>	
 
