@@ -16,7 +16,9 @@ Once you have done this, you are ready to get going with the Multiserver Shooter
 
 ### Step 2: Clone the GDK for Unreal's Example Project repository
 
-Clone the Unreal GDK Example Project repository and checkout the tutorial branch using one of the following commands:
+>If you have already cloned and set up the GDK for Unreal's Example Project, on or after 2019-08-01, as part of the GDK's [Get started gude]({{urlRoot}}/content/get-started/example-project/exampleproject-intro), you don't need to clone and set up it up again. 
+
+Clone the GDK for Unreal's Example Project repository and checkout the tutorial branch using one of the following commands:
 
 |          |      |
 | -------- | ---- |
