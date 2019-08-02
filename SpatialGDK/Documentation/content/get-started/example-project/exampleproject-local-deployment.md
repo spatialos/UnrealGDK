@@ -71,4 +71,4 @@ You can find out more about snapshots in the [GDK snapshot documentation]({{urlR
 
 <br/>
 <br/>------------<br/>
-_2019-07-02 Page updated with limited editorial review: added debug workaround_
+_2019-08-02 Page updated with limited editorial review: added debug workaround_

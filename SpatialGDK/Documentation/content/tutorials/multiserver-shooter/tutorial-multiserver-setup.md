@@ -96,4 +96,4 @@ Notice that when players shoot each other, their health does not go down. It's n
 
 
 <br/>------<br/>
-_2019-04-30 Page updated with limited editorial review_
+_2019-08-02 Page updated with limited editorial review_

@@ -148,4 +148,4 @@ When your deployment has launched, SpatialOS automatically opens the Console in 
 
 
 <br/>------<br/>
-_2019-06-27 Page edited with editorial review_
+_2019-08-02 Page edited with editorial review_
