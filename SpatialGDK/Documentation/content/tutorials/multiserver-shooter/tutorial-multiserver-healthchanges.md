@@ -71,4 +71,5 @@ Now let’s test our health replication in another local deployment.
 
 
 <br/>------<br/>
-_2019-08-02 Page updated with limited editorial review_
+_2019-08-02 Page updated with limited editorial review: updated project name and GDKCharacter name._</br>
+_2019-04-30 Page updated with limited editorial review_
