@@ -24,7 +24,7 @@ _Image: A local Inspector showing two server-worker instances (two Unreal server
 <br/>
 ### Step 3: Enable cross server RPCs
 
-To damage a player on a different server, the actor shooting the bullet must send a cross-server RPC to the actor getting hit by the bullet. You will implement this by overriding the [TakeDamage (Unreal documentation)](https://api.unrealengine.com/INT/API/Runtime/Engine/GameFramework/APawn/TakeDamage/index.html) function in the GDKCharcter class.
+To damage a player on a different server, the actor shooting the bullet must send a cross-server RPC to the actor getting hit by the bullet. You will implement this by overriding the [TakeDamage (Unreal documentation)](https://api.unrealengine.com/INT/API/Runtime/Engine/GameFramework/APawn/TakeDamage/index.html) function in the `GDKCharcter` class.
 
 1. In your IDE, open `UnrealGDKExampleProject\Game\Source\GDKShooter\Public\Characters\GDKCharacter.h`.
 1. Under line 91, add this snippet:
