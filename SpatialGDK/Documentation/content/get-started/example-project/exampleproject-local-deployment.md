@@ -108,4 +108,4 @@ To fully stop your SpatialOS deployment, select **Stop** in the GDK toolbar.<br/
 
 <br/>
 <br/>------------<br/>
-_2019-08-02 Page updated with limited editorial review._
+_2019-07-22 Page updated with limited editorial review._
