@@ -187,6 +187,8 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	Delegate.BindUObject(TargetObject, &UObjectSpy::ProcessRPC);
 	RPCs.BindProcessingFunction(Delegate);
 
+	RPCs.ProcessRPCs();
+
 	bool bProcessedInOrder = true;
 	for (const auto& ProcessedIndicesOfType : TargetObject->ProcessedRPCIndices)
 	{
