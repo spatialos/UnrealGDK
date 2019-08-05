@@ -8,7 +8,7 @@
 
 #include "UObject/Object.h"
 #include "UObject/Class.h"
-#include "UObject/WeakObjectPtrTemplates.h"
+#include "UObject/WeakObjectPtr.h"
 #include "CoreMinimal.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogRPCContainer, Log, All);
