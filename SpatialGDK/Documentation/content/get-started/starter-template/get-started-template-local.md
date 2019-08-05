@@ -41,14 +41,7 @@ You can find out more about snapshots in the [GDK snapshot documentation]({{urlR
 
 <%(/Expandable)%>
 
-### Step 2: Generate descriptors
-
-1. Open a command prompt in the `<ProjectRoot>\spatial` directory
-2. Run `spatial worker build build-config`
-
-You should see output confirming that your bridge and managed worker configurations have been generated correctly.
-
-### Step 3: Launch a local deployment and play
+### Step 2: Launch a local deployment and play
 
 This section shows you how to  start one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor. The server-worker instance acts as an Unreal server and the two client-worker instances acts as two Unreal game clients (as would be used by two game players).
 
@@ -60,7 +53,7 @@ If the game does not run automatically after selecting **New Editor Window (PIE)
 
    ![]({{assetRoot}}assets/set-up-template/template-two-clients.png)<br/>
 
-### Step 4: Inspecting and stopping play
+### Step 3: Inspecting and stopping play
 
 When your game is running, select **Inspector** to open the [Inspector](https://docs.improbable.io/unreal/alpha//content/glossary#inspector) in your default web browser. The Inspector is a web-based tool that you use to explore the internal state of a SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. <br/><br/>
 ![]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)<br/>
@@ -75,7 +68,7 @@ When you’re done, select Unreal Engine's native **Stop** button to stop the cl
 
 This stops the running client and server workers but keeps your deployment running.
 
-### Step 5: Iterating on your game
+### Step 4: Iterating on your game
 
 As you iterate on your game (i.e modifying classes or blueprints), **making changes to replicated components will require incremental schema regeneration**. To do this, select the **Schema** button in the GDK toolbar.
 
@@ -95,7 +88,7 @@ For more details, see the [Local deployment workflow page]({{urlRoot}}/content/l
 
 <%(/Expandable)%>
 
-### Step 6: Stop your deployment
+### Step 5: Stop your deployment
 
 To fully stop your SpatialOS deployment, select **Stop** in the GDK toolbar.<br/></br>
 ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
