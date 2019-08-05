@@ -6,7 +6,8 @@
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 
-#include "Core.h"
+#include "UObject/WeakObjectPtrTemplates.h"
+#include "CoreMinimal.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogRPCContainer, Log, All);
 
