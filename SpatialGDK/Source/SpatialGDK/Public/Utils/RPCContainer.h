@@ -22,6 +22,7 @@ enum class ERPCError : uint8_t
 	Success,
 
 	// Shared across Sender and Receiver
+	NoProcessingFunctionBound,
 	UnresolvedTargetObject,
 	MissingFunctionInfo,
 	UnresolvedParameters,
@@ -45,7 +46,8 @@ enum class ERPCError : uint8_t
 enum class ERPCQueueType : uint8_t
 {
 	Send,
-	Receive
+	Receive,
+	Unknown
 };
 
 struct FRPCErrorInfo

@@ -17,6 +17,9 @@ namespace
 		case ERPCError::Success:
 			return TEXT("");
 
+		case ERPCError::NoProcessingFunctionBound:
+			return TEXT("No Processing Function Bound");
+
 		case ERPCError::UnresolvedTargetObject:
 			return TEXT("Unresolved Target Object");
 
@@ -97,7 +100,7 @@ namespace
 		{
 			OutputLog.Append(TEXT("sending for "));
 		}
-		else
+		else if (ErrorInfo.QueueType == ERPCQueueType::Receive)
 		{
 			OutputLog.Append(TEXT("execution for "));
 		}
@@ -198,12 +201,15 @@ void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 
 bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 {
-	// TODO(Alex): proper errorinfo
-	FRPCErrorInfo ErrorInfo = FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Send, ERPCError::Unknown };
+	FRPCErrorInfo ErrorInfo = FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Unknown, ERPCError::Unknown };
 
 	if (ProcessingFunction.IsBound())
 	{
 		ErrorInfo = ProcessingFunction.Execute(Params);
+	}
+	else
+	{
+		ErrorInfo = FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Unknown, ERPCError::NoProcessingFunctionBound };
 	}
 
 	if (ErrorInfo.Success())
