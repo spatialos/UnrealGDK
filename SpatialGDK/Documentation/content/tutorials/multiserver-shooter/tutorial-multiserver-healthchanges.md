@@ -55,7 +55,7 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 Notice that the workflow you just used mirrors that of native Unreal.
 
 ### Step 2: Generate schema and rebuild your project
-Because you've modified code related to replication, SpatialOS requires you to generate schema. Also, because you have changed code in a GDK function, Unreal Engine requires you to rebuild your project. (Note: SpatialOS does not require you to generate a snapshot, this is because as you did this when you set up the Example Project and you only need to set up a snapshot once per project.) </br>
+Because you've modified code related to replication, SpatialOS requires you to generate schema. Also, because you have changed code, Unreal Engine requires you to recompile your project. (Note: SpatialOS does not require you to generate a snapshot, this is because as you did this when you set up the Example Project and you only need to set up a snapshot once per project.) </br>
 
 To generate schema:
 
