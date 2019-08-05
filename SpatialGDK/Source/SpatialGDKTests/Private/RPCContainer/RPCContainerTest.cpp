@@ -60,6 +60,8 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_que
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
 	FRPCContainer RPCs;
 
+	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 1);
+
 	RPCs.ProcessOrQueueRPC(Params.ObjectRef, Params.Type, MoveTemp(Params.Payload));
 
 	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, AnySchemaComponentType));
@@ -73,6 +75,8 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_
 	FPendingRPCParams Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FPendingRPCParams Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FRPCContainer RPCs;
+
+	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 1);
 
 	RPCs.ProcessOrQueueRPC(Params1.ObjectRef, Params1.Type, MoveTemp(Params1.Payload));
 	RPCs.ProcessOrQueueRPC(Params2.ObjectRef, Params2.Type, MoveTemp(Params2.Payload));
@@ -88,6 +92,8 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_n
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
 	FRPCContainer RPCs;
 
+	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 1);
+
 	RPCs.ProcessOrQueueRPC(Params.ObjectRef, Params.Type, MoveTemp(Params.Payload));
 
 	FProcessRPCDelegate Delegate;
@@ -101,12 +107,14 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_n
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_storinng_multiple_values_of_same_type_WHEN_processed_once_THEN_nothing_is_queued)
+RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_same_type_WHEN_processed_once_THEN_nothing_is_queued)
 {
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
 	FPendingRPCParams Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FPendingRPCParams Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FRPCContainer RPCs;
+
+	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 1);
 
 	RPCs.ProcessOrQueueRPC(Params1.ObjectRef, Params1.Type, MoveTemp(Params1.Payload));
 	RPCs.ProcessOrQueueRPC(Params2.ObjectRef, Params2.Type, MoveTemp(Params2.Payload));
@@ -131,6 +139,8 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 
 	FRPCContainer RPCs;
 
+	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 2);
+
 	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload));
 	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload));
 
@@ -147,6 +157,8 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	FPendingRPCParams ParamsReliable = CreateMockParameters(TargetObject, AnySchemaComponentType);
 
 	FRPCContainer RPCs;
+
+	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 2);
 
 	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload));
 	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload));
@@ -168,6 +180,8 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	UObjectSpy* TargetObject = NewObject<UObjectSpy>();
 	FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
 	FRPCContainer RPCs;
+
+	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 2);
 
 	TMap<ESchemaComponentType, TArray<uint32>> RPCIndices;
 
