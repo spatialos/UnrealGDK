@@ -5,7 +5,7 @@ In the SpatialOS GDK for Unreal, you can use GDK-specific command line arguments
 ## Connection arguments
 You can use one of the following methods to connect a worker instance to a SpatialOS deployment:
 
-* Use the [Receptionist]({{urlRoot}}/content/map-travel#using-receptionist) to connect a client-worker or server-worker instance to a local or cloud deployment.
+* Use the [Receptionist]({{urlRoot}}/content/map-travel#using-receptionist-local-deployments) to connect a client-worker or server-worker instance to a local or cloud deployment.
 * Use the [Locator](https://docs.improbable.io/reference/latest/shared/glossary#locator) to connect a client-worker instance to a cloud deployment.
 
 Each time you connect one worker instance to a deployment, you can choose only one method for connection. You might need to add both general [connection arguments](#connection-arguments) and method-specific arguments.

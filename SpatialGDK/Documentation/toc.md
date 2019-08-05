@@ -14,11 +14,11 @@
             - The Starter Template
                 - [Introduction]({{urlRoot}}/content/get-started/\starter-template/get-started-template-intro)
                 - [1: Set up]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup)
-                - [2: Launch a local deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-local)
+                - [1: Launch a local deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-local)
                 - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-cloud)
                 - [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
     - Tutorials and guides
-        - Offloading example project
+        - Offloading in the Example Project
             - [Introduction]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-intro)
             - [1. Set up]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-setup)
             - [2. Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
@@ -30,12 +30,11 @@
             - [4: Configure the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure)
             - [5: Launch multiple session-based deployments]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch)
             - [6: Play your game]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-play)
-        - Multiserver Shooter tutorial
+        - Multiserver zoning shooter tutorial
             - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
-            - [1: Set up]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-setup)
-            - [2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
-            - [3: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
-            - [4: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
+            - [1: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
+            - [2: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
+            - [3: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
         - Database sync worker tutorial
             - [Introduction]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-intro)
             - [1. Set up]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-setup)
