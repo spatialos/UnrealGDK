@@ -218,20 +218,11 @@ bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 	}
 	else
 	{
-		FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
-		bool bDropRPC = TimeDiff.GetSeconds() > SECONDS_TO_DROP_RPC;
-
 #if !UE_BUILD_SHIPPING
+		bool bDropRPC = false;
 		LogRPCError(ErrorInfo, Params, bDropRPC);
 #endif
 
-		if (bDropRPC)
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		return false;
 	}
 }
