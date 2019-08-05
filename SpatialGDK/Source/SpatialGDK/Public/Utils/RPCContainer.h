@@ -7,6 +7,7 @@
 #include "SpatialConstants.h"
 
 #include "UObject/Object.h"
+#include "UObject/Class.h"
 #include "UObject/WeakObjectPtrTemplates.h"
 #include "CoreMinimal.h"
 
