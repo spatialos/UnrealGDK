@@ -62,7 +62,7 @@ struct FRPCErrorInfo
 	ERPCError ErrorCode;
 };
 
-struct FPendingRPCParams
+struct SPATIALGDK_API FPendingRPCParams
 { 
 	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, SpatialGDK::RPCPayload&& InPayload);
 
@@ -81,13 +81,22 @@ struct FPendingRPCParams
 	ESchemaComponentType Type;
 };
 
-class FRPCContainer
+class SPATIALGDK_API FRPCContainer
 {
 public:
-	void BindProcessingFunction(const FProcessRPCDelegate& Function);
+	// Moveable, not copyable.
+	FRPCContainer() = default;
+	FRPCContainer(const FRPCContainer&) = delete;
+	FRPCContainer(FRPCContainer&&) = default;
+	FRPCContainer& operator=(const FRPCContainer&) = delete;
+	FRPCContainer& operator=(FRPCContainer&&) = default;
+	~FRPCContainer() = default;
 
+	void BindProcessingFunction(const FProcessRPCDelegate& Function);
 	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, SpatialGDK::RPCPayload&& InPayload);
 	void ProcessRPCs();
+
+	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const;
 
 private:
 	using FArrayOfParams = TArray<FPendingRPCParams>;
@@ -96,8 +105,7 @@ private:
 
 	void ProcessRPCs(FArrayOfParams& RPCList);
 	bool ApplyFunction(FPendingRPCParams& Params);
-	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const;
-
+	
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
 
