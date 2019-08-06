@@ -11,6 +11,7 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 	, ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
 	, Timestamp(FDateTime::Now())
+	, bApplyWithUnresolvedRefs(false)
 {
 }
 
@@ -68,7 +69,7 @@ bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, E
 	return false;
 }
 
-bool FRPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, const FPendingRPCParams& Params)
+bool FRPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParams& Params)
 {
 	if(FunctionToApply.Execute(Params))
 	{
@@ -77,9 +78,11 @@ bool FRPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, co
 	else
 	{
 		FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
-		bool bDropRPC = TimeDiff.GetSeconds() > SECONDS_TO_DROP_RPC;
-		if (bDropRPC)
+		bool bProcessAnywayOrDropRPC = TimeDiff.GetSeconds() > SECONDS_TO_DROP_RPC;
+		if (bProcessAnywayOrDropRPC)
 		{
+			Params.bApplyWithUnresolvedRefs = true;
+			FunctionToApply.Execute(Params);
 			return true;
 		}
 		else

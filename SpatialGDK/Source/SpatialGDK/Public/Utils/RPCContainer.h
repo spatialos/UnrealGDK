@@ -22,6 +22,7 @@ struct FPendingRPCParams
 	SpatialGDK::RPCPayload Payload;
 
 	FDateTime Timestamp;
+	bool bApplyWithUnresolvedRefs;
 };
 
 class FRPCContainer
@@ -37,8 +38,8 @@ private:
 	using RPCContainerType = TMap<ESchemaComponentType, FRPCMap>;
 
 	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArrayOfParams& RPCList);
-	static bool ApplyFunction(const FProcessRPCDelegate& FunctionToApply, const FPendingRPCParams& Params);
+	static bool ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParams& Params);
 
 	RPCContainerType QueuedRPCs;
-	static const int32 SECONDS_TO_DROP_RPC = 5;
+	static const int32 SECONDS_TO_DROP_RPC = 4;
 };
