@@ -98,7 +98,6 @@ public:
 
 	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject);
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
-	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection);
 
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
@@ -192,6 +191,7 @@ private:
 	void CreateAndInitializeCoreClasses();
 
 	void CreateServerSpatialOSNetConnection();
+	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor);
 
 	void QueryGSMToLoadMap();
 

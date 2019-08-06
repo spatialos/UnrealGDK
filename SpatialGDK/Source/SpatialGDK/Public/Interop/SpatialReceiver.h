@@ -122,10 +122,14 @@ public:
 	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);
 	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
 	void FlushRemoveComponentOps();
+	void RemoveComponentOpsForEntity(Worker_EntityId EntityId);
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void HandleRPC(const Worker_ComponentUpdateOp& Op);
+
+	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp &Op, const Worker_ComponentId RPCEndpointComponentId, bool bPacked);
+
 	void OnCommandRequest(const Worker_CommandRequestOp& Op);
 	void OnCommandResponse(const Worker_CommandResponseOp& Op);
 
@@ -175,8 +179,6 @@ private:
 	void AttachDynamicSubobject(Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
-
-	void RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object);
 
 	bool ApplyRPC(const FPendingRPCParams& Params);
 	bool ApplyRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);	

@@ -20,30 +20,41 @@
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 static const FString SpatialExe(TEXT("spatial.exe"));
+static const FString SpatialServiceVersion(TEXT("20190716.094149.1b6d448edd"));
 
 FLocalDeploymentManager::FLocalDeploymentManager()
+	: bLocalDeploymentRunning(false)
+	, bSpatialServiceRunning(false)
+	, bSpatialServiceInProjectDirectory(false)
+	, bStartingDeployment(false)
+	, bStoppingDeployment(false)
+	, bStartingSpatialService(false)
+	, bStoppingSpatialService(false)
 {
-	bLocalDeploymentRunning = false;
-	bSpatialServiceRunning = false;
-	bSpatialServiceInProjectDirectory = false;
-
-	bStartingDeployment = false;
-	bStoppingDeployment = false;
-
-	bStartingSpatialService = false;
-	bStoppingSpatialService = false;
-
 	// Get the project name from the spatialos.json.
 	ProjectName = GetProjectName();
 
-	// Ensure the worker.jsons are up to date.
-	WorkerBuildConfigAsync();
+#if PLATFORM_WINDOWS
+	// Don't kick off background processes when running commandlets
+	if (IsRunningCommandlet() == false)
+	{
+		// Ensure the worker.jsons are up to date.
+		WorkerBuildConfigAsync();
 
-	// Watch the worker config directory for changes.
-	StartUpWorkerConfigDirectoryWatcher();
+		// Watch the worker config directory for changes.
+		StartUpWorkerConfigDirectoryWatcher();
 
-	// Ensure we have an up to date state of the spatial service and local deployment.
-	RefreshServiceStatus();
+		// Restart the spatial service so it is guaranteed to be running in the current project.
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+		{
+			TryStopSpatialService();
+			TryStartSpatialService();
+
+			// Ensure we have an up to date state of the spatial service and local deployment.
+			RefreshServiceStatus();
+		});
+	}
+#endif
 }
 
 const FString FLocalDeploymentManager::GetSpotExe()
@@ -87,16 +98,23 @@ FString FLocalDeploymentManager::GetProjectName()
 	FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialDirectory, SpatialFileName));
 
 	TSharedPtr<FJsonObject> JsonParsedSpatialFile;
-	if (!ParseJson(SpatialFileResult, JsonParsedSpatialFile))
+	if (ParseJson(SpatialFileResult, JsonParsedSpatialFile))
+	{
+		if (JsonParsedSpatialFile->TryGetStringField(TEXT("name"), ProjectName))
+		{
+			return ProjectName;
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'name' does not exist in spatialos.json. Can't read project name."));
+		}
+	}
+	else
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spatialos.json failed. Can't get project name."));
 	}
 
-	if (!JsonParsedSpatialFile->TryGetStringField(TEXT("name"), ProjectName))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'name' does not exist in spatialos.json. Can't read project name."));
-	}
-
+	ProjectName.Empty();
 	return ProjectName;
 }
 
@@ -130,6 +148,7 @@ bool FLocalDeploymentManager::ParseJson(const FString& RawJsonString, TSharedPtr
 // For other processes which do not spawn cmd windows, use ExecProcess instead.
 void FLocalDeploymentManager::ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode)
 {
+#if PLATFORM_WINDOWS
 	UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Executing '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
 
 	void* ReadPipe = nullptr;
@@ -157,6 +176,9 @@ void FLocalDeploymentManager::ExecuteAndReadOutput(const FString& Executable, co
 
 	FPlatformProcess::ClosePipe(0, ReadPipe);
 	FPlatformProcess::ClosePipe(0, WritePipe);
+#else
+	ExitCode = 1;
+#endif
 }
 
 void FLocalDeploymentManager::RefreshServiceStatus()
@@ -169,18 +191,24 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 		// Timers must be started on the game thread.
 		AsyncTask(ENamedThreads::GameThread, [this]
 		{
-			// Start checking for the service status.
-			FTimerHandle RefreshTimer;
-			GEditor->GetTimerManager()->SetTimer(RefreshTimer, [this]()
+			// It's possible that GEditor won't exist when shutting down.
+			if (GEditor != nullptr)
 			{
-				RefreshServiceStatus();
-			}, RefreshFrequency, false);
+				// Start checking for the service status.
+				FTimerHandle RefreshTimer;
+				GEditor->GetTimerManager()->SetTimer(RefreshTimer, [this]()
+				{
+					RefreshServiceStatus();
+				}, RefreshFrequency, false);
+			}
 		});
 	});
 }
 
 bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs)
 {
+	bRedeployRequired = false;
+
 	if (bStoppingDeployment)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment is in the process of stopping. New deployment will start when previous one has stopped."));
@@ -199,12 +227,6 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	LocalRunningDeploymentID.Empty();
 
 	bStartingDeployment = true;
-
-	if (!bSpatialServiceInProjectDirectory)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service is running in a different project directory! Cannot start local deployment."));
-		return false;
-	}
 
 	// If the service is not running then start it.
 	if (!bSpatialServiceRunning)
@@ -346,7 +368,7 @@ bool FLocalDeploymentManager::TryStartSpatialService()
 
 	bStartingSpatialService = true;
 
-	FString SpatialServiceStartArgs = TEXT("service start");
+	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s"), *SpatialServiceVersion);
 	FString ServiceStartResult;
 	int32 ExitCode;
 	ExecuteAndReadOutput(SpatialExe, SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStartResult, ExitCode);
@@ -376,12 +398,6 @@ bool FLocalDeploymentManager::TryStartSpatialService()
 
 bool FLocalDeploymentManager::TryStopSpatialService()
 {
-	if (!bSpatialServiceRunning)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Tried to stop spatial service but it's not running."));
-		return false;
-	}
-
 	bStoppingSpatialService = true;
 
 	FString SpatialServiceStartArgs = TEXT("service stop");
@@ -394,7 +410,7 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service stopped!"));
 		bSpatialServiceRunning = false;
-		bSpatialServiceInProjectDirectory = false;
+		bSpatialServiceInProjectDirectory = true;
 		bLocalDeploymentRunning = false;
 		return true;
 	}
@@ -403,7 +419,6 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service failed to stop! %s"), *ServiceStopResult);
 	}
 
-	IsSpatialServiceRunning();
 	return false;
 }
 
@@ -488,6 +503,7 @@ bool FLocalDeploymentManager::GetServiceStatus()
 	if (ServiceStatusResult.Contains(TEXT("Local API service is not running.")))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Spatial service not running."));
+		bSpatialServiceInProjectDirectory = true;
 		bSpatialServiceRunning = false;
 		bLocalDeploymentRunning = false;
 		return false;
@@ -505,26 +521,31 @@ bool FLocalDeploymentManager::GetServiceStatus()
 bool FLocalDeploymentManager::IsServiceInCorrectDirectory(const FString& ServiceStatusResult)
 {
 	// Get the project file path and ensure it matches the one for the currently running project.
-	FString SpatialServicePath;
-	if (ServiceStatusResult.Split(TEXT("project file path: "), nullptr, &SpatialServicePath))
+	FString SpatialServiceProjectPath;
+	if (ServiceStatusResult.Split(TEXT("project file path: "), nullptr, &SpatialServiceProjectPath))
 	{
 		// Remove the trailing '" cli-version' that comes with non-interactive 'spatial' calls.
-		SpatialServicePath.Split(TEXT("\" cli-version"), &SpatialServicePath, nullptr);
+		SpatialServiceProjectPath.Split(TEXT("\" cli-version"), &SpatialServiceProjectPath, nullptr);
 
 		FString CurrentProjectSpatialPath = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("spatialos.json"));
-		FPaths::NormalizeDirectoryName(SpatialServicePath);
-		FPaths::RemoveDuplicateSlashes(SpatialServicePath);
+		FPaths::NormalizeDirectoryName(SpatialServiceProjectPath);
+		FPaths::RemoveDuplicateSlashes(SpatialServiceProjectPath);
 
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Spatial service running at path: %s "), *SpatialServicePath);
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Spatial service running at path: %s "), *SpatialServiceProjectPath);
 
-		if (CurrentProjectSpatialPath.Equals(SpatialServicePath, ESearchCase::IgnoreCase))
+		if (CurrentProjectSpatialPath.Equals(SpatialServiceProjectPath, ESearchCase::IgnoreCase))
 		{
 			return true;
+		}
+		else if (SpatialServiceProjectPath.Contains(TEXT("not available")))
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service has hit an erroneous state! Please run 'spatial service stop'."));
+			return false;
 		}
 		else
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error,
-				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServicePath);
+				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
 			return false;
 		}
 	}
@@ -560,4 +581,31 @@ bool FLocalDeploymentManager::IsServiceStarting() const
 bool FLocalDeploymentManager::IsServiceStopping() const
 {
 	return bStoppingSpatialService;
+}
+
+bool FLocalDeploymentManager::IsRedeployRequired() const
+{
+	return bRedeployRequired;
+}
+
+void FLocalDeploymentManager::SetRedeployRequired()
+{
+	bRedeployRequired = true;
+}
+
+bool FLocalDeploymentManager::ShouldWaitForDeployment() const
+{
+	if (bAutoDeploy)
+	{
+		return !IsLocalDeploymentRunning() || IsDeploymentStopping() || IsDeploymentStarting();
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
+{
+	bAutoDeploy = bInAutoDeploy;
 }
