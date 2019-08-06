@@ -201,7 +201,7 @@ void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 
 bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 {
-	FRPCErrorInfo ErrorInfo = FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Unknown, ERPCError::Unknown };
+	FRPCErrorInfo ErrorInfo;
 
 	if (ProcessingFunction.IsBound())
 	{

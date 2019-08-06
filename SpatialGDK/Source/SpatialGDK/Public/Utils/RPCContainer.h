@@ -6,9 +6,10 @@
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 
-#include "UObject/Object.h"
 #include "UObject/Class.h"
+#include "UObject/Object.h"
 #include "UObject/WeakObjectPtr.h"
+
 #include "CoreMinimal.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogRPCContainer, Log, All);
@@ -57,11 +58,11 @@ struct FRPCErrorInfo
 		return (ErrorCode == ERPCError::Success);
 	}
 
-	TWeakObjectPtr<UObject> TargetObject;
-	TWeakObjectPtr<UFunction> Function;
-	bool bIsServer;
-	ERPCQueueType QueueType;
-	ERPCError ErrorCode;
+	TWeakObjectPtr<UObject> TargetObject = nullptr;
+	TWeakObjectPtr<UFunction> Function = nullptr;
+	bool bIsServer = false;
+	ERPCQueueType QueueType = ERPCQueueType::Unknown;
+	ERPCError ErrorCode = ERPCError::Unknown;
 };
 
 struct SPATIALGDK_API FPendingRPCParams
