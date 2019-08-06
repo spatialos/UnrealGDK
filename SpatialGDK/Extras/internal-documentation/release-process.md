@@ -164,6 +164,7 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 **Documentation**
 1. Publish the docs to live using Improbadoc commands listed [here](https://improbableio.atlassian.net/wiki/spaces/GBU/pages/327485360/Publishing+GDK+Docs).
 1. Update the [roadmap](https://github.com/spatialos/UnrealGDK/projects/1), moving the release from **Planned** to **Released**, and linking to the release.
+1. Audit the [known issues](https://github.com/spatialos/UnrealGDK/issues), and ensure all fixed issues are updated/removed.
 
 **Announce**
 Only announce full releases, not `preview` ones.
