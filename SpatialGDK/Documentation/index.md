@@ -2,7 +2,7 @@
 
 <%(Callout  message="The SpatialOS GDK for Unreal is in alpha. It is ready to use for development of games using a single Unreal server, or using multiple servers in an offloading architecture. It it not yet recommended for development of multiserver games using the zoning architecture, and is not ready for public releases. For more information, please follow our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) pages.")%>
 
-The SpatialOS Game Development Kit (GDK) for Unreal is an [Unreal Engine plugin](https://docs.unrealengine.com/en-US/Programming/Plugins/index.html) which gives you the features of SpatialOS, within the familiar workflows and APIs of Unreal. 
+The SpatialOS Game Development Kit (GDK) for Unreal gives you the features of SpatialOS within the familiar workflows and APIs of Unreal. 
 
 <img src="{{assetRoot}}assets/unrealgdk-headline-image.png" style=" float: right; margin: 0; display: block; width: 60%; padding: 20px 20px"/>
 
