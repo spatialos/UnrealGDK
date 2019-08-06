@@ -87,6 +87,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false))
 	float MaxNetCullDistanceSquared;
 
+	/** Seconds to wait before executing a received RPC substituting nullptr for unresolved UObjects*/
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false))
+	float WaitTimeBeforeProcessingReceivedRPCWithUnresolveRefs;
+
 	/** Query Based Interest is required for level streaming and the AlwaysInterested UPROPERTY specifier to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bUsingQBI;
@@ -122,10 +126,6 @@ public:
 	/** Include an order index with reliable RPCs and warn if they are executed out of order.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bCheckRPCOrder;
-
-	/** Seconds to wait before executing a received RPC substituting nullptr for unresolved UObjects*/
-	UPROPERTY(config, meta = (ConfigRestartRequired = false))
-	float SecondsToProcessRPCWithUnresolvedRefs;
 
 	/** Batch entity position updates to be processed on a single frame.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))

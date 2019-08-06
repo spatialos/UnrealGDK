@@ -1540,7 +1540,7 @@ bool USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 
 	bool bApplyWithUnresolvedRefs = false;
 	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
-	if (GetDefault<USpatialGDKSettings>()->SecondsToProcessRPCWithUnresolvedRefs < TimeDiff)
+	if (GetDefault<USpatialGDKSettings>()->WaitTimeBeforeProcessingReceivedRPCWithUnresolveRefs < TimeDiff)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing RPC %s::%s with unresolved references after %f seconds of queueing"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), TimeDiff);
 		bApplyWithUnresolvedRefs = true;
