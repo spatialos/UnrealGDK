@@ -180,8 +180,6 @@ private:
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 
-	void RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object);
-
 	bool ApplyRPC(const FPendingRPCParams& Params);
 	bool ApplyRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);	
 

@@ -11,6 +11,15 @@ This document outlines the process for releasing a version of the GDK for Unreal
 * `<ProjectRoot>` - The directory that contains your `<GameRoot>` directory.
 * `<YourProject>` - The name of your project and .uproject file (for example, `\<GameRoot>\YourProject.uproject`).
 
+## Release Pre-Requisites
+
+1. Ensure that XBox-compatible worker SDK DLLs are available
+
+* The required combination is the Worker SDK version pinned by the GDK, and the XDK version(s) officially supported by all GDK-supported UE4 versions.
+* To check if the package already exists, try to download the DLL with this command:
+  * `spatial package get worker_sdk c-dynamic-x86_64-xdk180401-xbone 13.7.1 c-sdk-13.7.1-180401.zip`
+* If it is not available, file a WRK ticket for the Worker team to generate the required DLL(s). See [WRK-1275](https://improbableio.atlassian.net/browse/WRK-1275) for an example.
+
 ## Pre-Validation
 
 ### Create the `UnrealGDK` release candidate
@@ -33,6 +42,7 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. Using `git log`, take note of the latest commit hash.
 1. `git checkout -b 4.xx-SpatialOSUnrealGDK-x.y.z-rc` in order to create release candidate branch.
 1. `git push --set-upstream origin 4.xx-SpatialOSUnrealGDK-x.y.z-rc` to push the branch.
+1. Repeat the above steps for all supported `4.xx` engine versions.
 1. Announce the branch and the commit hash it uses in the `#unreal-gdk-release` channel.
 
 ### Create the `UnrealGDKThirdPersonShooter` release candidate

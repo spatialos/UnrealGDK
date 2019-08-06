@@ -47,7 +47,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 		UniqueIdReader << UniqueId;
 
 		FName OnlinePlatformName = FName(*GetStringFromSchema(Payload, 3));
-		bool bSimulatedPlayer = Schema_GetBool(Payload, 4);
+		bool bSimulatedPlayer = GetBoolFromSchema(Payload, 4);
 
 		URLString.Append(TEXT("?workerAttribute=")).Append(Attributes);
 		if (bSimulatedPlayer)
