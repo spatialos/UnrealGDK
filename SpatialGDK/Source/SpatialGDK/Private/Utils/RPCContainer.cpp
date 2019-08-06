@@ -10,50 +10,50 @@ using namespace SpatialGDK;
 
 namespace
 {
-	FString ERPCErrorToString(ERPCError Error)
+	FString ERPCResultToString(ERPCResult Error)
 	{
 		switch (Error)
 		{
-		case ERPCError::Success:
+		case ERPCResult::Success:
 			return TEXT("");
 
-		case ERPCError::NoProcessingFunctionBound:
+		case ERPCResult::NoProcessingFunctionBound:
 			return TEXT("No Processing Function Bound");
 
-		case ERPCError::UnresolvedTargetObject:
+		case ERPCResult::UnresolvedTargetObject:
 			return TEXT("Unresolved Target Object");
 
-		case ERPCError::MissingFunctionInfo:
+		case ERPCResult::MissingFunctionInfo:
 			return TEXT("Missing UFunction info");
 
-		case ERPCError::UnresolvedParameters:
+		case ERPCResult::UnresolvedParameters:
 			return TEXT("Unresolved Parameters");
 
-		case ERPCError::NoActorChannel:
+		case ERPCResult::NoActorChannel:
 			return TEXT("No Actor Channel");
 
-		case ERPCError::SpatialActorChannelNotListening:
+		case ERPCResult::SpatialActorChannelNotListening:
 			return TEXT("Spatial Actor Channel Not Listening");
 
-		case ERPCError::NoNetConnection:
+		case ERPCResult::NoNetConnection:
 			return TEXT("No Net Connection");
 
-		case ERPCError::NoAuthority:
+		case ERPCResult::NoAuthority:
 			return TEXT("No Authority");
 
-		case ERPCError::InvalidRPCType:
+		case ERPCResult::InvalidRPCType:
 			return TEXT("Invalid RPC Type");
 
-		case ERPCError::NoOwningController:
+		case ERPCResult::NoOwningController:
 			return TEXT("No Owning Controller");
 
-		case ERPCError::NoControllerChannel:
+		case ERPCResult::NoControllerChannel:
 			return TEXT("No Controller Channel");
 
-		case ERPCError::UnresolvedController:
+		case ERPCResult::UnresolvedController:
 			return TEXT("Unresolved Controller");
 
-		case ERPCError::ControllerChannelNotListening:
+		case ERPCResult::ControllerChannelNotListening:
 			return TEXT("Controller Channel Not Listening");
 
 		default:
@@ -116,7 +116,7 @@ namespace
 			OutputLog.Append(TEXT(". "));
 		}
 
-		OutputLog.Append(FString::Printf(TEXT("Reason: %s"), *ERPCErrorToString(ErrorInfo.ErrorCode)));
+		OutputLog.Append(FString::Printf(TEXT("Reason: %s"), *ERPCResultToString(ErrorInfo.ErrorCode)));
 
 		UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 	}
@@ -209,7 +209,7 @@ bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 	}
 	else
 	{
-		ErrorInfo = FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Unknown, ERPCError::NoProcessingFunctionBound };
+		ErrorInfo = FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Unknown, ERPCResult::NoProcessingFunctionBound };
 	}
 
 	if (ErrorInfo.Success())

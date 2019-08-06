@@ -181,7 +181,7 @@ private:
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
-	ERPCError ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);
+	ERPCResult ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);
 
 	void ReceiveCommandResponse(const Worker_CommandResponseOp& Op);
 

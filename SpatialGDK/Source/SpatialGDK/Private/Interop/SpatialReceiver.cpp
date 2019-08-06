@@ -1419,9 +1419,9 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
-ERPCError USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId)
+ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId)
 {
-	ERPCError Result = ERPCError::Unknown;
+	ERPCResult Result = ERPCResult::Unknown;
 
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	FMemory::Memzero(Parms, Function->ParmsSize);
@@ -1460,11 +1460,11 @@ ERPCError USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* F
 		}
 
 		TargetObject->ProcessEvent(Function, Parms);
-		Result = ERPCError::Success;
+		Result = ERPCResult::Success;
 	}
 	else
 	{
-		Result = ERPCError::UnresolvedParameters;
+		Result = ERPCResult::UnresolvedParameters;
 	}
 
 	// Destroy the parameters.
@@ -1481,7 +1481,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
-		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Receive, ERPCError::UnresolvedTargetObject };
+		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Receive, ERPCResult::UnresolvedTargetObject };
 	}
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
@@ -1489,10 +1489,10 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Receive, ERPCError::MissingFunctionInfo };
+		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Receive, ERPCResult::MissingFunctionInfo };
 	}
 
-	ERPCError ErrorCode = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{});
+	ERPCResult ErrorCode = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{});
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, ErrorCode };
 }
 

@@ -21,5 +21,5 @@ FRPCErrorInfo  UObjectSpy::ProcessRPC(const FPendingRPCParams& Params)
 {
 	ESchemaComponentType Type = SpyUtils::ByteArrayToSchemaType(Params.Payload.PayloadData);
 	ProcessedRPCIndices.FindOrAdd(Type).Push(Params.Payload.Index);
-	return FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Send, ERPCError::Success };
+	return FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Send, ERPCResult::Success };
 }

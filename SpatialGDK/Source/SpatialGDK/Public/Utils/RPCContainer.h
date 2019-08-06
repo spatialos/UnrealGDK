@@ -18,7 +18,7 @@ struct FPendingRPCParams;
 struct FRPCErrorInfo;
 DECLARE_DELEGATE_RetVal_OneParam(FRPCErrorInfo, FProcessRPCDelegate, const FPendingRPCParams&)
 
-enum class ERPCError : uint8_t
+enum class ERPCResult : uint8_t
 {
 	Success,
 
@@ -55,14 +55,14 @@ struct FRPCErrorInfo
 {
 	bool Success() const
 	{
-		return (ErrorCode == ERPCError::Success);
+		return (ErrorCode == ERPCResult::Success);
 	}
 
 	TWeakObjectPtr<UObject> TargetObject = nullptr;
 	TWeakObjectPtr<UFunction> Function = nullptr;
 	bool bIsServer = false;
 	ERPCQueueType QueueType = ERPCQueueType::Unknown;
-	ERPCError ErrorCode = ERPCError::Unknown;
+	ERPCResult ErrorCode = ERPCResult::Unknown;
 };
 
 struct SPATIALGDK_API FPendingRPCParams

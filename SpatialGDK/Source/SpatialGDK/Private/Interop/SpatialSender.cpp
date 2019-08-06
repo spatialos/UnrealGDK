@@ -754,7 +754,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
-		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::UnresolvedTargetObject };
+		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::UnresolvedTargetObject };
 	}
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 
@@ -762,22 +762,22 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCError::MissingFunctionInfo };
+		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::MissingFunctionInfo };
 	}
 
-	ERPCError ErrorCode = SendRPCInternal(TargetObject, Function, Params.Payload);
+	ERPCResult ErrorCode = SendRPCInternal(TargetObject, Function, Params.Payload);
 
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ErrorCode };
 }
 
-ERPCError USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload)
+ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload)
 {
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
 
 	if (!Channel)
 	{
 		UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
-		return ERPCError::NoActorChannel;
+		return ERPCResult::NoActorChannel;
 	}
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
@@ -796,7 +796,7 @@ ERPCError USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Func
 #if !UE_BUILD_SHIPPING
 			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
-			return ERPCError::Success;
+			return ERPCResult::Success;
 		}
 		else
 		{
@@ -817,7 +817,7 @@ ERPCError USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Func
 
 		if (UnresolvedObject)
 		{
-			return ERPCError::UnresolvedTargetObject;
+			return ERPCResult::UnresolvedTargetObject;
 		}
 
 		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
@@ -839,7 +839,7 @@ ERPCError USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Func
 				EntityId, CommandRequest.component_id, *Function->GetName());
 		}
 
-		return ERPCError::Success;
+		return ERPCResult::Success;
 	}
 	case SCHEMA_NetMulticastRPC:
 	case SCHEMA_ClientReliableRPC:
@@ -850,7 +850,7 @@ ERPCError USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Func
 		FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
 		if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 		{
-			return ERPCError::UnresolvedTargetObject;
+			return ERPCResult::UnresolvedTargetObject;
 		}
 
 		if (RPCInfo.Type != SCHEMA_NetMulticastRPC && !Channel->IsListening())
@@ -858,7 +858,7 @@ ERPCError USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Func
 			// If the Entity endpoint is not yet ready to receive RPCs -
 			// treat the corresponding object as unresolved and queue RPC
 			// However, it doesn't matter in case of Multicast
-			return ERPCError::SpatialActorChannelNotListening;
+			return ERPCResult::SpatialActorChannelNotListening;
 		}
 
 		EntityId = TargetObjectRef.Entity;
@@ -897,9 +897,9 @@ ERPCError USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Func
 		if (bCanPackRPC)
 		{
 			const UObject* UnresolvedObject = nullptr;
-			ERPCError Result = AddPendingRPC(TargetObject, Function, Payload, ComponentId, RPCInfo.Index, UnresolvedObject);
+			ERPCResult Result = AddPendingRPC(TargetObject, Function, Payload, ComponentId, RPCInfo.Index, UnresolvedObject);
 #if !UE_BUILD_SHIPPING
-			if (Result == ERPCError::Success)
+			if (Result == ERPCResult::Success)
 			{
 				NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
 			}
@@ -910,7 +910,7 @@ ERPCError USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Func
 		{
 			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 			{
-				return ERPCError::NoAuthority;
+				return ERPCResult::NoAuthority;
 			}
 
 			const UObject* UnresolvedParameter = nullptr;
@@ -918,19 +918,19 @@ ERPCError USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Func
 
 			if (UnresolvedParameter)
 			{
-				return ERPCError::UnresolvedParameters;
+				return ERPCResult::UnresolvedParameters;
 			}
 
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 #if !UE_BUILD_SHIPPING
 			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
-			return ERPCError::Success;
+			return ERPCResult::Success;
 		}
 	}
 	default:
 		checkNoEntry();
-		return ERPCError::InvalidRPCType;
+		return ERPCResult::InvalidRPCType;
 	}
 }
 
@@ -1225,13 +1225,13 @@ Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 
 	return ComponentUpdate;
 }
-ERPCError USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject)
+ERPCResult USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject)
 {
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = TargetObject;
-		return ERPCError::UnresolvedTargetObject;
+		return ERPCResult::UnresolvedTargetObject;
 	}
 
 	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(TargetObjectRef.Entity).Get());
@@ -1241,7 +1241,7 @@ ERPCError USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Functi
 	{
 		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingRPC: No connection for object %s (RPC %s, actor %s, entity %lld)"),
 			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity);
-		return ERPCError::NoNetConnection;
+		return ERPCResult::NoNetConnection;
 	}
 
 	APlayerController* Controller = Cast<APlayerController>(OwningConnection->OwningActor);
@@ -1249,25 +1249,25 @@ ERPCError USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Functi
 	{
 		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingRPC: Connection's owner is not a player controller for object %s (RPC %s, actor %s, entity %lld): connection owner %s"),
 			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity, *OwningConnection->OwningActor->GetName());
-		return ERPCError::NoOwningController;
+		return ERPCResult::NoOwningController;
 	}
 
 	USpatialActorChannel* ControllerChannel = NetDriver->GetOrCreateSpatialActorChannel(Controller);
 	if (ControllerChannel == nullptr)
 	{
-		return ERPCError::NoControllerChannel;
+		return ERPCResult::NoControllerChannel;
 	}
 
 	if (!ControllerChannel->IsListening())
 	{
-		return ERPCError::ControllerChannelNotListening;
+		return ERPCResult::ControllerChannelNotListening;
 	}
 
 	FUnrealObjectRef ControllerObjectRef = PackageMap->GetUnrealObjectRefFromObject(Controller);
 	if (ControllerObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = Controller;
-		return ERPCError::UnresolvedController;
+		return ERPCResult::UnresolvedController;
 	}
 
 	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
@@ -1279,7 +1279,7 @@ ERPCError USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Functi
 	FMemory::Memcpy(RPC.Data.GetData(), Payload.PayloadData.GetData(), Payload.PayloadData.Num());
 	RPC.Entity = TargetObjectRef.Entity;
 	RPCsToPack.FindOrAdd(ControllerObjectRef.Entity).Emplace(MoveTemp(RPC));
-	return ERPCError::Success;
+	return ERPCResult::Success;
 }
 
 void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)
