@@ -4,8 +4,8 @@
 
 The SpatialOS GDK for Unreal consists of:
 
-*   [The GDK Plugin](https://github.com/spatialos/unrealgdk)
 *   [The SpatialOS Unreal Engine Fork](https://github.com/improbableio/UnrealEngine)
+*   [The GDK Plugin](https://github.com/spatialos/unrealgdk) (includes the Starter Template, a blank starter project)
 *   [The Example Project](https://github.com/spatialos/UnrealGDKExampleProject)
 
 These repositories all follow the same versioning scheme, as described below: 
@@ -85,8 +85,8 @@ To facilitate a smooth upgrade for your project, when we introduce support for a
 We endeavour to support the latest stable and recommended version of Unreal Engine less than 3 months after it's released. To see when a new version will be supported, check out the [Development Roadmap](https://github.com/spatialos/unrealgdk/projects/1).
 
 <br/>------<br/>
-_2019-07-21 Page added with limited editorial review_
+_2019-07-21 Page updated: clarified what the GDK consists of_
+<br>_2019-07-21 Page added with limited editorial review_
 
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1231)
-
 
