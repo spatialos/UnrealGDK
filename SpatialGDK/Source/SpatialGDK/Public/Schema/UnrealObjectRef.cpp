@@ -2,5 +2,75 @@
 
 #include "Schema/UnrealObjectRef.h"
 
+#include "EngineClasses/SpatialPackageMapClient.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogUnrealObjectRef, Log, All);
+
 const FUnrealObjectRef FUnrealObjectRef::NULL_OBJECT_REF = FUnrealObjectRef(0, 0);
 const FUnrealObjectRef FUnrealObjectRef::UNRESOLVED_OBJECT_REF = FUnrealObjectRef(0, 1);
+
+FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialPackageMapClient* PackageMap)
+{
+	FUnrealObjectRef ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
+
+	if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())
+	{
+		FNetworkGUID NetGUID;
+		if (ObjectValue->IsSupportedForNetworking())
+		{
+			NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
+
+			if (!NetGUID.IsValid())
+			{
+				if (ObjectValue->IsFullNameStableForNetworking())
+				{
+					NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
+				}
+				else
+				{
+					NetGUID = PackageMap->TryResolveObjectAsEntity(ObjectValue);
+				}
+			}
+		}
+
+		// The secondary part of the check is needed if we couldn't assign an entity id (e.g. ran out of entity ids)
+		if (NetGUID.IsValid() || (ObjectValue->IsSupportedForNetworking() && !ObjectValue->IsFullNameStableForNetworking()))
+		{
+			ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		}
+		else
+		{
+			ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
+		}
+
+		if (ObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+		{
+			// There are cases where something assigned a NetGUID without going through the FSpatialNetGUID (e.g. FObjectReplicator)
+			// Assign an UnrealObjectRef by going through the FSpatialNetGUID flow
+			if (ObjectValue->IsFullNameStableForNetworking())
+			{
+				PackageMap->ResolveStablyNamedObject(ObjectValue);
+				ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			}
+			else
+			{
+				// Check if the object is an actor or a subobject of an actor that is torn off or non-replicated.
+				if (ObjectValue->IsA<AActor>() || ObjectValue->GetOuter()->IsA<AActor>())
+				{
+					AActor* Actor = ObjectValue->IsA<AActor>() ? Cast<AActor>(ObjectValue) : Cast<AActor>(ObjectValue->GetOuter());
+
+					if (Actor->GetTearOff() || !Actor->GetIsReplicated())
+					{
+						return FUnrealObjectRef::NULL_OBJECT_REF;
+					}
+				}
+
+				// Unresolved object. 
+				UE_LOG(LogUnrealObjectRef, /*TODO: Verbose*/Warning, TEXT("FUnrealObjectRef::FromObjectPtr: ObjectValue is unresolved! %s"), *ObjectValue->GetName());
+				ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
+			}
+		}
+	}
+
+	return ObjectRef;
+}

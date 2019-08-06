@@ -1719,8 +1719,6 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
-	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
-	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
 	// TODO: UNR-1650 We're trying to resolve all queues, which introduces more overhead.
 	ResolveIncomingRPCs();

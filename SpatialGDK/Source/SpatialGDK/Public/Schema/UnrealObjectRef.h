@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Containers/UnrealString.h"
-#include "Templates/TypeHash.h"
+#include "CoreMinimal.h"
 
 #include "Utils/SchemaOption.h"
 
 #include <cstdint>
 
 using Worker_EntityId = std::int64_t;
+
+class USpatialPackageMapClient;
 
 struct FUnrealObjectRef
 {
@@ -84,6 +85,8 @@ struct FUnrealObjectRef
 	{
 		return (*this != NULL_OBJECT_REF && *this != UNRESOLVED_OBJECT_REF);
 	}
+
+	static FUnrealObjectRef FromObjectPtr(UObject* ObjectValue, USpatialPackageMapClient* PackageMap);
 
 	static const FUnrealObjectRef NULL_OBJECT_REF;
 	static const FUnrealObjectRef UNRESOLVED_OBJECT_REF;
