@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -64,7 +65,7 @@ Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor
 	Worker_EntityId EntityId = NetDriver->EntityPool->GetNextEntityId();
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
+		UE_LOG(LogSpatialPackageMap, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
 		return EntityId;
 	}
 
@@ -238,6 +239,30 @@ Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* O
 
 	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
 	return GetUnrealObjectRefFromNetGUID(NetGUID).Entity;
+}
+
+AActor* USpatialPackageMapClient::GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef)
+{
+	UClass* SingletonClass = Cast<UClass>(GetObjectFromUnrealObjectRef(SingletonClassRef));
+	if (SingletonClass != nullptr)
+	{
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsOfClass(NetDriver->World, SingletonClass, FoundActors);
+
+		// There should be only one singleton actor per class
+		if (FoundActors.Num() == 1)
+		{
+			return FoundActors[0];
+		}
+
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("GetSingletonByClassRef: Found %d actors for singleton class: %s"), FoundActors.Num(), *SingletonClassRef.ToString());
+		return nullptr;
+	}
+	else
+	{
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("GetSingletonByClassRef: Can't resolve singleton class: %s"), *SingletonClassRef.ToString());
+		return nullptr;
+	}
 }
 
 bool USpatialPackageMapClient::CanClientLoadObject(UObject* Object)

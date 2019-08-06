@@ -122,6 +122,10 @@ inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const
 	{
 		AddObjectRefToSchema(ObjectRefObject, 5, *ObjectRef.Outer);
 	}
+	if (ObjectRef.bSingletonRef)
+	{
+		Schema_AddBool(ObjectRefObject, 6, ObjectRef.bSingletonRef);
+	}
 }
 
 FUnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id);
@@ -145,6 +149,10 @@ inline FUnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_F
 	if (Schema_GetObjectCount(ObjectRefObject, 5) > 0)
 	{
 		ObjectRef.Outer = GetObjectRefFromSchema(ObjectRefObject, 5);
+	}
+	if (Schema_GetBoolCount(ObjectRefObject, 6) > 0)
+	{
+		ObjectRef.bSingletonRef = GetBoolFromSchema(ObjectRefObject, 6);
 	}
 
 	return ObjectRef;

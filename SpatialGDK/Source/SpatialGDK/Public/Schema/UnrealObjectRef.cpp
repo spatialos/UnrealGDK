@@ -3,11 +3,53 @@
 #include "Schema/UnrealObjectRef.h"
 
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealObjectRef, Log, All);
 
 const FUnrealObjectRef FUnrealObjectRef::NULL_OBJECT_REF = FUnrealObjectRef(0, 0);
 const FUnrealObjectRef FUnrealObjectRef::UNRESOLVED_OBJECT_REF = FUnrealObjectRef(0, 1);
+
+UObject* FUnrealObjectRef::ToObjectPtr(USpatialPackageMapClient* PackageMap, bool& bOutUnresolved) const
+{
+	if (*this == FUnrealObjectRef::NULL_OBJECT_REF)
+	{
+		return nullptr;
+	}
+	else
+	{
+		if (bSingletonRef)
+		{
+			FUnrealObjectRef SingletonClassRef = *this;
+			SingletonClassRef.bSingletonRef = false;
+
+			return PackageMap->GetSingletonByClassRef(SingletonClassRef);
+		}
+
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(*this);
+		if (NetGUID.IsValid())
+		{
+			UObject* Value = PackageMap->GetObjectFromNetGUID(NetGUID, true);
+			if (Value == nullptr)
+			{
+				// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
+				// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
+				// So we do the same.
+				FString FullPath;
+				SpatialGDK::GetFullPathFromUnrealObjectReference(*this, FullPath);
+				UE_LOG(LogUnrealObjectRef, Verbose, TEXT("Object ref did not map to valid object. Streaming level not loaded or actor deleted. Will be set to nullptr: %s %s"),
+					*ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
+			}
+
+			return Value;
+		}
+		else
+		{
+			bOutUnresolved = true;
+			return nullptr;
+		}
+	}
+}
 
 FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialPackageMapClient* PackageMap)
 {
@@ -62,6 +104,17 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 					if (Actor->GetTearOff() || !Actor->GetIsReplicated())
 					{
 						return FUnrealObjectRef::NULL_OBJECT_REF;
+					}
+				}
+
+				// If this is a singleton that hasn't been resolved yet, send its class path instead.
+				if (ObjectValue->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+				{
+					ObjectRef = FromObjectPtr(ObjectValue->GetClass(), PackageMap);
+					if (ObjectRef.IsValid())
+					{
+						ObjectRef.bSingletonRef = true;
+						return ObjectRef;
 					}
 				}
 

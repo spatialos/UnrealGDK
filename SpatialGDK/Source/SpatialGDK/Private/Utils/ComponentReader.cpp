@@ -308,38 +308,19 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 
-		if (ObjectRef == FUnrealObjectRef::NULL_OBJECT_REF)
+		UObject* ObjectValue = ObjectRef.ToObjectPtr(PackageMap, bUnresolved);
+
+		if (bUnresolved)
 		{
-			ObjectProperty->SetObjectPropertyValue(Data, nullptr);
+			InObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, ShadowOffset, ParentIndex, Property));
+			UnresolvedRefs.Add(ObjectRef);
 		}
 		else
 		{
-			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-			if (NetGUID.IsValid())
+			ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
+			if (ObjectValue != nullptr)
 			{
-				UObject* ObjectValue = PackageMap->GetObjectFromNetGUID(NetGUID, true);
-				if (ObjectValue == nullptr)
-				{
-					// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
-					// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
-					// So we do the same.
-					FString FullPath;
-					GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
-					UE_LOG(LogSpatialComponentReader, Verbose, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),
-						*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
-
-					ObjectProperty->SetObjectPropertyValue(Data, nullptr);
-					return;
-				}
-
 				checkf(ObjectValue->IsA(ObjectProperty->PropertyClass), TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRef.ToString(), *ObjectValue->GetFullName());
-				ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
-			}
-			else
-			{
-				InObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, ShadowOffset, ParentIndex, Property));
-				UnresolvedRefs.Add(ObjectRef);
-				bUnresolved = true;
 			}
 		}
 

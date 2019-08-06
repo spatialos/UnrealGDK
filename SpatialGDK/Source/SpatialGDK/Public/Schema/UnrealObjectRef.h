@@ -13,6 +13,7 @@ class USpatialPackageMapClient;
 struct FUnrealObjectRef
 {
 	FUnrealObjectRef() = default;
+	FUnrealObjectRef(const FUnrealObjectRef&) = default;
 
 	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset)
 		: Entity(Entity)
@@ -26,24 +27,6 @@ struct FUnrealObjectRef
 		, Outer(Outer)
 		, bNoLoadOnClient(bNoLoadOnClient)
 	{}
-
-	FUnrealObjectRef(const FUnrealObjectRef& In)
-		: Entity(In.Entity)
-		, Offset(In.Offset)
-		, Path(In.Path)
-		, Outer(In.Outer)
-		, bNoLoadOnClient(In.bNoLoadOnClient)
-	{}
-
-	FORCEINLINE FUnrealObjectRef& operator=(const FUnrealObjectRef& In)
-	{
-		Entity = In.Entity;
-		Offset = In.Offset;
-		Path = In.Path;
-		Outer = In.Outer;
-		bNoLoadOnClient = In.bNoLoadOnClient;
-		return *this;
-	}
 
 	FORCEINLINE FString ToString() const
 	{
@@ -86,6 +69,7 @@ struct FUnrealObjectRef
 		return (*this != NULL_OBJECT_REF && *this != UNRESOLVED_OBJECT_REF);
 	}
 
+	UObject* ToObjectPtr(USpatialPackageMapClient* PackageMap, bool& bOutUnresolved) const;
 	static FUnrealObjectRef FromObjectPtr(UObject* ObjectValue, USpatialPackageMapClient* PackageMap);
 
 	static const FUnrealObjectRef NULL_OBJECT_REF;
@@ -96,6 +80,7 @@ struct FUnrealObjectRef
 	SpatialGDK::TSchemaOption<FString> Path;
 	SpatialGDK::TSchemaOption<FUnrealObjectRef> Outer;
 	bool bNoLoadOnClient = false;
+	bool bSingletonRef = false;
 };
 
 inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
