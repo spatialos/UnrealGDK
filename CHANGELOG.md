@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 
+## [`0.6.1`] - 2019-xx-xx
+
+### Bug fixes: 
+- Fixed Simulated Players launch configurations not being valid when using an Engine Plugin installation.
+
 ## [`0.6.0`] - 2019-07-31
 
 ### Breaking Changes:
