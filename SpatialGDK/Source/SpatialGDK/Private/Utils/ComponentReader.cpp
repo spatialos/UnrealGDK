@@ -308,7 +308,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 
-		UObject* ObjectValue = ObjectRef.ToObjectPtr(PackageMap, bUnresolved);
+		UObject* ObjectValue = FUnrealObjectRef::ToObjectPtr(ObjectRef, PackageMap, bUnresolved);
 
 		if (bUnresolved)
 		{

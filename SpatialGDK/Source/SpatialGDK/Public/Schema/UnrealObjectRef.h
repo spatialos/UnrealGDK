@@ -28,6 +28,8 @@ struct FUnrealObjectRef
 		, bNoLoadOnClient(bNoLoadOnClient)
 	{}
 
+	FUnrealObjectRef& operator=(const FUnrealObjectRef&) = default;
+
 	FORCEINLINE FString ToString() const
 	{
 		return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), Entity, Offset);
@@ -69,7 +71,7 @@ struct FUnrealObjectRef
 		return (*this != NULL_OBJECT_REF && *this != UNRESOLVED_OBJECT_REF);
 	}
 
-	UObject* ToObjectPtr(USpatialPackageMapClient* PackageMap, bool& bOutUnresolved) const;
+	static UObject* ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpatialPackageMapClient* PackageMap, bool& bOutUnresolved);
 	static FUnrealObjectRef FromObjectPtr(UObject* ObjectValue, USpatialPackageMapClient* PackageMap);
 
 	static const FUnrealObjectRef NULL_OBJECT_REF;

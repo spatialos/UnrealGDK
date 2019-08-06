@@ -50,7 +50,7 @@ FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
 	check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
 	bool bUnresolved = false;
-	Value = ObjectRef.ToObjectPtr(Cast<USpatialPackageMapClient>(PackageMap), bUnresolved);
+	Value = FUnrealObjectRef::ToObjectPtr(ObjectRef, Cast<USpatialPackageMapClient>(PackageMap), bUnresolved);
 
 	if (bUnresolved)
 	{

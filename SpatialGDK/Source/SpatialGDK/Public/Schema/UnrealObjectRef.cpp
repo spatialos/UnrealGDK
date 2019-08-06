@@ -10,23 +10,23 @@ DEFINE_LOG_CATEGORY_STATIC(LogUnrealObjectRef, Log, All);
 const FUnrealObjectRef FUnrealObjectRef::NULL_OBJECT_REF = FUnrealObjectRef(0, 0);
 const FUnrealObjectRef FUnrealObjectRef::UNRESOLVED_OBJECT_REF = FUnrealObjectRef(0, 1);
 
-UObject* FUnrealObjectRef::ToObjectPtr(USpatialPackageMapClient* PackageMap, bool& bOutUnresolved) const
+UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpatialPackageMapClient* PackageMap, bool& bOutUnresolved)
 {
-	if (*this == FUnrealObjectRef::NULL_OBJECT_REF)
+	if (ObjectRef == FUnrealObjectRef::NULL_OBJECT_REF)
 	{
 		return nullptr;
 	}
 	else
 	{
-		if (bSingletonRef)
+		if (ObjectRef.bSingletonRef)
 		{
-			FUnrealObjectRef SingletonClassRef = *this;
+			FUnrealObjectRef SingletonClassRef = ObjectRef;
 			SingletonClassRef.bSingletonRef = false;
 
 			return PackageMap->GetSingletonByClassRef(SingletonClassRef);
 		}
 
-		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(*this);
+		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 		if (NetGUID.IsValid())
 		{
 			UObject* Value = PackageMap->GetObjectFromNetGUID(NetGUID, true);
@@ -36,9 +36,9 @@ UObject* FUnrealObjectRef::ToObjectPtr(USpatialPackageMapClient* PackageMap, boo
 				// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
 				// So we do the same.
 				FString FullPath;
-				SpatialGDK::GetFullPathFromUnrealObjectReference(*this, FullPath);
+				SpatialGDK::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
 				UE_LOG(LogUnrealObjectRef, Verbose, TEXT("Object ref did not map to valid object. Streaming level not loaded or actor deleted. Will be set to nullptr: %s %s"),
-					*ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
+					*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
 			}
 
 			return Value;
@@ -119,7 +119,7 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 				}
 
 				// Unresolved object. 
-				UE_LOG(LogUnrealObjectRef, /*TODO: Verbose*/Warning, TEXT("FUnrealObjectRef::FromObjectPtr: ObjectValue is unresolved! %s"), *ObjectValue->GetName());
+				UE_LOG(LogUnrealObjectRef, Verbose, TEXT("FUnrealObjectRef::FromObjectPtr: ObjectValue is unresolved! %s"), *ObjectValue->GetName());
 				ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 			}
 		}
