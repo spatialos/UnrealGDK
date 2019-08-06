@@ -123,7 +123,7 @@ public:
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bCheckRPCOrder;
 
-	/** Seconds to wait before executing an RPC substituting null values for unresoled parameters */
+	/** Seconds to wait before executing a received RPC substituting nullptr for unresolved UObjects*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	float SecondsToProcessRPCWithUnresolvedRefs;
 
