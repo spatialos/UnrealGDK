@@ -1,4 +1,4 @@
-// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
+
 
 #include "SSpatialOutputLog.h"
 #include "Framework/Text/TextRange.h"
@@ -26,6 +26,7 @@
 #include "Misc/FileHelper.h"
 #include "DirectoryWatcherModule.h"
 #include "Modules/ModuleManager.h"
+#include "SpatialGDKServicesModule.h"
 
 #define LOCTEXT_NAMESPACE "SSpatialOutputLog"
 
@@ -221,7 +222,7 @@ void FSpatialOutputLogTextLayoutMarshaller::MarkMessagesCacheAsDirty()
 	bNumMessagesCacheDirty = true;
 }
 
-FSpatialOutputLogTextLayoutMarshaller::FSpatialOutputLogTextLayoutMarshaller(TArray< TSharedPtr<FSpatialLogMessage> > InMessages, FSpatialLogFilter* InFilter)
+FSpatialOutputLogTextLayoutMarshaller::FSpatialOutputLogTextLayoutMarshaller(TArray<TSharedPtr<FSpatialLogMessage>> InMessages, FSpatialLogFilter* InFilter)
 	: Messages(MoveTemp(InMessages))
 	, CachedNumMessages(0)
 	, Filter(InFilter)
@@ -319,26 +320,9 @@ void SSpatialOutputLog::Construct( const FArguments& InArgs )
 			[
 				MessagesTextBox.ToSharedRef()
 			]
-
-			//// The console input box
-			//+SVerticalBox::Slot()
-			//.AutoHeight()
-			//.Padding(FMargin(0.0f, 4.0f, 0.0f, 0.0f))
-			//[
-			//	SNew(SBox)
-			//	.MaxDesiredHeight(180.0f)
-			//	[
-			//		SNew(SConsoleInputBox)
-			//		.OnConsoleCommandExecuted(this, &SSpatialOutputLog::OnConsoleCommandExecuted)
-
-			//		// Always place suggestions above the input line for the output log widget
-			//		.SuggestionListPlacement(MenuPlacement_AboveAnchor)
-			//	]
-			//]
 		]
 	];
 
-	// GLog->AddOutputDevice(this);
 	// Remove itself on crash (crashmalloc has limited memory and echoing logs here at that point is useless).
 	FCoreDelegates::OnHandleSystemError.AddRaw(this, &SSpatialOutputLog::OnCrash);
 
@@ -352,22 +336,6 @@ END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 void SSpatialOutputLog::WatchLogFile()
 {
-	//// Find and open the spatialD log file.
-	//// TODO: Get this log file properly
-	//FString SpatialDLogPath = TEXT("F:/UnrealEngine422/Samples/UnrealGDKExampleProject/spatial/logs/testing/locallaunch_log.log");
-	//FString LogData = "";
-	//FFileHelper::LoadFileToString(LogData, *SpatialDLogPath);
-
-	//TArray<FString> LogLines;
-	//// TODO: This is apparently inefficient
-	//int32 lineCount = LogData.ParseIntoArray(LogLines, TEXT("\n"), true);
-
-	//for(FString LogLine : LogLines)
-	//{
-	//	// TODO: We need a better way of getting the log categories and shit here.
-	//	Serialize(*LogLine, ELogVerbosity::Display, FName(TEXT("TestName")));
-	//}
-
 	ReadLogFile();
 
 	StartUpLogDirectoryWatcher();
@@ -414,8 +382,9 @@ void SSpatialOutputLog::ReadLogFile()
 	FFileHelper::BufferToString(Result, Ch, Size);
 
 	TArray<FString> LogLines;
-	// TODO: This is apparently inefficient
-	int32 lineCount = Result.ParseIntoArray(LogLines, TEXT("\n"), true);
+
+	//// TODO: This is apparently inefficient
+	//int32 lineCount = Result.ParseIntoArray(LogLines, TEXT("\n"), true);
 
 	for (FString LogLine : LogLines)
 	{
@@ -494,8 +463,8 @@ void SSpatialOutputLog::TailLogFile()
 
 	TArray<FString> LogLines;
 
-	// TODO: This is apparently inefficient
-	int32 lineCount = Result.ParseIntoArray(LogLines, TEXT("\n"), true);
+	//// TODO: This is apparently inefficient
+	//int32 lineCount = Result.ParseIntoArray(LogLines, TEXT("\n"), true);
 
 	for (FString LogLine : LogLines)
 	{
@@ -552,6 +521,47 @@ void SSpatialOutputLog::StartUpLogDirectoryWatcher()
 	}
 }
 
+void SSpatialOutputLog::ShutdownLogDirectoryWatcher()
+{
+
+}
+
+void SSpatialOutputLog::ChangeLogFolder(FString LogFolderPath)
+{
+	ShutdownLogDirectoryWatcher();
+	FString LogDir = GetNewLogFolder();
+	StartUpLogDirectoryWatcher();
+}
+
+// Call this when a new local deployment has been started.
+FString SSpatialOutputLog::GetNewLogFolder()
+{
+	// Get the spatial logs local deployment folder
+	const FString RootLogDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("logs/localdeployment"));
+
+	// List all folders
+	IFileManager& FileManager = IFileManager::Get();
+
+	FString FinalPath = RootLogDir / TEXT("*");
+	TArray<FString> Folders;
+	FileManager.FindFiles(Folders, *FinalPath, false, true);
+
+	FString NewestLogDir;
+	FDateTime NewestLogDirModTime;
+
+	// Get the one that was modified most recently
+	for (FString Folder : Folders)
+	{
+		FFileStatData StatData = FileManager.GetStatData(*Folder);
+		if (StatData.ModificationTime < NewestLogDirModTime)
+		{
+			NewestLogDir = Folder;
+		}
+	}
+
+	return NewestLogDir;
+}
+
 void SSpatialOutputLog::OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
 {
 	UE_LOG(LogTemp, Display, TEXT("Log files updated."));
@@ -560,19 +570,11 @@ void SSpatialOutputLog::OnLogDirectoryChanged(const TArray<FFileChangeData>& Fil
 
 SSpatialOutputLog::~SSpatialOutputLog()
 {
-	//if (GLog != nullptr)
-	//{
-	//	GLog->RemoveOutputDevice(this);
-	//}
 	FCoreDelegates::OnHandleSystemError.RemoveAll(this);
 }
 
 void SSpatialOutputLog::OnCrash()
 {
-	//if (GLog != nullptr)
-	//{
-	//	GLog->RemoveOutputDevice(this);
-	//}
 }
 
 bool SSpatialOutputLog::CreateLogMessages( const TCHAR* V, ELogVerbosity::Type Verbosity, const class FName& Category, TArray< TSharedPtr<FSpatialLogMessage> >& OutMessages )
@@ -659,7 +661,6 @@ bool SSpatialOutputLog::CreateLogMessages( const TCHAR* V, ELogVerbosity::Type V
 	}
 }
 
-//TODO: Make a file tail thing and on each new line call 'Serialize' with a new custom MessagesTextMarshaller. 
 void SSpatialOutputLog::Serialize(const TCHAR* V, ELogVerbosity::Type Verbosity, const class FName& Category)
 {
 	if ( MessagesTextMarshaller->AppendMessage(V, Verbosity, Category) )
