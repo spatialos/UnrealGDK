@@ -13,13 +13,15 @@ using FPendingRPCParamsPtr = TUniquePtr<FPendingRPCParams>;
 DECLARE_DELEGATE_RetVal_OneParam(bool, FProcessRPCDelegate, const FPendingRPCParams&)
 
 struct FPendingRPCParams
-{
+{ 
 	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload, int InReliableRPCIndex = 0);
 
 	// TODO: UNR-1653 Redesign bCheckRPCOrder Tests functionality
 	int ReliableRPCIndex;
 	FUnrealObjectRef ObjectRef;
 	SpatialGDK::RPCPayload Payload;
+
+	FDateTime Timestamp;
 };
 
 class FRPCContainer
@@ -38,4 +40,5 @@ private:
 	static bool ApplyFunction(const FProcessRPCDelegate& FunctionToApply, const FPendingRPCParams& Params);
 
 	RPCContainerType QueuedRPCs;
+	static const int32 SECONDS_TO_DROP_RPC = 5;
 };

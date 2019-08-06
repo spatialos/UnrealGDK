@@ -10,6 +10,7 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 	: ReliableRPCIndex(InReliableRPCIndex)
 	, ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
+	, Timestamp(FDateTime::Now())
 {
 }
 
@@ -69,5 +70,21 @@ bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, E
 
 bool FRPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, const FPendingRPCParams& Params)
 {
-	return FunctionToApply.Execute(Params);
+	if(FunctionToApply.Execute(Params))
+	{
+		return true;
+	}
+	else
+	{
+		FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
+		bool bDropRPC = TimeDiff.GetSeconds() > SECONDS_TO_DROP_RPC;
+		if (bDropRPC)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
 }
