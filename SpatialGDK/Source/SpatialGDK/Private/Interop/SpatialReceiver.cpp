@@ -1494,8 +1494,7 @@ bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, cons
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
 
-	if ((UnresolvedRefs.Num() == 0)
-		|| bApplyWithUnresolvedRefs)
+	if ((UnresolvedRefs.Num() == 0) || bApplyWithUnresolvedRefs)
 	{
 		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 		{
@@ -1540,9 +1539,10 @@ bool USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	}
 
 	bool bApplyWithUnresolvedRefs = false;
-	const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
-	if (GetDefault<USpatialGDKSettings>()->SecondsToProcessRPCWithUnresolvedRefs > TimeDiff.GetTotalSeconds())
+	const double TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
+	if (GetDefault<USpatialGDKSettings>()->SecondsToProcessRPCWithUnresolvedRefs > TimeDiff)
 	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing RPC %s::%s with unresolved references after %d seconds of queueing"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), TimeDiff);
 		bApplyWithUnresolvedRefs = true;
 	}
 
