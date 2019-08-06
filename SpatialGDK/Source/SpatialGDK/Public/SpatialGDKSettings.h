@@ -123,6 +123,10 @@ public:
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bCheckRPCOrder;
 
+	/** Seconds to wait before executing an RPC substituting null values for unresoled parameters */
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
+	float SecondsToProcessRPCWithUnresolvedRefs;
+
 	/** Batch entity position updates to be processed on a single frame.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bBatchSpatialPositionUpdates;

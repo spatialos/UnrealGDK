@@ -22,7 +22,6 @@ struct FPendingRPCParams
 	SpatialGDK::RPCPayload Payload;
 
 	FDateTime Timestamp;
-	bool bApplyWithUnresolvedRefs;
 };
 
 class FRPCContainer
@@ -41,5 +40,4 @@ private:
 	static bool ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParams& Params);
 
 	RPCContainerType QueuedRPCs;
-	static const int32 SECONDS_TO_DROP_RPC = 4;
 };

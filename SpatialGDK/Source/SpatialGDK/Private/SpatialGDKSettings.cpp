@@ -30,6 +30,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MetricsReportRate(2.0f)
 	, bUseFrameTimeAsLoad(false)
 	, bCheckRPCOrder(false)
+	, SecondsToProcessRPCWithUnresolvedRefs(1.0f)
 	, bBatchSpatialPositionUpdates(true)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, bEnableServerQBI(bUsingQBI)

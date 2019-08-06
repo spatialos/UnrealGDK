@@ -1539,7 +1539,14 @@ bool USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		return false;
 	}
 
-	return ApplyRPC(TargetObjectWeakPtr.Get(), Function, Params.Payload, FString{}, Params.bApplyWithUnresolvedRefs);
+	bool bApplyWithUnresolvedRefs = false;
+	const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
+	if (GetDefault<USpatialGDKSettings>()->SecondsToProcessRPCWithUnresolvedRefs > TimeDiff.GetTotalSeconds())
+	{
+		bApplyWithUnresolvedRefs = true;
+	}
+
+	return ApplyRPC(TargetObjectWeakPtr.Get(), Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
