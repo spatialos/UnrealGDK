@@ -4,7 +4,8 @@
 For more information on multiserver zoning, follow our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) pages.")%>	
 
 
-> **This tutorial uses the Example Project from the GDK's [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro).**</br>
+> **This tutorial uses the Example Project from the GDK's [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro).
+> You'll want to begin this tutorial by switching over to the `multiserver-tutorial-start` branch to follow along with the code samples. The `release` branch of this project contains a completed version of this tutorial.**</br>
 
 <br/>
 <br/>
