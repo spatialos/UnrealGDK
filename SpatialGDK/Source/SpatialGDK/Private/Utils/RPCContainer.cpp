@@ -63,7 +63,7 @@ namespace
 
 	void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params, bool DroppingRPC)
 	{
-		FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
+		const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
 
 		// The format is expected to be:
 		// Function <objectName>::<functionName> queued on server/client for sending/execution (and dropped). Reason: <reason>
