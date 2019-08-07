@@ -30,7 +30,7 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. Using `git log`, take note of the latest commit hash.
 1. `git checkout -b x.y.z-rc` in order to create release candidate branch.
 1. Open `CHANGELOG.md`, which is in the root of the repository.
-1. Read **every** release note in the `Unreleased` section. Ensure that they make sense, they conform to [how-to-write-good-release-notes.md ](https://github.com/spatialos/UnrealGDK/blob/master/SpatialGDK/Extras/internal-documentation/how-to-write-good-release-notes.md) structure.
+1. Read **every** release note in the `Unreleased` section. Ensure that they make sense, they conform to [how-to-write-good-release-notes.md](https://github.com/spatialos/UnrealGDK/blob/master/SpatialGDK/Extras/internal-documentation/how-to-write-good-release-notes.md) structure.
 1. Compare `master` to `release` using the GitHub UI and ensure that every change that requires a release note has one.
 1. Enter the release version and planned date of release in a `##` block. Move the `Unreleased` section above this.
     - Look at the previous release versions in the changelog to see how this should be done.
