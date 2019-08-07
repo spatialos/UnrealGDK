@@ -10,7 +10,7 @@ In addition, you can integrate systems from outside the game instance, such as i
 
 The diagram below shows how SpatialOS and the GDK fit into a typical multiplayer game stack:
 
-<%(Lightbox image="{{assetRoot}}assets/diagrams/architecture-of-spatialos-gdk-for-unreal-game.jpg")%>
+<%(Lightbox image="{{assetRoot}}assets/tech-overview/architecture-of-spatialos-gdk-for-unreal-game.jpg")%><br>
 _The GDK provides a networking integration with SpatialOS, which enables Unreal Engine 4 clients and servers to communicate with the SpatialOS Runtime to synchronize state._
 
 You upload your built-out UE4 server binaries to SpatialOS, which runs them as part of a deployment. You can also upload clients to SpatialOS and distribute them to players using the [SpatialOS Launcher]({{urlRoot}}/content/glossary#launcher) for early playtesting.
@@ -22,7 +22,7 @@ In Unreal, game clients communicate with the game server using Unreal’s networ
 
 When we forked Unreal Engine, we extended Unreal’s `UIpNetDriver` (which orchestrates replication) to create a `USpatialNetDriver`. This handles the connection between the GDK and SpatialOS, and translates Unreal’s native replication updates and RPCs into instructions that SpatialOS can follow. We do this by using the `UnrealHeaderTool` to generate reflection data that we then turn into the SpatialOS data format called schema.
 
-<%(Lightbox image="{{assetRoot}}assets/screen-grabs/networking-switch.jpg")%>
+<%(Lightbox image="{{assetRoot}}assets/tech-overview/networking-switch.png")%><br>
 _Use the Unreal Editor toolbar networking switch to swap out native Unreal networking and swap in SpatialOS networking._
 
 The SpatialOS model differs significantly from Unreal Engine when it comes to replicating an Actor. We don't replicate Actors to each player individually, as Unreal would. Instead, we update the game instance running in the cloud, and it’s SpatialOS which handles distributing this data to connected clients, so data is not sent multiple times to each interested client.

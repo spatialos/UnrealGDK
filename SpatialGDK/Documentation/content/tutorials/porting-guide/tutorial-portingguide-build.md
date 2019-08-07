@@ -9,7 +9,7 @@ Before you open your project in the Editor you need to:
 * Add the SpatialGDK module to your project
 * Build your project using Visual Studio
 
-<!--- **Note:**  If you built the Unreal Engine Fork manually, you must clone and set up the GDK plugin by following the [manual GDK installation instructions]({{urlRoot}}/content/manual-engine-build#installing-the-spatialos-gdk-for-unreal) before you follow the rest of this guide.</br> --->
+<!--- **Note:**  If you built the Unreal Engine fork manually, you must clone and set up the GDK plugin by following the [manual GDK installation instructions]({{urlRoot}}/content/manual-engine-build#installing-the-spatialos-gdk-for-unreal) before you follow the rest of this guide.</br> --->
 
 ## Step 1: Add the SpatialGDK module to your project
 
@@ -38,13 +38,13 @@ For example:
 
 ## Step 2: Build your project
 
-Set up your Unreal project to work with the GDK Unreal Engine Fork, which you cloned and installed in the [Before you start]({{urlRoot}}/content/tutorials/tutorial-porting-guide#before-you-start) section. 
+Set up your Unreal project to work with the GDK Unreal Engine fork, which you cloned and installed in the [Before you start]({{urlRoot}}/content/tutorials/tutorial-porting-guide#before-you-start) section. 
 
 To do this:
 
 1. In **File Explorer**, navigate to `<ProjectRoot>\<GameRoot>`.
 1. Right-click your `<YourProject>.uproject` file and select **Switch Unreal Engine version**.
-1. Select the path to the Unreal Engine fork you cloned earlier. This associates your project with the Unreal Engine Fork and automatically generates a Visual Studio solution file for your project called `<YourProject.sln>`
+1. Select the path to the Unreal Engine fork you cloned earlier. This associates your project with the Unreal Engine fork and automatically generates a Visual Studio solution file for your project called `<YourProject.sln>`
 1. In the same directory, double-click `<YourProject>`.sln to open it with Visual Studio.
 1. On the Visual Studio toolbar, set your Solution configuration to **Development Editor**. <br/>
 ![GDK for Unreal Documentation]({{assetRoot}}assets/porting-guide/porting-solution-config.png)<br/>

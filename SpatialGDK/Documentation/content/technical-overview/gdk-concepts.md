@@ -24,7 +24,7 @@ We’ve introduced some new concepts to facilitate the fact that SpatialOS enabl
 ### Offloading
 Offloading is the new architecture that the SpatialOS GDK for Unreal provides to allocate the authority of specific Actor groups from the main Unreal server worker instance to a different worker instance. By using offloading, you can save the resources of the main Unreal server-worker instance when you want to build richer game features.
 
-<%(Lightbox image="{{assetRoot}}assets/offloading-diagram.png")%>
+<%(Lightbox image="{{assetRoot}}assets/offloading-diagram.png")%><br>
 _Offloading: Offloaded Unreal server-worker instance has authority only over Red Actors and the Main Unreal server-worker instance that runs major game systems has authority over all Actors except the Red Actors._
 
 For more information, see [Offloading overview]({{urlRoot}}/content/workers/offloading-concept).
@@ -50,7 +50,7 @@ When Player 1 shoots at Player 2, the server-worker instance that has authority 
 
 SpatialOS sends this to the server-worker instance that has authority over Player 2 (server-worker B). Server-worker B then executes the RPC.
 
-<%(Lightbox image="{{assetRoot}}assets/screen-grabs/shooting-across-boundaries.png")%>
+<%(Lightbox image="{{assetRoot}}assets/shooting-across-boundaries.png")%>
 _Cross-server RPC: Player 1’s action affects Player 2, even though they are in different areas of authority being updated by different server-worker instances._ 
 
 You set up a cross-server RPC in the same way as you would set up any other RPC within Unreal.

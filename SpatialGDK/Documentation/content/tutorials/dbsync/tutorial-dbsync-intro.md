@@ -15,7 +15,7 @@ This tutorial uses the GDK’s [Example Project](https://github.com/spatialos/Un
 Before starting this tutorial you _**must**_ follow:
 
 - [Get started 1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
-- [Get started 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+- [Get started 2 - Get and build the SpatialOS Unreal Engine fork]({{urlRoot}}/content/get-started/build-unreal-fork)
 
 This tutorial assumes that you are familiar with the basic development workflows of the GDK from the "Set up a project" guides: [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro), [Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro).
 
