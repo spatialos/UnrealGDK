@@ -183,7 +183,7 @@ private:
 	void RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object);
 
 	bool ApplyRPC(const FPendingRPCParams& Params);
-	bool ApplyRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);	
+	bool ApplyRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs = false);	
 
 	void ReceiveCommandResponse(const Worker_CommandResponseOp& Op);
 
