@@ -20,6 +20,8 @@ UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpati
 	{
 		if (ObjectRef.bSingletonRef)
 		{
+			// This is a singleton ref, which means it's just the UnrealObjectRef of the singleton class, with this boolean set.
+			// Unset it to get the original singleton class UnrealObjectRef, and look it up in the PackageMap.
 			FUnrealObjectRef SingletonClassRef = ObjectRef;
 			SingletonClassRef.bSingletonRef = false;
 
