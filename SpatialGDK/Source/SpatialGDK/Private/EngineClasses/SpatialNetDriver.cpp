@@ -1407,12 +1407,13 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 	}
 }
 
-USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, FUniqueNetIdRepl UniqueId, FName OnlinePlatformName, bool bExistingPlayer)
+bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn)
 {
-	bool bOk = true;
+	check(*OutConn == nullptr);
+	*OutConn = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
+	check(*OutConn != nullptr);
 
-	USpatialNetConnection* SpatialConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
-	check(SpatialConnection);
+	USpatialNetConnection* SpatialConnection = *OutConn;
 
 	// We create a "dummy" connection that corresponds to this player. This connection won't transmit any data.
 	// We may not need to keep it in the future, but for now it looks like path of least resistance is to have one UPlayer (UConnection) per player.
@@ -1446,71 +1447,77 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, FUn
 
 	FString ErrorMsg;
 	AGameModeBase* GameMode = GetWorld()->GetAuthGameMode();
-	if (GameMode)
-	{
-		GameMode->PreLogin(Tmp, SpatialConnection->LowLevelGetRemoteAddress(), SpatialConnection->PlayerId, ErrorMsg);
-	}
+	check(GameMode);
+
+	GameMode->PreLogin(Tmp, SpatialConnection->LowLevelGetRemoteAddress(), SpatialConnection->PlayerId, ErrorMsg);
 
 	if (!ErrorMsg.IsEmpty())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("PreLogin failure: %s"), *ErrorMsg);
-		bOk = false;
+		// TODO: Destroy connection. UNR-584
+		return false;
 	}
 
-	if (bOk)
+	SpatialConnection->SetClientWorldPackageName(GetWorld()->GetCurrentLevel()->GetOutermost()->GetFName());
+
+	FString RedirectURL;
+	GameMode->GameWelcomePlayer(SpatialConnection, RedirectURL);
+
+	return true;
+}
+
+void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName)
+{
+	USpatialNetConnection* SpatialConnection = nullptr;
+
+	if (!CreateSpatialNetConnection(InUrl, UniqueId, OnlinePlatformName, &SpatialConnection))
 	{
-		FString LevelName = GetWorld()->GetCurrentLevel()->GetOutermost()->GetName();
-		SpatialConnection->SetClientWorldPackageName(GetWorld()->GetCurrentLevel()->GetOutermost()->GetFName());
-
-		FString GameName;
-		FString RedirectURL;
-		if (GameMode)
-		{
-			GameName = GameMode->GetClass()->GetPathName();
-			GameMode->GameWelcomePlayer(SpatialConnection, RedirectURL);
-		}
-
-		if (!bExistingPlayer)
-		{
-			SpatialConnection->PlayerController = World->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, SpatialConnection->PlayerId, ErrorMsg);
-		}
-		else
-		{
-			// Most of this is taken from "World->SpawnPlayActor", excluding the logic to spawn a pawn which happens during
-			// GameMode->PostLogin(...).
-			APlayerController* NewPlayerController = GameMode->SpawnPlayerController(ROLE_AutonomousProxy, UrlString);
-
-			// Destroy the player state (as we'll be replacing it anyway).
-			NewPlayerController->CleanupPlayerState();
-
-			// Possess the newly-spawned player.
-			NewPlayerController->NetPlayerIndex = 0;
-			NewPlayerController->Role = ROLE_Authority;
-			NewPlayerController->SetReplicates(true);
-			NewPlayerController->SetAutonomousProxy(true);
-			NewPlayerController->SetPlayer(SpatialConnection);
-			// We explicitly don't call GameMode->PostLogin(NewPlayerController) here, to avoid the engine restarting the player.
-			// TODO: Should we call AGameSession::PostLogin? - UNR:583
-			// TODO: Should we trigger to blueprints that a player has "joined" via GameMode->K2_PostLogin(Connection)? - UNR:583
-
-			SpatialConnection->PlayerController = NewPlayerController;
-		}
-
-		if (SpatialConnection->PlayerController == NULL)
-		{
-			// Failed to connect.
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Join failure: %s"), *ErrorMsg);
-			SpatialConnection->FlushNet(true);
-			bOk = false;
-		}
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to create SpatialNetConnection!"));
+		return;
 	}
 
-	if (!bOk)
+	FString ErrorMsg;
+	SpatialConnection->PlayerController = GetWorld()->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, SpatialConnection->PlayerId, ErrorMsg);
+
+	if (SpatialConnection->PlayerController == nullptr)
 	{
-		// TODO: Destroy connection. UNR:584
+		// Failed to connect.
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Join failure: %s"), *ErrorMsg);
+		SpatialConnection->FlushNet(true);
+	}
+}
+
+// This function is called for server workers who received the PC over the wire
+void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerController, const FString& WorkerAttribute)
+{
+	check(PlayerController != nullptr);
+	checkf(!WorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
+
+	PlayerController->SetFlags(GetFlags() | RF_Transient);
+
+	FString URLString = FURL().ToString();
+	URLString += TEXT("?workerAttribute=") + WorkerAttribute;
+
+	// We create a connection here so that any code that searches for owning connection, etc on the server
+	// resolves ownership correctly
+	USpatialNetConnection* OwnershipConnection = nullptr;
+	if (!CreateSpatialNetConnection(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), &OwnershipConnection))
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to create SpatialNetConnection!"));
+		return;
 	}
 
-	return bOk ? SpatialConnection : nullptr;
+	OwnershipConnection->PlayerController = PlayerController;
+
+	PlayerController->NetPlayerIndex = 0;
+	// We need to lie about our authority briefly here so that SetReplicates will succeed.
+	// In the case this is being called after receiving an actor over the wire, our authority is intended to be ROLE_SimulatedProxy.
+	// (It will get set immediately after this call in SpatialReceiver::CreateActor)
+	ENetRole OriginalRole = PlayerController->Role;
+	PlayerController->Role = ROLE_Authority;
+	PlayerController->SetReplicates(true);
+	PlayerController->Role = OriginalRole;
+	PlayerController->SetPlayer(OwnershipConnection);
 }
 
 bool USpatialNetDriver::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
