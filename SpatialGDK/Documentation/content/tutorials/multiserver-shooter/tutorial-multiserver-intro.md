@@ -31,7 +31,7 @@ To follow the Multiserver zoning shooter tutorial, you need to change your Examp
 To do this, open a terminal window, navigate to directory containing your cloned Example Project (this will be    `...\UnrealEngine\samples\UnrealGDKExampleProject`) and enter `git checkout -b multiserver-tutorial-start`.
 3. Open the project in Visual Studio.</br>
 To do this, in Windows Explorer, in the directory `...\UnrealEngine\samples\UnrealGDKExampleProject\Game`, double-click on `GDKShooter.sln`.
-4. In Visual Studio, select **Local Windows Debugger** in toolbar to open your project in the Unreal Editor.
+4. In Visual Studio, select **Local Windows Debugger** in the toolbar to open your project in the Unreal Editor.
 
 You can now get going setting up replication of health changes. 
 
