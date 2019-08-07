@@ -61,7 +61,7 @@ public:
 private:
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
-	bool IsServiceInCorrectDirectory(const FString& ServiceStatusResult);
+	bool IsServiceInCorrectDirectory();
 
 	static const int32 ExitCodeSuccess = 0;
 
