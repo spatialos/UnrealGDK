@@ -33,7 +33,7 @@ To do this, open a terminal window, navigate to directory containing your cloned
 To do this, in Windows Explorer, in the directory `...\UnrealEngine\samples\UnrealGDKExampleProject\Game`, double-click on `GDKShooter.sln`.
 4. In Visual Studio, select **Local Windows Debugger** in the toolbar to open your project in the Unreal Editor.
 
-You can now get going setting up replication of health changes. 
+You can now set up replication of health changes. 
 
 </br>
 </br>
