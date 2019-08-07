@@ -22,7 +22,7 @@ The tutorial demonstrates that the workflows and iteration speed you’re used t
 
 ### Change your branch of the Example Project 
 
-Before starting this tutorial you need to complete the [Example Project set up guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro). Following this, you clone or download and set up all the elements of the GDK and its dependencies, including the Example Project.
+Before starting this tutorial you need to complete the [Example Project setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro). Following this, you clone or download and set up all the elements of the GDK and its dependencies, including the Example Project.
 
 To follow the Multiserver zoning shooter tutorial, you need to change your Example Project branch from `release` (which is the default) to `multiserver-tutorial-start`. To do this:
 
