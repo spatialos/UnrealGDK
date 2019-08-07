@@ -189,13 +189,12 @@ public:
 	void Construct( const FArguments& InArgs );
 
 	void WatchLogFile();
+	void ReadLogFile(FString LogFilePath);
+	void TailLogFile(FString LogFilePath);
 
-	void ReadLogFile();
-	void TailLogFile();
-
-	void StartUpLogDirectoryWatcher();
-	void ShutdownLogDirectoryWatcher();
-	void ChangeLogFolder(FString LogFolderPath);
+	void StartUpLogDirectoryWatcher(FString LogDirectory);
+	void ShutdownLogDirectoryWatcher(FString LogDirectory);
+	void WatchLatestLogDirectory();
 	FString GetNewLogFolder();
 	void OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 	FDelegateHandle LogDirectoryChangedDelegateHandle;
@@ -306,6 +305,9 @@ private:
 
 	/** Forces re-population of the messages list */
 	void Refresh();
+
+	FString CurrentLogDir;
+	FString CurrentLogFile;
 
 public:
 	/** Visible messages filter */

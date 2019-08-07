@@ -27,6 +27,7 @@
 #include "DirectoryWatcherModule.h"
 #include "Modules/ModuleManager.h"
 #include "SpatialGDKServicesModule.h"
+#include "Async/Async.h"
 
 #define LOCTEXT_NAMESPACE "SSpatialOutputLog"
 
@@ -329,33 +330,45 @@ void SSpatialOutputLog::Construct( const FArguments& InArgs )
 	bIsUserScrolled = false;
 	RequestForceScroll();
 
+	FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices");
+
+	// TODO: Not sure about garbage collection shit here.
+	GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.AddLambda([this]
+	{
+		WatchLatestLogDirectory();
+	});
+
 	WatchLogFile();
 
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
+// TODO: This isn't super useful anymore
 void SSpatialOutputLog::WatchLogFile()
 {
-	ReadLogFile();
+	//FString SpatialDLogPath = TEXT("F:/UnrealEngine422/Samples/UnrealGDKExampleProject/spatial/logs/testing/locallaunch_log.log");
+	//FString SpatialDLogPath = TEXT("C:/Users/joshuahuburn/Projects/spatial-farm/spatial/logs/2019-08-02_14-14-51/runtime.log");
+	FString SpatialDLogPath = TEXT("C:/Users/joshuahuburn/AppData/Local/.improbable/spatiald/log/spatiald.log");
+	ReadLogFile(SpatialDLogPath);
 
-	StartUpLogDirectoryWatcher();
+	//FString LogDirectory = TEXT("F:/UnrealEngine422/Samples/UnrealGDKExampleProject/spatial/logs/testing");
+	//FString LogDirectory = TEXT("C:/Users/joshuahuburn/Projects/spatial-farm/spatial/logs/2019-08-02_14-14-51");
+	FString LogDirectory = TEXT("C:/Users/joshuahuburn/AppData/Local/.improbable/spatiald/log");
+	StartUpLogDirectoryWatcher(LogDirectory);
 }
 
 int32 SizeDifference;
 int32 OldSize;
 int32 NewSize;
 
-void SSpatialOutputLog::ReadLogFile()
+void SSpatialOutputLog::ReadLogFile(FString LogFilePath)
 {
 	// Read log file live.
 	FString Result;
-	//FString SpatialDLogPath = TEXT("F:/UnrealEngine422/Samples/UnrealGDKExampleProject/spatial/logs/testing/locallaunch_log.log");
-	//FString SpatialDLogPath = TEXT("C:/Users/joshuahuburn/Projects/spatial-farm/spatial/logs/2019-08-02_14-14-51/runtime.log");
-	FString SpatialDLogPath = TEXT("C:/Users/joshuahuburn/AppData/Local/.improbable/spatiald/log/spatiald.log");
 
-	FScopedLoadingState ScopedLoadingState(*SpatialDLogPath);
+	FScopedLoadingState ScopedLoadingState(*LogFilePath);
 
-	TUniquePtr<FArchive> LogReader(IFileManager::Get().CreateFileReader(*SpatialDLogPath, FILEREAD_AllowWrite));
+	TUniquePtr<FArchive> LogReader(IFileManager::Get().CreateFileReader(*LogFilePath, FILEREAD_AllowWrite));
 
 	if (!LogReader)
 	{
@@ -383,8 +396,8 @@ void SSpatialOutputLog::ReadLogFile()
 
 	TArray<FString> LogLines;
 
-	//// TODO: This is apparently inefficient
-	//int32 lineCount = Result.ParseIntoArray(LogLines, TEXT("\n"), true);
+	// TODO: This is apparently inefficient
+	int32 lineCount = Result.ParseIntoArray(LogLines, TEXT("\n"), true);
 
 	for (FString LogLine : LogLines)
 	{
@@ -418,17 +431,14 @@ void SSpatialOutputLog::ReadLogFile()
 	FMemory::Free(Ch);
 }
 
-void SSpatialOutputLog::TailLogFile()
+void SSpatialOutputLog::TailLogFile(FString LogFilePath)
 {
 	// Read log file live.
 	FString Result;
-	//FString SpatialDLogPath = TEXT("F:/UnrealEngine422/Samples/UnrealGDKExampleProject/spatial/logs/testing/locallaunch_log.log");
-	//FString SpatialDLogPath = TEXT("C:/Users/joshuahuburn/Projects/spatial-farm/spatial/logs/2019-08-02_14-14-51/runtime.log");
-	FString SpatialDLogPath = TEXT("C:/Users/joshuahuburn/AppData/Local/.improbable/spatiald/log/spatiald.log");
 
-	FScopedLoadingState ScopedLoadingState(*SpatialDLogPath);
+	FScopedLoadingState ScopedLoadingState(*LogFilePath);
 
-	TUniquePtr<FArchive> LogReader(IFileManager::Get().CreateFileReader(*SpatialDLogPath, FILEREAD_AllowWrite));
+	TUniquePtr<FArchive> LogReader(IFileManager::Get().CreateFileReader(*LogFilePath, FILEREAD_AllowWrite));
 
 	if (!LogReader)
 	{
@@ -463,8 +473,8 @@ void SSpatialOutputLog::TailLogFile()
 
 	TArray<FString> LogLines;
 
-	//// TODO: This is apparently inefficient
-	//int32 lineCount = Result.ParseIntoArray(LogLines, TEXT("\n"), true);
+	// TODO: This is apparently inefficient
+	int32 lineCount = Result.ParseIntoArray(LogLines, TEXT("\n"), true);
 
 	for (FString LogLine : LogLines)
 	{
@@ -499,38 +509,54 @@ void SSpatialOutputLog::TailLogFile()
 	OldSize = NewSize;
 }
 
-void SSpatialOutputLog::StartUpLogDirectoryWatcher()
+void SSpatialOutputLog::StartUpLogDirectoryWatcher(FString LogDirectory)
 {
-	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-	if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
+	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
 	{
-		// Watch the log directory for changes.
-		//FString LogDirectory = TEXT("F:/UnrealEngine422/Samples/UnrealGDKExampleProject/spatial/logs/testing");
-		//FString LogDirectory = TEXT("C:/Users/joshuahuburn/Projects/spatial-farm/spatial/logs/2019-08-02_14-14-51");
-		FString LogDirectory = TEXT("C:/Users/joshuahuburn/AppData/Local/.improbable/spatiald/log");
+		FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
+		if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
+		{
+			// Watch the log directory for changes.
+			if (FPaths::DirectoryExists(LogDirectory))
+			{
+				LogDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &SSpatialOutputLog::OnLogDirectoryChanged);
+				DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegate, LogDirectoryChangedDelegateHandle);
+				CurrentLogDir = LogDirectory;
 
-		if (FPaths::DirectoryExists(LogDirectory))
-		{
-			LogDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &SSpatialOutputLog::OnLogDirectoryChanged);
-			DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegate, LogDirectoryChangedDelegateHandle);
+				// TODO: Use Launch.log instead
+				CurrentLogFile = FPaths::Combine(LogDirectory, TEXT("runtime.log"));
+				NewSize = 0;
+				OldSize = 0;
+				SizeDifference = 0;
+
+				ReadLogFile(CurrentLogFile);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Log directory does not exist!"));
+			}
 		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("Log directory does not exist!"));
-		}
-	}
+	});
 }
 
-void SSpatialOutputLog::ShutdownLogDirectoryWatcher()
+void SSpatialOutputLog::ShutdownLogDirectoryWatcher(FString LogDirectory)
 {
-
+	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
+	{
+		FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
+		if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
+		{
+			// TODO: Logging and bool check.
+			DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegateHandle);
+		}
+	});
 }
 
-void SSpatialOutputLog::ChangeLogFolder(FString LogFolderPath)
+void SSpatialOutputLog::WatchLatestLogDirectory()
 {
-	ShutdownLogDirectoryWatcher();
-	FString LogDir = GetNewLogFolder();
-	StartUpLogDirectoryWatcher();
+	ShutdownLogDirectoryWatcher(CurrentLogDir);
+	FString NewLogDir = GetNewLogFolder();
+	StartUpLogDirectoryWatcher(NewLogDir);
 }
 
 // Call this when a new local deployment has been started.
@@ -552,10 +578,11 @@ FString SSpatialOutputLog::GetNewLogFolder()
 	// Get the one that was modified most recently
 	for (FString Folder : Folders)
 	{
-		FFileStatData StatData = FileManager.GetStatData(*Folder);
-		if (StatData.ModificationTime < NewestLogDirModTime)
+		FString FullLogDir = FPaths::Combine(RootLogDir, Folder);
+		FFileStatData StatData = FileManager.GetStatData(*FullLogDir);
+		if (StatData.ModificationTime > NewestLogDirModTime)
 		{
-			NewestLogDir = Folder;
+			NewestLogDir = FullLogDir;
 		}
 	}
 
@@ -565,7 +592,7 @@ FString SSpatialOutputLog::GetNewLogFolder()
 void SSpatialOutputLog::OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
 {
 	UE_LOG(LogTemp, Display, TEXT("Log files updated."));
-	TailLogFile();
+	TailLogFile(CurrentLogFile);
 }
 
 SSpatialOutputLog::~SSpatialOutputLog()
