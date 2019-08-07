@@ -28,7 +28,7 @@ To follow the Multiserver zoning shooter tutorial, you need to change your Examp
 
 1. If you have Unreal Editor open, close it.
 2. In GitHub, change your Example Project branch to `multiserver-tutorial-start`.</br>
-To do this, open a terminal window, navigate to directory containing your cloned Example Project  - this will be    `...\UnrealEngine\samples\UnrealGDKExampleProject` and enter `git checkout -b multiserver-tutorial-start`.
+To do this, open a terminal window, navigate to directory containing your cloned Example Project (this will be    `...\UnrealEngine\samples\UnrealGDKExampleProject`) and enter `git checkout -b multiserver-tutorial-start`.
 3. Open the project in Visual Studio.</br>
 To do this, in Windows Explorer, in the directory `...\UnrealEngine\samples\UnrealGDKExampleProject\Game`, double-click on `GDKShooter.sln`.
 4. In Visual Studio, select **Local Windows Debugger** in toolbar to open your project in the Unreal Editor.
