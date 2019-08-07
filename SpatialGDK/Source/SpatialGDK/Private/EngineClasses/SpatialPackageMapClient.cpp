@@ -243,8 +243,7 @@ Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* O
 
 AActor* USpatialPackageMapClient::GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef)
 {
-	UClass* SingletonClass = Cast<UClass>(GetObjectFromUnrealObjectRef(SingletonClassRef));
-	if (SingletonClass != nullptr)
+	if (UClass* SingletonClass = Cast<UClass>(GetObjectFromUnrealObjectRef(SingletonClassRef)))
 	{
 		TArray<AActor*> FoundActors;
 		UGameplayStatics::GetAllActorsOfClass(NetDriver->World, SingletonClass, FoundActors);
