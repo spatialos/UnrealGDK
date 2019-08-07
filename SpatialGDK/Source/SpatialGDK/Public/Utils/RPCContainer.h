@@ -21,7 +21,7 @@ struct FPendingRPCParams
 	FUnrealObjectRef ObjectRef;
 	SpatialGDK::RPCPayload Payload;
 
-	FDateTime Timestamp;
+	FDateTime QueuedTimestamp;
 };
 
 class FRPCContainer

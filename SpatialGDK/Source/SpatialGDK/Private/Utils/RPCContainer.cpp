@@ -10,7 +10,7 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 	: ReliableRPCIndex(InReliableRPCIndex)
 	, ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
-	, Timestamp(FDateTime::Now())
+	, QueuedTimestamp(FDateTime::Now())
 {
 }
 
