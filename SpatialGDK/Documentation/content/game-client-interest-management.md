@@ -3,14 +3,14 @@
 
 The GDK uses [interest]({{urlRoot}}/content/glossary#interest) to control the information that [game clients]({{urlRoot}}/content/glossary#client-workers) receive about the world around them.
 
-Game clients need information about Actors that they don’t own (see the Unreal documentation on [owning](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections)) to help them to correctly manipulate the Actors that they _do_ own, and to render the SpatialOS world. Interest enables game clients to receive the relevant information.
+Game clients need information about Actors that they don’t own (see the Unreal documentation on [owning connections](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections)) to help them to correctly manipulate the Actors that they _do_ own, and to render the SpatialOS world. Interest enables game clients to receive the relevant information.
 
 You can define your game client’s interest in three ways, which you can use alongside each other:
 
 * **`NetCullDistanceSquared`**<br>
-A property that you define on an Actor’s class. For any Actor of that class or a derived class, game clients whose players are within the distance you specify receive updates about the Actor.<br>
+A property defined on an Actor's class. For any instance of an Actor of that class or a derived class, game clients whose players are within the distance specified receive updates about the Actor.<br>
 * **`ActorInterestComponent`**<br>
-An Unreal Actor component that you add to an Actor that a game client might own. This includes Actors that are possessed by Actors that the game client owns. For example, if a game client owns a PlayerController, and the PlayerController possesses a Pawn, then the game client owns the Pawn.
+An Unreal Actor component that you add to an Actor that a game client might own. This includes the game client's PlayerController, the Pawn that the PlayerController is possessing, and any Actor that the possessed Pawn owns.
 
     Within this component, you provide a list of queries that express the Actors that you want the game client to receive updates about. This is a more granular way of setting up interest than `NetCullDistanceSquared`.<br>
 * **`AlwaysInterested`**<br>
@@ -19,7 +19,7 @@ A `UPROPERTY` that you add to an Actor that a game client might own. It refers t
 > **Tip**: All three ways of defining interest can coexist. However, if you've specified all of the interest in your game using `ActorInterestComponent` and `AlwaysInterested`, you can turn off `NetCullDistanceSquared` using the toggle in `ActorInterestComponent`.
 
 ## NetCullDistanceSquared
-You can define a distance using `NetCullDistanceSquared` on an Actor class. Game clients whose players are within this distance of an Actor of this class receive updates about the Actor. By default, this distance is 150 meters for all Actor classes.
+`NetCullDistanceSquared` is a value on an Actor class that defines a distance. Game clients whose players are within this distance of an Actor of this class receive updates about the Actor. By default, this distance is 150 meters for all Actor classes.
 
 To change an Actor class’s `NetCullDistanceSquared` value, open the Actor class's Blueprint and go to the Class Defaults tab. Net Cull Distance Squared is in the Replication section:
 
@@ -29,7 +29,7 @@ To change an Actor class’s `NetCullDistanceSquared` value, open the Actor clas
 > **Tip**: You need to convert your chosen number of meters into centimeters, square it, and then enter the resulting value. For example, to set a distance of 150 meters, you need to enter 225000000 (like in the screenshot above).
 
 ### Example 
-If you set the `NetCullDistanceSquared` to 200 meters for all Characters, game clients receive updates about Characters that are within 200 meters of their own player.
+In your game you have an Actor Blueprint called `PlayerCharacter`, which represents players within your game. If you set `PlayerCharacter`'s `NetCullDistanceSquared` to 200 meters, then all game clients will receive updates about all `PlayerCharacter`s that are within 200 meters of their own player.
 
 And if you set the `NetCullDistanceSquared` to 400 meters for vehicles, game clients receive updates about vehicles within 400 meters of their player.
 
@@ -87,7 +87,7 @@ In the screenshot above, `ActorInterestComponent` has two queries, so the game c
 
 ## AlwaysInterested
 
-You might want a game client to always receive updates about some Actors, regardless of the positions of the player and of these Actors. For example, you might want the game client to always receive updates about an important landmark, or about other members of the player’s team. You can use the `AlwaysInterested` `UPROPERTY` specifier for this.
+You might want a game client to always receive updates about some specific Actors, regardless of the positions of the player and of these Actors. For example, you might want the game client to always receive updates about an important landmark, or about other members of the player’s team. You can use the `AlwaysInterested` `UPROPERTY` specifier for this.
 
 An `AlwaysInterested` `UPROPERTY` must:
 
