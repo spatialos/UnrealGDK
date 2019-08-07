@@ -43,7 +43,7 @@ You have now built Unreal Engine 4 with cross-compilation for Linux.
 
 ## Installing the SpatialOS GDK for Unreal
 
-If you built the Engine Fork manually, you need to add the GDK to your project's Plugins folder before using SpatialOS. 
+If you built the Engine fork manually, you need to add the GDK to your project's Plugins folder before using SpatialOS. 
 
 To do this: 
 

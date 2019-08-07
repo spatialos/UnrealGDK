@@ -8,7 +8,7 @@ Use this guide to set up the [Third-Person Shooter game](https://github.com/spat
 Before starting this, you need to have followed:
 
 * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
-* [Getting started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+* [Getting started: 2 - Get and build the GDK’s Unreal Engine fork]({{urlRoot}}/content/get-started/build-unreal-fork)
 
 ### Terms used on this page
 
