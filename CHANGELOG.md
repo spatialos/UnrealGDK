@@ -5,7 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
-- RPCs that have been queued for execution for more than 1 second (default value in SpatialGDKSettings WaitTimeBeforeProcessingReceivedRPC_WithUnresolvedRefs) are executed with unresolved parameters.
+- RPCs that have been queued for execution for more than 1 second (default value in SpatialGDKSettings QueuedIncomingRPCWaitTime) are executed with unresolved parameters.
 
 ## [`0.6.0`] - 2019-07-31
 
