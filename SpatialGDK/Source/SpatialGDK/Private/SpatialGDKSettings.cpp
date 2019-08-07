@@ -22,7 +22,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, OpsUpdateRate(1000.0f)
 	, bEnableHandover(true)
 	, MaxNetCullDistanceSquared(900000000.0f) // Set to twice the default Actor NetCullDistanceSquared (300m)
-	, WaitTimeBeforeProcessingReceivedRPC_WithUnresolvedRefs(1.0f)
+	, QueuedIncomingRPCWaitTime(1.0f)
 	, bUsingQBI(true)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)

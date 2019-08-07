@@ -88,8 +88,8 @@ public:
 	float MaxNetCullDistanceSquared;
 
 	/** Seconds to wait before executing a received RPC substituting nullptr for unresolved UObjects*/
-	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false))
-	float WaitTimeBeforeProcessingReceivedRPC_WithUnresolvedRefs;
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Wait Time Before Processing Received RPC With Unresolved Refs"))
+	float QueuedIncomingRPCWaitTime;
 
 	/** Query Based Interest is required for level streaming and the AlwaysInterested UPROPERTY specifier to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
