@@ -52,5 +52,5 @@ To build the GDK for Unreal you need the following software installed on your ma
 <br/>
 
 ------</br>
-_2019-08-03 Page updated with editorial review: text clarification only._
+_2019-08-08 Page updated with editorial review: text clarification only._
 _2019-07-22 Page updated with limited editorial review_
