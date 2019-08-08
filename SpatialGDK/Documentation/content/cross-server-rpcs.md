@@ -3,15 +3,17 @@
 
 In native-Unreal networking, [RPCs (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs) are functions which either the client or the server use to send messages to each other over a network connection. 
 
-Cross-server RPCs are a custom solution to take advantage of the SpatialOS distributed server architecture.
+Cross-server RPCs facilitate [zoning]({{urlRoot}}/content/glossary#zoning), which is one of the GDK's options for multiserver development.
 
-In Unreal’s native single-client architecture, your game server holds the canonical state of the whole game world. As there is a single game server, it has complete authority over all server Actors and so it is able to invoke and execute functions on Actors unhindered. 
+> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 
-In SpatialOS games, there can be more than one server; these multiple servers are known as “server-workers”. (Find out more about server-workers as well as “client-workers” in the [glossary]({{urlRoot}}/content/glossary#worker).) As a SpatialOS game runs across many server-workers, SpatialOS server-workers have the concept of “worker authority” - where only one server-worker at a time is able to invoke and execute functions on Actors. (Find out more about authority in the [glossary]({{urlRoot}}/content/glossary#authority).)
+In Unreal’s native single-server architecture, your game server holds the canonical state of the whole game world. As there is a single game server, it has complete authority over all server Actors and so it is able to invoke and execute functions on Actors unhindered. 
+
+In SpatialOS games, there can be more than one server; these multiple servers are known as “server-workers”. (Find out more about server-workers as well as “client-workers” in the [glossary]({{urlRoot}}/content/glossary#worker).) In a SpatialOS game that runs across many server-workers, SpatialOS server-workers have the concept of “worker authority” - where only one server-worker at a time is able to invoke and execute functions on Actors. (Find out more about authority in the [glossary]({{urlRoot}}/content/glossary#authority).)
 
 As Unreal expects there to be only one server, rather than several servers, the GDK has a custom solution to take advantage of the SpatialOS distributed server architecture. This involves handling the scenario where a server-worker attempts to invoke an RPC on an Actor that another server-worker has [authority]({{urlRoot}}/content/glossary#worker) over. This custom solution is the cross-server RPC. The GDK offers cross-server RPC in addition to support for the [native RPC types that Unreal provides (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs).
 
-When a cross-server RPC is invoked by a non-authoritative server-worker, SpatialOS routes the execution through the SpatialOS [Runtime]({{urlRoot}}/content/glossary#spatialos-runtime) to the authoritative server-worker - this authoritative server-worker executes the RPC.
+When a cross-server RPC is invoked by a server-worker, SpatialOS routes the execution through the SpatialOS [Runtime]({{urlRoot}}/content/glossary#spatialos-runtime) to the server-worker that has authority - this server-worker executes the RPC.
 
 The example diagram below shows a player successfully shooting another player’s hat across a server-worker boundary.
 
@@ -53,13 +55,13 @@ To set up a cross-server RPC in a Blueprint, follow the same instructions as you
 
 The tables below show where cross-server RPCs are executed based on where they were invoked. (To make it easier to follow, the tables use the same format as the [Unreal documentation on RPCs](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs#rpcinvokedfromtheserver).)
 
-#### Invoking a cross-server RPC from an authoritative server-worker
+#### Invoking a cross-server RPC from a server-worker that has authority over an Actor
 
 | **Actor ownership** | **Cross-server RPC**
 |-----------|---------
-| Client-owned Actor | Runs on the authoritative server-worker
-| Server-owned Actor | Runs on the authoritative server-worker
-| Unowned Actor | Runs on the authoritative server-worker
+| Client-owned Actor | Runs on the server-worker that has authority
+| Server-owned Actor | Runs on the server-worker that has authority
+| Unowned Actor | Runs on the server-worker that has authority
 
 #### Invoking a cross-server RPC from a client-worker
 

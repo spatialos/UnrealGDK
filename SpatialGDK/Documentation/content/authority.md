@@ -59,20 +59,20 @@ Actor on **non-owning client**:
 
 ## GDK authority
 
-As the GDK works with multiple [server-workers]({{urlRoot}}/content/glossary#worker), rather than a single server, authority needs to be dictated by SpatialOS so that authority is shared between server-workers. This means server-workers have authority over some Actors but don’t have authority over other Actors, depending on how SpatialOS assigns authority. **This is a key difference between the GDK and native Unreal networking!**
+Because you can use the GDK with multiple [server-workers instances]({{urlRoot}}/content/glossary#worker) using [zoning]({{urlRoot}}/content/glossary#zoning), SpatialOS needs to specify authority, so that it can allocate it appropriately between server-worker instances. This means that, when you use zoning, at any given moment, server-worker instances might have authority over only some Actors, depending on how SpatialOS assigns authority. **This is a key difference between the GDK and native Unreal networking!**
 
-> We use the term “authoritative” when a server-worker has authority over an Actor and “non-authoritative” when it doesn’t.
+> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 
-In the GDK, a server-worker is authoritative over an Actor if it has authority over the [schema]({{urlRoot}}/content/glossary#schema) [component]({{urlRoot}}/content/glossary#spatialos-component) `Position`. 
+In the GDK, a server-worker has authority over an Actor if it has authority over the [schema]({{urlRoot}}/content/glossary#schema) [component]({{urlRoot}}/content/glossary#spatialos-component) `Position`. 
 
-So, in the SpatialOS GDK multiserver scenario, authority looks like this:
+So, in the GDK multiserver scenario, authority looks like this:
 
-Actor on **authoritative server-worker**:
+Actor on **server-worker that has authority**:
 
 * `Role = ROLE_Authority`
 * `RemoteRole = ROLE_SimulatedProxy`
 
-Actor on **non-authoritative server-worker**:
+Actor on **server-worker that doesn't have authority**:
 
 * `Role = ROLE_SimulatedProxy`
 * `RemoteRole = ROLE_Authority`
@@ -82,16 +82,16 @@ Actor on **[client-worker]({{urlRoot}}/content/glossary#worker)**:
 * `Role = ROLE_SimulatedProxy`
 * `RemoteRole = ROLE_Authority`
 
-The GDK models owning connections using a schema component which represents the `ClientRPC`s. The worker authoritative over the `ClientRPC` schema [component]({{urlRoot}}/content/glossary#spatialos-component) is the client which owns the Actor.
+The GDK models owning connections using a schema component which represents the `ClientRPC`s. The worker that has authority over the `ClientRPC` schema [component]({{urlRoot}}/content/glossary#spatialos-component) is the client which owns the Actor.
 
-In the same example as above, with the `PlayerController`, `Character` and gun, the client-worker would be authoritative over the `ClientRPC` schema component on the `PlayerController`, `Character` and gun [entities]({{urlRoot}}/content/glossary#entity). Authority over this schema component dictates the assignment of `ROLE_AutonomousProxy`.
+In the same example as above, with the `PlayerController`, `Character` and gun, the client-worker would have authority over the `ClientRPC` schema component on the `PlayerController`, `Character` and gun [entities]({{urlRoot}}/content/glossary#entity). Authority over this schema component dictates the assignment of `ROLE_AutonomousProxy`.
 
-Actor on **authoritative server-worker** with an **owning connection**:
+Actor on **server-worker that has authority** with an **owning connection**:
 
 * `Role = ROLE_Authority`
 * `RemoteRole = ROLE_AutonomousProxy`
 
-Actor on **non-authoritative server-worker** with an **owning connection**:
+Actor on **server-worker that doesn't have authority** with an **owning connection**:
 
 * `Role = ROLE_SimulatedProxy`
 * `RemoteRole = ROLE_Authority`
