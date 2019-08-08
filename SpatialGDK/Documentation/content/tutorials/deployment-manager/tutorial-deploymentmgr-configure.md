@@ -61,7 +61,7 @@ In this example, you must tell the Deployment Manager:
 
 *  the type of client-worker it can deploy - `UnrealClient` for this example, but this can be any client type you have set up for your project
 * the number of deployments you want it to allow to run concurrently - 2 for this example
-* which worker assembly to use for the deployments - you created the name for this in step 2, above.
+* which assembly to use for the deployments - you created the name for this in step 2, above.
 
 Leave the other configuration file settings to the default, for this example.  For more information about the other Deployment Manager configuration options, see the Deployment Manager [documentation on GitHub](https://github.com/spatialos/deployment-manager). 
 
@@ -75,7 +75,7 @@ In the `config.json`, you need to change the following lines:
 
 - `"ClientType": "YourClient"`, to `"ClientType": "UnrealClient"`,
 - `"NumberOfDeployments": 1`, to `"NumberOfDeployments": 2`,
-- `"AssemblyName": "YourAssembly"`, to `"AssemblyName": "<assembly_name>)"`, where `<assembly_name>` is the name you gave to your assembly when you [uploaded your worker assemblies]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-2-upload-your-worker-assemblies).
+- `"AssemblyName": "YourAssembly"`, to `"AssemblyName": "<assembly_name>)"`, where `<assembly_name>` is the name you gave to your assembly when you [uploaded your assembly]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-2-upload-your-worker-assemblies).
 
 Your `config.json` file should look like this: 
 
