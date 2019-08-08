@@ -19,7 +19,7 @@ A `UPROPERTY` that you add to an Actor that a game client might own. It refers t
 > **Tip**: All three ways of defining interest can coexist. However, if you've specified all of the interest in your game using `ActorInterestComponent` and `AlwaysInterested`, you can turn off `NetCullDistanceSquared` using the toggle in `ActorInterestComponent`.
 
 ## NetCullDistanceSquared
-`NetCullDistanceSquared` is a value on an Actor class that defines a distance. Game clients whose players are within this distance of an Actor of this class receive updates about the Actor. By default, this distance is 150 meters for all Actor classes.
+`NetCullDistanceSquared` is a property on an Actor class that defines a distance. Game clients whose players are within this distance of an Actor of this class receive updates about the Actor. By default, this distance is 150 meters for all Actor classes.
 
 To change an Actor class’s `NetCullDistanceSquared` value, open the Actor class's Blueprint and go to the Class Defaults tab. Net Cull Distance Squared is in the Replication section:
 
@@ -31,7 +31,7 @@ To change an Actor class’s `NetCullDistanceSquared` value, open the Actor clas
 ### Example 
 In your game you have an Actor Blueprint called `PlayerCharacter`, which represents players within your game. If you set `PlayerCharacter`'s `NetCullDistanceSquared` to 200 meters, then all game clients will receive updates about all `PlayerCharacter`s that are within 200 meters of their own player.
 
-And if you set the `NetCullDistanceSquared` to 400 meters for vehicles, game clients receive updates about vehicles within 400 meters of their player.
+If you also have an Actor Blueprint called `Vehicle`, and you set its `NetCullDistanceSquared` to 400 meters, then game clients will receive updates about all `Vehicle`s within 400 meters of their player.
 
 ![NetCullDistanceSquared diagram]({{assetRoot}}assets/screen-grabs/game-client-interest-management/net-cull-distance-diagram.png)
 <br>_Image: A game client receives updates about Characters and vehicles that are close enough to its player, according to the Characters’ and vehicles’ `NetCullDistanceSquared`._
