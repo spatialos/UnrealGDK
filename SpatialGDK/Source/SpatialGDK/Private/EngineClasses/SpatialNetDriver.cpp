@@ -1248,6 +1248,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 	if (Connection != nullptr)
 	{
+		const auto& Worker = Connection->GetWorkerId();
 		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
 
 		// Servers will queue ops at startup until we've extracted necessary information from the op stream
