@@ -24,9 +24,9 @@ Actor groups facilitate multiserver functionality through [offloading](#offloadi
 
 > **Find out more:**
 > 
-> [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups)
-> [The SpatialOS Runtime Settings panel]({{urlRoot/}}content/unreal-editor-interface/runtime-settings)
-> [Offloading overview]({{urlRoot}}/content/workers/offloading-concept)
+> * [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups)
+> * [The SpatialOS Runtime Settings panel]({{urlRoot/}}content/unreal-editor-interface/runtime-settings)
+> * [Offloading overview]({{urlRoot}}/content/workers/offloading-concept)
 
 ### Actor handover
 Actor handover (`handover`) is a GDK-specific `UPROPERTY` tag. It allows games built in Unreal (which uses single-server architecture) to take advantage of SpatialOS’ distributed, persistent server architecture. See [Actor property handover between server-workers]({{urlRoot}}/content/actor-handover.md).
