@@ -24,9 +24,9 @@ After you set up the SpatialOS GDK Starter Template or the Example
 Project, you can learn more about the GDK’s functionality with:
 <img src="{{assetRoot}}assets/example-project/example-project-headline.png" style=" float: right; margin: 0; display: block; width: 60%; padding: 20px 20px"/>
 
-* **The offloading example project tutorial**: learn how to offload groups of actors to separate Unreal server-workers
+* **The offloading example project tutorial**: learn how to offload groups of actors to separate Unreal server-workers.
 * **The tutorial on multiple deployments for session-based games**: upload a session-based FPS example game to the cloud.
-* **The multiserver zoning shooter tutorial**: implement shooting across the boundaries of different servers simulating one game world.
+* **The multiserver zoning shooter tutorial**: implement shooting across the boundaries of different servers computing one game world.
 * **The porting guide**: porting your existing UE project to SpatialOS.
 * **The database sync worker tutorial**: learn how to integrate the Database Sync Worker Example in your GDK project
 
@@ -48,4 +48,5 @@ Project, you can learn more about the GDK’s functionality with:
 ### **> Next:** [Get Started]({{urlRoot}}/content/get-started/dependencies.md)
 
 </br>------</br>
+_2019-08-08 Page updated with editorial review: renamed "multiserver shooter tutorial" to "multiserver zoning shooter tutorial"_ 
 _2019-07-31 Page updated with limited editorial review_

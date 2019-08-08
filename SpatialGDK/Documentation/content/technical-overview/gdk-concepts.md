@@ -22,9 +22,9 @@ You can find out more about [entities]({{urlRoot}}/content/glossary#entity), Spa
 We’ve introduced some new concepts to facilitate the fact that SpatialOS enables you to spread computation between multiple servers - known as “server-worker instances” in SpatialOS.
 
 ### Offloading
-Offloading is one of the multiserver options for working with SpatialOS. It involves allocating the authority over specific groups of Actors to a server-worker instance other than your main Unreal server-worker instance. 
+Offloading is one of the multiserver options for working with SpatialOS. The functionality of the main out-of-the-box Unreal server-worker type is split between two server-worker types. For example, you could create an AI server-worker type and offload the AI computation from the main Unreal server-worker type onto it.
 
-For example, you could offload computationally expensive but latency-tolerant systems, such as advanced AI or large-scale background physics simulation, so that your main server-worker instance can run other systems at a larger scale.
+Advanced AI and large-scale background physics computation are good candidates for offloading as they are computationally expensive but latency-tolerant. This would leave your game's out-of-the-box main server-worker instance to run other game systems at a larger scale.
 
 <%(Lightbox image="{{assetRoot}}assets/offloading-diagram.png")%>
 _Offloading: The offloaded server-worker instance has authority only over Red Actors, and the main Unreal server-worker instance that runs major game systems has authority over all other Actors._
@@ -37,7 +37,7 @@ To facilitate offloading, we've created the concept of Actor groups to help you 
 Before you start to use offloading in your game, make sure that you’re familiar with the [best practices]({{urlRoot}}/content/workers/offloading-concept#best-practices) and with how to [set up your game feature for offloading]({{urlRoot}}/content/workers/set-up-offloading).
 
 ### Zoning
-Like [offloading](#offloading), zoning is a multiserver option for working with SpatialOS. It involves splitting up the world into zones, known as “areas of authority”, with a different server-worker instance responsible for each. A server-worker instance can make updates only to Actors that are in its area of authority.
+Zoning is another multiserver option for working with SpatialOS. It works differently from [offloading](#offloading). Zoning involves sharing the server computation load by splitting up the world into areas of authority, with a different server-worker instance responsible for the computation of each area. A server-worker instance can make updates only to Actors that are in its area of authority.
 
 > **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 
@@ -97,7 +97,9 @@ The concept of Actor Throttling allows you to set a simple limit on the number o
 We recommend using Actor Throttling with a combination of Unreal's Net Update Frequency, as this will limit the number of actors which are added to the 'ConsiderList' for replication in order to optimize your servers performance. Experiment with the limit by setting it high and then lowering over time until you see client latency issues in a realistic game scenario. 
 
 ## Non-Unreal computation
-By default, the GDK uses a single Unreal server-worker type (which is like a mold for a server-worker instance) to handle all server-side computation. However, you can set up additional server-worker types that do not use Unreal or the GDK. 
+By default, the GDK uses a single Unreal server-worker type to handle all server-side computation. (A server-worker type is a server-worker definition. It's a mold which SpatialOS uses to spin up the server-worker instances which compute your game at runtime.) 
+
+However, in addition to the out-of-the-box main Unreal server type, you can set up additional server-worker types that do not use Unreal or the GDK.
 
 You can use these non-Unreal server-worker types to modularize your game’s functionality so you can re-use the functionality across different games. For example, you could use a non-Unreal server-worker type written in Python that interacts with a database or other third-party service, such as [Firebase](https://firebase.google.com/) or [PlayFab](https://playfab.com/).
 
@@ -105,6 +107,7 @@ For more information, see the documentation on [non-Unreal server-worker types](
 
 
 <br/>------------<br/>
+_2019-08-08 Page updated with editorial review: updated offloading, Actor groups, zoning_</br>
 _2019-07-31 Page updated with limited editorial review: added Actor throttling_<br/>
 _2019-07-26 Page updated with limited editorial review: added offloading and Actor groups_<br/>
 _2019-04-11 Page updated with limited editorial review_<br/>

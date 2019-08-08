@@ -19,7 +19,7 @@ Use the Deployment Manager to launch multiple deployments of the Example Project
 </br>
 </br>
 * **The multiserver zoning shooter tutorial**: </br>
-Learn more about the the GDK's functionality by implementing shooting across the boundaries of different servers simulating one game world. In this tutorial, you will set up a new game; the Mutliserver Shooter Game.
+Learn more about the the GDK's functionality by implementing shooting across the boundaries of different servers computing one game world. In this tutorial, you will set up a new game; the Mutliserver Shooter Game.
 </br>
 </br>
 * **The porting guide**: <br/>
