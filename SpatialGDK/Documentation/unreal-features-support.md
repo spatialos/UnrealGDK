@@ -389,7 +389,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 
 </table>
 
-## Multiserver Support
+## Multiserver support
 
 The table for multiserver support is coming soon. 
 

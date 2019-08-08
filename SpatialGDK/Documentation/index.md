@@ -9,7 +9,7 @@ The SpatialOS Game Development Kit (GDK) for Unreal is an [Unreal Engine plugin]
 SpatialOS provides:<br/>
 
 * **Global hosting**: Scalable dedicated hosting for your game in every major gaming region.<br/>
-* **Easy playtesting**: Deploy and test your game from the start of development, and distribute it to your team and players quickly and easily with a ready-made link. Scale-test your build by connecting in Simulated Players.<br/>
+* **Easy playtesting**: Deploy and test your game from the start of development, and distribute it to your team and players quickly and easily with a ready-made link. Scale-test your build by connecting in simulated players.<br/>
 * **Profiling and debugging tools**: Logs and metrics out of the box to help you quickly understand any bugs and performance issues.
 * **Single and multiserver networking**: Use one or multiple server-worker instances simulating your game world, enabling greater numbers of Actors, players and gameplay systems. This is available today through the offloading architecture, in which you allocate the authority of specific Actor groups from the main Unreal server worker instance to a different worker. This is available as a preview - not recommended for development - through the zoning architecture, in which the world is split into zones of authority for each server-worker. 
 
@@ -26,7 +26,7 @@ Project, you can learn more about the GDK’s functionality with:
 
 * **The offloading example project tutorial**: learn how to offload groups of actors to separate Unreal server-workers
 * **The tutorial on multiple deployments for session-based games**: upload a session-based FPS example game to the cloud.
-* **The multiserver shooter tutorial**: implement shooting across the boundaries of different servers simulating one game world.
+* **The multiserver zoning shooter tutorial**: implement shooting across the boundaries of different servers simulating one game world.
 * **The porting guide**: porting your existing UE project to SpatialOS.
 * **The database sync worker tutorial**: learn how to integrate the Database Sync Worker Example in your GDK project
 

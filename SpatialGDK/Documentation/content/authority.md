@@ -65,7 +65,7 @@ As the GDK works with multiple [server-workers]({{urlRoot}}/content/glossary#wor
 
 In the GDK, a server-worker is authoritative over an Actor if it has authority over the [schema]({{urlRoot}}/content/glossary#schema) [component]({{urlRoot}}/content/glossary#spatialos-component) `Position`. 
 
-So, in the SpatialOS GDK multiserver scenario, authority looks like this:
+So, in the GDK multiserver scenario, authority looks like this:
 
 Actor on **authoritative server-worker**:
 

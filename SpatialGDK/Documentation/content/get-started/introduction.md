@@ -18,11 +18,11 @@ After you set up with the Example Project or Starter Template, you can check out
 Use the Deployment Manager to launch multiple deployments of the Example Project in the cloud - useful for time-limited match-based games, such as battle royales.
 </br>
 </br>
-* **The Multiserver Shooter tutorial**: </br>
-Learn more about the the GDK's functionality by implement shooting across the boundaries of different servers simulating one game world. In this tutorial, you will set up a new game; the Mutliserver Shooter Game.
+* **The multiserver zoning shooter tutorial**: </br>
+Learn more about the the GDK's functionality by implementing shooting across the boundaries of different servers simulating one game world. In this tutorial, you will set up a new game; the Mutliserver Shooter Game.
 </br>
 </br>
-* **The Porting guide**: <br/>
+* **The porting guide**: <br/>
 Port your existing UE project to SpatialOS.
 <br/>
 
