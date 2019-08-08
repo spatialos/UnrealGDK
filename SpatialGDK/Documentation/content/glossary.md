@@ -83,7 +83,9 @@ You can define interest in three ways, which you can use alongside each other:
 
 ### Offloading
 
-Offloading is when you allocate the [authority](#authority) over specific [Actor groups](#actor-groups) to a [server-worker instance](#worker-types-and-worker-instances) other than the main Unreal server-worker instance. For example, you could offload computationally expensive but latency-tolerant systems, such as advanced AI or large-scale background physics simulation, so that your main server-worker instance can run other systems at a larger scale.
+Offloading is one of the multiserver options for working with SpatialOS. It involves allocating the [authority](#authority) over specific [Actor groups](#actor-groups) to a [server-worker instance](#worker-types-and-worker-instances) other than your main Unreal server-worker instance. 
+
+For example, you could offload computationally expensive but latency-tolerant systems, such as advanced AI or large-scale background physics simulation, so that your main server-worker instance can run other systems at a larger scale.
 
 > **Find out more**
 > 
@@ -438,17 +440,20 @@ When you create a worker type using the [Worker SDK](#spatialos-sdks), each work
 
 #### Server-workers
 
-A server-worker [instance](#worker-types-and-worker-instances) equates to a server in native Unreal networking but, unlike Unreal networking, in SpatialOS you can have more than one server-worker instance (see [Zoning](#zoning)). A server-worker instance’s lifecycle is managed by SpatialOS. When you run a SpatialOS [deployment](#deployment) of your game, the [SpatialOS Runtime]#spatialos-runtime) starts and stops server-worker instances.
+A server-worker [instance](#worker-types-and-worker-instances) equates to a server in native Unreal networking but, unlike Unreal networking, in SpatialOS you can have more than one server-worker instance (see [Zoning](#zoning)). A server-worker instance’s lifecycle is managed by SpatialOS. When you run a SpatialOS [deployment](#deployment) of your game, the [SpatialOS Runtime](#spatialos-runtime) starts and stops server-worker instances.
 
-The GDK sets up one server-worker type for you by default. This default server-worker type is an Unreal server-worker, computing Unreal functionality - you can add additional non-Unreal server-worker types.
+##### Single server vs multiserver
+The GDK sets up one server-worker type for you by default: an Unreal server-worker, computing Unreal functionality. Out of the box, you can have a single instance of this type. However, there are also two multiserver options for working with SpatialOS: [offloading](#offloading) and [zoning](#zoning) (note that zoning is currently in pre-alpha).
 
-For example, you could set up an additional server-worker type to implement player logic and another to implement AI logic. 
+You can also add additional non-Unreal server-worker types. For example, you could set up an additional server-worker type to implement player logic and another to implement AI logic. 
 
 **Note:** In a local deployment, the server-worker instances run on your development computer. In a cloud deployment, the server-worker instances run in the cloud. For more information, see [Deployment](#deployment).
 
 > **Find out more**
 > 
-> [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
+> * [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
+> * [Offloading]({{urlRoot}}/content/workers/offloading-concept/)
+> * [Multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
 
 <!-- TODO How do you set up worker types in Unreal https://improbableio.atlassian.net/browse/DOC-1064 -->
 <!-- TODO Offloading info added here:  https://improbableio.atlassian.net/browse/DOC-1064 -->
@@ -477,8 +482,10 @@ Once you’ve chosen a label for the worker type (for example, myWorkerType), yo
 
 ### Zoning
 
-Zoning is when you have multiple [server-worker instances](#server-workers) computing your [game world](#game-world), and each instance is responsible for computing the Actors in a particular spatial area.
+Zoning is one of the multiserver options for working with SpatialOS. It involves splitting up the world into zones, known as “areas of [authority](#authority)”, with a different [server-worker instance](#server-workers) responsible for each. A server-worker instance can make updates only to Actors that are in its area of authority.
 
+> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
+<br><br>
 > **Find out more**
 >
 > [Multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)

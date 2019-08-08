@@ -22,7 +22,9 @@ You can find out more about [entities]({{urlRoot}}/content/glossary#entity), Spa
 We’ve introduced some new concepts to facilitate the fact that SpatialOS enables you to spread computation between multiple servers - known as “server-worker instances” in SpatialOS.
 
 ### Offloading
-Offloading is when you allocate the authority over specific groups of Actors to a server-worker instance other than your main Unreal server-worker instance. By using offloading, you can save the resources of the main Unreal server-worker instance when you want to build richer game features.
+Offloading is one of the multiserver options for working with SpatialOS. It involves allocating the authority over specific groups of Actors to a server-worker instance other than your main Unreal server-worker instance. 
+
+For example, you could offload computationally expensive but latency-tolerant systems, such as advanced AI or large-scale background physics simulation, so that your main server-worker instance can run other systems at a larger scale.
 
 <%(Lightbox image="{{assetRoot}}assets/offloading-diagram.png")%>
 _Offloading: The offloaded server-worker instance has authority only over Red Actors, and the main Unreal server-worker instance that runs major game systems has authority over all other Actors._
@@ -35,9 +37,7 @@ To facilitate offloading, we've created the concept of Actor groups to help you 
 Before you start to use offloading in your game, make sure that you’re familiar with the [best practices]({{urlRoot}}/content/workers/offloading-concept#best-practices) and with how to [set up your game feature for offloading]({{urlRoot}}/content/workers/set-up-offloading).
 
 ### Zoning
-Because the GDK uses SpatialOS networking, you can use multiple server-worker instances to compute your game world. This enables you to extend the size of the world. We call this _zoning_ - splitting up the world into zones, known as “areas of authority”.
-
-Each server-worker instance has a different area of authority, and can make updates only to Actors that are in its area of authority.
+Like [offloading](#offloading), zoning is a multiserver option for working with SpatialOS. It involves splitting up the world into zones, known as “areas of authority”, with a different server-worker instance responsible for each. A server-worker instance can make updates only to Actors that are in its area of authority.
 
 > **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 

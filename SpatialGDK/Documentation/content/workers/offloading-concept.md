@@ -2,7 +2,7 @@
 
 # Overview
 
-Offloading is when you allocate the [authority](#authority) over specific [Actor groups](#actor-groups) to a [server-worker instance](#worker-types-and-worker-instances) other than the main Unreal server-worker instance. By using offloading, you can save the resources of the main Unreal server-worker instance when you want to build richer game features.
+Offloading is when you allocate the [authority](#authority) over specific [Actor groups](#actor-groups) to a [server-worker instance](#worker-types-and-worker-instances) other than your main Unreal server-worker instance.
 
 In Unreal’s native single-server architecture, the server runs many of the major game systems such as physics simulation, AI decision-making, and navigation. It also processes and validates input from game clients. Using the GDK allows you to execute latency-tolerant systems on a separate server-worker instance.
 
