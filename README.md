@@ -2,17 +2,18 @@
 
 ![](SpatialGDK/Documentation/spatialos-gdkforunreal-header.png)
 
-The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine plugin which gives you the features of [SpatialOS](https://spatialos.improbable.io/docs/reference/latest), within the familiar workflows and APIs of Unreal Engine. For more information, please see the GDK's [documentation website](https://docs.improbable.io/unreal/latest).
-  
-If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started guide](https://docs.improbable.io/unreal/latest/content/get-started/introduction). 
+The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine fork and plugin with associated projects. It gives you the features of [SpatialOS](https://spatialos.improbable.io/docs/reference/latest), within the familiar workflows and APIs of Unreal Engine. For more information, please see the GDK's [documentation website](https://docs.improbable.io/unreal/latest).
 
 > The SpatialOS GDK for Unreal is in alpha. It is ready to use for development of single-server games, but not recommended for public releases. We are committed to rapid development of the GDK to provide a performant release - for information on this, see our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support](https://docs.improbable.io/unreal/latest/unreal-features-support) pages, and contact us via our forums, or on Discord.
 
-## Where to get the GDK and related projects
-The GDK and its related projects are available on GitHub.
-* [GDK: github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
+This is the repository for the GDK plugin, which includes the Starter template (a blank starter project).
+
+In addition to the plugin, the GDK also contains:
+
 * [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine)
-* [The Example Project](https://github.com/spatialos/UnrealGDKExampleProject) 
+* [The Example Project](https://github.com/spatialos/UnrealGDKExampleProject)
+  
+If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started guide](https://docs.improbable.io/unreal/latest/content/get-started/introduction). 
 
 ## Unreal Engine changes
 In order to transform Unreal from a single server engine to a distributed model, we have made a number of small changes to the UE4 code. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our forked [Unreal Engine repo](https://github.com/improbableio/UnrealEngine).
