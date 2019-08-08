@@ -82,4 +82,5 @@ Use as a base for creating your own project running on SpatialOS.
 <br/>
 
 ------</br>
-_2019-05-30 Page updated with editorial review_
+_2019-08-03 Page updated with editorial review: added clarification on SSH key and Linux dependencies._
+_2019-05-30 Page updated with editorial review._
