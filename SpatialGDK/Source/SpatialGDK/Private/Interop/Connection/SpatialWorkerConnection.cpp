@@ -8,15 +8,14 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Engine/World.h"
-#include "UnrealEngine.h"
 #include "Async/Async.h"
 #include "Engine/Engine.h"
-#include "Engine/World.h"
 #include "Misc/Paths.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
+#include "gdk/spatialos_connection_handler.h"
+#include <memory>
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
@@ -36,43 +35,14 @@ void USpatialWorkerConnection::FinishDestroy()
 
 void USpatialWorkerConnection::DestroyConnection()
 {
-	Stop(); // Stop OpsProcessingThread
-	if (OpsProcessingThread != nullptr)
-	{
-		OpsProcessingThread->WaitForCompletion();
-		OpsProcessingThread = nullptr;
-	}
-
-	if (WorkerConnection)
-	{
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerConnection = WorkerConnection]
-		{
-			Worker_Connection_Destroy(WorkerConnection);
-		});
-
-		WorkerConnection = nullptr;
-	}
-
-	if (WorkerLocator)
-	{
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerLocator = WorkerLocator]
-		{
-			Worker_Alpha_Locator_Destroy(WorkerLocator);
-		});
-
-		WorkerLocator = nullptr;
-	}
-
 	bIsConnected = false;
 	NextRequestId = 0;
-	KeepRunning.AtomicSet(true);
 }
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
 {
 	if (bIsConnected)
 	{
-		OnConnectionSuccess();
 		return;
 	}
 
@@ -247,7 +217,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 
 	// Connect to the locator on the default port(0 will choose the default)
-	WorkerLocator = Worker_Alpha_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), 0, &LocatorParams);
+	auto* WorkerLocator = Worker_Alpha_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), 0, &LocatorParams);
 
 	// TODO UNR-1271: Move creation of connection parameters into a function somehow
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
@@ -270,6 +240,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Alpha_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);
+	Worker_Alpha_Locator_Destroy(WorkerLocator);
 
 	FinishConnecting(ConnectionFuture);
 }
@@ -292,17 +263,27 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 				return;
 			}
 
-			SpatialWorkerConnection->WorkerConnection = NewCAPIWorkerConnection;
+			gdk::ComponentRanges Ranges;
+			Ranges.TryAddComponentRange(gdk::Range{ 1, 100000 });
+			const auto GeneratedStart = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
+			// Generated components range.
+			//Ranges.TryAddComponentRange(gdk::Range{ GeneratedStart, GeneratedStart + 100000 });
+			// Non-generated components range.
+			//Ranges.TryAddComponentRange(gdk::Range{ SpatialConstants::MAX_EXTERNAL_SCHEMA_ID + 1, GeneratedStart - 1});
+			// External component range
+			//Ranges.TryAddComponentRange(gdk::Range{ SpatialConstants::MIN_EXTERNAL_SCHEMA_ID, SpatialConstants::MAX_EXTERNAL_SCHEMA_ID});
+			auto ConnectionHandler = std::make_unique<gdk::SpatialOsConnectionHandler>(NewCAPIWorkerConnection);
+			SpatialWorkerConnection->Worker = MakeUnique<gdk::SpatialOsWorker>(MoveTemp(ConnectionHandler), Ranges);
 
 			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
 			{
 				SpatialWorkerConnection->CacheWorkerAttributes();
-				SpatialWorkerConnection->OnConnectionSuccess();
+				SpatialWorkerConnection->OnConnectionSuccess(NewCAPIWorkerConnection);
 			}
 			else
 			{
 				// TODO: Try to reconnect - UNR-576
-				SpatialWorkerConnection->OnConnectionFailure();
+				SpatialWorkerConnection->OnConnectionFailure(NewCAPIWorkerConnection);
 			}
 		});
 	});
@@ -323,89 +304,102 @@ SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
 {
 	TArray<Worker_OpList*> OpLists;
-	while (!OpListQueue.IsEmpty())
-	{
-		Worker_OpList* OutOpList;
-		OpListQueue.Dequeue(OutOpList);
-		OpLists.Add(OutOpList);
-	}
 
 	return OpLists;
 }
 
+const gdk::SpatialOsWorker& USpatialWorkerConnection::GetWorker() const
+{
+	return *Worker.Get();
+}
+
 Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
 {
-	QueueOutgoingMessage<FReserveEntityIdsRequest>(NumOfEntities);
+	Worker->SendReserveEntityIdsRequest(NextRequestId, NumOfEntities, 0);
 	return NextRequestId++;
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId)
 {
-	QueueOutgoingMessage<FCreateEntityRequest>(MoveTemp(Components), EntityId);
+	gdk::EntityState EntityState;
+	for (auto& Component : Components)
+	{
+		EntityState.AddComponent(gdk::ComponentData{ Component.schema_type });
+	}
+
+	gdk::EntityId Id = EntityId == nullptr ? 0 : *EntityId;
+	Worker->SendCreateEntityRequest(NextRequestId, MoveTemp(EntityState), Id, 0);
 	return NextRequestId++;
 }
 
 Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
-	QueueOutgoingMessage<FDeleteEntityRequest>(EntityId);
+	Worker->SendReserveEntityIdsRequest(NextRequestId, EntityId, 0);
 	return NextRequestId++;
 }
 
 void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData)
 {
-	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData);
+	Worker->AddComponent(EntityId, gdk::ComponentData{ ComponentData->schema_type });
 }
 
 void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
-	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
+	Worker->RemoveComponent(EntityId, ComponentId);
 }
 
 void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate)
 {
-	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate);
+	Worker->SendUpdate(EntityId, gdk::ComponentUpdate{ ComponentUpdate->schema_type });
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
 {
-	QueueOutgoingMessage<FCommandRequest>(EntityId, *Request, CommandId);
+	Worker->SendCommandRequest(EntityId, NextRequestId, gdk::CommandRequest{ Request->schema_type }, 0);
 	return NextRequestId++;
 }
 
 void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
 {
-	QueueOutgoingMessage<FCommandResponse>(RequestId, *Response);
+	Worker->SendCommandResponse(NextRequestId, gdk::CommandResponse{ Response->schema_type });
 }
 
 void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
-	QueueOutgoingMessage<FCommandFailure>(RequestId, Message);
+	Worker->SendCommandFailure(NextRequestId, std::string{TCHAR_TO_UTF8(*Message)});
 }
 
 void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const FName& LoggerName, const TCHAR* Message)
 {
-	QueueOutgoingMessage<FLogMessage>(Level, LoggerName, Message);
+	Worker->SendLogMessage(static_cast<Worker_LogLevel>(Level), 0, std::string{ TCHAR_TO_UTF8(*LoggerName.ToString()) }, std::string{ TCHAR_TO_UTF8(Message) });
 }
 
 void USpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
 {
-	QueueOutgoingMessage<FComponentInterest>(EntityId, MoveTemp(ComponentInterest));
+	std::vector<Worker_InterestOverride> InterestOverrides;
+	InterestOverrides.reserve(ComponentInterest.Num());
+	for (const auto& Interest : ComponentInterest)
+	{
+		InterestOverrides.emplace_back(Interest);
+	}
+	Worker->SendInterestChange(EntityId, MoveTemp(InterestOverrides));
 }
 
 Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
 {
-	QueueOutgoingMessage<FEntityQueryRequest>(*EntityQuery);
+	Worker->SendEntityQueryRequest(NextRequestId, gdk::EntityQuery{*EntityQuery}, 0);
 	return NextRequestId++;
 }
 
 void USpatialWorkerConnection::SendMetrics(const SpatialMetrics& Metrics)
 {
-	QueueOutgoingMessage<FMetrics>(Metrics);
+	//QueueOutgoingMessage<FMetrics>(Metrics);
+	//Worker->SendMetricsMessage(gdk::Metrics{Metrics});
 }
 
 FString USpatialWorkerConnection::GetWorkerId() const
 {
-	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
+	return FString(UTF8_TO_TCHAR(Worker->GetWorkerId().c_str()));
 }
 
 const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
@@ -415,18 +409,10 @@ const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 
 void USpatialWorkerConnection::CacheWorkerAttributes()
 {
-	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(WorkerConnection);
-
 	CachedWorkerAttributes.Empty();
-
-	if (Attributes->attributes == nullptr)
+	for (const auto& attribute : Worker->GetWorkerAttributes())
 	{
-		return;
-	}
-
-	for (uint32 Index = 0; Index < Attributes->attribute_count; ++Index)
-	{
-		CachedWorkerAttributes.Add(UTF8_TO_TCHAR(Attributes->attributes[Index]));
+		CachedWorkerAttributes.Emplace(TCHAR_TO_UTF8(attribute.c_str()));
 	}
 }
 
@@ -446,14 +432,9 @@ USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 	return SpatialNetDriver;
 }
 
-void USpatialWorkerConnection::OnConnectionSuccess()
+void USpatialWorkerConnection::OnConnectionSuccess(Worker_Connection* Connection)
 {
 	bIsConnected = true;
-
-	if (OpsProcessingThread == nullptr)
-	{
-		InitializeOpsProcessingThread();
-	}
 
 	GetSpatialNetDriverChecked()->OnConnectedToSpatialOS();
 	GameInstance->HandleOnConnected();
@@ -465,259 +446,15 @@ void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
 	GameInstance->HandleOnConnectionFailed(Reason);
 }
 
-void USpatialWorkerConnection::OnConnectionFailure()
+void USpatialWorkerConnection::OnConnectionFailure(Worker_Connection* Connection)
 {
 	bIsConnected = false;
 
 	if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 	{
-		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
-		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
+		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(Connection);
+		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(Connection)));
 
 		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
 	}
-}
-
-bool USpatialWorkerConnection::Init()
-{
-	OpsUpdateInterval = 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
-
-	return true;
-}
-
-uint32 USpatialWorkerConnection::Run()
-{
-	while (KeepRunning)
-	{
-		FPlatformProcess::Sleep(OpsUpdateInterval);
-
-		QueueLatestOpList();
-
-		ProcessOutgoingMessages();
-	}
-
-	return 0;
-}
-
-void USpatialWorkerConnection::Stop()
-{
-	KeepRunning.AtomicSet(false);
-}
-
-void USpatialWorkerConnection::InitializeOpsProcessingThread()
-{
-	check(IsInGameThread());
-
-	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
-	check(OpsProcessingThread);
-}
-
-void USpatialWorkerConnection::QueueLatestOpList()
-{
-	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
-	if (OpList->op_count > 0)
-	{
-		OpListQueue.Enqueue(OpList);
-	}
-	else
-	{
-		Worker_OpList_Destroy(OpList);
-	}
-}
-
-void USpatialWorkerConnection::ProcessOutgoingMessages()
-{
-	while (!OutgoingMessagesQueue.IsEmpty())
-	{
-		TUniquePtr<FOutgoingMessage> OutgoingMessage;
-		OutgoingMessagesQueue.Dequeue(OutgoingMessage);
-
-		switch (OutgoingMessage->Type)
-		{
-		case EOutgoingMessageType::ReserveEntityIdsRequest:
-		{
-			FReserveEntityIdsRequest* Message = static_cast<FReserveEntityIdsRequest*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendReserveEntityIdsRequest(WorkerConnection,
-				Message->NumOfEntities,
-				nullptr);
-			break;
-		}
-		case EOutgoingMessageType::CreateEntityRequest:
-		{
-			FCreateEntityRequest* Message = static_cast<FCreateEntityRequest*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
-				Message->Components.Num(),
-				Message->Components.GetData(),
-				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
-				nullptr);
-			break;
-		}
-		case EOutgoingMessageType::DeleteEntityRequest:
-		{
-			FDeleteEntityRequest* Message = static_cast<FDeleteEntityRequest*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendDeleteEntityRequest(WorkerConnection,
-				Message->EntityId,
-				nullptr);
-			break;
-		}
-		case EOutgoingMessageType::AddComponent:
-		{
-			FAddComponent* Message = static_cast<FAddComponent*>(OutgoingMessage.Get());
-
-			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
-			Worker_Connection_SendAddComponent(WorkerConnection,
-				Message->EntityId,
-				&Message->Data,
-				&DisableLoopback);
-			break;
-		}
-		case EOutgoingMessageType::RemoveComponent:
-		{
-			FRemoveComponent* Message = static_cast<FRemoveComponent*>(OutgoingMessage.Get());
-
-			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
-			Worker_Connection_SendRemoveComponent(WorkerConnection,
-				Message->EntityId,
-				Message->ComponentId,
-				&DisableLoopback);
-			break;
-		}
-		case EOutgoingMessageType::ComponentUpdate:
-		{
-			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
-
-			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
-			Worker_Alpha_Connection_SendComponentUpdate(WorkerConnection,
-				Message->EntityId,
-				&Message->Update,
-				&DisableLoopback);
-			break;
-		}
-		case EOutgoingMessageType::CommandRequest:
-		{
-			FCommandRequest* Message = static_cast<FCommandRequest*>(OutgoingMessage.Get());
-
-			static const Worker_CommandParameters DefaultCommandParams{};
-			Worker_Connection_SendCommandRequest(WorkerConnection,
-				Message->EntityId,
-				&Message->Request,
-				Message->CommandId,
-				nullptr,
-				&DefaultCommandParams);
-			break;
-		}
-		case EOutgoingMessageType::CommandResponse:
-		{
-			FCommandResponse* Message = static_cast<FCommandResponse*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendCommandResponse(WorkerConnection,
-				Message->RequestId,
-				&Message->Response);
-			break;
-		}
-		case EOutgoingMessageType::CommandFailure:
-		{
-			FCommandFailure* Message = static_cast<FCommandFailure*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendCommandFailure(WorkerConnection,
-				Message->RequestId,
-				TCHAR_TO_UTF8(*Message->Message));
-			break;
-		}
-		case EOutgoingMessageType::LogMessage:
-		{
-			FLogMessage* Message = static_cast<FLogMessage*>(OutgoingMessage.Get());
-
-			FTCHARToUTF8 LoggerName(*Message->LoggerName.ToString());
-			FTCHARToUTF8 LogString(*Message->Message);
-
-			Worker_LogMessage LogMessage{};
-			LogMessage.level = Message->Level;
-			LogMessage.logger_name = LoggerName.Get();
-			LogMessage.message = LogString.Get();
-			Worker_Connection_SendLogMessage(WorkerConnection, &LogMessage);
-			break;
-		}
-		case EOutgoingMessageType::ComponentInterest:
-		{
-			FComponentInterest* Message = static_cast<FComponentInterest*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendComponentInterest(WorkerConnection,
-				Message->EntityId,
-				Message->Interests.GetData(),
-				Message->Interests.Num());
-			break;
-		}
-		case EOutgoingMessageType::EntityQueryRequest:
-		{
-			FEntityQueryRequest* Message = static_cast<FEntityQueryRequest*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendEntityQueryRequest(WorkerConnection,
-				&Message->EntityQuery,
-				nullptr);
-			break;
-		}
-		case EOutgoingMessageType::Metrics:
-		{
-			FMetrics* Message = static_cast<FMetrics*>(OutgoingMessage.Get());
-
-			// Do the conversion here so we can store everything on the stack.
-			Worker_Metrics WorkerMetrics;
-
-			WorkerMetrics.load = Message->Metrics.Load.IsSet() ? &Message->Metrics.Load.GetValue() : nullptr;
-
-			TArray<Worker_GaugeMetric> WorkerGaugeMetrics;
-			WorkerGaugeMetrics.SetNum(Message->Metrics.GaugeMetrics.Num());
-			for (int i = 0; i < Message->Metrics.GaugeMetrics.Num(); i++)
-			{
-				WorkerGaugeMetrics[i].key = Message->Metrics.GaugeMetrics[i].Key.c_str();
-				WorkerGaugeMetrics[i].value = Message->Metrics.GaugeMetrics[i].Value;
-			}
-
-			WorkerMetrics.gauge_metric_count = static_cast<uint32_t>(WorkerGaugeMetrics.Num());
-			WorkerMetrics.gauge_metrics = WorkerGaugeMetrics.GetData();
-
-			TArray<Worker_HistogramMetric> WorkerHistogramMetrics;
-			TArray<TArray<Worker_HistogramMetricBucket>> WorkerHistogramMetricBuckets;
-			WorkerHistogramMetrics.SetNum(Message->Metrics.HistogramMetrics.Num());
-			for (int i = 0; i < Message->Metrics.HistogramMetrics.Num(); i++)
-			{
-				WorkerHistogramMetrics[i].key = Message->Metrics.HistogramMetrics[i].Key.c_str();
-				WorkerHistogramMetrics[i].sum = Message->Metrics.HistogramMetrics[i].Sum;
-
-				WorkerHistogramMetricBuckets[i].SetNum(Message->Metrics.HistogramMetrics[i].Buckets.Num());
-				for (int j = 0; j < Message->Metrics.HistogramMetrics[i].Buckets.Num(); j++)
-				{
-					WorkerHistogramMetricBuckets[i][j].upper_bound = Message->Metrics.HistogramMetrics[i].Buckets[j].UpperBound;
-					WorkerHistogramMetricBuckets[i][j].samples = Message->Metrics.HistogramMetrics[i].Buckets[j].Samples;
-				}
-
-				WorkerHistogramMetrics[i].bucket_count = static_cast<uint32_t>(WorkerHistogramMetricBuckets[i].Num());
-				WorkerHistogramMetrics[i].buckets = WorkerHistogramMetricBuckets[i].GetData();
-			}
-
-			WorkerMetrics.histogram_metric_count = static_cast<uint32_t>(WorkerHistogramMetrics.Num());
-			WorkerMetrics.histogram_metrics = WorkerHistogramMetrics.GetData();
-
-			Worker_Connection_SendMetrics(WorkerConnection, &WorkerMetrics);
-			break;
-		}
-		default:
-		{
-			checkNoEntry();
-			break;
-		}
-		}
-	}
-}
-
-template <typename T, typename... ArgsType>
-void USpatialWorkerConnection::QueueOutgoingMessage(ArgsType&&... Args)
-{
-	// TODO UNR-1271: As later optimization, we can change the queue to hold a union
-	// of all outgoing message types, rather than having a pointer.
-	OutgoingMessagesQueue.Enqueue(MakeUnique<T>(Forward<ArgsType>(Args)...));
 }
