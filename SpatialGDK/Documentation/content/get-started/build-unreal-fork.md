@@ -38,7 +38,7 @@ To get access to the SpatialOS Unreal Engine fork, you need to link your GitHub 
 
 ### Step 3: Add a new SSH key to your GitHub account
 
-If you have not already configured your GitHub account to use an SSH key, you must do so in order to automatically download the GDK repositories using **InstallGDK.bat** as part of the next setup step.
+If you have not already configured your GitHub account to use an SSH key, you must do this in order to automatically download the GDK repositories as part of the next setup step.
 
 To do this:
 
