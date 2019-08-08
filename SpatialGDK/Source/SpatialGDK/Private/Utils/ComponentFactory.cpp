@@ -87,6 +87,8 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 
 bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
 {
+	bool bWroteSomething = false;
+
 	for (uint16 ChangedHandle : Changes)
 	{
 		check(ChangedHandle > 0 && ChangedHandle - 1 < Info.HandoverProperties.Num());
@@ -95,9 +97,11 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
 
 		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, ClearedIds);
+
+		bWroteSomething = true;
 	}
 
-	return Changes.Num() > 0;
+	return bWroteSomething;
 }
 
 void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TArray<Schema_FieldId>* ClearedIds)

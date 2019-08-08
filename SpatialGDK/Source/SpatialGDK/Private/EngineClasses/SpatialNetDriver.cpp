@@ -1086,9 +1086,14 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		}
 	}
 
-	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, Function, ReliableRPCIndex, Parameters);
-
 	FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(CallingObject);
+	if (!ObjectRef.IsValid())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("The target object %s is unresolved; RPC %s will be dropped."), *CallingObject->GetFullName(), *Function->GetName());
+		return;
+	}
+	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, ObjectRef, Function, ReliableRPCIndex, Parameters);
+
 	FPendingRPCParamsPtr RPCParams = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload), ReliableRPCIndex);
 	Sender->ProcessRPC(MoveTemp(RPCParams));
 }

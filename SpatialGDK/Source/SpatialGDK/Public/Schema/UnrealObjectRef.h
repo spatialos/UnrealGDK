@@ -59,6 +59,7 @@ struct FUnrealObjectRef
 			((!Path && !Other.Path) || (Path && Other.Path && Path->Equals(*Other.Path))) &&
 			((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer));
 		// Intentionally don't compare bNoLoadOnClient since it does not affect equality.
+		// Intentionally don't compare bUseSingletonClassPath.
 	}
 
 	FORCEINLINE bool operator!=(const FUnrealObjectRef& Other) const
@@ -82,7 +83,7 @@ struct FUnrealObjectRef
 	SpatialGDK::TSchemaOption<FString> Path;
 	SpatialGDK::TSchemaOption<FUnrealObjectRef> Outer;
 	bool bNoLoadOnClient = false;
-	bool bSingletonRef = false;
+	bool bUseSingletonClassPath = false;
 };
 
 inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
@@ -93,5 +94,6 @@ inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Path);
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Outer);
 	// Intentionally don't hash bNoLoadOnClient.
+	// Intentionally don't hash bUseSingletonClassPath.
 	return Result;
 }

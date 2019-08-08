@@ -15,5 +15,5 @@ type UnrealObjectRef {
     // Singleton objects can be referred to by their class path in the case of an
     // authoritative server that hasn't checked the singleton entity yet. This bool
     // will differentiate that from their class pointer.
-    option<bool> singleton_ref = 6;
+    option<bool> use_singleton_class_path = 6;
 }

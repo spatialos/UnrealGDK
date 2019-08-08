@@ -18,14 +18,19 @@ UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpati
 	}
 	else
 	{
-		if (ObjectRef.bSingletonRef)
+		if (ObjectRef.bUseSingletonClassPath)
 		{
 			// This is a singleton ref, which means it's just the UnrealObjectRef of the singleton class, with this boolean set.
-			// Unset it to get the original singleton class UnrealObjectRef, and look it up in the PackageMap.
+			// Unset it to get the original UnrealObjectRef of its singleton class, and look it up in the PackageMap.
 			FUnrealObjectRef SingletonClassRef = ObjectRef;
-			SingletonClassRef.bSingletonRef = false;
+			SingletonClassRef.bUseSingletonClassPath = false;
 
-			return PackageMap->GetSingletonByClassRef(SingletonClassRef);
+			UObject* Value = PackageMap->GetSingletonByClassRef(SingletonClassRef);
+			if (Value == nullptr)
+			{
+				bOutUnresolved = true;
+			}
+			return Value;
 		}
 
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
@@ -39,7 +44,7 @@ UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpati
 				// So we do the same.
 				FString FullPath;
 				SpatialGDK::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
-				UE_LOG(LogUnrealObjectRef, Verbose, TEXT("Object ref did not map to valid object. Streaming level not loaded or actor deleted. Will be set to nullptr: %s %s"),
+				UE_LOG(LogUnrealObjectRef, Warning, TEXT("Object ref did not map to valid object. Streaming level not loaded or actor deleted. Will be set to nullptr: %s %s"),
 					*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
 			}
 
@@ -115,7 +120,7 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 					ObjectRef = FromObjectPtr(ObjectValue->GetClass(), PackageMap);
 					if (ObjectRef.IsValid())
 					{
-						ObjectRef.bSingletonRef = true;
+						ObjectRef.bUseSingletonClassPath = true;
 						return ObjectRef;
 					}
 				}

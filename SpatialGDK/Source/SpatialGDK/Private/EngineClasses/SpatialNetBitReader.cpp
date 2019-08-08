@@ -39,7 +39,7 @@ void FSpatialNetBitReader::DeserializeObjectRef(FUnrealObjectRef& ObjectRef)
 	}
 
 	SerializeBits(&ObjectRef.bNoLoadOnClient, 1);
-	SerializeBits(&ObjectRef.bSingletonRef, 1);
+	SerializeBits(&ObjectRef.bUseSingletonClassPath, 1);
 }
 
 FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)

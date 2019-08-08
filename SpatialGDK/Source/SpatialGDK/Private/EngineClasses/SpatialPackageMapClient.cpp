@@ -254,12 +254,16 @@ AActor* USpatialPackageMapClient::GetSingletonByClassRef(const FUnrealObjectRef&
 			return FoundActors[0];
 		}
 
-		UE_LOG(LogSpatialPackageMap, Warning, TEXT("GetSingletonByClassRef: Found %d actors for singleton class: %s"), FoundActors.Num(), *SingletonClassRef.ToString());
+		FString FullPath;
+		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("GetSingletonByClassRef: Found %d actors for singleton class: %s"), FoundActors.Num(), *FullPath);
 		return nullptr;
 	}
 	else
 	{
-		UE_LOG(LogSpatialPackageMap, Warning, TEXT("GetSingletonByClassRef: Can't resolve singleton class: %s"), *SingletonClassRef.ToString());
+		FString FullPath;
+		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("GetSingletonByClassRef: Can't resolve singleton class: %s"), *FullPath);
 		return nullptr;
 	}
 }
