@@ -20,6 +20,8 @@ class SPATIALGDK_API USpatialStaticComponentView : public UObject
 	GENERATED_BODY()
 
 public:
+	DECLARE_DELEGATE_OneParam(FOnComponentUpdate, const Worker_ComponentUpdateOp& /*Op*/);
+
 	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
@@ -44,6 +46,7 @@ public:
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
+	FOnComponentUpdate OnComponentUpdateDelegate;
 private:
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, TUniquePtr<SpatialGDK::ComponentStorageBase>>> EntityComponentMap;

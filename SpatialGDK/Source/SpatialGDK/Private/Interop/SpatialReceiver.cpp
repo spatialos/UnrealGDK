@@ -13,6 +13,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
@@ -41,6 +42,7 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
+	VirtualWorkerTranslator = InNetDriver->VirtualWorkerTranslator;
 	TimerManager = InTimerManager;
 }
 
@@ -124,6 +126,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::VIRTUAL_WORKER_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
+	case SpatialConstants::WORKER_COMPONENT_LISTENER_COMPONENT_ID:
+		VirtualWorkerTranslator->ApplyWorkerComponentListenerData(Op.data);
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplySingletonManagerData(Op.data);
 		GlobalStateManager->LinkAllExistingSingletonActors();
@@ -273,6 +277,12 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	if (GlobalStateManager->HandlesComponent(Op.component_id))
 	{
 		GlobalStateManager->AuthorityChanged(Op);
+		return;
+	}
+
+	if (VirtualWorkerTranslator->HandlesComponent(Op.component_id))
+	{
+		VirtualWorkerTranslator->AuthorityChanged(Op);
 		return;
 	}
 

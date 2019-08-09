@@ -135,9 +135,12 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		return;
 	}
 
-	if (Component) {
+	if (Component)
+	{
 		Component->ApplyComponentUpdate(Op.update);
 	}
+
+	OnComponentUpdateDelegate.ExecuteIfBound(Op);
 }
 
 void USpatialStaticComponentView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)

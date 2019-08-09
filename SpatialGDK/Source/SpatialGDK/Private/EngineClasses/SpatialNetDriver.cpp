@@ -287,6 +287,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
 	GlobalStateManager = NewObject<UGlobalStateManager>();
+	VirtualWorkerTranslator = NewObject<USpatialVirtualWorkerTranslator>();
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
 	SnapshotManager = NewObject<USnapshotManager>();
@@ -306,6 +307,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Sender->Init(this, &TimerManager);
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
+	VirtualWorkerTranslator->Init();
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);

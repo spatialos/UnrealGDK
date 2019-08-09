@@ -9,6 +9,7 @@
 #include "TimerManager.h"
 #include "UObject/CoreOnline.h"
 
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "SpatialConstants.h"
@@ -117,6 +118,8 @@ public:
 	USpatialClassInfoManager* ClassInfoManager;
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
+	UPROPERTY()
+	USpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 	UPROPERTY()
 	USpatialPlayerSpawner* PlayerSpawner;
 	UPROPERTY()
