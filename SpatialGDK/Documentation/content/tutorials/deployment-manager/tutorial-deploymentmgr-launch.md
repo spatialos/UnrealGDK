@@ -10,11 +10,9 @@ To do this:
 
 1. In File Explorer, navigate to your Deployment Manager repository.
 1. Select **File** > **Open Windows Powershell** > **Open Windows Powershell as administrator**.
-1. In Powershell, run the following two SpatialOS CLI commands (*): 
+2. In Powershell, run the following two commands, making sure to replace the text in `<....>` according to your project. See the list below the commands: 
 	* `.\publish-linux-workers.ps1 <launch config path> <snapshot path>`
 	* `.\cloud-launch.ps1 <assembly name> <deployment name>`
-
-(*) For these commands replace the text in `<....>` according to your project. See the list below:
 
 * `<launch config path>` is the file path to the` one_worker_test.json` file in the Example project
 * `<snapshot path>` is the path to the snapshot file you generated in the [Example Project set up guide]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
