@@ -1,0 +1,7 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+component VirtualWorker {
+    id = 9982;
+    string virtual_worker_id = 1;
+}

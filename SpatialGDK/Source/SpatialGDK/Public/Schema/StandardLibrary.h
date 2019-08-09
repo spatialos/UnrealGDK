@@ -262,4 +262,35 @@ struct Persistence : Component
 	}
 };
 
+struct VirtualWorker : Component
+{
+	static const Worker_ComponentId ComponentId = SpatialConstants::VIRTUAL_WORKER_COMPONENT_ID;
+
+	VirtualWorker() = default;
+
+	VirtualWorker(const FString& InVirtualWorkerId)
+		: VirtualWorkerId(InVirtualWorkerId) {}
+
+	VirtualWorker(const Worker_ComponentData& Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		VirtualWorkerId = GetStringFromSchema(ComponentObject, 1);
+	}
+
+	Worker_ComponentData CreateVirtualWorkerData()
+	{
+		Worker_ComponentData Data = {};
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		AddStringToSchema(ComponentObject, 1, VirtualWorkerId);
+
+		return Data;
+	}
+
+	FString VirtualWorkerId;
+};
+
 } // namespace SpatialGDK
