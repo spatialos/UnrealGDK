@@ -6,17 +6,17 @@ The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine fork and
 
 > The SpatialOS GDK for Unreal is in alpha. It is ready to use for development of single-server games, but not recommended for public releases. We are committed to rapid development of the GDK to provide a performant release - for information on this, see our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support](https://docs.improbable.io/unreal/latest/unreal-features-support) pages, and contact us via our forums, or on Discord.
 
-This is the repository for the GDK plugin, which includes the Starter template (a blank starter project).
+This is the repository for the GDK plugin, which includes the Starter Template (a blank starter project).
 
-In addition to the plugin, the GDK also contains:
+In addition to the plugin, the GDK also includes:
 
 * [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine)
 * [The Example Project](https://github.com/spatialos/UnrealGDKExampleProject)
   
 If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started guide](https://docs.improbable.io/unreal/latest/content/get-started/introduction). 
 
-## Unreal Engine changes
-In order to transform Unreal from a single server engine to a distributed model, we have made a number of small changes to the UE4 code. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our forked [Unreal Engine repo](https://github.com/improbableio/UnrealEngine).
+## SpatialOS Unreal Engine fork changes
+In order to transform Unreal from a single-server engine to a distributed model, we made a number of small changes to Unreal Engine code. We are attempting to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in the [SpatialOS Unreal Engine fork repository](https://github.com/improbableio/UnrealEngine).
 
 > In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 
