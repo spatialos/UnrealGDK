@@ -70,7 +70,8 @@ To use the Example project, you must build the GDK for Unreal module dependencie
 1. In the same directory, double-click **GDKShooter.sln** to open it with Visual Studio.
 1. In the Solution Explorer window, right-click on **GDKShooter** and select **Build**.
 1. When Visual Studio has finished building your project, right-click on **GDKShooter** and select **Set as StartUp Project**.
-1. Build and open your project in the Unreal Editor. To do this: Either press F5 on your keyboard or, in the Visual Studio toolbar, select *Local Windows Debugger*.
+1. Build and open your project in the Unreal Editor. To do this: Either press F5 on your keyboard or, in the Visual Studio toolbar, select *Local Windows Debugger*.<br/>
+
    ![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)<br/>
    _Image: The Visual Studio toolbar_ <br/>
    **Note:** Ensure that your Visual Studio Solution Configuration is set to **Development Editor**. <br/><br/><br/>

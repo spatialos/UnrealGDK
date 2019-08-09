@@ -38,9 +38,12 @@ To get access to the SpatialOS Unreal Engine fork, you need to link your GitHub 
 
 ### Step 3: Add a new SSH key to your GitHub account
 
-You must add an SSH key to your GitHub account in order to automatically download the GDK repositories as part of this setup step.
+If you have not already configured your GitHub account to use an SSH key, you must do this in order to automatically download the GDK repositories as part of the next setup step.
 
-To do this, follow the GitHub tutorial on [Adding a new SSH key to your GitHub account (GitHub Documentation)](https://help.github.com/en/articles/adding-a-new-ssh-key-to-your-github-account)
+To do this:
+
+1. Before you generate an SSH key, you can check to see if you have any existing SSH keys by following the GitHub tutorial [Checking for existing SSH keys](https://help.github.com/en/articles/checking-for-existing-ssh-keys).
+1. If you don't have an existing key, then generate a new SSH key by following the GitHub tutorial [Adding a new SSH key to your GitHub account (GitHub Documentation)](https://help.github.com/en/articles/adding-a-new-ssh-key-to-your-github-account).
 
 ### Step 4: Build the Unreal Engine fork
 
@@ -50,16 +53,15 @@ To build the Unreal Engine fork:
 2. In the same directory, double-click **GenerateProjectFiles.bat**. This file automatically sets up the project files required to build Unreal Engine.<br/>
 3. Double-click **InstallGDK.bat**
 This automatically opens a command line window and performs the following:
-	* Sets `LINUX_MULTIARCH_ROOT` as an environment variable, required for the Linux Cross-Compilation process (see https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html)
 	* Clones the UnrealGDK into your Engine's `Plugins` directory
 	* Clones the [UnrealGDKExampleProject](https://github.com/spatialos/UnrealGDKExampleProject) into your Engine's `Samples` directory
 	* Runs the Unreal GDK `Setup.bat` script to install the GDK into the cloned `UnrealGDKExampleProject` directory
 	* Generates Visual Studio solution files for the `UnrealGDKExampleProject`<br/>
 This process can take a long time to complete. The command line window closes when the process has finished.    <br/>
 1. In the same directory, open **UE4.sln** in Visual Studio.
-1. In Visual Studio, on the toolbar, navigate to **Build** > **Configuration Manager**; set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
-1. In the Solution Explorer window, right-click on the **UE4** project and select **Set as StartUp Project**
-1. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first). <br>
+2. In Visual Studio, on the toolbar, navigate to **Build** > **Configuration Manager**; set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
+3. In the Solution Explorer window, right-click on the **UE4** project and select **Set as StartUp Project**
+4. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first). <br>
 
 Visual Studio then builds Unreal Engine, which can take up to a couple of hours.
 
@@ -80,4 +82,5 @@ Use as a base for creating your own project running on SpatialOS.
 <br/>
 
 ------</br>
-_2019-05-30 Page updated with editorial review_
+_2019-08-08 Page updated with editorial review: added clarification on SSH key and Linux dependencies._
+_2019-05-30 Page updated with editorial review._

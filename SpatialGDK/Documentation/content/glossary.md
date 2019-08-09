@@ -20,24 +20,26 @@ Note that this SpatialOS documentation assumes you are developing a SpatialOS ga
 ## GDK for Unreal terms
 
 ### Actor groups
-To facilitate offloading, we've created the concept of Actor groups to help you configure which Actor types a given server-worker type will have authority over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type.
+Actor groups facilitate multiserver functionality through [offloading](#offloading). You set them up to configure which Actor types instances of a [server-worker type](#worker-types-and-instances) have [authority](#authority) over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type via the SpatialOS Runtime Settings panel.
 
 > **Find out more:**
 > 
-> [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups)
+> * [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups)
+> * [The SpatialOS Runtime Settings panel]({{urlRoot/}}content/unreal-editor-interface/runtime-settings)
+> * [Offloading overview]({{urlRoot}}/content/workers/offloading-concept)
 
 ### Actor handover
 Actor handover (`handover`) is a GDK-specific `UPROPERTY` tag. It allows games built in Unreal (which uses single-server architecture) to take advantage of SpatialOS’ distributed, persistent server architecture. See [Actor property handover between server-workers]({{urlRoot}}/content/actor-handover.md).
 
 ### Authority
 
-A [server-worker instance](#server-workers) has authority over an Actor if it has authority over the equivalent [entity](#entity)’s [SpatialOS component] `Position`. Having authority means it can make changes to the Actor by sending updates to the [SpatialOS Runtime](#spatialos-runtime). 
+When a [server-worker instance](#server-workers) has authority over an Actor, the server-worker instance can make changes to the Actor by sending updates to the [SpatialOS Runtime](#spatialos-runtime). A server-worker instance has authority over an Actor if it has authority over the equivalent [entity](#entity)’s [SpatialOS component](#spatialos-component) `Position`. 
 
 Client-worker instances never have authority over Actors. However, like in native Unreal, they can have [ownership](#ownership). 
 
 In a game with just one server-worker instance (which is the default for the GDK), that server-worker instance has authority over all the Actors in the game. In a game with more than one server-worker instance, different server-worker instances have authority over different Actors:
 
-* with offloading, the server-worker instance that has authority over an Actor always stays the same. <!-- TODO add link to offloading doc -->
+* with [offloading]({{urlRoot}}/content/workers/offloading-concept), the server-worker instance that has authority over an Actor always stays the same.
 * with [zoning](#zoning) (currently in pre-alpha), the server-worker instance that has authority over an Actor can change as the Actor moves around, but only one instance can have authority over an Actor at any one time.
 
 > **Find out more:**
@@ -48,7 +50,7 @@ In a game with just one server-worker instance (which is the default for the GDK
 To enable the network stacks of Unreal and SpatialOS to interoperate, we've implemented [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings.md). `Dynamic Typebindings` operate at runtime so your that your iteration speed is not affected despite your network code running on a completely different represenetations than Unreal's.
 
 ### Cross-server RPCs
-These handle the scenario where a [server-worker](#worker) needs to execute an operation on an Actor that another server-worker has [authority](#authority) over. When a cross-server RPC is invoked by a non-authoritative server-worker, the execution is routed through SpatialOS to the authoritative server-worker - this authoritative server-worker executes the RPC. (See the documentation on [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)).
+These handle the scenario where a [server-worker](#worker) needs to execute an operation on an Actor that another server-worker has [authority](#authority) over. When a cross-server RPC is invoked by a server-worker that doesn't have authority, the execution is routed through SpatialOS to the server-worker that has authority - this server-worker executes the RPC. (See the documentation on [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)).
 
 ### Global State Manager
 The Global State Manager (GSM):
@@ -83,7 +85,9 @@ You can define interest in three ways, which you can use alongside each other:
 
 ### Offloading
 
-Offloading is the new architecture that the SpatialOS GDK for Unreal provides to allocate the authority of specific [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups) from the main Unreal server-worker instance to a different server-worker instance. By using offloading, you can save the resources of the main Unreal server-worker instance when you want to build richer game features.
+Offloading is one of the multiserver options for working with SpatialOS.  The functionality of the main out-of-the-box Unreal [server-worker type](#server-workers) is split between two server-worker types. For example, you could create an AI server-worker type and offload the AI computation from the main Unreal server-worker type onto it.
+
+Advanced AI and large-scale background physics computation are good candidates for offloading as they are computationally expensive but latency-tolerant. This would leave your game's out-of-the-box main server-worker instance to run other game systems at a larger scale.
 
 > **Find out more**
 > 
@@ -204,7 +208,7 @@ The Inspector is a web-based tool that you use to explore the internal state of 
 * how much [load](https://docs.improbable.io/reference/latest/shared/glossary#load-balancing) the workers are under.
 * which [entities](#entity) are in the SpatialOS world.
 * what their [SpatialOS components](#spatialos-component)’ [properties]({{urlRoot}}/content/spatialos-concepts/world-entities-components#entities-and-components) are.
-* which workers are authoritative over each SpatialOS component.
+* which workers have authority over each SpatialOS component.
 
 > **Find out more**
 >
@@ -438,17 +442,20 @@ When you create a worker type using the [Worker SDK](#spatialos-sdks), each work
 
 #### Server-workers
 
-A server-worker [instance](#worker-types-and-worker-instances) equates to a server in native Unreal networking but, unlike Unreal networking, in SpatialOS you can have more than one server-worker instance (see [Zoning](#zoning)). A server-worker instance’s lifecycle is managed by SpatialOS. When you run a SpatialOS [deployment](#deployment) of your game, the [SpatialOS Runtime]#spatialos-runtime) starts and stops server-worker instances.
+A server-worker [instance](#worker-types-and-worker-instances) equates to a server in native Unreal networking but, unlike Unreal networking, in SpatialOS you can have more than one server-worker instance (see [Zoning](#zoning)). A server-worker instance’s lifecycle is managed by SpatialOS. When you run a SpatialOS [deployment](#deployment) of your game, the [SpatialOS Runtime](#spatialos-runtime) starts and stops server-worker instances.
 
-The GDK sets up one server-worker type for you by default. This default server-worker type is an Unreal server-worker, computing Unreal functionality - you can add additional non-Unreal server-worker types.
+##### Single server vs multiserver
+The GDK sets up one server-worker type for you by default: an Unreal server-worker, computing Unreal functionality. Out of the box, you can have a single instance of this type. However, there are also two multiserver options for working with SpatialOS: [offloading](#offloading) and [zoning](#zoning) (note that zoning is currently in pre-alpha).
 
-For example, you could set up an additional server-worker type to implement player logic and another to implement AI logic. 
+You can also add additional non-Unreal server-worker types. For example, you could set up an additional server-worker type to implement player logic and another to implement AI logic. 
 
 **Note:** In a local deployment, the server-worker instances run on your development computer. In a cloud deployment, the server-worker instances run in the cloud. For more information, see [Deployment](#deployment).
 
 > **Find out more**
 > 
-> [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
+> * [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
+> * [Offloading]({{urlRoot}}/content/workers/offloading-concept/)
+> * [Multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
 
 <!-- TODO How do you set up worker types in Unreal https://improbableio.atlassian.net/browse/DOC-1064 -->
 <!-- TODO Offloading info added here:  https://improbableio.atlassian.net/browse/DOC-1064 -->
@@ -475,23 +482,19 @@ Once you’ve chosen a label for the worker type (for example, myWorkerType), yo
 >
 > [Worker configuration file `worker.json`](https://docs.improbable.io/reference/latest/shared/worker-configuration/worker-configuration)
 
-### Worker types
-
-> First, see [workers](#worker).
-
-There are two generic types of worker that define how you would want to connect these workers and what kind of capabilities they have:
-
-* [server-worker](#server-workers)
-* [client-worker](#client-workers)
-
-Within these broad types, you can define your own worker sub-types to create more specialized workers.
-
 ### Zoning
 
-Zoning is when you split out the computation of the SpatialOS world spatially, so that each [worker instance](#worker-types-and-worker-instances) of a particular type is responsible for computing the objects in a particular area.
+Zoning is one of the multiserver options for working with SpatialOS (the other option is [offloading](#offloading)). It involves splitting up the world into zones, known as “areas of [authority](#authority)”, with a different [server-worker instance](#server-workers) responsible for each. A server-worker instance can make updates only to Actors that are in its area of authority.
+
+> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
+<br><br>
+> **Find out more**
+>
+> [Multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
 
 <br/>
 <br/>------<br/>
-_2019-07-30 Added Actor groups, offloading_
+_2019-08-08 Page updated with editorial review: updated Actor groups, offloading, zoning, workers, authority_
+<br/>_2019-07-30 Page updated without editorial review: added Actor groups, offloading_
 <br/>_2019-06-15 Added layers, non-Unreal layers, network operations (ops)_
 <br/>_2019-03-15 Page updated with editorial review_

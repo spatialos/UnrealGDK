@@ -1,7 +1,9 @@
 <%(TOC)%>
 # Actor handover between server-workers
 
-Actor handover (`handover`) is a `UPROPERTY` specifier. It allows games built in Unreal (which uses single-server architecture) to take advantage of SpatialOS’ distributed, persistent server architecture. 
+Actor handover (`handover`) is a `UPROPERTY` specifier. It allows games built in Unreal (which uses single-server architecture) to take advantage of [zoning]({{urlRoot}}/content/glossary#zoning), which is one of the GDK's options for multiserver development.
+
+> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 
 In Unreal’s native single-server architecture, your game server holds the canonical state of the whole game world. As there is a single game server, there are Actor properties that the server doesn’t need to share with any other server or clients. These properties only need to exist in the game server’s local process space.
 

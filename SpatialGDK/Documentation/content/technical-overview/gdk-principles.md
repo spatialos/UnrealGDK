@@ -18,7 +18,7 @@ The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine fork and
 
     You don’t have to make these technical tradeoffs with the GDK. SpatialOS can spread computation across multiple servers, allowing for far more complex games and much higher player counts.</br></br>
 
-    > This will be enabled by [Zoning]({{urlRoot}}/content/technical-overview/gdk-concepts#zoning), which is currently in pre-alpha. We invite you to try out the [Multiserver Shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
+    > This is enabled by [offloading]({{urlRoot}}/content/technical-overview/gdk-concepts#offloading) and will be enabled by [zoning]({{urlRoot}}/content/technical-overview/gdk-concepts#zoning). Zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 
 * **Open development**
     
