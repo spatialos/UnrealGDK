@@ -171,4 +171,13 @@ public:
 	/** Available server worker types. */
 	UPROPERTY(Config)
 	TSet<FName> ServerWorkerTypes;
+
+	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
+	bool bEnableUnrealLoadBalancer;
+
+	/** EXPERIMENTAL: Worker type to assign for load balancing. */
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
+	FWorkerType LoadBalancingWorkerType;
+
 };
