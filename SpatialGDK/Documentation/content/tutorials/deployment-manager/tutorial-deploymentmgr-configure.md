@@ -76,7 +76,7 @@ In the `config.json`, you need to change the following lines:
 - `"NumberOfDeployments": 1`, to `"NumberOfDeployments": 2`,
 - `"AssemblyName": "YourAssembly"`, to `"AssemblyName": "<assembly_name>)"`, where `<assembly_name>` is the name you gave to your assembly when you [uploaded your assembly]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-3-upload-your-worker-assemblies).
 
-Your `config.json` file should look like this: 
+Your `config.json` file should look like this:
 
 ```
 {
@@ -86,7 +86,7 @@ Your `config.json` file should look like this:
   "DeploymentPrefix": "session",
   "NumberOfDeployments": 2,
   "AssemblyName": "<assembly_name>",
-  "DeploymentTags": [ "dev_login" ],
+  "DeploymentTags": [ "dev_login", "ttl_1_hours" ],
   "RegionCode": "EU",
   "DeploymentIntervalSeconds": 5
 }
