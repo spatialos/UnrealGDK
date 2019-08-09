@@ -11,6 +11,8 @@ This is the repository for the GDK plugin, which includes the Starter template (
 In addition to the plugin, the GDK also contains:
 
 * [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine)
+
+    You must be a member of the [Epic Games organization](https://github.com/EpicGames) on GitHub to access this. If you aren't, the link returns a 404 error.
 * [The Example Project](https://github.com/spatialos/UnrealGDKExampleProject)
   
 If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started guide](https://docs.improbable.io/unreal/latest/content/get-started/introduction). 
