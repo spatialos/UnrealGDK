@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Database Sync Worker Tutorial
+# Database sync worker
 
 ## 4. Testing your changes
 

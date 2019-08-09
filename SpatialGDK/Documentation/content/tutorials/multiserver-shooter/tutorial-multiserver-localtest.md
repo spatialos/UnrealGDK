@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Multiserver zoning shooter tutorial
+# Multiserver zoning
 ## 2: Test changes locally
 ### Step 1: Start SpatialOS and start the game
 1. Start SpatialOS: in Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS Local deployment started!`.
@@ -84,7 +84,7 @@ Now you can upload your game to the cloud.
 ### **> Next:** [3: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
 <br/>
 <br/>
-<%(Nav)%>
+
 
 <br/>------<br/>
 _2019-08-02 Page updated with limited editorial review: re-number steps._</br>

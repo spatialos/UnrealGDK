@@ -61,7 +61,7 @@ Actor on **non-owning client**:
 
 Because you can use the GDK with multiple [server-workers instances]({{urlRoot}}/content/glossary#worker) using [zoning]({{urlRoot}}/content/glossary#zoning), SpatialOS needs to specify authority, so that it can allocate it appropriately between server-worker instances. This means that, when you use zoning, at any given moment, server-worker instances might have authority over only some Actors, depending on how SpatialOS assigns authority. **This is a key difference between the GDK and native Unreal networking!**
 
-> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
+> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 
 In the GDK, a server-worker has authority over an Actor if it has authority over the [schema]({{urlRoot}}/content/glossary#schema) [component]({{urlRoot}}/content/glossary#spatialos-component) `Position`. 
 

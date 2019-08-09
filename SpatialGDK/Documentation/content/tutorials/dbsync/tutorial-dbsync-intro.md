@@ -1,6 +1,7 @@
 # Tutorials and guides
 
-## Database Sync Worker Tutorial
+## Database sync worker
+> This tutorial uses the Example Project from the GDK's [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro).</br>
 
 This tutorial takes you through how to integrate the [Database Sync Worker Example](https://github.com/spatialos/database-sync-worker) in a GDK project and use it to store persistent data outside of a SpatialOS deployment.
 

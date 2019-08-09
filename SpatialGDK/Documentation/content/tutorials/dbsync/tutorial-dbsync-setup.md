@@ -1,4 +1,4 @@
-# Database Sync Worker Tutorial
+# Database sync worker
 
 ## 1. Set up
 

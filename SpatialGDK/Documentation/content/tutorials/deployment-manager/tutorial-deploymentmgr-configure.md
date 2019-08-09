@@ -96,7 +96,7 @@ Your `config.json` file should look like this:
 When you are done, save and close your `config.json` file. 
 </br>
 </br>
-**> Next**: [5. Launch multiple session-based deployments]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch)
+### **> Next**: [5. Launch multiple session-based deployments]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch)
 
 
 

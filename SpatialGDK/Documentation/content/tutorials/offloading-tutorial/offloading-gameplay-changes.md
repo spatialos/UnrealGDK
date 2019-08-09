@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Offloading example project tutorial
+# Multiserver offloading
 
 ## 2. Make gameplay changes
 

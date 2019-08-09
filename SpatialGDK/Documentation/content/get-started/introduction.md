@@ -18,7 +18,7 @@ After you set up with the Example Project or Starter Template, you can check out
 Use the Deployment Manager to launch multiple deployments of the Example Project in the cloud - useful for time-limited match-based games, such as battle royales.
 </br>
 </br>
-* **The multiserver zoning shooter tutorial**: </br>
+* **The multiserver zoning tutorial**: </br>
 Learn more about the the GDK's functionality by implementing shooting across the boundaries of different servers computing one game world. In this tutorial, you will set up a new game; the Mutliserver Shooter Game.
 </br>
 </br>

@@ -1,34 +1,39 @@
 ![GDK for Unreal Documentation]({{assetRoot}}assets/spatialos-gdkforunreal-header.png)
 
-<%(Callout  message="The SpatialOS GDK for Unreal is in alpha. It is ready to use for development of games using a single Unreal server, or using multiple servers in an [offloading]({{urlRoot}}/content/glossary#offloading) architecture. It it not yet recommended for development of multiserver games using the [zoning]({{urlRoot}}/content/glossary#zoning) architecture, and is not ready for public releases. For more information, see our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) page.")%>
+<%(Callout  message="The SpatialOS GDK for Unreal is in alpha. It is ready to use for development of games using a single server, or multiserver offloading functionality. We do not recommend development using multiserver zoning functionalty. For more information on multiserver zoning availability, see the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) page.")%>
 
-The SpatialOS Game Development Kit (GDK) for Unreal is an [Unreal Engine plugin](https://docs.unrealengine.com/en-US/Programming/Plugins/index.html) which gives you the features of SpatialOS, within the familiar workflows and APIs of Unreal. 
+The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine fork and plugin with associated projects; it provides features of SpatialOS, within the familiar workflows and APIs of Unreal. 
+
+You can [get started](#get-started) immediately or [find out more](#find-out-more) before diving in. 
 
 <img src="{{assetRoot}}assets/unrealgdk-headline-image.png" style=" float: right; margin: 0; display: block; width: 60%; padding: 20px 20px"/>
 
 SpatialOS provides:<br/>
 
 * **Global hosting**: Scalable dedicated hosting for your game in every major gaming region.<br/>
-* **Easy playtesting**: Deploy and test your game from the start of development, and distribute it to your team and players quickly and easily with a ready-made link. Scale-test your build by connecting in simulated players.<br/>
+* **Easy playtesting**: Deploy and test your game from the start of development, and distribute it to your team and players quickly and easily with a ready-made link. Scale-test your build by connecting simulated players.<br/>
 * **Profiling and debugging tools**: Logs and metrics out of the box to help you quickly understand any bugs and performance issues.
-* **Single and multiserver networking**: Use one or multiple server-worker instances simulating your game world, enabling greater numbers of Actors, players and gameplay systems. This is available today through the offloading architecture, in which you allocate the authority of specific Actor groups from the main Unreal server worker instance to a different worker. This is available as a preview - not recommended for development - through the zoning architecture, in which the world is split into zones of authority for each server-worker. 
+* **Single and multiserver networking**: Use one instance of server software or multiple instancs of server software to compute your game world. Multiple servers enable a greater numbers of Actors, players and gameplay systems in your game.</br>
+Multiserver is available through either:
+    * server **offloading** (available in alpha), in which Unreal server functionality is split between multiple servers and those servers compute different functionality across the whole game world, or 
+    * server **zoning** (available in preview only), in which the game world is split into several geographical areas and each area has a dedicated Unreal server computing all the functionality for it.
 
 ## Get started
 
-If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started]({{urlRoot}}/content/get-started/introduction) guide.
+If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started]({{urlRoot}}/content/get-started/introduction) guide, or you can [find out more](#find-out-more) before diving in.
 
-It takes you through setting up the GDK and getting the Starter Template project or the Example 
-Project running in the cloud, as well as running locally on your computer. This gives an overview of the GDK and using SpatialOS, and you can use the Starter Template as a basis for your own projects.
+The _Get started_ guide takes you through setting up the GDK and getting the Starter Template project or the Example 
+Project running in the cloud, as well as running locally on your computer. The Example Project gives an overview of the GDK and using SpatialOS, and is the basis for tutorials, and you can use the Starter Template as a basis for your own projects.
 
-After you set up the SpatialOS GDK Starter Template or the Example 
-Project, you can learn more about the GDK’s functionality with:
+After you set up the SpatialOS GDK and the Example 
+Project, you can learn more about the GDK’s functionality with tutorials and guides:
 <img src="{{assetRoot}}assets/example-project/example-project-headline.png" style=" float: right; margin: 0; display: block; width: 60%; padding: 20px 20px"/>
 
-* **The offloading example project tutorial**: learn how to offload groups of actors to separate Unreal server-workers.
-* **The tutorial on multiple deployments for session-based games**: upload a session-based FPS example game to the cloud.
-* **The multiserver zoning shooter tutorial**: implement shooting across the boundaries of different servers computing one game world.
-* **The porting guide**: porting your existing UE project to SpatialOS.
-* **The database sync worker tutorial**: learn how to integrate the Database Sync Worker Example in your GDK project
+* **Multiserver offloading**: Learn how to offload groups of Actors so Unreal server functionality is split between multiple servers using the Example Project.
+* **Multiple deployments for session-based games**: Upload a session-based FPS example game to the cloud using the Example Project.
+* **Multiserver zoning**: Implement shooting across the boundaries of different servers computing one game world using the Example Project. (**Note:** Zoning is in preview.)
+* **Database sync worker**: Learn how to integrate server database synchronization into your project using the Example Project.
+* **The porting guide**: Port your existing UE project to SpatialOS.
 
 ## Find out more
 
@@ -45,8 +50,9 @@ Project, you can learn more about the GDK’s functionality with:
 <br/>
 <br/>
 
-### **> Next:** [Get Started]({{urlRoot}}/content/get-started/dependencies.md)
+### **> Next:** [Get started]({{urlRoot}}/content/get-started/dependencies.md)
 
 </br>------</br>
-_2019-08-08 Page updated with editorial review: renamed "multiserver shooter tutorial" to "multiserver zoning shooter tutorial"_ 
-_2019-07-31 Page updated with limited editorial review_
+_2019-08-09 Updated with editorial review_</br>
+_2019-08-08 Updated with editorial review: renamed "multiserver shooter tutorial" to "multiserver zoning tutorial"_ </br>
+_2019-07-31 Updated with limited editorial review_

@@ -5,7 +5,7 @@ In native-Unreal networking, [RPCs (Unreal documentation)](https://docs.unrealen
 
 Cross-server RPCs facilitate [zoning]({{urlRoot}}/content/glossary#zoning), which is one of the GDK's options for multiserver development.
 
-> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
+> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 
 In Unreal’s native single-server architecture, your game server holds the canonical state of the whole game world. As there is a single game server, it has complete authority over all server Actors and so it is able to invoke and execute functions on Actors unhindered. 
 

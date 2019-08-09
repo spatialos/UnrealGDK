@@ -1,6 +1,6 @@
 # Tutorials and guides
 ## Multiple deployments for session-based games
-> **This tutorial uses the Example Project from the GDK's [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro).**</br>
+> This tutorial uses the Example Project from the GDK's [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro).</br>
 
 
 In this tutorial, you will use the [Deployment Manager](https://github.com/spatialos/deployment-manager) to launch multiple deployments of the [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) in the cloud.</br>

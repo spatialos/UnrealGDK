@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Database Sync Worker Tutorial
+# Database sync worker
 
 ## 2. Communicating with the Database Sync Worker
 

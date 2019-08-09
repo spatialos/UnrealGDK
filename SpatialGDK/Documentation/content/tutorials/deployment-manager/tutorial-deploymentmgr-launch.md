@@ -57,7 +57,7 @@ Make sure your Deployment Manager repository is in the same parent directory as 
 
 </br>
 </br>
-**> Next**: [6. Play your game]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-play)
+### **> Next**: [6. Play your game]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-play)
 
 
 

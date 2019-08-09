@@ -2,7 +2,9 @@
 
 # Tutorials and guides
 
-## Offloading example project
+## Multiserver offloading
+
+> This tutorial uses the Example Project from the GDK's [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro).</br>
 
 The UnrealGDK Example project contains a map called `CrashBot_Gym` that demonstrates how to set up a gameplay feature using offload to separate workers.
 

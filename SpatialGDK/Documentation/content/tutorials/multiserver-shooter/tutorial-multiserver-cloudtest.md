@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Multiserver zoning shooter tutorial
+# Multiserver zoning
 ## 3: Test changes in the cloud
 ### Step 1: Build your workers
 
@@ -75,7 +75,7 @@ When you’re done shooting your friends, you can click the **Stop** button in t
 * If you want to create a new game using the GDK, you should get the [Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro). 
 * If you want to port your existing game to the GDK, follow the [Porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide).
 
-<%(Nav)%>
+
 <br/>------<br/>
 _2019-08-02 Page updated with limited editorial review: updated project name._</br>
 _2019-03-20 Page updated with limited editorial review._
