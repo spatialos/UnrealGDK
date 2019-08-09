@@ -1,12 +1,20 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/SpatialStaticComponentView.h"
+#include "Schema/StandardLibrary.h"
 #include "SpatialConstants.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
-void USpatialVirtualWorkerTranslator::Init()
+using namespace SpatialGDK;
+
+void USpatialVirtualWorkerTranslator::Init(USpatialNetDriver* InNetDriver)
 {
+	NetDriver = InNetDriver;
+
 	TArray<ZoneId> ZoneIds;
 	GetZones(ZoneIds);
 
@@ -51,10 +59,10 @@ void USpatialVirtualWorkerTranslator::GetVirtualWorkers(TArray<VirtualWorkerId>&
 void USpatialVirtualWorkerTranslator::GetWorkers(TArray<WorkerId>& WorkerIds)
 {
 	// TODO: this won't actually work until we replace with real worker ids from the worker entities
-	//WorkerIds.Add(TEXT("UnrealWorker0"));
-	//WorkerIds.Add(TEXT("UnrealWorker1"));
-	//WorkerIds.Add(TEXT("UnrealWorker2"));
-	//WorkerIds.Add(TEXT("UnrealWorker3"));
+	WorkerIds.Add(TEXT("UnrealWorker0"));
+	WorkerIds.Add(TEXT("UnrealWorker1"));
+	WorkerIds.Add(TEXT("UnrealWorker2"));
+	WorkerIds.Add(TEXT("UnrealWorker3"));
 }
 
 bool USpatialVirtualWorkerTranslator::HandlesComponent(const Worker_ComponentId ComponentId) const
@@ -64,7 +72,7 @@ bool USpatialVirtualWorkerTranslator::HandlesComponent(const Worker_ComponentId 
 
 void USpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Verbose, TEXT("Authority over the VirtualWorkerTranslator component %d has changed. This worker %s authority."), AuthOp.component_id,
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("Authority over the VirtualWorkerTranslator component %d has changed. This worker %s authority."), AuthOp.component_id,
 		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
 
 	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
@@ -87,7 +95,30 @@ void USpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityCha
 	}
 }
 
+void USpatialVirtualWorkerTranslator::OnComponentAdded(const Worker_AddComponentOp& Op)
+{
+	if (Op.data.component_id == SpatialConstants::VIRTUAL_WORKER_COMPONENT_ID)
+	{
+		// Set Entity's ACL component to correct worker id based on requested virtual worker
+		Worker_EntityId EntityId = Op.entity_id;
+		VirtualWorker* MyVirtualWorker = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::VirtualWorker>(EntityId);
+
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("OnComponentAdded: For Entity %lld, VWId is: %s"), EntityId, *MyVirtualWorker->VirtualWorkerId);
+	}
+}
+
+void USpatialVirtualWorkerTranslator::OnComponentUpdated(const Worker_ComponentUpdateOp& Op)
+{
+	if (Op.update.component_id == SpatialConstants::VIRTUAL_WORKER_COMPONENT_ID)
+	{
+		// Set Entity's ACL component to correct worker id based on requested virtual worker
+		Worker_EntityId EntityId = Op.entity_id;
+		VirtualWorker* MyVirtualWorker = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::VirtualWorker>(EntityId);
+
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("OnComponentUpdated: For Entity %lld, VWId is: %s"), EntityId, *MyVirtualWorker->VirtualWorkerId);
+	}
+}
+
 void USpatialVirtualWorkerTranslator::ApplyWorkerComponentListenerData(const Worker_ComponentData& Data)
 {
-
 }

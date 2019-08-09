@@ -307,7 +307,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Sender->Init(this, &TimerManager);
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
-	VirtualWorkerTranslator->Init();
+	VirtualWorkerTranslator->Init(this);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
@@ -315,6 +315,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	// Entity Pools should never exist on clients
 	if (IsServer())
 	{
+		StaticComponentView->OnComponentAddDelegate.BindUObject(VirtualWorkerTranslator, &USpatialVirtualWorkerTranslator::OnComponentAdded);
+		StaticComponentView->OnComponentUpdateDelegate.BindUObject(VirtualWorkerTranslator, &USpatialVirtualWorkerTranslator::OnComponentUpdated);
+
 		EntityPool->Init(this, &TimerManager);
 	}
 }

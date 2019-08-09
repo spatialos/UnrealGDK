@@ -11,6 +11,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslator, Log, All)
 
+class USpatialNetDriver;
+
 typedef FString ZoneId;
 typedef FString VirtualWorkerId;
 typedef FString WorkerId;
@@ -21,7 +23,7 @@ class USpatialVirtualWorkerTranslator : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init();
+	void Init(USpatialNetDriver* InNetDriver);
 	/*
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
@@ -39,7 +41,8 @@ public:
 
 	void ApplyWorkerComponentListenerData(const Worker_ComponentData& Data);
 
-	void OnComponentUpdated(const Worker_ComponentUpdateOp& Data);
+	void OnComponentAdded(const Worker_AddComponentOp& Op);
+	void OnComponentUpdated(const Worker_ComponentUpdateOp& Op);
 
 private:
 	/*UPROPERTY()
@@ -62,4 +65,6 @@ private:
 
 	TMap<ZoneId, VirtualWorkerId> ZoneToVirtualWorkerMap;
 	TMap<VirtualWorkerId, WorkerId> VirtualWorkerToWorkerMap;
+
+	USpatialNetDriver* NetDriver;
 };
