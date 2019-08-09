@@ -4,8 +4,8 @@
 
 The SpatialOS GDK for Unreal consists of:
 
-*   [The GDK Plugin](https://github.com/spatialos/unrealgdk)
-*   [The SpatialOS Unreal Engine Fork](https://github.com/improbableio/UnrealEngine)
+*   [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine)
+*   [The GDK plugin](https://github.com/spatialos/unrealgdk) (includes the Starter Template, a blank starter project)
 *   [The Example Project](https://github.com/spatialos/UnrealGDKExampleProject)
 
 These repositories all follow the same versioning scheme, as described below: 
@@ -65,9 +65,9 @@ In summary:
   </tr>
 </table>
 
-### Unreal Engine Fork branches
+### Unreal Engine fork branches
 
-The [Unreal Engine Fork](https://github.com/improbableio/UnrealEngine) follows the versioning and branches pattern described above, but the branch names have `X.XX-SpatialOSUnrealGDK` following prepended to them (where `X.XX` is the Unreal Engine version of the fork.)
+The [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) follows the versioning and branches pattern described above, but the branch names have `X.XX-SpatialOSUnrealGDK` following prepended to them (where `X.XX` is the Unreal Engine version of the fork.)
 
 For example:
 
@@ -78,15 +78,15 @@ when Unreal Engine 4.22 is the version supported.
 
 ## Unreal Engine version support
 
-**The GDK and the Example Project only support one version of Unreal Engine at a time**. This version is the Unreal Engine Fork repository’s default branch, and is indicated in the [Get started]({{urlRoot}}/content/get-started/introduction) documentation.
+**The GDK and the Example Project only support one version of Unreal Engine at a time**. This version is the Unreal Engine fork repository’s default branch, and is indicated in the [Get started]({{urlRoot}}/content/get-started/introduction) documentation.
 
 To facilitate a smooth upgrade for your project, when we introduce support for a new Unreal Engine version, we also support the previously Engine version in parallel, for one GDK release. For example, GDK version `0.6.0` introduces `Unreal Engine 4.22` support, but is also the last GDK version to support `4.20-SpatialOSUnrealGDK-release`.
 
 We endeavour to support the latest stable and recommended version of Unreal Engine less than 3 months after it's released. To see when a new version will be supported, check out the [Development Roadmap](https://github.com/spatialos/unrealgdk/projects/1).
 
 <br/>------<br/>
-_2019-07-21 Page added with limited editorial review_
+_2019-08-07 Page updated: clarified what the GDK consists of_
+<br>_2019-07-21 Page added with limited editorial review_
 
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1231)
-
 

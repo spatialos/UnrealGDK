@@ -50,7 +50,7 @@ When Player 1 shoots at Player 2, the server-worker instance that has authority 
 
 SpatialOS sends this to the server-worker instance that has authority over Player 2 (server-worker B). Server-worker B then executes the RPC.
 
-<%(Lightbox image="{{assetRoot}}assets/screen-grabs/shooting-across-boundaries.png")%>
+<%(Lightbox image="{{assetRoot}}assets/shooting-across-boundaries.png")%>
 _Cross-server RPC: Player 1’s action affects Player 2, even though they are in different areas of authority being updated by different server-worker instances._ 
 
 You set up a cross-server RPC in the same way as you would set up any other RPC within Unreal.

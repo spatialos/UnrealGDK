@@ -1,12 +1,12 @@
 <%(TOC)%>
 
-# Manually build the SpatialOS Unreal Engine Fork
+# Manually build the SpatialOS Unreal Engine fork
 
-Follow these instructions to manually build the SpatialOS Unreal Engine fork after cloning the [Unreal Engine Fork](https://github.com/improbableio/UnrealEngine) repository.
+Follow these instructions to manually build the SpatialOS Unreal Engine fork after cloning the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) repository.
 
 ## Step 1: Unreal Linux cross-platform support</br>
 
-To build the server software for SpatialOS deployments correctly, you need to build the Unreal Engine Fork targeting Linux. This requires Linux cross-compilation of your SpatialOS project and the Unreal Engine Fork. To do this, you need to download and unzip the Linux cross-compilation toolchain.</br></br>
+To build the server software for SpatialOS deployments correctly, you need to build the Unreal Engine fork targeting Linux. This requires Linux cross-compilation of your SpatialOS project and the Unreal Engine fork. To do this, you need to download and unzip the Linux cross-compilation toolchain.</br></br>
 For guidance on this, see the _Getting the toolchain_ section of Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation. As you follow the guidance there, select **v11 clang 5.0.0-based** to download the `v11_clang-5.0.0-centos7.zip` archive, then unzip this file into a suitable directory.
 
 ## Step 2: Add a LINUX_MULTIARCH_ROOT environment variable
@@ -43,7 +43,7 @@ You have now built Unreal Engine 4 with cross-compilation for Linux.
 
 ## Installing the SpatialOS GDK for Unreal
 
-If you built the Engine Fork manually, you need to add the GDK to your project's Plugins folder before using SpatialOS. 
+If you built the Engine fork manually, you need to add the GDK to your project's Plugins folder before using SpatialOS. 
 
 To do this: 
 

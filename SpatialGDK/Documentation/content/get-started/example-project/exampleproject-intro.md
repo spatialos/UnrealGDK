@@ -9,7 +9,7 @@ The project contains gameplay and assets that are representative of a basic firs
 Before starting this tutorial you _**must**_ follow:
 
 - [Get started 1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
-- [Get started 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+- [Get started 2 - Get and build the SpatialOS Unreal Engine fork]({{urlRoot}}/content/get-started/build-unreal-fork)
 
 </br>
 ### **> Next:** [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)

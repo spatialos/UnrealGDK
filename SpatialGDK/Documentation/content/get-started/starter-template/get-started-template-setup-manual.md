@@ -1,7 +1,7 @@
 <%(TOC)%>
 # The Starter Template
 
-> **If you did not manually build your Engine Fork**, i.e you used `InstallGDK.bat`, please follow [these setup instructions]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup) instead of the below.
+> **If you did not manually build your Engine fork**, i.e you used `InstallGDK.bat`, please follow [these setup instructions]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup) instead of the below.
 
 ## 1. Set up (manual instructions)
 

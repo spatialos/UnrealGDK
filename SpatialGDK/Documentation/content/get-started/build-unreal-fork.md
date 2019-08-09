@@ -1,6 +1,6 @@
 <%(TOC)%>
 # Get started 
-## 2 - Get and build the SpatialOS Unreal Engine Fork
+## 2 - Get and build the SpatialOS Unreal Engine fork
 
 To use the SpatialOS GDK for Unreal, you first need to download and build the SpatialOS fork of Unreal Engine.
 
@@ -8,9 +8,9 @@ To use the SpatialOS GDK for Unreal, you first need to download and build the Sp
 
 To get access to the SpatialOS Unreal Engine fork, you need to link your GitHub account to a verified Epic Games account, agree to the Unreal Engine End User License Agreement (EULA) and accept the invitation to join the [EpicGames organisation on GitHub](https://github.com/EpicGames). To do this, see the [Unreal Engine documentation](https://www.unrealengine.com/en-US/ue4-on-github).</br>
 
-<%(Callout type="warn" message="This step is required to use the GDK. Without joining the `EpicGames` organisation on GitHub, the [Unreal Engine Fork link](https://github.com/improbableio/UnrealEngine) will return a 404 error and you will not be able to download it.")%>
+<%(Callout type="warn" message="This step is required to use the GDK. Without joining the `EpicGames` organisation on GitHub, the [Unreal Engine fork link](https://github.com/improbableio/UnrealEngine) will return a 404 error and you will not be able to download it.")%>
 
-### Step 2: Clone the Unreal Engine Fork repository
+### Step 2: Clone the Unreal Engine fork repository
 
 <%(#Expandable title="Using the command line")%>
 
@@ -34,7 +34,7 @@ To get access to the SpatialOS Unreal Engine fork, you need to link your GitHub 
 ![img]({{assetRoot}}assets/screen-grabs/github-desktop.png)<br/>
 <%(/Expandable)%>
 
-> **TIP:** Clone the Unreal Engine Fork into your root directory to avoid file path length errors. For example: `C:\Dev\UnrealEngine`.
+> **TIP:** Clone the Unreal Engine fork into your root directory to avoid file path length errors. For example: `C:\Dev\UnrealEngine`.
 
 ### Step 3: Add a new SSH key to your GitHub account
 
@@ -45,9 +45,9 @@ To do this:
 1. Before you generate an SSH key, you can check to see if you have any existing SSH keys by following the GitHub tutorial [Checking for existing SSH keys](https://help.github.com/en/articles/checking-for-existing-ssh-keys).
 1. If you don't have an existing key, then generate a new SSH key by following the GitHub tutorial [Adding a new SSH key to your GitHub account (GitHub Documentation)](https://help.github.com/en/articles/adding-a-new-ssh-key-to-your-github-account).
 
-### Step 4: Build the Unreal Engine Fork
+### Step 4: Build the Unreal Engine fork
 
-To build the Unreal Engine Fork: 
+To build the Unreal Engine fork: 
 
 1. Run **Setup.bat**, found in the root directory of your clone of Unreal Engine.
 2. In the same directory, double-click **GenerateProjectFiles.bat**. This file automatically sets up the project files required to build Unreal Engine.<br/>

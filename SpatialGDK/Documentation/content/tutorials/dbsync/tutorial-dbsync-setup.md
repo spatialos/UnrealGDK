@@ -12,7 +12,7 @@ You can download it from [here](https://postgresql.org/download/windows). Once d
 
 ### 2. Set up the Example Project
 
-If you followed [Get started 1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies), and [Get started 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork), you will have a fully set up Example Project already.
+If you followed [Get started 1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies), and [Get started 2 - Get and build the SpatialOS Unreal Engine fork]({{urlRoot}}/content/get-started/build-unreal-fork), you will have a fully set up Example Project already.
 
 For this tutorial, you will use the `feature/dbsync_worker_tutorial_start` branch rather than the default `release` branch. To switch branches, run `git checkout origin/feature/dbsync_worker_tutorial_start`.
 
