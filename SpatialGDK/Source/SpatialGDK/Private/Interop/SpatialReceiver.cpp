@@ -451,7 +451,7 @@ bool USpatialReceiver::IsReceivedEntityTornOff(Worker_EntityId EntityId)
 
 		Worker_ComponentData* ComponentData = PendingAddComponent.Data->ComponentData;
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData->schema_type);
-		return Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID);
+		return GetBoolFromSchema(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID);
 	}
 
 	return false;
@@ -600,6 +600,10 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Taken from PostNetInit
 		if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 		{
+			// Whenever we receive an actor over the wire, the expectation is that it is not in an authoritative
+			// state.  This is because it should already have had authoritative BeginPlay() called.  If we have
+			// authority here, we are calling BeginPlay() with authority on this actor a 2nd time, which is always incorrect.
+			check(!EntityActor->HasAuthority());
 			EntityActor->DispatchBeginPlay();
 		}
 
@@ -833,28 +837,17 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 		return nullptr;
 	}
 
+	const bool bIsServer = NetDriver->IsServer();
+
 	// Initial Singleton Actor replication is handled with GlobalStateManager::LinkExistingSingletonActors
-	if (NetDriver->IsServer() && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	if (bIsServer && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		return FindSingletonActor(ActorClass);
 	}
 
-	// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
-	if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
-	{
-		checkf(!UnrealMetadataComp->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
-
-		FString URLString = FURL().ToString();
-		URLString += TEXT("?workerAttribute=") + UnrealMetadataComp->OwnerWorkerAttribute;
-
-		// TODO: Once we can checkout PlayerController and PlayerState atomically, we can grab the UniqueId and online subsystem type from PlayerState. UNR-933
-		UNetConnection* Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), true);
-		check(Connection);
-
-		return Connection->PlayerController;
-	}
-
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
+
+	const bool bCreatingPlayerController = ActorClass->IsChildOf(APlayerController::StaticClass());
 
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -865,6 +858,11 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 
 	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnDataComp->Rotation, SpawnLocation), SpawnInfo);
 	check(NewActor);
+
+	if (bIsServer && bCreatingPlayerController)
+	{
+		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), UnrealMetadataComp->OwnerWorkerAttribute);
+	}
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
 	const float Epsilon = 0.001f;
@@ -1441,7 +1439,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 		// Check if bTearOff has been set to true
-		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
+		if (GetBoolFromSchema(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
 #if ENGINE_MINOR_VERSION <= 20
 			Channel->ConditionalCleanUp();

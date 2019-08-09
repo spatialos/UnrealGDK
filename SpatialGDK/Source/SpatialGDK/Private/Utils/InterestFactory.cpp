@@ -70,10 +70,7 @@ void GatherClientInterestDistances()
 	// Sort the map for iteration so that parent classes are seen before derived classes. This lets us skip
 	// derived classes that have a smaller interest distance than a parent class.
 	DiscoveredInterestDistancesSquared.KeySort([](const UClass& LHS, const UClass& RHS) {
-		return
-			LHS.IsChildOf(&RHS) ? -1 :
-			RHS.IsChildOf(&LHS) ? 1 :
-			0;
+		return LHS.IsChildOf(&RHS);
 	});
 
 	// If an actor's interest distance is smaller than that of a parent class, there's no need to add interest for that actor.
