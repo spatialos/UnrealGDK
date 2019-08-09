@@ -31,13 +31,15 @@ In the terminal window, copy the string displayed after `tokenSecret` and make a
 
 Next, you must add your development authentication token to the Example Project code.
 
-1. In File Explorer, navigate to UnrealGDKExampleProject\Game\Source\GDKShooter\Private\Deployments and double click `DeploymentsPlayerController.cpp` to open it in Visual Studio.
-1. In Visual studio with the  `DeploymentsPlayerController.cpp` file open, search for `PITParams->development_authentication_token` and replace `“REPLACE ME"` with the `tokenSecret` string you copied in step 3. <br/>
+1. In File Explorer, navigate to `UnrealGDKExampleProject\Game\Source\GDKShooter\Private\Deployments` and double click **DeploymentsPlayerController.cpp** to open it.
+1. With **DeploymentsPlayerController.cpp** open, search for `PITParams->development_authentication_token` and replace `“REPLACE ME"` with the `tokenSecret` string you copied in step 3. <br/>
 <%(Lightbox image="{{assetRoot}}assets/deployment-manager/deploymentmgr-token.png")%><br/>
 _Image: The development authentication token id code as shown in Visual Studio_ <br/>
-1. Save your changes and launch a debug build of your project by pressing F5 on your keyboard or by selecting **Local Windows Debugger** on the Visual Studio toolbar. 
+1. Save your changes.
+1. In the directory `UnrealEngine\samples\UnrealGDKExampleProject\Game`, double-click **GDKShooter.sln** to open it with Visual Studio.
+1. Press F5 on your computer’s keyboard or, from the Visual Studio toolbar, select **Local Windows Debugger** to launch a debug build of your project.
 
-If your project opens without errors you have successfully added the developer authentication token to your project. 
+If your project opens without errors you have successfully added the developer authentication token to your project.
 
 **> Next**: [3: Build and upload workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers)
 
