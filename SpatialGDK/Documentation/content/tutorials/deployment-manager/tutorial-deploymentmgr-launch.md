@@ -9,8 +9,7 @@ Now you use the Deployment Manager to launch multiple session-based cloud deploy
 To do this: 
 
 1. In File Explorer, navigate to your Deployment Manager repository.
-1. Select **File.**
-1. Select **Open Windows Powershell**, then select **Open Windows Powershell as administrator.**
+1. Select **File** > **Open Windows Powershell** > **Open Windows Powershell as administrator**.
 1. In Powershell, run the following two SpatialOS CLI commands (*): 
 	* `.\publish-linux-workers.ps1 <launch config path> <snapshot path>`
 	* `.\cloud-launch.ps1 <assembly name> <deployment name>`
@@ -19,7 +18,7 @@ To do this:
 
 * `<launch config path>` is the file path to the` one_worker_test.json` file in the Example project
 * `<snapshot path>` is the path to the snapshot file you generated in the [Example Project set up guide]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
-*  `<deployment manager assembly name>` is a name that you choose for your Deployment Manager assembly. This **must be a different name** to the `<assembly name>` you created when you uploaded your assembly in [Step 3: Build and upload your workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-2-upload-your-assembly).
+*  `<deployment manager assembly name>` is a name that you choose for your Deployment Manager assembly. This **must be a different name** to the `<assembly name>` you created when you uploaded your assembly in [Step 3: Build and upload your workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-3-upload-your-assembly).
 * `<deployment name>` is a name that you choose for your deployment.
 
 For example, your commands might look like:

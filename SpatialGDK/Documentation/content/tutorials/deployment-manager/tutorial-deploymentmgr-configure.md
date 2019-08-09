@@ -45,13 +45,12 @@ Where `beta_nuts_double_379` is your SpatialOS cloud project name.
 ### Step 2: Build the Deployment Manager
 
 1. In File Explorer, navigate to your Deployment Manager repository
-1. Select **File.**
-1. Select **Open Windows Powershell**, then select **Open Windows Powershell as administrator.**
-1. In Powershell, run the following SpatialOS CLI commands: 
+1. Select **File** > **Open Windows Powershell** > **Open Windows Powershell as administrator**.
+1. In Powershell, run the following SpatialOS CLI commands:
 	- `.\build-nuget-packages.ps1`
 	- `.\generate-service-account-token.ps1 <project name> <token life time in days>`
 
-Where `<project name>` is your SpatialOS project name and `<token life time in days>` is the the number of days you want your token to remain valid for. 
+Where `<project name>` is your SpatialOS project name and `<token life time in days>` is the the number of days you want your token to remain valid for.
 
 ### Step 3: Edit the config.json file
 
@@ -75,7 +74,7 @@ In the `config.json`, you need to change the following lines:
 
 - `"ClientType": "YourClient"`, to `"ClientType": "UnrealClient"`,
 - `"NumberOfDeployments": 1`, to `"NumberOfDeployments": 2`,
-- `"AssemblyName": "YourAssembly"`, to `"AssemblyName": "<assembly_name>)"`, where `<assembly_name>` is the name you gave to your assembly when you [uploaded your assembly]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-2-upload-your-worker-assemblies).
+- `"AssemblyName": "YourAssembly"`, to `"AssemblyName": "<assembly_name>)"`, where `<assembly_name>` is the name you gave to your assembly when you [uploaded your assembly]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-3-upload-your-worker-assemblies).
 
 Your `config.json` file should look like this: 
 

@@ -2,27 +2,24 @@
 # Multiple deployments for session-based games
 ## 3: Build and upload workers 
 
-Before you build your [assembly]({{urlRoot}}/content/glossary#assembly), you need to edit the Example Project `DefaultEngine.ini` file.
+### Step 1: Edit the .ini file
 
-In File Explorer, navigate to `UnrealGDKExampleProject\Game\Config` and open `DefaultEngine.ini` in a text editor. 
+Before you build your [assembly]({{urlRoot}}/content/glossary#assembly), you need to edit the Example Project `DefaultEngine.ini` file. To do this:
 
-In your text editor, search for `bPreventAutoConnectWithLocator=False` and change this value to `True`. 
-
-This setting forces your game client to stay offline after being launched until you select a deployment or select Quick Join in the game. 
-
-```
-[/Script/SpatialGDK.SpatialGameInstance]
-bPreventAutoConnectWithLocator=True
-```
-
-Save and close `DefaultEngine.ini` once you have made your changes. 
+1. In File Explorer, navigate to `UnrealGDKExampleProject\Game\Config` and open `DefaultEngine.ini` in a text editor.
+1. In your text editor, search for `bPreventAutoConnectWithLocator=False` and change this value to `True`. This setting forces your game client to stay offline after being launched until you select a deployment or select Quick Join in the game. Your changes should look like this:
+    
+    ```
+    [/Script/SpatialGDK.SpatialGameInstance]
+    bPreventAutoConnectWithLocator=True
+    ```
+1. Save and close `DefaultEngine.ini` once you have made your changes. 
 
 > **Note**: You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers, the command will fail.
 </br>
 </br>
 
-
-### Step 1: Build your assembly
+### Step 2: Build your assembly
 
 There are two ways to build workers for your assembly, you can either:
 
@@ -60,7 +57,7 @@ If you receive the error `The system cannot find the path specified. Builds fail
 
 <%(/Expandable)%>
 
-### Step 2: Upload your assembly
+### Step 3: Upload your assembly
 
 Before launching a cloud deployment, you must upload your assembly, which contains your server-worker and client-worker. To do this:
 
