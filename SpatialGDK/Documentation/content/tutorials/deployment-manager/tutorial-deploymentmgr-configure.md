@@ -58,9 +58,9 @@ Next, you configure the Deployment Manager.
 
 In this example, you must tell the Deployment Manager:
 
-*  the type of client-worker it can deploy - `UnrealClient` for this example, but this can be any client type you have set up for your project
-* the number of deployments you want it to allow to run concurrently - 2 for this example
-* which assembly to use for the deployments - you created the name for this in step 2, above.
+* the type of client-worker it can deploy - `UnrealClient` for this example, but this can be any client type you have set up for your project.
+* the number of deployments you want to run concurrently - `2` for this example.
+* the assembly you want to deploy - you created the name for this assembly when you ran `spatial cloud upload <assembly_name>` during [3: Build and upload workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-3-upload-your-assembly).
 
 Leave the other configuration file settings to the default, for this example.  For more information about the other Deployment Manager configuration options, see the Deployment Manager [documentation on GitHub](https://github.com/spatialos/deployment-manager). 
 
@@ -68,7 +68,7 @@ To configure the Deployment Manager, you edit its configuration file.
 To do this, 
 
 1. Navigate to the Deployment Manager repository you cloned in step 1.
-1. Using a text editor of your choice, open `\deployment-manager\DeploymentManager\config.json`. 
+2. Using a text editor of your choice, open `\deployment-manager\DeploymentManager\config.json`. 
 
 In the `config.json`, you need to change the following lines: 
 
