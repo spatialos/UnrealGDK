@@ -110,14 +110,21 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
-	const WorkerAttributeSet WorkerAttribute{ Info.WorkerType.ToString() };
-	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+
+	const FString AuthoritativeWorkerAttribute = SpatialSettings->bEnableUnrealLoadBalancer ? FString::Printf(TEXT("workerId:%s"), *Connection->GetWorkerId()) : Info.WorkerType.ToString();
+	const WorkerAttributeSet AuthoritativeWorkerAttributeSet{ AuthoritativeWorkerAttribute };
+	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { AuthoritativeWorkerAttributeSet };
+
+	const FString LoadBalancingWorkerAttribute = SpatialSettings->bEnableUnrealLoadBalancer ? SpatialSettings->LoadBalancingWorkerType.WorkerTypeName.ToString() : Info.WorkerType.ToString();
+	const WorkerAttributeSet LoadBalancingAttributeSet{ LoadBalancingWorkerAttribute };
+	const WorkerRequirementSet LoadBalancingWorkerRequirementSet = { LoadBalancingAttributeSet };
 
 	WriteAclMap ComponentWriteAcl;
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalancingWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
