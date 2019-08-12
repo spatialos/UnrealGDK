@@ -47,6 +47,7 @@ Before you offload Actors, consider the following scenarios that you need to upd
     However, this might cause issues when the initialization logic in the calls such as `BeginPlay` and `PostInitializeComponent` is executed on the wrong server-worker instance. You can usually work around these issues using callbacks / RepNotify-s on the main Unreal server-worker instance to defer the execution of such logic until when the correct server-worker instance has authority over the offloaded Actor.
 
 <br/>------------<br/>
+_2019-08-12 Page updated with limited editorial review_
 _2019-07-26 Page added with limited editorial review_
 <br/>
 <br/>
