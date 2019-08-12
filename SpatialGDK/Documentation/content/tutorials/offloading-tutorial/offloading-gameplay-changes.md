@@ -81,6 +81,7 @@ By using offloading, you can scale your CPU heavy tasks by splitting them to run
 Meanwhile, offloading introduces a set of constraints that you need to take care of.  When you set up your feature using offloading properly, you can have significant scaling opportunities.
 
 <br/>------------<br/>
+_2019-08-12 Page updated with limited editorial review_
 _2019-07-30 Page added as limited editorial review_
 <br/>
 <br/>
