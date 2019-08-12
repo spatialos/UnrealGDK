@@ -17,6 +17,7 @@ In this tutorial, you will go through the steps to enable offloading.
 
 <br/>------------<br/>
 _2019-07-30 Page added as limited editorial review_
+_2019-08-12 Page updated with limited editorial review_
 <br/>
 <br/>
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1142)
