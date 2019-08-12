@@ -45,11 +45,7 @@ public:
 
 	void SPATIALGDKSERVICES_API SetAutoDeploy(bool bAutoDeploy);
 
-	// TODO: Refactor these into Utils
-	FString GetProjectName();
 	void WorkerBuildConfigAsync();
-	bool ParseJson(const FString& RawJsonString, TSharedPtr<FJsonObject>& JsonParsed);
-	void ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode);
 	const FString GetSpotExe();
 
 	FSimpleMulticastDelegate OnSpatialShutdown;
@@ -79,7 +75,6 @@ private:
 	bool bStoppingSpatialService;
 
 	FString LocalRunningDeploymentID;
-	FString ProjectName;
 
 	bool bRedeployRequired = false;
 	bool bAutoDeploy = false;
