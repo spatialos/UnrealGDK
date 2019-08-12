@@ -266,9 +266,6 @@ private:
 	TArray<FString> SpatialOSCommandLineLaunchFlags;
 
 private:
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS project"))
-		FString ProjectName;
-
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (ConfigRestartRequired = false, DisplayName = "Assembly name"))
 		FString AssemblyName;
 
@@ -371,12 +368,6 @@ public:
 	FORCEINLINE FString GetAssemblyName() const
 	{
 		return AssemblyName;
-	}
-
-	void SetProjectName(const FString& Name);
-	FORCEINLINE FString GetProjectName() const
-	{
-		return ProjectName;
 	}
 
 	void SetPrimaryLaunchConfigPath(const FString& Path);
