@@ -288,7 +288,8 @@ void WorkerView::HandleCommandRequest(const Worker_CommandRequestOp& request) {
 }
 
 void WorkerView::HandleCommandResponse(const Worker_CommandResponseOp& response) {
-  CommandResponseReceived r{response.request_id, CommandResponse{response.response},
+  auto resp = response.status_code == 1 ? CommandResponse{ response.response } : CommandResponse{response.response.component_id, response.command_id};
+  CommandResponseReceived r{response.request_id, std::move(resp),
                             static_cast<Worker_StatusCode>(response.status_code),
                             std::string{response.message}, response.command_id};
   delta.AddCommandResponse(std::move(r));

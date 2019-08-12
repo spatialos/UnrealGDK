@@ -41,8 +41,7 @@ public:
   Schema_Object* GetEvents();
   const Schema_Object* GetEvents() const;
 
-  Schema_ComponentUpdate* GetUnderlying();
-  const Schema_ComponentUpdate* GetUnderlying() const;
+  Schema_ComponentUpdate* GetUnderlying() const;
 
   ComponentId GetComponentId() const;
 

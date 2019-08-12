@@ -21,11 +21,7 @@ Schema_CommandRequest* CommandRequest::Release() && {
   return request.release();
 }
 
-Schema_CommandRequest* CommandRequest::GetUnderlying() {
-  return request.get();
-}
-
-const Schema_CommandRequest* CommandRequest::GetUnderlying() const {
+Schema_CommandRequest* CommandRequest::GetUnderlying() const {
   return request.get();
 }
 

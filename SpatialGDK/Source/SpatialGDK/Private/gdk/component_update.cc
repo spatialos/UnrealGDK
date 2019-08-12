@@ -67,11 +67,7 @@ const Schema_Object* ComponentUpdate::GetEvents() const {
   return Schema_GetComponentUpdateEvents(update.get());
 }
 
-Schema_ComponentUpdate* ComponentUpdate::GetUnderlying() {
-  return update.get();
-}
-
-const Schema_ComponentUpdate* ComponentUpdate::GetUnderlying() const {
+Schema_ComponentUpdate* ComponentUpdate::GetUnderlying() const {
   return update.get();
 }
 

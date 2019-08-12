@@ -33,8 +33,7 @@ public:
   ComponentId GetComponentId() const;
   FieldId GetCommandIndex() const;
 
-  Schema_CommandRequest* GetUnderlying();
-  const Schema_CommandRequest* GetUnderlying() const;
+  Schema_CommandRequest* GetUnderlying() const;
 
 private:
   struct Deleter {

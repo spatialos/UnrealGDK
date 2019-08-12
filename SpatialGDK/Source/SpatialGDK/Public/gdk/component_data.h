@@ -40,8 +40,7 @@ public:
   Schema_Object* GetFields();
   const Schema_Object* GetFields() const;
 
-  Schema_ComponentData* GetUnderlying();
-  const Schema_ComponentData* GetUnderlying() const;
+  Schema_ComponentData* GetUnderlying() const;
 
   ComponentId GetComponentId() const;
 

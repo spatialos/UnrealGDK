@@ -54,14 +54,10 @@ const Schema_Object* ComponentData::GetFields() const {
   return Schema_GetComponentDataFields(data.get());
 }
 
-Schema_ComponentData* ComponentData::GetUnderlying() {
+Schema_ComponentData* ComponentData::GetUnderlying() const {
   if (data == nullptr) {
     return nullptr;
   }
-  return data.get();
-}
-
-const Schema_ComponentData* ComponentData::GetUnderlying() const {
   return data.get();
 }
 
