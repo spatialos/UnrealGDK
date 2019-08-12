@@ -18,6 +18,10 @@ EntityId EntitySnapshot::GetEntityId() const {
   return entityId;
 }
 
+EntityState& EntitySnapshot::GetEntityState() {
+  return entityState;
+}
+
 const EntityState& EntitySnapshot::GetEntityState() const {
   return entityState;
 }

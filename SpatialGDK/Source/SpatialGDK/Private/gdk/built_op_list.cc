@@ -1,5 +1,6 @@
 #include "gdk/built_op_list.h"
 
+#include <algorithm>
 #include <cstddef>
 
 namespace gdk {
@@ -70,7 +71,8 @@ OpListBuilder& OpListBuilder::RemoveEntity(EntityId entityId) {
   return *this;
 }
 
-OpListBuilder& OpListBuilder::AddComponent(EntityId entityId, ComponentData&& component) {
+OpListBuilder& OpListBuilder::AddComponent(EntityId entityId,
+                                           ComponentData&& component) {
   Worker_ComponentData workerData{nullptr, component.GetComponentId(), component.GetUnderlying(),
                                   nullptr};
   Worker_Op op;
@@ -181,6 +183,105 @@ OpListBuilder& OpListBuilder::AddCommandFailure(RequestId requestId, EntityId en
   op.command_response.command_id = commandId;
   opList.ops.emplace_back(op);
   return *this;
+}
+
+OpListBuilder& OpListBuilder::AddReserveEntityIdsResponse(RequestId requestId,
+                                                          Worker_StatusCode status,
+                                                          const std::string& message,
+                                                          EntityId firstEntityId,
+                                                          std::uint32_t numberOfIds) {
+  Worker_Op op{};
+  op.op_type = static_cast<std::uint8_t>(WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE);
+  op.reserve_entity_ids_response.request_id = requestId;
+  op.reserve_entity_ids_response.status_code = static_cast<std::uint8_t>(status);
+
+  opList.stringStorage.emplace_back(message);
+  op.reserve_entity_ids_response.message = opList.stringStorage.back().c_str();
+
+  op.reserve_entity_ids_response.first_entity_id = firstEntityId;
+  op.reserve_entity_ids_response.number_of_entity_ids = numberOfIds;
+  opList.ops.emplace_back(op);
+  return *this;
+}
+
+OpListBuilder& OpListBuilder::AddCreateEntityResponse(RequestId requestId, Worker_StatusCode status,
+                                                      const std::string& message,
+                                                      EntityId entityId) {
+  Worker_Op op{};
+  op.op_type = static_cast<std::uint8_t>(WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE);
+  op.create_entity_response.request_id = requestId;
+  op.create_entity_response.status_code = static_cast<std::uint8_t>(status);
+
+  opList.stringStorage.emplace_back(message);
+  op.create_entity_response.message = opList.stringStorage.back().c_str();
+
+  op.create_entity_response.entity_id = entityId;
+  opList.ops.emplace_back(op);
+  return *this;
+}
+
+OpListBuilder& OpListBuilder::AddDeleteEntityResponse(RequestId requestId, EntityId entityId,
+                                                      Worker_StatusCode status,
+                                                      const std::string& message) {
+  Worker_Op op{};
+  op.op_type = static_cast<std::uint8_t>(WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE);
+  op.delete_entity_response.request_id = requestId;
+  op.delete_entity_response.status_code = static_cast<std::uint8_t>(status);
+
+  opList.stringStorage.emplace_back(message);
+  op.delete_entity_response.message = opList.stringStorage.back().c_str();
+
+  op.delete_entity_response.entity_id = entityId;
+  opList.ops.emplace_back(op);
+  return *this;
+}
+
+OpListBuilder& OpListBuilder::AddEntityQueryResponse(RequestId requestId, Worker_StatusCode status,
+                                                     const std::string& message,
+                                                     std::uint32_t resultCount,
+                                                     std::vector<EntitySnapshot> results) {
+  Worker_Op op{};
+  op.op_type = static_cast<std::uint8_t>(WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE);
+  op.entity_query_response.request_id = requestId;
+  op.entity_query_response.status_code = static_cast<std::uint8_t>(status);
+
+  opList.stringStorage.emplace_back(message);
+  op.entity_query_response.message = opList.stringStorage.back().c_str();
+
+  op.entity_query_response.result_count = resultCount;
+
+  // Store the results information and create the Worker_Entity array.
+  opList.queryEntityStorage.emplace_back(std::vector<Worker_Entity>(results.size()));
+  for (size_t i = 0; i < results.size(); ++i) {
+    Worker_Entity entity;
+    // Store components and get a pointer.
+    auto& components = results[i].GetEntityState().GetComponents();
+    opList.snapshotStorage.emplace_back(std::vector<Worker_ComponentData>(components.size()));
+    auto& storedSnapshot = opList.snapshotStorage.back();
+    for (size_t j = 0; i < components.size(); ++j) {
+      opList.dataStorage.emplace_back(std::move(components[j]));
+      auto& storedData = opList.dataStorage.back();
+      storedSnapshot.emplace_back(Worker_ComponentData{nullptr, storedData.GetComponentId(),
+                                                       storedData.GetUnderlying(), nullptr});
+    }
+    entity.entity_id = results[i].GetEntityId();
+    entity.component_count = static_cast<std::uint32_t>(storedSnapshot.size());
+    entity.components = storedSnapshot.data();
+    // Store the entity.
+    opList.queryEntityStorage.back().emplace_back(entity);
+  }
+
+  op.entity_query_response.results = opList.queryEntityStorage.back().data();
+
+  opList.ops.emplace_back(op);
+  return *this;
+}
+
+Worker_ComponentData OpListBuilder::StoreAndConvertComponentData(ComponentData&& data) {
+  opList.dataStorage.emplace_back(std::move(data));
+  auto& storedData = opList.dataStorage.back();
+  return Worker_ComponentData{nullptr, storedData.GetComponentId(), storedData.GetUnderlying(),
+                              nullptr};
 }
 
 }  // namespace gdk

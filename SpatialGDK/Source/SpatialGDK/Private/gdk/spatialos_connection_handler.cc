@@ -9,7 +9,8 @@
 namespace gdk {
 
 SpatialOsConnectionHandler::SpatialOsConnectionHandler(Worker_Connection* connection)
-: connection(connection), workerId(Worker_Connection_GetWorkerId(connection)) {
+: connection(connection)
+, workerId(Worker_Connection_GetWorkerId(connection)) {
   auto* attributes = Worker_Connection_GetWorkerAttributes(connection);
   workerAttributes.reserve(attributes->attribute_count);
   for (std::uint32_t i = 0; i < attributes->attribute_count; ++i) {

@@ -192,6 +192,10 @@ void WorkerView::ProcessOpList(const OpList& opList) {
     case WORKER_OP_TYPE_COMMAND_RESPONSE:
       HandleCommandResponse(op.command_response);
       break;
+    default:
+      // Ignore other ops.
+      // todo replace this with a gdk op list enum.
+      break;
     }
   }
 }
@@ -288,9 +292,13 @@ void WorkerView::HandleCommandRequest(const Worker_CommandRequestOp& request) {
 }
 
 void WorkerView::HandleCommandResponse(const Worker_CommandResponseOp& response) {
-  auto resp = response.status_code == 1 ? CommandResponse{ response.response } : CommandResponse{response.response.component_id, response.command_id};
-  CommandResponseReceived r{response.request_id, std::move(resp),
-                            static_cast<Worker_StatusCode>(response.status_code),
+  const auto status = static_cast<Worker_StatusCode>(response.status_code);
+  // If the response was not sucesfull then the op will not contain a valid response.
+  // Todo consider replacing with an option type.
+  CommandResponse payload = status == WORKER_STATUS_CODE_SUCCESS
+      ? CommandResponse{response.response}
+      : CommandResponse{response.response.component_id, response.command_id};
+  CommandResponseReceived r{response.request_id, std::move(payload), status,
                             std::string{response.message}, response.command_id};
   delta.AddCommandResponse(std::move(r));
 }

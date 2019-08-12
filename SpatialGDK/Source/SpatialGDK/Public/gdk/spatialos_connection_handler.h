@@ -4,6 +4,7 @@
 #include "gdk/common_types.h"
 #include "gdk/op_list.h"
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <queue>
 #include <string>

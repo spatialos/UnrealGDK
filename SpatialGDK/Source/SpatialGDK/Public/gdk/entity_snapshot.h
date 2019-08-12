@@ -23,7 +23,10 @@ public:
   EntitySnapshot Clone() const;
 
   EntityId GetEntityId() const;
+
+  EntityState& GetEntityState();
   const EntityState& GetEntityState() const;
+
   const ComponentData* GetComponentData(ComponentId componentId) const;
 
 private:

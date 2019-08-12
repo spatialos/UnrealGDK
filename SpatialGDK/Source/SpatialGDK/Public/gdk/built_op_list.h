@@ -11,6 +11,7 @@
 #include <deque>
 #include <string>
 #include <vector>
+#include "entity_snapshot.h"
 
 namespace gdk {
 
@@ -42,6 +43,8 @@ private:
   std::deque<ComponentUpdate> updateStorage;
   std::deque<CommandRequest> requestStorage;
   std::deque<CommandResponse> responseStorage;
+  std::deque<std::vector<Worker_ComponentData>> snapshotStorage;
+  std::deque<std::vector<Worker_Entity>> queryEntityStorage;
 
   friend OpListBuilder;
 };
@@ -63,7 +66,7 @@ public:
   OpListBuilder& AddFlag(const std::string& name, const std::string& value);
   OpListBuilder& AddCriticalSection(bool inCriticalSection);
 
-  OpListBuilder& AddEntity(EntityId entityId, EntityState entity);
+  OpListBuilder& AddEntity(EntityId entityId, EntityState entity = {});
   OpListBuilder& RemoveEntity(EntityId entityId);
   OpListBuilder& AddComponent(EntityId entityId, ComponentData&& component);
   OpListBuilder& RemoveComponent(EntityId entityId, ComponentId componentId);
@@ -79,8 +82,19 @@ public:
                                     CommandResponse&& response, std::uint32_t commandId);
   OpListBuilder& AddCommandFailure(RequestId requestId, EntityId entityId, Worker_StatusCode status,
                                    const std::string& message, std::uint32_t commandId);
+  OpListBuilder& AddReserveEntityIdsResponse(RequestId requestId, Worker_StatusCode status,
+                                             const std::string& message, EntityId firstEntityId,
+                                             std::uint32_t numberOfIds);
+  OpListBuilder& AddCreateEntityResponse(RequestId requestId, Worker_StatusCode status,
+                                         const std::string& message, EntityId entityId);
+  OpListBuilder& AddDeleteEntityResponse(RequestId requestId, EntityId entityId,
+                                         Worker_StatusCode status, const std::string& message);
+  OpListBuilder& AddEntityQueryResponse(RequestId requestId, Worker_StatusCode status,
+                                        const std::string& message, std::uint32_t resultCount,
+                                        std::vector<EntitySnapshot> results);
 
 private:
+  Worker_ComponentData StoreAndConvertComponentData(ComponentData&& data);
   BuiltOpList opList;
 };
 
