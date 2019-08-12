@@ -256,7 +256,7 @@ AActor* USpatialPackageMapClient::GetSingletonByClassRef(const FUnrealObjectRef&
 
 		FString FullPath;
 		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
-		UE_LOG(LogSpatialPackageMap, Warning, TEXT("GetSingletonByClassRef: Found %d actors for singleton class: %s"), FoundActors.Num(), *FullPath);
+		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("GetSingletonByClassRef: Found %d actors for singleton class: %s"), FoundActors.Num(), *FullPath);
 		return nullptr;
 	}
 	else

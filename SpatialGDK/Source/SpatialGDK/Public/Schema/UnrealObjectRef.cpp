@@ -117,10 +117,9 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 				// If this is a singleton that hasn't been resolved yet, send its class path instead.
 				if (ObjectValue->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 				{
-					ObjectRef = FromObjectPtr(ObjectValue->GetClass(), PackageMap);
+					ObjectRef = GetSingletonClassRef(ObjectValue, PackageMap);
 					if (ObjectRef.IsValid())
 					{
-						ObjectRef.bUseSingletonClassPath = true;
 						return ObjectRef;
 					}
 				}
@@ -133,4 +132,14 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 	}
 
 	return ObjectRef;
+}
+
+FUnrealObjectRef FUnrealObjectRef::GetSingletonClassRef(UObject* SingletonObject, USpatialPackageMapClient* PackageMap)
+{
+	FUnrealObjectRef ClassObjectRef = FromObjectPtr(SingletonObject->GetClass(), PackageMap);
+	if (ClassObjectRef.IsValid())
+	{
+		ClassObjectRef.bUseSingletonClassPath = true;
+	}
+	return ClassObjectRef;
 }
