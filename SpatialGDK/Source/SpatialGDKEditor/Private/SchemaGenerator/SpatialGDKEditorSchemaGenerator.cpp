@@ -628,7 +628,7 @@ void ResetUsedNames()
  	}
 }
 
-void RunSchemaCompiler()
+bool RunSchemaCompiler()
 {
 	FString PluginDir = GetDefault<USpatialGDKEditorSettings>()->GetGDKPluginDirectory();
 
@@ -659,10 +659,12 @@ void RunSchemaCompiler()
 	if (ExitCode == 0)
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("schema_compiler successfully generated schema descriptor: %s"), *SchemaCompilerOut);
+		return true;
 	}
 	else
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("schema_compiler failed to generate schema descriptor: %s"), *SchemaCompilerErr);
+		return false;
 	}
 }
 
@@ -707,9 +709,10 @@ bool SpatialGDKGenerateSchema()
 	GenerateSchemaForSublevels(SchemaOutputPath, IdGenerator);
 	NextAvailableComponentId = IdGenerator.Peek();
 	SaveSchemaDatabase();
-	RunSchemaCompiler();
 
-	return true;
+	bool SchemaCompileSuccess = RunSchemaCompiler();
+
+	return SchemaCompileSuccess;
 }
 
 #undef LOCTEXT_NAMESPACE
