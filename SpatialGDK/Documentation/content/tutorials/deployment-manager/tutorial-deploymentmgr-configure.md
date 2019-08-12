@@ -46,7 +46,7 @@ Where `beta_nuts_double_379` is your SpatialOS cloud project name.
 
 1. In File Explorer, navigate to your Deployment Manager repository
 1. Select **File** > **Open Windows Powershell** > **Open Windows Powershell as administrator**.
-1. In Powershell, run the following SpatialOS CLI commands:
+1. In Powershell, run the following commands:
 	- `.\build-nuget-packages.ps1`
 	- `.\generate-service-account-token.ps1 <project name> <token life time in days>`
 

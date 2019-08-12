@@ -14,7 +14,7 @@ To do this:
 	* `.\publish-linux-workers.ps1 <launch config path> <snapshot path>`
 	* `.\cloud-launch.ps1 <assembly name> <deployment name>`
 
-* `<launch config path>` is the file path to the` one_worker_test.json` file in the Example project
+* `<launch config path>` is `UnrealGDKExampleProject/spatial/one_worker_test.json`.
 * `<snapshot path>` is the path to the snapshot file you generated in the [Example Project set up guide]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
 *  `<deployment manager assembly name>` is a name that you choose for your Deployment Manager assembly. This **must be a different name** to the `<assembly name>` you created when you uploaded your assembly in [Step 3: Build and upload your workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-3-upload-your-assembly).
 * `<deployment name>` is a name that you choose for your deployment.

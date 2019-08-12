@@ -27,7 +27,7 @@ There are two ways to build workers for your assembly, you can either:
 
 1. In File Explorer, navigate to the `UnrealGDKExampleProject` directory.
 
-2. Double click `BuildProject.bat`. This opens a command line window and automatically builds your client and server workers.
+1. Double click `BuildProject.bat`. This opens a command line window and automatically builds your client and server workers.
 
 This script automatically builds both the [server-workers]({{urlRoot}}/content/glossary#server-workers) and [client-workers]({{urlRoot}}/content/glossary#client-workers) required to run your game in the cloud. It then compresses your workers and saves them as `.zip` files to the `UnrealGDKExampleProject\spatial\build\assembly\worker` directory. Use this script if you want to build server-workers and client-workers at the same time.
 
@@ -40,7 +40,7 @@ or
 1. In a terminal window, navigate to the `UnrealGDKExampleProject` directory.
 
 1. Build a server-worker by running the following command: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject`
-2. Build a client-worker by running the following command: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject`
+1. Build a client-worker by running the following command: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject`
 
 Use the command line when you want to build your [server-workers]({{urlRoot}}/content/glossary#server-workers) and [client-workers]({{urlRoot}}/content/glossary#client-workers) separately, or, if you want to build different worker configurations.
 
@@ -62,7 +62,7 @@ If you receive the error `The system cannot find the path specified. Builds fail
 Before launching a cloud deployment, you must upload your assembly, which contains your server-worker and client-worker. To do this:
 
 1. Open a terminal window and navigate to `\UnrealGDKExampleProject\spatial`.
-2. Run the following SpatialOS CLI command: `spatial cloud upload <assembly_name>`
+1. Run the following SpatialOS CLI command: `spatial cloud upload <assembly_name>`
 <br/>Where `<assembly_name>` is a name you create here for the upload (for example “myassembly”).
 
 Make a note of the `<assembly_name>` you create, as you will need it later. 

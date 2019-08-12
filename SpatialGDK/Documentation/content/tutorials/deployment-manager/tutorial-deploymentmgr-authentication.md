@@ -36,7 +36,7 @@ Next, you must add your development authentication token to the Example Project 
 <%(Lightbox image="{{assetRoot}}assets/deployment-manager/deploymentmgr-token.png")%><br/>
 _Image: The development authentication token id code as shown in Visual Studio_ <br/>
 1. Save your changes.
-1. In the directory `UnrealEngine\samples\UnrealGDKExampleProject\Game`, double-click **GDKShooter.sln** to open it with Visual Studio.
+1. In the directory `UnrealEngine\Samples\UnrealGDKExampleProject\Game`, double-click **GDKShooter.sln** to open it with Visual Studio.
 1. Press F5 on your computer’s keyboard or, from the Visual Studio toolbar, select **Local Windows Debugger** to launch a debug build of your project.
 
 If your project opens without errors you have successfully added the developer authentication token to your project.
