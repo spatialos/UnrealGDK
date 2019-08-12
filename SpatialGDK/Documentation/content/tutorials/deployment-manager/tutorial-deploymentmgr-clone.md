@@ -15,8 +15,8 @@ If you do not clone the Deployment Manager into the parent directory of your Exa
 
 |       |                                                              |
 | ----- | ------------------------------------------------------------ |
-| HTTPS | git clone https://github.com/spatialos/deployment-manager.git|
-| SSH   | git clone git@github.com:spatialos/deployment-manager.git |
+| HTTPS | `git clone https://github.com/spatialos/deployment-manager.git`|
+| SSH   | `git clone git@github.com:spatialos/deployment-manager.git`|
 
 <%(/Expandable)%>
 

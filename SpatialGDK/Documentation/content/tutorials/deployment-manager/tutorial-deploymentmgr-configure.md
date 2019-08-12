@@ -45,13 +45,12 @@ Where `beta_nuts_double_379` is your SpatialOS cloud project name.
 ### Step 2: Build the Deployment Manager
 
 1. In File Explorer, navigate to your Deployment Manager repository
-1. Select **File.**
-1. Select **Open Windows Powershell**, then select **Open Windows Powershell as administrator.**
-1. In Powershell, run the following SpatialOS CLI commands: 
+1. Select **File** > **Open Windows Powershell** > **Open Windows Powershell as administrator**.
+1. In Powershell, run the following commands:
 	- `.\build-nuget-packages.ps1`
 	- `.\generate-service-account-token.ps1 <project name> <token life time in days>`
 
-Where `<project name>` is your SpatialOS project name and `<token life time in days>` is the the number of days you want your token to remain valid for. 
+Where `<project name>` is your SpatialOS project name and `<token life time in days>` is the the number of days you want your token to remain valid for.
 
 ### Step 3: Edit the config.json file
 
@@ -59,9 +58,9 @@ Next, you configure the Deployment Manager.
 
 In this example, you must tell the Deployment Manager:
 
-*  the type of client-worker it can deploy - `UnrealClient` for this example, but this can be any client type you have set up for your project
-* the number of deployments you want it to allow to run concurrently - 2 for this example
-* which worker assembly to use for the deployments - you created the name for this in step 2, above.
+* the type of client-worker it can deploy - `UnrealClient` for this example, but this can be any client type you have set up for your project.
+* the number of deployments you want to run concurrently - `2` for this example.
+* the assembly you want to deploy - you created the name for this assembly when you ran `spatial cloud upload <assembly_name>` during [3: Build and upload workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-3-upload-your-assembly).
 
 Leave the other configuration file settings to the default, for this example.  For more information about the other Deployment Manager configuration options, see the Deployment Manager [documentation on GitHub](https://github.com/spatialos/deployment-manager). 
 
@@ -69,15 +68,15 @@ To configure the Deployment Manager, you edit its configuration file.
 To do this, 
 
 1. Navigate to the Deployment Manager repository you cloned in step 1.
-1. Using a text editor of your choice, open `\deployment-manager\DeploymentManager\config.json`. 
+2. Using a text editor of your choice, open `\deployment-manager\DeploymentManager\config.json`. 
 
 In the `config.json`, you need to change the following lines: 
 
 - `"ClientType": "YourClient"`, to `"ClientType": "UnrealClient"`,
 - `"NumberOfDeployments": 1`, to `"NumberOfDeployments": 2`,
-- `"AssemblyName": "YourAssembly"`, to `"AssemblyName": "<assembly_name>)"`, where `<assembly_name>` is the name you gave to your assembly when you [uploaded your worker assemblies]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-2-upload-your-worker-assemblies).
+- `"AssemblyName": "YourAssembly"`, to `"AssemblyName": "<assembly_name>)"`, where `<assembly_name>` is the name you gave to your assembly when you [uploaded your assembly]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-3-upload-your-assembly).
 
-Your `config.json` file should look like this: 
+Your `config.json` file should look like this:
 
 ```
 {
@@ -87,7 +86,7 @@ Your `config.json` file should look like this:
   "DeploymentPrefix": "session",
   "NumberOfDeployments": 2,
   "AssemblyName": "<assembly_name>",
-  "DeploymentTags": [ "dev_login" ],
+  "DeploymentTags": [ "dev_login", "ttl_1_hours" ],
   "RegionCode": "EU",
   "DeploymentIntervalSeconds": 5
 }
