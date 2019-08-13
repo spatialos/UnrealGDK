@@ -84,12 +84,12 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 		return NetGUID;
 	}
 
-	if (!Value->IsA<AActor>() && !Value->GetOuter()->IsA<AActor>())
+	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Value->GetTypedOuter<AActor>();
+	if (Actor == nullptr)
 	{
 		return NetGUID;
 	}
 
-	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Cast<AActor>(Value->GetOuter());
 	if (!Actor->GetIsReplicated())
 	{
 		return NetGUID;

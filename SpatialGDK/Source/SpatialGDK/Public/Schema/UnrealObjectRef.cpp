@@ -104,10 +104,8 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 			else
 			{
 				// Check if the object is an actor or a subobject of an actor that is torn off or non-replicated.
-				if (ObjectValue->IsA<AActor>() || ObjectValue->GetOuter()->IsA<AActor>())
+				if (AActor* Actor = ObjectValue->IsA<AActor>() ? Cast<AActor>(ObjectValue) : ObjectValue->GetTypedOuter<AActor>())
 				{
-					AActor* Actor = ObjectValue->IsA<AActor>() ? Cast<AActor>(ObjectValue) : Cast<AActor>(ObjectValue->GetOuter());
-
 					if (Actor->GetTearOff() || !Actor->GetIsReplicated())
 					{
 						return FUnrealObjectRef::NULL_OBJECT_REF;
