@@ -81,8 +81,8 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ServerRPCEndpoint>>(Op.data);
 		break;
-	case SpatialConstants::VIRTUAL_WORKER_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::VirtualWorker>>(Op.data);
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::AuthorityIntent>>(Op.data);
 		break;
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.
@@ -130,8 +130,8 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::ServerRPCEndpoint>(Op.entity_id);
 		break;
-	case SpatialConstants::VIRTUAL_WORKER_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::VirtualWorker>(Op.entity_id);
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::AuthorityIntent>(Op.entity_id);
 		break;
 	default:
 		return;

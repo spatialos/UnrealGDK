@@ -97,25 +97,25 @@ void USpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityCha
 
 void USpatialVirtualWorkerTranslator::OnComponentAdded(const Worker_AddComponentOp& Op)
 {
-	if (Op.data.component_id == SpatialConstants::VIRTUAL_WORKER_COMPONENT_ID)
+	if (Op.data.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	{
 		// Set Entity's ACL component to correct worker id based on requested virtual worker
 		Worker_EntityId EntityId = Op.entity_id;
-		VirtualWorker* MyVirtualWorker = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::VirtualWorker>(EntityId);
+		AuthorityIntent* MyAuthorityIntent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
 
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("OnComponentAdded: For Entity %lld, VWId is: %s"), EntityId, *MyVirtualWorker->VirtualWorkerId);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("OnComponentAdded: For Entity %lld, VWId is: %s"), EntityId, *MyAuthorityIntent->VirtualWorkerId);
 	}
 }
 
 void USpatialVirtualWorkerTranslator::OnComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
-	if (Op.update.component_id == SpatialConstants::VIRTUAL_WORKER_COMPONENT_ID)
+	if (Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	{
 		// Set Entity's ACL component to correct worker id based on requested virtual worker
 		Worker_EntityId EntityId = Op.entity_id;
-		VirtualWorker* MyVirtualWorker = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::VirtualWorker>(EntityId);
+		AuthorityIntent* MyAuthorityIntent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
 
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("OnComponentUpdated: For Entity %lld, VWId is: %s"), EntityId, *MyVirtualWorker->VirtualWorkerId);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("OnComponentUpdated: For Entity %lld, VWId is: %s"), EntityId, *MyAuthorityIntent->VirtualWorkerId);
 	}
 }
 

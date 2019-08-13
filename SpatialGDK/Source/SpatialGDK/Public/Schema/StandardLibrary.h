@@ -262,23 +262,23 @@ struct Persistence : Component
 	}
 };
 
-struct VirtualWorker : Component
+struct AuthorityIntent : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::VIRTUAL_WORKER_COMPONENT_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
 
-	VirtualWorker() = default;
+	AuthorityIntent() = default;
 
-	VirtualWorker(const FString& InVirtualWorkerId)
+	AuthorityIntent(const FString& InVirtualWorkerId)
 		: VirtualWorkerId(InVirtualWorkerId) {}
 
-	VirtualWorker(const Worker_ComponentData& Data)
+	AuthorityIntent(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		VirtualWorkerId = GetStringFromSchema(ComponentObject, 1);
 	}
 
-	Worker_ComponentData CreateVirtualWorkerData()
+	Worker_ComponentData CreateAuthorityIntentData()
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
