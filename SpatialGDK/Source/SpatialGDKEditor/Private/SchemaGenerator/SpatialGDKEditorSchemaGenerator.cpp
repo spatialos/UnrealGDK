@@ -644,7 +644,11 @@ bool RunSchemaCompiler()
 	if (!FPaths::DirectoryExists(SchemaDescriptorDir))
 	{
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-		PlatformFile.CreateDirectoryTree(*SchemaDescriptorDir);
+		if (!PlatformFile.CreateDirectoryTree(*SchemaDescriptorDir))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create schema descriptor directory '%s'! Please make sure the parent directory is writeable."), *SchemaDescriptorDir);
+			return false;
+		}
 	}
 
 	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
@@ -710,9 +714,7 @@ bool SpatialGDKGenerateSchema()
 	NextAvailableComponentId = IdGenerator.Peek();
 	SaveSchemaDatabase();
 
-	bool SchemaCompileSuccess = RunSchemaCompiler();
-
-	return SchemaCompileSuccess;
+	return RunSchemaCompiler();
 }
 
 #undef LOCTEXT_NAMESPACE
