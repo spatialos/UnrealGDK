@@ -119,6 +119,30 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 
 void USpatialDispatcher::ProcessOps(const gdk::SpatialOsWorker& Worker)
 {
+	Receiver->OnCriticalSection(true);
+	for (const auto& Entity : Worker.GetEntitiesAdded())
+	{
+		Receiver->OnAddEntity(Worker_AddEntityOp{Entity.GetEntityId()});
+	}
+	for (const auto& entityComponent : Worker.GetComponentsAdded(1))
+	{
+		Worker_ComponentData Data{ nullptr, entityComponent.Data.GetComponentId(), entityComponent.Data.GetUnderlying(), nullptr };
+		Worker_AddComponentOp Op{ entityComponent.EntityId, Data };
+		StaticComponentView->OnAddComponent(Op);
+		Receiver->OnAddComponent(Op);
+	}
+	for (const auto& entityComponent : Worker.GetComponentsRemoved(1))
+	{
+		Receiver->OnRemoveComponent(Worker_RemoveComponentOp{ entityComponent.EntityId, entityComponent.ComponentId });
+	}
+	for (const auto& EntityId : Worker.GetEntitiesRemoved())
+	{
+		Receiver->OnRemoveEntity(Worker_RemoveEntityOp{EntityId});
+		StaticComponentView->OnRemoveEntity(EntityId);
+		Receiver->RemoveComponentOpsForEntity(EntityId);
+	}
+	Receiver->OnCriticalSection(false);
+
 	for (const auto& response : Worker.GetReserveEntityIdsResponses())
 	{
 		Worker_ReserveEntityIdsResponseOp Op{ response.RequestId, static_cast<std::uint8_t>(response.StatusCode), 
@@ -135,21 +159,6 @@ void USpatialDispatcher::ProcessOps(const gdk::SpatialOsWorker& Worker)
 	{
 		std::vector<Worker_Entity> Entities(response.Entities.size());
 		std::vector<std::vector<Worker_ComponentData>> Data(response.Entities.size());
-//		std::transform(response.Entities.begin(), response.Entities.end(), Entities.begin(),
-//			[](const gdk::EntitySnapshot& snapshot) -> Worker_Entity
-//		{
-//			Worker_Entity e;
-//			const auto& components = snapshot.GetEntityState().GetComponents();
-//			e.component_count = components.size();
-//			e.entity_id = snapshot.GetEntityId();
-//			std::vector<Worker_ComponentData> Data{ components.size() };
-//			std::transform(components.begin(), components.end(), Data.begin(), [](const gdk::ComponentData& data) -> Worker_ComponentData
-//			{
-//				return Worker_ComponentData{ nullptr, data.GetComponentId(), data.GetUnderlying(), nullptr };
-//			});
-//			e.components = Data.data();
-//			return e;
-//		});
 		for (size_t i = 0; i < response.Entities.size(); ++i)
 		{
 			const auto& components = response.Entities[i].GetEntityState().GetComponents();
@@ -167,28 +176,6 @@ void USpatialDispatcher::ProcessOps(const gdk::SpatialOsWorker& Worker)
 			response.Message.c_str(), response.ResultCount, Entities.data() };
 		Receiver->OnEntityQueryResponse(Op);
 	}
-	Receiver->OnCriticalSection(true);
-	for (const auto& Entity : Worker.GetEntitiesAdded())
-	{
-		Receiver->OnAddEntity(Worker_AddEntityOp{Entity.GetEntityId()});
-	}
-	for (const auto& EntityId : Worker.GetEntitiesRemoved())
-	{
-		Receiver->OnRemoveEntity(Worker_RemoveEntityOp{EntityId});
-		StaticComponentView->OnRemoveEntity(EntityId);
-	}
-	for (const auto& entityComponent : Worker.GetComponentsAdded(1))
-	{
-		Worker_ComponentData Data{ nullptr, entityComponent.Data.GetComponentId(), entityComponent.Data.GetUnderlying(), nullptr };
-		Worker_AddComponentOp Op{ entityComponent.EntityId, Data };
-		StaticComponentView->OnAddComponent(Op);
-		Receiver->OnAddComponent(Op);
-	}
-	for (const auto& entityComponent : Worker.GetComponentsRemoved(1))
-	{
-		Receiver->OnRemoveComponent(Worker_RemoveComponentOp{ entityComponent.EntityId, entityComponent.ComponentId });
-	}
-	Receiver->OnCriticalSection(false);
 	for (const auto& request : Worker.GetCommandRequests(1))
 	{
 		const char** Attributes = new const char*[request.CallerAttributeSet.size()];
@@ -204,7 +191,6 @@ void USpatialDispatcher::ProcessOps(const gdk::SpatialOsWorker& Worker)
 		Receiver->OnCommandRequest(Op);
 		delete[] Attributes;
 	}
-
 	for (const auto& response : Worker.GetCommandResponses(1))
 	{
 		Worker_CommandResponse r{ nullptr, response.Response.GetComponentId(), response.Response.GetUnderlying(), nullptr };
@@ -253,6 +239,7 @@ void USpatialDispatcher::ProcessOps(const gdk::SpatialOsWorker& Worker)
 		Worker_ComponentUpdate Update{ nullptr, entityComponent.Update.GetComponentId(), entityComponent.Update.GetUnderlying(), nullptr };
 		Worker_ComponentUpdateOp Op{ entityComponent.EntityId, Update };
 		Receiver->OnComponentUpdate(Op);
+		StaticComponentView->OnComponentUpdate(Op);
 	}
 	for (const auto& entityComponent : Worker.GetEvents(1))
 	{
