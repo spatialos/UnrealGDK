@@ -34,8 +34,8 @@ public:
 
 private:
   enum {
-    kFirstOpListNotReady,
-    kFirstOpListReady,
+    kFiltering,
+    kFilterFinished,
     kFlushingQueuedOpLists,
     kPassThrough
   } state;

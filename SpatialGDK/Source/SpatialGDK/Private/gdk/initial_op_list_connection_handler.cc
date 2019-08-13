@@ -19,9 +19,8 @@ void ExtractedOpList::AddOp(OpList* opList, size_t index) {
 InitialOpListConnectionHandler::InitialOpListConnectionHandler(
   std::unique_ptr<AbstractConnectionHandler> handler,
   std::function<bool(OpList*, ExtractedOpList*)> opExtractor)
-  : state(kFirstOpListNotReady)
+  : state(kFiltering)
   , internalHandler(std::move(handler))
-  , extractedOpList(std::make_unique<ExtractedOpList>())
   , opExtractor(std::move(opExtractor)) {
 }
 
@@ -32,14 +31,15 @@ void InitialOpListConnectionHandler::Advance() {
   }
 
   switch (state) {
-  case kFirstOpListNotReady: {
+  case kFiltering: {
     OpList empty{};
+    extractedOpList = std::make_unique<ExtractedOpList>();
     if (opExtractor(&empty, extractedOpList.get())) {
-      state = kFirstOpListReady;
+      state = kFilterFinished;
     }
     break;
   }
-  case kFirstOpListReady:
+  case kFilterFinished:
     extractedOpList = nullptr;
     if (queuedOpLists.empty()) {
       state = kPassThrough;
@@ -59,17 +59,17 @@ void InitialOpListConnectionHandler::Advance() {
   const auto opListsAvailable = internalHandler->GetOpListCount();
   for (size_t i = 0; i < opListsAvailable; ++i) {
     queuedOpLists.push(internalHandler->GetNextOpList());
-    if (state == kFirstOpListNotReady && opExtractor(&queuedOpLists.back(), extractedOpList.get())) {
-      state = kFirstOpListReady;
+    if (state == kFiltering && opExtractor(&queuedOpLists.back(), extractedOpList.get())) {
+      state = kFilterFinished;
     }
   }
 }
 
 size_t InitialOpListConnectionHandler::GetOpListCount() {
   switch (state) {
-  case kFirstOpListNotReady:
-    return 0;
-  case kFirstOpListReady:
+  case kFiltering:
+    return 1;
+  case kFilterFinished:
     return 1;
   case kFlushingQueuedOpLists:
     return queuedOpLists.size();
@@ -83,10 +83,9 @@ size_t InitialOpListConnectionHandler::GetOpListCount() {
 
 OpList InitialOpListConnectionHandler::GetNextOpList() {
   switch (state) {
-  case kFirstOpListNotReady: {
-    return OpList{};
-  }
-  case kFirstOpListReady: {
+  case kFiltering: 
+    // Fallthrough.
+  case kFilterFinished: {
     OpList tmp{std::move(extractedOpList)};
     extractedOpList = nullptr;
     return tmp;
