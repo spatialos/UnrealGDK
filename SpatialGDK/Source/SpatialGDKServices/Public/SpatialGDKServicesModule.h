@@ -23,6 +23,8 @@ public:
 	static FString GetSpatialOSDirectory(const FString& AppendPath = TEXT(""));
 	static FString GetSpatialGDKPluginDirectory(const FString& AppendPath = TEXT(""));
 
+	static void DeleteSchemaDatabase();
+
 	FORCEINLINE static FString GetProjectName()
 	{
 		return ProjectName;

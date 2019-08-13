@@ -74,6 +74,7 @@ private:
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
 	void SchemaGenerateFullButtonClicked();
+	void DeleteSchemaDatabaseButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
 	void ShowSimulatedPlayerDeploymentDialog();
@@ -81,6 +82,7 @@ private:
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
+	bool CanExecuteDeleteSchemaDatabase() const;
 
 	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
 

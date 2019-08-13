@@ -141,6 +141,11 @@ bool FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator() const
 	return SpatialGDKEditorInstance.IsValid() && !SpatialGDKEditorInstance.Get()->IsSchemaGeneratorRunning();
 }
 
+bool FSpatialGDKEditorToolbarModule::CanExecuteDeleteSchemaDatabase() const
+{
+	return true;
+}
+
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> InPluginCommands)
 {
 	InPluginCommands->MapAction(
@@ -152,6 +157,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaFull,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator));
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteDeleteSchemaDatabase));
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot,
@@ -264,6 +274,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuCont
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKSchemaOptionsHeader", "Schema Generation"));
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaFull);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase);
 	}
 	MenuBuilder.EndSection();
 
@@ -281,6 +292,13 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 		FSimpleDelegate::CreateLambda([this]() { OnShowSuccessNotification("Snapshot successfully generated!"); }),
 		FSimpleDelegate::CreateLambda([this]() { OnShowFailedNotification("Snapshot generation failed!"); }),
 		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
+}
+
+void FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked()
+{
+	OnShowTaskStartNotification("Deleting schema database");
+	FSpatialGDKServicesModule::DeleteSchemaDatabase();
+	OnShowSuccessNotification("Schema database deleted");
 }
 
 void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
