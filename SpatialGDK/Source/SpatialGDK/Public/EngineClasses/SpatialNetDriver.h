@@ -240,4 +240,5 @@ private:
 #if !UE_BUILD_SHIPPING
 	int32 ConsiderListSize = 0;
 #endif
+	bool bStarted = false;
 };

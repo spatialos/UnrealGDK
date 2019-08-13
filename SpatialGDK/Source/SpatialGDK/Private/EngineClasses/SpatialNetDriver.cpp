@@ -1246,9 +1246,15 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
 
-	if (Connection != nullptr)
+	if (!Connection->IsConnected())
 	{
-		const auto& Worker = Connection->GetWorkerId();
+		return;
+	}
+
+	const auto& Worker = Connection->GetWorker();
+	Dispatcher->ProcessOps(Worker);
+	Connection->Advance();
+	return;
 		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
 
 		// Servers will queue ops at startup until we've extracted necessary information from the op stream
@@ -1269,7 +1275,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			SpatialMetrics->TickMetrics();
 		}
-	}
 }
 
 void USpatialNetDriver::ProcessRemoteFunction(
