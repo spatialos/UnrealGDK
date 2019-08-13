@@ -14,8 +14,11 @@
 
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
-#include "gdk/spatialos_connection_handler.h"
+#include <gdk/spatialos_connection_handler.h>
+#include <gdk/initial_op_list_connection_handler.h>
 #include <memory>
+#include "Utils/EntityPool.h"
+#include "Interop/GlobalStateManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
@@ -249,12 +252,12 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 {
 	TWeakObjectPtr<USpatialWorkerConnection> WeakSpatialWorkerConnection(this);
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialWorkerConnection]
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, ConnectionFuture, WeakSpatialWorkerConnection]
 	{
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [WeakSpatialWorkerConnection, NewCAPIWorkerConnection]
+		AsyncTask(ENamedThreads::GameThread, [this, WeakSpatialWorkerConnection, NewCAPIWorkerConnection]
 		{
 			USpatialWorkerConnection* SpatialWorkerConnection = WeakSpatialWorkerConnection.Get();
 
@@ -265,15 +268,66 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 
 			gdk::ComponentRanges Ranges;
 			Ranges.TryAddComponentRange(gdk::Range{ 1, 100000 });
-			const auto GeneratedStart = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
+			//const auto GeneratedStart = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 			// Generated components range.
 			//Ranges.TryAddComponentRange(gdk::Range{ GeneratedStart, GeneratedStart + 100000 });
 			// Non-generated components range.
 			//Ranges.TryAddComponentRange(gdk::Range{ SpatialConstants::MAX_EXTERNAL_SCHEMA_ID + 1, GeneratedStart - 1});
 			// External component range
 			//Ranges.TryAddComponentRange(gdk::Range{ SpatialConstants::MIN_EXTERNAL_SCHEMA_ID, SpatialConstants::MAX_EXTERNAL_SCHEMA_ID});
-			auto ConnectionHandler = std::make_unique<gdk::SpatialOsConnectionHandler>(NewCAPIWorkerConnection);
-			SpatialWorkerConnection->Worker = MakeUnique<gdk::SpatialOsWorker>(MoveTemp(ConnectionHandler), Ranges);
+			auto InitialOpsFunction = [this](gdk::OpList* OpList, gdk::ExtractedOpList* ExtractedOpList)
+			{
+				if (GetSpatialNetDriverChecked()->bConnectAsClient)
+				{
+					UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Client started"));
+					return true;
+				}
+				auto EntityPool = GetSpatialNetDriverChecked()->EntityPool;
+				auto GlobalStateManager = GetSpatialNetDriverChecked()->GlobalStateManager;
+				if (EntityPool == nullptr || GlobalStateManager == nullptr)
+				{
+					UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Stuff is null"));
+					return false;
+				}
+				const gdk::ComponentId StartUpId = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
+				if (GlobalStateManager->IsReadyToCallBeginPlay() && EntityPool->IsReady())
+				{
+					GlobalStateManager->TriggerBeginPlay();
+					UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Server ready"));
+					return true;
+				}
+				for (size_t i = 0; i< OpList->GetCount(); ++i)
+				{
+					auto& op = (*OpList)[i];
+					if (op.op_type == WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE && !EntityPool->IsReady())
+					{
+						ExtractedOpList->AddOp(OpList, i);
+					}
+					if (op.op_type == WORKER_OP_TYPE_ADD_COMPONENT && op.add_component.data.component_id == StartUpId && !GlobalStateManager->IsReadyToCallBeginPlay())
+					{
+						ExtractedOpList->AddOp(OpList, i);
+					}
+					if (op.op_type == WORKER_OP_TYPE_COMPONENT_UPDATE && op.component_update.update.component_id == StartUpId && !GlobalStateManager->IsReadyToCallBeginPlay())
+					{
+						ExtractedOpList->AddOp(OpList, i);
+					}
+					if (op.op_type == WORKER_OP_TYPE_AUTHORITY_CHANGE && op.authority_change.component_id == StartUpId && !GlobalStateManager->IsReadyToCallBeginPlay())
+					{
+						ExtractedOpList->AddOp(OpList, i);
+					}
+				}
+				UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Server not ready"));
+				return false;
+			};
+
+			auto ClientInitialOpsFunction = [this](gdk::OpList*, gdk::ExtractedOpList*)
+			{
+				return true;
+			};
+
+			auto SpatialOSConnectionHandler = std::make_unique<gdk::SpatialOsConnectionHandler>(NewCAPIWorkerConnection);
+			auto InitialOpsConnectionHandler = std::make_unique<gdk::InitialOpListConnectionHandler>(MoveTemp(SpatialOSConnectionHandler), InitialOpsFunction);
+			SpatialWorkerConnection->Worker = MakeUnique<gdk::SpatialOsWorker>(MoveTemp(InitialOpsConnectionHandler), Ranges);
 
 			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
 			{
@@ -361,12 +415,12 @@ Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId En
 
 void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
 {
-	Worker->SendCommandResponse(NextRequestId, gdk::CommandResponse{ Response->schema_type });
+	Worker->SendCommandResponse(RequestId, gdk::CommandResponse{ Response->schema_type });
 }
 
 void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
-	Worker->SendCommandFailure(NextRequestId, std::string{TCHAR_TO_UTF8(*Message)});
+	Worker->SendCommandFailure(RequestId, std::string{TCHAR_TO_UTF8(*Message)});
 }
 
 void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const FName& LoggerName, const TCHAR* Message)
@@ -405,6 +459,11 @@ FString USpatialWorkerConnection::GetWorkerId() const
 const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 {
 	return CachedWorkerAttributes;
+}
+
+void USpatialWorkerConnection::Advance()
+{
+	Worker->Advance();
 }
 
 void USpatialWorkerConnection::CacheWorkerAttributes()

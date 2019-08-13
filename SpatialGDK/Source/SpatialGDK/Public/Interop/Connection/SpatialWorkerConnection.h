@@ -59,6 +59,7 @@ public:
 
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
+	void Advance();
 
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
@@ -86,7 +87,7 @@ private:
 
 	TWeakObjectPtr<USpatialGameInstance> GameInstance;
 
-	bool bIsConnected;
+	bool bIsConnected = false;
 
 	TArray<FString> CachedWorkerAttributes;
 
