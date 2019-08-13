@@ -11,16 +11,20 @@ This document outlines the process for releasing a version of the GDK for Unreal
 * `<ProjectRoot>` - The directory that contains your `<GameRoot>` directory.
 * `<YourProject>` - The name of your project and .uproject file (for example, `\<GameRoot>\YourProject.uproject`).
 
-## Release Pre-Requisites
+## Validation pre-requisites
 
-1. Ensure that XBox-compatible worker SDK DLLs are available
+The following entry criteria must be met before you start the validation steps:
 
-* The required combination is the Worker SDK version pinned by the GDK, and the XDK version(s) officially supported by all GDK-supported UE4 versions.
-* To check if the package already exists, try to download the DLL with this command:
-  * `spatial package get worker_sdk c-dynamic-x86_64-xdk180401-xbone 13.7.1 c-sdk-13.7.1-180401.zip`
-* If it is not available, file a WRK ticket for the Worker team to generate the required DLL(s). See [WRK-1275](https://improbableio.atlassian.net/browse/WRK-1275) for an example.
+### Ensure Xbox DLLs exist
 
-## Pre-Validation
+To check that Xbox-compatible Worker SDK DLLs are available.
+
+1. Identify the Worker SDK version pinned by the GDK. To do this, check the `Improbable.SpatialOS.Platform` at [DeploymentLauncher.csproj#L46](https://github.com/spatialos/UnrealGDK/blob/master/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/DeploymentLauncher/DeploymentLauncher.csproj#L46)
+1. Identify the XDK version(s) officially supported in all UE4 versions that the GDK version you're about to release supports. You need to search for this information in the Unreal Engine's release notes. For example, searching for `XDK` in the [4.22 Release Notes](https://docs.unrealengine.com/en-US/Support/Builds/ReleaseNotes/4_22/index.html) reveals that it supports `XDK: July 2018 QFE-4`.
+1. Using the information you just ascertained, fill in the `<...>` blanks in this command and run it:<br>
+`spatial package get worker_sdk c-dynamic-x86_64-xdk180401-xbone 13.7.1 c-sdk-13.7.1-180401.zip`<br>
+If it succeeds it will download a DLL.<br>
+If it fails because the DLL is not available, file a WRK ticket for the Worker team to generate the required DLL(s). See [WRK-1275](https://improbableio.atlassian.net/browse/WRK-1275) for an example.
 
 ### Create the `UnrealGDK` release candidate
 1. Notify `#dev-unreal-internal` that you intend to commence a release. Ask if anyone `@here` knows of any blocking defects in code or docs that should be resolved prior to commencement of the release process.
