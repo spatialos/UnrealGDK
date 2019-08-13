@@ -5,9 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "IpNetDriver.h"
-#include "OnlineSubsystemNames.h"
 #include "TimerManager.h"
-#include "UObject/CoreOnline.h"
 
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
@@ -182,7 +180,6 @@ private:
 	bool bConnectAsClient;
 	bool bPersistSpatialConnection;
 	bool bWaitingForAcceptingPlayersToSpawn;
-	bool bIsReadyToStart;
 
 	FString SnapshotToLoad;
 
@@ -197,9 +194,6 @@ private:
 	void QueryGSMToLoadMap();
 
 	void HandleOngoingServerTravel();
-
-	void HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists);
-	bool FindAndDispatchStartupOps(const TArray<Worker_OpList*>& InOpLists);
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
@@ -240,5 +234,4 @@ private:
 #if !UE_BUILD_SHIPPING
 	int32 ConsiderListSize = 0;
 #endif
-	bool bStarted = false;
 };
