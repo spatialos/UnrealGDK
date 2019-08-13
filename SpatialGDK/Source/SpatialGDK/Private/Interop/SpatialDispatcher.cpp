@@ -119,118 +119,153 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 
 void USpatialDispatcher::ProcessOps(const gdk::SpatialOsWorker& Worker)
 {
-	Receiver->OnCriticalSection(true);
-	for (auto& Entity : Worker.GetEntitiesAdded())
+	for (const auto& response : Worker.GetReserveEntityIdsResponses())
 	{
-		Receiver->OnAddEntity(Entity.GetEntityId());
+		Worker_ReserveEntityIdsResponseOp Op{ response.RequestId, static_cast<std::uint8_t>(response.StatusCode), 
+			response.Message.c_str(), response.FirstEntityId, response.NumberOfIds };
+		Receiver->OnReserveEntityIdsResponse(Op);
 	}
-	for (auto& EntityId : Worker.GetEntitiesRemoved())
+	for (const auto& response : Worker.GetCreateEntityResponses())
 	{
-		Receiver->OnRemoveEntity(EntityId);
+		Worker_CreateEntityResponseOp Op{ response.RequestId, static_cast<std::uint8_t>(response.StatusCode), 
+			response.Message.c_str(), response.EntityId };
+		Receiver->OnCreateEntityResponse(Op);
+	}
+	for (const auto& response : Worker.GetEntityQueryResponses())
+	{
+		std::vector<Worker_Entity> Entities(response.Entities.size());
+		std::vector<std::vector<Worker_ComponentData>> Data(response.Entities.size());
+//		std::transform(response.Entities.begin(), response.Entities.end(), Entities.begin(),
+//			[](const gdk::EntitySnapshot& snapshot) -> Worker_Entity
+//		{
+//			Worker_Entity e;
+//			const auto& components = snapshot.GetEntityState().GetComponents();
+//			e.component_count = components.size();
+//			e.entity_id = snapshot.GetEntityId();
+//			std::vector<Worker_ComponentData> Data{ components.size() };
+//			std::transform(components.begin(), components.end(), Data.begin(), [](const gdk::ComponentData& data) -> Worker_ComponentData
+//			{
+//				return Worker_ComponentData{ nullptr, data.GetComponentId(), data.GetUnderlying(), nullptr };
+//			});
+//			e.components = Data.data();
+//			return e;
+//		});
+		for (size_t i = 0; i < response.Entities.size(); ++i)
+		{
+			const auto& components = response.Entities[i].GetEntityState().GetComponents();
+			Entities[i].component_count = components.size();
+			Entities[i].entity_id = response.Entities[i].GetEntityId();
+			Data[i] = std::vector<Worker_ComponentData>( components.size() );
+			std::transform(components.begin(), components.end(), Data[i].begin(), [](const gdk::ComponentData& data) -> Worker_ComponentData
+			{
+				return Worker_ComponentData{ nullptr, data.GetComponentId(), data.GetUnderlying(), nullptr };
+			});
+			Entities[i].components = Data[i].data();
+
+		}
+		Worker_EntityQueryResponseOp Op{ response.RequestId, static_cast<std::uint8_t>(response.StatusCode),
+			response.Message.c_str(), response.ResultCount, Entities.data() };
+		Receiver->OnEntityQueryResponse(Op);
+	}
+	Receiver->OnCriticalSection(true);
+	for (const auto& Entity : Worker.GetEntitiesAdded())
+	{
+		Receiver->OnAddEntity(Worker_AddEntityOp{Entity.GetEntityId()});
+	}
+	for (const auto& EntityId : Worker.GetEntitiesRemoved())
+	{
+		Receiver->OnRemoveEntity(Worker_RemoveEntityOp{EntityId});
 		StaticComponentView->OnRemoveEntity(EntityId);
 	}
-	for (auto& entityComponent : Worker.GetComponentsAdded(1))
+	for (const auto& entityComponent : Worker.GetComponentsAdded(1))
 	{
-		StaticComponentView->OnAddComponent(entityComponent);
-		Receiver->OnAddComponent(entityComponent);
+		Worker_ComponentData Data{ nullptr, entityComponent.Data.GetComponentId(), entityComponent.Data.GetUnderlying(), nullptr };
+		Worker_AddComponentOp Op{ entityComponent.EntityId, Data };
+		StaticComponentView->OnAddComponent(Op);
+		Receiver->OnAddComponent(Op);
 	}
-	for (auto& entityComponent : Worker.GetComponentsRemoved(1))
+	for (const auto& entityComponent : Worker.GetComponentsRemoved(1))
 	{
-		Receiver->OnRemoveComponent(entityComponent);
+		Receiver->OnRemoveComponent(Worker_RemoveComponentOp{ entityComponent.EntityId, entityComponent.ComponentId });
 	}
-	for (auto& entityComponent : Worker.GetComponentUpdates(1))
+	Receiver->OnCriticalSection(false);
+	for (const auto& request : Worker.GetCommandRequests(1))
 	{
-		Receiver->OnComponentUpdate(entityComponent);
+		const char** Attributes = new const char*[request.CallerAttributeSet.size()];
+		for (size_t i = 0; i < request.CallerAttributeSet.size(); ++i) {
+			Attributes[i] = request.CallerAttributeSet[i].c_str();
+		}
+		auto Size = static_cast<std::uint32_t>(request.CallerAttributeSet.size());
+		Worker_WorkerAttributes CallerAttributes{Size, Attributes };
+		Worker_CommandRequest r{ nullptr, request.Request.GetComponentId(), request.Request.GetUnderlying(), nullptr };
+		Worker_CommandRequestOp Op{
+			request.RequestId, request.EntityId, request.TimeoutMillis,
+			request.CallerWorkerId.c_str(), CallerAttributes, r};
+		Receiver->OnCommandRequest(Op);
+		delete[] Attributes;
 	}
-	for (size_t i = 0; i < Worker->op_count; ++i)
+
+	for (const auto& response : Worker.GetCommandResponses(1))
 	{
-		Worker_Op* Op = &Worker->ops[i];
+		Worker_CommandResponse r{ nullptr, response.Response.GetComponentId(), response.Response.GetUnderlying(), nullptr };
+		Worker_CommandResponseOp Op{ 
+			response.RequestId, 0, static_cast<std::uint8_t>(response.Status),
+			response.Message.c_str(), r, response.CommandId 
+		};
+		Receiver->OnCommandResponse(Op);
+	}
+	for (const auto& Authority : Worker.GetAuthorityGained(1))
+	{
+		Worker_AuthorityChangeOp Op{ Authority.EntityId, Authority.ComponentId, static_cast<std::uint8_t>(WORKER_AUTHORITY_AUTHORITATIVE) };
+		Receiver->OnAuthorityChange(Op);
+	}
+	for (const auto& Authority : Worker.GetAuthorityLost(1))
+	{
+		Worker_AuthorityChangeOp Op{ Authority.EntityId, Authority.ComponentId, static_cast<std::uint8_t>(WORKER_AUTHORITY_NOT_AUTHORITATIVE) };
+		Receiver->OnAuthorityChange(Op);
+	}
+	for (const auto& Authority : Worker.GetAuthorityLossImminent(1))
+	{
+		Worker_AuthorityChangeOp Op{ Authority.EntityId, Authority.ComponentId, static_cast<std::uint8_t>(WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT) };
+		Receiver->OnAuthorityChange(Op);
+	}
+	for (const auto& flags : Worker.GetFlagChanges())
+	{
+		USpatialWorkerFlags::ApplyWorkerFlagUpdate(flags);
+	}
+	for (const auto& logs : Worker.GetLogsReceived())
+	{
+		UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(logs.message));
+	}
+	if (Worker.HasConnectionStatusChanged()) {
+		Worker_DisconnectOp Op{ static_cast<std::uint8_t>(Worker.GetConnectionStatusCode()), Worker.GetConnectionMessage().c_str() };
+			Receiver->OnDisconnect(Op);
+	}
 
-		if (OpsToSkip.Num() != 0 &&
-			OpsToSkip.Contains(Op))
-		{
-			OpsToSkip.Remove(Op);
-			continue;
-		}
+		//if (IsExternalSchemaOp(Op))
+		//{
+		//	ProcessExternalSchemaOp(Op);
+		//	continue;
+		//}
 
-		if (IsExternalSchemaOp(Op))
-		{
-			ProcessExternalSchemaOp(Op);
-			continue;
-		}
-
-		switch (Op->op_type)
-		{
-		// Critical Section
-		case WORKER_OP_TYPE_CRITICAL_SECTION:
-			Receiver->OnCriticalSection(Op->critical_section.in_critical_section != 0);
-			break;
-
-		// Entity Lifetime
-		case WORKER_OP_TYPE_ADD_ENTITY:
-			Receiver->OnAddEntity(Op->add_entity);
-			break;
-		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			Receiver->OnRemoveEntity(Op->remove_entity);
-			StaticComponentView->OnRemoveEntity(Op->remove_entity.entity_id);
-			Receiver->RemoveComponentOpsForEntity(Op->remove_entity.entity_id);
-			break;
-
-		// Components
-		case WORKER_OP_TYPE_ADD_COMPONENT:
-			StaticComponentView->OnAddComponent(Op->add_component);
-			Receiver->OnAddComponent(Op->add_component);
-			break;
-		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			Receiver->OnRemoveComponent(Op->remove_component);
-			break;
-		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			StaticComponentView->OnComponentUpdate(Op->component_update);
-			Receiver->OnComponentUpdate(Op->component_update);
-			break;
-
-		// Commands
-		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			Receiver->OnCommandRequest(Op->command_request);
-			break;
-		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			Receiver->OnCommandResponse(Op->command_response);
-			break;
-
-		// Authority Change
-		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			Receiver->OnAuthorityChange(Op->authority_change);
-			break;
-
-		// World Command Responses
-		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-			Receiver->OnReserveEntityIdsResponse(Op->reserve_entity_ids_response);
-			break;
-		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			Receiver->OnCreateEntityResponse(Op->create_entity_response);
-			break;
-		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
-			break;
-		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
-			Receiver->OnEntityQueryResponse(Op->entity_query_response);
-			break;
-
-		case WORKER_OP_TYPE_FLAG_UPDATE:
-			USpatialWorkerFlags::ApplyWorkerFlagUpdate(Op->flag_update);
-			break;
-		case WORKER_OP_TYPE_LOG_MESSAGE:
-			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
-			break;
-		case WORKER_OP_TYPE_METRICS:
-			break;
-
-		case WORKER_OP_TYPE_DISCONNECT:
-			Receiver->OnDisconnect(Op->disconnect);
-			break;
-
-		default:
-			break;
-		}
+	for (const auto& entityComponent : Worker.GetComponentUpdates(1))
+	{
+		Worker_ComponentUpdate Update{ nullptr, entityComponent.Update.GetComponentId(), entityComponent.Update.GetUnderlying(), nullptr };
+		Worker_ComponentUpdateOp Op{ entityComponent.EntityId, Update };
+		Receiver->OnComponentUpdate(Op);
+	}
+	for (const auto& entityComponent : Worker.GetEvents(1))
+	{
+		Worker_ComponentUpdate Update{ nullptr, entityComponent.Update.GetComponentId(), entityComponent.Update.GetUnderlying(), nullptr };
+		Worker_ComponentUpdateOp Op{ entityComponent.EntityId, Update };
+		Receiver->OnComponentUpdate(Op);
+	}
+	for (const auto& entityComponent : Worker.GetCompleteUpdates(1))
+	{
+		Worker_ComponentData Data{ nullptr, entityComponent.Data.GetComponentId(), entityComponent.Data.GetUnderlying(), nullptr };
+		Worker_AddComponentOp Op{ entityComponent.EntityId, Data };
+		StaticComponentView->OnAddComponent(Op);
+		Receiver->OnAddComponent(Op);
 	}
 
 	Receiver->FlushRemoveComponentOps();
