@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
-component VirtualWorker {
+component AuthorityIntent {
     id = 9982;
     string virtual_worker_id = 1;
 }
