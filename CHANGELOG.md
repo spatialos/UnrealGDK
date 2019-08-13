@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
+- Attempting to replicate unsupported types (such as TMap) produce a log error rather than crashing the game.
 
 ## [`0.6.0`] - 2019-07-31
 
