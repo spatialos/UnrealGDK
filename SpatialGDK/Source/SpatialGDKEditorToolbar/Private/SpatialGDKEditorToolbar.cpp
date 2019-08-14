@@ -13,7 +13,6 @@
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
 #include "LevelEditor.h"
-#include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarStyle.h"
@@ -23,6 +22,7 @@
 
 #include "SpatialConstants.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
+#include "SpatialGDKDefaultWorkerJsonGenerator.h"
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesModule.h"
@@ -541,9 +541,14 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			return;
 		}
 
-		if (!GenerateDefaultWorkerJson())
+		bool bRedeployRequired = false;
+		if (!GenerateDefaultWorkerJson(bRedeployRequired))
 		{
 			return;
+		}
+		if (bRedeployRequired)
+		{
+			LocalDeploymentManager->SetRedeployRequired();
 		}
 
 		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), TEXT("Improbable/DefaultLaunchConfig.json"));
@@ -738,51 +743,6 @@ void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
 	TSharedPtr<SWindow> RootWindow = FGlobalTabmanager::Get()->GetRootWindow();
 
 	FSlateApplication::Get().AddModalWindow(SimulatedPlayerDeploymentWindowPtr.ToSharedRef(), RootWindow);
-}
-
-bool FSpatialGDKEditorToolbarModule::GenerateDefaultWorkerJson()
-{
-	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
-	{
-		const FString WorkerJsonDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("workers/unreal"));
-		const FString TemplateWorkerJsonPath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
-
-		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
-		for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
-		{
-			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.WorkerTypeName.ToString()));
-			if (!FPaths::FileExists(JsonPath))
-			{
-				UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
-				FString Contents;
-				if (FFileHelper::LoadFileToString(Contents, *TemplateWorkerJsonPath))
-				{
-					Contents.ReplaceInline(TEXT("{{WorkerTypeName}}"), *Worker.WorkerTypeName.ToString());
-					if (FFileHelper::SaveStringToFile(Contents, *JsonPath))
-					{
-						LocalDeploymentManager->SetRedeployRequired();
-						UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Wrote default worker json to %s"), *JsonPath)
-					}
-					else
-					{
-						UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to write default worker json to %s"), *JsonPath)
-					}
-				}
-				else
-				{
-					UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to read default worker json template at %s"), *TemplateWorkerJsonPath)
-				}
-			}
-			else
-			{
-				UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Found worker json at %s"), *JsonPath)
-			}
-		}
-
-		return true;
-	}
-
-	return false;
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)

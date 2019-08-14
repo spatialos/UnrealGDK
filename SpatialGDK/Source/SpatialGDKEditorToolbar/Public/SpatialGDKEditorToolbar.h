@@ -94,7 +94,6 @@ private:
 	void ShowFailedNotification(const FString& NotificationText);
 
 	bool ValidateGeneratedLaunchConfig() const;
-	bool GenerateDefaultWorkerJson();
 
 	void GenerateSchema(bool bFullScan);
 

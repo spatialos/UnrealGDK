@@ -7,8 +7,6 @@
 #include "Serialization/JsonWriter.h"
 #include "Misc/FileHelper.h"
 
-#include "CoreMinimal.h"
-
 DEFINE_LOG_CATEGORY(LogSpatialGDKDefaultLaunchConfigGenerator);
 
 #define LOCTEXT_NAMESPACE "SpatialGDKDefaultLaunchConfigGenerator"
