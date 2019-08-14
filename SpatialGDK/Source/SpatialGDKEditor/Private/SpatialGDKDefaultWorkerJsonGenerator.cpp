@@ -9,7 +9,7 @@
 DEFINE_LOG_CATEGORY(LogSpatialGDKDefaultWorkerJsonGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKDefaultWorkerJsonGenerator"
 
-bool GenerateDefaultWorkerJson(bool& bRedeployRequired)
+bool GenerateDefaultWorkerJson(bool& bOutRedeployRequired)
 {
 	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
@@ -29,7 +29,7 @@ bool GenerateDefaultWorkerJson(bool& bRedeployRequired)
 					Contents.ReplaceInline(TEXT("{{WorkerTypeName}}"), *Worker.WorkerTypeName.ToString());
 					if (FFileHelper::SaveStringToFile(Contents, *JsonPath))
 					{
-						bRedeployRequired = true;
+						bOutRedeployRequired = true;
 						UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Wrote default worker json to %s"), *JsonPath)
 					}
 					else
