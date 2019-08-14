@@ -38,7 +38,6 @@ enum class ERPCResult : uint8_t
 	// Specific to packing
 	NoOwningController,
 	NoControllerChannel,
-	UnresolvedController,
 	ControllerChannelNotListening,
 
 	Unknown

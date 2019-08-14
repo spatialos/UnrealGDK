@@ -50,9 +50,6 @@ namespace
 		case ERPCResult::NoControllerChannel:
 			return TEXT("No Controller Channel");
 
-		case ERPCResult::UnresolvedController:
-			return TEXT("Unresolved Controller");
-
 		case ERPCResult::ControllerChannelNotListening:
 			return TEXT("Controller Channel Not Listening");
 
