@@ -23,7 +23,6 @@ enum class ERPCResult : uint8_t
 	Success,
 
 	// Shared across Sender and Receiver
-	NoProcessingFunctionBound,
 	UnresolvedTargetObject,
 	MissingFunctionInfo,
 	UnresolvedParameters,

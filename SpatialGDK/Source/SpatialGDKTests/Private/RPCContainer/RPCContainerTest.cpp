@@ -4,6 +4,7 @@
 
 #include "ObjectDummy.h"
 #include "ObjectSpy.h"
+#include "ObjectStub.h"
 
 #include "Utils/RPCContainer.h"
 #include "Schema/RPCPayload.h"
@@ -56,11 +57,12 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_queued)
 {
-	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
+	UObjectStub* TargetObject = NewObject<UObjectStub>();
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
 	FRPCContainer RPCs;
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 
-	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 1);
+	AddExpectedError(TEXT("Unresolved Parameters"), EAutomationExpectedErrorFlags::Contains, 1);
 
 	RPCs.ProcessOrQueueRPC(Params.ObjectRef, Params.Type, MoveTemp(Params.Payload));
 
@@ -71,12 +73,13 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_que
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_added_THEN_they_are_queued)
 {
-	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
+	UObjectStub* TargetObject = NewObject<UObjectStub>();
 	FPendingRPCParams Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FPendingRPCParams Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FRPCContainer RPCs;
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 
-	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 1);
+	AddExpectedError(TEXT("Unresolved Parameters"), EAutomationExpectedErrorFlags::Contains, 1);
 
 	RPCs.ProcessOrQueueRPC(Params1.ObjectRef, Params1.Type, MoveTemp(Params1.Payload));
 	RPCs.ProcessOrQueueRPC(Params2.ObjectRef, Params2.Type, MoveTemp(Params2.Payload));
@@ -91,16 +94,9 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_n
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
 	FRPCContainer RPCs;
-
-	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 1);
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectDummy::ProcessRPC));
 
 	RPCs.ProcessOrQueueRPC(Params.ObjectRef, Params.Type, MoveTemp(Params.Payload));
-
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UObjectDummy::ProcessRPC);
-	RPCs.BindProcessingFunction(Delegate);
-
-	RPCs.ProcessRPCs();
 
 	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, AnySchemaComponentType));
 
@@ -113,17 +109,10 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_same_type_WHEN_pr
 	FPendingRPCParams Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FPendingRPCParams Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FRPCContainer RPCs;
-
-	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 1);
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectDummy::ProcessRPC));
 
 	RPCs.ProcessOrQueueRPC(Params1.ObjectRef, Params1.Type, MoveTemp(Params1.Payload));
 	RPCs.ProcessOrQueueRPC(Params2.ObjectRef, Params2.Type, MoveTemp(Params2.Payload));
-
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UObjectDummy::ProcessRPC);
-	RPCs.BindProcessingFunction(Delegate);
-	
-	RPCs.ProcessRPCs();
 
 	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(Params1.ObjectRef.Entity, AnyOtherSchemaComponentType));
 
@@ -132,14 +121,15 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_same_type_WHEN_pr
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_THEN_they_are_queued)
 {
-	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
+	UObjectStub* TargetObject = NewObject<UObjectStub>();
 
 	FPendingRPCParams ParamsUnreliable = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FPendingRPCParams ParamsReliable = CreateMockParameters(TargetObject, AnySchemaComponentType);
 
 	FRPCContainer RPCs;
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 
-	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 2);
+	AddExpectedError(TEXT("Unresolved Parameters"), EAutomationExpectedErrorFlags::Contains, 2);
 
 	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload));
 	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload));
@@ -157,17 +147,10 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	FPendingRPCParams ParamsReliable = CreateMockParameters(TargetObject, AnySchemaComponentType);
 
 	FRPCContainer RPCs;
-
-	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 2);
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectDummy::ProcessRPC));
 
 	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload));
 	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload));
-
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UObjectDummy::ProcessRPC);
-	RPCs.BindProcessingFunction(Delegate);
-
-	RPCs.ProcessRPCs();
 
 	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsUnreliable.ObjectRef.Entity, AnyOtherSchemaComponentType));
 	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsReliable.ObjectRef.Entity, AnySchemaComponentType));
@@ -180,8 +163,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	UObjectSpy* TargetObject = NewObject<UObjectSpy>();
 	FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
 	FRPCContainer RPCs;
-
-	AddExpectedError(TEXT("No Processing Function Bound"), EAutomationExpectedErrorFlags::Contains, 2);
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectSpy::ProcessRPC));
 
 	TMap<ESchemaComponentType, TArray<uint32>> RPCIndices;
 
@@ -196,12 +178,6 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 		RPCs.ProcessOrQueueRPC(ObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload));
 		RPCs.ProcessOrQueueRPC(ObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload));
 	}
-
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UObjectSpy::ProcessRPC);
-	RPCs.BindProcessingFunction(Delegate);
-
-	RPCs.ProcessRPCs();
 
 	bool bProcessedInOrder = true;
 	for (const auto& ProcessedIndicesOfType : TargetObject->ProcessedRPCIndices)
