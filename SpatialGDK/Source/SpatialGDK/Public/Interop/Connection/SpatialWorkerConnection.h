@@ -59,6 +59,7 @@ public:
 
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
+	void FlushMessageToSend();
 	void Advance();
 
 	FReceptionistConfig ReceptionistConfig;

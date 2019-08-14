@@ -15,8 +15,17 @@ SpatialOsWorker::SpatialOsWorker(std::unique_ptr<AbstractConnectionHandler> conn
 , workerView(componentRanges)
 , currentViewDelta(workerView.GetNextViewDelta()) {}
 
-void SpatialOsWorker::Advance() {
+SpatialOsWorker::~SpatialOsWorker()
+{
+    FlushSend();
+}
+
+void SpatialOsWorker::FlushSend() {
   connectionHandler->SendMessages(workerView.FlushLocalChanges());
+}
+
+void SpatialOsWorker::Advance() {
+  FlushSend();
   connectionHandler->Advance();
   const size_t numberOfOpLists = connectionHandler->GetOpListCount();
   for (size_t i = 0; i < numberOfOpLists; ++i) {

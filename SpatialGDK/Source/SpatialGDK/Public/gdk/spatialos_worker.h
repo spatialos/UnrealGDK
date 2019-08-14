@@ -21,7 +21,7 @@ public:
   SpatialOsWorker(std::unique_ptr<AbstractConnectionHandler> connectionHandler,
       const ComponentRanges& componentRanges);
 
-  ~SpatialOsWorker() = default;
+  ~SpatialOsWorker();
 
   // Moveable, not copyable.
   SpatialOsWorker(const SpatialOsWorker&) = delete;
@@ -29,6 +29,7 @@ public:
   SpatialOsWorker& operator=(const SpatialOsWorker&) = delete;
   SpatialOsWorker& operator=(SpatialOsWorker&&) = default;
 
+  void FlushSend();
   void Advance();
 
   void SendLogMessage(Worker_LogLevel level, EntityId entityId, std::string loggerName,
