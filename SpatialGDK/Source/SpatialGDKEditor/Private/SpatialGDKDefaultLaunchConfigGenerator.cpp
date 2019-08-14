@@ -15,7 +15,7 @@ using namespace SpatialGDK;
 
 namespace
 {
-bool WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value)
+bool WriteFlagSection(TSharedRef<TJsonWriter<>> Writer, const FString& Key, const FString& Value)
 {
 	Writer->WriteObjectStart();
 		Writer->WriteValue(TEXT("name"), Key);
@@ -25,7 +25,7 @@ bool WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, co
 	return true;
 }
 
-bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLaunchSection& Worker)
+bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunchSection& Worker)
 {
 	Writer->WriteObjectStart();
 		Writer->WriteValue(TEXT("worker_type"), *Worker.WorkerTypeName.ToString());
@@ -80,7 +80,7 @@ bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLau
 	return true;
 }
 
-bool WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FName& WorkerType, const int32 Columns, const int32 Rows, const bool ManualWorkerConnectionOnly)
+bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerType, const int32 Columns, const int32 Rows, const bool ManualWorkerConnectionOnly)
 {
 	Writer->WriteObjectStart();
 		Writer->WriteValue(TEXT("layer"), *WorkerType.ToString());
@@ -103,7 +103,7 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath)
 	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
 		FString Text;
-		TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
+		TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Text);
 
 		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 
