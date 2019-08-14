@@ -5,7 +5,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialWorkerFlags.h"
-#include "UObject/UObjectIterator.h"
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialMetrics.h"
 
@@ -143,6 +142,22 @@ void USpatialDispatcher::ProcessOps(const gdk::SpatialOsWorker& Worker)
 	}
 	Receiver->OnCriticalSection(false);
 
+	for (const auto& Authority : Worker.GetAuthorityGained(1))
+	{
+		Worker_AuthorityChangeOp Op{ Authority.EntityId, Authority.ComponentId, static_cast<std::uint8_t>(WORKER_AUTHORITY_AUTHORITATIVE) };
+		Receiver->OnAuthorityChange(Op);
+	}
+	for (const auto& Authority : Worker.GetAuthorityLost(1))
+	{
+		Worker_AuthorityChangeOp Op{ Authority.EntityId, Authority.ComponentId, static_cast<std::uint8_t>(WORKER_AUTHORITY_NOT_AUTHORITATIVE) };
+		Receiver->OnAuthorityChange(Op);
+	}
+	for (const auto& Authority : Worker.GetAuthorityLossImminent(1))
+	{
+		Worker_AuthorityChangeOp Op{ Authority.EntityId, Authority.ComponentId, static_cast<std::uint8_t>(WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT) };
+		Receiver->OnAuthorityChange(Op);
+	}
+
 	for (const auto& response : Worker.GetReserveEntityIdsResponses())
 	{
 		Worker_ReserveEntityIdsResponseOp Op{ response.RequestId, static_cast<std::uint8_t>(response.StatusCode), 
@@ -199,21 +214,6 @@ void USpatialDispatcher::ProcessOps(const gdk::SpatialOsWorker& Worker)
 			response.Message.c_str(), r, response.CommandId 
 		};
 		Receiver->OnCommandResponse(Op);
-	}
-	for (const auto& Authority : Worker.GetAuthorityGained(1))
-	{
-		Worker_AuthorityChangeOp Op{ Authority.EntityId, Authority.ComponentId, static_cast<std::uint8_t>(WORKER_AUTHORITY_AUTHORITATIVE) };
-		Receiver->OnAuthorityChange(Op);
-	}
-	for (const auto& Authority : Worker.GetAuthorityLost(1))
-	{
-		Worker_AuthorityChangeOp Op{ Authority.EntityId, Authority.ComponentId, static_cast<std::uint8_t>(WORKER_AUTHORITY_NOT_AUTHORITATIVE) };
-		Receiver->OnAuthorityChange(Op);
-	}
-	for (const auto& Authority : Worker.GetAuthorityLossImminent(1))
-	{
-		Worker_AuthorityChangeOp Op{ Authority.EntityId, Authority.ComponentId, static_cast<std::uint8_t>(WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT) };
-		Receiver->OnAuthorityChange(Op);
 	}
 	for (const auto& flags : Worker.GetFlagChanges())
 	{
