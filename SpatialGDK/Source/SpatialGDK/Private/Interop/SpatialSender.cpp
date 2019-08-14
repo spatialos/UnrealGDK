@@ -69,9 +69,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	ActorGroupManager = InNetDriver->ActorGroupManager;
 	TimerManager = InTimerManager;
 
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(this, &USpatialSender::SendRPC);
-	OutgoingRPCs.BindProcessingFunction(Delegate);
+	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
 }
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)

@@ -43,9 +43,7 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	GlobalStateManager = InNetDriver->GlobalStateManager;
 	TimerManager = InTimerManager;
 
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(this, &USpatialReceiver::ApplyRPC);
-	IncomingRPCs.BindProcessingFunction(Delegate);
+	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
 }
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
