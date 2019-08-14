@@ -80,7 +80,7 @@ bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLau
 	return true;
 }
 
-bool WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FName& WorkerType, const int32 Columns, const int32 Rows, const bool ManualWorkerConnectionOnly)
+bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerType, const int32 Columns, const int32 Rows, const bool ManualWorkerConnectionOnly)
 {
 	Writer->WriteObjectStart();
 	Writer->WriteValue(TEXT("layer"), *WorkerType.ToString());
