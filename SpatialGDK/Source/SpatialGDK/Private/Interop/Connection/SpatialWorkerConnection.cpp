@@ -5,20 +5,20 @@
 #include "Interop/Connection/EditorWorkerController.h"
 #endif
 
-#include "EngineClasses/SpatialGameInstance.h"
-#include "EngineClasses/SpatialNetDriver.h"
-#include "Engine/World.h"
 #include "Async/Async.h"
+#include "Engine/World.h"
 #include "Engine/Engine.h"
+#include "Interop/GlobalStateManager.h"
 #include "Misc/Paths.h"
 
+#include "EngineClasses/SpatialGameInstance.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/EntityPool.h"
 #include "Utils/ErrorCodeRemapping.h"
 #include <gdk/spatialos_connection_handler.h>
 #include <gdk/initial_op_list_connection_handler.h>
 #include <memory>
-#include "Utils/EntityPool.h"
-#include "Interop/GlobalStateManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
@@ -44,6 +44,7 @@ void USpatialWorkerConnection::DestroyConnection()
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
 {
+#include "Interop/GlobalStateManager.h"
 	if (bIsConnected)
 	{
 		return;
@@ -282,8 +283,8 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 					UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Client started"));
 					return true;
 				}
-				auto EntityPool = GetSpatialNetDriverChecked()->EntityPool;
-				auto GlobalStateManager = GetSpatialNetDriverChecked()->GlobalStateManager;
+				auto* EntityPool = GetSpatialNetDriverChecked()->EntityPool;
+				auto* GlobalStateManager = GetSpatialNetDriverChecked()->GlobalStateManager;
 				if (EntityPool == nullptr || GlobalStateManager == nullptr)
 				{
 					UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Stuff is null"));
@@ -318,11 +319,6 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 				}
 				UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Server not ready"));
 				return false;
-			};
-
-			auto ClientInitialOpsFunction = [this](gdk::OpList*, gdk::ExtractedOpList*)
-			{
-				return true;
 			};
 
 			auto SpatialOSConnectionHandler = std::make_unique<gdk::SpatialOsConnectionHandler>(NewCAPIWorkerConnection);
@@ -388,7 +384,7 @@ Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<Worker
 
 Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
-	Worker->SendReserveEntityIdsRequest(NextRequestId, EntityId, 0);
+	Worker->SendDeleteEntityRequest(NextRequestId, EntityId, 0);
 	return NextRequestId++;
 }
 
@@ -459,6 +455,11 @@ FString USpatialWorkerConnection::GetWorkerId() const
 const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 {
 	return CachedWorkerAttributes;
+}
+
+void USpatialWorkerConnection::FlushMessageToSend()
+{
+	Worker->FlushSend();
 }
 
 void USpatialWorkerConnection::Advance()
