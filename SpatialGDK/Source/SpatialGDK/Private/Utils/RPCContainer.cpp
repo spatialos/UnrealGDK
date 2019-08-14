@@ -61,7 +61,7 @@ namespace
 		}
 	}
 
-	void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params, bool DroppingRPC)
+	void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params)
 	{
 		const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
 
@@ -105,18 +105,7 @@ namespace
 			OutputLog.Append(TEXT("execution for "));
 		}
 
-		OutputLog.Append(FString::Printf(TEXT("%s"), *TimeDiff.ToString()));
-
-		if (DroppingRPC)
-		{
-			OutputLog.Append(TEXT(" and dropped. "));
-		}
-		else
-		{
-			OutputLog.Append(TEXT(". "));
-		}
-
-		OutputLog.Append(FString::Printf(TEXT("Reason: %s"), *ERPCResultToString(ErrorInfo.ErrorCode)));
+		OutputLog.Append(FString::Printf(TEXT("%s. Reason: %s"), *TimeDiff.ToString(), *ERPCResultToString(ErrorInfo.ErrorCode)));
 
 		UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 	}
@@ -219,8 +208,7 @@ bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 	else
 	{
 #if !UE_BUILD_SHIPPING
-		bool bDropRPC = false;
-		LogRPCError(ErrorInfo, Params, bDropRPC);
+		LogRPCError(ErrorInfo, Params);
 #endif
 
 		return false;
