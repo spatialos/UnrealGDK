@@ -120,7 +120,7 @@ public:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 	UPROPERTY()
-	USpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
+	ASpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 	UPROPERTY()
 	USpatialPlayerSpawner* PlayerSpawner;
 	UPROPERTY()

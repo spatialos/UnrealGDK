@@ -126,8 +126,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
-	case SpatialConstants::WORKER_COMPONENT_LISTENER_COMPONENT_ID:
-		VirtualWorkerTranslator->ApplyWorkerComponentListenerData(Op.data);
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplySingletonManagerData(Op.data);
 		GlobalStateManager->LinkAllExistingSingletonActors();
@@ -280,11 +278,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
-	if (VirtualWorkerTranslator->HandlesComponent(Op.component_id))
-	{
-		VirtualWorkerTranslator->AuthorityChanged(Op);
-		return;
-	}
+	VirtualWorkerTranslator->AuthorityChanged(Op);
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));
 	if (Actor == nullptr)

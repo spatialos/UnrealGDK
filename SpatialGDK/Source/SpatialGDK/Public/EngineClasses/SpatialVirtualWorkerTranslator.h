@@ -17,54 +17,50 @@ typedef FString ZoneId;
 typedef FString VirtualWorkerId;
 typedef FString WorkerId;
 
-UCLASS()
-class USpatialVirtualWorkerTranslator : public UObject
+UCLASS(SpatialType = (Singleton, ServerOnly))
+class ASpatialVirtualWorkerTranslator : public AActor
 {
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
 
 public:
+	DECLARE_DELEGATE_OneParam(FOnWorkerAssignmentChanged, const TArray<FString>& /*Assignment*/);
+
 	void Init(USpatialNetDriver* InNetDriver);
-	/*
-	void LinkExistingSingletonActor(const UClass* SingletonClass);
-	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
-	void ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate);
 
-	void BecomeAuthoritativeOverAllActors();
-
-#if WITH_EDITOR
-	void SendShutdownMultiProcessRequest();
-	void SendShutdownAdditionalServersEvent();
-#endif // WITH_EDITOR
-*/
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
-	bool HandlesComponent(const Worker_ComponentId ComponentId) const;
-
-	void ApplyWorkerComponentListenerData(const Worker_ComponentData& Data);
 
 	void OnComponentAdded(const Worker_AddComponentOp& Op);
 	void OnComponentUpdated(const Worker_ComponentUpdateOp& Op);
 
+	void UpdateEntityAclWriteForEntity(Worker_EntityId EntityId);
+
+	virtual void BeginPlay() override;
+
+	const TArray<ZoneId>& GetZones() const { return Zones; }
+	const TArray<VirtualWorkerId>& GetVirtualWorkers() const { return VirtualWorkers; }
+	// TODO - VWId/FString discrepancy
+	const TArray<FString>& GetVirtualWorkerAssignments() const { return VirtualWorkerAssignment; }
+
+	FOnWorkerAssignmentChanged OnWorkerAssignmentChanged;
+
 private:
-	/*UPROPERTY()
-		USpatialNetDriver* NetDriver;
 
-	UPROPERTY()
-		USpatialStaticComponentView* StaticComponentView;
+	UFUNCTION()
+	void OnRep_VirtualWorkerAssignment();
 
-	UPROPERTY()
-		USpatialSender* Sender;
+	void OnWorkerComponentReceived(const Worker_ComponentData& Data);
 
-	UPROPERTY()
-		USpatialReceiver* Receiver;
+	void AssignWorker(const FString& WorkerId);
 
-	FTimerManager* TimerManager;
-	*/
-	void GetZones(TArray<ZoneId>& ZoneIds);
-	void GetVirtualWorkers(TArray<VirtualWorkerId>& VirtualWorkerIds);
-	void GetWorkers(TArray<WorkerId>& WorkerIds);
+	// this will be static information
+	// this map is simulating the info that will be passed in somehow from the editor
+	TArray<ZoneId> Zones;
+	TArray<VirtualWorkerId> VirtualWorkers;
 
-	TMap<ZoneId, VirtualWorkerId> ZoneToVirtualWorkerMap;
-	TMap<VirtualWorkerId, WorkerId> VirtualWorkerToWorkerMap;
+	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
+
+	UPROPERTY(ReplicatedUsing = OnRep_VirtualWorkerAssignment)
+	TArray<FString> VirtualWorkerAssignment;
 
 	USpatialNetDriver* NetDriver;
 };

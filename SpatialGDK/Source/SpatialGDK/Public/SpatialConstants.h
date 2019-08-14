@@ -97,6 +97,8 @@ namespace SpatialConstants
 	const Worker_ComponentId POSITION_COMPONENT_ID							= 54;
 	const Worker_ComponentId PERSISTENCE_COMPONENT_ID						= 55;
 	const Worker_ComponentId INTEREST_COMPONENT_ID							= 58;
+	const Worker_ComponentId SYSTEM_COMPONENT_ID                            = 59;
+	const Worker_ComponentId WORKER_COMPONENT_ID                            = 60;
 
 	const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 9999;
 	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 9998;
@@ -115,7 +117,6 @@ namespace SpatialConstants
 	const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
 	const Worker_ComponentId ALWAYS_RELEVANT_COMPONENT_ID					= 9983;
 	const Worker_ComponentId AUTHORITY_INTENT_COMPONENT_ID                  = 9982;
-	const Worker_ComponentId WORKER_COMPONENT_LISTENER_COMPONENT_ID         = 9981;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -160,6 +161,9 @@ namespace SpatialConstants
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID						= 1;
 
 	const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
+
+	const Schema_FieldId WORKER_ID_ID = 1;
+	const Schema_FieldId WORKER_TYPE_ID = 2;
 
 	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;

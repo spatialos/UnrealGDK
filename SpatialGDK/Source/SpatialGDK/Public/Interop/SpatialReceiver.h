@@ -233,7 +233,7 @@ private:
 	UGlobalStateManager* GlobalStateManager;
 
 	UPROPERTY()
-	USpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
+	ASpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 	FTimerManager* TimerManager;
 

@@ -3,7 +3,9 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "Net/UnrealNetwork.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialConstants.h"
 
@@ -11,114 +13,159 @@ DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
 using namespace SpatialGDK;
 
-void USpatialVirtualWorkerTranslator::Init(USpatialNetDriver* InNetDriver)
+ASpatialVirtualWorkerTranslator::ASpatialVirtualWorkerTranslator(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer),
+	NetDriver(nullptr)
+{
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
+
+	bReplicates = true;
+	bAlwaysRelevant = true;
+
+	NetUpdateFrequency = 100.f;
+}
+
+void ASpatialVirtualWorkerTranslator::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-
-	TArray<ZoneId> ZoneIds;
-	GetZones(ZoneIds);
-
-	TArray<VirtualWorkerId> VirtualWorkerIds;
-	GetVirtualWorkers(VirtualWorkerIds);
-
-	TArray<WorkerId> WorkerIds;
-	GetWorkers(WorkerIds);
-
-	// The zone -> virtual worker counts don't strictly need to match, but for first pass we'll enforce this
-	check(ZoneIds.Num() == VirtualWorkerIds.Num());
-	check(VirtualWorkerIds.Num() == WorkerIds.Num());
-
-	for (int i = 0; i < ZoneIds.Num(); ++i)
-	{
-		ZoneToVirtualWorkerMap.Add(ZoneIds[i], VirtualWorkerIds[i]);
-	}
-
-	for (int i = 0; i < VirtualWorkerIds.Num(); ++i)
-	{
-		VirtualWorkerToWorkerMap.Add(VirtualWorkerIds[i], WorkerIds[i]);
-	}
 }
 
-void USpatialVirtualWorkerTranslator::GetZones(TArray<ZoneId>& ZoneIds)
+void ASpatialVirtualWorkerTranslator::UpdateEntityAclWriteForEntity(Worker_EntityId EntityId)
 {
-	ZoneIds.Add("Mountains");
-	ZoneIds.Add("Plains");
-	ZoneIds.Add("Wetlands");
-	ZoneIds.Add("Coastal");
-}
+	EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<EntityAcl>(EntityId);
 
-void USpatialVirtualWorkerTranslator::GetVirtualWorkers(TArray<VirtualWorkerId>& VirtualWorkerIds)
-{
-	// TODO: replace this with data supplied from Unreal (the Zone -> VirtualWorkerId map)
-	VirtualWorkerIds.Add(TEXT("A"));
-	VirtualWorkerIds.Add(TEXT("B"));
-	VirtualWorkerIds.Add(TEXT("C"));
-	VirtualWorkerIds.Add(TEXT("D"));
-}
-
-void USpatialVirtualWorkerTranslator::GetWorkers(TArray<WorkerId>& WorkerIds)
-{
-	// TODO: this won't actually work until we replace with real worker ids from the worker entities
-	WorkerIds.Add(TEXT("UnrealWorker0"));
-	WorkerIds.Add(TEXT("UnrealWorker1"));
-	WorkerIds.Add(TEXT("UnrealWorker2"));
-	WorkerIds.Add(TEXT("UnrealWorker3"));
-}
-
-bool USpatialVirtualWorkerTranslator::HandlesComponent(const Worker_ComponentId ComponentId) const
-{
-	return ComponentId == SpatialConstants::WORKER_COMPONENT_LISTENER_COMPONENT_ID;
-}
-
-void USpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
-{
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("Authority over the VirtualWorkerTranslator component %d has changed. This worker %s authority."), AuthOp.component_id,
-		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
-
-	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
+	if (EntityACL == nullptr)
 	{
 		return;
 	}
 
-	switch (AuthOp.component_id)
+	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
-		case SpatialConstants::WORKER_COMPONENT_LISTENER_COMPONENT_ID:
+		return;
+	}
+
+	AuthorityIntent* MyAuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
+
+	if (MyAuthorityIntentComponent == nullptr)
+	{
+		return;
+	}
+
+	// TODO - set EntityACL write authorities and send component update
+	//Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
+	//NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+}
+
+void ASpatialVirtualWorkerTranslator::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// These collections contain static data that is accessible on all server workers via accessor methods
+	// This data should likely live somewhere else, but for the purposes of the prototype it's here
+	// ZoneToVirtualWorkerMap
+	// VirtualWorkers
+	// TODO - replace with real data from the editor
+	Zones.Add(TEXT("Zone_A"));
+	Zones.Add(TEXT("Zone_B"));
+	Zones.Add(TEXT("Zone_C"));
+	Zones.Add(TEXT("Zone_D"));
+
+	VirtualWorkers.Add("VW_A");
+	VirtualWorkers.Add("VW_B");
+	VirtualWorkers.Add("VW_C");
+	VirtualWorkers.Add("VW_D");
+
+	if (HasAuthority())
+	{
+		for (const FString& VirtualWorker : VirtualWorkers)
 		{
-			//GlobalStateManagerEntityId = AuthOp.entity_id;
-			//SetAcceptingPlayers(true);
-			//break;
+			UnassignedVirtualWorkers.Enqueue(VirtualWorker);
 		}
-		default:
+
+		VirtualWorkerAssignment.AddDefaulted(VirtualWorkers.Num());
+	}
+}
+
+void ASpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
+{
+	// We have gained or lost authority over the ACL component for some entity
+	// If we have authority, the responsibility here is to set the EntityACL write auth to match the worker requested via the virtual worker component
+	// TODO - Set Entity's ACL component to correct worker id based on requested virtual worker
+	if (AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
+	{
+		//UpdateEntityAclWriteForEntity(AuthOp.entity_id);
+	}
+}
+
+void ASpatialVirtualWorkerTranslator::OnWorkerComponentReceived(const Worker_ComponentData& Data)
+{
+	// TODO - this will possibly miss worker components that arrive before an instance of this class has authority
+	// TODO - handle workers disconnecting
+	if (HasAuthority())
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		FString WorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::WORKER_ID_ID);
+		FString WorkerType = GetStringFromSchema(ComponentObject, SpatialConstants::WORKER_TYPE_ID);
+
+		if (WorkerType.Equals(SpatialConstants::DefaultServerWorkerType.ToString()))
 		{
-			break;
+			// We've received information about a new Worker, consider it and possibly assign it as one of our virtual workers
+			if (!UnassignedVirtualWorkers.IsEmpty())
+			{
+				AssignWorker(WorkerId);
+			}
 		}
 	}
 }
 
-void USpatialVirtualWorkerTranslator::OnComponentAdded(const Worker_AddComponentOp& Op)
+void ASpatialVirtualWorkerTranslator::AssignWorker(const FString& WorkerId)
+{
+	check(!UnassignedVirtualWorkers.IsEmpty());
+
+	FString VirtualWorkerId;
+	int32 VirtualWorkerIndex;
+
+	UnassignedVirtualWorkers.Dequeue(VirtualWorkerId);
+	VirtualWorkers.Find(VirtualWorkerId, VirtualWorkerIndex);
+	VirtualWorkerAssignment[VirtualWorkerIndex] = WorkerId;
+
+	UE_LOG(LogTemp, Warning, TEXT("Assigned %s to %s"), *WorkerId, *VirtualWorkerId);
+}
+
+void ASpatialVirtualWorkerTranslator::OnComponentAdded(const Worker_AddComponentOp& Op)
 {
 	if (Op.data.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	{
-		// Set Entity's ACL component to correct worker id based on requested virtual worker
-		Worker_EntityId EntityId = Op.entity_id;
-		AuthorityIntent* MyAuthorityIntent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
-
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("OnComponentAdded: For Entity %lld, VWId is: %s"), EntityId, *MyAuthorityIntent->VirtualWorkerId);
+		// TODO - Set Entity's ACL component to correct worker id based on requested virtual worker
+		//Worker_EntityId EntityId = Op.entity_id;
+		//AuthorityIntent* MyAuthorityIntent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
+	}
+	else if (Op.data.component_id == SpatialConstants::WORKER_COMPONENT_ID)
+	{
+		OnWorkerComponentReceived(Op.data);
 	}
 }
 
-void USpatialVirtualWorkerTranslator::OnComponentUpdated(const Worker_ComponentUpdateOp& Op)
+void ASpatialVirtualWorkerTranslator::OnComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
 	if (Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	{
-		// Set Entity's ACL component to correct worker id based on requested virtual worker
-		Worker_EntityId EntityId = Op.entity_id;
-		AuthorityIntent* MyAuthorityIntent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
-
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("OnComponentUpdated: For Entity %lld, VWId is: %s"), EntityId, *MyAuthorityIntent->VirtualWorkerId);
+		// TODO - Set Entity's ACL component to correct worker id based on requested virtual worker
+		//Worker_EntityId EntityId = Op.entity_id;
+		//AuthorityIntent* MyAuthorityIntent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
 	}
 }
 
-void USpatialVirtualWorkerTranslator::ApplyWorkerComponentListenerData(const Worker_ComponentData& Data)
+void ASpatialVirtualWorkerTranslator::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ASpatialVirtualWorkerTranslator, VirtualWorkerAssignment);
+}
+
+void ASpatialVirtualWorkerTranslator::OnRep_VirtualWorkerAssignment()
+{
+	OnWorkerAssignmentChanged.ExecuteIfBound(VirtualWorkerAssignment);
 }
