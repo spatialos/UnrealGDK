@@ -5,12 +5,12 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
-- RPCs that have been queued for execution for more than 1 second (default value in SpatialGDKSettings QueuedIncomingRPCWaitTime) are executed with unresolved parameters.
 
 ## [`0.6.1`] - 2019-xx-xx
 
 ### Bug fixes: 
-- Fixed Simulated Players launch configurations not being valid when using an Engine Plugin installation.
+- Simulated player launch configurations are no longer invalid when the GDK is installed as an Engine Plugin.
+- RPCs that have been queued for execution for more than 1 second (the default value in `SpatialGDKSettings QueuedIncomingRPCWaitTime`) are now executed even if there are unresolved parameters. This stops unresolved parameters from blocking the execution queue.
 
 ## [`0.6.0`] - 2019-07-31
 
