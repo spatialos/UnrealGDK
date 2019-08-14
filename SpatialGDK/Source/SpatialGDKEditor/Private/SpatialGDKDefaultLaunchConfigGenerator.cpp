@@ -30,10 +30,10 @@ bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLau
 	Writer->WriteObjectStart();
 		Writer->WriteValue(TEXT("worker_type"), *Worker.WorkerTypeName.ToString());
 		Writer->WriteArrayStart(TEXT("flags"));
-		for (const auto& Flag : Worker.Flags)
-		{
-			WriteFlagSection(Writer, Flag.Key, Flag.Value);
-		}
+			for (const auto& Flag : Worker.Flags)
+			{
+				WriteFlagSection(Writer, Flag.Key, Flag.Value);
+			}
 		Writer->WriteArrayEnd();
 		Writer->WriteArrayStart(TEXT("permissions"));
 			Writer->WriteObjectStart();
@@ -83,7 +83,7 @@ bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLau
 bool WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FName& WorkerType, const int32 Columns, const int32 Rows, const bool ManualWorkerConnectionOnly)
 {
 	Writer->WriteObjectStart();
-	Writer->WriteValue(TEXT("layer"), *WorkerType.ToString());
+		Writer->WriteValue(TEXT("layer"), *WorkerType.ToString());
 		Writer->WriteObjectStart("rectangle_grid");
 			Writer->WriteValue(TEXT("cols"), Columns);
 			Writer->WriteValue(TEXT("rows"), Rows);
@@ -159,7 +159,7 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath)
 
 		if (!FFileHelper::SaveStringToFile(Text, *LaunchConfigPath))
 		{
-			UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Log, TEXT("Failed to write output file '%s'. It might be that the file is read-only."), *LaunchConfigPath);
+			UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Failed to write output file '%s'. It might be that the file is read-only."), *LaunchConfigPath);
 			return false;
 		}
 
