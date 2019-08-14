@@ -103,7 +103,7 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath)
 	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
 		FString Text;
-		TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
+		TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Text);
 
 		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 
