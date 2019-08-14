@@ -15,7 +15,7 @@ using namespace SpatialGDK;
 
 namespace
 {
-bool WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value)
+bool WriteFlagSection(TSharedRef<TJsonWriter<>> Writer, const FString& Key, const FString& Value)
 {
 	Writer->WriteObjectStart();
 		Writer->WriteValue(TEXT("name"), Key);
