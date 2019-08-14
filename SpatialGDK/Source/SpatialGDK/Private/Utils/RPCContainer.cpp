@@ -67,7 +67,7 @@ namespace
 
 		// The format is expected to be:
 		// Function <objectName>::<functionName> queued on server/client for sending/execution for <duration> (and dropped). Reason: <reason>
-		FString OutputLog = "Function ";
+		FString OutputLog = TEXT("Function ");
 
 		if (ErrorInfo.TargetObject.IsValid())
 		{
