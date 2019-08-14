@@ -2,7 +2,7 @@
 
 #include "ObjectStub.h"
 
-FRPCErrorInfo  UObjectStub::ProcessRPC(const FPendingRPCParams& Params)
+FRPCErrorInfo UObjectStub::ProcessRPC(const FPendingRPCParams& Params)
 {
 	return FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Send, ERPCResult::UnresolvedParameters };
 }
