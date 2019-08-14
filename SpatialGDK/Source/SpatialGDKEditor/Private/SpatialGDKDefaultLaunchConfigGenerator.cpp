@@ -25,7 +25,7 @@ bool WriteFlagSection(TSharedRef<TJsonWriter<>> Writer, const FString& Key, cons
 	return true;
 }
 
-bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLaunchSection& Worker)
+bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunchSection& Worker)
 {
 	Writer->WriteObjectStart();
 		Writer->WriteValue(TEXT("worker_type"), *Worker.WorkerTypeName.ToString());
