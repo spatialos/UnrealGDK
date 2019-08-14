@@ -676,9 +676,9 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::MissingFunctionInfo };
 	}
 
-	ERPCResult ErrorCode = SendRPCInternal(TargetObject, Function, Params.Payload);
+	ERPCResult Result = SendRPCInternal(TargetObject, Function, Params.Payload);
 
-	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ErrorCode };
+	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result };
 }
 
 ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload)
@@ -814,8 +814,8 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			{
 				NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
 			}
-			return Result;
 #endif // !UE_BUILD_SHIPPING
+			return Result;
 		}
 		else
 		{

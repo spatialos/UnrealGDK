@@ -1488,8 +1488,8 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Receive, ERPCResult::MissingFunctionInfo };
 	}
 
-	ERPCResult ErrorCode = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{});
-	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, ErrorCode };
+	ERPCResult Result = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{});
+	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
