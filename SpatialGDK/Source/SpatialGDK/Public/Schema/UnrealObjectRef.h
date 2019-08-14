@@ -10,7 +10,7 @@ using Worker_EntityId = std::int64_t;
 
 class USpatialPackageMapClient;
 
-struct FUnrealObjectRef
+struct SPATIALGDK_API FUnrealObjectRef
 {
 	FUnrealObjectRef() = default;
 	FUnrealObjectRef(const FUnrealObjectRef&) = default;
