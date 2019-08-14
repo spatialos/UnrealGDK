@@ -238,25 +238,13 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ComponentDatas.Add(Heartbeat().CreateHeartbeatData());
 	}
 
-	FUnresolvedObjectsMap UnresolvedObjectsMap;
-	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
-	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, false, NetDriver);
+	ComponentFactory DataFactory(false, NetDriver);
 
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
 
 	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 	ComponentDatas.Append(DynamicComponentDatas);
-
-	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
-	{
-		QueueOutgoingUpdate(Channel, Actor, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
-	}
-
-	for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
-	{
-		QueueOutgoingUpdate(Channel, Actor, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
-	}
 
 	InterestFactory InterestDataFactory(Actor, Info, NetDriver);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
@@ -305,22 +293,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-			// Reset unresolved objects so they can be filled again by DataFactory
-			UnresolvedObjectsMap.Empty();
-			HandoverUnresolvedObjectsMap.Empty();
-
 			TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 			ComponentDatas.Append(ActorSubobjectDatas);
-
-			for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
-			{
-				QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
-			}
-
-			for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
-			{
-				QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
-			}
 		}
 	}
 
@@ -353,18 +327,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-		// Reset unresolved objects so they can be filled again by DataFactory
-		HandoverUnresolvedObjectsMap.Empty();
-
 		Worker_ComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges);
 		ComponentDatas.Add(SubobjectHandoverData);
 
 		ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);
-
-		for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
-		{
-			QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
-		}
 	}
 
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
@@ -401,21 +367,9 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-	FUnresolvedObjectsMap UnresolvedObjectsMap;
-	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
-	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, false, NetDriver);
+	ComponentFactory DataFactory(false, NetDriver);
 
 	TArray<Worker_ComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
-
-	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
-	{
-		QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
-	}
-
-	for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
-	{
-		QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
-	}
 
 	for (Worker_ComponentData& ComponentData : SubobjectDatas)
 	{
@@ -554,40 +508,9 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
-	FUnresolvedObjectsMap UnresolvedObjectsMap;
-	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
-	ComponentFactory UpdateFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, Channel->GetInterestDirty(), NetDriver);
+	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver);
 
 	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges);
-
-	if (RepChanges)
-	{
-		for (uint16 Handle : RepChanges->RepChanged)
-		{
-			if (Handle > 0)
-			{
-				ResetOutgoingUpdate(Channel, Object, Handle, /* bIsHandover */ false);
-
-				if (TSet<TWeakObjectPtr<const UObject>>* UnresolvedObjects = UnresolvedObjectsMap.Find(Handle))
-				{
-					QueueOutgoingUpdate(Channel, Object, Handle, *UnresolvedObjects, /* bIsHandover */ false);
-				}
-			}
-		}
-	}
-
-	if (HandoverChanges)
-	{
-		for (uint16 Handle : *HandoverChanges)
-		{
-			ResetOutgoingUpdate(Channel, Object, Handle, /* bIsHandover */ true);
-
-			if (TSet<TWeakObjectPtr<const UObject>>* UnresolvedObjects = HandoverUnresolvedObjectsMap.Find(Handle))
-			{
-				QueueOutgoingUpdate(Channel, Object, Handle, *UnresolvedObjects, /* bIsHandover */ true);
-			}
-		}
-	}
 
 	for (Worker_ComponentUpdate& Update : ComponentUpdates)
 	{
@@ -699,21 +622,11 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterestForActor(
 	return ComponentInterest;
 }
 
-RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, UFunction* Function, int ReliableRPCIndex, void* Params, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects)
+RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function, int ReliableRPCIndex, void* Params)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
-	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
-	{
-		UnresolvedObjects.Add(TargetObject);
-	}
-
-	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params, ReliableRPCIndex, UnresolvedObjects);
-	if (UnresolvedObjects.Num() > 0)
-	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Some RPC parameters for %s were not resolved."), *Function->GetName());
-	}
+	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params, ReliableRPCIndex);
 
 	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 }
@@ -1036,102 +949,6 @@ void USpatialSender::SendServerEndpointReadyUpdate(Worker_EntityId EntityId)
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, bool bIsHandover)
-{
-	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderResetOutgoingUpdate);
-
-	check(DependentChannel);
-	check(ReplicatedObject);
-	const FChannelObjectPair ChannelObjectPair(DependentChannel, ReplicatedObject);
-
-	// Choose the correct container based on whether it's handover or not
-	FChannelToHandleToUnresolved& PropertyToUnresolved = bIsHandover ? HandoverPropertyToUnresolved : RepPropertyToUnresolved;
-	FOutgoingRepUpdates& ObjectToUnresolved = bIsHandover ? HandoverObjectToUnresolved : RepObjectToUnresolved;
-
-	FHandleToUnresolved* HandleToUnresolved = PropertyToUnresolved.Find(ChannelObjectPair);
-	if (HandleToUnresolved == nullptr)
-	{
-		return;
-	}
-
-	FUnresolvedEntry* UnresolvedPtr = HandleToUnresolved->Find(Handle);
-	if (UnresolvedPtr == nullptr)
-	{
-		return;
-	}
-
-	FUnresolvedEntry& Unresolved = *UnresolvedPtr;
-
-	check(Unresolved.IsValid());
-
-	UE_LOG(LogSpatialSender, Log, TEXT("Resetting pending outgoing array depending on channel: %s, object: %s, handle: %d."),
-		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
-
-	// Remove any references to the unresolved objects.
-	// Since these are not dereferenced before removing, it is safe to not check whether the unresolved object is still valid.
-	for (TWeakObjectPtr<const UObject>& UnresolvedObject : *Unresolved)
-	{
-		FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
-		FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
-
-		OtherHandleToUnresolved.Remove(Handle);
-		if (OtherHandleToUnresolved.Num() == 0)
-		{
-			ChannelToUnresolved.Remove(ChannelObjectPair);
-			if (ChannelToUnresolved.Num() == 0)
-			{
-				ObjectToUnresolved.Remove(UnresolvedObject);
-			}
-		}
-	}
-
-	HandleToUnresolved->Remove(Handle);
-	if (HandleToUnresolved->Num() == 0)
-	{
-		PropertyToUnresolved.Remove(ChannelObjectPair);
-	}
-}
-
-void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, bool bIsHandover)
-{
-	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderQueueOutgoingUpdate);
-	check(DependentChannel);
-	check(ReplicatedObject);
-	FChannelObjectPair ChannelObjectPair(DependentChannel, ReplicatedObject);
-
-	UE_LOG(LogSpatialSender, Log, TEXT("Added pending outgoing property: channel: %s, object: %s, handle: %d. Depending on objects:"),
-		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
-
-	// Choose the correct container based on whether it's handover or not
-	FChannelToHandleToUnresolved& PropertyToUnresolved = bIsHandover ? HandoverPropertyToUnresolved : RepPropertyToUnresolved;
-	FOutgoingRepUpdates& ObjectToUnresolved = bIsHandover ? HandoverObjectToUnresolved : RepObjectToUnresolved;
-
-	FUnresolvedEntry Unresolved = MakeShared<TSet<TWeakObjectPtr<const UObject>>>();
-	*Unresolved = UnresolvedObjects;
-
-	FHandleToUnresolved& HandleToUnresolved = PropertyToUnresolved.FindOrAdd(ChannelObjectPair);
-	if (HandleToUnresolved.Find(Handle))
-	{
-		HandleToUnresolved.Remove(Handle);
-	}
-	HandleToUnresolved.Add(Handle, Unresolved);
-
-	for (const TWeakObjectPtr<const UObject>& UnresolvedObject : UnresolvedObjects)
-	{
-		// It is expected that this will never be reached. We should never have added an invalid object as an unresolved reference.
-		// Check the ComponentFactory.cpp should this ever be triggered.
-		checkf(UnresolvedObject.IsValid(), TEXT("Invalid UnresolvedObject passed in to USpatialSender::QueueOutgoingUpdate"));
-
-		FHandleToUnresolved& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
-		check(!AnotherHandleToUnresolved.Find(Handle));
-		AnotherHandleToUnresolved.Add(Handle, Unresolved);
-
-		// Following up on the previous log: listing the unresolved objects
-		UE_LOG(LogSpatialSender, Log, TEXT("- %s"), *UnresolvedObject->GetName());
-
-	}
-}
-
 void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
@@ -1152,9 +969,9 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 	OutgoingRPCs.ProcessRPCs();
 }
 
-FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const
+FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId) const
 {
-	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
+	FSpatialNetBitWriter PayloadWriter(PackageMap);
 
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 	{
@@ -1294,79 +1111,6 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Response.schema_type = Schema_CreateCommandResponse(ComponentId, CommandIndex);
 
 	Connection->SendCommandResponse(RequestId, &Response);
-}
-
-void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover)
-{
-	// Choose the correct container based on whether it's handover or not
-	FChannelToHandleToUnresolved& PropertyToUnresolved = bIsHandover ? HandoverPropertyToUnresolved : RepPropertyToUnresolved;
-	FOutgoingRepUpdates& ObjectToUnresolved = bIsHandover ? HandoverObjectToUnresolved : RepObjectToUnresolved;
-
-	FChannelToHandleToUnresolved* ChannelToUnresolved = ObjectToUnresolved.Find(Object);
-	if (!ChannelToUnresolved)
-	{
-		return;
-	}
-
-	for (auto& ChannelProperties : *ChannelToUnresolved)
-	{
-		FChannelObjectPair& ChannelObjectPair = ChannelProperties.Key;
-		if (!ChannelObjectPair.Key.IsValid() || !ChannelObjectPair.Value.IsValid())
-		{
-			continue;
-		}
-
-		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key.Get();
-		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
-		FHandleToUnresolved& HandleToUnresolved = ChannelProperties.Value;
-
-		const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(ReplicatingObject);
-
-		TArray<uint16> PropertyHandles;
-
-		for (auto& HandleUnresolvedPair : HandleToUnresolved)
-		{
-			uint16 Handle = HandleUnresolvedPair.Key;
-			FUnresolvedEntry& Unresolved = HandleUnresolvedPair.Value;
-
-			Unresolved->Remove(Object);
-			if (Unresolved->Num() == 0)
-			{
-				PropertyHandles.Add(Handle);
-
-				// Hack to figure out if this property is an array to add extra handles
-				if (!bIsHandover && DependentChannel->IsDynamicArrayHandle(ReplicatingObject, Handle))
-				{
-					PropertyHandles.Add(0);
-					PropertyHandles.Add(0);
-				}
-
-				FHandleToUnresolved& AnotherHandleToUnresolved = PropertyToUnresolved.FindChecked(ChannelObjectPair);
-				AnotherHandleToUnresolved.Remove(Handle);
-				if (AnotherHandleToUnresolved.Num() == 0)
-				{
-					PropertyToUnresolved.Remove(ChannelObjectPair);
-				}
-			}
-		}
-
-		if (PropertyHandles.Num() > 0)
-		{
-			if (bIsHandover)
-			{
-				SendComponentUpdates(ReplicatingObject, Info, DependentChannel, nullptr, &PropertyHandles);
-			}
-			else
-			{
-				// End with zero to indicate the end of the list of handles.
-				PropertyHandles.Add(0);
-				FRepChangeState RepChangeState = { PropertyHandles, DependentChannel->GetObjectRepLayout(ReplicatingObject) };
-				SendComponentUpdates(ReplicatingObject, Info, DependentChannel, &RepChangeState, nullptr);
-			}
-		}
-	}
-
-	ObjectToUnresolved.Remove(Object);
 }
 
 // Authority over the ClientRPC Schema component is dictated by the owning connection of a client.

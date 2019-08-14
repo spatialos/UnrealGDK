@@ -51,6 +51,8 @@ public:
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
 	Worker_EntityId GetEntityIdFromObject(const UObject* Object);
 
+	AActor* GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef);
+
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
 

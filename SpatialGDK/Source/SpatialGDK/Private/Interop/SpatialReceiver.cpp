@@ -1693,9 +1693,17 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
-	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
-	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
+	if (Object->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		// When resolving a singleton, also resolve using class path (in case any properties
+		// were set from a server that hasn't resolved the singleton yet)
+		FUnrealObjectRef ClassObjectRef = FUnrealObjectRef::GetSingletonClassRef(Object, PackageMap);
+		if (ClassObjectRef.IsValid())
+		{
+			ResolveIncomingOperations(Object, ClassObjectRef);
+		}
+	}
 	// TODO: UNR-1650 We're trying to resolve all queues, which introduces more overhead.
 	IncomingRPCs.ProcessRPCs();
 }
@@ -1817,11 +1825,11 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		{
 			FUnrealObjectRef& ObjectRef = *UnresolvedIt;
 
-			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-			if (NetGUID.IsValid())
+			bool bUnresolved = false;
+			UObject* Object = FUnrealObjectRef::ToObjectPtr(ObjectRef, PackageMap, bUnresolved);
+			if (!bUnresolved)
 			{
-				UObject* Object = PackageMap->GetObjectFromNetGUID(NetGUID, true);
-				check(Object);
+				check(Object != nullptr);
 
 				UE_LOG(LogSpatialReceiver, Verbose, TEXT("ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
 
