@@ -10,9 +10,9 @@ using namespace SpatialGDK;
 
 namespace
 {
-	FString ERPCResultToString(ERPCResult Error)
+	FString ERPCResultToString(ERPCResult Result)
 	{
-		switch (Error)
+		switch (Result)
 		{
 		case ERPCResult::Success:
 			return TEXT("");
