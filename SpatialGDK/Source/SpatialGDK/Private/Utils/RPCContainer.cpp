@@ -66,7 +66,7 @@ namespace
 		const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
 
 		// The format is expected to be:
-		// Function <objectName>::<functionName> queued on server/client for sending/execution (and dropped). Reason: <reason>
+		// Function <objectName>::<functionName> queued on server/client for sending/execution for <duration> (and dropped). Reason: <reason>
 		FString OutputLog = "Function ";
 
 		if (ErrorInfo.TargetObject.IsValid())
