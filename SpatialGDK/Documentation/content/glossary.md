@@ -484,7 +484,7 @@ Once you’ve chosen a label for the worker type (for example, myWorkerType), yo
 
 ### Zoning
 
-Zoning is one of the multiserver options for working with SpatialOS (the other option is [offloading](#offloading)). It involves splitting up the world into zones, known as “areas of [authority](#authority)”, with a different [server-worker instance](#server-workers) responsible for each. A server-worker instance can make updates only to Actors that are in its area of authority.
+Zoning is one of the multiserver options for working with SpatialOS (the other option is [offloading](#offloading)). It involves splitting up the world into areas of [authority](#authority), with a different [server-worker instance](#server-workers) responsible for each. A server-worker instance can make updates only to Actors that are in its area of authority.
 
 > **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 <br><br>
