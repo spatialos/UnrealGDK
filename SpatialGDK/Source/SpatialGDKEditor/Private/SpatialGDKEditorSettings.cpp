@@ -215,8 +215,8 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	bool result = IsAssemblyNameValid(AssemblyName) &&
 		IsDeploymentNameValid(PrimaryDeploymentName) &&
 		IsProjectNameValid(ProjectName) &&
-		!SnapshotPath.FilePath.IsEmpty() &&
-		!PrimaryLaunchConfigPath.FilePath.IsEmpty() &&
+		!GetSnapshotPath().IsEmpty() &&
+		!GetPrimaryLanchConfigPath().IsEmpty() &&
 		IsRegionCodeValid(PrimaryDeploymentRegionCode);
 
 	if (IsSimulatedPlayersEnabled())
