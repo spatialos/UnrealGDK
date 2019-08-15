@@ -17,105 +17,6 @@ void USpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticCompon
 	SpatialMetrics = InSpatialMetrics;
 }
 
-void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
-{
-	for (size_t i = 0; i < OpList->op_count; ++i)
-	{
-		Worker_Op* Op = &OpList->ops[i];
-
-		if (OpsToSkip.Num() != 0 &&
-			OpsToSkip.Contains(Op))
-		{
-			OpsToSkip.Remove(Op);
-			continue;
-		}
-
-		if (IsExternalSchemaOp(Op))
-		{
-			ProcessExternalSchemaOp(Op);
-			continue;
-		}
-
-		switch (Op->op_type)
-		{
-		// Critical Section
-		case WORKER_OP_TYPE_CRITICAL_SECTION:
-			Receiver->OnCriticalSection(Op->critical_section.in_critical_section != 0);
-			break;
-
-		// Entity Lifetime
-		case WORKER_OP_TYPE_ADD_ENTITY:
-			Receiver->OnAddEntity(Op->add_entity);
-			break;
-		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			Receiver->OnRemoveEntity(Op->remove_entity);
-			StaticComponentView->OnRemoveEntity(Op->remove_entity.entity_id);
-			Receiver->RemoveComponentOpsForEntity(Op->remove_entity.entity_id);
-			break;
-
-		// Components
-		case WORKER_OP_TYPE_ADD_COMPONENT:
-			StaticComponentView->OnAddComponent(Op->add_component);
-			Receiver->OnAddComponent(Op->add_component);
-			break;
-		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			Receiver->OnRemoveComponent(Op->remove_component);
-			break;
-		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			StaticComponentView->OnComponentUpdate(Op->component_update);
-			Receiver->OnComponentUpdate(Op->component_update);
-			break;
-
-		// Commands
-		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			Receiver->OnCommandRequest(Op->command_request);
-			break;
-		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			Receiver->OnCommandResponse(Op->command_response);
-			break;
-
-		// Authority Change
-		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			Receiver->OnAuthorityChange(Op->authority_change);
-			break;
-
-		// World Command Responses
-		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-			Receiver->OnReserveEntityIdsResponse(Op->reserve_entity_ids_response);
-			break;
-		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			Receiver->OnCreateEntityResponse(Op->create_entity_response);
-			break;
-		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
-			break;
-		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
-			Receiver->OnEntityQueryResponse(Op->entity_query_response);
-			break;
-
-		case WORKER_OP_TYPE_FLAG_UPDATE:
-			USpatialWorkerFlags::ApplyWorkerFlagUpdate(Op->flag_update);
-			break;
-		case WORKER_OP_TYPE_LOG_MESSAGE:
-			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
-			break;
-		case WORKER_OP_TYPE_METRICS:
-#if !UE_BUILD_SHIPPING
-			SpatialMetrics->HandleWorkerMetrics(Op);
-#endif
-			break;
-		case WORKER_OP_TYPE_DISCONNECT:
-			Receiver->OnDisconnect(Op->disconnect);
-			break;
-
-		default:
-			break;
-		}
-	}
-
-	Receiver->FlushRemoveComponentOps();
-	Receiver->FlushRetryRPCs();
-}
-
 void USpatialDispatcher::ProcessOps(const gdk::SpatialOsWorker& Worker)
 {
 	Receiver->OnCriticalSection(true);
@@ -226,6 +127,7 @@ void USpatialDispatcher::ProcessOps(const gdk::SpatialOsWorker& Worker)
 	if (Worker.HasConnectionStatusChanged()) {
 		Worker_DisconnectOp Op{ static_cast<std::uint8_t>(Worker.GetConnectionStatusCode()), Worker.GetConnectionMessage().c_str() };
 			Receiver->OnDisconnect(Op);
+		UE_LOG(LogSpatialView, Log, TEXT("Disconnected"), UTF8_TO_TCHAR(Op.reason));
 	}
 
 		//if (IsExternalSchemaOp(Op))
@@ -410,14 +312,4 @@ void USpatialDispatcher::RunCallbacks(Worker_ComponentId ComponentId, const Work
 	{
 		CallbackData.Callback(Op);
 	}
-}
-
-void USpatialDispatcher::MarkOpToSkip(const Worker_Op* Op)
-{
-	OpsToSkip.Add(Op);
-}
-
-int USpatialDispatcher::GetNumOpsToSkip() const
-{
-	return OpsToSkip.Num();
 }
