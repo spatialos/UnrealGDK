@@ -19,12 +19,10 @@
 namespace SpatialGDK
 {
 
-ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, bool bInterestDirty, USpatialNetDriver* InNetDriver)
+ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
-	, PendingRepUnresolvedObjectsMap(RepUnresolvedObjectsMap)
-	, PendingHandoverUnresolvedObjectsMap(HandoverUnresolvedObjectsMap)
 	, bInterestHasChanged(bInterestDirty)
 { }
 
@@ -45,7 +43,6 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 			if (GetGroupFromCondition(Parent.Condition) == PropertyGroup)
 			{
 				const uint8* Data = (uint8*)Object + Cmd.Offset;
-				TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 
 				bool bProcessedFastArrayProperty = false;
 
@@ -56,7 +53,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 					// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
 					if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
 					{
-						FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
+						FSpatialNetBitWriter ValueDataWriter(PackageMap);
 
 						if (FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct) || bIsInitialData)
 						{
@@ -69,24 +66,10 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 
 				if (!bProcessedFastArrayProperty)
 				{
-					AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, UnresolvedObjects, ClearedIds);
+					AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, ClearedIds);
 				}
 
-				if (UnresolvedObjects.Num() == 0)
-				{
-					bWroteSomething = true;
-				}
-				else
-				{
-					if (!bIsInitialData)
-					{
-						// Don't send updates for fields with unresolved objects, unless it's the initial data,
-						// in which case all fields should be populated.
-						Schema_ClearField(ComponentObject, HandleIterator.Handle);
-					}
-
-					PendingRepUnresolvedObjectsMap.Add(HandleIterator.Handle, UnresolvedObjects);
-				}
+				bWroteSomething = true;
 			}
 
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
@@ -112,36 +95,21 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 		const FHandoverPropertyInfo& PropertyInfo = Info.HandoverProperties[ChangedHandle - 1];
 
 		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
-		FUnresolvedObjectsSet UnresolvedObjects;
 
-		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, UnresolvedObjects, ClearedIds);
+		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, ClearedIds);
 
-		if (UnresolvedObjects.Num() == 0)
-		{
-			bWroteSomething = true;
-		}
-		else
-		{
-			if (!bIsInitialData)
-			{
-				// Don't send updates for fields with unresolved objects, unless it's the initial data,
-				// in which case all fields should be populated.
-				Schema_ClearField(ComponentObject, ChangedHandle);
-			}
-
-			PendingHandoverUnresolvedObjectsMap.Add(ChangedHandle, UnresolvedObjects);
-		}
+		bWroteSomething = true;
 	}
 
 	return bWroteSomething;
 }
 
-void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds)
+void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TArray<Schema_FieldId>* ClearedIds)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
 		UScriptStruct* Struct = StructProperty->Struct;
-		FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
+		FSpatialNetBitWriter ValueDataWriter(PackageMap);
 		bool bHasUnmapped = false;
 
 		if (Struct->StructFlags & STRUCT_NetSerializeNative)
@@ -216,63 +184,14 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		FUnrealObjectRef ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
-
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
-
-		if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())
-		{
-			FNetworkGUID NetGUID;
-			if (ObjectValue->IsSupportedForNetworking())
-			{
-				NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
-
-				if (!NetGUID.IsValid())
-				{
-					if (ObjectValue->IsFullNameStableForNetworking())
-					{
-						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
-					}
-					else
-					{
-						NetGUID = PackageMap->TryResolveObjectAsEntity(ObjectValue);
-					}
-				}
-			}
-
-			// The secondary part of the check is needed if we couldn't assign an entity id (e.g. ran out of entity ids)
-			if (NetGUID.IsValid() || (ObjectValue->IsSupportedForNetworking() && !ObjectValue->IsFullNameStableForNetworking()))
-			{
-				ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			}
-			else
-			{
-				ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
-			}
-
-			if (ObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
-			{
-				// There are cases where something assigned a NetGUID without going through the FSpatialNetGUID (e.g. FObjectReplicator)
-				// Assign an UnrealObjectRef by going through the FSpatialNetGUID flow
-				if (ObjectValue->IsFullNameStableForNetworking())
-				{
-					PackageMap->ResolveStablyNamedObject(ObjectValue);
-					ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				}
-				else
-				{
-					UnresolvedObjects.Add(ObjectValue);
-					ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
-				}
-			}
-		}
 
 		if (ObjectProperty->PropertyFlags & CPF_AlwaysInterested)
 		{
 			bInterestHasChanged = true;
 		}
 
-		AddObjectRefToSchema(Object, FieldId, ObjectRef);
+		AddObjectRefToSchema(Object, FieldId, FUnrealObjectRef::FromObjectPtr(ObjectValue, PackageMap));
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
 	{
@@ -291,7 +210,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 		for (int i = 0; i < ArrayHelper.Num(); i++)
 		{
-			AddProperty(Object, FieldId, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), UnresolvedObjects, ClearedIds);
+			AddProperty(Object, FieldId, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), ClearedIds);
 		}
 
 		if (ArrayHelper.Num() == 0 && ClearedIds)
@@ -307,7 +226,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		}
 		else
 		{
-			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, UnresolvedObjects, ClearedIds);
+			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, ClearedIds);
 		}
 	}
 	else if (Property->IsA<UDelegateProperty>() || Property->IsA<UMulticastDelegateProperty>() || Property->IsA<UInterfaceProperty>())
