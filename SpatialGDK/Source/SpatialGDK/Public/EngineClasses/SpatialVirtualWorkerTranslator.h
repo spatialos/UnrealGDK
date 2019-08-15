@@ -32,9 +32,8 @@ public:
 	void OnComponentAdded(const Worker_AddComponentOp& Op);
 	void OnComponentUpdated(const Worker_ComponentUpdateOp& Op);
 
-	void UpdateEntityAclWriteForEntity(Worker_EntityId EntityId);
-
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 
 	const TArray<ZoneId>& GetZones() const { return Zones; }
 	const TArray<VirtualWorkerId>& GetVirtualWorkers() const { return VirtualWorkers; }
@@ -52,6 +51,10 @@ private:
 
 	void AssignWorker(const FString& WorkerId);
 
+	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
+	void ProcessQueuedAclAssignmentRequests();
+
+	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId);
 	// this will be static information
 	// this map is simulating the info that will be passed in somehow from the editor
 	TArray<ZoneId> Zones;
@@ -61,6 +64,8 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_VirtualWorkerAssignment)
 	TArray<FString> VirtualWorkerAssignment;
+
+	TArray<Worker_EntityId> AclWriteAuthAssignmentRequests;
 
 	USpatialNetDriver* NetDriver;
 };
