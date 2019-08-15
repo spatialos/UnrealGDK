@@ -17,7 +17,6 @@ USpatialLoadBalancingStrategy::~USpatialLoadBalancingStrategy()
 
 FString USingleWorkerLoadBalancingStrategy::GetAuthoritativeVirtualWorkerId(const AActor& Actor) const
 {
-	check(Translator->GetVirtualWorkerAssignments().Num() == 1);
 	return Translator->GetVirtualWorkerAssignments()[0];
 }
 
