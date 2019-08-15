@@ -4,21 +4,49 @@
 ## 3: Test changes in the cloud
 ### Step 1: Build your workers
 
-When you build your workers, you create an assembly. They’re `.zip` files that contain all the files that the SpatialOS Runtime uses when your run your game in the cloud. To do this you run a batch file,  `BuildWorker.bat`.
+When you build your workers, you create an assembly. They’re `.zip` files that contain all the files that the SpatialOS Runtime uses when your run your game in the cloud. </br>
+To do this you run a batch file,  `BuildWorker.bat`. You can add different flags to the script but, for now, run the script twice, once with a flag for server-workers and once with a flag for cloud-workers:</br>
 
-**Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
+  <%(#Expandable title="What flags are there?")%>
+During development, you might want to, for example:</br> * cook a headless standalone version of the game ready for upload to the SpatialOS cloud as a simulated player cloud deployment, or </br> * cook a stand-alone version of the game to test it as a game client.</br> The optional flags give you this functionality and more.</br></br> See the [Helper script]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts) documentation for details of all the options and how to use them.
+<%(/Expandable)%>
 
-**Note:** Unreal GDK projects default to using [Spatial for networking](). However, if the `bSpatialNetworking` option is present in your `DefaultGame.ini` configuration file (located in `<ProjectRoot>\Game\Config` directory), ensure that it is set to `True` (as in, `bSpatialNetworking=True`) to enable networking with Spatial for your cloud deployment.
+To build workers:
 
-1. In a terminal window, change directory to the root directory of the Third-Person Shooter repository.
-1. Build a server-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject`
-1. Build a client-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject`
+1. Close your Unreal Editor - if the Editor is open when you try to build workers, the command fails.
+1. Check the project's networking is set to Spatial networking. </br>
+Unreal GDK projects default to using Spatial networking. However, if you have reset the networking switch to native Unreal networking, you need to set it back. </br>
+    1. In a terminal window, navigate to the `DefaultGame.ini` configuration file (located in `<ProjectRoot>\Game\Config` directory).
+    2. Check if the `bSpatialNetworking` option is present. If it is, set it to `True` (so: `bSpatialNetworking=True`), save the file and exit. 
+2. Still in a terminal window, navigate to the `UnrealGDKExampleProject` directory.
+3. Run the `BuildProject.bat` command to build a server-worker using the filepath and flags below. </br>
+The filepath you use depends on whether you used auto-install or manual-install when you cloned and set up the GDK's fork and plugin. <br/></br>
+    * Auto-install filepath:</br>
+    ```
+    Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
+    ```
+    </br>
+    * Manual-install filepath:</br>
+    ```
+    Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
+    ```
+    </br>
+4. Now run the `BuildProject.bat` command to build a client-worker: <br/><br/>
+    * Auto-install filepath:</br>
+     ```
+    Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
+    ```
+    <br/>
+    * Manual-install filepath:</br>
+    ```
+    Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
+    ```
+    <br/>
 
-<br/>
 ### Step 2: Upload your game
 
 1. In File Explorer, navigate to `UnrealGDKExampleProject\spatial` and open `spatialos.json` in a text editor.
-1. Change the `name` field to the name of your project. You can find this in the [Console](https://console.improbable.io). It’ll be something like `beta_someword_anotherword_000`.
+1. Change the `name` field to the name of your project. You can find this in the [Console](https://console.improbable.io). </br>It’ll be something like `beta_nuts_double_379`.
     ![]({{assetRoot}}assets/tutorial/project-name.png)
 1. In a terminal window, change directory to `UnrealGDKExampleProject\spatial\` and run `spatial cloud upload <assembly_name>`, where `<assembly_name>` is a name of your choice (for example `myassembly`). A valid upload command looks like this:
 
@@ -51,7 +79,7 @@ spatial cloud launch --snapshot=snapshots/default.snapshot myassembly two_worker
 <br/>
 ### Step 4: Play your game
 
-![]({{assetRoot}}assets/tutorial/console.png)
+![]({{assetRoot}}assets/tutorial/old-console.png)
 
 When your deployment has launched, SpatialOS automatically opens the [Console](https://console.improbable.io) in your browser.
 
@@ -77,5 +105,6 @@ When you’re done shooting your friends, you can click the **Stop** button in t
 
 
 <br/>------<br/>
+_2019-08-14 Page updated with editorial review: added filepaths based on auto-install or manual-install._</br>
 _2019-08-02 Page updated with limited editorial review: updated project name._</br>
 _2019-03-20 Page updated with limited editorial review._

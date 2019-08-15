@@ -50,7 +50,7 @@ Project, you can learn more about the GDK’s functionality with tutorials and g
 <br/>
 <br/>
 
-### **> Next:** [Get started]({{urlRoot}}/content/get-started/dependencies.md)
+#### **> Next:** [Get started]({{urlRoot}}/content/get-started/introduction.md)
 
 </br>------</br>
 _2019-08-09 Updated with editorial review_</br>

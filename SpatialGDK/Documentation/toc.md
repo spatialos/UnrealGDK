@@ -3,7 +3,7 @@
     - Get started
         - [Introduction]({{urlRoot}}/content/get-started/introduction)
         - [1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
-        - [2 - Get and build the GDK’s Unreal Engine fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+        - [2 - Set up the fork and plugin]({{urlRoot}}/content/get-started/build-unreal-fork)
         - 3 - Set up a project
             - The Example Project
                 - [Introduction]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)
@@ -14,7 +14,7 @@
             - The Starter Template
                 - [Introduction]({{urlRoot}}/content/get-started/\starter-template/get-started-template-intro)
                 - [1: Set up]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup)
-                - [1: Launch a local deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-local)
+                - [2: Launch a local deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-local)
                 - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-cloud)
                 - [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
     - Tutorials and guides
@@ -95,7 +95,11 @@
     - [Directory structure]({{urlRoot}}/content/directory-structure)
 - <h3>Workflows</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
-    - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
+    - Manual-install
+        - [UE fork and plugin]({{urlRoot}}/content/get-started/manual-engine-build)
+        - [Example Project setup]({{urlRoot}}/content/get-started/example-project/exampleproject-manual-setup)
+        - [Starter Template setup]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup-manual)
+    - [Keep your GDK up to date]({{urlRoot}}/content/upgrading)
     - Deployment workflows
         - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
         - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)

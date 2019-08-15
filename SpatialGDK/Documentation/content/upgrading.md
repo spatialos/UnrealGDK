@@ -26,7 +26,7 @@ If it returns a different branch, run `git checkout <branch-name>` to check out 
 
 > For more information about the different GDK branches and their maturity, see the [Versioning scheme page]({{urlRoot}}/content/pricing-and-support/versioning-scheme).
 
-## Step 2: Update your Unreal Engine fork and GDK
+## Step 2: Update your Unreal Engine fork and plugin
 
 Before you begin, read the release notes on the releases page of the [`UnrealGDK` GitHub](https://github.com/spatialos/UnrealGDK/releases) so you understand the changes that you're about to download.
 
@@ -43,7 +43,7 @@ Right-click on your `.uproject` file and select **Generate Visual Studio project
 
 You are now on the latest GDK and the latest SpatialOS Unreal Engine fork.
 
-## Optional: upgrading your clang version 
+## Optional: upgrade your clang version 
 
 If you're also upgrading your Unreal Engine version, you need to ensure you have the up to date version of Linux cross-compilation (clang), for SpatialOS to be able to build targeting Linux (for cloud deployments). 
 

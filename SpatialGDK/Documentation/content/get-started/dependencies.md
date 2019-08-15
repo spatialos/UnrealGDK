@@ -15,8 +15,7 @@ Before you start, make sure you are logged in to your SpatialOS account.
 ### Step 2: Hardware
 
 - Ensure your machine meets the minimum hardware requirements for Unreal Engine. 
-
-Refer to the <a href="https://docs.unrealengine.com/en-US/GettingStarted/RecommendedSpecifications" data-track-link="Clicked UE4 Recommendations|product=Docs|platform=Win|label=Win" target="_blank">Unreal Engine hardware recommendations</a> for further information about the minimum hardware requirements.
+</br>See the <a href="https://docs.unrealengine.com/en-US/GettingStarted/RecommendedSpecifications" data-track-link="Clicked UE4 Recommendations|product=Docs|platform=Win|label=Win" target="_blank">Unreal Engine hardware recommendations</a> for further information about the minimum hardware requirements.
 
 - Recommended storage: 60GB+ available space
 
@@ -24,9 +23,8 @@ Refer to the <a href="https://docs.unrealengine.com/en-US/GettingStarted/Recomme
 
 To build the GDK for Unreal you need the following software installed on your machine:
 
-- **Windows 10,** with Command Prompt or PowerShell.
-
-  - **The GDK for Unreal is currently only supported on Windows 10.** 
+- **Windows 10** with Command Prompt or PowerShell.
+  - **Note:** The GDK for Unreal is currently only supported on Windows 10.
 - **A Git client**
   - In order to clone the GDK and Unreal Engine repos, we recommend using a Git client such as <a href="https://gitforwindows.org" data-track-link="Clicked GIT for Windows|product=Docs|platform=Win|label=Win" target="_blank">**Git for Windows**</a>
 - <a href="https://console.improbable.io/installer/download/stable/latest/win" data-track-link="Clicked Download SpatialOS|product=Docs|platform=Win|label=Win" target="_blank">**SpatialOS**</a>
@@ -46,8 +44,7 @@ To build the GDK for Unreal you need the following software installed on your ma
     - You need to download and install Unreal's Linux Cross-Compilation toolchain in order to build Linux server-workers using your Windows machine. Use the Unreal documentation link above to install `-v13 clang-7.0.1-based`, the appropriate toolchain for Unreal Engine 4.22.
 
 </br>
-</br>
-### **> Next:** [2 - Get and build the GDK’s Unreal Engine fork]({{urlRoot}}/content/get-started/build-unreal-fork.md)
+#### **> Next:** [2 - Set up the fork and plugin]({{urlRoot}}/content/get-started/build-unreal-fork.md)
 
 <br/>
 

@@ -1,8 +1,21 @@
-<%(TOC)%>
+<%(TOC max="2")%>
 
-# Manually build the SpatialOS Unreal Engine fork
+# Manual-install: UE fork and plugin
 
-Follow these instructions to manually build the SpatialOS Unreal Engine fork after cloning the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) repository.
+When you follow the [Get started]({{urlRoot}}/content/get-started/introduction.md) guide's steps on [2 - Set up the fork and plugin]({{urlRoot}}/content/get-started/build-unreal-fork.md), we recommend you [auto-install]({{urlRoot}}/content/get-started/build-unreal-fork#step-5-clone-and-install-the-plugin) the fork and plugin. </br>
+
+If you prefer to manually install the the UE fork and plugin, follow these instructions to:
+
+*  set up and build the SpatialOS Unreal Engine fork after cloning the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) repository.
+*  clone and install the SpatialOS GDK for Unreal plugin.
+
+> **TIP:** We recommend you use the auto-install option as this makes setting up the Example Project and following tutorials based on the Example Project quicker. If you manually install, you will need to take extra steps to follow tutorials.
+
+## Before starting
+You must have followed the [Get started]({{urlRoot}}/content/get-started/introduction.md) guide:
+
+* [1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
+* [2 - Set up the fork and plugin]({{urlRoot}}/content/get-started/build-unreal-fork.md) up to [step 5]({{urlRoot}}/content/get-started/build-unreal-fork#step-5-clone-and-install-the-plugin)
 
 ## Step 1: Unreal Linux cross-platform support</br>
 
@@ -41,9 +54,9 @@ Visual Studio then builds Unreal Engine, which can take up to a couple of hours.
 
 You have now built Unreal Engine 4 with cross-compilation for Linux. 
 
-## Installing the SpatialOS GDK for Unreal
+## Step 4: Clone and install the SpatialOS GDK for Unreal plugin
 
-If you built the Engine fork manually, you need to add the GDK to your project's Plugins folder before using SpatialOS. 
+You need to add the plugin to your project's plugins folder in order to use SpatialOS 
 
 To do this: 
 
@@ -56,3 +69,20 @@ To do this:
 | SSH | `git clone git@github.com:spatialos/UnrealGDK.git`|
 
 1. In File Explorer, navigate to the root directory of the GDK for Unreal repository (`<YourProject>\Game\Plugins\UnrealGDK\...`), and double-click `Setup.bat`. If you haven’t already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in.
+
+When the build is complete, you can continue to _3 - Set up a project_.
+
+
+</br>
+#### **> Next:** 3 - Set up project
+
+Choose either:
+
+* [Set up the Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) </br>
+The Example Project is a session-based FPS game. It gives an overview of the GDK and using SpatialOS, including deploying your game to SpatialOS locally and in the cloud.
+* [Set up the Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro) </br>
+Use as a base for creating your own project running on SpatialOS.
+
+</br>------</br>
+_2019-08-12 Page updated with editorial review: added to page orientation._
+

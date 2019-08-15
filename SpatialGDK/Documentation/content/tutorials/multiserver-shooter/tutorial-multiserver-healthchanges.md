@@ -74,7 +74,7 @@ To rebuild your project:
 Now let's test the health replication in a local deployment.
 </br>
 </br>
-### **> Next:** [2: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
+#### **> Next:** [2: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
 <br/>
 <br/>
 

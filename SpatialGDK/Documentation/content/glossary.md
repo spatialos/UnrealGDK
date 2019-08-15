@@ -20,12 +20,12 @@ Note that this SpatialOS documentation assumes you are developing a SpatialOS ga
 ## GDK for Unreal terms
 
 ### Actor groups
-Actor groups facilitate multiserver functionality through [offloading](#offloading). You set them up to configure which Actor types instances of a [server-worker type](#worker-types-and-instances) have [authority](#authority) over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type via the SpatialOS Runtime Settings panel.
+Actor groups facilitate multiserver functionality through [offloading](#offloading). You set them up to configure which Actor types instances of a [server-worker type](#worker-types-and-worker-instances) have [authority](#authority) over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type via the SpatialOS Runtime Settings panel.
 
 > **Find out more:**
 > 
 > * [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups)
-> * [The SpatialOS Runtime Settings panel]({{urlRoot/}}content/unreal-editor-interface/runtime-settings)
+> * [The SpatialOS Runtime Settings panel]({{urlRoot}}/content/unreal-editor-interface/runtime-settings)
 > * [Offloading overview]({{urlRoot}}/content/workers/offloading-concept)
 
 ### Actor handover

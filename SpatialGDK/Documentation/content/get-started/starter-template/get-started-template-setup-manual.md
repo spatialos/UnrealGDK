@@ -1,9 +1,14 @@
-<%(TOC)%>
-# The Starter Template
+<%(TOC max="3")%>
 
-> **If you did not manually build your Engine fork**, i.e you used `InstallGDK.bat`, please follow [these setup instructions]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup) instead of the below.
+# Manual-install: Starter Template setup
 
-## 1. Set up (manual instructions)
+When you follow the [Get started: 2 - Set up the fork and plugin]({{urlRoot}}/content/get-started/build-unreal-fork.md), we recommend you [auto-install]({{urlRoot}}/content/get-started/build-unreal-fork#step-5-clone-and-install-the-plugin) the fork and plugin. However, you have the option to manually install the the UE fork and plugin by following the [Manual-install: UE fork and plugin]({{urlRoot}}/content/get-started/manual-engine-build) guide.
+
+If you followed the manual-install guide, follow the steps below to set up the Starter Template. After this, you can return to [Starter Template - 2: Launch a local deployment with multiple clients]({{urlRoot}}/content/get-started/starter-template/get-started-template-local). 
+
+
+## Starter Template - Set up (manual-install only) 
+> If you used **auto-install** (by running `InstallGDK.bat`) as part of _Get Started: 2 - Set up the fork and plugin_, follow the standard [setup instructions]({{urlRoot}}/content/get-started/example-project/exampleproject-setup). Do not follow the instructions below.
 
 To use the Starter Template, you must complete the following steps:
 
@@ -61,8 +66,10 @@ To use the Starter Template, you must build the GDK for Unreal module dependenci
 
 Note: Ensure that your Visual Studio Solution Configuration is set to **Development Editor**.
 
-### **> Next:** [2: Launch a local deployment with multiple clients]({{urlRoot}}/content/get-started/starter-template/get-started-template-local)
+#### **> Next:** [2: Launch a local deployment with multiple clients]({{urlRoot}}/content/get-started/starter-template/get-started-template-local)
 
 <br/>
 
-<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>
+<br/>------------<br/>
+_2019-07-22 Page updated with editorial review: updated navigation_</br>
+_2019-07-16 Page updated with editorial review_<br/>

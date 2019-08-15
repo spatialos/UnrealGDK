@@ -12,7 +12,7 @@ You can download it from [here](https://postgresql.org/download/windows). Once d
 
 ### 2. Set up the Example Project
 
-If you followed [Get started 1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies), and [Get started 2 - Get and build the SpatialOS Unreal Engine fork]({{urlRoot}}/content/get-started/build-unreal-fork), you will have a fully set up Example Project already.
+If you followed [Get started 1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies), and [Get started 2 - Set up the fork and plugin]({{urlRoot}}/content/get-started/build-unreal-fork), you will have a fully set up Example Project already.
 
 For this tutorial, you will use the `feature/dbsync_worker_tutorial_start` branch rather than the default `release` branch. To switch branches, run `git checkout origin/feature/dbsync_worker_tutorial_start`.
 
@@ -63,7 +63,7 @@ To communicate with that worker, you need the UnrealWorker to send commands and 
 You've now set up up the Database Sync worker - let's start using it!
 
 </br>
-### **> Next:** [2: Communicating with the Database Sync Worker]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-communicating)
+#### **> Next:** [2: Communicating with the Database Sync Worker]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-communicating)
 </br>
 
 <br/>------<br/>

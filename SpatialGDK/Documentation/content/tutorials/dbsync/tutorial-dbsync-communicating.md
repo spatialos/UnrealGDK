@@ -180,7 +180,7 @@ A key feature of the Database Sync Worker is that it allows you to externally mo
 So far, you have brought the Database Sync Worker into your project, generated code to communicate with it from the Example Project using schema, and you have registered to listen to the worker responses. Now is time to actually use the worker to sync with the database.
 
 </br>
-### **> Next:** [3: Syncing with the database]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-syncing)
+#### **> Next:** [3: Syncing with the database]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-syncing)
 </br>
 
 <br/>------<br/>

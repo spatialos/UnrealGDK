@@ -98,7 +98,7 @@ Before you launch a cloud deployment, you need to make sure that `spatial` direc
 ```
 
   
- ### **> Next:** [3. Launch a local deployment]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-deployment)
+ #### **> Next:** [3. Launch a local deployment]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-deployment)
  
   
 <br/>

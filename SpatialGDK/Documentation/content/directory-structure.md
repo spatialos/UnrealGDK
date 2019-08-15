@@ -1,6 +1,6 @@
 <%(TOC)%>
 # Directory structure
-The table below lists the contents of the GDK for Unreal repository after running `Setup.bat` to build the Unreal engine as part of [Getting started]({{urlRoot}}/content/get-started/build-unreal-fork#step-2-clone-the-unreal-engine-fork-repository).
+The table below lists the contents of your clone of the Unreal Engine fork repository after running `Setup.bat` to build Unreal engine as part of [Get started]({{urlRoot}}/content/get-started/build-unreal-fork).
 
 | Directory | Purpose
 |-----------|---------
@@ -17,3 +17,6 @@ The table below lists the contents of the GDK for Unreal repository after runnin
 | `SpatialGDK/Source/SpatialGDK/Public/WorkerSdk/` | Not tracked in git. Contains the [C API worker SDK](https://docs.improbable.io/reference/latest/capi/introduction) headers which are used while building the GDK. You install these when you run `Setup.bat`
 | `SpatialGDK/Source/SpatialGDKEditorToolbar/` | Contains the [SpatialOS GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars.md) that appears within the Unreal Editor GUI, from which you can take snapshots, generate schemas, start and stop deployments, and access the SpatialOS Inspector.
 | `ci/` | Contains scripts we use internally for our continuous integration.
+
+</br>------</br>
+_2019-08-12 Page updated with limited editorial review: editorial updates._

@@ -30,7 +30,7 @@ To follow the multiserver zoning tutorial, you need to change your Example Proje
 2. In GitHub, change your Example Project branch to `multiserver-tutorial-start`.</br>
 To do this, open a terminal window, navigate to directory containing your cloned Example Project (this will be    `...\UnrealEngine\samples\UnrealGDKExampleProject`) and enter `git checkout -b multiserver-tutorial-start`.
 3. Open the project in Visual Studio.</br>
-To do this, in Windows Explorer, in the directory `...\UnrealEngine\samples\UnrealGDKExampleProject\Game`, double-click on `GDKShooter.sln`.
+To do this, in File Explorer, in the directory `...\UnrealEngine\samples\UnrealGDKExampleProject\Game`, double-click on `GDKShooter.sln`.
 4. In Visual Studio, select **Local Windows Debugger** in the toolbar to open your project in the Unreal Editor.
 
 You can now set up replication of health changes. 
@@ -38,7 +38,7 @@ You can now set up replication of health changes.
 </br>
 </br>
 
-### **> Next:** [1: Set up replication]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
+#### **> Next:** [1: Set up replication]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
 
 
 <br/>
