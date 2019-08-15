@@ -55,6 +55,7 @@ public:
 	IDirectoryWatcher::FDirectoryChanged WorkerConfigDirectoryChangedDelegate;
 
 private:
+	bool PreRunChecks();
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 	bool IsServiceInCorrectDirectory(const FString& ServiceStatusResult);

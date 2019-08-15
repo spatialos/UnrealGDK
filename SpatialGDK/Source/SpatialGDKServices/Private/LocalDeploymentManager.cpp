@@ -30,6 +30,14 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	// Don't kick off background processes when running commandlets
 	if (IsRunningCommandlet() == false)
 	{
+		// Check for the existence of Spatial and Spot. If they don't exist then don't start any background processes. Disable spatial networking if either is true.
+		if (!PreRunChecks())
+		{
+			UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Pre run checks for LocalDeploymentManager failed. Local deployments cannot be started. Spatial networking will be disabled."));
+			GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = false;
+			return;
+		}
+
 		// Ensure the worker.jsons are up to date.
 		WorkerBuildConfigAsync();
 
@@ -47,6 +55,31 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 		});
 	}
 #endif
+}
+
+bool FLocalDeploymentManager::PreRunChecks()
+{
+	FString SpatialExistenceCheckResult;
+	int32 ExitCode;
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialExe, TEXT("version"), FSpatialGDKServicesModule::GetSpatialOSDirectory(), SpatialExistenceCheckResult, ExitCode);
+
+	if (ExitCode != 0)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Spatial.exe does not exist on this machine! Please make sure Spatial is installed before trying to start a local deployment. %s"), *SpatialExistenceCheckResult);
+		return false;
+	}
+
+	FString SpotExistenceCheckResult;
+	FString StdErr;
+	FPlatformProcess::ExecProcess(*GetSpotExe(), TEXT("version"), &ExitCode, &SpotExistenceCheckResult, &StdErr);
+
+	if (ExitCode != 0)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Spot.exe does not exist on this machine! Please make sure to run Setup.bat in the UnrealGDK Plugin before trying to start a local deployment."));
+		return false;
+	}
+
+	return true;
 }
 
 const FString FLocalDeploymentManager::GetSpotExe()
