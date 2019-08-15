@@ -10,7 +10,7 @@ public class SpatialGDKEditorCommandlet : ModuleRules
         bFasterWithoutUnity = true;
 
 		PrivateDependencyModuleNames.AddRange(
-			new string[] {          
+			new string[] {
 				"Core",
 				"CoreUObject",
 				"Engine",
