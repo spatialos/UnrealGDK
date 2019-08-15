@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - Visual Studio 2019 is now supported.
+- Added toolbar and commandlet options to delete the schema database.
 
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
