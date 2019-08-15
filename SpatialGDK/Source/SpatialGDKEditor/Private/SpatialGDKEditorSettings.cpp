@@ -24,8 +24,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
-	, SimulatedPlayerLaunchConfigPath(FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir() /
-		TEXT("Plugins/UnrealGDK/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json"))))
+	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
@@ -216,8 +215,8 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	bool result = IsAssemblyNameValid(AssemblyName) &&
 		IsDeploymentNameValid(PrimaryDeploymentName) &&
 		IsProjectNameValid(ProjectName) &&
-		!SnapshotPath.FilePath.IsEmpty() &&
-		!PrimaryLaunchConfigPath.FilePath.IsEmpty() &&
+		!GetSnapshotPath().IsEmpty() &&
+		!GetPrimaryLanchConfigPath().IsEmpty() &&
 		IsRegionCodeValid(PrimaryDeploymentRegionCode);
 
 	if (IsSimulatedPlayersEnabled())
