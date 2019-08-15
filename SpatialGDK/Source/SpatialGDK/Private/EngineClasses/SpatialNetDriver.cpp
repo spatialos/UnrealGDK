@@ -1094,8 +1094,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	}
 	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, ReliableRPCIndex, Parameters);
 
-	FPendingRPCParamsPtr RPCParams = MakeUnique<FPendingRPCParams>(CallingObjectRef, MoveTemp(Payload), ReliableRPCIndex);
-	Sender->ProcessRPC(MoveTemp(RPCParams));
+	Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, MoveTemp(Payload));
 }
 
 #endif
