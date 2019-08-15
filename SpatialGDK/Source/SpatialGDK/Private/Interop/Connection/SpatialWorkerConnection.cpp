@@ -280,26 +280,27 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 			{
 				if (GetSpatialNetDriverChecked()->bConnectAsClient)
 				{
-					UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Client started"));
 					return true;
 				}
 				auto* EntityPool = GetSpatialNetDriverChecked()->EntityPool;
 				auto* GlobalStateManager = GetSpatialNetDriverChecked()->GlobalStateManager;
 				if (EntityPool == nullptr || GlobalStateManager == nullptr)
 				{
-					UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Stuff is null"));
 					return false;
 				}
 				const gdk::ComponentId StartUpId = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
 				if (GlobalStateManager->IsReadyToCallBeginPlay() && EntityPool->IsReady())
 				{
 					GlobalStateManager->TriggerBeginPlay();
-					UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Server ready"));
 					return true;
 				}
 				for (size_t i = 0; i< OpList->GetCount(); ++i)
 				{
 					auto& op = (*OpList)[i];
+					if (op.op_type == WORKER_OP_TYPE_DISCONNECT)
+					{
+						ExtractedOpList->AddOp(OpList, i);
+					}
 					if (op.op_type == WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE && !EntityPool->IsReady())
 					{
 						ExtractedOpList->AddOp(OpList, i);
@@ -317,7 +318,6 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 						ExtractedOpList->AddOp(OpList, i);
 					}
 				}
-				UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("Server not ready"));
 				return false;
 			};
 
@@ -472,7 +472,7 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	CachedWorkerAttributes.Empty();
 	for (const auto& attribute : Worker->GetWorkerAttributes())
 	{
-		CachedWorkerAttributes.Emplace(TCHAR_TO_UTF8(attribute.c_str()));
+		CachedWorkerAttributes.Emplace(UTF8_TO_TCHAR( attribute.c_str()));
 	}
 }
 
