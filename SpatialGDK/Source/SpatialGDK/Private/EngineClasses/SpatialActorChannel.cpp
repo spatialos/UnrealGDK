@@ -17,6 +17,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialLoadBalancingStrategy.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -498,6 +499,11 @@ int64 USpatialActorChannel::ReplicateActor()
 				RepComp.RemoveCurrent();
 			}
 		}
+	}
+
+	if (bWroteSomethingImportant && NetDriver->LoadBalancer->ShouldChangeAuthority(*Actor))
+	{
+		Sender->SendAuthorityUpdate(*Actor, NetDriver->LoadBalancer->GetAuthoritativeVirtualWorkerId(*Actor));
 	}
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.

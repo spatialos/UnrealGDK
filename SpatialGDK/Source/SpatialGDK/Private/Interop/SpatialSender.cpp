@@ -9,6 +9,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialLoadBalancingStrategy.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialDispatcher.h"
@@ -211,7 +212,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(Persistence().CreatePersistenceData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
-	ComponentDatas.Add(AuthorityIntent(TEXT("")).CreateAuthorityIntentData());
+	ComponentDatas.Add(AuthorityIntent(NetDriver->LoadBalancer->GetAuthoritativeVirtualWorkerId(*Actor)).CreateAuthorityIntentData());
 
 	if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
 	{
@@ -750,6 +751,15 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 #endif
 
 	Worker_ComponentUpdate Update = Position::CreatePositionUpdate(Coordinates::FromFVector(Location));
+	Connection->SendComponentUpdate(EntityId, &Update);
+}
+
+void USpatialSender::SendAuthorityUpdate(const AActor& Actor, const FString& NewAuthoritativeVirtualWorkerId)
+{
+	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
+	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+
+	Worker_ComponentUpdate Update = AuthorityIntent::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId);
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
