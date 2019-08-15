@@ -33,14 +33,11 @@ void ASpatialVirtualWorkerTranslator::Init(USpatialNetDriver* InNetDriver)
 
 void ASpatialVirtualWorkerTranslator::UpdateEntityAclWriteForEntity(Worker_EntityId EntityId)
 {
+	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
+
 	EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<EntityAcl>(EntityId);
 
 	if (EntityACL == nullptr)
-	{
-		return;
-	}
-
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
 		return;
 	}
@@ -49,6 +46,21 @@ void ASpatialVirtualWorkerTranslator::UpdateEntityAclWriteForEntity(Worker_Entit
 
 	if (MyAuthorityIntentComponent == nullptr)
 	{
+		return;
+	}
+
+	const FString& VirtualWorkerId = MyAuthorityIntentComponent->VirtualWorkerId;
+	if (VirtualWorkerId.IsEmpty())
+	{
+		return;
+	}
+
+	int32 VirtualWorkerIndex;
+	VirtualWorkers.Find(VirtualWorkerId, VirtualWorkerIndex);
+
+	if (VirtualWorkerIndex == -1)
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("Failed to update EntityACL component write permission for entity %lld because no virtual worker with id: %s exists"), EntityId, *VirtualWorkerId);
 		return;
 	}
 
@@ -63,7 +75,7 @@ void ASpatialVirtualWorkerTranslator::BeginPlay()
 
 	// These collections contain static data that is accessible on all server workers via accessor methods
 	// This data should likely live somewhere else, but for the purposes of the prototype it's here
-	// ZoneToVirtualWorkerMap
+	// Zones
 	// VirtualWorkers
 	// TODO - replace with real data from the editor
 	Zones.Add(TEXT("Zone_A"));
@@ -91,10 +103,10 @@ void ASpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityCha
 {
 	// We have gained or lost authority over the ACL component for some entity
 	// If we have authority, the responsibility here is to set the EntityACL write auth to match the worker requested via the virtual worker component
-	// TODO - Set Entity's ACL component to correct worker id based on requested virtual worker
-	if (AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
+	if (AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID &&
+		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		//UpdateEntityAclWriteForEntity(AuthOp.entity_id);
+		UpdateEntityAclWriteForEntity(AuthOp.entity_id);
 	}
 }
 
@@ -130,8 +142,6 @@ void ASpatialVirtualWorkerTranslator::AssignWorker(const FString& WorkerId)
 	UnassignedVirtualWorkers.Dequeue(VirtualWorkerId);
 	VirtualWorkers.Find(VirtualWorkerId, VirtualWorkerIndex);
 	VirtualWorkerAssignment[VirtualWorkerIndex] = WorkerId;
-
-	UE_LOG(LogTemp, Warning, TEXT("Assigned %s to %s"), *WorkerId, *VirtualWorkerId);
 }
 
 void ASpatialVirtualWorkerTranslator::OnComponentAdded(const Worker_AddComponentOp& Op)

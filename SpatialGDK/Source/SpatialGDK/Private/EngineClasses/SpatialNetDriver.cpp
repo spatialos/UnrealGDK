@@ -300,6 +300,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
+	if (IsServer())
+	{
+		VirtualWorkerTranslator = GetWorld()->SpawnActor<ASpatialVirtualWorkerTranslator>();
+		VirtualWorkerTranslator->Init(this);
+		StaticComponentView->OnComponentAddDelegate.BindUObject(VirtualWorkerTranslator, &ASpatialVirtualWorkerTranslator::OnComponentAdded);
+		StaticComponentView->OnComponentUpdateDelegate.BindUObject(VirtualWorkerTranslator, &ASpatialVirtualWorkerTranslator::OnComponentUpdated);
+	}
+
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 	PackageMap->Init(this);
 	Dispatcher->Init(this);
@@ -313,10 +321,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	// Some things should never exist on clients
 	if (IsServer())
 	{
-		VirtualWorkerTranslator = GetWorld()->SpawnActor<ASpatialVirtualWorkerTranslator>();
-		VirtualWorkerTranslator->Init(this);
-		StaticComponentView->OnComponentAddDelegate.BindUObject(VirtualWorkerTranslator, &ASpatialVirtualWorkerTranslator::OnComponentAdded);
-		StaticComponentView->OnComponentUpdateDelegate.BindUObject(VirtualWorkerTranslator, &ASpatialVirtualWorkerTranslator::OnComponentUpdated);
 
 		EntityPool->Init(this, &TimerManager);
 	}
