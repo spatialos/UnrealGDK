@@ -630,7 +630,7 @@ void ResetUsedNames()
  	}
 }
 
-void RunSchemaCompiler()
+bool RunSchemaCompiler()
 {
 	FString PluginDir = GetDefault<USpatialGDKEditorSettings>()->GetGDKPluginDirectory();
 
@@ -646,7 +646,11 @@ void RunSchemaCompiler()
 	if (!FPaths::DirectoryExists(SchemaDescriptorDir))
 	{
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-		PlatformFile.CreateDirectoryTree(*SchemaDescriptorDir);
+		if (!PlatformFile.CreateDirectoryTree(*SchemaDescriptorDir))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create schema descriptor directory '%s'! Please make sure the parent directory is writeable."), *SchemaDescriptorDir);
+			return false;
+		}
 	}
 
 	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
@@ -661,10 +665,12 @@ void RunSchemaCompiler()
 	if (ExitCode == 0)
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("schema_compiler successfully generated schema descriptor: %s"), *SchemaCompilerOut);
+		return true;
 	}
 	else
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("schema_compiler failed to generate schema descriptor: %s"), *SchemaCompilerErr);
+		return false;
 	}
 }
 
@@ -712,9 +718,8 @@ bool SpatialGDKGenerateSchema()
 	{
 		return false;
 	}
-	RunSchemaCompiler();
 
-	return true;
+	return RunSchemaCompiler();
 }
 
 #undef LOCTEXT_NAMESPACE
