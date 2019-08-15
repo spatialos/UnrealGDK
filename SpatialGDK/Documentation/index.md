@@ -16,7 +16,7 @@ SpatialOS provides:<br/>
 * **Single and multiserver networking**: Use one instance of server software or multiple instances of server software to compute your game world. Multiple servers enable a greater numbers of Actors, players and gameplay systems in your game.</br>
 Multiserver is available through either:
     * server **offloading** (available in alpha), in which Unreal server functionality is split between multiple servers and those servers compute different functionality across the whole game world, or 
-    * server **zoning** (available in preview only), in which the game world is split into several geographical areas and each area has a dedicated Unreal server computing all the functionality for it.
+    * server **zoning** (available in pre-alpha only), in which the game world is split into several geographical areas and each area has a dedicated Unreal server computing all the functionality for it.
 
 ## Get started
 
