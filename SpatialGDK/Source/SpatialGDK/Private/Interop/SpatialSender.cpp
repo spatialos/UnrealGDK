@@ -113,7 +113,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
-	const FString AuthoritativeWorkerAttribute = SpatialSettings->bEnableUnrealLoadBalancer ? FString::Printf(TEXT("workerId:%s"), *Connection->GetWorkerId()) : Info.WorkerType.ToString();
+	//const FString AuthoritativeWorkerAttribute = SpatialSettings->bEnableUnrealLoadBalancer ? FString::Printf(TEXT("workerId:%s"), *Connection->GetWorkerId()) : Info.WorkerType.ToString();
+	const FString AuthoritativeWorkerAttribute = Info.WorkerType.ToString();
 	const WorkerAttributeSet AuthoritativeWorkerAttributeSet{ AuthoritativeWorkerAttribute };
 	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { AuthoritativeWorkerAttributeSet };
 

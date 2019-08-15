@@ -17,7 +17,7 @@ USpatialLoadBalancingStrategy::~USpatialLoadBalancingStrategy()
 
 FString USingleWorkerLoadBalancingStrategy::GetAuthoritativeVirtualWorkerId(const AActor& Actor) const
 {
-	return Translator->GetVirtualWorkerAssignments()[0];
+	return Translator->GetVirtualWorkers()[0];
 }
 
 
@@ -36,5 +36,5 @@ bool UGridBasedLoadBalancingStrategy::ShouldChangeAuthority(const AActor& Actor)
 FString UGridBasedLoadBalancingStrategy::GetAuthoritativeVirtualWorkerId(const AActor& Actor) const
 {
 	// TODO
-	return Translator->GetVirtualWorkerAssignments()[0];
+	return Translator->GetVirtualWorkers()[0];
 }
