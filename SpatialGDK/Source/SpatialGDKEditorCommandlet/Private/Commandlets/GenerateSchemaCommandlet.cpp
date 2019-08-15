@@ -7,7 +7,7 @@
 UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
 {
 	IsClient = false;
-	IsEditor = false;
+	IsEditor = true;
 	IsServer = false;
 	LogToConsole = true;
 }
