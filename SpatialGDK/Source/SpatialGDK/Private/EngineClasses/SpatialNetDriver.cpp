@@ -17,6 +17,7 @@
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
+#include "EngineClasses/SpatialLoadBalancingStrategy.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
@@ -306,6 +307,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		VirtualWorkerTranslator->Init(this);
 		StaticComponentView->OnComponentAddDelegate.BindUObject(VirtualWorkerTranslator, &ASpatialVirtualWorkerTranslator::OnComponentAdded);
 		StaticComponentView->OnComponentUpdateDelegate.BindUObject(VirtualWorkerTranslator, &ASpatialVirtualWorkerTranslator::OnComponentUpdated);
+
+		// TODO: timgibson - get from config data for a map?
+		USpatialLoadBalancingStrategy* NewLoadBalancer = NewObject<USingleWorkerLoadBalancingStrategy>();
+		NewLoadBalancer->Init(VirtualWorkerTranslator);
+		LoadBalancer = NewLoadBalancer;
 	}
 
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
@@ -321,7 +327,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	// Some things should never exist on clients
 	if (IsServer())
 	{
-
 		EntityPool->Init(this, &TimerManager);
 	}
 }

@@ -122,6 +122,8 @@ public:
 	UPROPERTY()
 	ASpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 	UPROPERTY()
+	const class USpatialLoadBalancingStrategy* LoadBalancer;
+	UPROPERTY()
 	USpatialPlayerSpawner* PlayerSpawner;
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
