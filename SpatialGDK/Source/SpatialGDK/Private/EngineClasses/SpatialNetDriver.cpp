@@ -309,7 +309,12 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		StaticComponentView->OnComponentUpdateDelegate.BindUObject(VirtualWorkerTranslator, &ASpatialVirtualWorkerTranslator::OnComponentUpdated);
 
 		// TODO: timgibson - get from config data for a map?
-		USpatialLoadBalancingStrategy* NewLoadBalancer = NewObject<USingleWorkerLoadBalancingStrategy>();
+		UGridBasedLoadBalancingStrategy* NewLoadBalancer = NewObject<UGridBasedLoadBalancingStrategy>();
+		{
+			const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+			NewLoadBalancer->RowCount = Settings->RowCount;
+			NewLoadBalancer->ColumnCount = Settings->ColumnCount;
+		}
 		NewLoadBalancer->Init(VirtualWorkerTranslator);
 		LoadBalancer = NewLoadBalancer;
 	}
