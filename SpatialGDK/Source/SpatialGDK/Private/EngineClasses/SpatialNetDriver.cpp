@@ -1248,6 +1248,10 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		return;
 	}
 
+	if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
+	{
+		SpatialMetrics->TickMetrics();
+	}
 	Connection->Advance();
 	Dispatcher->ProcessOps(Connection->GetWorker());
 }
