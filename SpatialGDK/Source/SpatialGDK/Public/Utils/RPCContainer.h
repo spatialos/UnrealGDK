@@ -108,6 +108,4 @@ private:
 	bool ApplyFunction(FPendingRPCParams& Params);
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
-
-	static const int32 SECONDS_TO_DROP_RPC = 5;
 };

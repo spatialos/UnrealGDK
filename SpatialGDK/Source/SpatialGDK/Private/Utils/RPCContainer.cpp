@@ -10,6 +10,8 @@ using namespace SpatialGDK;
 
 namespace
 {
+	static const double SECONDS_BEFORE_WARNING = 2.0;
+
 	FString ERPCResultToString(ERPCResult Result)
 	{
 		switch (Result)
@@ -61,47 +63,22 @@ namespace
 
 		// The format is expected to be:
 		// Function <objectName>::<functionName> queued on server/client for sending/execution for <duration> (and dropped). Reason: <reason>
-		FString OutputLog = TEXT("Function ");
+		FString OutputLog = FString::Printf(TEXT("Function %s::%s queued on %s for %s for %s. Reason: %s"),
+			ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
+			ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
+			ErrorInfo.bIsServer ? TEXT("server") : TEXT("client"),
+			ErrorInfo.QueueType == ERPCQueueType::Send ? TEXT("sending") : ErrorInfo.QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
+			*TimeDiff.ToString(),
+			*ERPCResultToString(ErrorInfo.ErrorCode));
 
-		if (ErrorInfo.TargetObject.IsValid())
+		if (TimeDiff.GetTotalSeconds() > SECONDS_BEFORE_WARNING)
 		{
-			OutputLog.Append(FString::Printf(TEXT("%s::"), *ErrorInfo.TargetObject->GetName()));
+			UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 		}
 		else
 		{
-			OutputLog.Append(TEXT("UNKNOWN::"));
+			UE_LOG(LogRPCContainer, Verbose, TEXT("%s"), *OutputLog);
 		}
-
-		if (ErrorInfo.Function.IsValid())
-		{
-			OutputLog.Append(FString::Printf(TEXT("%s "), *ErrorInfo.Function->GetName()));
-		}
-		else
-		{
-			OutputLog.Append(TEXT("UNKNOWN "));
-		}
-
-		if (ErrorInfo.bIsServer)
-		{
-			OutputLog.Append(TEXT("queued on server for "));
-		}
-		else
-		{
-			OutputLog.Append(TEXT("queued on client for "));
-		}
-
-		if (ErrorInfo.QueueType == ERPCQueueType::Send)
-		{
-			OutputLog.Append(TEXT("sending for "));
-		}
-		else if (ErrorInfo.QueueType == ERPCQueueType::Receive)
-		{
-			OutputLog.Append(TEXT("execution for "));
-		}
-
-		OutputLog.Append(FString::Printf(TEXT("%s. Reason: %s"), *TimeDiff.ToString(), *ERPCResultToString(ErrorInfo.ErrorCode)));
-
-		UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 	}
 }
 
