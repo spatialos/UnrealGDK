@@ -13,7 +13,7 @@ SpatialOS provides:<br/>
 * **Global hosting**: Scalable dedicated hosting for your game in every major gaming region.<br/>
 * **Easy playtesting**: Deploy and test your game from the start of development, and distribute it to your team and players quickly and easily with a ready-made link. Scale-test your build by connecting simulated players.<br/>
 * **Profiling and debugging tools**: Logs and metrics out of the box to help you quickly understand any bugs and performance issues.
-* **Single and multiserver networking**: Use one instance of server software or multiple instancs of server software to compute your game world. Multiple servers enable a greater numbers of Actors, players and gameplay systems in your game.</br>
+* **Single and multiserver networking**: Use one instance of server software or multiple instances of server software to compute your game world. Multiple servers enable a greater numbers of Actors, players and gameplay systems in your game.</br>
 Multiserver is available through either:
     * server **offloading** (available in alpha), in which Unreal server functionality is split between multiple servers and those servers compute different functionality across the whole game world, or 
     * server **zoning** (available in preview only), in which the game world is split into several geographical areas and each area has a dedicated Unreal server computing all the functionality for it.
