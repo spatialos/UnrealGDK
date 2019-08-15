@@ -119,6 +119,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -130,11 +132,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
-		return;
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-		Schema_Object* FieldsObject = Schema_GetComponentDataFields(Op.data.schema_type);
-		RegisterListeningEntityIfReady(Op.entity_id, FieldsObject);
 		return;
 	}
 
@@ -1058,13 +1055,6 @@ void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorCh
 
 void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
-	if (Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID ||
-		Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
-	{
-		Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
-		RegisterListeningEntityIfReady(Op.entity_id, FieldsObject);
-	}
-
 	if (StaticComponentView->GetAuthority(Op.entity_id, Op.update.component_id) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping update because this was short circuited"), Op.entity_id, Op.update.component_id);
@@ -1451,26 +1441,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
-void USpatialReceiver::RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object)
-{
-	if (Schema_GetBoolCount(Object, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
-	{
-		bool bReady = GetBoolFromSchema(Object, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
-		if (bReady)
-		{
-			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
-			{
-				Channel->StartListening();
-				if (UObject* TargetObject = Channel->GetActor())
-				{
-					Sender->SendOutgoingRPCs();
-				}
-			}
-		}
-	}
-}
-
-bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId)
+bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs /* = false */)
 {
 	bool bApplied = false;
 
@@ -1494,7 +1465,7 @@ bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, cons
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
 
-	if (UnresolvedRefs.Num() == 0)
+	if ((UnresolvedRefs.Num() == 0) || bApplyWithUnresolvedRefs)
 	{
 		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 		{
@@ -1538,7 +1509,15 @@ bool USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		return false;
 	}
 
-	return ApplyRPC(TargetObjectWeakPtr.Get(), Function, Params.Payload, FString{});
+	bool bApplyWithUnresolvedRefs = false;
+	const float TimeDiff = (FDateTime::Now() - Params.QueuedTimestamp).GetTotalSeconds();
+	if (GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCWaitTime < TimeDiff)
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing RPC %s::%s with unresolved references after %f seconds of queueing"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), TimeDiff);
+		bApplyWithUnresolvedRefs = true;
+	}
+
+	return ApplyRPC(TargetObjectWeakPtr.Get(), Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)

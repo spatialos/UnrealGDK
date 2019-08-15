@@ -89,6 +89,10 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 	}
 
 	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Cast<AActor>(Value->GetOuter());
+	if (!Actor->GetIsReplicated())
+	{
+		return NetGUID;
+	}
 
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{

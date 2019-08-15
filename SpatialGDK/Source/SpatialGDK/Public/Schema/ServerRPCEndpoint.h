@@ -18,6 +18,21 @@ struct ServerRPCEndpoint : Component
 
 	ServerRPCEndpoint() = default;
 
+	ServerRPCEndpoint(const Worker_ComponentData& Data)
+	{
+		Schema_Object* EndpointObject = Schema_GetComponentDataFields(Data.schema_type);
+		bReady = GetBoolFromSchema(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
+	}
+
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
+	{
+		Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		if (Schema_GetBoolCount(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
+		{
+			bReady = GetBoolFromSchema(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
+		}
+	}
+
 	Worker_ComponentData CreateRPCEndpointData()
 	{
 		Worker_ComponentData Data{};
