@@ -46,7 +46,6 @@ public:
 	void SPATIALGDKSERVICES_API SetAutoDeploy(bool bAutoDeploy);
 
 	void WorkerBuildConfigAsync();
-	const FString GetSpotExe();
 
 	FSimpleMulticastDelegate OnSpatialShutdown;
 	FSimpleMulticastDelegate OnDeploymentStart;
@@ -55,7 +54,6 @@ public:
 	IDirectoryWatcher::FDirectoryChanged WorkerConfigDirectoryChangedDelegate;
 
 private:
-	bool PreRunChecks();
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 	bool IsServiceInCorrectDirectory(const FString& ServiceStatusResult);
