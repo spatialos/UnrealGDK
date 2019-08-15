@@ -91,6 +91,10 @@ void SpatialOsConnectionHandler::PollOps() {
       requestId = &op.entity_query_response.request_id;
       isResponse = true;
       break;
+    case WORKER_OP_TYPE_COMMAND_RESPONSE:
+      requestId = &op.command_response.request_id;
+      isResponse = true;
+      break;
     default:
       requestId = nullptr;
       isResponse = false;

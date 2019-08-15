@@ -41,15 +41,11 @@ void InitialOpListConnectionHandler::Advance() {
   }
   case kFilterFinished:
     extractedOpList = nullptr;
-    if (queuedOpLists.empty()) {
-      state = kPassThrough;
-    } else {
-      state = kFlushingQueuedOpLists;
-    }
+    state = kFlushingQueuedOpLists;
     break;
   case kFlushingQueuedOpLists:
     state = kPassThrough;
-    break;
+    return;
   case kPassThrough:
     // Ignore.
     break;

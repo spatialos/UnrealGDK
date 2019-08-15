@@ -58,6 +58,8 @@ private:
   void HandleCommandRequest(const Worker_CommandRequestOp& request);
   void HandleCommandResponse(const Worker_CommandResponseOp& response);
 
+  static const ViewDelta kEmptyViewDelta;
+
   EntityView view;
   ViewDelta delta;
 

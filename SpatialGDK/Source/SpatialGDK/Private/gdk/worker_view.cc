@@ -6,6 +6,8 @@
 
 namespace gdk {
 
+const ViewDelta WorkerView::kEmptyViewDelta{ComponentRanges{}};
+
 WorkerView::WorkerView(const ComponentRanges& componentRanges)
 : delta(componentRanges), inOpenCriticalSection(false), firstOpInCurrentList(0) {}
 
@@ -17,10 +19,11 @@ void WorkerView::EnqueueOpList(OpList&& opList) {
 }
 
 const ViewDelta* WorkerView::GetNextViewDelta() {
-  usedOpLists.clear();
-  if (!inOpenCriticalSection) {
-    delta.Clear();
+  if (inOpenCriticalSection) {
+    return &kEmptyViewDelta;
   }
+  usedOpLists.clear();
+  delta.Clear();
   while (!opListQueue.empty()) {
     ProcessOpList(opListQueue.front());
     if (inOpenCriticalSection) {
