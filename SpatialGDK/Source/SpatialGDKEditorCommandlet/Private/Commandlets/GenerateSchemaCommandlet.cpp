@@ -3,11 +3,12 @@
 #include "GenerateSchemaCommandlet.h"
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditor.h"
+#include "SpatialGDKServicesModule.h"
 
 UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
 {
 	IsClient = false;
-	IsEditor = false;
+	IsEditor = true;
 	IsServer = false;
 	LogToConsole = true;
 }
@@ -17,10 +18,16 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Commandlet Started"));
 
 	//NOTE: For future use, if schema generation configuration at the command line is desired
-	//TArray<FString> Tokens;
-	//TArray<FString> Switches;
-	//TMap<FString, FString> Params;
-	//ParseCommandLine(*Args, Tokens, Switches, Params);
+	TArray<FString> Tokens;
+	TArray<FString> Switches;
+	TMap<FString, FString> Params;
+	ParseCommandLine(*Args, Tokens, Switches);
+
+	if (Switches.Contains("delete-schema-db"))
+	{
+		FSpatialGDKServicesModule::DeleteSchemaDatabase();
+		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Deleted schema database"));
+	}
 
 	//Generate Schema!
 	bool bSchemaGenSuccess;

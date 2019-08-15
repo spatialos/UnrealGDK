@@ -11,6 +11,7 @@
 #include "FileHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/Paths.h"
+#include "SpatialGDKServicesModule.h"
 
 UGenerateSchemaAndSnapshotsCommandlet::UGenerateSchemaAndSnapshotsCommandlet()
 {
@@ -34,11 +35,18 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 
 	FSpatialGDKEditor SpatialGDKEditor;
 
+	if (Switches.Contains("delete-schema-db"))
+	{
+		FSpatialGDKServicesModule::DeleteSchemaDatabase();
+		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Deleted schema database"));
+	}
+
 	// Do full schema generation
 	if (!GenerateSchema(SpatialGDKEditor))
 	{
 		return 1;
 	}
+
 
 	if (Params.Contains(MapPathsParamName))
 	{
