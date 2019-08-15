@@ -3,7 +3,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 
 #include "Engine/ActorChannel.h"
-#include "Engine/ChildConnection.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/NetworkObjectList.h"
@@ -33,7 +32,6 @@
 #include "Utils/ActorGroupManager.h"
 #include "Utils/EntityPool.h"
 #include "Utils/InterestFactory.h"
-#include "Utils/OpUtils.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 
