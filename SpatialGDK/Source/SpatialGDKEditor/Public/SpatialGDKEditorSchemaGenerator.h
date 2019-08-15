@@ -17,3 +17,5 @@ SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles();
 SPATIALGDKEDITOR_API bool TryLoadExistingSchemaDatabase();
 
 SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists();
+
+SPATIALGDKEDITOR_API bool GeneratedSchemaDatabaseExists();
