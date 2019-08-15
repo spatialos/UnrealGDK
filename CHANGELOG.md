@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
+- Generating schema when the schema database is locked by another process will no longer crash the editor.
 
 ## [`0.6.0`] - 2019-07-31
 
