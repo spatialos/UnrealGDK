@@ -441,10 +441,9 @@ Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_E
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendMetrics(const SpatialMetrics& Metrics)
+void USpatialWorkerConnection::SendMetrics(const Worker_Metrics& Metrics)
 {
-	//QueueOutgoingMessage<FMetrics>(Metrics);
-	//Worker->SendMetricsMessage(gdk::Metrics{Metrics});
+	Worker->SendMetricsMessage(gdk::Metrics{ Metrics });
 }
 
 FString USpatialWorkerConnection::GetWorkerId() const

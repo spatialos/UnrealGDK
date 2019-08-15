@@ -55,7 +55,7 @@ public:
 	void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message);
 	void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest);
 	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
-	void SendMetrics(const SpatialGDK::SpatialMetrics& Metrics);
+	void SendMetrics(const Worker_Metrics& Metrics);
 
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
