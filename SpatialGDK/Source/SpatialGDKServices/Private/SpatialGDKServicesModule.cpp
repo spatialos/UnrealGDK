@@ -7,6 +7,7 @@
 #include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesPrivate.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Misc/PackageName.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKServicesModule"
 
@@ -51,9 +52,11 @@ FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& A
 
 void FSpatialGDKServicesModule::DeleteSchemaDatabase()
 {
-	FString SchemaDatabasePath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../Game/Content/Spatial/SchemaDatabase.uasset")));
+	const FString SchemaDatabasePackagePath = TEXT("/Game/Spatial/SchemaDatabase");
+	const FString SchemaDatabaseAssetPath = FString::Printf(TEXT("%s.SchemaDatabase"), *SchemaDatabasePackagePath);
+	const FString SchemaDatabaseFileName = FPackageName::LongPackageNameToFilename(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 
-	if (!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*SchemaDatabasePath))
+	if (!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*SchemaDatabaseFileName))
 	{
 		UE_LOG(LogSpatialGDKServices, Warning, TEXT("Attempted to delete schema database file when it does not exist"))
 	}

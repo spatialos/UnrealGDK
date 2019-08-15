@@ -559,7 +559,7 @@ bool TryLoadExistingSchemaDatabase()
 
 		if (SchemaDatabase == nullptr)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Failed to load existing schema database."));
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Failed to load existing schema database. If this continues, delete the schema database and try again."));
 			return false;
 		}
 
