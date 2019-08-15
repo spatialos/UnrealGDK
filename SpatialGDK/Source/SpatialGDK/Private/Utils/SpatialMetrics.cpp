@@ -3,7 +3,6 @@
 #include "Utils/SpatialMetrics.h"
 
 #include "Engine/Engine.h"
-#include "EngineGlobals.h"
 #include "GameFramework/PlayerController.h"
 
 #include "EngineClasses/SpatialNetConnection.h"
@@ -41,13 +40,18 @@ void USpatialMetrics::TickMetrics()
 	AverageFPS = FramesSinceLastReport / TimeSinceLastReport;
 	WorkerLoad = CalculateLoad();
 
-	SpatialGDK::GaugeMetric DynamicFPSGauge;
-	DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
-	DynamicFPSGauge.Value = AverageFPS;
+	Worker_GaugeMetric DynamicFPSGauge{};
+	const std::string Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
+	DynamicFPSGauge.key = Key.c_str();
+	DynamicFPSGauge.value = AverageFPS;
 
-	SpatialGDK::SpatialMetrics DynamicFPSMetrics;
-	DynamicFPSMetrics.GaugeMetrics.Add(DynamicFPSGauge);
-	DynamicFPSMetrics.Load = WorkerLoad;
+	Worker_Metrics DynamicFPSMetrics{};
+	TArray<Worker_GaugeMetric> GaugeMetrics;
+	GaugeMetrics.Add(DynamicFPSGauge);
+	DynamicFPSMetrics.gauge_metrics = GaugeMetrics.GetData();
+	DynamicFPSMetrics.gauge_metric_count = GaugeMetrics.Num();
+	DynamicFPSMetrics.histogram_metric_count = 0;
+	DynamicFPSMetrics.load = &WorkerLoad;
 
 	TimeOfLastReport = NetDriver->Time;
 	FramesSinceLastReport = 0;
