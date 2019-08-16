@@ -99,6 +99,8 @@ public:
 
 	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const;
 
+	static const double SECONDS_BEFORE_WARNING;
+
 private:
 	using FArrayOfParams = TArray<FPendingRPCParams>;
 	using FRPCMap = TMap<Worker_EntityId_Key, FArrayOfParams>;

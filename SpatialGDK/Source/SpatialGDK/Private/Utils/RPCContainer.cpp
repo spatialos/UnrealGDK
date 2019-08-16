@@ -8,10 +8,10 @@ DEFINE_LOG_CATEGORY(LogRPCContainer);
 
 using namespace SpatialGDK;
 
+const double FRPCContainer::SECONDS_BEFORE_WARNING = 2.0;
+
 namespace
 {
-	static const double SECONDS_BEFORE_WARNING = 2.0;
-
 	FString ERPCResultToString(ERPCResult Result)
 	{
 		switch (Result)
@@ -71,7 +71,7 @@ namespace
 			*TimeDiff.ToString(),
 			*ERPCResultToString(ErrorInfo.ErrorCode));
 
-		if (TimeDiff.GetTotalSeconds() > SECONDS_BEFORE_WARNING)
+		if (TimeDiff.GetTotalSeconds() > FRPCContainer::SECONDS_BEFORE_WARNING)
 		{
 			UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 		}

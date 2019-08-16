@@ -206,7 +206,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_2_secon
 
 	AddExpectedError(TEXT("Unresolved Parameters"), EAutomationExpectedErrorFlags::Contains, 1);
 
-	FPlatformProcess::Sleep(2.0f);
+	FPlatformProcess::Sleep(FRPCContainer::SECONDS_BEFORE_WARNING);
 	RPCs.ProcessRPCs();
 
     return true;
