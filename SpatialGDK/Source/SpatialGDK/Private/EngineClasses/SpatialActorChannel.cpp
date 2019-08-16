@@ -501,7 +501,10 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	if (bWroteSomethingImportant && NetDriver->LoadBalancer->ShouldChangeAuthority(*Actor))
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+
+	if (SpatialSettings->bEnableUnrealLoadBalancer &&
+		bWroteSomethingImportant && NetDriver->LoadBalancer->ShouldChangeAuthority(*Actor))
 	{
 		Sender->SendAuthorityUpdate(*Actor, NetDriver->LoadBalancer->GetAuthoritativeVirtualWorkerId(*Actor));
 	}

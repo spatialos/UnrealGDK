@@ -49,6 +49,7 @@ DEFINE_STAT(STAT_SpatialConsiderList);
 
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, VirtualWorkerTranslator(nullptr)
 	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
@@ -293,15 +294,16 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SnapshotManager = NewObject<USnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
 
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 #if !UE_BUILD_SHIPPING
 	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client
-	if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
+	if (IsServer() && SpatialSettings->bEnableMetricsDisplay)
 	{
 		SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
 	}
 #endif
 
-	if (IsServer())
+	if (IsServer() && SpatialSettings->bEnableUnrealLoadBalancer)
 	{
 		VirtualWorkerTranslator = GetWorld()->SpawnActor<ASpatialVirtualWorkerTranslator>();
 		VirtualWorkerTranslator->Init(this);
@@ -310,11 +312,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		// TODO: timgibson - get from config data for a map?
 		UGridBasedLoadBalancingStrategy* NewLoadBalancer = NewObject<UGridBasedLoadBalancingStrategy>();
-		{
-			const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-			NewLoadBalancer->RowCount = Settings->RowCount;
-			NewLoadBalancer->ColumnCount = Settings->ColumnCount;
-		}
+		NewLoadBalancer->RowCount = SpatialSettings->RowCount;
+		NewLoadBalancer->ColumnCount = SpatialSettings->ColumnCount;
 		NewLoadBalancer->Init(VirtualWorkerTranslator);
 		LoadBalancer = NewLoadBalancer;
 	}

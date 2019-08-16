@@ -278,7 +278,10 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
-	VirtualWorkerTranslator->AuthorityChanged(Op);
+	if (VirtualWorkerTranslator != nullptr)
+	{
+		VirtualWorkerTranslator->AuthorityChanged(Op);
+	}
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));
 	if (Actor == nullptr)
