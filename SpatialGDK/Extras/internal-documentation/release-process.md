@@ -134,13 +134,16 @@ The workflow for this is:
 
 All of the above tests **must** have passed and there must be no outstanding blocking issues before you start this, the release phase.
 
+The order of `git merge` operations in all UnrealGDK related repositories is:<br>
+`release candidate` > `preview` > `release` > `master`
+
 If you want to soak test this release on the `preview` branch before promoting it to the `release` branch, only execute the steps that merge into `preview` and `master`.
 
-When merging the following PRs, you need to enable `Allow merge commits` option on the repos and choose `Create a merge commit` from the dropdown in the pull request UI to merge the branch, then disable `Allow merge commits` option on the repos once the release process is complete. You need to be an admin to perform this.
+1. When merging the following PRs, you need to enable `Allow merge commits` option on the repos and choose `Create a merge commit` from the dropdown in the pull request UI to merge the branch, then disable `Allow merge commits` option on the repos once the release process is complete. You need to be an admin to perform this.
 
 **UnrealGDK**
 1. In `UnrealGDK`, merge `x.y.z-rc` into `preview`.
-1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDK/releases) to tag the commit you just made to `preview` as `x.y.z-preview`.<br/>
+1. If you want to soak test this release on the `preview`, use the [GitHub Release UI](https://github.com/spatialos/UnrealGDK/releases) to tag the commit you just made to `preview` as `x.y.z-preview`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
 1. In `UnrealGDK`, merge `x.y.z-rc` into `release`.
 1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDK/releases) to tag the commit you just made to `release` as `x.y.z`.<br/>
@@ -149,7 +152,7 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 
 **improbableio/UnrealEngine**
 1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-preview`.
-1. Use the [GitHub Release UI](https://github.com/improbableio/UnrealEngine/releases) to tag the commit you just made to `4.xx-SpatialOSUnrealGDK-preview` as `4.xx-SpatialOSUnrealGDK-x.y.z-preview`.<br/>
+1. If you want to soak test this release on the `preview`, use the [GitHub Release UI](https://github.com/improbableio/UnrealEngine/releases) to tag the commit you just made to `4.xx-SpatialOSUnrealGDK-preview` as `4.xx-SpatialOSUnrealGDK-x.y.z-preview`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
 1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-release`.
 1. Use the [GitHub Release UI](https://github.com/improbableio/UnrealEngine/releases) to tag the commit you just made to `release` as `4.xx-SpatialOSUnrealGDK-x.y`.<br/>
@@ -158,7 +161,7 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 
 **UnrealGDKExampleProject**
 1. In `UnrealGDKExampleProject`, merge `x.y.z-rc` into `preview`.
-1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDKExampleProject/releases) to tag the commit you just made to `preview` as `x.y.z-preview`.<br/>
+1. If you want to soak test this release on the `preview`, use the [GitHub Release UI](https://github.com/spatialos/UnrealGDKExampleProject/releases) to tag the commit you just made to `preview` as `x.y.z-preview`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
 1. In `UnrealGDKExampleProject`, merge `x.y.z-rc` into `release`.
 1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDKExampleProject/releases) to tag the commit you just made to `release` as `x.y.z`.<br/>
