@@ -62,12 +62,12 @@ namespace
 		const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
 
 		// The format is expected to be:
-		// Function <objectName>::<functionName> queued on server/client for sending/execution for <duration> (and dropped). Reason: <reason>
-		FString OutputLog = FString::Printf(TEXT("Function %s::%s queued on %s for %s for %s. Reason: %s"),
+		// Function <objectName>::<functionName> sending/execution queued on server/client for <duration>. Reason: <reason>
+		FString OutputLog = FString::Printf(TEXT("Function %s::%s %s queued on %s for %s. Reason: %s"),
 			ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
 			ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
-			ErrorInfo.bIsServer ? TEXT("server") : TEXT("client"),
 			ErrorInfo.QueueType == ERPCQueueType::Send ? TEXT("sending") : ErrorInfo.QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
+			ErrorInfo.bIsServer ? TEXT("server") : TEXT("client"),
 			*TimeDiff.ToString(),
 			*ERPCResultToString(ErrorInfo.ErrorCode));
 
