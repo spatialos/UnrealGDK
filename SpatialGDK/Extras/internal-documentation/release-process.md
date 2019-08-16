@@ -19,9 +19,11 @@ The following entry criteria must be met before you start the validation steps:
 
 To check that Xbox-compatible Worker SDK DLLs are available.
 
-1. Identify the Worker SDK version pinned by the GDK. To do this, check the `Improbable.SpatialOS.Platform` at [DeploymentLauncher.csproj#L46](https://github.com/spatialos/UnrealGDK/blob/master/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/DeploymentLauncher/DeploymentLauncher.csproj#L46)
+1. Identify the Worker SDK version pinned by the GDK. To do this, check [core-sdk.version](https://github.com/spatialos/UnrealGDK/blob/master/SpatialGDK/Extras/core-sdk.version) on `master`.
 1. Identify the XDK version(s) officially supported in all UE4 versions that the GDK version you're about to release supports. You need to search for this information in the Unreal Engine's release notes. For example, searching for `XDK` in the [4.22 Release Notes](https://docs.unrealengine.com/en-US/Support/Builds/ReleaseNotes/4_22/index.html) reveals that it supports `XDK: July 2018 QFE-4`.
 1. Using the information you just ascertained, fill in the `<...>` blanks in this command and run it:<br>
+`spatial package get worker_sdk c-dynamic-x86_64-<XDK version>-xbone <SDK version> c-sdk-<SDK version>.zip`<br>
+A correct command looks something like this:<br>
 `spatial package get worker_sdk c-dynamic-x86_64-xdk180401-xbone 13.7.1 c-sdk-13.7.1-180401.zip`<br>
 If it succeeds it will download a DLL.<br>
 If it fails because the DLL is not available, file a WRK ticket for the Worker team to generate the required DLL(s). See [WRK-1275](https://improbableio.atlassian.net/browse/WRK-1275) for an example.
