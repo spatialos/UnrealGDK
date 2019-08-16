@@ -62,8 +62,6 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_que
 	FRPCContainer RPCs;
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 
-	AddExpectedError(TEXT("Unresolved Parameters"), EAutomationExpectedErrorFlags::Contains, 1);
-
 	RPCs.ProcessOrQueueRPC(Params.ObjectRef, Params.Type, MoveTemp(Params.Payload));
 
 	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, AnySchemaComponentType));
@@ -78,8 +76,6 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_
 	FPendingRPCParams Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FRPCContainer RPCs;
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
-
-	AddExpectedError(TEXT("Unresolved Parameters"), EAutomationExpectedErrorFlags::Contains, 1);
 
 	RPCs.ProcessOrQueueRPC(Params1.ObjectRef, Params1.Type, MoveTemp(Params1.Payload));
 	RPCs.ProcessOrQueueRPC(Params2.ObjectRef, Params2.Type, MoveTemp(Params2.Payload));
@@ -128,8 +124,6 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 
 	FRPCContainer RPCs;
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
-
-	AddExpectedError(TEXT("Unresolved Parameters"), EAutomationExpectedErrorFlags::Contains, 2);
 
 	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload));
 	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload));
@@ -201,3 +195,20 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 
     return true;
 }
+
+RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_2_seconds_THEN_warning_is_logged)
+{
+	UObjectStub* TargetObject = NewObject<UObjectStub>();
+	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
+	FRPCContainer RPCs;
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
+	RPCs.ProcessOrQueueRPC(Params.ObjectRef, Params.Type, MoveTemp(Params.Payload));
+
+	AddExpectedError(TEXT("Unresolved Parameters"), EAutomationExpectedErrorFlags::Contains, 1);
+
+	FPlatformProcess::Sleep(2.0f);
+	RPCs.ProcessRPCs();
+
+    return true;
+}
+
