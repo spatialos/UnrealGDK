@@ -433,14 +433,31 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 		return false;
 	}
 
-	const ULevelEditorPlaySettings* LevelEditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
-	if (!SpatialGDKRuntimeSettings->bEnableHandover && LevelEditorPlaySettings->GetTotalPIEServerWorkerCount() > 1)
+	if (!SpatialGDKRuntimeSettings->bEnableHandover && SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
+		{
+			return (Section.Rows * Section.Columns) > 1;
+		}))
 	{
 		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Property handover is disabled and multiple launch servers are specified.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
 
 		if (Result == EAppReturnType::Yes)
 		{
 			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
+		}
+
+		return false;
+	}
+
+	if (SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
+		{
+			return (Section.Rows * Section.Columns) < Section.NumEditorInstances;
+		}))
+	{
+		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Attempting to launch too many servers for load balance configuration.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
+
+		if (Result == EAppReturnType::Yes)
+		{
+			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
 		}
 
 		return false;
