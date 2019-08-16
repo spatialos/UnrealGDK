@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generating schema when the schema database is locked by another process will no longer crash the editor.
 - When schema compiler fails, schema generation correctly shows an error.
 - Fixed crash during initialization when running GenerateSchemaCommandlet.
+- Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
 
 ## [`0.6.0`] - 2019-07-31
 
