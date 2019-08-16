@@ -596,8 +596,8 @@ SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists()
 
 SPATIALGDKEDITOR_API bool GeneratedSchemaDatabaseExists()
 {
-	const FString SchemaDatabasePackagePath = TEXT("/Game/Spatial/SchemaDatabase");
-	const FString SchemaDatabaseFileName = FPackageName::LongPackageNameToFilename(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Spatial/SchemaDatabase"));
+	const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	return PlatformFile.FileExists(*SchemaDatabaseFileName);
 }
