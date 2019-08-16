@@ -4,8 +4,8 @@
 
 #include "Misc/AutomationTest.h"
 
-#define TEST(ComponentName, TestName) \
-	IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestName, "SpatialGDK.EngineClasses."#ComponentName"."#TestName, EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter) \
+#define TEST(ModuleName, ComponentName, TestName) \
+	IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestName, "SpatialGDK."#ModuleName"."#ComponentName"."#TestName, EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter) \
 	bool TestName::RunTest(const FString& Parameters)
 
 /*
