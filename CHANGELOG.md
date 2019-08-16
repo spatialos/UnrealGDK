@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- Added logging for queued RPCs.
 
 ### Features:
 - Visual Studio 2019 is now supported.
@@ -12,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
+- Generating schema when the schema database is locked by another process will no longer crash the editor.
+- When schema compiler fails, schema generation correctly shows an error.
+- Fixed crash during initialization when running GenerateSchemaCommandlet.
 
 ## [`0.6.0`] - 2019-07-31
 
