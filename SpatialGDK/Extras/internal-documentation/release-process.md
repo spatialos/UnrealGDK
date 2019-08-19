@@ -165,7 +165,7 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 1. In `UnrealGDKExampleProject`, merge `x.y.z-rc` into `preview`.
 1. If you want to soak test this release on the `preview`, use the [GitHub Release UI](https://github.com/spatialos/UnrealGDKExampleProject/releases) to tag the commit you just made to `preview` as `x.y.z-preview`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
-1. In `UnrealGDKExampleProject`, merge `x.y.z-rc` into `release`.
+1. In `UnrealGDKExampleProject`, merge `preview` into `release`.
 1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDKExampleProject/releases) to tag the commit you just made to `release` as `x.y.z`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
 1. In `UnrealGDK`, merge `release` into `master`.
