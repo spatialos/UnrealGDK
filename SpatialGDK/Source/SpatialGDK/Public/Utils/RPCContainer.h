@@ -99,6 +99,8 @@ public:
 
 	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const;
 
+	static const double SECONDS_BEFORE_WARNING;
+
 private:
 	using FArrayOfParams = TArray<FPendingRPCParams>;
 	using FRPCMap = TMap<Worker_EntityId_Key, FArrayOfParams>;
@@ -108,6 +110,4 @@ private:
 	bool ApplyFunction(FPendingRPCParams& Params);
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
-
-	static const int32 SECONDS_TO_DROP_RPC = 5;
 };
