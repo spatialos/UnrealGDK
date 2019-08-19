@@ -37,7 +37,4 @@ public:
 private:
 	FLocalDeploymentManager LocalDeploymentManager;
 	static FString ParseProjectName();
-
-	static const FString SpatialExe;
-	static const FString SpotExe;
 };

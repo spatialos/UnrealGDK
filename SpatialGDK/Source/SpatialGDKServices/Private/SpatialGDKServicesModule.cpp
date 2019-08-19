@@ -13,8 +13,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKServices);
 
 IMPLEMENT_MODULE(FSpatialGDKServicesModule, SpatialGDKServices);
 
-const FString FSpatialGDKServicesModule::SpatialExe = TEXT("spatial.exe");
-const FString FSpatialGDKServicesModule::SpotExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe"));
+const FString SpatialExe = TEXT("spatial.exe");
+const FString SpotExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe"));
 
 void FSpatialGDKServicesModule::StartupModule()
 {
