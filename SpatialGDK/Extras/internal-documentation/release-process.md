@@ -156,7 +156,7 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-preview`.
 1. If you want to soak test this release on the `preview`, use the [GitHub Release UI](https://github.com/improbableio/UnrealEngine/releases) to tag the commit you just made to `4.xx-SpatialOSUnrealGDK-preview` as `4.xx-SpatialOSUnrealGDK-x.y.z-preview`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
-1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-release`.
+1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-preview` into `4.xx-SpatialOSUnrealGDK-release`.
 1. Use the [GitHub Release UI](https://github.com/improbableio/UnrealEngine/releases) to tag the commit you just made to `release` as `4.xx-SpatialOSUnrealGDK-x.y`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
 1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-release` into `master`. This merge could have conflicts. Don't hesitate to ask for help resolving these if you are unsure.
