@@ -115,6 +115,40 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
 	return CreateInterest().CreateInterestUpdate();
 }
 
+Interest InterestFactory::CreateServerWorkerInterest()
+{
+	QueryConstraint Constraint;
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
+	{
+		UE_LOG(LogInterestFactory, Warning, TEXT("For performance reasons, it's recommended to disable server QBI when using offloading"));
+	}
+
+	if (!SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
+	{
+		// In offloading scenarios, hijack the server worker entity to ensure each server has interest in all entities
+		Constraint.ComponentConstraint = SpatialConstants::POSITION_COMPONENT_ID;
+	}
+	else
+	{
+		// Ensure server worker receives the GSM entity
+		Constraint.EntityIdConstraint = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
+	}
+
+	Query Query;
+	Query.Constraint = Constraint;
+	Query.FullSnapshotResult = true;
+
+	ComponentInterest Queries;
+	Queries.Queries.Add(Query);
+
+	Interest ServerInterest;
+	ServerInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, Queries);
+
+	return ServerInterest;
+}
+
 Interest InterestFactory::CreateInterest() const
 {
 	if (!GetDefault<USpatialGDKSettings>()->bUsingQBI)
