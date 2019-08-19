@@ -141,11 +141,6 @@ bool FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator() const
 	return SpatialGDKEditorInstance.IsValid() && !SpatialGDKEditorInstance.Get()->IsSchemaGeneratorRunning();
 }
 
-bool FSpatialGDKEditorToolbarModule::CanExecuteDeleteSchemaDatabase() const
-{
-	return true;
-}
-
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> InPluginCommands)
 {
 	InPluginCommands->MapAction(
@@ -160,8 +155,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteDeleteSchemaDatabase));
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked));
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot,
@@ -296,9 +290,12 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked()
 {
-	OnShowTaskStartNotification("Deleting schema database");
-	FSpatialGDKServicesModule::DeleteSchemaDatabase();
-	OnShowSuccessNotification("Schema database deleted");
+	if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("DeleteSchemaDatabasePrompt", "Are you sure you want to delete the schema database?")) == EAppReturnType::Yes)
+	{
+		OnShowTaskStartNotification("Deleting schema database");
+		FSpatialGDKServicesModule::DeleteSchemaDatabase();
+		OnShowSuccessNotification("Schema database deleted");
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()

@@ -35,7 +35,7 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 
 	FSpatialGDKEditor SpatialGDKEditor;
 
-	if (Switches.Contains("delete-schema-db"))
+	if (Switches.Contains(TEXT("delete-schema-db")))
 	{
 		FSpatialGDKServicesModule::DeleteSchemaDatabase();
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Deleted schema database"));
@@ -46,7 +46,6 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 	{
 		return 1;
 	}
-
 
 	if (Params.Contains(MapPathsParamName))
 	{

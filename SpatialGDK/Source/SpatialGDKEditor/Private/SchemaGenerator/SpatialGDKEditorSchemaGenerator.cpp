@@ -541,6 +541,7 @@ void ClearGeneratedSchema()
 
 bool TryLoadExistingSchemaDatabase()
 {
+
 	const FString SchemaDatabasePackagePath = TEXT("/Game/Spatial/SchemaDatabase");
 	const FString SchemaDatabaseAssetPath = FString::Printf(TEXT("%s.SchemaDatabase"), *SchemaDatabasePackagePath);
 	const FString SchemaDatabaseFileName = FPackageName::LongPackageNameToFilename(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());

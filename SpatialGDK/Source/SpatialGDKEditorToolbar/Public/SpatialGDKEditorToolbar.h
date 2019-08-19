@@ -82,7 +82,6 @@ private:
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
-	bool CanExecuteDeleteSchemaDatabase() const;
 
 	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
 
