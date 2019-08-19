@@ -434,25 +434,11 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
 
-	QueryConstraint Constraint;
-	// Ensure server worker receives the GSM entity
-	Constraint.EntityIdConstraint = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
-
-	Query Query;
-	Query.Constraint = Constraint;
-	Query.FullSnapshotResult = true;
-
-	ComponentInterest Queries;
-	Queries.Queries.Add(Query);
-
-	Interest Interest;
-	Interest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, Queries);
-
 	TArray<Worker_ComponentData> Components;
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(Interest.CreateInterestData());
+	Components.Add(InterestFactory::CreateServerWorkerInterest().CreateInterestData());
 
 	Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
