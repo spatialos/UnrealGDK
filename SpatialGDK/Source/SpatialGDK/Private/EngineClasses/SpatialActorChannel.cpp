@@ -903,7 +903,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		}
 #if !UE_BUILD_SHIPPING
 		// Commands can timeout locally, but still be processed by the runtime. When this occurs, our follow up `CreateEntityRequest` will be
-		// superfluous, as the entity will already be created. If we detect that the entity is already in our view, reduce the message serverity 
+		// superfluous, as the entity will already be created. If we detect that the entity is already in our view, reduce the message severity
 		else if (NetDriver->StaticComponentView->GetComponentData<SpatialGDK::Position>(GetEntityId()) == nullptr)
 		{
 			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to create entity for actor %s: Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
