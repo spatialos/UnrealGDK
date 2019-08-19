@@ -129,7 +129,11 @@ call :MarkEndOfBlock "%~0"
 
 popd
 
-echo UnrealGDK build completed successfully^!
+if %ERRORLEVEL% EQU 0 (
+    echo UnrealGDK build completed successfully^!
+) Else (
+    echo UnrealGDK build had an error^!
+)
 
 if not defined NO_PAUSE (
     pause
