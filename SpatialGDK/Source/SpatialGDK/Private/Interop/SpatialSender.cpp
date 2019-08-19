@@ -434,40 +434,11 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
 
-	QueryConstraint Constraint;
-
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
-	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("For performance reasons, it's recommended to disable server QBI when using offloading"));
-	}
-
-	if (!SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
-	{
-		// In offloading scenarios, hijack the server worker entity to ensure each server has interest in all entities
-		Constraint.ComponentConstraint = SpatialConstants::POSITION_COMPONENT_ID;
-	}
-	else
-	{
-		// Ensure server worker receives the GSM entity
-		Constraint.EntityIdConstraint = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
-	}
-
-	Query Query;
-	Query.Constraint = Constraint;
-	Query.FullSnapshotResult = true;
-
-	ComponentInterest Queries;
-	Queries.Queries.Add(Query);
-
-	Interest Interest;
-	Interest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, Queries);
-
 	TArray<Worker_ComponentData> Components;
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(Interest.CreateInterestData());
+	Components.Add(InterestFactory::CreateServerWorkerInterest().CreateInterestData());
 
 	Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
