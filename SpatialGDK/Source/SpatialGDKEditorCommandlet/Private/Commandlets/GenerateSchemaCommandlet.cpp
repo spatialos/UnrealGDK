@@ -1,8 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "GenerateSchemaCommandlet.h"
-#include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditor.h"
+#include "SpatialGDKEditorCommandletPrivate.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKServicesModule.h"
 
 UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
@@ -25,8 +26,14 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 
 	if (Switches.Contains("delete-schema-db"))
 	{
-		FSpatialGDKServicesModule::DeleteSchemaDatabase();
-		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Deleted schema database"));
+		if (DeleteSchemaDatabase())
+		{
+			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Deleted schema database"));
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed to delete schema database"));
+		}		
 	}
 
 	//Generate Schema!

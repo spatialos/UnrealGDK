@@ -53,6 +53,10 @@ TMap<FString, FString> ClassPathToSchemaName;
 TMap<FString, FString> SchemaNameToClassPath;
 TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 
+const FString SchemaDatabasePackagePath = TEXT("/Game/Spatial/SchemaDatabase");
+const FString SchemaDatabaseAssetPath = FString::Printf(TEXT("%s.SchemaDatabase"), *SchemaDatabasePackagePath);
+const FString SchemaDatabaseFileName = FPackageName::LongPackageNameToFilename(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+
 namespace
 {
 
@@ -541,11 +545,6 @@ void ClearGeneratedSchema()
 
 bool TryLoadExistingSchemaDatabase()
 {
-
-	const FString SchemaDatabasePackagePath = TEXT("/Game/Spatial/SchemaDatabase");
-	const FString SchemaDatabaseAssetPath = FString::Printf(TEXT("%s.SchemaDatabase"), *SchemaDatabasePackagePath);
-	const FString SchemaDatabaseFileName = FPackageName::LongPackageNameToFilename(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
-
 	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*SchemaDatabaseFileName);
 
 	if (StatData.bIsValid)
@@ -591,6 +590,36 @@ SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists()
 	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	return PlatformFile.DirectoryExists(*SchemaOutputPath);
+}
+
+bool DeleteSchemaDatabase()
+{
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*SchemaDatabaseFileName);
+
+	if (StatData.bIsValid)
+	{
+		if (!StatData.bIsReadOnly)
+		{
+			if (!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*SchemaDatabaseFileName))
+			{
+				// This should never run, since DeleteFile should only return false if the file does not exist which we have already checked for.
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s%s"), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
+				return false;
+			}
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s%s because it is read-only."), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
+			return false;
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Attempted to delete schema database at %s%s when it did not exist."), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
+		// Don't return false since the schema database was already deleted
+	}
+
+	return true;
 }
 
 void ResolveClassPathToSchemaName(const FString& ClassPath, const FString& SchemaName)

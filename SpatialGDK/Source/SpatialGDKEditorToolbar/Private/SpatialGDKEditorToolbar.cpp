@@ -24,6 +24,7 @@
 
 #include "SpatialConstants.h"
 #include "SpatialGDKEditor.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
@@ -293,8 +294,14 @@ void FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked()
 	if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("DeleteSchemaDatabasePrompt", "Are you sure you want to delete the schema database?")) == EAppReturnType::Yes)
 	{
 		OnShowTaskStartNotification("Deleting schema database");
-		FSpatialGDKServicesModule::DeleteSchemaDatabase();
-		OnShowSuccessNotification("Schema database deleted");
+		if (DeleteSchemaDatabase())
+		{
+			OnShowSuccessNotification("Schema database deleted");
+		}
+		else
+		{
+			OnShowFailedNotification("Failed to delete schema database");
+		}
 	}
 }
 

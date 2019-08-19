@@ -15,7 +15,6 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKServices);
 
 IMPLEMENT_MODULE(FSpatialGDKServicesModule, SpatialGDKServices);
 
-
 void FSpatialGDKServicesModule::StartupModule()
 {
 }
@@ -48,24 +47,6 @@ FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& A
 	}
 
 	return FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, AppendPath));
-}
-
-FString FSpatialGDKServicesModule::GetSchemaDatabasePath()
-{
-	const FString SchemaDatabasePackagePath = TEXT("/Game/Spatial/SchemaDatabase");
-	const FString SchemaDatabaseAssetPath = FString::Printf(TEXT("%s.SchemaDatabase"), *SchemaDatabasePackagePath);
-	const FString SchemaDatabaseFileName = FPackageName::LongPackageNameToFilename(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
-	return SchemaDatabaseFileName;
-}
-
-void FSpatialGDKServicesModule::DeleteSchemaDatabase()
-{
-	const FString SchemaDatabasePath = GetSchemaDatabasePath();
-
-	if (!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*SchemaDatabasePath))
-	{
-		UE_LOG(LogSpatialGDKServices, Warning, TEXT("Attempted to delete schema database file when it does not exist. Path: %s"), *SchemaDatabasePath);
-	}
 }
 
 bool FSpatialGDKServicesModule::ParseJson(const FString& RawJsonString, TSharedPtr<FJsonObject>& JsonParsed)
