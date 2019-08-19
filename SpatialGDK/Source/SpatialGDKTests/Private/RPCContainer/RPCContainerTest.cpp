@@ -4,6 +4,7 @@
 
 #include "ObjectDummy.h"
 #include "ObjectSpy.h"
+#include "ObjectStub.h"
 
 #include "Utils/RPCContainer.h"
 #include "Schema/RPCPayload.h"
@@ -31,7 +32,7 @@ namespace
 		return FreeIndex++;
 	}
 
-	FPendingRPCParamsPtr CreateMockParameters(UObject* TargetObject, ESchemaComponentType Type)
+	FPendingRPCParams CreateMockParameters(UObject* TargetObject, ESchemaComponentType Type)
 	{
 		// Use PayloadData as a place to store RPC type
 		RPCPayload Payload(0, GeneratePayloadFunctionIndex(), SpyUtils::SchemaTypeToByteArray(Type));
@@ -39,48 +40,47 @@ namespace
 
 		FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
 
-		return MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload), ReliableRPCIndex);
+		return FPendingRPCParams{ ObjectRef, Type, MoveTemp(Payload) };
 	}
 } // anonymous namespace
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_queued)
 {
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
-	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
-	FPendingRPCParamsPtr Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
+	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
 	FRPCContainer RPCs;
 
-	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
+	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, AnySchemaComponentType));
 
     return true;
 }
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_queued)
 {
-	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
-	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
-	FPendingRPCParamsPtr Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
+	UObjectStub* TargetObject = NewObject<UObjectStub>();
+	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
 	FRPCContainer RPCs;
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 
-	RPCs.QueueRPC(MoveTemp(Params), AnySchemaComponentType);
+	RPCs.ProcessOrQueueRPC(Params.ObjectRef, Params.Type, MoveTemp(Params.Payload));
 
-	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
+	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, AnySchemaComponentType));
 
     return true;
 }
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_added_THEN_they_are_queued)
 {
-	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
-	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
-	FPendingRPCParamsPtr Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
-	FPendingRPCParamsPtr Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
+	UObjectStub* TargetObject = NewObject<UObjectStub>();
+	FPendingRPCParams Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
+	FPendingRPCParams Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FRPCContainer RPCs;
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 
-	RPCs.QueueRPC(MoveTemp(Params1), AnyOtherSchemaComponentType);
-	RPCs.QueueRPC(MoveTemp(Params2), AnyOtherSchemaComponentType);
+	RPCs.ProcessOrQueueRPC(Params1.ObjectRef, Params1.Type, MoveTemp(Params1.Payload));
+	RPCs.ProcessOrQueueRPC(Params2.ObjectRef, Params2.Type, MoveTemp(Params2.Payload));
 
-	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnyOtherSchemaComponentType));
+	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(Params1.ObjectRef.Entity, AnyOtherSchemaComponentType));
 
     return true;
 }
@@ -88,58 +88,48 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_
 RPCCONTAINER_TEST(GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_nothing_is_queued)
 {
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
-	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
-	FPendingRPCParamsPtr Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
+	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
 	FRPCContainer RPCs;
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectDummy::ProcessRPC));
 
-	RPCs.QueueRPC(MoveTemp(Params), AnySchemaComponentType);
+	RPCs.ProcessOrQueueRPC(Params.ObjectRef, Params.Type, MoveTemp(Params.Payload));
 
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UObjectDummy::ProcessRPC);
-	RPCs.ProcessRPCs(Delegate);
-
-	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
+	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, AnySchemaComponentType));
 
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_storinng_multiple_values_of_same_type_WHEN_processed_once_THEN_nothing_is_queued)
+RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_same_type_WHEN_processed_once_THEN_nothing_is_queued)
 {
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
-	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
-	FPendingRPCParamsPtr Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
-	FPendingRPCParamsPtr Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
+	FPendingRPCParams Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
+	FPendingRPCParams Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FRPCContainer RPCs;
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectDummy::ProcessRPC));
 
-	RPCs.QueueRPC(MoveTemp(Params1), AnyOtherSchemaComponentType);
-	RPCs.QueueRPC(MoveTemp(Params2), AnyOtherSchemaComponentType);
+	RPCs.ProcessOrQueueRPC(Params1.ObjectRef, Params1.Type, MoveTemp(Params1.Payload));
+	RPCs.ProcessOrQueueRPC(Params2.ObjectRef, Params2.Type, MoveTemp(Params2.Payload));
 
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UObjectDummy::ProcessRPC);
-	RPCs.ProcessRPCs(Delegate);
-
-	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnyOtherSchemaComponentType));
+	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(Params1.ObjectRef.Entity, AnyOtherSchemaComponentType));
 
     return true;
 }
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_THEN_they_are_queued)
 {
-	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
+	UObjectStub* TargetObject = NewObject<UObjectStub>();
 
-	FPendingRPCParamsPtr ParamsUnreliable = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
-	FUnrealObjectRef ObjecRefUnreliable = ParamsUnreliable->ObjectRef;
-
-	FPendingRPCParamsPtr ParamsReliable = CreateMockParameters(TargetObject, AnySchemaComponentType);
-	FUnrealObjectRef ObjecRefReliable = ParamsReliable->ObjectRef;
+	FPendingRPCParams ParamsUnreliable = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
+	FPendingRPCParams ParamsReliable = CreateMockParameters(TargetObject, AnySchemaComponentType);
 
 	FRPCContainer RPCs;
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 
-	RPCs.QueueRPC(MoveTemp(ParamsUnreliable), AnyOtherSchemaComponentType);
-	RPCs.QueueRPC(MoveTemp(ParamsReliable), AnySchemaComponentType);
+	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload));
+	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload));
 
-	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRefUnreliable.Entity, AnyOtherSchemaComponentType));
-	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRefReliable.Entity, AnySchemaComponentType));
+	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsUnreliable.ObjectRef.Entity, AnyOtherSchemaComponentType));
+	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsReliable.ObjectRef.Entity, AnySchemaComponentType));
 
     return true;
 }
@@ -147,21 +137,17 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_nothing_is_queued)
 {
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
-	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
-	FPendingRPCParamsPtr ParamsUnreliable = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
-	FPendingRPCParamsPtr ParamsReliable = CreateMockParameters(TargetObject, AnySchemaComponentType);
+	FPendingRPCParams ParamsUnreliable = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
+	FPendingRPCParams ParamsReliable = CreateMockParameters(TargetObject, AnySchemaComponentType);
 
 	FRPCContainer RPCs;
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectDummy::ProcessRPC));
 
-	RPCs.QueueRPC(MoveTemp(ParamsUnreliable), AnyOtherSchemaComponentType);
-	RPCs.QueueRPC(MoveTemp(ParamsReliable), AnySchemaComponentType);
+	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload));
+	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload));
 
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UObjectDummy::ProcessRPC);
-	RPCs.ProcessRPCs(Delegate);
-
-	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnyOtherSchemaComponentType));
-	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
+	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsUnreliable.ObjectRef.Entity, AnyOtherSchemaComponentType));
+	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsReliable.ObjectRef.Entity, AnySchemaComponentType));
 
     return true;
 }
@@ -171,24 +157,21 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	UObjectSpy* TargetObject = NewObject<UObjectSpy>();
 	FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
 	FRPCContainer RPCs;
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectSpy::ProcessRPC));
 
 	TMap<ESchemaComponentType, TArray<uint32>> RPCIndices;
 
 	for (int i = 0; i < 4; ++i)
 	{
-		FPendingRPCParamsPtr ParamsUnreliable = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
-		FPendingRPCParamsPtr ParamsReliable = CreateMockParameters(TargetObject, AnySchemaComponentType);
+		FPendingRPCParams ParamsUnreliable = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
+		FPendingRPCParams ParamsReliable = CreateMockParameters(TargetObject, AnySchemaComponentType);
 
-		RPCIndices.FindOrAdd(AnyOtherSchemaComponentType).Push(ParamsUnreliable->Payload.Index);
-		RPCIndices.FindOrAdd(AnySchemaComponentType).Push(ParamsReliable->Payload.Index);
+		RPCIndices.FindOrAdd(AnyOtherSchemaComponentType).Push(ParamsUnreliable.Payload.Index);
+		RPCIndices.FindOrAdd(AnySchemaComponentType).Push(ParamsReliable.Payload.Index);
 
-		RPCs.QueueRPC(MoveTemp(ParamsUnreliable), AnyOtherSchemaComponentType);
-		RPCs.QueueRPC(MoveTemp(ParamsReliable), AnySchemaComponentType);
+		RPCs.ProcessOrQueueRPC(ObjectRef, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload));
+		RPCs.ProcessOrQueueRPC(ObjectRef, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload));
 	}
-
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UObjectSpy::ProcessRPC);
-	RPCs.ProcessRPCs(Delegate);
 
 	bool bProcessedInOrder = true;
 	for (const auto& ProcessedIndicesOfType : TargetObject->ProcessedRPCIndices)
@@ -212,3 +195,20 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 
     return true;
 }
+
+RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_2_seconds_THEN_warning_is_logged)
+{
+	UObjectStub* TargetObject = NewObject<UObjectStub>();
+	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
+	FRPCContainer RPCs;
+	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
+	RPCs.ProcessOrQueueRPC(Params.ObjectRef, Params.Type, MoveTemp(Params.Payload));
+
+	AddExpectedError(TEXT("Unresolved Parameters"), EAutomationExpectedErrorFlags::Contains, 1);
+
+	FPlatformProcess::Sleep(FRPCContainer::SECONDS_BEFORE_WARNING);
+	RPCs.ProcessRPCs();
+
+    return true;
+}
+
