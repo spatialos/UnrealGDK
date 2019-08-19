@@ -214,7 +214,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	}
 
 	TArray<Worker_ComponentData> ComponentDatas;
-	ComponentDatas.Add(Position(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
+	ComponentDatas.Add(Position(Coordinates::FromFVector(USpatialActorChannel::GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(Persistence().CreatePersistenceData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
@@ -668,6 +668,7 @@ void USpatialSender::SendAuthorityUpdate(const AActor& Actor, const FString& New
 {
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+	UE_LOG(LogSpatialSender, Log, TEXT("Sending authority update for entity id %d. Virtual worker '%s' should become authoritative over %s"), EntityId, *NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
 
 	Worker_ComponentUpdate Update = AuthorityIntent::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId);
 	Connection->SendComponentUpdate(EntityId, &Update);

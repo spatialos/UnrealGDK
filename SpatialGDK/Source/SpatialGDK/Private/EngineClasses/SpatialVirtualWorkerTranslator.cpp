@@ -128,9 +128,12 @@ void ASpatialVirtualWorkerTranslator::OnComponentUpdated(const Worker_ComponentU
 {
 	if (Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	{
-		// TODO - Set Entity's ACL component to correct worker id based on requested virtual worker
-		//Worker_EntityId EntityId = Op.entity_id;
-		//AuthorityIntent* MyAuthorityIntent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
+		check(NetDriver);
+		check(NetDriver->StaticComponentView);
+		if (NetDriver->StaticComponentView->GetAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			QueueAclAssignmentRequest(Op.entity_id);
+		}
 	}
 }
 
@@ -218,5 +221,5 @@ void ASpatialVirtualWorkerTranslator::ProcessQueuedAclAssignmentRequests()
 
 void ASpatialVirtualWorkerTranslator::OnRep_VirtualWorkerAssignment()
 {
-	OnWorkerAssignmentChanged.ExecuteIfBound(VirtualWorkerAssignment);
+	OnWorkerAssignmentChanged.Broadcast(VirtualWorkerAssignment);
 }

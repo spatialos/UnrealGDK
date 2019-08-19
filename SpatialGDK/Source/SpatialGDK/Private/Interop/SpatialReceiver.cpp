@@ -1110,8 +1110,12 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-		check(false); // don't forget to implement me
-		break;
+		if (NetDriver->IsServer())
+		{
+			check(NetDriver->VirtualWorkerTranslator != nullptr);
+			NetDriver->VirtualWorkerTranslator->OnComponentUpdated(Op);
+		}
+		return;
 	}
 
 	if (ClassInfoManager->IsSublevelComponent(Op.update.component_id))

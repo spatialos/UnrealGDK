@@ -23,7 +23,7 @@ class ASpatialVirtualWorkerTranslator : public AActor
 	GENERATED_UCLASS_BODY()
 
 public:
-	DECLARE_DELEGATE_OneParam(FOnWorkerAssignmentChanged, const TArray<FString>& /*Assignment*/);
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnWorkerAssignmentChanged, const TArray<FString>& /*Assignment*/);
 
 	void Init(USpatialNetDriver* InNetDriver);
 
@@ -40,7 +40,7 @@ public:
 	// TODO - VWId/FString discrepancy
 	const TArray<FString>& GetVirtualWorkerAssignments() const { return VirtualWorkerAssignment; }
 
-	FOnWorkerAssignmentChanged OnWorkerAssignmentChanged;
+	mutable FOnWorkerAssignmentChanged OnWorkerAssignmentChanged;
 
 private:
 
