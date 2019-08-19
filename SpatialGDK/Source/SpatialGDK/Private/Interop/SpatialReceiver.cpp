@@ -44,6 +44,8 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	GlobalStateManager = InNetDriver->GlobalStateManager;
 	VirtualWorkerTranslator = InNetDriver->VirtualWorkerTranslator;
 	TimerManager = InTimerManager;
+
+	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
 }
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
@@ -1234,24 +1236,11 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 			}
 		}
 
-		FPendingRPCParamsPtr Params = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
 		if (UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
-			const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-			UFunction* Function = ClassInfo.RPCs[Payload.Index];
-			const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-
-			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
-			{
-				// Apply if possible, queue otherwise
-				if (ApplyRPC(*Params))
-				{
-					continue;
-				}
-			}
+			ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload));
 		}
 
-		QueueIncomingRPC(MoveTemp(Params));
 	}
 }
 
@@ -1329,20 +1318,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
 
-	bool bAppliedRPC = false;
-	if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
-	{
-		if (ApplyRPC(TargetObject, Function, Payload, FString()))
-		{
-			bAppliedRPC = true;
-		}
-	}
-
-	if (!bAppliedRPC)
-	{
-		QueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload)));
-	}
-
+	ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload));
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
 
@@ -1450,9 +1426,9 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
-bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId)
+ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs /* = false */)
 {
-	bool bApplied = false;
+	ERPCResult Result = ERPCResult::Unknown;
 
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	FMemory::Memzero(Parms, Function->ParmsSize);
@@ -1474,7 +1450,7 @@ bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, cons
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
 
-	if (UnresolvedRefs.Num() == 0)
+	if ((UnresolvedRefs.Num() == 0) || bApplyWithUnresolvedRefs)
 	{
 		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 		{
@@ -1491,7 +1467,11 @@ bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, cons
 		}
 
 		TargetObject->ProcessEvent(Function, Parms);
-		bApplied = true;
+		Result = ERPCResult::Success;
+	}
+	else
+	{
+		Result = ERPCResult::UnresolvedParameters;
 	}
 
 	// Destroy the parameters.
@@ -1500,25 +1480,35 @@ bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, cons
 	{
 		It->DestroyValue_InContainer(Parms);
 	}
-	return bApplied;
+	return Result;
 }
 
-bool USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
+FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
-		return false;
+		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Receive, ERPCResult::UnresolvedTargetObject };
 	}
 
+	UObject* TargetObject = TargetObjectWeakPtr.Get();
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return false;
+		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Receive, ERPCResult::MissingFunctionInfo };
 	}
 
-	return ApplyRPC(TargetObjectWeakPtr.Get(), Function, Params.Payload, FString{});
+	bool bApplyWithUnresolvedRefs = false;
+	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
+	if (GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCWaitTime < TimeDiff)
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing RPC %s::%s with unresolved references after %f seconds of queueing"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), TimeDiff);
+		bApplyWithUnresolvedRefs = true;
+	}
+
+	ERPCResult Result = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
+	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
@@ -1660,15 +1650,7 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPC
 		const FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor);
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
-		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
-		{
-			if (ApplyRPC(Actor, Function, RPC, FString()))
-			{
-				continue;
-			}
-		}
-
-		QueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(RPC)));
+		ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(RPC));
 	}
 }
 
@@ -1706,9 +1688,9 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 	}
 }
 
-void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
+void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload)
 {
-	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("The object has been deleted, dropping the RPC"));
@@ -1717,22 +1699,30 @@ void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
+	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	ESchemaComponentType Type = RPCInfo.Type;
 
-	IncomingRPCs.QueueRPC(MoveTemp(Params), Type);
+	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, Type, MoveTemp(InPayload));
 }
 
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
-	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
-	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
+	if (Object->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		// When resolving a singleton, also resolve using class path (in case any properties
+		// were set from a server that hasn't resolved the singleton yet)
+		FUnrealObjectRef ClassObjectRef = FUnrealObjectRef::GetSingletonClassRef(Object, PackageMap);
+		if (ClassObjectRef.IsValid())
+		{
+			ResolveIncomingOperations(Object, ClassObjectRef);
+		}
+	}
 	// TODO: UNR-1650 We're trying to resolve all queues, which introduces more overhead.
-	ResolveIncomingRPCs();
+	IncomingRPCs.ProcessRPCs();
 }
 
 void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
@@ -1789,13 +1779,6 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 	}
 
 	IncomingRefsMap.Remove(ObjectRef);
-}
-
-void USpatialReceiver::ResolveIncomingRPCs()
-{
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(this, &USpatialReceiver::ApplyRPC);
-	IncomingRPCs.ProcessRPCs(Delegate);
 }
 
 void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved)
@@ -1859,11 +1842,11 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		{
 			FUnrealObjectRef& ObjectRef = *UnresolvedIt;
 
-			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-			if (NetGUID.IsValid())
+			bool bUnresolved = false;
+			UObject* Object = FUnrealObjectRef::ToObjectPtr(ObjectRef, PackageMap, bUnresolved);
+			if (!bUnresolved)
 			{
-				UObject* Object = PackageMap->GetObjectFromNetGUID(NetGUID, true);
-				check(Object);
+				check(Object != nullptr);
 
 				UE_LOG(LogSpatialReceiver, Verbose, TEXT("ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
 

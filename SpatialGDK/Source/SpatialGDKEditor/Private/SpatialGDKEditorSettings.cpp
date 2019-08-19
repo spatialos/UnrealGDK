@@ -2,14 +2,10 @@
 
 #include "SpatialGDKEditorSettings.h"
 
-#include "Dom/JsonObject.h"
 #include "Internationalization/Regex.h"
 #include "ISettingsModule.h"
-#include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "Templates/SharedPointer.h"
 #include "SpatialConstants.h"
@@ -24,13 +20,11 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
-	, SimulatedPlayerLaunchConfigPath(FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir() /
-		TEXT("Plugins/UnrealGDK/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json"))))
+	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotFile = GetSpatialOSSnapshotFile();
-	ProjectName = GetProjectNameFromSpatial();
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
@@ -101,27 +95,6 @@ void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
 	}
 }
 
-FString USpatialGDKEditorSettings::GetProjectNameFromSpatial() const
-{
-	FString FileContents;
-	const FString SpatialOSFile = FSpatialGDKServicesModule::GetSpatialOSDirectory().Append(TEXT("/spatialos.json"));
-
-	if (!FFileHelper::LoadFileToString(FileContents, *SpatialOSFile))
-	{
-		return TEXT("");
-	}
-
-	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(FileContents);
-	TSharedPtr<FJsonObject> JsonObject;
-
-	if (FJsonSerializer::Deserialize(Reader, JsonObject))
-	{
-		return JsonObject->GetStringField("name");
-	}
-
-	return FString();
-}
-
 bool USpatialGDKEditorSettings::IsAssemblyNameValid(const FString& Name)
 {
 	const FRegexPattern AssemblyPatternRegex(SpatialConstants::AssemblyPattern);
@@ -162,12 +135,6 @@ void USpatialGDKEditorSettings::SetPrimaryDeploymentName(const FString& Name)
 void USpatialGDKEditorSettings::SetAssemblyName(const FString& Name)
 {
 	AssemblyName = Name;
-	SaveConfig();
-}
-
-void USpatialGDKEditorSettings::SetProjectName(const FString& Name)
-{
-	ProjectName = Name;
 	SaveConfig();
 }
 
@@ -215,9 +182,8 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 {
 	bool result = IsAssemblyNameValid(AssemblyName) &&
 		IsDeploymentNameValid(PrimaryDeploymentName) &&
-		IsProjectNameValid(ProjectName) &&
-		!SnapshotPath.FilePath.IsEmpty() &&
-		!PrimaryLaunchConfigPath.FilePath.IsEmpty() &&
+		!GetSnapshotPath().IsEmpty() &&
+		!GetPrimaryLanchConfigPath().IsEmpty() &&
 		IsRegionCodeValid(PrimaryDeploymentRegionCode);
 
 	if (IsSimulatedPlayersEnabled())

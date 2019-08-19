@@ -12,4 +12,8 @@ type UnrealObjectRef {
     // a reference, e.g. anything inside streaming levels should not be loaded.
     option<bool> no_load_on_client = 4;
     option<UnrealObjectRef> outer = 5;
+    // Singleton objects can be referred to by their class path in the case of an
+    // authoritative server that hasn't checked the singleton entity yet. This bool
+    // will differentiate that from their class pointer.
+    option<bool> use_singleton_class_path = 6;
 }
