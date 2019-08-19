@@ -8,6 +8,8 @@ DEFINE_LOG_CATEGORY(LogRPCContainer);
 
 using namespace SpatialGDK;
 
+const double FRPCContainer::SECONDS_BEFORE_WARNING = 2.0;
+
 namespace
 {
 	FString ERPCResultToString(ERPCResult Result)
@@ -60,48 +62,23 @@ namespace
 		const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
 
 		// The format is expected to be:
-		// Function <objectName>::<functionName> queued on server/client for sending/execution for <duration> (and dropped). Reason: <reason>
-		FString OutputLog = TEXT("Function ");
+		// Function <objectName>::<functionName> sending/execution queued on server/client for <duration>. Reason: <reason>
+		FString OutputLog = FString::Printf(TEXT("Function %s::%s %s queued on %s for %s. Reason: %s"),
+			ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
+			ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
+			ErrorInfo.QueueType == ERPCQueueType::Send ? TEXT("sending") : ErrorInfo.QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
+			ErrorInfo.bIsServer ? TEXT("server") : TEXT("client"),
+			*TimeDiff.ToString(),
+			*ERPCResultToString(ErrorInfo.ErrorCode));
 
-		if (ErrorInfo.TargetObject.IsValid())
+		if (TimeDiff.GetTotalSeconds() > FRPCContainer::SECONDS_BEFORE_WARNING)
 		{
-			OutputLog.Append(FString::Printf(TEXT("%s::"), *ErrorInfo.TargetObject->GetName()));
+			UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 		}
 		else
 		{
-			OutputLog.Append(TEXT("UNKNOWN::"));
+			UE_LOG(LogRPCContainer, Verbose, TEXT("%s"), *OutputLog);
 		}
-
-		if (ErrorInfo.Function.IsValid())
-		{
-			OutputLog.Append(FString::Printf(TEXT("%s "), *ErrorInfo.Function->GetName()));
-		}
-		else
-		{
-			OutputLog.Append(TEXT("UNKNOWN "));
-		}
-
-		if (ErrorInfo.bIsServer)
-		{
-			OutputLog.Append(TEXT("queued on server for "));
-		}
-		else
-		{
-			OutputLog.Append(TEXT("queued on client for "));
-		}
-
-		if (ErrorInfo.QueueType == ERPCQueueType::Send)
-		{
-			OutputLog.Append(TEXT("sending for "));
-		}
-		else if (ErrorInfo.QueueType == ERPCQueueType::Receive)
-		{
-			OutputLog.Append(TEXT("execution for "));
-		}
-
-		OutputLog.Append(FString::Printf(TEXT("%s. Reason: %s"), *TimeDiff.ToString(), *ERPCResultToString(ErrorInfo.ErrorCode)));
-
-		UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 	}
 }
 
