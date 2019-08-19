@@ -67,7 +67,7 @@ In summary:
 
 ### Unreal Engine fork branches
 
-The [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) follows the versioning and branches pattern described above, but the branch names have `X.XX-SpatialOSUnrealGDK` following prepended to them (where `X.XX` is the Unreal Engine version of the fork.)
+The [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) follows the versioning and branching pattern described above, but the branch names are prefixed with `x.yy-SpatialOSUnrealGDK-` following pre to them (where `x.yy` is the Unreal Engine version that was forked.)
 
 For example:
 
@@ -75,6 +75,8 @@ For example:
 *   ``4.22-SpatialOSUnrealGDK-preview``
 
 when Unreal Engine 4.22 is the version supported.
+
+> **TIP:** The **InstallGDK.bat** script used in [Get and build the GDK's Unreal Engine fork]({{urlRoot}}//content/get-started/build-unreal-fork#step-4-build-the-unreal-engine-fork) clones the `release` branches of [UnrealGDK](https://github.com/spatialos/UnrealGDK) & [UnrealGDKExampleProject](https://github.com/spatialos/UnrealGDKExampleProject), ensuring compatibility with the `x.yy-SpatialOSUnrealGDK-release` branch of the the Unreal Engine fork that you cloned during the [setup process]({{urlRoot}}//content/get-started/build-unreal-fork#step-4-build-the-unreal-engine-fork#step-2-clone-the-unreal-engine-fork-repository). If you choose to develop using the `preview` branch, or to checkout a `git tag` of a specific version, you must `git checkout` the corresponding version in all three of these repositories to ensure compatibility.
 
 ## Unreal Engine version support
 

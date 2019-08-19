@@ -50,18 +50,21 @@ To do this:
 To build the Unreal Engine fork: 
 
 1. Run **Setup.bat**, found in the root directory of your clone of Unreal Engine.
-2. In the same directory, double-click **GenerateProjectFiles.bat**. This file automatically sets up the project files required to build Unreal Engine.<br/>
-3. Double-click **InstallGDK.bat**
+1. In the same directory, double-click **GenerateProjectFiles.bat**. This file automatically sets up the project files required to build Unreal Engine.<br/>
+1. Double-click **InstallGDK.bat**
 This automatically opens a command line window and performs the following:
-	* Clones the UnrealGDK into your Engine's `Plugins` directory
+	* Clones the [UnrealGDK](https://github.com/spatialos/UnrealGDK) into your Engine's `Plugins` directory
 	* Clones the [UnrealGDKExampleProject](https://github.com/spatialos/UnrealGDKExampleProject) into your Engine's `Samples` directory
 	* Runs the Unreal GDK `Setup.bat` script to install the GDK into the cloned `UnrealGDKExampleProject` directory
 	* Generates Visual Studio solution files for the `UnrealGDKExampleProject`<br/>
 This process can take a long time to complete. The command line window closes when the process has finished.    <br/>
+
+	> **TIP:** **InstallGDK.bat** clones the `release` branches of [UnrealGDK](https://github.com/spatialos/UnrealGDK) & [UnrealGDKExampleProject](https://github.com/spatialos/UnrealGDKExampleProject), ensuring compatibility with the `x.yy-SpatialOSUnrealGDK-release` branch of the the Unreal Engine fork that you cloned in [step 2](#step-2-clone-the-unreal-engine-fork-repository).
+
 1. In the same directory, open **UE4.sln** in Visual Studio.
-2. In Visual Studio, on the toolbar, navigate to **Build** > **Configuration Manager**; set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
-3. In the Solution Explorer window, right-click on the **UE4** project and select **Set as StartUp Project**
-4. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first). <br>
+1. In Visual Studio, on the toolbar, navigate to **Build** > **Configuration Manager**; set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
+1. In the Solution Explorer window, right-click on the **UE4** project and select **Set as StartUp Project**
+1. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first). <br>
 
 Visual Studio then builds Unreal Engine, which can take up to a couple of hours.
 
