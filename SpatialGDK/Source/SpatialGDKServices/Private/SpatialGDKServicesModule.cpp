@@ -12,7 +12,9 @@
 #include "SSpatialOutputLog.h"
 #include "Textures/SlateIcon.h"
 #include "Widgets/Docking/SDockTab.h"
-
+#include "Misc/FileHelper.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesPrivate.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKServicesModule"
@@ -89,6 +91,8 @@ void FSpatialGDKServicesModule::ShutdownModule()
 	}
 }
 
+FString FSpatialGDKServicesModule::ProjectName = FSpatialGDKServicesModule::ParseProjectName();
+
 FLocalDeploymentManager* FSpatialGDKServicesModule::GetLocalDeploymentManager()
 {
 	return &LocalDeploymentManager;
@@ -111,6 +115,75 @@ FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& A
 	}
 
 	return FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, AppendPath));
+}
+
+bool FSpatialGDKServicesModule::ParseJson(const FString& RawJsonString, TSharedPtr<FJsonObject>& JsonParsed)
+{
+	TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(RawJsonString);
+	return FJsonSerializer::Deserialize(JsonReader, JsonParsed);
+}
+
+// ExecuteAndReadOutput exists so that a spatial command window does not spawn when using 'spatial.exe'. It does not however allow reading from StdErr.
+// For other processes which do not spawn cmd windows, use ExecProcess instead.
+void FSpatialGDKServicesModule::ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode)
+{
+	UE_LOG(LogSpatialGDKServices, Verbose, TEXT("Executing '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
+
+	void* ReadPipe = nullptr;
+	void* WritePipe = nullptr;
+	ensure(FPlatformProcess::CreatePipe(ReadPipe, WritePipe));
+
+	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*Executable, *Arguments, false, true, true, nullptr, 1 /*PriorityModifer*/, *DirectoryToRun, WritePipe);
+
+	if (ProcHandle.IsValid())
+	{
+		for (bool bProcessFinished = false; !bProcessFinished; )
+		{
+			bProcessFinished = FPlatformProcess::GetProcReturnCode(ProcHandle, &ExitCode);
+
+			OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
+			FPlatformProcess::Sleep(0.01f);
+		}
+
+		FPlatformProcess::CloseProc(ProcHandle);
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Execution failed. '%s' with arguments '%s' in directory '%s' "), *Executable, *Arguments, *DirectoryToRun);
+	}
+
+	FPlatformProcess::ClosePipe(0, ReadPipe);
+	FPlatformProcess::ClosePipe(0, WritePipe);
+}
+
+FString FSpatialGDKServicesModule::ParseProjectName()
+{
+	FString ProjectNameParsed;
+	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
+
+	FString SpatialFileName = TEXT("spatialos.json");
+	FString SpatialFileResult;
+	FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialDirectory, SpatialFileName));
+
+	TSharedPtr<FJsonObject> JsonParsedSpatialFile;
+	if (ParseJson(SpatialFileResult, JsonParsedSpatialFile))
+	{
+		if (JsonParsedSpatialFile->TryGetStringField(TEXT("name"), ProjectNameParsed))
+		{
+			return ProjectNameParsed;
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKServices, Error, TEXT("'name' does not exist in spatialos.json. Can't read project name."));
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Json parsing of spatialos.json failed. Can't get project name."));
+	}
+
+	ProjectNameParsed.Empty();
+	return ProjectNameParsed;
 }
 
 #undef LOCTEXT_NAMESPACE

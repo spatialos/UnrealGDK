@@ -19,7 +19,7 @@ class UObjectSpy : public UObject
 {
 	GENERATED_BODY()
 public:
-	bool ProcessRPC(const FPendingRPCParams& Params);
+	FRPCErrorInfo ProcessRPC(const FPendingRPCParams& Params);
 
 	TMap<ESchemaComponentType, TArray<uint32>> ProcessedRPCIndices;
 };

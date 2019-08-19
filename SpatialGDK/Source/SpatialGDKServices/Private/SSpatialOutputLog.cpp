@@ -443,6 +443,7 @@ void SSpatialOutputLog::TailLogFile(FString LogFilePath)
 	if (!LogReader)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Log file does not exist!"));
+		return;
 	}
 
 	int32 Size = LogReader->TotalSize();

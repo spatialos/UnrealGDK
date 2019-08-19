@@ -17,9 +17,9 @@ ESchemaComponentType SpyUtils::ByteArrayToSchemaType(const TArray<uint8>& Array)
 	return ESchemaComponentType(*reinterpret_cast<const int32*>(&Array[0]));
 }
 
-bool UObjectSpy::ProcessRPC(const FPendingRPCParams& Params)
+FRPCErrorInfo UObjectSpy::ProcessRPC(const FPendingRPCParams& Params)
 {
 	ESchemaComponentType Type = SpyUtils::ByteArrayToSchemaType(Params.Payload.PayloadData);
 	ProcessedRPCIndices.FindOrAdd(Type).Push(Params.Payload.Index);
-	return true;
+	return FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Send, ERPCResult::Success };
 }
