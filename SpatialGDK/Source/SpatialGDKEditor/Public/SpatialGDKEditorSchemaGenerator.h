@@ -6,7 +6,13 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSchemaGenerator, Log, All);
 
-SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchema();
+SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchema(bool bSaveSchemaDatabase = true, bool bRunSchemaCompiler = true);
+
+SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes);
+
+SPATIALGDKEDITOR_API bool SaveSchemaDatabase();
+
+SPATIALGDKEDITOR_API bool RunSchemaCompiler();
 
 SPATIALGDKEDITOR_API void ClearGeneratedSchema();
 

@@ -186,7 +186,10 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 		TSharedPtr<FUnrealType>& SubobjectTypeInfo = It.Value;
 		FString NextSchemaSubobjectName = UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString());
 
-		if (!CheckSchemaNameValidity(NextSchemaSubobjectName, SubobjectTypeInfo->Object->GetPathName(), TEXT("Subobject")))
+		FString SubObjectPath = SubobjectTypeInfo->Object->GetPathName();
+		SubObjectPath.ReplaceInline(TEXT("_GEN_VARIABLE"), TEXT(""));
+
+		if (!CheckSchemaNameValidity(NextSchemaSubobjectName, SubObjectPath, TEXT("Subobject")))
 		{
 			bOutSuccess = false;
 		}
@@ -433,47 +436,77 @@ bool SaveSchemaDatabase()
 	return true;
 }
 
-TArray<UClass*> GetAllSupportedClasses()
+bool IsSupportedClass(UClass* SupportedClass)
 {
-	TSet<UClass*> Classes;
-	const TArray<FDirectoryPath>& DirectoriesToNeverCook = GetDefault<UProjectPackagingSettings>()->DirectoriesToNeverCook;
-
-	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
+	if (!IsValid(SupportedClass))
 	{
-		// User told us to ignore this class
-		if (ClassIt->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
-		{
-			continue;
-		}
-
-		UClass* SupportedClass = *ClassIt;
-
-		// Ensure we don't process transient generated classes for BP
-		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
-			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)
-			|| SupportedClass->GetName().StartsWith(TEXT("TRASHCLASS_"), ESearchCase::CaseSensitive)
-			|| SupportedClass->GetName().StartsWith(TEXT("HOTRELOADED_"), ESearchCase::CaseSensitive)
-			|| SupportedClass->GetName().StartsWith(TEXT("PROTO_BP_"), ESearchCase::CaseSensitive)
-			|| SupportedClass->GetName().StartsWith(TEXT("PLACEHOLDER-CLASS_"), ESearchCase::CaseSensitive)
-			|| SupportedClass->GetName().StartsWith(TEXT("ORPHANED_DATA_ONLY_"), ESearchCase::CaseSensitive))
-		{
-			continue;
-		}
-
-		// Avoid processing classes contained in Directories to Never Cook
-		const FString& ClassPath = SupportedClass->GetPathName();
-		if (DirectoriesToNeverCook.ContainsByPredicate([&ClassPath](const FDirectoryPath& Directory)
-		{
-			return ClassPath.StartsWith(Directory.Path);
-		}))
-		{
-			continue;
-		}
-
-		Classes.Add(SupportedClass);
+		return false;
 	}
 
-	return Classes.Array();
+	// User told us to ignore this class
+	if (SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
+	{
+		return false;
+	}
+
+	// Ensure we don't process transient generated classes for BP
+	if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
+		|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)
+		|| SupportedClass->GetName().StartsWith(TEXT("TRASHCLASS_"), ESearchCase::CaseSensitive)
+		|| SupportedClass->GetName().StartsWith(TEXT("HOTRELOADED_"), ESearchCase::CaseSensitive)
+		|| SupportedClass->GetName().StartsWith(TEXT("PROTO_BP_"), ESearchCase::CaseSensitive)
+		|| SupportedClass->GetName().StartsWith(TEXT("PLACEHOLDER-CLASS_"), ESearchCase::CaseSensitive)
+		|| SupportedClass->GetName().StartsWith(TEXT("ORPHANED_DATA_ONLY_"), ESearchCase::CaseSensitive))
+	{
+		return false;
+	}
+
+	const TArray<FDirectoryPath>& DirectoriesToNeverCook = GetDefault<UProjectPackagingSettings>()->DirectoriesToNeverCook;
+
+	// Avoid processing classes contained in Directories to Never Cook
+	const FString& ClassPath = SupportedClass->GetPathName();
+	if (DirectoriesToNeverCook.ContainsByPredicate([&ClassPath](const FDirectoryPath& Directory)
+	{
+		return ClassPath.StartsWith(Directory.Path);
+	}))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+
+TSet<UClass*> GetAllSupportedClasses()
+{
+	TSet<UClass*> Classes;
+	
+	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
+	{
+		UClass* SupportedClass = *ClassIt;
+
+		if (IsSupportedClass(SupportedClass))
+		{
+			Classes.Add(SupportedClass);
+		}
+	}
+
+	return Classes;
+}
+
+TSet<UClass*> FilterClasses(TSet<UClass*> Classes)
+{
+	TSet<UClass*> FilteredClasses;
+
+	for (auto Class : Classes)
+	{
+		if (IsSupportedClass(Class))
+		{
+			FilteredClasses.Add(Class);
+		}
+	}
+
+	return FilteredClasses;
 }
 
 void CopyWellKnownSchemaFiles()
@@ -674,23 +707,61 @@ bool RunSchemaCompiler()
 	}
 }
 
-bool SpatialGDKGenerateSchema()
+bool SpatialGDKGenerateSchema(bool bSaveSchemaDatabase, bool bRunSchemaCompiler)
+{
+	// Generate Schema for classes loaded in memory.
+
+	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses()))
+	{
+		return false;
+	}
+
+	if (bSaveSchemaDatabase)
+	{
+		if (!SaveSchemaDatabase())
+		{
+			return false;
+		}
+	}
+
+	if (bRunSchemaCompiler)
+	{
+		return RunSchemaCompiler();
+	}
+
+	return true;
+}
+
+SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes)
 {
 	ResetUsedNames();
-
-	// Gets the classes currently loaded into memory.
-	SchemaGeneratedClasses = GetAllSupportedClasses();
-	SchemaGeneratedClasses.Sort();
-
+	TArray<UClass*> SortedClasses = FilterClasses(Classes).Array();
+	SortedClasses.Sort();
+		
 	// Generate Type Info structs for all classes
 	TArray<TSharedPtr<FUnrealType>> TypeInfos;
 
-	for (const auto& Class : SchemaGeneratedClasses)
+	for (const auto& Class : SortedClasses)
 	{
 		// Parent and static array index start at 0 for checksum calculations.
-		TypeInfos.Add(CreateUnrealTypeInfo(Class, 0, 0, false));
+		TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, 0, 0, false);
+		TypeInfos.Add(TypeInfo);
+		if (UClass* TypeClass = Cast<UClass>(TypeInfo->Type))
+		{
+			SchemaGeneratedClasses.Add(TypeClass);
+		}
+		VisitAllObjects(TypeInfo, [&](TSharedPtr<FUnrealType> TypeNode) {
+			if (UClass* TypeClass = Cast<UClass>(TypeNode->Type))
+			{
+				/*UE_LOG(LogTemp, Display, TEXT("SubTypeInfo: [%s], Flags: %#010x ClassFlags: %#010x"),
+					*GetPathNameSafe(TypeClass), TypeClass->GetFlags(), TypeClass->GetClassFlags());*/
+				TypeInfos.Add(CreateUnrealTypeInfo(TypeClass, 0, 0, false));
+				SchemaGeneratedClasses.Add(TypeClass);
+			}
+			return true;
+		}, true);
 	}
-
+	
 	if (!ValidateIdentifierNames(TypeInfos))
 	{
 		return false;
@@ -698,7 +769,7 @@ bool SpatialGDKGenerateSchema()
 
 	FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 
-	UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
+	//UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
 
 	// Check schema path is valid.
 	if (!FPaths::CollapseRelativeDirectories(SchemaOutputPath))
@@ -714,12 +785,8 @@ bool SpatialGDKGenerateSchema()
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath, IdGenerator);
 	GenerateSchemaForSublevels(SchemaOutputPath, IdGenerator);
 	NextAvailableComponentId = IdGenerator.Peek();
-	if (!SaveSchemaDatabase())
-	{
-		return false;
-	}
 
-	return RunSchemaCompiler();
+	return true;
 }
 
 #undef LOCTEXT_NAMESPACE
