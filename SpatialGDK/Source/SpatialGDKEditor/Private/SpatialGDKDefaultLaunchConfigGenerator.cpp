@@ -100,7 +100,7 @@ bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& Wo
 
 bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription)
 {
-	if (InLaunchConfigDescription)
+	if (InLaunchConfigDescription != nullptr)
 	{
 		const FSpatialLaunchConfigDescription& LaunchConfigDescription = *InLaunchConfigDescription;
 
