@@ -109,50 +109,50 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatial
 
 		// Populate json file for launch config
 		Writer->WriteObjectStart(); // Start of json
-		Writer->WriteValue(TEXT("template"), LaunchConfigDescription.Template); // Template section
-		Writer->WriteObjectStart(TEXT("world")); // World section begin
-		Writer->WriteObjectStart(TEXT("dimensions"));
-		Writer->WriteValue(TEXT("x_meters"), LaunchConfigDescription.World.Dimensions.X);
-		Writer->WriteValue(TEXT("z_meters"), LaunchConfigDescription.World.Dimensions.Y);
-		Writer->WriteObjectEnd();
-		Writer->WriteValue(TEXT("chunk_edge_length_meters"), LaunchConfigDescription.World.ChunkEdgeLengthMeters);
-		Writer->WriteValue(TEXT("streaming_query_interval"), LaunchConfigDescription.World.StreamingQueryIntervalSeconds);
-		Writer->WriteArrayStart(TEXT("legacy_flags"));
-		for (auto& Flag : LaunchConfigDescription.World.LegacyFlags)
-		{
-			WriteFlagSection(Writer, Flag.Key, Flag.Value);
-		}
-		Writer->WriteArrayEnd();
-		Writer->WriteArrayStart(TEXT("legacy_javaparams"));
-		for (auto& Parameter : LaunchConfigDescription.World.LegacyJavaParams)
-		{
-			WriteFlagSection(Writer, Parameter.Key, Parameter.Value);
-		}
-		Writer->WriteArrayEnd();
-		Writer->WriteObjectStart(TEXT("snapshots"));
-		Writer->WriteValue(TEXT("snapshot_write_period_seconds"), LaunchConfigDescription.World.SnapshotWritePeriodSeconds);
-		Writer->WriteObjectEnd();
+			Writer->WriteValue(TEXT("template"), LaunchConfigDescription.Template); // Template section
+			Writer->WriteObjectStart(TEXT("world")); // World section begin
+				Writer->WriteObjectStart(TEXT("dimensions"));
+					Writer->WriteValue(TEXT("x_meters"), LaunchConfigDescription.World.Dimensions.X);
+					Writer->WriteValue(TEXT("z_meters"), LaunchConfigDescription.World.Dimensions.Y);
+				Writer->WriteObjectEnd();
+			Writer->WriteValue(TEXT("chunk_edge_length_meters"), LaunchConfigDescription.World.ChunkEdgeLengthMeters);
+			Writer->WriteValue(TEXT("streaming_query_interval"), LaunchConfigDescription.World.StreamingQueryIntervalSeconds);
+			Writer->WriteArrayStart(TEXT("legacy_flags"));
+			for (auto& Flag : LaunchConfigDescription.World.LegacyFlags)
+			{
+				WriteFlagSection(Writer, Flag.Key, Flag.Value);
+			}
+			Writer->WriteArrayEnd();
+			Writer->WriteArrayStart(TEXT("legacy_javaparams"));
+			for (auto& Parameter : LaunchConfigDescription.World.LegacyJavaParams)
+			{
+				WriteFlagSection(Writer, Parameter.Key, Parameter.Value);
+			}
+			Writer->WriteArrayEnd();
+			Writer->WriteObjectStart(TEXT("snapshots"));
+				Writer->WriteValue(TEXT("snapshot_write_period_seconds"), LaunchConfigDescription.World.SnapshotWritePeriodSeconds);
+			Writer->WriteObjectEnd();
 		Writer->WriteObjectEnd(); // World section end
 		Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
-		Writer->WriteArrayStart("layer_configurations");
-		for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
-		{
-			WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.bManualWorkerConnectionOnly);
-		}
-		Writer->WriteArrayEnd();
-		Writer->WriteObjectEnd(); // Load balancing section end
-		Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
-		for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
-		{
-			WriteWorkerSection(Writer, Worker);
-		}
-		// Write the client worker section
-		FWorkerTypeLaunchSection ClientWorker;
-		ClientWorker.WorkerTypeName = SpatialConstants::DefaultClientWorkerType;
-		ClientWorker.WorkerPermissions.bAllPermissions = true;
-		ClientWorker.bLoginRateLimitEnabled = false;
-		WriteWorkerSection(Writer, ClientWorker);
-		Writer->WriteArrayEnd(); // Worker section end
+			Writer->WriteArrayStart("layer_configurations");
+			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
+			{
+				WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.bManualWorkerConnectionOnly);
+			}
+			Writer->WriteArrayEnd();
+			Writer->WriteObjectEnd(); // Load balancing section end
+			Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
+			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
+			{
+				WriteWorkerSection(Writer, Worker);
+			}
+			// Write the client worker section
+			FWorkerTypeLaunchSection ClientWorker;
+			ClientWorker.WorkerTypeName = SpatialConstants::DefaultClientWorkerType;
+			ClientWorker.WorkerPermissions.bAllPermissions = true;
+			ClientWorker.bLoginRateLimitEnabled = false;
+			WriteWorkerSection(Writer, ClientWorker);
+			Writer->WriteArrayEnd(); // Worker section end
 		Writer->WriteObjectEnd(); // End of json
 
 		Writer->Close();
