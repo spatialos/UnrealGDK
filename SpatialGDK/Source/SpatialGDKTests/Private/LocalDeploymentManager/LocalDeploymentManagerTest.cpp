@@ -15,13 +15,13 @@
 namespace
 {
 	// TODO: UNR-1969 - Prepare LocalDeployment in CI pipeline
-	static const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 10.0;
+	const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 10.0;
 
 	// TODO: UNR-1964 - Move EDeploymentState enum to LocalDeploymentManager
 	enum class EDeploymentState { IsRunning, IsNotRunning };
 
-	static const FName AutomationWorkerType = TEXT("AutomationWorker");
-	static const FString AutomationLaunchConfig = TEXT("Improbable/AutomationLaunchConfig.json");
+	const FName AutomationWorkerType = TEXT("AutomationWorker");
+	const FString AutomationLaunchConfig = TEXT("Improbable/AutomationLaunchConfig.json");
 
 	FLocalDeploymentManager* GetLocalDeploymentManager()
 	{
@@ -30,21 +30,7 @@ namespace
 		return LocalDeploymentManager;
 	}
 
-	FSpatialLaunchConfigDescription GenerateLaunchConfigDescription()
-	{
-		FSpatialLaunchConfigDescription LaunchConfigDescription;
-		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
-		UnrealWorkerDefaultSetting.WorkerTypeName = FName(AutomationWorkerType);
-		UnrealWorkerDefaultSetting.Rows = 1;
-		UnrealWorkerDefaultSetting.Columns = 1;
-		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
-		LaunchConfigDescription.ServerWorkers.Reset();
-		LaunchConfigDescription.ServerWorkers.Add(UnrealWorkerDefaultSetting);
-
-		return LaunchConfigDescription;
-	}
-
-	bool GenerateWorkerPB()
+	bool GenerateWorkerAssemblies()
 	{
 		FString BuildConfigArgs = TEXT("worker build build-config");
 		FString WorkerBuildConfigResult;
@@ -78,13 +64,13 @@ DEFINE_LATENT_COMMAND(StartDeployment)
 		return true;
 	}
 
-	if (!GenerateWorkerPB())
+	if (!GenerateWorkerAssemblies())
 	{
 		return true;
 	}
 
 	const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
-	FSpatialLaunchConfigDescription LaunchConfigDescription = GenerateLaunchConfigDescription();
+	FSpatialLaunchConfigDescription LaunchConfigDescription(AutomationWorkerType);
 	if (!GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription))
 	{
 		return true;
@@ -101,7 +87,7 @@ DEFINE_LATENT_COMMAND(StartDeployment)
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags]
 	{
-		return LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags);
+		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags);
 	}
 	);
 
@@ -121,7 +107,7 @@ DEFINE_LATENT_COMMAND(StopDeployment)
 	{
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager]
 		{
-			return LocalDeploymentManager->TryStopLocalDeployment();
+			LocalDeploymentManager->TryStopLocalDeployment();
 		});
 	}
 

@@ -62,7 +62,7 @@ bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
 		return bAllJsonsGeneratedSuccessfully;
 	}
 
-	return bAllJsonsGeneratedSuccessfully;
+	return false;
 }
 
 #undef LOCTEXT_NAMESPACE
