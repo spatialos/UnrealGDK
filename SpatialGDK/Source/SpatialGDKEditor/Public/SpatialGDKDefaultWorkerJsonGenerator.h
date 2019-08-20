@@ -6,4 +6,5 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKDefaultWorkerJsonGenerator, Log, All);
 
-SPATIALGDKEDITOR_API bool GenerateDefaultWorkerJson(bool& bOutRedeployRequired);
+SPATIALGDKEDITOR_API bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired);
+SPATIALGDKEDITOR_API bool GenerateDefaultWorkerJson(const FString& WorkerJsonName, FString WorkerTypeName, bool& bOutRedeployRequired);

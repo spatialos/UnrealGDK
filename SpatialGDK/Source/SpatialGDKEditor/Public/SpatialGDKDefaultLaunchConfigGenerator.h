@@ -6,4 +6,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKDefaultLaunchConfigGenerator, Log, All);
 
-bool SPATIALGDKEDITOR_API GenerateDefaultLaunchConfig(const FString& LaunchConfigPath);
+struct FSpatialLaunchConfigDescription;
+
+bool SPATIALGDKEDITOR_API GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription);

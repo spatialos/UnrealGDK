@@ -9,13 +9,41 @@
 DEFINE_LOG_CATEGORY(LogSpatialGDKDefaultWorkerJsonGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKDefaultWorkerJsonGenerator"
 
-bool GenerateDefaultWorkerJson(bool& bOutRedeployRequired)
+bool GenerateDefaultWorkerJson(const FString& JsonPath, FString WorkerTypeName, bool& bOutRedeployRequired)
 {
+	const FString TemplateWorkerJsonPath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
+
+	FString Contents;
+	if (FFileHelper::LoadFileToString(Contents, *TemplateWorkerJsonPath))
+	{
+		Contents.ReplaceInline(TEXT("{{WorkerTypeName}}"), *WorkerTypeName);
+		if (FFileHelper::SaveStringToFile(Contents, *JsonPath))
+		{
+			bOutRedeployRequired = true;
+			UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Wrote default worker json to %s"), *JsonPath)
+
+			return true;
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Error, TEXT("Failed to write default worker json to %s"), *JsonPath)
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Error, TEXT("Failed to read default worker json template at %s"), *TemplateWorkerJsonPath)
+	}
+
+	return false;
+}
+
+bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
+{
+	const FString WorkerJsonDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("workers/unreal"));
+	bool bAllJsonsGeneratedSuccessfully = true;
+
 	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
-		const FString WorkerJsonDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("workers/unreal"));
-		const FString TemplateWorkerJsonPath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
-
 		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 		for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
 		{
@@ -23,35 +51,18 @@ bool GenerateDefaultWorkerJson(bool& bOutRedeployRequired)
 			if (!FPaths::FileExists(JsonPath))
 			{
 				UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
-				FString Contents;
-				if (FFileHelper::LoadFileToString(Contents, *TemplateWorkerJsonPath))
+
+				if (!GenerateDefaultWorkerJson(JsonPath, Worker.WorkerTypeName.ToString(), bOutRedeployRequired))
 				{
-					Contents.ReplaceInline(TEXT("{{WorkerTypeName}}"), *Worker.WorkerTypeName.ToString());
-					if (FFileHelper::SaveStringToFile(Contents, *JsonPath))
-					{
-						bOutRedeployRequired = true;
-						UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Wrote default worker json to %s"), *JsonPath)
-					}
-					else
-					{
-						UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Error, TEXT("Failed to write default worker json to %s"), *JsonPath)
-					}
+					bAllJsonsGeneratedSuccessfully = false;
 				}
-				else
-				{
-					UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Error, TEXT("Failed to read default worker json template at %s"), *TemplateWorkerJsonPath)
-				}
-			}
-			else
-			{
-				UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Found worker json at %s"), *JsonPath)
 			}
 		}
 
-		return true;
+		return bAllJsonsGeneratedSuccessfully;
 	}
 
-	return false;
+	return bAllJsonsGeneratedSuccessfully;
 }
 
 #undef LOCTEXT_NAMESPACE
