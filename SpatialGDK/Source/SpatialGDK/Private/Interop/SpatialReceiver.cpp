@@ -1116,9 +1116,6 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 			NetDriver->VirtualWorkerTranslator->OnComponentUpdated(Op);
 		}
 		return;
-	case SpatialConstants::WORKER_COMPONENT_ID:
-		check(false); // don't forget to implement me
-		break;
 	}
 
 	if (ClassInfoManager->IsSublevelComponent(Op.update.component_id))
