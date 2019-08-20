@@ -9,7 +9,7 @@
 DEFINE_LOG_CATEGORY(LogSpatialGDKDefaultWorkerJsonGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKDefaultWorkerJsonGenerator"
 
-bool GenerateDefaultWorkerJson(const FString& JsonPath, FString WorkerTypeName, bool& bOutRedeployRequired)
+bool GenerateDefaultWorkerJson(const FString& JsonPath, const FString& WorkerTypeName, bool& bOutRedeployRequired)
 {
 	const FString TemplateWorkerJsonPath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
 
