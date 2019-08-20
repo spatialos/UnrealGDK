@@ -293,14 +293,14 @@ void FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked()
 {
 	if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("DeleteSchemaDatabasePrompt", "Are you sure you want to delete the schema database?")) == EAppReturnType::Yes)
 	{
-		OnShowTaskStartNotification("Deleting schema database");
+		OnShowTaskStartNotification(TEXT("Deleting schema database"));
 		if (DeleteSchemaDatabase())
 		{
-			OnShowSuccessNotification("Schema database deleted");
+			OnShowSuccessNotification(TEXT("Schema database deleted"));
 		}
 		else
 		{
-			OnShowFailedNotification("Failed to delete schema database");
+			OnShowFailedNotification(TEXT("Failed to delete schema database"));
 		}
 	}
 }

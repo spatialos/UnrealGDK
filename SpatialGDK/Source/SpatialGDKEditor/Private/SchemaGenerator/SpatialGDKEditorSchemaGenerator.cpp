@@ -551,7 +551,7 @@ bool TryLoadExistingSchemaDatabase()
 	{
 		if (StatData.bIsReadOnly)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s%s is read only. Make it writable before generating schema"), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"), *SchemaDatabaseFileName);
 			return false;
 		}
 
@@ -603,19 +603,19 @@ bool DeleteSchemaDatabase()
 			if (!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*SchemaDatabaseFileName))
 			{
 				// This should never run, since DeleteFile should only return false if the file does not exist which we have already checked for.
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s%s"), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s"), *SchemaDatabaseFileName);
 				return false;
 			}
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s%s because it is read-only."), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s because it is read-only."), *SchemaDatabaseFileName);
 			return false;
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Attempted to delete schema database at %s%s when it did not exist."), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
+		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Attempted to delete schema database at %s when it did not exist."), *SchemaDatabaseFileName);
 		// Don't return false since the schema database was already deleted
 	}
 

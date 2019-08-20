@@ -4,7 +4,6 @@
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
-#include "SpatialGDKServicesModule.h"
 
 UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
 {

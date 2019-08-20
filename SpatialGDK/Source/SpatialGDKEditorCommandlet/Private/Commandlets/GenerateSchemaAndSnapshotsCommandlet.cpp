@@ -12,7 +12,6 @@
 #include "FileHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/Paths.h"
-#include "SpatialGDKServicesModule.h"
 
 UGenerateSchemaAndSnapshotsCommandlet::UGenerateSchemaAndSnapshotsCommandlet()
 {
