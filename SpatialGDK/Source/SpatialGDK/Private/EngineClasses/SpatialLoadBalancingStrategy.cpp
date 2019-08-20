@@ -39,7 +39,7 @@ const FString USpatialLoadBalancingStrategy::GetWorkerId() const
 	return GameInstance->GetSpatialWorkerId();
 }
 
-void USpatialLoadBalancingStrategy::OnWorkerAssignmentChanged(const TArray<FString> NewAssignments)
+void USpatialLoadBalancingStrategy::OnWorkerAssignmentChanged(const TArray<FString>& NewAssignments)
 {
 	int32 OldWorkerIndex = LocalWorkerIndex;
 	NewAssignments.Find(GetWorkerId(), LocalWorkerIndex);
