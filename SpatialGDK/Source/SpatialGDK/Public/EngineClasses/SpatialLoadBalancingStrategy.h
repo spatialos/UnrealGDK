@@ -34,7 +34,7 @@ protected:
 
 private:
 	const FString GetWorkerId() const;
-	void OnWorkerAssignmentChanged(const TArray<FString> NewAssignements);
+	void OnWorkerAssignmentChanged(const TArray<FString>& NewAssignements);
 
 	int32 LocalWorkerIndex = INDEX_NONE;
 	FDelegateHandle OnWorkerAssignmentChangedDelegateHandle = FDelegateHandle();
