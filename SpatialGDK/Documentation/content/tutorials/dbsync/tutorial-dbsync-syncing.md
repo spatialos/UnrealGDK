@@ -28,7 +28,7 @@ And the internal ones that will encapsulate the code to do the requests:
 ```
 ...
     UPROPERTY()
-		TMap<int32, int32> PlayerScoreMap;
+		TMap<FString, int32> PlayerScoreMap;
 
 	void RequestGetItem(const FString &Path);
 	void RequestCreateItem(const FString &Name, int64 Count, const FString &Path);
@@ -70,7 +70,7 @@ With everything declared, it is time to start getting values from the database.
 
 First, you need to send a `GetItem` command to the `DatabaseSyncService` specifying the path of the info you want to retrieve.
 
-To do so, implement the `RequestGetItem` function in `DeathmatchScoreComponent.cpp`. Also, declare some constants with the strings used in the database structure. For this example, we have defined a hierarchy as such: `profiles.UnrealWorker.players.<playerId>.score.(AllTimeKills or AllTimeDeaths)`.
+To do so, implement the `RequestGetItem` function in `DeathmatchScoreComponent.cpp`. Also, declare some constants with the strings used in the database structure. For this example, we have defined a hierarchy as such: `profiles.UnrealWorker.players.<PlayerName>.score.(AllTimeKills or AllTimeDeaths)`.
 
 You can create this structure in the way that fits your game the best, having inventories for players and NPCs. For more information about this, check out the Database Sync Worker's reference documentation [on Github](https://github.com/spatialos/database-sync-worker).
 
@@ -80,7 +80,7 @@ You can create this structure in the way that fits your game the best, having in
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialNetDriver.h"
 
-// Path format to store the score is in the format "profiles.UnrealWorker.players.<playerId>.score.(AllTimeKills or AllTimeDeaths)"
+// Path format to store the score is in the format "profiles.UnrealWorker.players.<PlayerName>.score.(AllTimeKills or AllTimeDeaths)"
 namespace DBPaths
 {
 	static const FString kPlayersRoot = TEXT("profiles.UnrealWorker.players.");
@@ -179,16 +179,16 @@ void UDeathmatchScoreComponent::UpdateScoreFromPath(const FString &Path, int64 N
 	FString workingPath = *Path;
 	if (workingPath.RemoveFromStart(DBPaths::kPlayersRoot))
 	{
-		FString playerId;
-		if (workingPath.Split(".", &playerId, &workingPath))
+		FString PlayerName;
+		if (workingPath.Split(".", &PlayerName, &workingPath))
 		{
 			if (workingPath.RemoveFromStart(DBPaths::kScoreFolder + "."))
 			{
 				if (workingPath.Compare(DBPaths::kAllTimeKills) == 0)
 				{
-					if (PlayerScoreMap.Contains(FCString::Atoi(*playerId)))
+					if (PlayerScoreMap.Contains(PlayerName))
 					{
-						PlayerScoreArray[PlayerScoreMap[FCString::Atoi(*playerId)]].AllTimeKills = NewCount;
+						PlayerScoreArray[PlayerScoreMap[PlayerName]].AllTimeKills = NewCount;
 						return;
 					}
 					else
@@ -198,9 +198,9 @@ void UDeathmatchScoreComponent::UpdateScoreFromPath(const FString &Path, int64 N
 				}
 				else if (workingPath.Compare(DBPaths::kAllTimeDeaths) == 0)
 				{
-					if (PlayerScoreMap.Contains(FCString::Atoi(*playerId)))
+					if (PlayerScoreMap.Contains(PlayerName))
 					{
-						PlayerScoreArray[PlayerScoreMap[FCString::Atoi(*playerId)]].AllTimeDeaths = NewCount;
+						PlayerScoreArray[PlayerScoreMap[PlayerName]].AllTimeDeaths = NewCount;
 						return;
 					}
 					else
@@ -220,8 +220,8 @@ void UDeathmatchScoreComponent::RequestCreateItemFromPath(const FString &Path)
 	FString workingPath = *Path;
 	if (workingPath.RemoveFromStart(DBPaths::kPlayersRoot))
 	{
-		FString playerId;
-		if (workingPath.Split(".", &playerId, &workingPath))
+		FString PlayerName;
+		if (workingPath.Split(".", &PlayerName, &workingPath))
 		{
 			if (workingPath.RemoveFromStart(DBPaths::kScoreFolder + "."))
 			{
@@ -343,7 +343,7 @@ void UDeathmatchScoreComponent::RecordNewPlayer(APlayerState* PlayerState)
 		GameInstance = Cast<UGDKShooterSpatialGameInstance>(GetWorld()->GetGameInstance());
 	}
 
-	if (!PlayerScoreMap.Contains(PlayerState->PlayerId))
+	if (!PlayerScoreMap.Contains(PlayerState->GetPlayerName()))
 	{
 		FPlayerScore NewPlayerScore;
 		NewPlayerScore.PlayerId = PlayerState->PlayerId;
@@ -354,18 +354,18 @@ void UDeathmatchScoreComponent::RecordNewPlayer(APlayerState* PlayerState)
 		NewPlayerScore.AllTimeDeaths = 0;
 
 		int32 Index = PlayerScoreArray.Add(NewPlayerScore);
-		PlayerScoreMap.Emplace(NewPlayerScore.PlayerId, Index);
+		PlayerScoreMap.Emplace(NewPlayerScore.PlayerName, Index);
 
 		// Only use the Database Sync Worker if the entity exists.
 		if (GameInstance->GetHierarchyServiceId() != 0)
 		{
-			RequestGetItem(DBPaths::kPlayersRoot + FString::FromInt(PlayerState->PlayerId) + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeKills); // Get this value from persistent storage
-			RequestGetItem(DBPaths::kPlayersRoot + FString::FromInt(PlayerState->PlayerId) + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeDeaths); // Get this value from persistent storage
+			RequestGetItem(DBPaths::kPlayersRoot + PlayerState->GetPlayerName() + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeKills); // Get this value from persistent storage
+			RequestGetItem(DBPaths::kPlayersRoot + PlayerState->GetPlayerName() + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeDeaths); // Get this value from persistent storage
 		}
 	}
 }
 
-void UDeathmatchScoreComponent::RecordKill(const int32 Killer, const int32 Victim)
+void UDeathmatchScoreComponent::RecordKill(const FString Killer, const FString Victim)
 {
 	if (Killer != Victim && PlayerScoreMap.Contains(Killer))
 	{
@@ -375,7 +375,7 @@ void UDeathmatchScoreComponent::RecordKill(const int32 Killer, const int32 Victi
 		// Only use the Database Sync Worker if the entity exists.
 		if (GameInstance->GetHierarchyServiceId() != 0)
 		{
-			RequestIncrement(DBPaths::kPlayersRoot + FString::FromInt(Killer) + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeKills, 1);	// Store this value in persistent storage
+			RequestIncrement(DBPaths::kPlayersRoot + Killer + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeKills, 1);	// Store this value in persistent storage
 		}
 	}
 	if (PlayerScoreMap.Contains(Victim))
@@ -386,7 +386,7 @@ void UDeathmatchScoreComponent::RecordKill(const int32 Killer, const int32 Victi
 		// Only use the Database Sync Worker if the entity exists.
 		if (GameInstance->GetHierarchyServiceId() != 0)
 		{
-			RequestIncrement(DBPaths::kPlayersRoot + FString::FromInt(Victim) + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeDeaths, 1); // Store this value in persistent storage
+			RequestIncrement(DBPaths::kPlayersRoot + Victim + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeDeaths, 1); // Store this value in persistent storage
 		}
 	}
 }
