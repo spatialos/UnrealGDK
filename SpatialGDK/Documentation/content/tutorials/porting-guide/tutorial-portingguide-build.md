@@ -21,7 +21,7 @@ To use the GDK and SpatialOS networking, you must add the SpatialGDK [module](ht
 For example:  
 
 ```
-   PublicDependencyModuleNames.AddRange(`
+   PublicDependencyModuleNames.AddRange(
                new string[] {
                    "Core",
                    "CoreUObject",
