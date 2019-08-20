@@ -138,7 +138,7 @@ public:
 
 	void OnCreateEntityResponse(const struct Worker_CreateEntityResponseOp& Op);
 
-	FVector GetActorSpatialPosition(AActor* Actor);
+	static FVector GetActorSpatialPosition(const AActor* Actor);
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 	

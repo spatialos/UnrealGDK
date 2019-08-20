@@ -139,9 +139,12 @@ void ASpatialVirtualWorkerTranslator::OnComponentUpdated(const Worker_ComponentU
 {
 	if (Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	{
-		// TODO - Set Entity's ACL component to correct worker id based on requested virtual worker
-		//Worker_EntityId EntityId = Op.entity_id;
-		//AuthorityIntent* MyAuthorityIntent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
+		check(NetDriver);
+		check(NetDriver->StaticComponentView);
+		if (NetDriver->StaticComponentView->GetAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			QueueAclAssignmentRequest(Op.entity_id);
+		}
 	}
 }
 
@@ -181,13 +184,16 @@ void ASpatialVirtualWorkerTranslator::SetAclWriteAuthority(const Worker_EntityId
 
 	for (int i = 0; i < ComponentIds.Num(); ++i)
 	{
-		if (ComponentIds[i] != SpatialConstants::ENTITY_ACL_COMPONENT_ID)
+		if (ComponentIds[i] == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
+			ComponentIds[i] == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
-			WorkerRequirementSet* wrs = EntityACL->ComponentWriteAcl.Find(ComponentIds[i]);
-			check(wrs->Num() == 1);
-			wrs->Empty();
-			wrs->Add(OwningWorkerAttribute);
+			continue;
 		}
+
+		WorkerRequirementSet* wrs = EntityACL->ComponentWriteAcl.Find(ComponentIds[i]);
+		check(wrs->Num() == 1);
+		wrs->Empty();
+		wrs->Add(OwningWorkerAttribute);
 	}
 
 	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) Setting Acl WriteAuth for entity %lld to workerid: %s"), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role, EntityId, *WorkerId);
@@ -243,7 +249,7 @@ void ASpatialVirtualWorkerTranslator::OnRep_VirtualWorkerAssignment()
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) assignment: %s"), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role, *VirtualWorkerAssignment[i]);
 	}
-	OnWorkerAssignmentChanged.ExecuteIfBound(VirtualWorkerAssignment);
+	OnWorkerAssignmentChanged.Broadcast(VirtualWorkerAssignment);
 }
 
 void ASpatialVirtualWorkerTranslator::ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op)

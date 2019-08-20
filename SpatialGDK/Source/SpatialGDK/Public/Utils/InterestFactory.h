@@ -26,6 +26,8 @@ public:
 	Worker_ComponentData CreateInterestData() const;
 	Worker_ComponentUpdate CreateInterestUpdate() const;
 
+	static Interest CreateServerWorkerInterest();
+
 private:
 	Interest CreateInterest() const;
 

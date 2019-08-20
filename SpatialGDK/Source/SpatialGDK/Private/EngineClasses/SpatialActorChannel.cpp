@@ -504,7 +504,9 @@ int64 USpatialActorChannel::ReplicateActor()
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	if (SpatialSettings->bEnableUnrealLoadBalancer &&
-		bWroteSomethingImportant && NetDriver->LoadBalancer->ShouldChangeAuthority(*Actor))
+		bWroteSomethingImportant &&
+		Actor->HasAuthority() &&
+		NetDriver->LoadBalancer->ShouldChangeAuthority(*Actor))
 	{
 		Sender->SendAuthorityUpdate(*Actor, NetDriver->LoadBalancer->GetAuthoritativeVirtualWorkerId(*Actor));
 	}
@@ -984,7 +986,7 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId I
 	}
 }
 
-FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
+FVector USpatialActorChannel::GetActorSpatialPosition(const AActor* InActor)
 {
 	FVector Location = FVector::ZeroVector;
 
@@ -992,7 +994,7 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 	// Otherwise if the Actor has an Owner, use its position.
 	// Otherwise if the Actor has a well defined location then use that
 	// Otherwise use the origin
-	AController* Controller = Cast<AController>(InActor);
+	const AController* Controller = Cast<AController>(InActor);
 	if (Controller != nullptr && Controller->GetPawn() != nullptr)
 	{
 		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();

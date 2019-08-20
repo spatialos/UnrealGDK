@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -64,7 +65,7 @@ Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor
 	Worker_EntityId EntityId = NetDriver->EntityPool->GetNextEntityId();
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
+		UE_LOG(LogSpatialPackageMap, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
 		return EntityId;
 	}
 
@@ -83,12 +84,12 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 		return NetGUID;
 	}
 
-	if (!Value->IsA<AActor>() && !Value->GetOuter()->IsA<AActor>())
+	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Value->GetTypedOuter<AActor>();
+	if (Actor == nullptr)
 	{
 		return NetGUID;
 	}
 
-	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Cast<AActor>(Value->GetOuter());
 	if (!Actor->GetIsReplicated())
 	{
 		return NetGUID;
@@ -238,6 +239,33 @@ Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* O
 
 	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
 	return GetUnrealObjectRefFromNetGUID(NetGUID).Entity;
+}
+
+AActor* USpatialPackageMapClient::GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef)
+{
+	if (UClass* SingletonClass = Cast<UClass>(GetObjectFromUnrealObjectRef(SingletonClassRef)))
+	{
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsOfClass(NetDriver->World, SingletonClass, FoundActors);
+
+		// There should be only one singleton actor per class
+		if (FoundActors.Num() == 1)
+		{
+			return FoundActors[0];
+		}
+
+		FString FullPath;
+		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
+		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("GetSingletonByClassRef: Found %d actors for singleton class: %s"), FoundActors.Num(), *FullPath);
+		return nullptr;
+	}
+	else
+	{
+		FString FullPath;
+		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("GetSingletonByClassRef: Can't resolve singleton class: %s"), *FullPath);
+		return nullptr;
+	}
 }
 
 bool USpatialPackageMapClient::CanClientLoadObject(UObject* Object)

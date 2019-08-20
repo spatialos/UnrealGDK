@@ -2,7 +2,7 @@
 
 #include "ObjectDummy.h"
 
-bool UObjectDummy::ProcessRPC(const FPendingRPCParams& Params)
+FRPCErrorInfo UObjectDummy::ProcessRPC(const FPendingRPCParams& Params)
 {
-	return true;
+	return FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Send, ERPCResult::Success };
 }
