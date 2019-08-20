@@ -166,7 +166,7 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatial
 		return true;
 	}
 
-	return false;	
+	return false;
 }
 
 #undef LOCTEXT_NAMESPACE
