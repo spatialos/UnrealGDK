@@ -2,6 +2,8 @@
 
 setlocal
 
+set anyerrors=0
+
 pushd "%~dp0"
 
 call :MarkStartOfBlock "%~0"
@@ -86,53 +88,53 @@ call :MarkStartOfBlock "Create folders"
 call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"
-    spatial package retrieve tools           schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
-    spatial package retrieve schema          standard_library                           %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\schema\standard_library.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86-msvc_md-win32                %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32             %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux       %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip"
-    spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang_libcpp-ios  %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang_libcpp-ios.zip"
-    spatial package retrieve worker_sdk      core-dynamic-x86_64-linux                  %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip"
+    spatial package retrieve tools           schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"                    || set anyerrors=1
+    spatial package retrieve schema          standard_library                           %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\schema\standard_library.zip"                               || set anyerrors=1
+    spatial package retrieve worker_sdk      c-dynamic-x86-msvc_md-win32                %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip"                || set anyerrors=1
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32             %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip"             || set anyerrors=1
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux       %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip"       || set anyerrors=1
+    spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang_libcpp-ios  %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang_libcpp-ios.zip"  || set anyerrors=1
+    spatial package retrieve worker_sdk      core-dynamic-x86_64-linux                  %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip"                  || set anyerrors=1
     spatial package retrieve worker_sdk      csharp                                     %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\csharp.zip"
     spatial package retrieve spot            spot-win64                                 %PINNED_SPOT_VERSION%       "%BINARIES_DIR%\Programs\spot.exe"
 call :MarkEndOfBlock "Retrieve dependencies"
 
 call :MarkStartOfBlock "Unpack dependencies"
-    powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip\"                -DestinationPath \"%BINARIES_DIR%\Win32\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip\"             -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip\"       -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip\"                  -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\core\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\csharp.zip\"                                     -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\csharp\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang_libcpp-ios.zip\"  -DestinationPath \"%BINARIES_DIR%\IOS\" -Force;"^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"                    -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                               -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
-    xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%"
+    powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip\"                -DestinationPath \"%BINARIES_DIR%\Win32\" -Force; "^                       || set anyerrors=1
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip\"             -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^                       || set anyerrors=1
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip\"       -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^                       || set anyerrors=1
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip\"                  -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\core\" -Force; "^    || set anyerrors=1
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\csharp.zip\"                                     -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\csharp\" -Force; "^  || set anyerrors=1
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang_libcpp-ios.zip\"  -DestinationPath \"%BINARIES_DIR%\IOS\" -Force;"^                          || set anyerrors=1
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"                    -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^                    || set anyerrors=1
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                               -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"               || set anyerrors=1
+    xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%" || set anyerrors=1
 call :MarkEndOfBlock "Unpack dependencies"
 
 if exist "%SPATIAL_DIR%" (
     call :MarkStartOfBlock "Copy standard library schema"
-        echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
-        xcopy /s /i /q "%BINARIES_DIR%\Programs\schema" "%SCHEMA_STD_COPY_DIR%"
+        echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"         || set anyerrors=1
+        xcopy /s /i /q "%BINARIES_DIR%\Programs\schema" "%SCHEMA_STD_COPY_DIR%"  || set anyerrors=1
     call :MarkEndOfBlock "Copy standard library schema"
 
     call :MarkStartOfBlock "Copy GDK schema"
-        echo Copying schemas to "%SCHEMA_COPY_DIR%".
-        xcopy /s /i /q "%~dp0\SpatialGDK\Extras\schema" "%SCHEMA_COPY_DIR%"
+        echo Copying schemas to "%SCHEMA_COPY_DIR%".                         || set anyerrors=1
+        xcopy /s /i /q "%~dp0\SpatialGDK\Extras\schema" "%SCHEMA_COPY_DIR%"  || set anyerrors=1
     call :MarkEndOfBlock "Copy GDK schema"
 )
 
 call :MarkStartOfBlock "Build C# utilities"
-    %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
+    %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore  || set anyerrors=1
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"
 
 popd
 
-if %ERRORLEVEL% EQU 0 (
+if %anyerrors% EQU 0 (
     echo UnrealGDK build completed successfully^!
 ) Else (
-    echo UnrealGDK build had an error^!
+    echo UnrealGDK build was unsuccessful^!
 )
 
 if not defined NO_PAUSE (
