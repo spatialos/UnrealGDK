@@ -16,6 +16,8 @@
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/InterestFactory.h"
 
+DEFINE_LOG_CATEGORY(LogComponentFactory);
+
 namespace SpatialGDK
 {
 
@@ -233,9 +235,17 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	{
 		// These properties can be set to replicate, but won't serialize across the network.
 	}
+	else if (Property->IsA<UMapProperty>())
+	{
+		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TMaps are not supported."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
+	}
+	else if (Property->IsA<USetProperty>())
+	{
+		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TSets are not supported."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
+	}
 	else
 	{
-		checkf(false, TEXT("Tried to add unknown property in field %d"), FieldId);
+		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Attempted to add unknown property type."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
 	}
 }
 
