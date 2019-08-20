@@ -164,13 +164,16 @@ void ASpatialVirtualWorkerTranslator::SetAclWriteAuthority(const Worker_EntityId
 
 	for (int i = 0; i < ComponentIds.Num(); ++i)
 	{
-		if (ComponentIds[i] != SpatialConstants::ENTITY_ACL_COMPONENT_ID)
+		if (ComponentIds[i] == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
+			ComponentIds[i] == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
-			WorkerRequirementSet* wrs = EntityACL->ComponentWriteAcl.Find(ComponentIds[i]);
-			check(wrs->Num() == 1);
-			wrs->Empty();
-			wrs->Add(OwningWorkerAttribute);
+			continue;
 		}
+
+		WorkerRequirementSet* wrs = EntityACL->ComponentWriteAcl.Find(ComponentIds[i]);
+		check(wrs->Num() == 1);
+		wrs->Empty();
+		wrs->Add(OwningWorkerAttribute);
 	}
 
 	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Setting Acl WriteAuth for entity %lld to workerid: %s"), EntityId, *WorkerId);
