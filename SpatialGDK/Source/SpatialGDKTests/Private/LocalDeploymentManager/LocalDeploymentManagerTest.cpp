@@ -59,37 +59,40 @@ namespace
 
 DEFINE_LATENT_COMMAND(StartDeployment)
 {
-	if (!GenerateWorkerJson())
-	{
-		return true;
-	}
-
-	if (!GenerateWorkerAssemblies())
-	{
-		return true;
-	}
-
-	const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
-	FSpatialLaunchConfigDescription LaunchConfigDescription(AutomationWorkerType);
-	if (!GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription))
-	{
-		return true;
-	}
-
-	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
-	if (LocalDeploymentManager->IsLocalDeploymentRunning())
-	{
-		return true;
-	}
-
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
-
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags]
+	if (SpatialGDKSettings)
 	{
-		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags);
+		FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
+		const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
+		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
+
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags]
+		{
+			if (!GenerateWorkerJson())
+			{
+				return;
+			}
+
+			if (!GenerateWorkerAssemblies())
+			{
+				return;
+			}
+
+			FSpatialLaunchConfigDescription LaunchConfigDescription(AutomationWorkerType);
+
+			if (!GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription))
+			{
+				return;
+			}
+
+			if (LocalDeploymentManager->IsLocalDeploymentRunning())
+			{
+				return;
+			}
+
+			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags);
+		});
 	}
-	);
 
 	return true;
 }
