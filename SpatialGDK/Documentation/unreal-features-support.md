@@ -23,11 +23,11 @@ The following tables show the state of support of Unreal Engine features on the 
         background-color:#597CF4;
     }
 
-    .indev {
+    /* .indev {
         background-color:#FFD058;
-    }
+    } */
 
-    .roadmap {
+    .unplanned {
         background-color:#FF6187;
     }
 
@@ -42,16 +42,19 @@ The following tables show the state of support of Unreal Engine features on the 
     <tr>
         <td>Fully supported, available now</td>
         <td class="supported"></td>
+    </tr>    
     <tr>
         <td>Supported with caveats or workarounds</td>
         <td class="caveats"></td>
-    </tr>
+    </tr>    
+    <!-- <tr>
         <td>Q2 - Q3 2019</td>
         <td class="indev"></td>
-    </tr>
+    </tr> -->
+    <tr>
         <td>Currently unplanned</td>
-        <td class="roadmap"></td>
-    </tr>
+        <td class="unplanned"></td>
+    </tr>   
     <!-- </tr>
         <td>Not applicable, or not planned to be delivered</td>
         <td class="na"></td>
@@ -144,12 +147,12 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td>Delta Serialization</td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td></td>
   </tr>
     <tr>
     <td>Fast TArray Serialization</td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td>Supported, but slower than native UE.</td>
   </tr>
   <tr>
@@ -196,12 +199,12 @@ Support of Unreal features with the GDK in a single server-worker configuration:
  <tr>
     <td rowspan="8"><b>Multiplayer Gameplay Features<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Rendering/ParticleSystems/Optimization/SplitScreen">Split Screen</a></td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td></td>
   </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Replay">Replay System</a></td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td></td>
   </tr>
   <tr>
@@ -216,7 +219,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/OnlineBeacons">Online Beacons</a></td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td></td>
   </tr>
   <tr>
@@ -226,12 +229,12 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-us/Programming/Online">Online Subsystem Abstraction</a></td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td></td>
    </tr> 
   <tr>
     <td><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Server">Listen Server</a></td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td>The GDK currently only supports Dedicated Server mode.</td>
   </tr>    
 
@@ -240,7 +243,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
  <tr>
     <td rowspan="4"><b>Optimization<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Networking/ReplicationGraph">Replication Graph</a></td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td>We may present a different system for the same purpose instead.</td>
   </tr>
   <tr>
@@ -255,7 +258,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td><a href="https://www.unrealengine.com/en-US/blog/finding-network-based-exploits">Network latency simulation commands</td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td></td>
    </tr> 
 
@@ -264,7 +267,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
  <tr>
     <td rowspan="3"><b>Debugging<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Gameplay/Tools/GameplayDebugger">Gameplay Debugger</a></td>
-    <td class="indev"></td>
+    <td class="unplanned"></td>
     <td>Currently unsupported due to NetDeltaSerialize dependency.</td>
   </tr>
   <tr>
@@ -274,7 +277,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-us/Gameplay/Tools/NetworkProfiler">Network Profiler</td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td>We may not support this tool fully but will have equivalent functionality in <a href="https://docs.improbable.io/reference/13.7/shared/operate/metrics"> SpatialOS metrics</a>.</td>
   </tr>
 
@@ -288,7 +291,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td>World Origin Shifting</td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td>World origin shifting is not supported in multiplayer by Unreal. We will likely provide an alternate solution.</td>
 </tr>
 
@@ -316,7 +319,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
  <tr>
     <td rowspan="3"><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling"><b>Travel<b></a></td>
     <td>Server Travel</td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td>Server Travel is on the <a href="https://github.com/spatialos/UnrealGDK/projects/1#card-22461878"> roadmap</a> but is not currently supported.</td>
   </tr>
   <tr>
@@ -326,7 +329,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 </tr>
   <tr>
     <td>Seamless Travel</td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td></td>
 </tr>
 
@@ -369,21 +372,21 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td>Xbox One</td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td>SpatialOS has Xbox One support (<a href="https://improbable.io/blog/spatialos-now-supports-xbox-one-and-playstation-4-development">announcement</a>), but GDK workflows are not yet optimised for development on it.</td>
   </tr>
   <tr>
     <td>PS4</td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td>SpatialOS has PS4 support (<a href="https://improbable.io/blog/spatialos-now-supports-xbox-one-and-playstation-4-development">announcement</a>), but GDK workflows are not yet optimised for development on it.</td></tr>
   <tr>
     <td>iOS</td>
-    <td class="roadmap"></td>
+    <td class="unplanned"></td>
     <td>iOS support is experimental, with insufficient testing and documentation for stable development.</td>
   </tr>
   <tr>
     <td>Android</td>
-    <td class=""></td>
+    <td class="unplanned"></td>
     <td>Android support is currently unplanned.</td>
   </tr>
 
@@ -396,4 +399,6 @@ The table for multiserver support is coming soon.
 
 
 <br/>------<br/>
+_2019-08-20 Pushed out Gameplay Debugger support_
+_2019-07-31 Added support for Dynamic Components, RPCs ordering, and Ability System (0.6.0 release)_
 _2019-07-04 Online Subsystem abstraction support pushed out._
