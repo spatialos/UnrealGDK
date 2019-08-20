@@ -504,7 +504,9 @@ int64 USpatialActorChannel::ReplicateActor()
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	if (SpatialSettings->bEnableUnrealLoadBalancer &&
-		bWroteSomethingImportant && NetDriver->LoadBalancer->ShouldChangeAuthority(*Actor))
+		bWroteSomethingImportant &&
+		Actor->HasAuthority() &&
+		NetDriver->LoadBalancer->ShouldChangeAuthority(*Actor))
 	{
 		Sender->SendAuthorityUpdate(*Actor, NetDriver->LoadBalancer->GetAuthoritativeVirtualWorkerId(*Actor));
 	}
