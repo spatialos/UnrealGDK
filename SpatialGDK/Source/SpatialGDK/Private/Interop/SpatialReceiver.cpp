@@ -124,6 +124,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+	case SpatialConstants::WORKER_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -1108,6 +1109,9 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		check(false); // don't forget to implement me
+		break;
+	case SpatialConstants::WORKER_COMPONENT_ID:
 		check(false); // don't forget to implement me
 		break;
 	}

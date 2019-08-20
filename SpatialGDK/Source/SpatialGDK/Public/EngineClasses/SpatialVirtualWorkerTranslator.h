@@ -31,6 +31,7 @@ public:
 
 	void OnComponentAdded(const Worker_AddComponentOp& Op);
 	void OnComponentUpdated(const Worker_ComponentUpdateOp& Op);
+	void OnComponentRemoved(const Worker_RemoveComponentOp& Op);
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -47,14 +48,17 @@ private:
 	UFUNCTION()
 	void OnRep_VirtualWorkerAssignment();
 
-	void OnWorkerComponentReceived(const Worker_ComponentData& Data);
-
 	void AssignWorker(const FString& WorkerId);
+	void UnassignWorker(const FString& WorkerId);
 
 	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
 	void ProcessQueuedAclAssignmentRequests();
 
 	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId);
+	void QueryForWorkerEntities();
+
+	void ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
+
 	// this will be static information
 	// this map is simulating the info that will be passed in somehow from the editor
 	TArray<ZoneId> Zones;
@@ -68,4 +72,8 @@ private:
 	TArray<Worker_EntityId> AclWriteAuthAssignmentRequests;
 
 	USpatialNetDriver* NetDriver;
+
+	Worker_EntityId TranslatorEntityId;
+
+	bool bWorkerEntityQueryInFlight;
 };

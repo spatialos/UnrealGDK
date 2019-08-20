@@ -87,7 +87,8 @@ namespace SpatialConstants
 		INVALID_ENTITY_ID = 0,
 		INITIAL_SPAWNER_ENTITY_ID = 1,
 		INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
-		FIRST_AVAILABLE_ENTITY_ID = 3,
+		INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = 3,
+		FIRST_AVAILABLE_ENTITY_ID = 4,
 	};
 
 	const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
@@ -117,6 +118,7 @@ namespace SpatialConstants
 	const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
 	const Worker_ComponentId ALWAYS_RELEVANT_COMPONENT_ID					= 9983;
 	const Worker_ComponentId AUTHORITY_INTENT_COMPONENT_ID                  = 9982;
+	const Worker_ComponentId VIRTUAL_WORKER_MANAGER_COMPONENT_ID            = 9981;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -162,6 +164,7 @@ namespace SpatialConstants
 
 	const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
 
+	// WorkerEntity Field IDs
 	const Schema_FieldId WORKER_ID_ID = 1;
 	const Schema_FieldId WORKER_TYPE_ID = 2;
 

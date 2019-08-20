@@ -84,6 +84,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::AuthorityIntent>>(Op.data);
 		break;
+	case SpatialConstants::WORKER_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Worker>>(Op.data);
+		break;
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.
 		Data = nullptr;
@@ -132,6 +135,9 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::AuthorityIntent>(Op.entity_id);
+		break;
+	case SpatialConstants::WORKER_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::Worker>(Op.entity_id);
 		break;
 	default:
 		return;

@@ -111,6 +111,15 @@ Worker_ComponentData CreateStartupActorManagerData()
 	return StartupActorManagerData;
 }
 
+Worker_ComponentData CreateVirtualWorkerManagerData()
+{
+	Worker_ComponentData VirtualWorkerManagerData{};
+	VirtualWorkerManagerData.component_id = SpatialConstants::VIRTUAL_WORKER_MANAGER_COMPONENT_ID;
+	VirtualWorkerManagerData.schema_type = Schema_CreateComponentData(SpatialConstants::VIRTUAL_WORKER_MANAGER_COMPONENT_ID);
+
+	return VirtualWorkerManagerData;
+}
+
 bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity GSM;
@@ -151,6 +160,42 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	GSM.components = Components.GetData();
 
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &GSM) != 0;
+}
+
+bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
+{
+	Worker_Entity VirtualWorkerTranslator;
+	VirtualWorkerTranslator.entity_id = SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID;
+
+	TArray<Worker_ComponentData> Components;
+
+	WriteAclMap ComponentWriteAcl;
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::VIRTUAL_WORKER_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+
+	Components.Add(Position(Origin).CreatePositionData());
+	Components.Add(Metadata(TEXT("VirtualWorkerTranslator")).CreateMetadataData());
+	Components.Add(Persistence().CreatePersistenceData());
+	Components.Add(CreateVirtualWorkerManagerData());
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	WorkerRequirementSet ReadACL;
+	for (const FName& WorkerType : SpatialGDKSettings->ServerWorkerTypes)
+	{
+		const WorkerAttributeSet WorkerTypeAttributeSet{ { WorkerType.ToString() } };
+		ReadACL.Add(WorkerTypeAttributeSet);
+	}
+
+	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
+
+	VirtualWorkerTranslator.component_count = Components.Num();
+	VirtualWorkerTranslator.components = Components.GetData();
+
+	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &VirtualWorkerTranslator) != 0;
 }
 
 bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
@@ -203,6 +248,12 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	if (!CreateGlobalStateManager(OutputStream))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating GlobalStateManager in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+		return false;
+	}
+
+	if (!CreateVirtualWorkerTranslator(OutputStream))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating VirtualWorkerTranslator in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
 		return false;
 	}
 

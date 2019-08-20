@@ -305,4 +305,52 @@ struct AuthorityIntent : Component
 	FString VirtualWorkerId;
 };
 
+struct Worker : Component
+{
+	static const Worker_ComponentId ComponentId = SpatialConstants::WORKER_COMPONENT_ID;
+
+	Worker() = default;
+
+	Worker(const FString& InWorkerId, const FString& InWorkerType)
+		: WorkerId(InWorkerId),
+	WorkerType(InWorkerType) {}
+
+	Worker(const Worker_ComponentData& Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		WorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::WORKER_ID_ID);
+		WorkerType = GetStringFromSchema(ComponentObject, SpatialConstants::WORKER_TYPE_ID);
+	}
+
+	Worker_ComponentData CreateWorkerData()
+	{
+		Worker_ComponentData Data = {};
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		AddStringToSchema(ComponentObject, SpatialConstants::WORKER_ID_ID, WorkerId);
+		AddStringToSchema(ComponentObject, SpatialConstants::WORKER_TYPE_ID, WorkerId);
+
+		return Data;
+	}
+
+	static Worker_ComponentUpdate CreateWorkerUpdate(const FString& NewWorkerId, const FString& NewWorkerType)
+	{
+		Worker_ComponentUpdate Update = {};
+		Update.component_id = ComponentId;
+		Update.schema_type = Schema_CreateComponentUpdate(ComponentId);
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+		AddStringToSchema(ComponentObject, SpatialConstants::WORKER_ID_ID, NewWorkerId);
+		AddStringToSchema(ComponentObject, SpatialConstants::WORKER_TYPE_ID, NewWorkerType);
+
+		return Update;
+	}
+
+	FString WorkerId;
+	FString WorkerType;
+};
+
 } // namespace SpatialGDK
