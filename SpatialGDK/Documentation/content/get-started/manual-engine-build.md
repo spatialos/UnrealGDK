@@ -9,7 +9,7 @@ If you prefer to manually install the the UE fork and plugin, follow these instr
 *  set up and build the SpatialOS Unreal Engine fork after cloning the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) repository.
 *  clone and install the SpatialOS GDK for Unreal plugin.
 
-> **TIP:** We recommend you use the auto-install option as this makes setting up the Example Project and following tutorials based on the Example Project quicker. If you manually install, you will need to take extra steps to follow tutorials.
+> **Tip:** We recommend you use the auto-install option as this makes setting up the Example Project and following tutorials based on the Example Project quicker. If you manually install, you will need to take extra steps to follow tutorials.
 
 ## Before starting
 You must have followed the [Get started]({{urlRoot}}/content/get-started/introduction.md) guide:
