@@ -16,7 +16,7 @@ There is a Runtime instance for every game simulation. A Runtime instance holds 
 - A **cloud deployment** runs on remote networked nodes. A node is a single machine used as server hardware. </br>
 The cloud is where your game simulation runs when you release it, so you always deploy your released game to the cloud but you can also use a cloud deployment during development to share it with test users and run it at scale. You share your game with test users through the SpatialOS Launcher. (You'll use the Launcher in a later step of this guide.)</br>
 <%(#Expandable title="What is the SpatialOS Launcher?")%>
-The Launcher is a distribution tool which downloads and launches game clients for your deployment. You installed the launcher when you [installed SpatialOS on your machine]({{urlRoot}}/content/get-started/dependencies#step-3-software). You access the Launcher from the Console; using it to create a URL to give end-users access to a game client for your game.. </br>Find out more in the [glossary]({{urlRoot}}/content/glossary#launcher).
+The Launcher is a distribution tool which downloads and launches game clients for your deployment. You installed the Launcher when you [installed SpatialOS on your machine]({{urlRoot}}/content/get-started/dependencies#step-3-software). You access the Launcher from the Console; use it to create a URL to give end-users access to a game client for your game. </br>Find out more in the [glossary]({{urlRoot}}/content/glossary#launcher).
 <%(/Expandable)%>
 
 Use local deployments for small-scale tests with multiple clients, to quickly test and iterate on changes to your project. For large-scale tests with several players, use a cloud deployment.
