@@ -73,7 +73,7 @@ In the same directory, double-click **GenerateProjectFiles.bat**.
 ### Step 5: Clone and install the plugin
 You need to clone the SpatialOS GDK plugin and install it in the UE fork and Example Project directory. You can follow either auto-install or manual-install, we recommend the auto-install.
 
-> **TIP:** Use auto-install as this makes setting up the Example Project and Starter Template quicker. You will be able to follow tutorials based on the Example Project more quickly. If you follow manual-install, you will need to take extra steps to set up the Example Project or Starer Template and follow tutorials.
+> **Tip:** Use auto-install as this makes setting up the Example Project and Starter Template quicker. You will be able to follow tutorials based on the Example Project more quickly. If you follow manual-install, you will need to take extra steps to set up the Example Project or Starer Template and follow tutorials.
 
 * **Manual-install**
 </br>See the guide on how to [Manually build the SpatialOS Unreal Engine fork]({{urlRoot}}/content/get-started/manual-engine-build) guide. You do not need to follow _Step 6: Build the fork in Visual Studio_, below.</br></br>
