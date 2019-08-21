@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Multiserver zoning shooter tutorial
+# Multiserver zoning
 ## 1: Set up replication
 
 Before you set up replication, make sure you have changed your Example Project branch from `release` (which is the default) to `multiserver-tutorial-start` - see the tutorial's [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro#change-your-branch-of-the-example-project) for guidance.
@@ -74,10 +74,10 @@ To rebuild your project:
 Now let's test the health replication in a local deployment.
 </br>
 </br>
-### **> Next:** [2: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
+#### **> Next:** [2: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
 <br/>
 <br/>
-<%(Nav)%>
+
 
 <br/>------<br/>
 _2019-08-03 Page updated with limited editorial review: added change branch._</br>

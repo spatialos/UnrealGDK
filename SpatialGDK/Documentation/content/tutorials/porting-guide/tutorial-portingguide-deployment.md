@@ -79,7 +79,7 @@ You have now ported your Unreal game to GDK.
 
 If you have encountered any problems please check out our [troubleshooting]({{urlRoot}}/content/troubleshooting) and [known-issues]({{urlRoot}}/known-issues).
 
-### **> Next:** [Logs and modifications]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-logs)
+#### **> Next:** [Logs and modifications]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-logs)
 
 <br/>
 

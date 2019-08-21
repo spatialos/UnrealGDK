@@ -41,7 +41,7 @@ _Image: The development authentication token id code as shown in Visual Studio_ 
 
 If your project opens without errors you have successfully added the developer authentication token to your project.
 
-**> Next**: [3: Build and upload workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers)
+#### **> Next**: [3: Build and upload workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers)
 
 
 <br/>------<br/>

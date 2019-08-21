@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Offloading example project tutorial
+# Multiserver offloading
 
 ## 1. Setup
 
@@ -47,7 +47,7 @@ In the Example Project, the configuration files are automatically created for th
 _Enable offloading_
 
 </br>
-### **> Next:** [2: Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
+#### **> Next:** [2: Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
 </br>
 
 <br/>------------<br/>

@@ -1,6 +1,6 @@
 <%(TOC)%>
 # Tutorials and guides
-## Multiserver zoning shooter tutorial
+## Multiserver zoning
 <%(Callout type="warn" message="This tutorial is a preview demonstrating early multiserver zoning functionality in the GDK. Please note we do not recommend development of multiserver projects using server [zoning]({{urlRoot}}/content/glossary#worker) at this time. </br></br>
 For more information on multiserver zoning, see our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) pages.")%>	
 
@@ -24,13 +24,13 @@ The tutorial demonstrates that the workflows and iteration speed you’re used t
 
 Before starting this tutorial you need to complete the [Example Project setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro). Following this, you clone or download and set up all the elements of the GDK and its dependencies, including the Example Project.
 
-To follow the multiserver zoning shooter tutorial, you need to change your Example Project branch from `release` (which is the default) to `multiserver-tutorial-start`. To do this:
+To follow the multiserver zoning tutorial, you need to change your Example Project branch from `release` (which is the default) to `multiserver-tutorial-start`. To do this:
 
 1. If you have Unreal Editor open, close it.
 2. In GitHub, change your Example Project branch to `multiserver-tutorial-start`.</br>
 To do this, open a terminal window, navigate to directory containing your cloned Example Project (this will be    `...\UnrealEngine\samples\UnrealGDKExampleProject`) and enter `git checkout -b multiserver-tutorial-start`.
 3. Open the project in Visual Studio.</br>
-To do this, in Windows Explorer, in the directory `...\UnrealEngine\samples\UnrealGDKExampleProject\Game`, double-click on `GDKShooter.sln`.
+To do this, in File Explorer, in the directory `...\UnrealEngine\samples\UnrealGDKExampleProject\Game`, double-click on `GDKShooter.sln`.
 4. In Visual Studio, select **Local Windows Debugger** in the toolbar to open your project in the Unreal Editor.
 
 You can now set up replication of health changes. 
@@ -38,7 +38,7 @@ You can now set up replication of health changes.
 </br>
 </br>
 
-### **> Next:** [1: Set up replication]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
+#### **> Next:** [1: Set up replication]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
 
 
 <br/>

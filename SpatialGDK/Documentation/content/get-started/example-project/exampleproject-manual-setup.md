@@ -1,15 +1,20 @@
-<%(TOC)%>
+<%(TOC max="3")%>
 
-# The Example Project 
+# Manual-install: Example Project setup
 
-> **If you did not manually build your Engine fork**, i.e used `InstallGDK.bat`, please follow [these setup instructions]({{urlRoot}}/content/get-started/example-project/exampleproject-setup) instead of the below.
+When you follow [Get started: 2 - Set up the fork and plugin]({{urlRoot}}/content/get-started/build-unreal-fork.md), we recommend you [auto-install]({{urlRoot}}/content/get-started/build-unreal-fork#step-5-clone-and-install-the-plugin) the fork and plugin. However, you have the option to manually install the the UE fork and plugin by following the [Manual-install: UE fork and plugin]({{urlRoot}}/content/get-started/manual-engine-build) guide.
 
-## 1: Set up (manual instructions)
+If you followed the manual-install guide, follow the steps below to set up the Example Project. After this, you can return to [Example Project - 2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment). 
+
+
+## Example Project - Set up (manual-install only) 
+> If you used **auto-install** (by running `InstallGDK.bat`) as part of _Get Started: 2 - Set up the fork and plugin_, follow the standard [setup instructions]({{urlRoot}}/content/get-started/example-project/exampleproject-setup). Do not follow the instructions below.
 
 To run the GDK and the Example Project, you need to:
 
 * Sign up for a SpatialOS account (or make sure you are logged in)
-* Clone the Example Project and GDK repositories
+* Clone the Example Project repository
+* Clone the GDK plugin repository into your Example Project
 * Build and launch the Example Project
 
 ### Step 1: Sign up or log in
@@ -45,7 +50,7 @@ _Image: The Github Desktop Clone a repository window_<br/>
 
 > **TIP:** Clone the Example project into your root directory to avoid file path length errors. For example: `C:\GitHub\UnrealGDKExampleProject`.
 
-### Step 3: Clone the GDK 
+### Step 3: Clone the GDK plugin repository
 
 Next, you need to clone the GDK into your project. To do this: 
 
@@ -78,7 +83,8 @@ To use the Example project, you must build the GDK for Unreal module dependencie
    ![img]({{assetRoot}}assets/example-project/example-project-editor.png)<br/>
    _Image: The Example Project in the Unreal Editor_<br/><br/>
 
-### **> Next:** [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) 
+#### **> Next:** [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) 
 
 <br/>------<br/>
+_2019-07-22 Page updated with editorial review: updated navigation_</br>
 _2019-07-22 Page added with limited editorial review_

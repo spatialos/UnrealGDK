@@ -20,12 +20,12 @@ Note that this SpatialOS documentation assumes you are developing a SpatialOS ga
 ## GDK for Unreal terms
 
 ### Actor groups
-Actor groups facilitate multiserver functionality through [offloading](#offloading). You set them up to configure which Actor types instances of a [server-worker type](#worker-types-and-instances) have [authority](#authority) over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type via the SpatialOS Runtime Settings panel.
+Actor groups facilitate multiserver functionality through [offloading](#offloading). You set them up to configure which Actor types instances of a [server-worker type](#worker-types-and-worker-instances) have [authority](#authority) over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type via the SpatialOS Runtime Settings panel.
 
 > **Find out more:**
 > 
 > * [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups)
-> * [The SpatialOS Runtime Settings panel]({{urlRoot/}}content/unreal-editor-interface/runtime-settings)
+> * [The SpatialOS Runtime Settings panel]({{urlRoot}}/content/unreal-editor-interface/runtime-settings)
 > * [Offloading overview]({{urlRoot}}/content/workers/offloading-concept)
 
 ### Actor handover
@@ -455,7 +455,7 @@ You can also add additional non-Unreal server-worker types. For example, you cou
 > 
 > * [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
 > * [Offloading]({{urlRoot}}/content/workers/offloading-concept/)
-> * [Multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
+> * [Multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
 
 <!-- TODO How do you set up worker types in Unreal https://improbableio.atlassian.net/browse/DOC-1064 -->
 <!-- TODO Offloading info added here:  https://improbableio.atlassian.net/browse/DOC-1064 -->
@@ -484,13 +484,13 @@ Once you’ve chosen a label for the worker type (for example, myWorkerType), yo
 
 ### Zoning
 
-Zoning is one of the multiserver options for working with SpatialOS (the other option is [offloading](#offloading)). It involves splitting up the world into zones, known as “areas of [authority](#authority)”, with a different [server-worker instance](#server-workers) responsible for each. A server-worker instance can make updates only to Actors that are in its area of authority.
+Zoning is one of the multiserver options for working with SpatialOS (the other option is [offloading](#offloading)). It involves splitting up the world into areas of [authority](#authority), with a different [server-worker instance](#server-workers) responsible for each. A server-worker instance can make updates only to Actors that are in its area of authority.
 
-> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
+> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 <br><br>
 > **Find out more**
 >
-> [Multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
+> [multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
 
 <br/>
 <br/>------<br/>

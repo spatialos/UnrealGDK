@@ -1,23 +1,32 @@
 <%(TOC)%>
 # The Starter Template
 
-## 2.  Launch a local deployment with multiple clients
+## 2.  Launch a local deployment
 
-When you want to try out your game, you need to run a deployment.
+When you want to try out your game, you need to launch a deployment; the deployment runs the game's functionality. We call the running deployment the game "simulation", and what's happening in it, the "SpatialOS world".
 
 There are two types of deployment: local and cloud.
 
-- A [local deployment]({{urlRoot}}/content/glossary#deployment) launches your game with its own instance of SpatialOS, running on your development machine.
-- A [cloud deployment]({{urlRoot}}/content/glossary#deployment) runs in the cloud on [nodes]({{urlRoot}}/content/glossary#node). A node refers to a single machine used by a cloud deployment. When you have deployed your game, you can share it with other people and run your game at a scale not possible on a single machine. Once a cloud deployment is running, you can connect clients to it using the [Launcher]({{urlRoot}}/content/glossary#launcher).
+- A **local deployment** is for testing only. A local deployment runs your game simulation in your Unreal Editor. 
+</br>Your game simulation with its own instance of the SpatialOS Runtime, runs on your development machine. You can run multiple clients in a local deployment - they are useful for fast development iteration.
+<%(#Expandable title="What is the SpatialOS Runtime?")%>
+There is a Runtime instance for every game simulation. A Runtime instance holds the canononical store of all a game's SpatialOS-relevant object data in the SpatialOS entity database. It handles server and client connections, and coordinates each server and client's write and read access to the entity database.
+<%(/Expandable)%>
 
-Use local deployments for small-scale tests, to quickly test and iterate on changes to your project. For large-scale tests with several players, use a cloud deployment.
+- A **cloud deployment** runs on remote networked nodes. A node is a single machine used as server hardware. </br>
+The cloud is where your game simulation runs when you release it, so you always deploy your released game to the cloud but you can also use a cloud deployment during development to share it with test users and run it at scale. You share your game with test users through the SpatialOS Launcher. (You'll use the Launcher in a later step of this guide.)</br>
+<%(#Expandable title="What is the SpatialOS Launcher?")%>
+The Launcher is a distribution tool which downloads and launches game clients for your deployment. You installed the Launcher when you [installed SpatialOS on your machine]({{urlRoot}}/content/get-started/dependencies#step-3-software). You access the Launcher from the Console; use it to create a URL to give end-users access to a game client for your game. </br>Find out more in the [glossary]({{urlRoot}}/content/glossary#launcher).
+<%(/Expandable)%>
+
+Use local deployments for small-scale tests with multiple clients, to quickly test and iterate on changes to your project. For large-scale tests with several players, use a cloud deployment.
 
 ### Step 1: Generate schema and a snapshot
 
-Before you launch a deployment (local or cloud) you must generate [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) and a [snapshot]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots).
+Before you launch a deployment (local or cloud) you must generate schema and a snapshot to generate SpatialOS entities.
 
-1. In the Editor, on the [GDK Toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars), open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/><br/>
-   ![Schema]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+1. In the Editor, on the GDK Toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/><br/>
+   ![Schema]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/></br>
 1. Select **Snapshot** to generate a snapshot.<br/><br/>
    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 
@@ -41,64 +50,113 @@ You can find out more about snapshots in the [GDK snapshot documentation]({{urlR
 
 <%(/Expandable)%>
 
-### Step 2: Launch a local deployment and play
+### Step 2: Launch and play
 
-This section shows you how to  start one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor. The server-worker instance acts as an Unreal server and the two client-worker instances acts as two Unreal game clients (as would be used by two game players).
+This step shows you how to start one game server and two game clients in a local deployment in your Unreal Editor. </br>
+In SpatialOS, game servers are called "server-workers" and game clients are called "client-workers".  
 
-1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
-1. Under **Multiplayer Options**, set the number of players to **2** and ensure that the check box next to **Run Dedicated Server** is selected.<br/>
-   ![]({{assetRoot}}assets/set-up-template/spatialos-multiplayer-options.png)<br/>
-   _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
-1. Under **Modes**, select **New Editor Window (PIE)** to run the game.  You should see two clients start. You can switch between two Editor windows to see and interact with each game client.
-If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to run the game.
+
+<%(#Expandable title="More about server-workers and client-workers")%>
+A server-worker is your game's server-side code, it's the equivalent of a "server" in native Unreal networking.
+
+You can think of client-workers as game clients as they are essentially the same. 
+
+Both server-workers and client-workers are programs that compute a SpatialOS game world: they send updates to and receive updates from the entity database in the SpatialOS Runtime.
+
+You can have different types of server-workers doing different tasks, depending how you have set up your game. You can also set up your game to have more than one instance of a server-worker type. This guide using the Starter Template sets up one instance of one server-worker type; a main Unreal server-worker.
+
+You usually only have one type of client-worker in your game but you can have many instances of a client-worker, each representing a game player. The Starter Template has one client-worker type.
+
+<%(/Expandable)%>
+
+To launch a local deployment in your Unreal Editor, set up the networking and run the game:
+
+1. From the Editor toolbar, open the **Play** drop-down menu:</br></br>
+    ![Multiplayer Options]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png))<br/>
+   _Image: The Unreal Editor toolbar's **Play** drop-down menu, with the relevant options hightlighted_</br></br>
+2. To set up the networking:</br>
+In the **Multiplayer Options** section of the window:</br>
+ * enter the number of players as `2`,</br>
+ * check the **Run Dedicated Server** setting and</br>
+ * check the **Spatial Networking** setting. </br>
+ (The settings may already be checked.)</br></br>
+The **Spatial Networking** option is the networking switch; you use this to switch your game's deployment from native Unreal networking to SpatialOS networking.</br></br>
+
+
+3. Now, run the game: in the **Modes** section of the window, select **New Editor Window (PIE)**.</br> 
+You are now running one game server and two game clients in a local deployment in your Unreal Editor. (If it doesn't run, see **Note** below.)</br>
+
+**What's running?**</br>
+You have started one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor. You have also started an instance of the SpatialOS Runtime locally.</br></br>
+**What is this doing?**</br>
+The server-worker instance is acting as an Unreal server.  The two client-worker instances are acting as two Unreal game clients, as if two game players were playing your game.</br>
+You can switch between the two Editor windows to see and interact with each game client.</br></br>
+**Note:** If the game does not run automatically after you have selected **New Editor Window (PIE)**, try selecting **Play** on the Editor toolbar. This should to start a local deployment and play the game.<br/><br/>
 
    ![]({{assetRoot}}assets/set-up-template/template-two-clients.png)<br/>
+   _Image: Two game clients running in Ubreal Editor_<br/></br>
 
-### Step 3: Inspecting and stopping play
+### Step 3: Inspect and stop play
 
-When your game is running, select **Inspector** to open the [Inspector](https://docs.improbable.io/unreal/alpha//content/glossary#inspector) in your default web browser. The Inspector is a web-based tool that you use to explore the internal state of a SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. <br/><br/>
-![]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)<br/>
+When your game is running, you can see how it is running by looking at the Inspector on the SpatialOS Console.
 
-This will open the Inspector in your browser:
+1. From the GDK toolbar, select **Inspector** to open it in your default web browser. 
 
-![]({{assetRoot}}assets/set-up-template/template-two-client-inspector.png)<br/>
+    ![]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)<br/>
+    _Image: GDK toolbar's **Inspector** button_
 
-When you’re done, select Unreal Engine's native **Stop** button to stop the client.
+    <%(#Expandable title="What are the Console and the Inspector?")%>
+The **Console** is a web-based tool for managing cloud deployments. It gives you access to information about your games’ SpatialOS project names, the SpatialOS assemblies you have uploaded, the internal state of any games you have running (via the Inspector), as well as logs and metrics. </br>
+The **Inspector** is part of the Console. You can use it to explore the internal state of a SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. <br/><br/>
+You can find out more about the Inspector and the Console in the [Glossary]({{urlRoot}}/content/glossary#console).
+<%(/Expandable)%>
 
-![]({{assetRoot}}assets/toolbar/stop-button-native.png)<br/>
+    Selecting **Inspector** opens the Inspector in your browser:</br></br>
+    ![]({{assetRoot}}assets/set-up-template/template-two-client-inspector.png)<br/>
+    _Image: The Inspector on the SpatialOS Console_
+</br></br>
+2. When you’re done, select **Stop** on the Unreal toolbar to stop the client.
 
-This stops the running client and server workers but keeps your deployment running.
+    ![]({{assetRoot}}assets/toolbar/stop-button-native.png)<br/>
+    _Image: Unreal toolbar's **Stop** button_</br></br>
 
-### Step 4: Iterating on your game
+    This stops the running client and server-worker instances but keeps your deployment running.
 
-As you iterate on your game (i.e modifying classes or blueprints), **making changes to replicated components will require incremental schema regeneration**. To do this, select the **Schema** button in the GDK toolbar.
+### Step 4: Iterate on game development
 
-![Stop]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
+As you iterate on development of your game (by modifying classes or Blueprints, for example), you will make changes changes to replicated components - this requires incremental schema regeneration. 
 
-Once you've regenerated schema, the GDK will restart the running deployment with the new schema.
+To do this:
 
-If you haven't modified anything related to replication, you don't need to regenerate schema and the previously running deployment will continue to be used.
+1. Select the **Schema** button in the GDK toolbar. (Note that you do not need to do a full scan schema generation for incremental changes.)
 
-To test your changes, hit play again which will start your client and server workers.
+    ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
+    _Image: GDK toolbar's **Schema** button_</br></br>
 
-<%(#Expandable title="Workflow reference diagram")%>
+    Once you've regenerated schema, the GDK restarts the running deployment with the new schema.
 
+    If you haven't modified anything related to replication, you don't need to regenerate schema and SpatialOS continues to use the running deployment. </br></br>
+
+2. To test your changes, select **Play** on the Unreal toolbar; this starts your game's clients and server-worker instances.
+
+<%(#Expandable title="Local deployment workflow summary")%>
+There is a summary on the [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow) page. It is the same as the one here.
  <%(Lightbox image="https://docs.google.com/drawings/d/e/2PACX-1vQCTOucXKMkDJ3-Vpg17_tpUS7IxOXD6Mps-FzWe2tQl3vw5alQPngCnw339cFy3u2NvrcBxhYASKsS/pub?w=710&h=1033")%>
-
-For more details, see the [Local deployment workflow page]({{urlRoot}}/content/local-deployment-workflow).
 
 <%(/Expandable)%>
 
 ### Step 5: Stop your deployment
 
-To fully stop your SpatialOS deployment, select **Stop** in the GDK toolbar.<br/></br>
+To fully stop your local deployment, select **Stop** in the GDK toolbar.<br/></br>
 ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
+ _Image: GDK toolbar's **Stop** button_</br></br>
 
-### **> Next:** [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-cloud)
+#### **> Next:** [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-cloud)
 
 <br/>
 
 <br/>------------<br/>
-2019-08-02 Page updated with editorial review: amended link.<br/>
-2019-07-16 Page updated with editorial review.<br/>
+_2019-08-12 Page updated with editorial review: standardised terms and narrative._<br/>
+_2019-08-02 Page updated with editorial review: amended link._<br/>
+_2019-07-16 Page updated with editorial review._<br/>
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1241)

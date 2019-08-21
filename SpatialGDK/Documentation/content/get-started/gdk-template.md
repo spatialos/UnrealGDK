@@ -9,7 +9,7 @@ If you are ready to start developing your own game with the GDK, follow the step
 * Before setting up the SpatialOS GDK Starter Template, you _**must**_ follow:
 
     *  [Get started 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
-    *  [Get started 2 - Get and build the SpatialOS Unreal Engine fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+    *  [Get started 2 - Set up the fork and plugin]({{urlRoot}}/content/get-started/build-unreal-fork)
 
 * We recommend setting up the [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) before creating a new project. This gives you an overview of the GDK and using SpatialOS.
 
@@ -270,7 +270,7 @@ spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker
 
 ### 7. Play your game
 
-![]({{assetRoot}}assets/tutorial/console.png)
+![]({{assetRoot}}assets/tutorial/old-console.png)
 _Image: The SpatialOS Console_
 
 When your deployment has launched, SpatialOS automatically opens the [Console](https://console.improbable.io) in your browser.

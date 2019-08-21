@@ -39,7 +39,7 @@ Before you start to use offloading in your game, make sure that you’re familia
 ### Zoning
 Zoning is another multiserver option for working with SpatialOS. It works differently from [offloading](#offloading). Zoning involves sharing the server computation load by splitting up the world into areas of authority, with a different server-worker instance responsible for the computation of each area. A server-worker instance can make updates only to Actors that are in its area of authority.
 
-> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
+> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 
 ### Cross-server RPCs
 To facilitate zoning, we created the concept of a cross-server RPC to make updates to Actors, known as “entities” in SpatialOS. This is a type of RPC that enables a server-worker instance  which does not have authority over an entity to tell the server-worker instance that does have authority over that entity to make an update to it. This is necessary if you’re using zoning because areas of authority mean that one server-worker instance can't make updates to every entity in the world; it can make updates only to the entities in its area of authority.
@@ -78,7 +78,7 @@ In Unreal’s single-server architecture, authority over an Actor stays with the
 
  _An AI following a player across the boundary between two server-worker instances' areas of authority. To demonstrate Actor handover, the AI changes its material every time authority is handed over._
 
-See the [multiserver zoning shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) for a tutorial that demonstrates this functionality.
+See the [multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) for a tutorial that demonstrates this functionality.
 
 For more information, see the documentation on [Actor handover]({{urlRoot}}/content/actor-handover).
 

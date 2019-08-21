@@ -69,7 +69,7 @@ Make a note of the `<assembly_name>` you create, as you will need it later.
 
 </br>
 </br>
-**> Next**: [4. Configure the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure)
+### **> Next**: [4. Configure the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure)
 
 
 <br/>------<br/>
