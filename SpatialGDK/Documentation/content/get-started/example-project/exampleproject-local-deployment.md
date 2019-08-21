@@ -83,7 +83,7 @@ In the **Multiplayer Options** section of the window:</br>
  * enter the number of players as `2`,</br>
  * check the **Run Dedicated Server** setting and</br>
  * check the **Spatial Networking** setting. </br>
- (The settings may already be checked.)</br></br>
+ (The settings might already be checked.)</br></br>
 The **Spatial Networking** option is the networking switch; you use this to switch your game's deployment from native Unreal networking to SpatialOS networking.</br></br>
 
 
