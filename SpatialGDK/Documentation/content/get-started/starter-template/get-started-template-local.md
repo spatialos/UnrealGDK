@@ -128,7 +128,7 @@ As you iterate on development of your game (by modifying classes or Blueprints, 
 
 To do this:
 
-1. Select the **Schema** button in the GDK toolbar. (Note you do not need to do a full scan schema generation for incremental changes.)
+1. Select the **Schema** button in the GDK toolbar. (Note that you do not need to do a full scan schema generation for incremental changes.)
 
     ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
     _Image: GDK toolbar's **Schema** button_</br></br>
