@@ -167,6 +167,28 @@ inline FUnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_Fie
 	return IndexObjectRefFromSchema(Object, Id, 0);
 }
 
+inline void AddStringArrayToSchema(Schema_Object* Object, Schema_FieldId Id, const TArray<FString>& StringArray)
+{
+	Schema_Object* StringArrayObject = Schema_AddObject(Object, Id);
+	for (const FString& StringEntry : StringArray)
+	{
+		AddStringToSchema(StringArrayObject, 1, StringEntry);
+	}
+}
+
+inline void GetStringArrayFromSchema(Schema_Object* Object, Schema_FieldId Id, TArray<FString>& StringArray)
+{
+	Schema_Object* StringArrayObject = Schema_GetObject(Object, Id);
+
+	int32 StringCount = (int32)Schema_GetObjectCount(StringArrayObject, 1);
+	StringArray.Reserve(StringCount);
+
+	for (int32 i = 0; i < StringCount; i++)
+	{
+		StringArray.Add(IndexStringFromSchema(StringArrayObject, 1, i));
+	}
+}
+
 inline void AddStringToEntityMapToSchema(Schema_Object* Object, Schema_FieldId Id, StringToEntityMap& Map)
 {
 	for (auto& Pair : Map)
