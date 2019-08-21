@@ -56,7 +56,7 @@ _Image: The Console deployment overview screen showing the white **Share** butto
 ![img]({{assetRoot}}assets/example-project/example-project-share-tos.png)<br/>
 _Image: The SpatialOS Console Share Application terms of service screen_
 <br/><br/>
-1. You can now see a URL, which is a token to download a game client. You can share this to game testers so they can try out your game. 
+1. You can now see a URL, which is a token to download a game client. You can share this with game testers so they can try out your game. 
 ![img]({{assetRoot}}assets/example-project/example-project-share-screens.png)<br/>
 _Image: The SpatialOS Console Share Application screen_
 </br>
