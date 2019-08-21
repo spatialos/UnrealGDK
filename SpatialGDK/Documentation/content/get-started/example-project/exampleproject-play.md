@@ -52,7 +52,7 @@ The screen has this near the top.
 _Image: The Console deployment overview screen showing the white **Share** button_
 <br/><br/>
 1. Select **Share** to see the Share Application screen.<br/><br/>
-1. In the Share Application screen, check the box to accept the terms and conditions and select **Get Share URL**..
+1. In the Share Application screen, check the box to accept the terms and conditions and select **Get Share URL**.
 ![img]({{assetRoot}}assets/example-project/example-project-share-tos.png)<br/>
 _Image: The SpatialOS Console Share Application terms of service screen_
 <br/><br/>
