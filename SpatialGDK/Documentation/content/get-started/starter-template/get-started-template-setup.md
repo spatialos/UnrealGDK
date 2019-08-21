@@ -2,7 +2,7 @@
 
 # The Starter Template
 
-> **Manual-install:** If you followed the [manual-install guide]({{urlRoot}}/content/get-started/manual-engine-build) when you set up the fork and plugin (that is you did NOT run `InstallGDK.bat`), do not follow the instructions below. Instead, follow the [Manual-install: Example Project setup]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup-manual) guide.
+> **Manual-install:** If you followed the [manual-install guide]({{urlRoot}}/content/get-started/manual-engine-build) when you set up the fork and plugin (that is, you did NOT run `InstallGDK.bat`), do not follow the instructions below. Instead, follow the [Manual-install: Example Project setup]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup-manual) guide.
 
 ## 1. Set up
 
