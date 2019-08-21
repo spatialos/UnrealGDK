@@ -158,7 +158,9 @@ void USpatialVirtualWorkerTranslator::SetAclWriteAuthority(const Worker_EntityId
 	EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<EntityAcl>(EntityId);
 	check(EntityACL);
 
-	WorkerAttributeSet OwningWorkerAttribute = { WorkerId };
+	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *WorkerId);
+
+	WorkerAttributeSet OwningWorkerAttribute = { WriteWorkerId };
 
 	TArray<Worker_ComponentId> ComponentIds;
 	EntityACL->ComponentWriteAcl.GetKeys(ComponentIds);
