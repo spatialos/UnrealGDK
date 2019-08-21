@@ -86,7 +86,7 @@ This process opens a command line window and runs some scripts - it can take a l
 The script automatically opens a command line window and performs the following:
 	* Clones the UnrealGDK into your EU fork's `Plugins` directory.
 	* Clones the [Example Project (`UnrealGDKExampleProject`)](https://github.com/spatialos/UnrealGDKExampleProject) into your Engine's `Samples` directory.
-	* Runs the Unreal GDK `Setup.bat` script to install the plugin into the cloned `UnrealGDKExampleProject` directory.
+	* Runs the GDK `Setup.bat` script to install the plugin into the cloned `UnrealGDKExampleProject` directory.
 	* Generates Visual Studio solution files for the `UnrealGDKExampleProject`.<br/>
 <%(/Expandable)%>
 
