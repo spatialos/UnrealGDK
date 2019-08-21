@@ -61,7 +61,7 @@ In SpatialOS, game servers are called "server-workers" and game clients are call
 
 
 <%(#Expandable title="More about server-workers and client-workers")%>
-A server-worker is your game's server-side code, it's the equivalent of a "server" in native Unreal networking.
+A server-worker is your game's server-side code. It's the equivalent of a "server" in native Unreal networking.
 
 You can think of client-workers as game clients as they are essentially the same. 
 
