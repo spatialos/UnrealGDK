@@ -3,7 +3,7 @@
 
 ## 2.  Launch a local deployment
 
-When you want to try out your game, you need to launch a deployment; the deployment runs the game's functionality. We call the running deployment, the game "simulation" and what's happening in it, the "SpatialOS world".
+When you want to try out your game, you need to launch a deployment; the deployment runs the game's functionality. We call the running deployment the game "simulation", and what's happening in it, the "SpatialOS world".
 
 There are two types of deployment: local and cloud.
 
