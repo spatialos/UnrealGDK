@@ -56,7 +56,7 @@ You have now built Unreal Engine 4 with cross-compilation for Linux.
 
 ## Step 4: Clone and install the SpatialOS GDK for Unreal plugin
 
-You need to add the plugin to your project's plugins folder in order to use SpatialOS 
+You need to add the plugin to your project's plugins folder in order to use SpatialOS.
 
 To do this: 
 
