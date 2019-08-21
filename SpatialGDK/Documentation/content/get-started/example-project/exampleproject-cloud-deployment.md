@@ -48,7 +48,7 @@ The Console is a web-based tool for managing cloud deployments. It gives you acc
 2. In File Explorer, navigate to the `UnrealGDKExampleProject\spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 3. In the file, locate the `name` field - it defaults to `demo`. Replace `demo` with the SpatialOS cloud project name shown in the Console (`beta_yankee_hawaii_621` using the example above). This associates your Unreal game with your SpatialOS cloud project, telling SpatialOS which cloud project you are uploading your built-out worker assemblies to.
 
-**Note:** Ensure you only change the `name` field at the top of the file. If you change any other settings, the deployment cloud fail.
+**Note:** Ensure you only change the `name` field at the top of the file. If you change any other settings, the deployment cloud will fail.
 
 ### Step 2: Build workers
 
