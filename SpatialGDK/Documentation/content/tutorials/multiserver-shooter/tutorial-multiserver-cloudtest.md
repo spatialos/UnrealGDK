@@ -15,7 +15,7 @@ To build workers:
 
 1. Close your Unreal Editor - if the Editor is open when you try to build workers, the command fails.
 1. Check the project's networking is set to Spatial networking. </br>
-Unreal GDK projects default to using Spatial networking. However, if you have reset the networking switch to native Unreal networking, you need to set it back. </br>
+GDK projects default to using Spatial networking. However, if you have reset the networking switch to native Unreal networking, you need to set it back. </br>
     1. In a terminal window, navigate to the `DefaultGame.ini` configuration file (located in `<ProjectRoot>\Game\Config` directory).
     2. Check if the `bSpatialNetworking` option is present. If it is, set it to `True` (so: `bSpatialNetworking=True`), save the file and exit. 
 2. Still in a terminal window, navigate to the `UnrealGDKExampleProject` directory.
