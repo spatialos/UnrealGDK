@@ -21,7 +21,7 @@ It only takes a few minutes to set up and includes setting up a GitHub account i
 </br>
 </br>
 <img src="{{assetRoot}}assets/github404.png" style=" float: right; margin: 10px; display: block; width: 30%; padding: 20px 20x"/>
-**Note:** You **must** follow this step to use the GDK. If you have not joined the `EpicGames` organisation on GitHub, the [SpatialOS Unreal Engine fork link](https://github.com/improbableio/UnrealEngine) returns a GitHub 404 error and you can't download it.
+**Note:** You **must** follow this step to use the GDK. If you have not joined the Epic Games organization on GitHub, the [SpatialOS Unreal Engine fork link](https://github.com/improbableio/UnrealEngine) returns a GitHub 404 error and you can't download it.
 
 ### Step 2: Clone the fork repository
 
