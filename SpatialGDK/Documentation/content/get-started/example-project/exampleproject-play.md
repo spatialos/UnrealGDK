@@ -14,7 +14,7 @@ Find out more in the [glossary]({{urlRoot}}/content/glossary#launcher).
 
 ### Step 1: Set up a game client using the Launcher
 
-1. Open the SpatualOS Console at [console.improbable.io](https://console.improbable.io/) to see a list of your SpatialOS cloud projects. </br>
+1. Open the SpatialOS Console at [console.improbable.io](https://console.improbable.io/) to see a list of your SpatialOS cloud projects. </br>
 The list will look something like this: </br>
 ![img]({{assetRoot}}assets/tutorial/console-projects-list.png)<br/>
 _Image: The Console home screen project list_
