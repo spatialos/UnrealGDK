@@ -35,17 +35,7 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 
 	FSpatialGDKEditor SpatialGDKEditor;
 
-	if (Switches.Contains(TEXT("delete-schema-db")))
-	{
-		if (DeleteSchemaDatabase())
-		{
-			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Deleted schema database"));
-		}
-		else
-		{
-			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed to delete schema database"));
-		}
-	}
+	HandleDeleteSchemaOption(Switches);
 
 	// Do full schema generation
 	if (!GenerateSchema(SpatialGDKEditor))

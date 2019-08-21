@@ -13,16 +13,7 @@ UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
 	LogToConsole = true;
 }
 
-int32 UGenerateSchemaCommandlet::Main(const FString& Args)
-{
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Commandlet Started"));
-
-	//NOTE: For future use, if schema generation configuration at the command line is desired
-	TArray<FString> Tokens;
-	TArray<FString> Switches;
-	TMap<FString, FString> Params;
-	ParseCommandLine(*Args, Tokens, Switches);
-
+void UGenerateSchemaCommandlet::HandleDeleteSchemaOption(const TArray<FString>& Switches) {
 	if (Switches.Contains("delete-schema-db"))
 	{
 		if (DeleteSchemaDatabase())
@@ -32,8 +23,20 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 		else
 		{
 			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed to delete schema database"));
-		}		
+		}
 	}
+}
+
+int32 UGenerateSchemaCommandlet::Main(const FString& Args)
+{
+	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Commandlet Started"));
+
+	TArray<FString> Tokens;
+	TArray<FString> Switches;
+	TMap<FString, FString> Params;
+	ParseCommandLine(*Args, Tokens, Switches);
+
+	HandleDeleteSchemaOption(Switches);
 
 	//Generate Schema!
 	bool bSchemaGenSuccess;
