@@ -59,8 +59,7 @@ namespace
 
 DEFINE_LATENT_COMMAND(StartDeployment)
 {
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (SpatialGDKSettings)
+	if (const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
 		FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
 		const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
