@@ -66,7 +66,7 @@ To prepare the fork:
 This is part of [Unreal's UE set-up](https://docs.unrealengine.com/en-US/GettingStarted/DownloadingUnrealEngine/index.html); it downloads binary content for UE, as well as installing prerequisites and setting up Unreal file associations. </br>
 To do this: </br>
 In File Explorer, navigate to the root directory of your clone of the SpatialOS Unreal Engine fork and double-click **Setup.bat**.
-2. Run Unreal's `GenerateProjectFiles.bat` script  - also part of Unreal's UE set-up. 
+2. Run Unreal's `GenerateProjectFiles.bat` script - also part of Unreal's UE set-up. 
 </br> To do this: </br>
 In the same directory, double-click **GenerateProjectFiles.bat**.
 
