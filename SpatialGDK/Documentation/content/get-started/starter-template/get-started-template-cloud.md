@@ -187,7 +187,7 @@ This opens the Cloud Deployment dialog box:</br></br>
 This `.json` file contains the configuration parameters for starting a deployment, including:</br> * the game template - defines the compute resources your deployment needs (see the documentation on [game templates and pricing](https://docs.improbable.io/reference/latest/shared/pricing-and-support/pricing-details#introduction-to-game-templates)).</br> * `dimensionsInWorldUnits` - defines the size of your SpatialOS game world in X and Y.</br> * worker types - lists the worker type names you have set up for your project. For this project; an Unreal server-worker `UnrealWorker` and an Unreal client-worker `UnrealClient`.
 </br></br>
 This project comes with a ready-made launch configuration file `one_worker_test.json`. Note that you can call your launch configuration file any name you choose. </br>
-You can find out more in the SpatialOS Worker SDK documentation: [launch confguration file](https://docs.improbable.io/reference/14.0/shared/flexible-project-layout/reference/launch-configuration) (but note that this may contain details on parameters not relevant to Unreal-developed projects.)
+You can find out more in the SpatialOS Worker SDK documentation: [launch confguration file](https://docs.improbable.io/reference/14.0/shared/flexible-project-layout/reference/launch-configuration) (but note that this may contain details on parameters not relevant to Unreal-developed projects).
 <%(/Expandable)%>
   * **Snapshot File**: The absolute filepath to your project's `.snapshot` snapshot file from `C:/`. </br>
   This is: `C:/...<filepath>.../<ProjectRoot>/spatial/snapshots/default.snapshot`. </br></br>
