@@ -138,6 +138,12 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
 		return;
+	case SpatialConstants::VIRTUAL_WORKER_MANAGER_COMPONENT_ID:
+		if (VirtualWorkerTranslator != nullptr)
+		{
+			VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(Op.data);
+		}
+		return;
 	}
 
 	if (ClassInfoManager->IsSublevelComponent(Op.data.component_id))
@@ -1114,6 +1120,12 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		{
 			check(NetDriver->VirtualWorkerTranslator != nullptr);
 			NetDriver->VirtualWorkerTranslator->OnComponentUpdated(Op);
+		}
+		return;
+	case SpatialConstants::VIRTUAL_WORKER_MANAGER_COMPONENT_ID:
+		if (VirtualWorkerTranslator != nullptr)
+		{
+			VirtualWorkerTranslator->ApplyVirtualWorkerManagerUpdate(Op.update);
 		}
 		return;
 	}

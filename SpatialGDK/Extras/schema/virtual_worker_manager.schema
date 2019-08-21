@@ -3,4 +3,5 @@ package unreal;
 
 component VirtualWorkerManager {
     id = 9981;
+    list<string> virtual_worker_assignment = 1;
 }

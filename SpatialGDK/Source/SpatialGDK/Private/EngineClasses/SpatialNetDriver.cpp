@@ -305,10 +305,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	if (IsServer() && SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		VirtualWorkerTranslator = GetWorld()->SpawnActor<ASpatialVirtualWorkerTranslator>();
+		VirtualWorkerTranslator = NewObject<USpatialVirtualWorkerTranslator>();
 		VirtualWorkerTranslator->Init(this);
-		StaticComponentView->OnComponentAddDelegate.BindUObject(VirtualWorkerTranslator, &ASpatialVirtualWorkerTranslator::OnComponentAdded);
-		StaticComponentView->OnComponentUpdateDelegate.BindUObject(VirtualWorkerTranslator, &ASpatialVirtualWorkerTranslator::OnComponentUpdated);
+		StaticComponentView->OnComponentAddDelegate.BindUObject(VirtualWorkerTranslator, &USpatialVirtualWorkerTranslator::OnComponentAdded);
+		StaticComponentView->OnComponentUpdateDelegate.BindUObject(VirtualWorkerTranslator, &USpatialVirtualWorkerTranslator::OnComponentUpdated);
 
 		// TODO: timgibson - get from config data for a map?
 		UGridBasedLoadBalancingStrategy* NewLoadBalancer = NewObject<UGridBasedLoadBalancingStrategy>();
@@ -1262,6 +1262,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
 		{
 			SpatialMetrics->TickMetrics();
+		}
+
+		if (VirtualWorkerTranslator != nullptr)
+		{
+			VirtualWorkerTranslator->Tick();
 		}
 	}
 }

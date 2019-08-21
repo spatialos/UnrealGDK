@@ -14,32 +14,17 @@ DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
 using namespace SpatialGDK;
 
-ASpatialVirtualWorkerTranslator::ASpatialVirtualWorkerTranslator(const FObjectInitializer& ObjectInitializer)
+USpatialVirtualWorkerTranslator::USpatialVirtualWorkerTranslator(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, NetDriver(nullptr)
 	, bWorkerEntityQueryInFlight(false)
 {
-	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.bStartWithTickEnabled = true;
-
-	bReplicates = true;
-	bAlwaysRelevant = true;
-
-	NetUpdateFrequency = 100.f;
-
 	TranslatorEntityId = SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID;
 }
 
-void ASpatialVirtualWorkerTranslator::Init(USpatialNetDriver* InNetDriver)
+void USpatialVirtualWorkerTranslator::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-}
-
-void ASpatialVirtualWorkerTranslator::BeginPlay()
-{
-	Super::BeginPlay();
-
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) BeginPlay"), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role);
 
 	// These collections contain static data that is accessible on all server workers via accessor methods
 	// This data should likely live somewhere else, but for the purposes of the prototype it's here
@@ -57,18 +42,21 @@ void ASpatialVirtualWorkerTranslator::BeginPlay()
 	VirtualWorkers.Add("VW_D");
 }
 
-void ASpatialVirtualWorkerTranslator::Tick(float DeltaSeconds)
+void USpatialVirtualWorkerTranslator::Tick()
 {
-	ProcessQueuedAclAssignmentRequests();
+	if (VirtualWorkerAssignment.Num() > 0)
+	{
+		ProcessQueuedAclAssignmentRequests();
+	}
 }
 
-void ASpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
+void USpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
 	const bool bAuthoritative = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;
 
 	if (AuthOp.component_id == SpatialConstants::VIRTUAL_WORKER_MANAGER_COMPONENT_ID)
 	{	
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) Authority over the VirtualWorkerTranslator has changed. This worker %s authority."), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role, bAuthoritative ? TEXT("now has") : TEXT("does not have"));
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Authority over the VirtualWorkerTranslator has changed. This worker %s authority."), *NetDriver->Connection->GetWorkerId(), bAuthoritative ? TEXT("now has") : TEXT("does not have"));
 
 		// Only the VirtualWorkerTranslator has this component, so we can use it to get our real EntityId
 		TranslatorEntityId = AuthOp.entity_id;
@@ -94,7 +82,7 @@ void ASpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityCha
 	}
 }
 
-void ASpatialVirtualWorkerTranslator::AssignWorker(const FString& WorkerId)
+void USpatialVirtualWorkerTranslator::AssignWorker(const FString& WorkerId)
 {
 	check(!UnassignedVirtualWorkers.IsEmpty());
 	check(NetDriver->StaticComponentView->HasAuthority(TranslatorEntityId, SpatialConstants::VIRTUAL_WORKER_MANAGER_COMPONENT_ID));
@@ -106,11 +94,11 @@ void ASpatialVirtualWorkerTranslator::AssignWorker(const FString& WorkerId)
 	VirtualWorkers.Find(VirtualWorkerId, VirtualWorkerIndex);
 	VirtualWorkerAssignment[VirtualWorkerIndex] = WorkerId;
 
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) Assigned VirtualWorker %s to simulate on Worker %s"), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role, *VirtualWorkerId, *VirtualWorkerAssignment[VirtualWorkerIndex]);
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Assigned VirtualWorker %s to simulate on Worker %s"), *NetDriver->Connection->GetWorkerId(), *VirtualWorkerId, *VirtualWorkerAssignment[VirtualWorkerIndex]);
 }
 
 // TODO: call this from appropriate location
-void ASpatialVirtualWorkerTranslator::UnassignWorker(const FString& WorkerId)
+void USpatialVirtualWorkerTranslator::UnassignWorker(const FString& WorkerId)
 {
 	for (int i = 0; i < VirtualWorkerAssignment.Num(); ++i)
 	{
@@ -125,7 +113,7 @@ void ASpatialVirtualWorkerTranslator::UnassignWorker(const FString& WorkerId)
 	}
 }
 
-void ASpatialVirtualWorkerTranslator::OnComponentAdded(const Worker_AddComponentOp& Op)
+void USpatialVirtualWorkerTranslator::OnComponentAdded(const Worker_AddComponentOp& Op)
 {
 	if (Op.data.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	{
@@ -135,7 +123,7 @@ void ASpatialVirtualWorkerTranslator::OnComponentAdded(const Worker_AddComponent
 	}
 }
 
-void ASpatialVirtualWorkerTranslator::OnComponentUpdated(const Worker_ComponentUpdateOp& Op)
+void USpatialVirtualWorkerTranslator::OnComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
 	if (Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	{
@@ -148,7 +136,7 @@ void ASpatialVirtualWorkerTranslator::OnComponentUpdated(const Worker_ComponentU
 	}
 }
 
-void ASpatialVirtualWorkerTranslator::OnComponentRemoved(const Worker_RemoveComponentOp& Op)
+void USpatialVirtualWorkerTranslator::OnComponentRemoved(const Worker_RemoveComponentOp& Op)
 {
 	if (Op.component_id == SpatialConstants::WORKER_COMPONENT_ID)
 	{
@@ -156,21 +144,14 @@ void ASpatialVirtualWorkerTranslator::OnComponentRemoved(const Worker_RemoveComp
 	}
 }
 
-void ASpatialVirtualWorkerTranslator::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void USpatialVirtualWorkerTranslator::QueueAclAssignmentRequest(const Worker_EntityId EntityId)
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ASpatialVirtualWorkerTranslator, VirtualWorkerAssignment);
-}
-
-void ASpatialVirtualWorkerTranslator::QueueAclAssignmentRequest(const Worker_EntityId EntityId)
-{
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) Queueing ACL assignment request for %lld"), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role, EntityId);
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Queueing ACL assignment request for %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
 	AclWriteAuthAssignmentRequests.Add(EntityId);
 }
 
 // TODO: should probably move this to SpatialSender
-void ASpatialVirtualWorkerTranslator::SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId)
+void USpatialVirtualWorkerTranslator::SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId)
 {
 	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
 
@@ -196,13 +177,13 @@ void ASpatialVirtualWorkerTranslator::SetAclWriteAuthority(const Worker_EntityId
 		wrs->Add(OwningWorkerAttribute);
 	}
 
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) Setting Acl WriteAuth for entity %lld to workerid: %s"), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role, EntityId, *WorkerId);
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Setting Acl WriteAuth for entity %lld to workerid: %s"), *NetDriver->Connection->GetWorkerId(), EntityId, *WorkerId);
 
 	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void ASpatialVirtualWorkerTranslator::ProcessQueuedAclAssignmentRequests()
+void USpatialVirtualWorkerTranslator::ProcessQueuedAclAssignmentRequests()
 {
 	TArray<Worker_EntityId> CompletedRequests;
 	CompletedRequests.Reserve(AclWriteAuthAssignmentRequests.Num());
@@ -242,41 +223,86 @@ void ASpatialVirtualWorkerTranslator::ProcessQueuedAclAssignmentRequests()
 	AclWriteAuthAssignmentRequests.RemoveAll([&](const Worker_EntityId EntityId) { return CompletedRequests.Contains(EntityId); });
 }
 
-void ASpatialVirtualWorkerTranslator::OnRep_VirtualWorkerAssignment()
+void USpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(const Worker_ComponentData& Data)
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) OnRep_VirtualWorkerAssignment"), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role);
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) ApplyVirtualWorkerManagerData"), *NetDriver->Connection->GetWorkerId());
+
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+	VirtualWorkerAssignment.Empty();
+	GetStringArrayFromSchema(ComponentObject, SpatialConstants::VIRTUAL_WORKER_MANAGER_ASSIGNMENTS_ID, VirtualWorkerAssignment);
+	OnWorkerAssignmentChanged.Broadcast(VirtualWorkerAssignment);
+
 	for (int i = 0; i < VirtualWorkerAssignment.Num(); ++i)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) assignment: %s"), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role, *VirtualWorkerAssignment[i]);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) assignment: %s"), *NetDriver->Connection->GetWorkerId(), *VirtualWorkerAssignment[i]);
 	}
-	OnWorkerAssignmentChanged.Broadcast(VirtualWorkerAssignment);
 }
 
-void ASpatialVirtualWorkerTranslator::ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
+void USpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerUpdate(const Worker_ComponentUpdate& Update)
 {
-	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) ApplyVirtualWorkerManagerUpdate"), *NetDriver->Connection->GetWorkerId());
+
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::VIRTUAL_WORKER_MANAGER_ASSIGNMENTS_ID) > 0)
 	{
-		Worker_ComponentData Data = Op.results[0].components[i];
-		if (Data.component_id == SpatialConstants::WORKER_COMPONENT_ID)
+		VirtualWorkerAssignment.Empty();
+		GetStringArrayFromSchema(ComponentObject, SpatialConstants::VIRTUAL_WORKER_MANAGER_ASSIGNMENTS_ID, VirtualWorkerAssignment);
+		OnWorkerAssignmentChanged.Broadcast(VirtualWorkerAssignment);
+	}
+
+	for (int i = 0; i < VirtualWorkerAssignment.Num(); ++i)
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) assignment: %s"), *NetDriver->Connection->GetWorkerId(), *VirtualWorkerAssignment[i]);
+	}
+
+}
+
+void USpatialVirtualWorkerTranslator::ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
+{
+	for (uint32_t i = 0; i < Op.result_count; ++i)
+	{
+		for (uint32_t j = 0; j < Op.results[i].component_count; j++)
 		{
-			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-			const FString& WorkerType = GetStringFromSchema(ComponentObject, SpatialConstants::WORKER_TYPE_ID);
-
-			if (WorkerType.Equals(SpatialConstants::DefaultServerWorkerType.ToString()) &&
-				!UnassignedVirtualWorkers.IsEmpty())
+			Worker_ComponentData Data = Op.results[i].components[j];
+			if (Data.component_id == SpatialConstants::WORKER_COMPONENT_ID)
 			{
-				AssignWorker(GetStringFromSchema(ComponentObject, SpatialConstants::WORKER_ID_ID));
+				Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+				const FString& WorkerType = GetStringFromSchema(ComponentObject, SpatialConstants::WORKER_TYPE_ID);
+
+				if (WorkerType.Equals(SpatialConstants::DefaultServerWorkerType.ToString()) &&
+					!UnassignedVirtualWorkers.IsEmpty())
+				{
+					AssignWorker(GetStringFromSchema(ComponentObject, SpatialConstants::WORKER_ID_ID));
+				}
 			}
 		}
 	}
 }
 
-void ASpatialVirtualWorkerTranslator::QueryForWorkerEntities()
+void USpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) Sending query for WorkerEntities"), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role);
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) SendVirtualWorkerMappingUpdate"), *NetDriver->Connection->GetWorkerId());
 
-	checkf(!bWorkerEntityQueryInFlight, TEXT("(%s role %d) Trying to query for worker entities while a previous query is still in flight!"), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role);
+	check(NetDriver->StaticComponentView->HasAuthority(TranslatorEntityId, SpatialConstants::VIRTUAL_WORKER_MANAGER_COMPONENT_ID));
+
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = SpatialConstants::VIRTUAL_WORKER_MANAGER_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::VIRTUAL_WORKER_MANAGER_COMPONENT_ID);
+	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	AddStringArrayToSchema(UpdateObject, SpatialConstants::VIRTUAL_WORKER_MANAGER_ASSIGNMENTS_ID, VirtualWorkerAssignment);
+
+	NetDriver->Connection->SendComponentUpdate(TranslatorEntityId, &Update);
+}
+
+void USpatialVirtualWorkerTranslator::QueryForWorkerEntities()
+{
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Sending query for WorkerEntities"), *NetDriver->Connection->GetWorkerId());
+
+	checkf(!bWorkerEntityQueryInFlight, TEXT("(%s) Trying to query for worker entities while a previous query is still in flight!"), *NetDriver->Connection->GetWorkerId());
 
 	Worker_ComponentConstraint WorkerEntityComponentConstraint{};
 	WorkerEntityComponentConstraint.component_id = SpatialConstants::WORKER_COMPONENT_ID;
@@ -297,22 +323,23 @@ void ASpatialVirtualWorkerTranslator::QueryForWorkerEntities()
 	{
 		if (!NetDriver->StaticComponentView->HasAuthority(TranslatorEntityId, SpatialConstants::VIRTUAL_WORKER_MANAGER_COMPONENT_ID))
 		{
-			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) Received response to WorkerEntityQuery, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role);
+			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Received response to WorkerEntityQuery, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *NetDriver->Connection->GetWorkerId());
 			return;
 		}
 
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
-			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) Could not find Worker Entities via entity query: %s"), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role, UTF8_TO_TCHAR(Op.message));
+			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Could not find Worker Entities via entity query: %s"), *NetDriver->Connection->GetWorkerId(), UTF8_TO_TCHAR(Op.message));
 		}
 		else if (Op.result_count == 0)
 		{
-			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) Worker Entity query shows that Worker Entities do not yet exist in the world."), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role);
+			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Worker Entity query shows that Worker Entities do not yet exist in the world."), *NetDriver->Connection->GetWorkerId());
 		}
 		else
 		{
-			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s role %d) Processing Worker Entity query response"), *Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->GetSpatialWorkerLabel(), (int)Role);
+			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Processing Worker Entity query response"), *NetDriver->Connection->GetWorkerId());
 			ConstructVirtualWorkerMappingFromQueryResponse(Op);
+			SendVirtualWorkerMappingUpdate();
 		}
 
 		bWorkerEntityQueryInFlight = false;

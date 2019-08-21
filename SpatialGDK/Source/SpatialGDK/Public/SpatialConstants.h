@@ -176,6 +176,9 @@ namespace SpatialConstants
 	const Schema_FieldId WORKER_ID_ID = 1;
 	const Schema_FieldId WORKER_TYPE_ID = 2;
 
+	// VirtualWorkerManager Field IDs
+	const Schema_FieldId VIRTUAL_WORKER_MANAGER_ASSIGNMENTS_ID = 1;
+
 	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
 

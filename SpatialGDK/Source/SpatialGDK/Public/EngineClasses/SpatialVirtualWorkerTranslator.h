@@ -18,7 +18,7 @@ typedef FString VirtualWorkerId;
 typedef FString WorkerId;
 
 UCLASS(SpatialType = (Singleton, ServerOnly))
-class ASpatialVirtualWorkerTranslator : public AActor
+class USpatialVirtualWorkerTranslator : public UObject
 {
 	GENERATED_UCLASS_BODY()
 
@@ -33,20 +33,21 @@ public:
 	void OnComponentUpdated(const Worker_ComponentUpdateOp& Op);
 	void OnComponentRemoved(const Worker_RemoveComponentOp& Op);
 
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaSeconds) override;
+	void Tick();
 
 	const TArray<ZoneId>& GetZones() const { return Zones; }
 	const TArray<VirtualWorkerId>& GetVirtualWorkers() const { return VirtualWorkers; }
 	// TODO - VWId/FString discrepancy
 	const TArray<FString>& GetVirtualWorkerAssignments() const { return VirtualWorkerAssignment; }
 
+	void ApplyVirtualWorkerManagerData(const Worker_ComponentData& Data);
+	void ApplyVirtualWorkerManagerUpdate(const Worker_ComponentUpdate& Data);
+
 	mutable FOnWorkerAssignmentChanged OnWorkerAssignmentChanged;
 
 private:
 
 	UFUNCTION()
-	void OnRep_VirtualWorkerAssignment();
 
 	void AssignWorker(const FString& WorkerId);
 	void UnassignWorker(const FString& WorkerId);
@@ -59,6 +60,8 @@ private:
 
 	void ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
+	void SendVirtualWorkerMappingUpdate();
+
 	// this will be static information
 	// this map is simulating the info that will be passed in somehow from the editor
 	TArray<ZoneId> Zones;
@@ -66,7 +69,6 @@ private:
 
 	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
 
-	UPROPERTY(ReplicatedUsing = OnRep_VirtualWorkerAssignment)
 	TArray<FString> VirtualWorkerAssignment;
 
 	TArray<Worker_EntityId> AclWriteAuthAssignmentRequests;

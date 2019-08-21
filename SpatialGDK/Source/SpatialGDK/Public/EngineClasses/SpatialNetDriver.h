@@ -120,7 +120,7 @@ public:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 	UPROPERTY()
-	ASpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
+	USpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 	UPROPERTY()
 	const class USpatialLoadBalancingStrategy* LoadBalancer;
 	UPROPERTY()

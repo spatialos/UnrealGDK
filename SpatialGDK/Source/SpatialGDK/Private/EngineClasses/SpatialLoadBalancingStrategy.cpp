@@ -9,7 +9,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalancer);
 
-void USpatialLoadBalancingStrategy::Init(const USpatialNetDriver* InNetDriver, const ASpatialVirtualWorkerTranslator* InTranslator)
+void USpatialLoadBalancingStrategy::Init(const USpatialNetDriver* InNetDriver, const USpatialVirtualWorkerTranslator* InTranslator)
 {
 	NetDriver = InNetDriver;
 	Translator = InTranslator;
@@ -39,7 +39,7 @@ void USpatialLoadBalancingStrategy::OnWorkerAssignmentChanged(const TArray<FStri
 }
 
 
-void UGridBasedLoadBalancingStrategy::Init(const USpatialNetDriver* InNetDriver, const ASpatialVirtualWorkerTranslator* InTranslator)
+void UGridBasedLoadBalancingStrategy::Init(const USpatialNetDriver* InNetDriver, const USpatialVirtualWorkerTranslator* InTranslator)
 {
 	USpatialLoadBalancingStrategy::Init(InNetDriver, InTranslator);
 
