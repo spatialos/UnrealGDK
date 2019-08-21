@@ -6,7 +6,7 @@
 
 Get started with the SpatialOS GDK for Unreal by building the GDK's Unreal Engine fork and setting up a project. You can set up either or both of the following projects: </br>
 
-* **The Example Project** is a session-based FPS game. It gives an overview of the GDK and using SpatialOS, including deploying your game to SpatialOS in the cloud and locally on your development machine -  useful for testing during development. The Example Project is the basis for the GDK tutorials.
+* **The Example Project** is a session-based FPS game. It gives an overview of the GDK and using SpatialOS, including deploying your game to SpatialOS in the cloud and locally on your development machine - useful for testing during development. The Example Project is the basis for the GDK tutorials.
 </br>
 </br>
 * **The Starter Template** is a template project you can use as a base to create your own new project running on SpatialOS.
