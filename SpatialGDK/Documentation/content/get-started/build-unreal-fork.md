@@ -14,7 +14,7 @@ If you haven't already joined, you need to:
 
 * connect your GitHub account to a verified Epic Games account, 
 * agree to the Unreal Engine End User License Agreement (EULA) and 
-* accept the invitation to join the EpicGames organisation on GitHub.
+* accept the invitation to join the Epic Games organization on GitHub.
 
 To do this, see [Unreal's connect accounts documentation](https://www.unrealengine.com/en-US/ue4-on-github). </br>
 It only takes a few minutes to set up and includes setting up a GitHub account if you don't already have one.
