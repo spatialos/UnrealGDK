@@ -7,7 +7,9 @@
 #include "CookAndGenerateSchemaCommandlet.generated.h"
 
 /**
- * 
+ * This Commandlet generates schema and performs a cook command.
+ * It supports the same set of arguments as cook. It will only generate
+ * schema for blueprints required by the cook.
  */
 UCLASS()
 class SPATIALGDKEDITORCOMMANDLET_API UCookAndGenerateSchemaCommandlet : public UCookCommandlet

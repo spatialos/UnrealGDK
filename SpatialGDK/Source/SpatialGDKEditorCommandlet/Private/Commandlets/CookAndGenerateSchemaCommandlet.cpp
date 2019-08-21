@@ -4,6 +4,7 @@
 #include "CookAndGenerateSchemaCommandlet.h"
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
+#include "Async.h"
 
 UCookAndGenerateSchemaCommandlet::UCookAndGenerateSchemaCommandlet()
 {
@@ -13,11 +14,15 @@ UCookAndGenerateSchemaCommandlet::UCookAndGenerateSchemaCommandlet()
 	LogToConsole = true;
 }
 
+bool UCookAndGenerateSchemaCommandlet::IsEditorOnly() const
+{
+	return true;
+}
+
 int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Cook and Generate Schema Started."));
 	GEditor->OnObjectsReplaced().AddUObject(this, &UCookAndGenerateSchemaCommandlet::OnObjectsReplaced);
-
 
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Try Load Schema Database."));
 	if (!TryLoadExistingSchemaDatabase())
@@ -59,9 +64,6 @@ void UCookAndGenerateSchemaCommandlet::OnObjectsReplaced(const TMap<UObject*, UO
 		{
 			if (NewObject->HasAllFlags(RF_ArchetypeObject) && !NewObject->HasAnyFlags(RF_NeedPostLoad | RF_NeedPostLoadSubobjects))
 			{
-				/*UE_LOG(LogTemp, Display, TEXT("[%s] ClassFlags: %#010x, ObjectFlags: %#010x"),
-					*GetPathNameSafe(NewObject), NewObject->GetClass()->GetClassFlags(),
-					NewObject->GetFlags());*/
 				bool bAlreadyLoaded = false;
 				ReferencedClasses.Add(NewObject->GetClass()->GetPathName(), &bAlreadyLoaded);
 				if (!bAlreadyLoaded)
@@ -69,18 +71,11 @@ void UCookAndGenerateSchemaCommandlet::OnObjectsReplaced(const TMap<UObject*, UO
 					CandidateClasses.Add(NewObject->GetClass());
 				}
 			}
-			else
-			{
-				UE_LOG(LogTemp, Display, TEXT("Not Considering [%s] ClassFlags: %#010x, ObjectFlags: %#010x"),
-					*GetPathNameSafe(NewObject), NewObject->GetClass()->GetClassFlags(),
-					NewObject->GetFlags());
-			}
 		}
 	}
-	SpatialGDKGenerateSchemaForClasses(CandidateClasses);
-}
 
-bool UCookAndGenerateSchemaCommandlet::IsEditorOnly() const
-{
-	return true;
+	AsyncTask(ENamedThreads::GameThread, [CandidateClasses]()
+	{
+		SpatialGDKGenerateSchemaForClasses(CandidateClasses);
+	});
 }

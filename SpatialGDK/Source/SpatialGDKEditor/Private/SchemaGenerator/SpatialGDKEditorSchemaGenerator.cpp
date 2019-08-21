@@ -443,6 +443,11 @@ bool IsSupportedClass(UClass* SupportedClass)
 		return false;
 	}
 
+	if (SupportedClass->IsEditorOnly())
+	{
+		return false;
+	}
+
 	// User told us to ignore this class
 	if (SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
 	{
