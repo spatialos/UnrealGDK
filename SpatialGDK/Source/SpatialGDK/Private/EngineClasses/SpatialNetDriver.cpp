@@ -307,8 +307,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	{
 		VirtualWorkerTranslator = NewObject<USpatialVirtualWorkerTranslator>();
 		VirtualWorkerTranslator->Init(this);
-		StaticComponentView->OnComponentAddDelegate.BindUObject(VirtualWorkerTranslator, &USpatialVirtualWorkerTranslator::OnComponentAdded);
-		StaticComponentView->OnComponentUpdateDelegate.BindUObject(VirtualWorkerTranslator, &USpatialVirtualWorkerTranslator::OnComponentUpdated);
 
 		// TODO: timgibson - get from config data for a map?
 		UGridBasedLoadBalancingStrategy* NewLoadBalancer = NewObject<UGridBasedLoadBalancingStrategy>();
