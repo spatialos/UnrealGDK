@@ -66,6 +66,7 @@ _Image: The Console Share Application terms of service screen_
 _Image: The Console Share Application screen_
 </br>
 </br>
+
 **Congratulations!**
 
 You've successfully set up and launched the Starter Template and the GDK! You are now ready to start developing a game with SpatialOS.
