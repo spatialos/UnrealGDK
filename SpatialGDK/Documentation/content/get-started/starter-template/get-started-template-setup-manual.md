@@ -2,7 +2,7 @@
 
 # Manual-install: Starter Template setup
 
-When you follow the [Get started: 2 - Set up the fork and plugin]({{urlRoot}}/content/get-started/build-unreal-fork.md), we recommend you [auto-install]({{urlRoot}}/content/get-started/build-unreal-fork#step-5-clone-and-install-the-plugin) the fork and plugin. However, you have the option to manually install the the UE fork and plugin by following the [Manual-install: UE fork and plugin]({{urlRoot}}/content/get-started/manual-engine-build) guide.
+When you follow [Get started: 2 - Set up the fork and plugin]({{urlRoot}}/content/get-started/build-unreal-fork.md), we recommend you [auto-install]({{urlRoot}}/content/get-started/build-unreal-fork#step-5-clone-and-install-the-plugin) the fork and plugin. However, you have the option to manually install the the UE fork and plugin by following the [Manual-install: UE fork and plugin]({{urlRoot}}/content/get-started/manual-engine-build) guide.
 
 If you followed the manual-install guide, follow the steps below to set up the Starter Template. After this, you can return to [Starter Template - 2: Launch a local deployment with multiple clients]({{urlRoot}}/content/get-started/starter-template/get-started-template-local). 
 
