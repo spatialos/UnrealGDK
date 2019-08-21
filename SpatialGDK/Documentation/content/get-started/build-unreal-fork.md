@@ -9,7 +9,7 @@ To use the SpatialOS GDK for Unreal, you first need to download and build the Sp
 
 ### Step 1: Join the Epic Games organization on GitHub
 
-To get access to the SpatialOS Unreal Engine fork, you need to join the Epic Games organisation on GitHub. </br>
+To get access to the SpatialOS Unreal Engine fork, you need to belong to the Epic Games organization on GitHub. </br>
 If you haven't already joined, you need to:
 
 * connect your GitHub account to a verified Epic Games account, 
