@@ -129,7 +129,7 @@ To do this:
 1. Open a terminal window and navigate to `\UnrealGDKExampleProject\spatial`.
 2. Run the following command: </br>
 `spatial cloud upload myassembly`.
-</br> (Remember to replace `myassembly` with a name for your assembly (for example: `exampleprojectassembly`). 
+</br> Remember to replace `myassembly` with a name for your assembly (for example: `exampleprojectassembly`). 
 
 A valid upload command looks like this:
 
