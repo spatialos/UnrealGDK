@@ -314,7 +314,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		UGridBasedLoadBalancingStrategy* NewLoadBalancer = NewObject<UGridBasedLoadBalancingStrategy>();
 		NewLoadBalancer->RowCount = SpatialSettings->RowCount;
 		NewLoadBalancer->ColumnCount = SpatialSettings->ColumnCount;
-		NewLoadBalancer->Init(VirtualWorkerTranslator);
+		NewLoadBalancer->Init(this, VirtualWorkerTranslator);
 		LoadBalancer = NewLoadBalancer;
 	}
 

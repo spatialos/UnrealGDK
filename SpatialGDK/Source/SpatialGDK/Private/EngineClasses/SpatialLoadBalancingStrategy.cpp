@@ -9,8 +9,9 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalancer);
 
-void USpatialLoadBalancingStrategy::Init(const ASpatialVirtualWorkerTranslator* InTranslator)
+void USpatialLoadBalancingStrategy::Init(const USpatialNetDriver* InNetDriver, const ASpatialVirtualWorkerTranslator* InTranslator)
 {
+	NetDriver = InNetDriver;
 	Translator = InTranslator;
 	OnWorkerAssignmentChangedDelegateHandle = Translator->OnWorkerAssignmentChanged.AddLambda([this](const TArray<FString>& NewAssignments) {
 		OnWorkerAssignmentChanged(NewAssignments);
@@ -26,17 +27,7 @@ USpatialLoadBalancingStrategy::~USpatialLoadBalancingStrategy()
 
 const FString USpatialLoadBalancingStrategy::GetWorkerId() const
 {
-	const UWorld* World = GetWorld();
-	if (World == nullptr)
-	{
-		return "";
-	}
-	USpatialGameInstance* GameInstance = Cast<USpatialGameInstance>(World->GetGameInstance());
-	if (GameInstance == nullptr)
-	{
-		return "";
-	}
-	return GameInstance->GetSpatialWorkerId();
+	return NetDriver->Connection->GetWorkerId();
 }
 
 void USpatialLoadBalancingStrategy::OnWorkerAssignmentChanged(const TArray<FString>& NewAssignments)
@@ -48,9 +39,9 @@ void USpatialLoadBalancingStrategy::OnWorkerAssignmentChanged(const TArray<FStri
 }
 
 
-void UGridBasedLoadBalancingStrategy::Init(const ASpatialVirtualWorkerTranslator* InTranslator)
+void UGridBasedLoadBalancingStrategy::Init(const USpatialNetDriver* InNetDriver, const ASpatialVirtualWorkerTranslator* InTranslator)
 {
-	USpatialLoadBalancingStrategy::Init(InTranslator);
+	USpatialLoadBalancingStrategy::Init(InNetDriver, InTranslator);
 
 	// Assume 200m * 200m world for the moment.
 	// TODO: get this from ?? (ideally from the deployment)

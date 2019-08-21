@@ -20,7 +20,7 @@ class SPATIALGDK_API USpatialLoadBalancingStrategy: public UObject
 	GENERATED_BODY()
 
 public:
-	virtual void Init(const ASpatialVirtualWorkerTranslator* Translator);
+	virtual void Init(const USpatialNetDriver* InNetDriver, const ASpatialVirtualWorkerTranslator* Translator);
 	virtual ~USpatialLoadBalancingStrategy();
 
 	// TODO - timgibson - consider ShouldHaveAuthority instead?
@@ -31,6 +31,7 @@ protected:
 	int32 GetLocalWorkerIndex() const { return LocalWorkerIndex; };
 
 	const ASpatialVirtualWorkerTranslator* Translator = nullptr;
+	const USpatialNetDriver* NetDriver = nullptr;
 
 private:
 	const FString GetWorkerId() const;
@@ -46,7 +47,7 @@ class SPATIALGDK_API UGridBasedLoadBalancingStrategy final : public USpatialLoad
 	GENERATED_BODY()
 
 public:
-	virtual void Init(const ASpatialVirtualWorkerTranslator* Translator) override;
+	virtual void Init(const USpatialNetDriver* InNetDriver, const ASpatialVirtualWorkerTranslator* Translator) override;
 	virtual bool ShouldChangeAuthority(const AActor& Actor) const override;
 	virtual FString GetAuthoritativeVirtualWorkerId(const AActor& Actor) const override;
 
