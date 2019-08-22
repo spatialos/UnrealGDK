@@ -330,110 +330,84 @@ void SSpatialOutputLog::Construct( const FArguments& InArgs )
 	bIsUserScrolled = false;
 	RequestForceScroll();
 
-	FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices");
-
-	// TODO: Not sure about garbage collection shit here.
-	GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.AddLambda([this]
-	{
-		WatchLatestLogDirectory();
-	});
-
-	WatchLogFile();
-
+	// Watch for new launch.log files created in the `spatial/log` folder. Tail the log files when they are created.
+	StartUpRootLogDirWatcher();
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-// TODO: This isn't super useful anymore
-void SSpatialOutputLog::WatchLogFile()
+void SSpatialOutputLog::StartUpRootLogDirWatcher()
 {
-	//FString SpatialDLogPath = TEXT("F:/UnrealEngine422/Samples/UnrealGDKExampleProject/spatial/logs/testing/locallaunch_log.log");
-	//FString SpatialDLogPath = TEXT("C:/Users/joshuahuburn/Projects/spatial-farm/spatial/logs/2019-08-02_14-14-51/runtime.log");
-	FString SpatialDLogPath = TEXT("C:/Users/joshuahuburn/AppData/Local/.improbable/spatiald/log/spatiald.log");
-	ReadLogFile(SpatialDLogPath);
+	FString RootLogDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("logs"));
+	AsyncTask(ENamedThreads::GameThread, [this, RootLogDir]
+		{
+			FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
+			if (IDirectoryWatcher * DirectoryWatcher = DirectoryWatcherModule.Get())
+			{
+				// Watch the log directory for changes.
+				if (FPaths::DirectoryExists(RootLogDir))
+				{
+					LogDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &SSpatialOutputLog::OnRootLogDirectoryChanged);
+					DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(RootLogDir, LogDirectoryChangedDelegate, LogDirectoryChangedDelegateHandle);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("Log directory does not exist!"));
+				}
+			}
+		});
+}
 
-	//FString LogDirectory = TEXT("F:/UnrealEngine422/Samples/UnrealGDKExampleProject/spatial/logs/testing");
-	//FString LogDirectory = TEXT("C:/Users/joshuahuburn/Projects/spatial-farm/spatial/logs/2019-08-02_14-14-51");
-	FString LogDirectory = TEXT("C:/Users/joshuahuburn/AppData/Local/.improbable/spatiald/log");
-	StartUpLogDirectoryWatcher(LogDirectory);
+
+void SSpatialOutputLog::ShutdownLogDirectoryWatcher(FString LogDirectory)
+{
+	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
+		{
+			FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
+			if (IDirectoryWatcher * DirectoryWatcher = DirectoryWatcherModule.Get())
+			{
+				// TODO: Logging and bool check.
+				DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegateHandle);
+			}
+		});
+}
+
+void SSpatialOutputLog::OnRootLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
+{
+	// If this is a new folder creation then switch to watching the log files in that new log folder.
+	for (FFileChangeData FileChange : FileChanges)
+	{
+		if (FileChange.Action == FFileChangeData::FCA_Added && FileChange.Filename.Contains(TEXT("launch.log")))
+		{
+			// Now we can start reading the new log file in the new log folder. (Hopefully exists)
+			UE_LOG(LogTemp, Display, TEXT("New launch log added: %s"), *FileChange.Filename);
+			StartTailingNewLogFile(FileChange.Filename);
+			break;
+		}
+		else if (FileChange.Action == FFileChangeData::FCA_Modified) // Don't check the name, just poll the file anyway.
+		{
+			TailLogFile(FileChange.Filename);
+		}
+	}
 }
 
 int32 SizeDifference;
 int32 OldSize;
 int32 NewSize;
 
-void SSpatialOutputLog::ReadLogFile(FString LogFilePath)
+void SSpatialOutputLog::StartTailingNewLogFile(FString LogFilePath)
 {
-	// Read log file live.
-	FString Result;
+	UE_LOG(LogTemp, Display, TEXT("Using new launch log file!: %s"), *LogFilePath);
 
-	FScopedLoadingState ScopedLoadingState(*LogFilePath);
+	// TODO: This should probably be a struct?
+	NewSize = 0;
+	OldSize = 0;
+	SizeDifference = 0;
 
-	TUniquePtr<FArchive> LogReader(IFileManager::Get().CreateFileReader(*LogFilePath, FILEREAD_AllowWrite));
-
-	if (!LogReader)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Log file does not exist!"));
-		return;
-	}
-
-	int32 Size = LogReader->TotalSize();
-	OldSize = Size;
-
-	if (!Size)
-	{
-		Result.Empty();
-		UE_LOG(LogTemp, Error, TEXT("Log empty!"));
-		return;
-	}
-
-	uint8* Ch = (uint8*)FMemory::Malloc(Size);
-	LogReader->Serialize(Ch, Size);
-
-	LogReader->Close();
-	LogReader = nullptr;
-
-	FFileHelper::BufferToString(Result, Ch, Size);
-
-	TArray<FString> LogLines;
-
-	// TODO: This is apparently inefficient
-	int32 lineCount = Result.ParseIntoArray(LogLines, TEXT("\n"), true);
-
-	for (FString LogLine : LogLines)
-	{
-		// TODO: We need a better way of getting the log categories and shit here.
-		ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
-
-		if (LogLine.Contains(TEXT("error")))
-		{
-			LogVerbosity = ELogVerbosity::Error;
-		}
-		else if (LogLine.Contains(TEXT("warn")))
-		{
-			LogVerbosity = ELogVerbosity::Warning;
-		}
-		else if (LogLine.Contains(TEXT("debug")))
-		{
-			LogVerbosity = ELogVerbosity::Verbose;
-		}
-		else if (LogLine.Contains(TEXT("verbose")))
-		{
-			LogVerbosity = ELogVerbosity::Verbose;
-		}
-		else
-		{
-			LogVerbosity = ELogVerbosity::Log;
-		}
-
-		Serialize(*LogLine, LogVerbosity, FName(TEXT("Spatial")));
-	}
-
-	FMemory::Free(Ch);
+	TailLogFile(LogFilePath);
 }
 
 void SSpatialOutputLog::TailLogFile(FString LogFilePath)
 {
-	// Read log file live.
 	FString Result;
 
 	FScopedLoadingState ScopedLoadingState(*LogFilePath);
@@ -510,91 +484,6 @@ void SSpatialOutputLog::TailLogFile(FString LogFilePath)
 	OldSize = NewSize;
 }
 
-void SSpatialOutputLog::StartUpLogDirectoryWatcher(FString LogDirectory)
-{
-	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
-	{
-		FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-		if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
-		{
-			// Watch the log directory for changes.
-			if (FPaths::DirectoryExists(LogDirectory))
-			{
-				LogDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &SSpatialOutputLog::OnLogDirectoryChanged);
-				DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegate, LogDirectoryChangedDelegateHandle);
-				CurrentLogDir = LogDirectory;
-
-				// TODO: Use Launch.log instead
-				CurrentLogFile = FPaths::Combine(LogDirectory, TEXT("launch.log"));
-				NewSize = 0;
-				OldSize = 0;
-				SizeDifference = 0;
-
-				ReadLogFile(CurrentLogFile);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("Log directory does not exist!"));
-			}
-		}
-	});
-}
-
-void SSpatialOutputLog::ShutdownLogDirectoryWatcher(FString LogDirectory)
-{
-	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
-	{
-		FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-		if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
-		{
-			// TODO: Logging and bool check.
-			DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegateHandle);
-		}
-	});
-}
-
-void SSpatialOutputLog::WatchLatestLogDirectory()
-{
-	ShutdownLogDirectoryWatcher(CurrentLogDir);
-	FString NewLogDir = GetNewLogFolder();
-	StartUpLogDirectoryWatcher(NewLogDir);
-}
-
-// Call this when a new local deployment has been started.
-FString SSpatialOutputLog::GetNewLogFolder()
-{
-	// Get the spatial logs local deployment folder
-	const FString RootLogDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("logs/localdeployment"));
-
-	// List all folders
-	IFileManager& FileManager = IFileManager::Get();
-
-	FString FinalPath = RootLogDir / TEXT("*");
-	TArray<FString> Folders;
-	FileManager.FindFiles(Folders, *FinalPath, false, true);
-
-	FString NewestLogDir;
-	FDateTime NewestLogDirModTime;
-
-	// Get the one that was modified most recently
-	for (FString Folder : Folders)
-	{
-		FString FullLogDir = FPaths::Combine(RootLogDir, Folder);
-		FFileStatData StatData = FileManager.GetStatData(*FullLogDir);
-		if (StatData.ModificationTime > NewestLogDirModTime)
-		{
-			NewestLogDir = FullLogDir;
-		}
-	}
-
-	return NewestLogDir;
-}
-
-void SSpatialOutputLog::OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
-{
-	UE_LOG(LogTemp, Display, TEXT("Log files updated."));
-	TailLogFile(CurrentLogFile);
-}
 
 SSpatialOutputLog::~SSpatialOutputLog()
 {

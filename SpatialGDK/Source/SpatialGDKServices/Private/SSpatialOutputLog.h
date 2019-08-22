@@ -190,10 +190,13 @@ public:
 
 	void WatchLogFile();
 	void ReadLogFile(FString LogFilePath);
+	void StartTailingNewLogFile(FString LogFilePath);
 	void TailLogFile(FString LogFilePath);
 
 	void StartUpLogDirectoryWatcher(FString LogDirectory);
 	void ShutdownLogDirectoryWatcher(FString LogDirectory);
+	void StartUpRootLogDirWatcher();
+	void OnRootLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 	void WatchLatestLogDirectory();
 	FString GetNewLogFolder();
 	void OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
