@@ -33,7 +33,7 @@ _Image: The Console deployment overview screen_
 1. Now start a deployment run. </br>
 To do this: </br>
     * Locate the screen's **Start** button near the top (the example above has a **Restart** button - this is where you find the **Start** button). Select it to open the Start deployment dialogue box.
-    * In the Start deployment dialogue box, select **Start** - this starts a deployment run.</br></br>
+    * In the Start deployment dialog box, select **Start** - this starts a deployment run.</br></br>
     Now the deployment is running, you see three buttons near the top of the deloyment overview screen:</br></br>
     ![img]({{assetRoot}}assets/tutorial/console-launcher-button.png)<br/>
     _Image: The Console deployment overview screen showing the blue **Launch** button to access the Launcher._
