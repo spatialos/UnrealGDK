@@ -413,22 +413,27 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 
 	for (FString LogLine : LogLines)
 	{
-		// TODO: We need a better way of getting the log categories and shit here.
+		// TODO: Do this with some proper foramtting or with regex
 		ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
 
-		if (LogLine.Contains(TEXT("error")))
+		FString Left;
+		FString Verbosity;
+
+		LogLine.Split(TEXT("level"), &Left, &Verbosity);
+
+		if (Verbosity.Contains(TEXT("error")))
 		{
 			LogVerbosity = ELogVerbosity::Error;
 		}
-		else if (LogLine.Contains(TEXT("warn")))
+		else if (Verbosity.Contains(TEXT("warn")))
 		{
 			LogVerbosity = ELogVerbosity::Warning;
 		}
-		else if (LogLine.Contains(TEXT("debug")))
+		else if (Verbosity.Contains(TEXT("debug")))
 		{
 			LogVerbosity = ELogVerbosity::Verbose;
 		}
-		else if (LogLine.Contains(TEXT("verbose")))
+		else if (Verbosity.Contains(TEXT("verbose")))
 		{
 			LogVerbosity = ELogVerbosity::Verbose;
 		}
@@ -437,7 +442,13 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 			LogVerbosity = ELogVerbosity::Log;
 		}
 
-		Serialize(*LogLine, LogVerbosity, FName(TEXT("Spatial")));
+		FString Content;
+		FString LogCategory;
+
+		Verbosity.Split(TEXT("msg"), &Left, &Content);
+		Content.Split(TEXT("]"), &LogCategory, &Content);
+
+		Serialize(*Content, LogVerbosity, FName(*LogCategory));
 	}
 
 	FMemory::Free(Ch);
@@ -464,7 +475,7 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 
 void SSpatialOutputLog::StartUpRootLogDirWatcher()
 {
-	FString RootLogDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("logs"));
+	FString RootLogDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("logs/localdeployment"));
 	AsyncTask(ENamedThreads::GameThread, [this, RootLogDir]
 		{
 			FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
@@ -477,7 +488,7 @@ void SSpatialOutputLog::StartUpRootLogDirWatcher()
 					// TODO: Change this to use the IDirectoryWatcher::Flags to only watch for folder creations and thus reduce how much the delegate gets triggered.
 					// We can use the name of the new folders and simply append launch.log to get the correct log files.
 					// We can also use this as a point to stop the old polling.
-					DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(RootLogDir, LogDirectoryChangedDelegate, LogDirectoryChangedDelegateHandle);
+					DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(RootLogDir, LogDirectoryChangedDelegate, LogDirectoryChangedDelegateHandle, IDirectoryWatcher::WatchOptions::IncludeDirectoryChanges | IDirectoryWatcher::WatchOptions::IgnoreChangesInSubtree);
 				}
 				else
 				{
@@ -509,11 +520,11 @@ void SSpatialOutputLog::OnRootLogDirectoryChanged(const TArray<FFileChangeData>&
 	for (FFileChangeData FileChange : FileChanges)
 	{
 		// TODO: Isn't this slow as fuck?
-		if (FileChange.Action == FFileChangeData::FCA_Added && FileChange.Filename.Contains(TEXT("launch.log")))
+		if (FileChange.Action == FFileChangeData::FCA_Added)
 		{
 			// Now we can start reading the new log file in the new log folder. (Hopefully exists)
 			UE_LOG(LogTemp, Display, TEXT("New folder added: %s"), *FileChange.Filename);
-			StartPollingLogFile(FileChange.Filename);
+			StartPollingLogFile(FPaths::Combine(FileChange.Filename, TEXT("launch.log")));
 		}
 	}
 }
