@@ -204,6 +204,8 @@ public:
 	FDelegateHandle LogDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged LogDirectoryChangedDelegate;
 
+	FTimerHandle PollTimer;
+
 
 	/**
 	 * Creates FLogMessage objects from FOutputDevice log callback

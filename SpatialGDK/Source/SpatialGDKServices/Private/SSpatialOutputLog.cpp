@@ -331,130 +331,45 @@ void SSpatialOutputLog::Construct( const FArguments& InArgs )
 	bIsUserScrolled = false;
 	RequestForceScroll();
 
-	FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices");
-
-	//// TODO: Not sure about garbage collection shit here.
-	//GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.AddLambda([this]
-	//{
-	//	// Since the deployment has started we know that there will be new log directories to read from.
-
-	//	// TODO: Instead of this we should be watching for all new log directories that are created. When a new one is made we start reading straight away from that log dir.
-	//	// The semantics will be. Start log dir watcher for new log folders. When new one created stop old log reader. Start new log reader in new directory. Poll ever 0.1s for new logs. Repeat.
-	//	WatchLatestLogDirectory();
-	//});
-
-	//WatchLatestLogDirectory();
 	StartUpRootLogDirWatcher();
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-
-void SSpatialOutputLog::WatchLatestLogDirectory()
-{
-	// TODO: What happens to this shutdown on first run?
-	ShutdownLogDirectoryWatcher(CurrentLogDir);
-	FString NewLogDir = GetNewLogFolder();
-
-	// When a log file changes in this log dir we will read the output.
-	StartUpLogDirectoryWatcher(NewLogDir);
-}
-
 int32 SizeDifference;
 int32 OldSize;
 int32 NewSize;
-TUniquePtr<FArchive> LogReader;
 
-void SSpatialOutputLog::ReadLogFile(FString LogFilePath)
+
+void SSpatialOutputLog::StartPollingLogFile(FString LogFilePath)
 {
-	// Read log file live.
-	FString Result;
-
-	FScopedLoadingState ScopedLoadingState(*LogFilePath);
-
-	TUniquePtr<FArchive> LogReader(IFileManager::Get().CreateFileReader(*LogFilePath, FILEREAD_AllowWrite));
-
-	if (!LogReader)
+	if (GEditor != nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Log file does not exist!"));
-		return;
+		// Start checking for the service status.
+		GEditor->GetTimerManager()->ClearTimer(PollTimer);
 	}
 
-	int32 Size = LogReader->TotalSize();
-	OldSize = Size;
+	SizeDifference = 0;
+	OldSize = 0;
+	NewSize = 0;
 
-	if (!Size)
-	{
-		Result.Empty();
-		UE_LOG(LogTemp, Error, TEXT("Log empty!"));
-		return;
-	}
-
-	uint8* Ch = (uint8*)FMemory::Malloc(Size);
-	LogReader->Serialize(Ch, Size);
-
-	LogReader->Close();
-	LogReader = nullptr;
-
-	FFileHelper::BufferToString(Result, Ch, Size);
-
-	TArray<FString> LogLines;
-
-	// TODO: This is apparently inefficient
-	int32 lineCount = Result.ParseIntoArray(LogLines, TEXT("\n"), true);
-
-	for (FString LogLine : LogLines)
-	{
-		// TODO: We need a better way of getting the log categories and shit here.
-		ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
-
-		if (LogLine.Contains(TEXT("error")))
-		{
-			LogVerbosity = ELogVerbosity::Error;
-		}
-		else if (LogLine.Contains(TEXT("warn")))
-		{
-			LogVerbosity = ELogVerbosity::Warning;
-		}
-		else if (LogLine.Contains(TEXT("debug")))
-		{
-			LogVerbosity = ELogVerbosity::Verbose;
-		}
-		else if (LogLine.Contains(TEXT("verbose")))
-		{
-			LogVerbosity = ELogVerbosity::Verbose;
-		}
-		else
-		{
-			LogVerbosity = ELogVerbosity::Log;
-		}
-
-		Serialize(*LogLine, LogVerbosity, FName(TEXT("Spatial")));
-	}
-
-	FMemory::Free(Ch);
+	PollLogFile(LogFilePath);
 }
 
-void SSpatialOutputLog::TailLogFile(FString LogFilePath)
+void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 {
 	// Read log file live.
 	FString Result;
 
 	FScopedLoadingState ScopedLoadingState(*LogFilePath);
 
-	TUniquePtr<FArchive> LogReader(IFileManager::Get().CreateFileReader(*LogFilePath, FILEREAD_AllowWrite));
-
-	if (!LogReader)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Log file does not exist!"));
-		return;
-	}
+	TUniquePtr<FArchive> LogReader = TUniquePtr<FArchive>(IFileManager::Get().CreateFileReader(*LogFilePath, FILEREAD_AllowWrite));
 
 	int32 Size = LogReader->TotalSize();
 
 	if (!Size)
 	{
 		Result.Empty();
-		UE_LOG(LogTemp, Error, TEXT("Log empty!"));
+		UE_LOG(LogTemp, Warning, TEXT("Log empty!"));
 	}
 
 	NewSize = Size;
@@ -465,91 +380,6 @@ void SSpatialOutputLog::TailLogFile(FString LogFilePath)
 		LogReader->Close();
 		LogReader = nullptr;
 		OldSize = NewSize;
-		return;
-	}
-
-	uint8* Ch = (uint8*)FMemory::Malloc(SizeDifference);
-
-	LogReader->Seek(OldSize);
-	LogReader->Serialize(Ch, SizeDifference);
-
-	FFileHelper::BufferToString(Result, Ch, SizeDifference);
-
-	TArray<FString> LogLines;
-
-	// TODO: This is apparently inefficient
-	int32 lineCount = Result.ParseIntoArray(LogLines, TEXT("\n"), true);
-
-	for (FString LogLine : LogLines)
-	{
-		// TODO: We need a better way of getting the log categories and shit here.
-		ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
-
-		if (LogLine.Contains(TEXT("error")))
-		{
-			LogVerbosity = ELogVerbosity::Error;
-		} 
-		else if (LogLine.Contains(TEXT("warn")))
-		{
-			LogVerbosity = ELogVerbosity::Warning;
-		}
-		else if (LogLine.Contains(TEXT("debug")))
-		{
-			LogVerbosity = ELogVerbosity::Verbose;
-		}
-		else if (LogLine.Contains(TEXT("verbose")))
-		{
-			LogVerbosity = ELogVerbosity::Verbose;
-		}
-		else
-		{
-			LogVerbosity = ELogVerbosity::Log;
-		}
-
-		Serialize(*LogLine, LogVerbosity, FName(TEXT("Spatial")));
-	}
-
-	FMemory::Free(Ch);
-	OldSize = NewSize;
-}
-
-void SSpatialOutputLog::StartPollingLogFile(FString LogFilePath)
-{
-	FScopedLoadingState ScopedLoadingState(*LogFilePath);
-
-	LogReader = TUniquePtr<FArchive>(IFileManager::Get().CreateFileReader(*LogFilePath, FILEREAD_AllowWrite));
-
-	if (!LogReader)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Log file does not exist!"));
-		return;
-	}
-
-	PollLogFile(LogFilePath);
-}
-
-void SSpatialOutputLog::PollLogFile(FString LogFilePath)
-{
-	// Read log file live.
-	FString Result;
-
-	int32 Size = LogReader->TotalSize();
-
-	if (!Size)
-	{
-		Result.Empty();
-		UE_LOG(LogTemp, Error, TEXT("Log empty!"));
-		return;
-	}
-
-	NewSize = Size;
-	SizeDifference = NewSize - OldSize;
-
-	if (SizeDifference <= 0)
-	{
-		//LogReader->Close();
-		//LogReader = nullptr;
-		OldSize = NewSize;
 
 		// Start a timer to read the log file every 0.1s
 		// Timers must be started on the game thread.
@@ -559,11 +389,10 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 			if (GEditor != nullptr)
 			{
 				// Start checking for the service status.
-				FTimerHandle PollTimer;
 				GEditor->GetTimerManager()->SetTimer(PollTimer, [this, LogFilePath]()
 				{
 					PollLogFile(LogFilePath);
-				}, 0.1f, false);
+				}, 0.05f, false);
 			}
 			});
 
@@ -612,6 +441,9 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 	}
 
 	FMemory::Free(Ch);
+
+	LogReader->Close();
+	LogReader = nullptr;
 	OldSize = NewSize;
 
 	// Start a timer to read the log file every 0.1s
@@ -622,11 +454,10 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 		if (GEditor != nullptr)
 		{
 			// Start checking for the service status.
-			FTimerHandle PollTimer;
 			GEditor->GetTimerManager()->SetTimer(PollTimer, [this, LogFilePath]()
 			{
 				PollLogFile(LogFilePath);
-			}, 0.1f, false);
+			}, 0.05f, false);
 		}
 	});
 }
@@ -643,44 +474,18 @@ void SSpatialOutputLog::StartUpRootLogDirWatcher()
 				if (FPaths::DirectoryExists(RootLogDir))
 				{
 					LogDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &SSpatialOutputLog::OnRootLogDirectoryChanged);
+					// TODO: Change this to use the IDirectoryWatcher::Flags to only watch for folder creations and thus reduce how much the delegate gets triggered.
+					// We can use the name of the new folders and simply append launch.log to get the correct log files.
+					// We can also use this as a point to stop the old polling.
 					DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(RootLogDir, LogDirectoryChangedDelegate, LogDirectoryChangedDelegateHandle);
 				}
 				else
 				{
+					// TODO: Create it?
 					UE_LOG(LogTemp, Error, TEXT("Log directory does not exist!"));
 				}
 			}
 		});
-}
-
-void SSpatialOutputLog::StartUpLogDirectoryWatcher(FString LogDirectory)
-{
-	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
-	{
-		FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-		if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
-		{
-			// Watch the log directory for changes.
-			if (FPaths::DirectoryExists(LogDirectory))
-			{
-				LogDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &SSpatialOutputLog::OnLogDirectoryChanged);
-				DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegate, LogDirectoryChangedDelegateHandle);
-				CurrentLogDir = LogDirectory;
-
-				// TODO: Use Launch.log instead
-				CurrentLogFile = FPaths::Combine(LogDirectory, TEXT("launch.log"));
-				NewSize = 0;
-				OldSize = 0;
-				SizeDifference = 0;
-
-				ReadLogFile(CurrentLogFile);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("Log directory does not exist!"));
-			}
-		}
-	});
 }
 
 void SSpatialOutputLog::ShutdownLogDirectoryWatcher(FString LogDirectory)
@@ -694,36 +499,6 @@ void SSpatialOutputLog::ShutdownLogDirectoryWatcher(FString LogDirectory)
 			DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegateHandle);
 		}
 	});
-}
-
-// Call this when a new local deployment has been started.
-FString SSpatialOutputLog::GetNewLogFolder()
-{
-	// Get the spatial logs local deployment folder
-	const FString RootLogDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("logs/localdeployment"));
-
-	// List all folders
-	IFileManager& FileManager = IFileManager::Get();
-
-	FString FinalPath = RootLogDir / TEXT("*");
-	TArray<FString> Folders;
-	FileManager.FindFiles(Folders, *FinalPath, false, true);
-
-	FString NewestLogDir;
-	FDateTime NewestLogDirModTime;
-
-	// Get the one that was modified most recently
-	for (FString Folder : Folders)
-	{
-		FString FullLogDir = FPaths::Combine(RootLogDir, Folder);
-		FFileStatData StatData = FileManager.GetStatData(*FullLogDir);
-		if (StatData.ModificationTime > NewestLogDirModTime)
-		{
-			NewestLogDir = FullLogDir;
-		}
-	}
-
-	return NewestLogDir;
 }
 
 void SSpatialOutputLog::OnRootLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
@@ -741,13 +516,6 @@ void SSpatialOutputLog::OnRootLogDirectoryChanged(const TArray<FFileChangeData>&
 			StartPollingLogFile(FileChange.Filename);
 		}
 	}
-}
-
-
-void SSpatialOutputLog::OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
-{
-	UE_LOG(LogTemp, Display, TEXT("Log files updated."));
-	TailLogFile(CurrentLogFile);
 }
 
 SSpatialOutputLog::~SSpatialOutputLog()
