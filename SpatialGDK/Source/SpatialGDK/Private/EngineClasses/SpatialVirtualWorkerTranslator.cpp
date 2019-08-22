@@ -113,16 +113,6 @@ void USpatialVirtualWorkerTranslator::UnassignWorker(const FString& WorkerId)
 	}
 }
 
-void USpatialVirtualWorkerTranslator::OnComponentAdded(const Worker_AddComponentOp& Op)
-{
-	if (Op.data.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
-	{
-		// TODO - Set Entity's ACL component to correct worker id based on requested virtual worker
-		//Worker_EntityId EntityId = Op.entity_id;
-		//AuthorityIntent* MyAuthorityIntent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
-	}
-}
-
 void USpatialVirtualWorkerTranslator::OnComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
 	if (Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
@@ -146,8 +136,11 @@ void USpatialVirtualWorkerTranslator::OnComponentRemoved(const Worker_RemoveComp
 
 void USpatialVirtualWorkerTranslator::QueueAclAssignmentRequest(const Worker_EntityId EntityId)
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Queueing ACL assignment request for %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
-	AclWriteAuthAssignmentRequests.Add(EntityId);
+	if (!AclWriteAuthAssignmentRequests.Contains(EntityId))
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Queueing ACL assignment request for %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
+		AclWriteAuthAssignmentRequests.Add(EntityId);
+	}
 }
 
 // TODO: should probably move this to SpatialSender

@@ -29,7 +29,6 @@ public:
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 
-	void OnComponentAdded(const Worker_AddComponentOp& Op);
 	void OnComponentUpdated(const Worker_ComponentUpdateOp& Op);
 	void OnComponentRemoved(const Worker_RemoveComponentOp& Op);
 
