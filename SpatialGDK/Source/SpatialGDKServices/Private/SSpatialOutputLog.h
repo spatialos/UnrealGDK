@@ -192,10 +192,14 @@ public:
 	void ReadLogFile(FString LogFilePath);
 	void TailLogFile(FString LogFilePath);
 
+	void StartPollingLogFile(FString LogFilePath);
+	void PollLogFile(FString LogFilePath);
+	void StartUpRootLogDirWatcher();
 	void StartUpLogDirectoryWatcher(FString LogDirectory);
 	void ShutdownLogDirectoryWatcher(FString LogDirectory);
 	void WatchLatestLogDirectory();
 	FString GetNewLogFolder();
+	void OnRootLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 	void OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 	FDelegateHandle LogDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged LogDirectoryChangedDelegate;
