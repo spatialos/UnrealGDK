@@ -525,7 +525,7 @@ void SSpatialOutputLog::StartUpLogDirectoryWatcher(FString LogDirectory)
 				CurrentLogDir = LogDirectory;
 
 				// TODO: Use Launch.log instead
-				CurrentLogFile = FPaths::Combine(LogDirectory, TEXT("runtime.log"));
+				CurrentLogFile = FPaths::Combine(LogDirectory, TEXT("launch.log"));
 				NewSize = 0;
 				OldSize = 0;
 				SizeDifference = 0;
