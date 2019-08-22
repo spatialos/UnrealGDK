@@ -543,9 +543,9 @@ void ClearGeneratedSchema()
 
 bool TryLoadExistingSchemaDatabase()
 {
-	const FString SchemaDatabasePackagePath = TEXT("/Game/Spatial/SchemaDatabase");
-	const FString SchemaDatabaseAssetPath = FString::Printf(TEXT("%s.SchemaDatabase"), *SchemaDatabasePackagePath);
-	const FString SchemaDatabaseFileName = FPackageName::LongPackageNameToFilename(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_CONTENT_PATH);
+	const FString SchemaDatabaseAssetPath = TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase");
+	const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 
 	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*SchemaDatabaseFileName);
 
@@ -596,9 +596,15 @@ SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists()
 
 SPATIALGDKEDITOR_API bool GeneratedSchemaDatabaseExists()
 {
-	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Spatial/SchemaDatabase"));
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_CONTENT_PATH);
 	const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	FString OutPath;
+	FString OutFile;
+	FString OutExt;
+	FPaths::Split(FPaths::ProjectContentDir(), OutPath, OutFile, OutExt);
+
 	return PlatformFile.FileExists(*SchemaDatabaseFileName);
 }
 

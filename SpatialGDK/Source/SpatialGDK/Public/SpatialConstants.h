@@ -210,6 +210,8 @@ namespace SpatialConstants
 	const uint16 LOCATOR_PORT = 444;
 
 	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
+
+	const FString SCHEMA_DATABASE_CONTENT_PATH = TEXT("Spatial/SchemaDatabase");
 }
 
 FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)
