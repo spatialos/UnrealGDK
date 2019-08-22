@@ -146,7 +146,11 @@ void USpatialVirtualWorkerTranslator::QueueAclAssignmentRequest(const Worker_Ent
 // TODO: should probably move this to SpatialSender
 void USpatialVirtualWorkerTranslator::SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId)
 {
-	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
+	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) Failing to set Acl WriteAuth for entity %lld to workerid: %s because this worker doesn't have authority over the EntityACL component."), *NetDriver->Connection->GetWorkerId(), EntityId, *WorkerId);
+		return;
+	}
 
 	EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<EntityAcl>(EntityId);
 	check(EntityACL);
@@ -291,6 +295,9 @@ void USpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 	AddStringArrayToSchema(UpdateObject, SpatialConstants::VIRTUAL_WORKER_MANAGER_ASSIGNMENTS_ID, VirtualWorkerAssignment);
 
 	NetDriver->Connection->SendComponentUpdate(TranslatorEntityId, &Update);
+
+	// Broadcast locally since we won't receive the ComponentUpdate on this worker
+	OnWorkerAssignmentChanged.Broadcast(VirtualWorkerAssignment);
 }
 
 void USpatialVirtualWorkerTranslator::QueryForWorkerEntities()
