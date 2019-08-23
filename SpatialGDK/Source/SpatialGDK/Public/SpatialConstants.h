@@ -211,7 +211,8 @@ namespace SpatialConstants
 
 	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
-	const FString SCHEMA_DATABASE_CONTENT_PATH = TEXT("Spatial/SchemaDatabase");
+	const FString SCHEMA_DATABASE_FILE_PATH = TEXT("Spatial/SchemaDatabase");
+	const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 }
 
 FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)

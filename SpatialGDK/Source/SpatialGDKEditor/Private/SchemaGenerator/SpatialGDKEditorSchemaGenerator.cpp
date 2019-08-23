@@ -400,7 +400,7 @@ TMap<uint32, FString> CreateComponentIdToClassPathMap()
 
 bool SaveSchemaDatabase()
 {
-	FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
+	FString PackagePath = SpatialConstants::SCHEMA_DATABASE_ASSET_PATH;
 	UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
@@ -543,9 +543,9 @@ void ClearGeneratedSchema()
 
 bool TryLoadExistingSchemaDatabase()
 {
-	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_CONTENT_PATH);
-	const FString SchemaDatabaseAssetPath = TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase");
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH);
 	const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	const FString SchemaDatabaseAssetPath = FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase"));
 
 	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*SchemaDatabaseFileName);
 
@@ -594,16 +594,11 @@ SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists()
 	return PlatformFile.DirectoryExists(*SchemaOutputPath);
 }
 
-SPATIALGDKEDITOR_API bool GeneratedSchemaDatabaseExists()
+bool GeneratedSchemaDatabaseExists()
 {
-	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_CONTENT_PATH);
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH);
 	const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-
-	FString OutPath;
-	FString OutFile;
-	FString OutExt;
-	FPaths::Split(FPaths::ProjectContentDir(), OutPath, OutFile, OutExt);
 
 	return PlatformFile.FileExists(*SchemaDatabaseFileName);
 }
