@@ -98,14 +98,14 @@ bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& Wo
 
 }
 
-bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath)
+bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription)
 {
-	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
+	if (InLaunchConfigDescription != nullptr)
 	{
+		const FSpatialLaunchConfigDescription& LaunchConfigDescription = *InLaunchConfigDescription;
+
 		FString Text;
 		TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Text);
-
-		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 
 		// Populate json file for launch config
 		Writer->WriteObjectStart(); // Start of json

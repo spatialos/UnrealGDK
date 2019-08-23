@@ -13,9 +13,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
+- Attempting to replicate unsupported types (such as TMap) produce a log error rather than crashing the game.
 - Generating schema when the schema database is locked by another process will no longer crash the editor.
 - When schema compiler fails, schema generation correctly shows an error.
 - Fixed crash during initialization when running GenerateSchemaCommandlet.
+
+## [`0.6.1`] - 2019-08-15
+
+### Features:
+- The [Multiserver zoning shooter tutorial](https://docs.improbable.io/unreal/alpha/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) has been updated to use the Example Project.
+
+### Bug fixes: 
+- Simulated player launch configurations are no longer invalid when the GDK is installed as an Engine Plugin.
+- RPCs that have been queued for execution for more than 1 second (the default value in `SpatialGDKSettings QueuedIncomingRPCWaitTime`) are now executed even if there are unresolved parameters. This stops unresolved parameters from blocking the execution queue.
+- Offloading is no longer enabled by default in the Example Project. You can toggle offloading on using [these steps](https://docs.improbable.io/unreal/alpha/content/tutorials/offloading-tutorial/offloading-setup#step-4-enable-offloading).
+- Guns no longer intermittently detatch from simulated players in the Example Project.
+- Default cloud deployment settings are now correctly set. This means you don't need to manually reset them before doing a cloud deployment.
 
 ## [`0.6.0`] - 2019-07-31
 
