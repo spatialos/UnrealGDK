@@ -46,7 +46,6 @@ public:
 	void SPATIALGDKSERVICES_API SetAutoDeploy(bool bAutoDeploy);
 
 	void WorkerBuildConfigAsync();
-	const FString GetSpotExe();
 
 	FSimpleMulticastDelegate OnSpatialShutdown;
 	FSimpleMulticastDelegate OnDeploymentStart;
