@@ -74,7 +74,7 @@ bool FSpatialGDKServicesModule::SpatialPreRunChecks()
 
 	FString SpotExistenceCheckResult;
 	FString StdErr;
-	FPlatformProcess::ExecProcess(*FSpatialGDKServicesModule::GetSpotExe(), TEXT("version"), &ExitCode, &SpotExistenceCheckResult, &StdErr);
+	FPlatformProcess::ExecProcess(*GetSpotExe(), TEXT("version"), &ExitCode, &SpotExistenceCheckResult, &StdErr);
 
 	if (ExitCode != 0)
 	{
