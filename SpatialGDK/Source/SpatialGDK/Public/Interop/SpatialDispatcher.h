@@ -7,6 +7,7 @@
 #include "Schema/UnrealMetadata.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
+#include <gdk/common_types.h>
 
 #include "SpatialDispatcher.generated.h"
 
@@ -57,7 +58,13 @@ private:
 
 	using OpTypeToCallbacksMap = TMap<Worker_OpType, TArray<UserOpCallbackData>>;
 
-	bool IsExternalSchemaOp(Worker_Op* Op) const;
+	void ProcessWorkerMessages(const gdk::SpatialOsWorker& Worker);
+	void ProcessNewEntities(const gdk::SpatialOsWorker& Worker);
+	void ProcessGdkEntityMessages(const gdk::SpatialOsWorker& Worker, gdk::ComponentId RangeId);
+	void ProcessGdkCommands(const gdk::SpatialOsWorker& Worker, gdk::ComponentId RangeId);
+	void ProcessUserMessages(const gdk::SpatialOsWorker& Worker, gdk::ComponentId RangeId);
+	void ProcessWorldCommandResponses(const gdk::SpatialOsWorker& Worker);
+
 	void ProcessExternalSchemaOp(Worker_Op* Op);
 	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
