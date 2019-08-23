@@ -26,7 +26,7 @@ public:
 	bool SPATIALGDKSERVICES_API TryStopSpatialService();
 
 	bool SPATIALGDKSERVICES_API GetLocalDeploymentStatus();
-	bool SPATIALGDKSERVICES_API GetServiceStatus();
+	bool SPATIALGDKSERVICES_API IsServiceRunningAndInCorrectDirectory();
 
 	bool SPATIALGDKSERVICES_API IsLocalDeploymentRunning() const;
 	bool SPATIALGDKSERVICES_API IsSpatialServiceRunning() const;
@@ -57,9 +57,9 @@ public:
 private:
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
-	bool IsServiceInCorrectDirectory(const FString& ServiceStatusResult);
 
 	static const int32 ExitCodeSuccess = 0;
+	static const int32 ExitCodeNotRunning = 4;
 
 	// This is the frequency at which check the 'spatial service status' to ensure we have the correct state as the user can change spatial service outside of the editor.
 	static const int32 RefreshFrequency = 3;
