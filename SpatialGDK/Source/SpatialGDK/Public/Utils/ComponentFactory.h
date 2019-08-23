@@ -9,6 +9,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+DECLARE_LOG_CATEGORY_EXTERN(LogComponentFactory, Log, All);
+
 class USpatialNetDriver;
 class USpatialPackageMap;
 class USpatialClassInfoManager;

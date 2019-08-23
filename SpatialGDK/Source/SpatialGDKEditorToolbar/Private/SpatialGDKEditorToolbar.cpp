@@ -559,7 +559,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		bool bRedeployRequired = false;
-		if (!GenerateDefaultWorkerJson(bRedeployRequired))
+		if (!GenerateAllDefaultWorkerJsons(bRedeployRequired))
 		{
 			return;
 		}
@@ -569,7 +569,11 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), TEXT("Improbable/DefaultLaunchConfig.json"));
-		GenerateDefaultLaunchConfig(LaunchConfig);
+		if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
+		{
+			const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
+			GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription);
+		}
 	}
 	else
 	{

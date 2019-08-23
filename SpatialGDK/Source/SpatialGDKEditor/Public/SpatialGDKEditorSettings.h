@@ -183,6 +183,19 @@ struct FSpatialLaunchConfigDescription
 		ServerWorkers.Add(UnrealWorkerDefaultSetting);
 	}
 
+	FSpatialLaunchConfigDescription(const FName& WorkerTypeName)
+		: Template(TEXT("w2_r0500_e5"))
+		, World()
+	{
+		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
+		UnrealWorkerDefaultSetting.WorkerTypeName = WorkerTypeName;
+		UnrealWorkerDefaultSetting.Rows = 1;
+		UnrealWorkerDefaultSetting.Columns = 1;
+		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
+
+		ServerWorkers.Add(UnrealWorkerDefaultSetting);
+	}
+
 	/** Deployment template. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
 	FString Template;
