@@ -13,7 +13,8 @@ UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
 	LogToConsole = true;
 }
 
-void UGenerateSchemaCommandlet::HandleDeleteSchemaOption(const TArray<FString>& Switches) {
+void UGenerateSchemaCommandlet::HandleDeleteSchemaOption(const TArray<FString>& Switches) 
+{
 	if (Switches.Contains("delete-schema-db"))
 	{
 		if (DeleteSchemaDatabase())
