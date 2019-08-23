@@ -447,6 +447,7 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 
 		Verbosity.Split(TEXT("msg"), &Left, &Content);
 		Content.Split(TEXT("]"), &LogCategory, &Content);
+		LogCategory.Split(TEXT("."), nullptr, &LogCategory, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
 
 		Serialize(*Content, LogVerbosity, FName(*LogCategory));
 	}
