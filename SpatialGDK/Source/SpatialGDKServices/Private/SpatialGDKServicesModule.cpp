@@ -64,7 +64,7 @@ bool FSpatialGDKServicesModule::SpatialPreRunChecks()
 {
 	FString SpatialExistenceCheckResult;
 	int32 ExitCode;
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(GetSpatialExe(), TEXT("version"), FSpatialGDKServicesModule::GetSpatialOSDirectory(), SpatialExistenceCheckResult, ExitCode);
+	ExecuteAndReadOutput(GetSpatialExe(), TEXT("version"), GetSpatialOSDirectory(), SpatialExistenceCheckResult, ExitCode);
 
 	if (ExitCode != 0)
 	{
