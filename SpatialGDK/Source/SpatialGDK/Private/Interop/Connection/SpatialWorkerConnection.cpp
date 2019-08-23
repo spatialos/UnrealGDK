@@ -268,14 +268,15 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 			}
 
 			gdk::ComponentRanges Ranges;
-			Ranges.TryAddComponentRange(gdk::Range{ 1, 100000 });
-			//const auto GeneratedStart = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
+			const auto GeneratedStart = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 			// Generated components range.
-			//Ranges.TryAddComponentRange(gdk::Range{ GeneratedStart, GeneratedStart + 100000 });
+			Ranges.TryAddComponentRange(gdk::Range{ GeneratedStart, GeneratedStart + 100000 });
 			// Non-generated components range.
-			//Ranges.TryAddComponentRange(gdk::Range{ SpatialConstants::MAX_EXTERNAL_SCHEMA_ID + 1, GeneratedStart - 1});
+			Ranges.TryAddComponentRange(gdk::Range{ SpatialConstants::MAX_EXTERNAL_SCHEMA_ID + 1, GeneratedStart - 1});
 			// External component range
-			//Ranges.TryAddComponentRange(gdk::Range{ SpatialConstants::MIN_EXTERNAL_SCHEMA_ID, SpatialConstants::MAX_EXTERNAL_SCHEMA_ID});
+			Ranges.TryAddComponentRange(gdk::Range{ SpatialConstants::MIN_EXTERNAL_SCHEMA_ID, SpatialConstants::MAX_EXTERNAL_SCHEMA_ID});
+			// Standard library
+			Ranges.TryAddComponentRange(gdk::Range{ 1, SpatialConstants::MIN_EXTERNAL_SCHEMA_ID - 1 });
 			auto InitialOpsFunction = [this](gdk::OpList* OpList, gdk::ExtractedOpList* ExtractedOpList)
 			{
 				if (GetSpatialNetDriverChecked()->bConnectAsClient)
