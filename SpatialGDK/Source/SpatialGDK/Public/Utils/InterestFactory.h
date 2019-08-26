@@ -26,6 +26,8 @@ public:
 	Worker_ComponentData CreateInterestData() const;
 	Worker_ComponentUpdate CreateInterestUpdate() const;
 
+	static Interest CreateServerWorkerInterest();
+
 private:
 	Interest CreateInterest() const;
 
@@ -42,7 +44,7 @@ private:
 	// System Defined Constraints
 	QueryConstraint CreateCheckoutRadiusConstraints() const;
 	QueryConstraint CreateAlwaysInterestedConstraint() const;
-	QueryConstraint CreateSingletonConstraint() const;
+	QueryConstraint CreateAlwaysRelevantConstraint() const;
 
 	// Only checkout entities that are in loaded sublevels
 	QueryConstraint CreateLevelConstraints() const;

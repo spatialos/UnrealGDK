@@ -90,7 +90,8 @@ public:
 	void OnAcceptingPlayersChanged(bool bAcceptingPlayers);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
-	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, FUniqueNetIdRepl UniqueId, FName OnlinePlatformName, bool bExistingPlayer);
+	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName);
+	void PostSpawnPlayerController(APlayerController* PlayerController, const FString& WorkerAttribute);
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId);
@@ -98,7 +99,6 @@ public:
 
 	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject);
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
-	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection);
 
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
@@ -192,6 +192,7 @@ private:
 	void CreateAndInitializeCoreClasses();
 
 	void CreateServerSpatialOSNetConnection();
+	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor);
 
 	void QueryGSMToLoadMap();
 
@@ -217,6 +218,7 @@ private:
 #endif
 
 	void ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters);
+	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn);
 
 	friend USpatialNetConnection;
 	friend USpatialWorkerConnection;

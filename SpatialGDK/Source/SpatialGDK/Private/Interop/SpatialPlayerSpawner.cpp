@@ -47,7 +47,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 		UniqueIdReader << UniqueId;
 
 		FName OnlinePlatformName = FName(*GetStringFromSchema(Payload, 3));
-		bool bSimulatedPlayer = Schema_GetBool(Payload, 4);
+		bool bSimulatedPlayer = GetBoolFromSchema(Payload, 4);
 
 		URLString.Append(TEXT("?workerAttribute=")).Append(Attributes);
 		if (bSimulatedPlayer)
@@ -55,7 +55,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 			URLString += TEXT("?simulatedPlayer=1");
 		}
 		
-		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName, false);
+		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName);
 	}
 
 	// Send a successful response if the player has been accepted, either from this request or one in the past.
@@ -174,6 +174,12 @@ void USpatialPlayerSpawner::ObtainPlayerParams(FURL& LoginURL, FUniqueNetIdRepl&
 		if (GameUrlOptions.Len() > 0)
 		{
 			LoginURL.AddOption(*FString::Printf(TEXT("%s"), *GameUrlOptions));
+		}
+		// Pull in options from the current world URL (to preserve options added to a travel URL)
+		const TArray<FString>& LastURLOptions = WorldContext->LastURL.Op;
+		for (const FString& Op : LastURLOptions)
+		{
+			LoginURL.AddOption(*Op);
 		}
 
 		// Send the player unique Id at login

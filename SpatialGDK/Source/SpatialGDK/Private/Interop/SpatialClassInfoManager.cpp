@@ -27,7 +27,7 @@ bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, UActorGro
 	NetDriver = InNetDriver;
 	ActorGroupManager = InActorGroupManager;
 
-	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase"));
+	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
 	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
 
 	if (SchemaDatabase == nullptr)
@@ -298,7 +298,7 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject
 	}
 	else
 	{
-		check(Cast<AActor>(Object->GetOuter()));
+		check(Object->GetTypedOuter<AActor>() != nullptr);
 
 		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
 

@@ -10,6 +10,7 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "Templates/SharedPointer.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesModule.h"
 #include "Textures/SlateIcon.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
@@ -20,6 +21,7 @@
 #include "Widgets/Layout/SExpandableArea.h"
 #include "Widgets/Layout/SSeparator.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
+#include "Widgets/Layout/SWrapBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "Widgets/Text/STextBlock.h"
 
@@ -28,7 +30,8 @@
 void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	
+	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
+
 	ParentWindowPtr = InArgs._ParentWindow;
 	SpatialGDKEditorPtr = InArgs._SpatialGDKEditor;
 
@@ -60,16 +63,23 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 							.Padding(2.0f)
 							.VAlign(VAlign_Center)
 							[
-								SNew(SHorizontalBox)
-								+ SHorizontalBox::Slot()
-								.AutoWidth()
-								.HAlign(HAlign_Center)
+								SNew(SWrapBox)
+								.UseAllottedWidth(true)
+								+ SWrapBox::Slot()
+								.VAlign(VAlign_Bottom)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("NOTE: The assembly has to be built and uploaded manually. Follow the docs "))))
+									.AutoWrapText(true)
+									.Text(FText::FromString(FString(TEXT("NOTE: You can set default values in the SpatialOS settings under \"Cloud\"."))))
 								]
-								+ SHorizontalBox::Slot()
-								.AutoWidth()
+								+ SWrapBox::Slot()
+								.VAlign(VAlign_Bottom)
+								[
+									SNew(STextBlock)
+									.AutoWrapText(true)
+								.Text(FText::FromString(FString(TEXT("The assembly has to be built and uploaded manually. Follow the docs "))))
+								]
+								+ SWrapBox::Slot()
 								[
 									SNew(SHyperlink)
 									.Text(FText::FromString(FString(TEXT("here."))))
@@ -101,10 +111,9 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
-									.Text(FText::FromString(SpatialGDKSettings->GetProjectName()))
+									.Text(FText::FromString(ProjectName))
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
-									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommited)
-									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommited, ETextCommit::Default)
+									.IsEnabled(false)
 								]
 							]
 							// Assembly Name 
@@ -397,12 +406,6 @@ void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited(const FT
 	SpatialGDKSettings->SetAssemblyName(InText.ToString());
 }
 
-void SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommited(const FText& InText, ETextCommit::Type InCommitType)
-{
-	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetProjectName(InText.ToString());
-}
-
 void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
@@ -567,7 +570,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 void SSpatialGDKSimulatedPlayerDeployment::OnCloudDocumentationClicked()
 {
 	FString WebError;
-	FPlatformProcess::LaunchURL(TEXT("https://docs.improbable.io/unreal/latest/content/get-started/gdk-template#step-2-build-your-workers"), TEXT(""), &WebError);
+	FPlatformProcess::LaunchURL(TEXT("https://docs.improbable.io/unreal/latest/content/cloud-deployment-workflow#build-server-worker-assembly"), TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
 		FNotificationInfo Info(FText::FromString(WebError));

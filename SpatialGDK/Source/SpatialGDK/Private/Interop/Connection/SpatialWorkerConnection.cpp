@@ -567,11 +567,11 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FAddComponent* Message = static_cast<FAddComponent*>(OutgoingMessage.Get());
 
-			static const Worker_UpdateParameters EnableLoopback{ true /* loopback */ };
+			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
 			Worker_Connection_SendAddComponent(WorkerConnection,
 				Message->EntityId,
 				&Message->Data,
-				&EnableLoopback);
+				&DisableLoopback);
 			break;
 		}
 		case EOutgoingMessageType::RemoveComponent:

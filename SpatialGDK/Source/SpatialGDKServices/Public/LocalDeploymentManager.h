@@ -26,7 +26,7 @@ public:
 	bool SPATIALGDKSERVICES_API TryStopSpatialService();
 
 	bool SPATIALGDKSERVICES_API GetLocalDeploymentStatus();
-	bool SPATIALGDKSERVICES_API GetServiceStatus();
+	bool SPATIALGDKSERVICES_API IsServiceRunningAndInCorrectDirectory();
 
 	bool SPATIALGDKSERVICES_API IsLocalDeploymentRunning() const;
 	bool SPATIALGDKSERVICES_API IsSpatialServiceRunning() const;
@@ -37,12 +37,15 @@ public:
 	bool SPATIALGDKSERVICES_API IsServiceStarting() const;
 	bool SPATIALGDKSERVICES_API IsServiceStopping() const;
 
-	// TODO: Refactor these into Utils
-	FString GetProjectName();
+	bool SPATIALGDKSERVICES_API IsRedeployRequired() const;
+	void SPATIALGDKSERVICES_API SetRedeployRequired();
+
+	// Helper function to inform a client or server whether it should wait for a local deployment to become active.
+	bool SPATIALGDKSERVICES_API ShouldWaitForDeployment() const;
+
+	void SPATIALGDKSERVICES_API SetAutoDeploy(bool bAutoDeploy);
+
 	void WorkerBuildConfigAsync();
-	bool ParseJson(const FString& RawJsonString, TSharedPtr<FJsonObject>& JsonParsed);
-	void ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode);
-	const FString GetSpotExe();
 
 	FSimpleMulticastDelegate OnSpatialShutdown;
 	FSimpleMulticastDelegate OnDeploymentStart;
@@ -53,9 +56,9 @@ public:
 private:
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
-	bool IsServiceInCorrectDirectory(const FString& ServiceStatusResult);
 
 	static const int32 ExitCodeSuccess = 0;
+	static const int32 ExitCodeNotRunning = 4;
 
 	// This is the frequency at which check the 'spatial service status' to ensure we have the correct state as the user can change spatial service outside of the editor.
 	static const int32 RefreshFrequency = 3;
@@ -71,5 +74,7 @@ private:
 	bool bStoppingSpatialService;
 
 	FString LocalRunningDeploymentID;
-	FString ProjectName;
+
+	bool bRedeployRequired = false;
+	bool bAutoDeploy = false;
 };

@@ -152,8 +152,7 @@ public:
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
 
-	FORCEINLINE void StartListening() { bIsListening = true; }
-	FORCEINLINE bool IsListening() { return bIsListening; }
+	bool IsListening() const;
 	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
 protected:
@@ -174,9 +173,11 @@ private:
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
+	
+	void UpdateEntityACLToNewOwner();
 
 public:
-	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity is created.
+	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
 	bool bCreatedEntity;
 
 	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
@@ -187,7 +188,6 @@ public:
 private:
 	Worker_EntityId EntityId;
 	bool bInterestDirty;
-	bool bIsListening;
 
 	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;

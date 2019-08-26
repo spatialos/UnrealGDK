@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -64,7 +65,7 @@ Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor
 	Worker_EntityId EntityId = NetDriver->EntityPool->GetNextEntityId();
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
+		UE_LOG(LogSpatialPackageMap, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
 		return EntityId;
 	}
 
@@ -83,12 +84,16 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 		return NetGUID;
 	}
 
-	if (!Value->IsA<AActor>() && !Value->GetOuter()->IsA<AActor>())
+	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Value->GetTypedOuter<AActor>();
+	if (Actor == nullptr)
 	{
 		return NetGUID;
 	}
 
-	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Cast<AActor>(Value->GetOuter());
+	if (!Actor->GetIsReplicated())
+	{
+		return NetGUID;
+	}
 
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
@@ -236,6 +241,33 @@ Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* O
 	return GetUnrealObjectRefFromNetGUID(NetGUID).Entity;
 }
 
+AActor* USpatialPackageMapClient::GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef)
+{
+	if (UClass* SingletonClass = Cast<UClass>(GetObjectFromUnrealObjectRef(SingletonClassRef)))
+	{
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsOfClass(NetDriver->World, SingletonClass, FoundActors);
+
+		// There should be only one singleton actor per class
+		if (FoundActors.Num() == 1)
+		{
+			return FoundActors[0];
+		}
+
+		FString FullPath;
+		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
+		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("GetSingletonByClassRef: Found %d actors for singleton class: %s"), FoundActors.Num(), *FullPath);
+		return nullptr;
+	}
+	else
+	{
+		FString FullPath;
+		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("GetSingletonByClassRef: Can't resolve singleton class: %s"), *FullPath);
+		return nullptr;
+	}
+}
+
 bool USpatialPackageMapClient::CanClientLoadObject(UObject* Object)
 {
 	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
@@ -326,6 +358,11 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 
 			// This is the only extra object ref that has to be registered for the subobject.
 			UnrealObjectRefToNetGUID.Emplace(StablyNamedSubobjectRef, SubobjectNetGUID);
+
+			// As the subobject may have be referred to previously in replication flow, it would
+			// have it's stable name registered as it's UnrealObjectRef inside NetGUIDToUnrealObjectRef.
+			// Update the map to point to the entity id version.
+			NetGUIDToUnrealObjectRef.Emplace(SubobjectNetGUID, EntityIdSubobjectRef);
 		}
 
 		RegisterObjectRef(SubobjectNetGUID, EntityIdSubobjectRef);
@@ -413,21 +450,44 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 		return;
 	}
 
-	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
-
 	SpatialGDK::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
 
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
+	if (UnrealMetadata->NativeClass.IsStale())
 	{
-		FUnrealObjectRef SubobjectRef(EntityId, SubobjectInfoPair.Key);
-		if (FNetworkGUID* SubobjectNetGUID = UnrealObjectRefToNetGUID.Find(SubobjectRef))
-		{
-			NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
-			UnrealObjectRefToNetGUID.Remove(SubobjectRef);
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Attempting to remove stale object from package map - %s"), *UnrealMetadata->ClassPath);
+	}
+	else
+	{
+		const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
 
-			if (StablyNamedRefOption.IsSet())
+		for (auto& SubobjectInfoPair : Info.SubobjectInfo)
+		{
+			FUnrealObjectRef SubobjectRef(EntityId, SubobjectInfoPair.Key);
+			if (FNetworkGUID* SubobjectNetGUID = UnrealObjectRefToNetGUID.Find(SubobjectRef))
 			{
-				UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
+				NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
+				UnrealObjectRefToNetGUID.Remove(SubobjectRef);
+
+				if (StablyNamedRefOption.IsSet())
+				{
+					UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
+				}
+			}
+		}
+	}
+
+	// Remove dynamically attached subobjects
+	if (USpatialActorChannel* Channel = SpatialNetDriver->GetActorChannelByEntityId(EntityId))
+	{
+		for (UObject* DynamicSubobject : Channel->CreateSubObjects)
+		{
+			if (FNetworkGUID* SubobjectNetGUID = NetGUIDLookup.Find(DynamicSubobject))
+			{
+				if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*SubobjectNetGUID))
+				{
+					UnrealObjectRefToNetGUID.Remove(*SubobjectRef);
+					NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
+				}
 			}
 		}
 	}
@@ -469,16 +529,23 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 		return;
 	}
 
-	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
-
-	// Part of the CDO
-	if (const TSharedRef<const FClassInfo>* SubobjectInfoPtr = Info.SubobjectInfo.Find(SubobjectRef.Offset))
+	if (UnrealMetadata->NativeClass.IsStale())
 	{
-		SpatialGDK::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Attempting to remove stale subobject from package map - %s"), *UnrealMetadata->ClassPath);
+	}
+	else
+	{
+		const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
 
-		if (StablyNamedRefOption.IsSet())
+		// Part of the CDO
+		if (const TSharedRef<const FClassInfo>* SubobjectInfoPtr = Info.SubobjectInfo.Find(SubobjectRef.Offset))
 		{
-			UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPtr->Get().SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
+			SpatialGDK::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
+
+			if (StablyNamedRefOption.IsSet())
+			{
+				UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPtr->Get().SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
+			}
 		}
 	}
 	FNetworkGUID SubobjectNetGUID = UnrealObjectRefToNetGUID[SubobjectRef];
@@ -620,8 +687,12 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const FUnreal
 	FUnrealObjectRef RemappedObjectRef = ObjectRef;
 	NetworkRemapObjectRefPaths(RemappedObjectRef, false /*bIsReading*/);
 
-	checkSlow(!NetGUIDToUnrealObjectRef.Contains(NetGUID) || (NetGUIDToUnrealObjectRef.Contains(NetGUID) && NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == RemappedObjectRef));
-	checkSlow(!UnrealObjectRefToNetGUID.Contains(RemappedObjectRef) || (UnrealObjectRefToNetGUID.Contains(RemappedObjectRef) && UnrealObjectRefToNetGUID.FindChecked(RemappedObjectRef) == NetGUID));
+	checkfSlow(!NetGUIDToUnrealObjectRef.Contains(NetGUID) || (NetGUIDToUnrealObjectRef.Contains(NetGUID) && NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == RemappedObjectRef),
+		TEXT("NetGUID to UnrealObjectRef mismatch - NetGUID: %s ObjRef in map: %s ObjRef expected: %s"), *NetGUID.ToString(),
+		*NetGUIDToUnrealObjectRef.FindChecked(NetGUID).ToString(), *RemappedObjectRef.ToString());
+	checkfSlow(!UnrealObjectRefToNetGUID.Contains(RemappedObjectRef) || (UnrealObjectRefToNetGUID.Contains(RemappedObjectRef) && UnrealObjectRefToNetGUID.FindChecked(RemappedObjectRef) == NetGUID),
+		TEXT("UnrealObjectRef to NetGUID mismatch - UnrealObjectRef: %s NetGUID in map: %s NetGUID expected: %s"), *NetGUID.ToString(),
+		*UnrealObjectRefToNetGUID.FindChecked(RemappedObjectRef).ToString(), *RemappedObjectRef.ToString());
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, RemappedObjectRef);
 	UnrealObjectRefToNetGUID.Emplace(RemappedObjectRef, NetGUID);
 }

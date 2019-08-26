@@ -21,9 +21,9 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);
 // Generates schema for all statically attached subobjects on an Actor.
 void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo,
-	FString SchemaPath, FActorSchemaData& ActorSchemaData);
+	FString SchemaPath, FActorSchemaData& ActorSchemaData, const FActorSchemaData* ExistingSchemaData);
 // Generates schema for a statically attached subobject on an Actor - called by GenerateSubobjectSchemaForActor.
 FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator,
-	FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass);
+	FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, const FActorSpecificSubobjectSchemaData* ExistingSchemaData);
 // Output the includes required by this schema file.
 void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInfo);

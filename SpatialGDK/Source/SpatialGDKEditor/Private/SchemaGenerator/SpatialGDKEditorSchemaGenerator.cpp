@@ -398,9 +398,9 @@ TMap<uint32, FString> CreateComponentIdToClassPathMap()
 	return ComponentIdToClassPath;
 }
 
-void SaveSchemaDatabase()
+bool SaveSchemaDatabase()
 {
-	FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
+	FString PackagePath = SpatialConstants::SCHEMA_DATABASE_ASSET_PATH;
 	UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
@@ -421,14 +421,16 @@ void SaveSchemaDatabase()
 	Package->GetMetaData();
 
 	FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
-	bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()));
+	bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()), GError, nullptr, false, true, SAVE_NoError);
 
 	if (!bSuccess)
 	{
 		FString FullPath = FPaths::ConvertRelativePathToFull(FilePath);
 		FPaths::MakePlatformFilename(FullPath);
-		FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to '%s'! Please make sure the file is writeable."), *FullPath)));
+		FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to '%s'! The file may be locked by another process."), *FullPath)));
+		return false;
 	}
+	return true;
 }
 
 TArray<UClass*> GetAllSupportedClasses()
@@ -541,9 +543,9 @@ void ClearGeneratedSchema()
 
 bool TryLoadExistingSchemaDatabase()
 {
-	const FString SchemaDatabasePackagePath = TEXT("/Game/Spatial/SchemaDatabase");
-	const FString SchemaDatabaseAssetPath = FString::Printf(TEXT("%s.SchemaDatabase"), *SchemaDatabasePackagePath);
-	const FString SchemaDatabaseFileName = FPackageName::LongPackageNameToFilename(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH);
+	const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	const FString SchemaDatabaseAssetPath = FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase"));
 
 	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*SchemaDatabaseFileName);
 
@@ -592,6 +594,34 @@ SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists()
 	return PlatformFile.DirectoryExists(*SchemaOutputPath);
 }
 
+bool GeneratedSchemaDatabaseExists()
+{
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH);
+	const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	return PlatformFile.FileExists(*SchemaDatabaseFileName);
+}
+
+void ResolveClassPathToSchemaName(const FString& ClassPath, const FString& SchemaName)
+{
+	if (SchemaName.IsEmpty())
+	{
+		return;
+	}
+
+	ClassPathToSchemaName.Add(ClassPath, SchemaName);
+	SchemaNameToClassPath.Add(SchemaName, ClassPath);
+	FSoftObjectPath ObjPath = FSoftObjectPath(ClassPath);
+	FString DesiredSchemaName = UnrealNameToSchemaName(ObjPath.GetAssetName());
+
+	if (DesiredSchemaName != SchemaName)
+	{
+		AddPotentialNameCollision(DesiredSchemaName, ClassPath, SchemaName);
+	}
+	AddPotentialNameCollision(SchemaName, ClassPath, SchemaName);
+}
+
 void ResetUsedNames()
 {
 	ClassPathToSchemaName.Empty();
@@ -600,25 +630,16 @@ void ResetUsedNames()
 
 	for (const TPair<FString, FActorSchemaData>& Entry : ActorClassPathToSchema)
 	{
-		if (Entry.Value.GeneratedSchemaName.IsEmpty())
-		{
-			// Ignore Subobject entries with empty names.
-			continue;
-		}
-		ClassPathToSchemaName.Add(Entry.Key, Entry.Value.GeneratedSchemaName);
-		SchemaNameToClassPath.Add(Entry.Value.GeneratedSchemaName, Entry.Key);
-		FSoftObjectPath ObjPath = FSoftObjectPath(Entry.Key);
-		FString DesiredSchemaName = UnrealNameToSchemaName(ObjPath.GetAssetName());
-
-		if (DesiredSchemaName != Entry.Value.GeneratedSchemaName)
-		{
-			AddPotentialNameCollision(DesiredSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
-		}
-		AddPotentialNameCollision(Entry.Value.GeneratedSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
+		ResolveClassPathToSchemaName(Entry.Key, Entry.Value.GeneratedSchemaName);
 	}
+
+ 	for (const TPair< FString, FSubobjectSchemaData>& Entry : SubobjectClassPathToSchema)
+ 	{
+		ResolveClassPathToSchemaName(Entry.Key, Entry.Value.GeneratedSchemaName);
+ 	}
 }
 
-void RunSchemaCompiler()
+bool RunSchemaCompiler()
 {
 	FString PluginDir = GetDefault<USpatialGDKEditorSettings>()->GetGDKPluginDirectory();
 
@@ -634,7 +655,11 @@ void RunSchemaCompiler()
 	if (!FPaths::DirectoryExists(SchemaDescriptorDir))
 	{
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-		PlatformFile.CreateDirectoryTree(*SchemaDescriptorDir);
+		if (!PlatformFile.CreateDirectoryTree(*SchemaDescriptorDir))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create schema descriptor directory '%s'! Please make sure the parent directory is writeable."), *SchemaDescriptorDir);
+			return false;
+		}
 	}
 
 	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
@@ -649,10 +674,12 @@ void RunSchemaCompiler()
 	if (ExitCode == 0)
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("schema_compiler successfully generated schema descriptor: %s"), *SchemaCompilerOut);
+		return true;
 	}
 	else
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("schema_compiler failed to generate schema descriptor: %s"), *SchemaCompilerErr);
+		return false;
 	}
 }
 
@@ -696,10 +723,12 @@ bool SpatialGDKGenerateSchema()
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath, IdGenerator);
 	GenerateSchemaForSublevels(SchemaOutputPath, IdGenerator);
 	NextAvailableComponentId = IdGenerator.Peek();
-	SaveSchemaDatabase();
-	RunSchemaCompiler();
+	if (!SaveSchemaDatabase())
+	{
+		return false;
+	}
 
-	return true;
+	return RunSchemaCompiler();
 }
 
 #undef LOCTEXT_NAMESPACE

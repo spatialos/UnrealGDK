@@ -17,9 +17,11 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/SpatialSender.h"
-#include "Interop/SpatialReceiver.h"
 #include "Interop/GlobalStateManager.h"
+#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
+#include "Schema/ClientRPCEndpoint.h"
+#include "Schema/ServerRPCEndpoint.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/RepLayoutUtils.h"
@@ -77,7 +79,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bCreatingNewEntity(false)
 	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, bInterestDirty(false)
-	, bIsListening(false)
 	, bNetOwned(false)
 	, NetDriver(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
@@ -125,6 +126,10 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		if (Actor->GetTearOff())
 		{
 			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
+			// Since the entity deletion is delayed, this creates a situation,
+			// when the Actor is torn off, but still replicates. 
+			// Disabling replication makes RPC calls impossible for this Actor.
+			Actor->SetReplicates(false);
 		}
 		else
 		{
@@ -161,6 +166,9 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 	}
 #endif
 
+	// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects
+	Receiver->CleanupDeletedEntity(EntityId);
+
 #if ENGINE_MINOR_VERSION <= 20
 	return UActorChannel::CleanUp(bForDestroy);
 #else
@@ -195,7 +203,7 @@ void USpatialActorChannel::UpdateShadowData()
 {
 	check(Actor);
 
-	// If this channel was responsible for creating the channel, we do not want to initialize our shadow data
+	// If this channel was responsible for creating the actor, we do not want to initialize our shadow data
 	// to the latest state since there could have been state that has changed between creation of the entity
 	// and gaining of authority. Revisit this with UNR-1034
 	// TODO: UNR-1029 - log when the shadow data differs from the current state of the Actor.
@@ -343,8 +351,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
 	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
-	APlayerController* PlayerController = Cast<APlayerController>(Actor);
-	if (PlayerController)
+	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
 		PlayerController->SendClientAdjustment();
 	}
@@ -413,6 +420,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
 			Sender->SendCreateEntityRequest(this);
+			bCreatedEntity = true;
 
 			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
 			Actor->Role = ROLE_SimulatedProxy;
@@ -542,6 +550,26 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	}
 }
 
+bool USpatialActorChannel::IsListening() const
+{
+	if (NetDriver->IsServer())
+	{
+		if (SpatialGDK::ClientRPCEndpoint* Endpoint = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ClientRPCEndpoint>(EntityId))
+		{
+			return Endpoint->bReady;
+		}
+	}
+	else
+	{
+		if (SpatialGDK::ServerRPCEndpoint* Endpoint = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ServerRPCEndpoint>(EntityId))
+		{
+			return Endpoint->bReady;
+		}
+	}
+
+	return false;
+}
+
 const FClassInfo* USpatialActorChannel::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
 {
 	const FClassInfo* Info = nullptr;
@@ -579,7 +607,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	bool bCreatedReplicator = false;
 
 #if ENGINE_MINOR_VERSION <= 20
-	bCreatedReplicator = ReplicationMap.Contains(Object);
+	bCreatedReplicator = !ReplicationMap.Contains(Object);
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 #else
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
@@ -638,6 +666,13 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	if (RepChanged.Num() > 0)
 	{
 		FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Object) };
+
+		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
+		if (!ObjectRef.IsValid())
+		{
+			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Attempted to replicate an invalid ObjectRef. This may be a dynamic component that couldn't attach: %s"), *Object->GetName());
+			return false;
+		}
 		
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
 		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr);
@@ -861,21 +896,27 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		// UNR-630 - Temporary hack to avoid failure to create entities due to timeout on large maps
 		if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
 		{
 			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Failed to create entity for actor %s Reason: %s. Retrying..."), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
 			Sender->SendCreateEntityRequest(this);
 		}
-		else
+#if !UE_BUILD_SHIPPING
+		// Commands can timeout locally, but still be processed by the runtime. When this occurs, our follow up `CreateEntityRequest` will be
+		// superfluous, as the entity will already be created. If we detect that the entity is already in our view, reduce the message severity
+		else if (NetDriver->StaticComponentView->GetComponentData<SpatialGDK::Position>(GetEntityId()) == nullptr)
 		{
 			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to create entity for actor %s: Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
 		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Failed to create entity for actor %s, entity already in view : Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+		}
+#endif // !UE_BUILD_SHIPPING
 
 		return;
 	}
 
-	bCreatedEntity = true;
 	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Created entity (%lld) for: %s."), Op.entity_id, *Actor->GetName());
 }
 
@@ -1000,6 +1041,21 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		return;
 	}
 
+	UpdateEntityACLToNewOwner();
+
+	for (AActor* Child : Actor->Children)
+	{
+		Worker_EntityId ChildEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Child);
+
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(ChildEntityId))
+		{
+			Channel->ServerProcessOwnershipChange();
+		}
+	}
+}
+
+void USpatialActorChannel::UpdateEntityACLToNewOwner()
+{
 	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 
 	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
