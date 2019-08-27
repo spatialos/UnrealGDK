@@ -28,6 +28,7 @@
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKSimulatedPlayerDeployment.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -547,6 +548,18 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		return;
 	}
 
+	if (!IsSnapshotGenerated())
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but snapshot is not generated."));
+		return;
+	}
+
+	if (!IsSchemaGenerated())
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but schema is not generated."));
+		return;
+	}
+
 	// Get the latest launch config.
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -809,6 +822,19 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 			OnShowFailedNotification("Incremental Schema Generation failed");
 		}
 	}
+}
+
+bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated(FString snapshotName) const
+{
+	FString SnapshotPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(FPaths::Combine(TEXT("snapshots"), snapshotName));
+	return FPaths::FileExists(SnapshotPath);
+}
+
+bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
+{
+	FString DescriptorPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("build/assembly/schema.descriptor"));
+	FString GdkFolderPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("schema/unreal/gdk"));
+	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && GeneratedSchemaDatabaseExists();
 }
 
 #undef LOCTEXT_NAMESPACE
