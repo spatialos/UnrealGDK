@@ -18,6 +18,7 @@
 #include "Utils/ErrorCodeRemapping.h"
 #include <gdk/spatialos_connection_handler.h>
 #include <gdk/initial_op_list_connection_handler.h>
+#include <cstddef>
 #include <memory>
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
