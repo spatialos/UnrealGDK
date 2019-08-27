@@ -21,12 +21,12 @@ void USpatialDispatcher::ProcessOps(const gdk::SpatialOsWorker& Worker)
 {
 	Receiver->OnCriticalSection(true);
 	ProcessNewEntities(Worker);
-	ProcessGdkEntityMessages(Worker, 1);
-	ProcessGdkEntityMessages(Worker, SpatialConstants::STARTING_GENERATED_COMPONENT_ID);
-	ProcessGdkEntityMessages(Worker, SpatialConstants::MAX_EXTERNAL_SCHEMA_ID + 1);
+	ProcessGdkEntityMessages(Worker, SpatialConstants::MIN_SPATIAL_OS_STANDARD_COMPONENT_ID);
+	ProcessGdkEntityMessages(Worker, SpatialConstants::MIN_GENERATED_COMPONENT_ID);
+	ProcessGdkEntityMessages(Worker, SpatialConstants::MIN_GDK_STANDARD_COMPONENT_ID);
 	Receiver->OnCriticalSection(false);
-	ProcessGdkCommands(Worker, SpatialConstants::MAX_EXTERNAL_SCHEMA_ID + 1);
-	ProcessGdkCommands(Worker, 1);
+	ProcessGdkCommands(Worker, SpatialConstants::MIN_GDK_STANDARD_COMPONENT_ID);
+	ProcessGdkCommands(Worker, SpatialConstants::MIN_SPATIAL_OS_STANDARD_COMPONENT_ID);
 	ProcessUserMessages(Worker, SpatialConstants::MIN_EXTERNAL_SCHEMA_ID);
 	ProcessWorldCommandResponses(Worker);
 	ProcessWorkerMessages(Worker);
