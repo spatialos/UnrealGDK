@@ -31,7 +31,7 @@
       "Name": "SpatialGDKEditorToolbar",
       "Type": "Editor",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64", "Mac" ]
+      "WhitelistPlatforms": [ "Win64" ]
     },
     {
       "Name": "SpatialGDKEditorCommandlet",
