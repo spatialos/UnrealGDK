@@ -251,6 +251,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture)
 {
+	using namespace SpatialConstants;
 	TWeakObjectPtr<USpatialWorkerConnection> WeakSpatialWorkerConnection(this);
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, ConnectionFuture, WeakSpatialWorkerConnection]
@@ -267,16 +268,14 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 				return;
 			}
 
+			// Group contiguous groups of components together depending on how we use them.
 			gdk::ComponentRanges Ranges;
-			const auto GeneratedStart = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
-			// Generated components range.
-			Ranges.TryAddComponentRange(gdk::Range{ GeneratedStart, GeneratedStart + 100000 });
-			// Non-generated components range.
-			Ranges.TryAddComponentRange(gdk::Range{ SpatialConstants::MAX_EXTERNAL_SCHEMA_ID + 1, GeneratedStart - 1});
-			// External component range
-			Ranges.TryAddComponentRange(gdk::Range{ SpatialConstants::MIN_EXTERNAL_SCHEMA_ID, SpatialConstants::MAX_EXTERNAL_SCHEMA_ID});
-			// Standard library
-			Ranges.TryAddComponentRange(gdk::Range{ 1, SpatialConstants::MIN_EXTERNAL_SCHEMA_ID - 1 });
+			Ranges.TryAddComponentRange(gdk::Range{ MIN_GENERATED_COMPONENT_ID, MAX_GENERATED_COMPONENT_ID });
+			Ranges.TryAddComponentRange(gdk::Range{ MIN_GDK_STANDARD_COMPONENT_ID,  MAX_GDK_STANDARD_COMPONENT_ID});
+			Ranges.TryAddComponentRange(gdk::Range{ MIN_EXTERNAL_SCHEMA_ID, MAX_EXTERNAL_SCHEMA_ID});
+			Ranges.TryAddComponentRange(gdk::Range{ MIN_SPATIAL_OS_STANDARD_COMPONENT_ID, MAX_SPATIAL_OS_STANDARD_COMPONENT_ID });
+
+			// Function determines what ops get seen early and when the connection is considered to be ready. 
 			auto InitialOpsFunction = [this](gdk::OpList* OpList, gdk::ExtractedOpList* ExtractedOpList)
 			{
 				if (GetSpatialNetDriverChecked()->bConnectAsClient)
@@ -289,7 +288,7 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 				{
 					return false;
 				}
-				const gdk::ComponentId StartUpId = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
+				const gdk::ComponentId StartUpId = STARTUP_ACTOR_MANAGER_COMPONENT_ID;
 				if (GlobalStateManager->IsReadyToCallBeginPlay() && EntityPool->IsReady())
 				{
 					GlobalStateManager->TriggerBeginPlay();
