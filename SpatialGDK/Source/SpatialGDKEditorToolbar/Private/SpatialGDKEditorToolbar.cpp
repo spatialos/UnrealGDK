@@ -24,11 +24,11 @@
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
 #include "SpatialGDKEditor.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKSimulatedPlayerDeployment.h"
-#include "SpatialGDKEditorSchemaGenerator.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -824,7 +824,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	}
 }
 
-bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated(FString snapshotName) const
+bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated(const FString& snapshotName) const
 {
 	FString SnapshotPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(FPaths::Combine(TEXT("snapshots"), snapshotName));
 	return FPaths::FileExists(SnapshotPath);
