@@ -21,9 +21,9 @@ void USpatialDispatcher::ProcessOps(const gdk::SpatialOsWorker& Worker)
 {
 	Receiver->OnCriticalSection(true);
 	ProcessNewEntities(Worker);
-	ProcessGdkEntityMessages(Worker, SpatialConstants::MIN_SPATIAL_OS_STANDARD_COMPONENT_ID);
-	ProcessGdkEntityMessages(Worker, SpatialConstants::MIN_GENERATED_COMPONENT_ID);
-	ProcessGdkEntityMessages(Worker, SpatialConstants::MIN_GDK_STANDARD_COMPONENT_ID);
+	ProcessEntityComponentMessages(Worker, SpatialConstants::MIN_SPATIAL_OS_STANDARD_COMPONENT_ID);
+	ProcessEntityComponentMessages(Worker, SpatialConstants::MIN_GENERATED_COMPONENT_ID);
+	ProcessEntityComponentMessages(Worker, SpatialConstants::MIN_GDK_STANDARD_COMPONENT_ID);
 	Receiver->OnCriticalSection(false);
 	ProcessGdkCommands(Worker, SpatialConstants::MIN_GDK_STANDARD_COMPONENT_ID);
 	ProcessGdkCommands(Worker, SpatialConstants::MIN_SPATIAL_OS_STANDARD_COMPONENT_ID);
@@ -66,7 +66,7 @@ void USpatialDispatcher::ProcessNewEntities(const gdk::SpatialOsWorker& Worker)
 	}
 }
 
-void USpatialDispatcher::ProcessGdkEntityMessages(const gdk::SpatialOsWorker& Worker, gdk::ComponentId RangeId)
+void USpatialDispatcher::ProcessEntityComponentMessages(const gdk::SpatialOsWorker& Worker, gdk::ComponentId RangeId)
 {
 	// Components added and removed.
 	for (const auto& entityComponent : Worker.GetComponentsAdded(RangeId))

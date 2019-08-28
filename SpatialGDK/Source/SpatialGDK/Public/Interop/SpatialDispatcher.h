@@ -60,7 +60,7 @@ private:
 
 	void ProcessWorkerMessages(const gdk::SpatialOsWorker& Worker);
 	void ProcessNewEntities(const gdk::SpatialOsWorker& Worker);
-	void ProcessGdkEntityMessages(const gdk::SpatialOsWorker& Worker, gdk::ComponentId RangeId);
+	void ProcessEntityComponentMessages(const gdk::SpatialOsWorker& Worker, gdk::ComponentId RangeId);
 	void ProcessGdkCommands(const gdk::SpatialOsWorker& Worker, gdk::ComponentId RangeId);
 	void ProcessUserMessages(const gdk::SpatialOsWorker& Worker, gdk::ComponentId RangeId);
 	void ProcessWorldCommandResponses(const gdk::SpatialOsWorker& Worker);
