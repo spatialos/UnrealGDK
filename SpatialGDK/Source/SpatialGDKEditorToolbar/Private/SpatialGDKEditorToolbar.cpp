@@ -824,15 +824,15 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	}
 }
 
-bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated(const FString& snapshotName) const
+bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated() const
 {
-	FString SnapshotPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(FPaths::Combine(TEXT("snapshots"), snapshotName));
-	return FPaths::FileExists(SnapshotPath);
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return FPaths::FileExists(SpatialGDKSettings->GetSnapshotPath());
 }
 
 bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
 {
-	FString DescriptorPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("build/assembly/schema.descriptor"));
+	FString DescriptorPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("build/assembly/schema/schema.descriptor"));
 	FString GdkFolderPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("schema/unreal/gdk"));
 	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && GeneratedSchemaDatabaseExists();
 }

@@ -97,7 +97,7 @@ private:
 
 	void GenerateSchema(bool bFullScan);
 
-	bool IsSnapshotGenerated(const FString& snapshotName = "default.snapshot") const;
+	bool IsSnapshotGenerated() const;
 	bool IsSchemaGenerated() const;
 
 	static void ShowCompileLog();
