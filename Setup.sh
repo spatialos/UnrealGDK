@@ -41,7 +41,6 @@ markStartOfBlock "Setup the git hooks"
 markEndOfBlock "Setup the git hooks"
 
 markStartOfBlock "Check dependencies"
-    # no need to check for UNREAL_HOME here. msbuild already installed and can directly use it. It's in the path
     which msbuild > /dev/null
     if [ $? -eq 1 ]; then
         echo "Error: Could not find the MSBuild executable. Please make sure you have Microsoft Visual Studio or Microsoft Build Tools installed."
