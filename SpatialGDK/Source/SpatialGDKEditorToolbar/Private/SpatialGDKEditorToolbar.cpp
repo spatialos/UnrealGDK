@@ -79,7 +79,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	{
 		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
 		{
-			VerifyAndStartDeployment();
+			AutoStartLocalDeployment();
 		});
 	}
 }
@@ -615,6 +615,21 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	});
 }
 
+void FSpatialGDKEditorToolbarModule::AutoStartLocalDeployment()
+{
+	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
+
+	if (GeneralProjectSettings->bAutoStartLocalDeployment)
+	{
+		if (GeneralProjectSettings->bAutoRestartLocalDeployment)
+		{
+			LocalDeploymentManager->SetRedeployRequired();
+		}
+
+		VerifyAndStartDeployment();
+	}
+}
+
 void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
 {
 	VerifyAndStartDeployment();
@@ -718,25 +733,6 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		if (PropertyName.ToString() == TEXT("bStopSpatialOnExit"))
 		{
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
-		}
-		else if (PropertyName.ToString() == TEXT("bAutoStartLocalDeployment"))
-		{
-			// TODO: UNR-1776 Workaround for SpatialNetDriver requiring editor settings.
-			LocalDeploymentManager->SetAutoDeploy(Settings->bAutoStartLocalDeployment);
-
-			if (Settings->bAutoStartLocalDeployment)
-			{
-				// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
-				UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
-				{
-					VerifyAndStartDeployment();
-				});
-			}
-			else
-			{
-				// Unbind the TryStartSpatialDeployment if autostart is disabled.
-				UEditorEngine::TryStartSpatialDeployment.Unbind();
-			}
 		}
 	}
 }

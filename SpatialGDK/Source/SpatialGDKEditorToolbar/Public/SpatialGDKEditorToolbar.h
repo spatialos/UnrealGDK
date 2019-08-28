@@ -51,6 +51,7 @@ private:
 	void AddMenuExtension(FMenuBuilder& Builder);
 
 	void VerifyAndStartDeployment();
+	void AutoStartLocalDeployment();
 
 	void StartSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
