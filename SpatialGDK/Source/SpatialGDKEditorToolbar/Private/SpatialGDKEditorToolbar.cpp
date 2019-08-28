@@ -826,8 +826,8 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 
 bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated() const
 {
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return FPaths::FileExists(SpatialGDKSettings->GetSnapshotPath());
+	FString SnapshotPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("snapshots/default.snapshot"));
+	return FPaths::FileExists(SnapshotPath);
 }
 
 bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
