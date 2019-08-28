@@ -59,11 +59,5 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-<!--
-    <PostBuildEvent>cp "$(SolutionDir)\$(ProjectName)\$(OutDir)CodeGenerator.exe" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\"
-      cp "$(SolutionDir)\$(ProjectName)\$(OutDir)CommandLine.dll" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\"
-      cp "$(SolutionDir)\$(ProjectName)\$(OutDir)Newtonsoft.Json.dll" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\"</PostBuildEvent>
--->
-    <!-- <PostBuildEvent>xcopy "$(SolutionDir)CodeGenerator\bin\netcoreapp2.2\win10-x64" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\codegen\" /E /Y</PostBuildEvent> -->
   </PropertyGroup>
 </Project>
