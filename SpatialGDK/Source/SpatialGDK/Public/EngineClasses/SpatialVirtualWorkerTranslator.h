@@ -44,6 +44,8 @@ public:
 
 	mutable FOnWorkerAssignmentChanged OnWorkerAssignmentChanged;
 
+	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
+
 private:
 
 	UFUNCTION()
@@ -51,7 +53,6 @@ private:
 	void AssignWorker(const FString& WorkerId);
 	void UnassignWorker(const FString& WorkerId);
 
-	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
 	void ProcessQueuedAclAssignmentRequests();
 
 	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId);

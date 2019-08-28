@@ -290,16 +290,22 @@ struct AuthorityIntent : Component
 		return Data;
 	}
 
-	static Worker_ComponentUpdate CreateAuthorityIntentUpdate(const FString& NewVirtualWorkerId)
+	Worker_ComponentUpdate CreateAuthorityIntentUpdate()
 	{
 		Worker_ComponentUpdate Update = {};
 		Update.component_id = ComponentId;
 		Update.schema_type = Schema_CreateComponentUpdate(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-		AddStringToSchema(ComponentObject, 1, NewVirtualWorkerId);
+		AddStringToSchema(ComponentObject, 1, VirtualWorkerId);
 
 		return Update;
+	}
+
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		VirtualWorkerId = GetStringFromSchema(ComponentObject, 1);
 	}
 
 	FString VirtualWorkerId;
