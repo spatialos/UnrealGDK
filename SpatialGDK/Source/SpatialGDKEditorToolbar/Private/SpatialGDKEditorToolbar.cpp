@@ -278,7 +278,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 
 	SpatialGDKEditorInstance->GenerateSnapshot(
-		GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotFile(),
+		GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotToSave(),
 		FSimpleDelegate::CreateLambda([this]() { OnShowSuccessNotification("Snapshot successfully generated!"); }),
 		FSimpleDelegate::CreateLambda([this]() { OnShowFailedNotification("Snapshot generation failed!"); }),
 		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
@@ -594,8 +594,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	}
 
 	const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
+	const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags]
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName]
 	{
 		// If the last local deployment is still stopping then wait until it's finished.
 		while (LocalDeploymentManager->IsDeploymentStopping())
@@ -617,7 +618,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
-		if (LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags))
+		if (LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName))
 		{
 			OnShowSuccessNotification(TEXT("Local deployment started!"));
 		}
@@ -826,8 +827,8 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 
 bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated() const
 {
-	FString SnapshotPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("snapshots/default.snapshot"));
-	return FPaths::FileExists(SnapshotPath);
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return FPaths::FileExists(SpatialGDKSettings->GetSpatialOSSnapshotToLoadPath());
 }
 
 bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
