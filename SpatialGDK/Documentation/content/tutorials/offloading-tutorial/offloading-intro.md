@@ -2,7 +2,7 @@
 
 # Tutorials and guides
 
-## Offloading
+## Multiserver offloading
 
 > This tutorial uses the Example Project from the GDK's [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro).</br>
 

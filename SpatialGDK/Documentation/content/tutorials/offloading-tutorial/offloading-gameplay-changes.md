@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Offloading
+# Multiserver offloading
 
 ## 2. Gameplay Changes
 
