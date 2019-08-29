@@ -19,3 +19,5 @@ SPATIALGDKEDITOR_API bool TryLoadExistingSchemaDatabase();
 SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists();
 
 SPATIALGDKEDITOR_API bool DeleteSchemaDatabase();
+
+bool GeneratedSchemaDatabaseExists();
