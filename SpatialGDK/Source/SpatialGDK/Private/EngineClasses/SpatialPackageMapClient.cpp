@@ -687,12 +687,12 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const FUnreal
 	FUnrealObjectRef RemappedObjectRef = ObjectRef;
 	NetworkRemapObjectRefPaths(RemappedObjectRef, false /*bIsReading*/);
 
-	checkfSlow(!NetGUIDToUnrealObjectRef.Contains(NetGUID) || (NetGUIDToUnrealObjectRef.Contains(NetGUID) && NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == RemappedObjectRef),
-		TEXT("NetGUID to UnrealObjectRef mismatch - NetGUID: %s ObjRef in map: %s ObjRef expected: %s"), *NetGUID.ToString(),
-		*NetGUIDToUnrealObjectRef.FindChecked(NetGUID).ToString(), *RemappedObjectRef.ToString());
-	checkfSlow(!UnrealObjectRefToNetGUID.Contains(RemappedObjectRef) || (UnrealObjectRefToNetGUID.Contains(RemappedObjectRef) && UnrealObjectRefToNetGUID.FindChecked(RemappedObjectRef) == NetGUID),
-		TEXT("UnrealObjectRef to NetGUID mismatch - UnrealObjectRef: %s NetGUID in map: %s NetGUID expected: %s"), *NetGUID.ToString(),
-		*UnrealObjectRefToNetGUID.FindChecked(RemappedObjectRef).ToString(), *RemappedObjectRef.ToString());
+	//checkfSlow(!NetGUIDToUnrealObjectRef.Contains(NetGUID) || (NetGUIDToUnrealObjectRef.Contains(NetGUID) && NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == RemappedObjectRef),
+	//	TEXT("NetGUID to UnrealObjectRef mismatch - NetGUID: %s ObjRef in map: %s ObjRef expected: %s"), *NetGUID.ToString(),
+	//	*NetGUIDToUnrealObjectRef.FindChecked(NetGUID).ToString(), *RemappedObjectRef.ToString());
+	//checkfSlow(!UnrealObjectRefToNetGUID.Contains(RemappedObjectRef) || (UnrealObjectRefToNetGUID.Contains(RemappedObjectRef) && UnrealObjectRefToNetGUID.FindChecked(RemappedObjectRef) == NetGUID),
+	//	TEXT("UnrealObjectRef to NetGUID mismatch - UnrealObjectRef: %s NetGUID in map: %s NetGUID expected: %s"), *NetGUID.ToString(),
+	//	*UnrealObjectRefToNetGUID.FindChecked(RemappedObjectRef).ToString(), *RemappedObjectRef.ToString());
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, RemappedObjectRef);
 	UnrealObjectRefToNetGUID.Emplace(RemappedObjectRef, NetGUID);
 }

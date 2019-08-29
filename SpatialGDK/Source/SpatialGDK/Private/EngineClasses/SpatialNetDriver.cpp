@@ -690,10 +690,15 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 // Returns true if this actor should replicate to *any* of the passed in connections
 static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, const TArray<FNetViewer>& ConnectionViewers)
 {
-	// SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
-	// We might make some exceptions in the future, so keeping this function.
-	// TODO: UNR-837 Start using IsNetRelevantFor again for relevancy checks rather than returning true.
-	return true;
+	for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
+	{
+		if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 // Returns true if this actor is considered dormant (and all properties caught up) to the current connection
@@ -1175,6 +1180,26 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 			if (ClientConnection->Children.Num() > 0)
 			{
 				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Child connections present on Spatial client connection %s! We don't support splitscreen yet, so this will not function correctly."), *ClientConnection->GetName());
+			}
+		}
+		else
+		{
+			// Not having a ViewTarget implies this must be the fake spatial connection and thus borrow the player controllers from other connections.
+			for (int j = 0; j < ClientConnections.Num(); j++)
+			{
+				USpatialNetConnection* OtherSpatialConnection = Cast<USpatialNetConnection>(ClientConnections[j]);
+				if (OtherSpatialConnection->ViewTarget)
+				{
+					new(ConnectionViewers)FNetViewer(OtherSpatialConnection, DeltaSeconds);
+
+					for (int32 ViewerIndex = 0; ViewerIndex < OtherSpatialConnection->Children.Num(); ViewerIndex++)
+					{
+						if (OtherSpatialConnection->Children[ViewerIndex]->ViewTarget != NULL)
+						{
+							new(ConnectionViewers)FNetViewer(OtherSpatialConnection->Children[ViewerIndex], DeltaSeconds);
+						}
+					}
+				}
 			}
 		}
 	}
