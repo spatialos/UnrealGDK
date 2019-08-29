@@ -20,7 +20,6 @@ bool UGenerateSchemaCommandlet::HandleDeleteSchemaOption(const TArray<FString>& 
 		if (DeleteSchemaDatabase())
 		{
 			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Deleted schema database"));
-			return true;
 		}
 		else
 		{
@@ -28,6 +27,7 @@ bool UGenerateSchemaCommandlet::HandleDeleteSchemaOption(const TArray<FString>& 
 			return false;
 		}
 	}
+	return true;
 }
 
 int32 UGenerateSchemaCommandlet::Main(const FString& Args)
