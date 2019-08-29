@@ -13,17 +13,19 @@ UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
 	LogToConsole = true;
 }
 
-void UGenerateSchemaCommandlet::HandleDeleteSchemaOption(const TArray<FString>& Switches) 
+bool UGenerateSchemaCommandlet::HandleDeleteSchemaOption(const TArray<FString>& Switches) 
 {
 	if (Switches.Contains("delete-schema-db"))
 	{
 		if (DeleteSchemaDatabase())
 		{
 			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Deleted schema database"));
+			return true;
 		}
 		else
 		{
 			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed to delete schema database"));
+			return false;
 		}
 	}
 }
@@ -37,7 +39,11 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 	TMap<FString, FString> Params;
 	ParseCommandLine(*Args, Tokens, Switches);
 
-	HandleDeleteSchemaOption(Switches);
+	if (!HandleDeleteSchemaOption(Switches))
+	{
+		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed to delete schema database, so the command will not continue."));
+		return 1;
+	}
 
 	//Generate Schema!
 	bool bSchemaGenSuccess;
