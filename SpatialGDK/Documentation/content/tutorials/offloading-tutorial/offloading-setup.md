@@ -19,7 +19,7 @@ Watch out, the turrets will also shoot you!
 
 ### Step 2: Adding a new Server Worker
 
-The next step is to define a new Server Worker and instruct the GDK to run an instance of it.
+The next step is to define a new server-worker and instruct the GDK to run an instance of it.
 
 1. Stop the game.
 1. Go to the [SpatialOS Runtime Settings panel]({{urlRoot}}/content/unreal-editor-interface/runtime-settings).
@@ -76,6 +76,7 @@ authority over the turrets & player.
 </br>
 
 <br/>------------<br/>
+_2019-08-29 Page updated as limited editorial review: tutorial is now a full walkthrough on setting up offloading, rather than using pre-set configurations_<br/>
 _2019-07-30 Page added as limited editorial review_
 <br/>
 <br/>
