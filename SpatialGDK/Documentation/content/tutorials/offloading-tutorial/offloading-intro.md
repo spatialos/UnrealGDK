@@ -14,13 +14,14 @@ The turrets use the Perception System to detect AI and player characters and sho
 
 Currently, everything in the world is running on a single server called `UnrealWorker`.
 
-In this tutorial, you will learn the steps needed to offload the AI characters onto a separate server.
+In this tutorial, you will learn the steps needed to offload the AI characters onto a separate server-worker.
 
 </br>
 #### **> Next:** [1: Setup]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-setup)
 </br>
 
 <br/>------------<br/>
+_2019-08-29 Page updated with limited editorial review: clarified overview of tutorial_<br/>
 _2019-07-30 Page added as limited editorial review_
 <br/>
 <br/>
