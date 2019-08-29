@@ -400,5 +400,5 @@ The table for multiserver support is coming soon.
 
 <br/>------<br/>
 _2019-08-20 Pushed out Gameplay Debugger support_
-_2019-07-31 Added support for Dynamic Components, RPCs ordering, and Ability System (0.6.0 release)_
+_2019-07-31 Added support for Dynamic Components, RPCs ordering, and Ability System (0.6.0 release)_</br>
 _2019-07-04 Online Subsystem abstraction support pushed out._
