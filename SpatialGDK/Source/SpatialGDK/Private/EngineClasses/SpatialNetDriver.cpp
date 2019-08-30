@@ -1345,7 +1345,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
 
-	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady() && GlobalStateManager->IsReadyToCallBeginPlay())
+	if (IsServer() && GetSpatialOSNetConnection() != nullptr && EntityPool->IsReady() && StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID))
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
