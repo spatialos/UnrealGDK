@@ -54,6 +54,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading", meta = (WorldContext = "WorldContextObject"))
 	static FName GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass);
 
+	UFUNCTION(BlueprintPure, Category = "SpatialOS|General", meta = (WorldContext = "WorldContextObject"))
+	static int32 GetEntityIdForActor(const UObject* WorldContext, const AActor* Actor);
+
+	UFUNCTION(BlueprintPure, Category = "SpatialOS|General", meta = (WorldContext = "WorldContextObject"))
+	static FString GetVirtualWorkerForEntityId(const UObject* WorldContext, int32 EntityId);
+
 private:
 
 	static bool IsSpatialOffloadingEnabled();

@@ -4,10 +4,15 @@
 
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "GeneralProjectSettings.h"
+#include "Interop/SpatialStaticComponentView.h"
+#include "Schema/StandardLibrary.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ActorGroupManager.h"
+
+using namespace SpatialGDK;
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
@@ -107,4 +112,34 @@ FName USpatialStatics::GetActorGroupForClass(const UObject* WorldContextObject, 
 	}
 
 	return SpatialConstants::DefaultActorGroup;
+}
+
+int32 USpatialStatics::GetEntityIdForActor(const UObject* WorldContext, const AActor* Actor)
+{
+	if (const UWorld* World = WorldContext->GetWorld())
+	{
+		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+		{
+			return SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
+		}
+	}
+	
+	return SpatialConstants::INVALID_ENTITY_ID;
+}
+
+FString USpatialStatics::GetVirtualWorkerForEntityId(const UObject* WorldContext, int32 EntityId)
+{
+	if (const UWorld* World = WorldContext->GetWorld())
+	{
+		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+		{
+			AuthorityIntent* AuthorityIntentComponent = SpatialNetDriver->StaticComponentView->GetComponentData<AuthorityIntent>((Worker_EntityId)EntityId);
+			if (AuthorityIntentComponent != nullptr)
+			{
+				return AuthorityIntentComponent->VirtualWorkerId;
+			}
+		}
+	}
+
+	return FString("INVALID");
 }
