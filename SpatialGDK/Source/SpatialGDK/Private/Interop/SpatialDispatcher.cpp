@@ -13,10 +13,19 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
+void USpatialDispatcher::WorkerMetricsTestDelegate(Worker_MetricsOp Op)
+{
+	UE_LOG(LogSpatialView, Display, TEXT("METRIIICCSSS"));
+}
+
 void USpatialDispatcher::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	Receiver = InNetDriver->Receiver;
+	WorkerMetricsRecievedDelegate.AddLambda([this](Worker_MetricsOp Op)
+	{
+		WorkerMetricsTestDelegate(Op);
+	});
 	StaticComponentView = InNetDriver->StaticComponentView;
 }
 
@@ -102,8 +111,14 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
 			break;
 		case WORKER_OP_TYPE_METRICS:
+			// Majority of metrics are gauge metrics and it appears there are also histogram metrics. Let's print them all for now.
+			// TODO: We want to turn this delegate into key and value rather than Op.
+			UE_LOG(LogSpatialView, Display, TEXT("SpatialOS Metrics"));
+			if (WorkerMetricsRecievedDelegate.IsBound())
+			{
+				WorkerMetricsRecievedDelegate.Broadcast(Op->metrics);
+			}
 			break;
-
 		case WORKER_OP_TYPE_DISCONNECT:
 			Receiver->OnDisconnect(Op->disconnect);
 			break;
@@ -116,7 +131,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 	Receiver->FlushRemoveComponentOps();
 	Receiver->FlushRetryRPCs();
 }
-
+ 
 bool USpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op) const
 {
 	Worker_ComponentId ComponentId = SpatialGDK::GetComponentId(Op);

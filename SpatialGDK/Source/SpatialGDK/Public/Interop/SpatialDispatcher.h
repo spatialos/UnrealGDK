@@ -29,6 +29,7 @@ class SPATIALGDK_API USpatialDispatcher : public UObject
 public:
 	using FCallbackId = uint32;
 
+	void WorkerMetricsTestDelegate(Worker_MetricsOp Op);
 	void Init(USpatialNetDriver* NetDriver);
 	void ProcessOps(Worker_OpList* OpList);
 	// The following 2 methods should *only* be used by the Startup OpList Queueing flow
@@ -46,6 +47,10 @@ public:
 	FCallbackId OnCommandRequest(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandRequestOp&)>& Callback);
 	FCallbackId OnCommandResponse(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback);
 	bool RemoveOpCallback(FCallbackId Id);
+
+	// The user can bind their own delegate to handle worker metrics.
+	DECLARE_MULTICAST_DELEGATE_OneParam(WorkerMetricsDelegate, Worker_MetricsOp)
+	WorkerMetricsDelegate WorkerMetricsRecievedDelegate;
 
 private:
 	struct UserOpCallbackData
