@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Commandlets/CookCommandlet.h"
-#include "CompileAllBlueprintsCommandlet.h"
 #include "CookAndGenerateSchemaCommandlet.generated.h"
 
 struct FObjectListener;
@@ -30,10 +29,6 @@ private:
 
 public:
 	virtual int32 Main(const FString& CmdLineParams) override;
-
-	/*void OnObjectsReplaced(const TMap<UObject*, UObject*>& ObjectsReplaced);
-
-	void FindAllDataOnlyBlueprints();*/
 
 	virtual bool IsEditorOnly() const override;
 };

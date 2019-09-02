@@ -187,7 +187,7 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 		FString NextSchemaSubobjectName = UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString());
 
 		FString SubObjectPath = SubobjectTypeInfo->Object->GetPathName();
-		SubObjectPath.ReplaceInline(TEXT("_GEN_VARIABLE"), TEXT(""));
+		//SubObjectPath.ReplaceInline(TEXT("_GEN_VARIABLE"), TEXT(""));
 
 		if (!CheckSchemaNameValidity(NextSchemaSubobjectName, SubObjectPath, TEXT("Subobject")))
 		{
@@ -490,13 +490,19 @@ bool IsSupportedClass(UClass* SupportedClass)
 		return false;
 	}
 
-	if (SupportedClass->ClassDefaultObject != nullptr && !SupportedClass->ClassDefaultObject->IsSupportedForNetworking())
+	if (SupportedClass->ClassDefaultObject == nullptr)
+	{
+		UE_LOG(LogTemp, Display, TEXT("[%s] No CDO, not supported. Class may become valid once CDO is created."), *GetPathNameSafe(SupportedClass));
+		return false;
+	}
+
+	if (!SupportedClass->ClassDefaultObject->IsSupportedForNetworking())
 	{
 		UE_LOG(LogTemp, Display, TEXT("[%s] Not supported for networking so not for schema gen"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
-	UE_LOG(LogTemp, Verbose, TEXT("[%s] Supported Class"), *GetPathNameSafe(SupportedClass));
+	UE_LOG(LogTemp, Display, TEXT("[%s] Supported Class"), *GetPathNameSafe(SupportedClass));
 	return true;
 }
 
@@ -759,28 +765,25 @@ bool SpatialGDKGenerateSchema(bool bSaveSchemaDatabase, bool bRunSchemaCompiler)
 SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes)
 {
 	ResetUsedNames();
-	TArray<UClass*> SortedClasses = FilterClasses(Classes).Array();
+	TSet<UClass*> NewClasses = FilterClasses(Classes);
+	TArray<UClass*> SortedClasses = NewClasses.Array();
 	SortedClasses.Sort();
-		
+	
 	// Generate Type Info structs for all classes
 	TArray<TSharedPtr<FUnrealType>> TypeInfos;
 
 	for (const auto& Class : SortedClasses)
 	{
 		if (SchemaGeneratedClasses.Contains(Class)) continue;
+
+		SchemaGeneratedClasses.Add(Class);
 		// Parent and static array index start at 0 for checksum calculations.
 		TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, 0, 0, false);
 		TypeInfos.Add(TypeInfo);
-		if (UClass* TypeClass = Cast<UClass>(TypeInfo->Type))
-		{
-
-		}
 		VisitAllObjects(TypeInfo, [&](TSharedPtr<FUnrealType> TypeNode) {
 			if (UClass* NestedClass = Cast<UClass>(TypeNode->Type))
 			{
-				/*UE_LOG(LogTemp, Display, TEXT("SubTypeInfo: [%s], Flags: %#010x ClassFlags: %#010x"),
-					*GetPathNameSafe(TypeClass), TypeClass->GetFlags(), TypeClass->GetClassFlags());*/
-				if (!SchemaGeneratedClasses.Contains(NestedClass) && IsSupportedClass(NestedClass))
+				if (!NewClasses.Contains(NestedClass) && !SchemaGeneratedClasses.Contains(NestedClass) && IsSupportedClass(NestedClass))
 				{
 					TypeInfos.Add(CreateUnrealTypeInfo(NestedClass, 0, 0, false));
 					SchemaGeneratedClasses.Add(NestedClass);
