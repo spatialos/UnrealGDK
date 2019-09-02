@@ -12,6 +12,7 @@ common: &common
     - "platform=windows"
     - "permission_set=builder"
     - "queue=v2-1551960839-2fc9bbe6e15deffd-------z"
+    - "scaler_version=2"
   retry:
     automatic:
       - <<: *agent_transients
