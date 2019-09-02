@@ -34,7 +34,7 @@ The tracking of those stats is done in `DeathmatchScoreComponent.cpp`: you can h
 
 ### 3. Clone and build the Database Sync Worker
 
-We are going to add the Database Sync Worker into the Example Project as another SpatialOS worker. To do so, clone [this repository](https://github.com/spatialos/database-sync-worker) into the `/spatial/workers` folder of the Example Project.
+We are going to add the Database Sync Worker into the Example Project as another SpatialOS worker. To do so, clone [the latest tag](https://github.com/spatialos/database-sync-worker/tags) into the `/spatial/workers` folder of the Example Project.
 
 Then, run the following:
 
@@ -67,5 +67,6 @@ You've now set up up the Database Sync worker - let's start using it!
 </br>
 
 <br/>------<br/>
+_2019-09-02 Page updated with limited editorial review: point to the latest tagged version of the repository_
 _2019-07-31 Page added with limited editorial review_
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1248)
