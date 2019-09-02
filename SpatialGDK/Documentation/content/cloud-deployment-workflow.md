@@ -12,17 +12,17 @@ You may find the following command-line snippets useful as reference:
 
 ### Build server-worker assembly
 
+The filepath you use depends on whether you have the `UnrealGDK` plugin set up as an *engine* plugin or as a *project* plugin. If you followed the default setup instructions which use the `InstallGDK.bat` script, you have it set up as an *engine* plugin.
+
 Engine plugin filepath (default):</br>
 ```
 UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject
 ```
-</br>
 
 Project plugin filepath:</br>
 ```
 <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject
 ```
-</br></br>
 
 Replacing `<YourProject>` with the name of your Unreal project. 
 
@@ -30,17 +30,17 @@ For more information on the available options when using `BuildWorker.bat`, plea
 
 ### Build client-worker assembly
 
+The filepath you use depends on whether you have the `UnrealGDK` plugin set up as an *engine* plugin or as a *project* plugin. If you followed the default setup instructions which use the `InstallGDK.bat` script, you have it set up as an *engine* plugin.
+
 Engine plugin filepath (default):</br>
 ```
 UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject
 ```
-<br/>
 
 Project plugin filepath:</br>
 ```
 <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject
 ```
-<br/><br/>
 
 Replacing `<YourProject>` with the name of your Unreal project.
 
