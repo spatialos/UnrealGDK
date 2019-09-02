@@ -76,28 +76,28 @@ During development, you might want to, for example:</br> * cook a headless stand
 <%(/Expandable)%>
 For now, you need to build server-workers and client-workers, so if you haven't run `BuildProject.bat` from File Explorer you need to:</br>
   1. Close your Unreal Editor - if the Editor is open when you try to build workers, the command fails.
-  2. Open a terminal window and navigate to the `<ProjectRoot>` directory.
-  3. Run the `BuildProject.bat` command to build a server-worker using the filepath and flags below. </br>
-  The filepath you use depends on whether you used auto-install or manual-install when you cloned and set up the GDK's fork and plugin. <br/><br/>
-      * Auto-install filepath:</br>
+  1. Open a terminal window and navigate to the `<ProjectRoot>` directory.
+  1. Run the `BuildProject.bat` command to build a server-worker using the filepath and flags below. </br>
+  The filepath you use depends on whether you have the `UnrealGDK` plugin set up as an *engine* plugin or as a *project* plugin. If you followed the default setup instructions which use the `InstallGDK.bat` script, you have it set up as an *engine* plugin. <br/></br>
+      * Engine plugin filepath (default):</br>
       ```
-      Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProjectServer Linux Development YourProject.uproject
+      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject
       ```
       </br>
-      * Manual-install filepath:</br>
+      * Project plugin filepath:</br>
       ```
-      Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProjectServer Linux Development YourProject.uproject
+      <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject
       ```
       </br></br>
-  4. Now run the `BuildProject.bat` command to build a client-worker: <br/></br>
-      * Auto-install filepath:</br>
+  1. Now run the `BuildProject.bat` command to build a client-worker: <br/><br/>
+      * Engine plugin filepath (default):</br>
       ```
-      Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject
+      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject
       ```
       <br/>
-      * Manual-install filepath:</br>
+      * Project plugin filepath:</br>
       ```
-      Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject
+        <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject
       ```
       <br/><br/>
 
