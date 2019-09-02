@@ -690,15 +690,20 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 // Returns true if this actor should replicate to *any* of the passed in connections
 static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, const TArray<FNetViewer>& ConnectionViewers)
 {
-	for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
+	if (GetDefault<USpatialGDKSettings>()->UseIsActorRelevantForConnection)
 	{
-		if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
+		for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
 		{
-			return true;
+			if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
+			{
+				return true;
+			}
 		}
+
+		return false;
 	}
 
-	return false;
+	return true;
 }
 
 // Returns true if this actor is considered dormant (and all properties caught up) to the current connection
