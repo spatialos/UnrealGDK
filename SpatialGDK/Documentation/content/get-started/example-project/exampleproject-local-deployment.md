@@ -78,7 +78,7 @@ To launch a local deployment in your Unreal Editor, set up the networking and ru
 1. From the Editor toolbar, open the **Play** drop-down menu:</br></br>
     ![Multiplayer Options]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png))<br/>
    _Image: The Unreal Editor toolbar's **Play** drop-down menu, with the relevant options hightlighted_</br></br>
-2. To set up the networking:</br>
+1. To set up the networking:</br>
 In the **Multiplayer Options** section of the window:</br>
  * enter the number of players as `2`,</br>
  * check the **Run Dedicated Server** setting and</br>
@@ -87,7 +87,7 @@ In the **Multiplayer Options** section of the window:</br>
 The **Spatial Networking** option is the networking switch; you use this to switch your game's deployment from native Unreal networking to SpatialOS networking.</br></br>
 
 
-3. Now, run the game: in the **Modes** section of the window, select **New Editor Window (PIE)**.</br> 
+1. Now, run the game: in the **Modes** section of the window, select **New Editor Window (PIE)**.</br> 
 You are now running one game server and two game clients in a local deployment in your Unreal Editor. (If it doesn't run, see **Note** below.)</br>
 
 **What's running?**</br>
@@ -118,7 +118,7 @@ You can find out more about the Inspector and the Console in the [Glossary]({{ur
     ![]({{assetRoot}}assets/set-up-template/template-two-client-inspector.png)<br/>
     _Image: The Inspector on the SpatialOS Console_
 </br></br>
-2. When you’re done, select **Stop** on the Unreal toolbar to stop the client.
+1. When you’re done, select **Stop** on the Unreal toolbar to stop the client.
 
     ![]({{assetRoot}}assets/toolbar/stop-button-native.png)<br/>
     _Image: Unreal toolbar's **Stop** button_</br></br>
@@ -140,7 +140,7 @@ To do this:
 
     If you haven't modified anything related to replication, you don't need to regenerate schema and SpatialOS continues to use the running deployment. </br></br>
 
-2. To test your changes, select **Play** on the Unreal toolbar; this starts your game's clients and server-worker instances.
+1. To test your changes, select **Play** on the Unreal toolbar; this starts your game's clients and server-worker instances.
 
 <%(#Expandable title="Locak deployment workflow summary")%>
 There is a sumary on the [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow) page. It is the same as the one here.
