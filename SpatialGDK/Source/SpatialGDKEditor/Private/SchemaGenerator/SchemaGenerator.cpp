@@ -12,6 +12,7 @@
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
 
 DEFINE_LOG_CATEGORY(LogSchemaGenerator);
 
@@ -602,10 +603,6 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 			}
 			SubobjectData = GenerateSchemaForStaticallyAttachedSubobject(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, 0, ExistingSubobjectSchemaData);
 		}
-		else
-		{
-			continue;
-		}
 
 		SubobjectData.Name = SubobjectTypeInfo->Name;
 		uint32 SubobjectOffset = SubobjectData.SchemaComponents[SCHEMA_Data];
@@ -634,7 +631,7 @@ void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUn
 		{
 			UObject* Value = PropertyTypeInfo->Object;
 
-			if (Value != nullptr && !Value->IsEditorOnly())
+			if (Value != nullptr && IsSupportedClass(Value->GetClass()))
 			{
 				UClass* Class = Cast<UClass>(PropertyTypeInfo->Type);
 				if (!AlreadyImported.Contains(Class) && SchemaGeneratedClasses.Contains(Class))

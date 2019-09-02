@@ -11,6 +11,7 @@ public class SpatialGDKEditorCommandlet : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(
 			new string[] {
+                "AssetRegistry",
 				"Core",
 				"CoreUObject",
 				"Engine",

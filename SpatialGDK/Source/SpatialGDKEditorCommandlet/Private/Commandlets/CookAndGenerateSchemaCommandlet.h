@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Commandlets/CookCommandlet.h"
+#include "CompileAllBlueprintsCommandlet.h"
 #include "CookAndGenerateSchemaCommandlet.generated.h"
+
+struct FObjectListener;
 
 /**
  * This Commandlet generates schema and performs a cook command.
@@ -15,15 +18,22 @@ UCLASS()
 class SPATIALGDKEDITORCOMMANDLET_API UCookAndGenerateSchemaCommandlet : public UCookCommandlet
 {
 	GENERATED_BODY()
-private:
-	TSet<FString> ReferencedClasses;
 
-public:
 	UCookAndGenerateSchemaCommandlet();
 
+	virtual ~UCookAndGenerateSchemaCommandlet();
+
+private:
+	TSet<FSoftClassPath> ReferencedClasses;
+
+	FObjectListener* ObjectListener;
+
+public:
 	virtual int32 Main(const FString& CmdLineParams) override;
 
-	void OnObjectsReplaced(const TMap<UObject*, UObject*>& ObjectsReplaced);
+	/*void OnObjectsReplaced(const TMap<UObject*, UObject*>& ObjectsReplaced);
+
+	void FindAllDataOnlyBlueprints();*/
 
 	virtual bool IsEditorOnly() const override;
 };

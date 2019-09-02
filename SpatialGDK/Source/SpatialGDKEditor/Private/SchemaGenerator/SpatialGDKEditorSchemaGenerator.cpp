@@ -252,8 +252,8 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	{
 		if (Collision.Value.Num() > 1)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for classes [%s]"),
-				*Collision.Key, *FString::Join(Collision.Value, TEXT(", ")));
+			/*UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for classes [%s]"),
+				*Collision.Key, *FString::Join(Collision.Value, TEXT(", ")));*/
 		}
 	}
 
@@ -275,6 +275,7 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 	for (const auto& TypeInfo : TypeInfos)
 	{
 		Progress.EnterProgressFrame(1.f);
+		UE_LOG(LogTemp, Display, TEXT("[%s] Generate Complete Schema."), *GetPathNameSafe(TypeInfo->Type));
 		GenerateCompleteSchemaFromClass(CombinedSchemaPath, IdGenerator, TypeInfo);
 	}
 }
@@ -440,17 +441,26 @@ bool IsSupportedClass(UClass* SupportedClass)
 {
 	if (!IsValid(SupportedClass))
 	{
+		UE_LOG(LogTemp, Verbose, TEXT("[%s] Invalid Class Not supported for schema gen"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
 	if (SupportedClass->IsEditorOnly())
 	{
+		UE_LOG(LogTemp, Verbose, TEXT("[%s] Editor-only Class Not supported for schema gen"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
 	// User told us to ignore this class
 	if (SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
 	{
+		UE_LOG(LogTemp, Verbose, TEXT("[%s] Not Spatial Type, not supported for schema gen"), *GetPathNameSafe(SupportedClass));
+		return false;
+	}
+
+	if (SupportedClass->HasAnyClassFlags(CLASS_LayoutChanging))
+	{
+		UE_LOG(LogTemp, Verbose, TEXT("[%s] Layout changing, not supported"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
@@ -463,6 +473,7 @@ bool IsSupportedClass(UClass* SupportedClass)
 		|| SupportedClass->GetName().StartsWith(TEXT("PLACEHOLDER-CLASS_"), ESearchCase::CaseSensitive)
 		|| SupportedClass->GetName().StartsWith(TEXT("ORPHANED_DATA_ONLY_"), ESearchCase::CaseSensitive))
 	{
+		UE_LOG(LogTemp, Verbose, TEXT("[%s] Transient Class not supported for schema gen"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
@@ -475,9 +486,17 @@ bool IsSupportedClass(UClass* SupportedClass)
 		return ClassPath.StartsWith(Directory.Path);
 	}))
 	{
+		UE_LOG(LogTemp, Verbose, TEXT("[%s] Inside Directory to never cook for schema gen"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
+	if (SupportedClass->ClassDefaultObject != nullptr && !SupportedClass->ClassDefaultObject->IsSupportedForNetworking())
+	{
+		UE_LOG(LogTemp, Display, TEXT("[%s] Not supported for networking so not for schema gen"), *GetPathNameSafe(SupportedClass));
+		return false;
+	}
+
+	UE_LOG(LogTemp, Verbose, TEXT("[%s] Supported Class"), *GetPathNameSafe(SupportedClass));
 	return true;
 }
 
@@ -748,20 +767,24 @@ SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Class
 
 	for (const auto& Class : SortedClasses)
 	{
+		if (SchemaGeneratedClasses.Contains(Class)) continue;
 		// Parent and static array index start at 0 for checksum calculations.
 		TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, 0, 0, false);
 		TypeInfos.Add(TypeInfo);
 		if (UClass* TypeClass = Cast<UClass>(TypeInfo->Type))
 		{
-			SchemaGeneratedClasses.Add(TypeClass);
+
 		}
 		VisitAllObjects(TypeInfo, [&](TSharedPtr<FUnrealType> TypeNode) {
-			if (UClass* TypeClass = Cast<UClass>(TypeNode->Type))
+			if (UClass* NestedClass = Cast<UClass>(TypeNode->Type))
 			{
 				/*UE_LOG(LogTemp, Display, TEXT("SubTypeInfo: [%s], Flags: %#010x ClassFlags: %#010x"),
 					*GetPathNameSafe(TypeClass), TypeClass->GetFlags(), TypeClass->GetClassFlags());*/
-				TypeInfos.Add(CreateUnrealTypeInfo(TypeClass, 0, 0, false));
-				SchemaGeneratedClasses.Add(TypeClass);
+				if (!SchemaGeneratedClasses.Contains(NestedClass) && IsSupportedClass(NestedClass))
+				{
+					TypeInfos.Add(CreateUnrealTypeInfo(NestedClass, 0, 0, false));
+					SchemaGeneratedClasses.Add(NestedClass);
+				}
 			}
 			return true;
 		}, true);

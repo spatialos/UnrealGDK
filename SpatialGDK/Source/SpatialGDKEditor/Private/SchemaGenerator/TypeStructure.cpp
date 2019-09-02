@@ -661,7 +661,7 @@ FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
 		{
 			UObject* Value = PropertyTypeInfo->Object;
 
-			if (Value != nullptr && !Value->IsEditorOnly())
+			if (Value != nullptr && IsSupportedClass(Value->GetClass()))
 			{
 				if (!SeenComponents.Contains(Value))
 				{
