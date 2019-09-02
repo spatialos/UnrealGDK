@@ -67,5 +67,6 @@ You've now set up up the Database Sync worker - let's start using it!
 </br>
 
 <br/>------<br/>
+_2019-09-02 Page updated with limited editorial review: point to the latest tagged version of the repository_
 _2019-07-31 Page added with limited editorial review_
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1248)
