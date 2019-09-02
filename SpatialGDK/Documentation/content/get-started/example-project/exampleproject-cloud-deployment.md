@@ -60,8 +60,8 @@ There are two ways to build workers, and you can choose which one to use. You ne
   When you use this script with no flags, it automatically builds both the server-workers and client-workers to run your game in the cloud. It then compresses your workers and saves them as .zip files to the `<ProjectRoot>\spatial\build\assembly\worker` directory, ready to upload. Use the script with no flags if you want to build server-workers and client-workers at the same time.<br/></br>
   To do this: </br>
     1. Close your Unreal Editor - if the Editor is open when you try to build workers, the command fails.
-    2. In File Explorer, navigate to the `UnrealGDKExampleProject` directory.
-    2. Double-click `BuildProject.bat`. </br>
+    1. In File Explorer, navigate to the `UnrealGDKExampleProject` directory.
+    1. Double-click `BuildProject.bat`. </br>
        This opens a command line window and automatically builds your client-workers and server-workers.
 </br></br>
 Problems building workers? See the [Troubleshooting](#troubleshooting) guide below.
@@ -73,28 +73,28 @@ During development, you might want to, for example:</br> * cook a headless stand
 <%(/Expandable)%>
 For now, you need to build server-workers and client-workers, so if you haven't run `BuildProject.bat` from File Explorer you need to:</br></br>
     1. Close your Unreal Editor - if the Editor is open when you try to build workers, the command fails.
-    2. Open a terminal window and navigate to the `UnrealGDKExampleProject` directory.
-    3. Run the `BuildProject.bat` command to build a server-worker using the filepath and flags below. </br>
-    The filepath you use depends on whether you used auto-install or manual-install when you cloned and set up the GDK's fork and plugin. <br/></br>
-        * Auto-install filepath:</br>
+    1. Open a terminal window and navigate to the `UnrealGDKExampleProject` directory.
+    1. Run the `BuildProject.bat` command to build a server-worker using the filepath and flags below. </br>
+    The filepath you use depends on whether you have the `UnrealGDK` plugin set up as an *engine* plugin or as a *project* plugin. If you followed the default setup instructions which use the `InstallGDK.bat` script, you have it set up as an *engine* plugin. <br/></br>
+        * Engine plugin filepath (default):</br>
         ```
-        Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
+        UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
         ```
         </br>
-        * Manual-install filepath:</br>
+        * Project plugin filepath:</br>
         ```
-        Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
+        UnrealGDKExampleProject\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
         ```
         </br></br>
-    4. Now run the `BuildProject.bat` command to build a client-worker: <br/><br/>
-        * Auto-install filepath:</br>
+    1. Now run the `BuildProject.bat` command to build a client-worker: <br/><br/>
+        * Engine plugin filepath (default):</br>
         ```
-        Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
+        UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
         ```
         <br/>
-        * Manual-install filepath:</br>
+        * Project plugin filepath:</br>
         ```
-        Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
+         UnrealGDKExampleProject\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
         ```
         <br/><br/>
 
