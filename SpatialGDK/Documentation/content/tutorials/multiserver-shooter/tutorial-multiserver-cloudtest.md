@@ -18,30 +18,30 @@ To build workers:
 GDK projects default to using Spatial networking. However, if you have reset the networking switch to native Unreal networking, you need to set it back. </br>
     1. In a terminal window, navigate to the `DefaultGame.ini` configuration file (located in `<ProjectRoot>\Game\Config` directory).
     2. Check if the `bSpatialNetworking` option is present. If it is, set it to `True` (so: `bSpatialNetworking=True`), save the file and exit. 
-2. Still in a terminal window, navigate to the `UnrealGDKExampleProject` directory.
-3. Run the `BuildProject.bat` command to build a server-worker using the filepath and flags below. </br>
-The filepath you use depends on whether you used auto-install or manual-install when you cloned and set up the GDK's fork and plugin. <br/></br>
-    * Auto-install filepath:</br>
-    ```
-    Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
-    ```
-    </br>
-    * Manual-install filepath:</br>
-    ```
-    Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
-    ```
-    </br>
-4. Now run the `BuildProject.bat` command to build a client-worker: <br/><br/>
-    * Auto-install filepath:</br>
-     ```
-    Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
-    ```
-    <br/>
-    * Manual-install filepath:</br>
-    ```
-    Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
-    ```
-    <br/>
+1. Still in a terminal window, navigate to the `UnrealGDKExampleProject` directory.
+1. Run the `BuildProject.bat` command to build a server-worker using the filepath and flags below. </br>
+The filepath you use depends on whether you have the `UnrealGDK` plugin set up as an *engine* plugin or as a *project* plugin. If you followed the default setup instructions which use the `InstallGDK.bat` script, you have it set up as an *engine* plugin. <br/></br>
+      * Engine plugin filepath (default):</br>
+      ```
+      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
+      ```
+      </br>
+      * Project plugin filepath:</br>
+      ```
+      UnrealGDKExampleProject\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
+      ```
+      </br></br>
+  1. Now run the `BuildProject.bat` command to build a client-worker: <br/><br/>
+      * Engine plugin filepath (default):</br>
+      ```
+      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
+      ```
+      <br/>
+      * Project plugin filepath:</br>
+      ```
+        UnrealGDKExampleProject\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
+      ```
+      <br/><br/>
 
 ### Step 2: Upload your game
 
