@@ -1182,26 +1182,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Child connections present on Spatial client connection %s! We don't support splitscreen yet, so this will not function correctly."), *ClientConnection->GetName());
 			}
 		}
-		else
-		{
-			// Not having a ViewTarget implies this must be the fake spatial connection and thus borrow the player controllers from other connections.
-			for (int j = 0; j < ClientConnections.Num(); j++)
-			{
-				USpatialNetConnection* OtherSpatialConnection = Cast<USpatialNetConnection>(ClientConnections[j]);
-				if (OtherSpatialConnection->ViewTarget)
-				{
-					new(ConnectionViewers)FNetViewer(OtherSpatialConnection, DeltaSeconds);
-
-					for (int32 ViewerIndex = 0; ViewerIndex < OtherSpatialConnection->Children.Num(); ViewerIndex++)
-					{
-						if (OtherSpatialConnection->Children[ViewerIndex]->ViewTarget != NULL)
-						{
-							new(ConnectionViewers)FNetViewer(OtherSpatialConnection->Children[ViewerIndex], DeltaSeconds);
-						}
-					}
-				}
-			}
-		}
 	}
 
 	FMemMark RelevantActorMark(FMemStack::Get());
