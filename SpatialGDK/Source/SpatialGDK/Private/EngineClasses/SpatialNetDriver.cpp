@@ -688,13 +688,19 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 #if WITH_SERVER_CODE
 
 // Returns true if this actor should replicate to *any* of the passed in connections
-static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, const TArray<FNetViewer>& ConnectionViewers)
+static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, UActorChannel* ActorChannel, const TArray<FNetViewer>& ConnectionViewers)
 {
 	if (GetDefault<USpatialGDKSettings>()->UseIsActorRelevantForConnection)
 	{
 		for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
 		{
-			if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
+			// Do a net relevancy check for Actor in net view cull distance for viewer
+			// If an actor has bAlwaysRelevant set to true, it will always return true
+			// If an actor is being replicated but doesn't have a channel yet, we want to
+			// replicate it once to create the entity, then only replicate if relevant after
+			if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation) ||
+				Actor->bAlwaysRelevant ||
+				Cast<USpatialActorChannel>(ActorChannel) == nullptr)
 			{
 				return true;
 			}
@@ -836,7 +842,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			// SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
 			// We have removed the level load check because it doesn't apply.
 			// Relevancy checking is also mostly just a pass through, might be removed later.
-			if (!IsActorRelevantToConnection(Actor, ConnectionViewers))
+			if (!IsActorRelevantToConnection(Actor, Channel, ConnectionViewers))
 			{
 				// If not relevant (and we don't have a channel), skip
 				continue;
