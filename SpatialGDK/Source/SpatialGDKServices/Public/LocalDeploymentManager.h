@@ -15,18 +15,18 @@ class FJsonObject;
 class FLocalDeploymentManager
 {
 public:
-	FLocalDeploymentManager();
+	FLocalDeploymentManager(const FString SpatialDirectory);
 
-	void SPATIALGDKSERVICES_API RefreshServiceStatus();
+	void SPATIALGDKSERVICES_API RefreshServiceStatus(const FString SpatialDirectory);
 
-	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs);
+	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, const FString SpatialDirectory);
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 
-	bool SPATIALGDKSERVICES_API TryStartSpatialService();
-	bool SPATIALGDKSERVICES_API TryStopSpatialService();
+	bool SPATIALGDKSERVICES_API TryStartSpatialService(const FString SpatialDirectory);
+	bool SPATIALGDKSERVICES_API TryStopSpatialService(const FString SpatialDirectory);
 
 	bool SPATIALGDKSERVICES_API GetLocalDeploymentStatus();
-	bool SPATIALGDKSERVICES_API IsServiceRunningAndInCorrectDirectory();
+	bool SPATIALGDKSERVICES_API IsServiceRunningAndInCorrectDirectory(const FString SpatialDirectory);
 
 	bool SPATIALGDKSERVICES_API IsLocalDeploymentRunning() const;
 	bool SPATIALGDKSERVICES_API IsSpatialServiceRunning() const;
@@ -45,7 +45,7 @@ public:
 
 	void SPATIALGDKSERVICES_API SetAutoDeploy(bool bAutoDeploy);
 
-	void WorkerBuildConfigAsync();
+	void WorkerBuildConfigAsync(const FString SpatialDirectory);
 
 	FSimpleMulticastDelegate OnSpatialShutdown;
 	FSimpleMulticastDelegate OnDeploymentStart;
@@ -54,7 +54,7 @@ public:
 	IDirectoryWatcher::FDirectoryChanged WorkerConfigDirectoryChangedDelegate;
 
 private:
-	void StartUpWorkerConfigDirectoryWatcher();
+	void StartUpWorkerConfigDirectoryWatcher(const FString SpatialDirectory);
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
 	static const int32 ExitCodeSuccess = 0;
@@ -74,6 +74,7 @@ private:
 	bool bStoppingSpatialService;
 
 	FString LocalRunningDeploymentID;
+	const FString SpatialOSDirectory;
 
 	bool bRedeployRequired = false;
 	bool bAutoDeploy = false;
