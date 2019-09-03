@@ -481,10 +481,11 @@ void CopyWellKnownSchemaFiles()
 	FString PluginDir = GetDefault<USpatialGDKEditorSettings>()->GetGDKPluginDirectory();
 
 	FString GDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
-	FString GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
+
+	FString GDKSchemaCopyDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
 
 	FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema"));
-	FString CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
+	FString CoreSDKSchemaCopyDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
 	
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
@@ -646,9 +647,9 @@ bool RunSchemaCompiler()
 	// Get the schema_compiler path and arguments
 	FString SchemaCompilerExe = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe"));
 
-	FString SchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema"));
-	FString CoreSDKSchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
-	FString SchemaDescriptorDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
+	FString SchemaDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("schema"));
+	FString CoreSDKSchemaDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
+	FString SchemaDescriptorDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
 	FString SchemaDescriptorOutput = FPaths::Combine(SchemaDescriptorDir, TEXT("schema.descriptor"));
 
 	// The schema_compiler cannot create folders.
