@@ -413,7 +413,9 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 
 	for (FString LogLine : LogLines)
 	{
-		// TODO: Do this with some proper foramtting or with regex
+		LogLine = LogLine.ReplaceEscapedCharWithChar();
+
+		// TODO: Do this with some proper formatting or with regex
 		ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
 
 		FString Left;
