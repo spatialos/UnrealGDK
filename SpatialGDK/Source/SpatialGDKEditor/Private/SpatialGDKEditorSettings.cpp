@@ -196,3 +196,8 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 
 	return result;
 }
+
+FString USpatialGDKEditorSettings::GetSpatialOSDirectory(const FString& AppendPath)
+{
+	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/"), AppendPath));
+}

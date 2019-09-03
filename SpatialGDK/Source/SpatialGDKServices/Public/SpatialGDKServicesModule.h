@@ -20,7 +20,6 @@ public:
 
 	FLocalDeploymentManager* GetLocalDeploymentManager();
 
-	static FString GetSpatialOSDirectory(const FString& AppendPath = TEXT(""));
 	static FString GetSpatialGDKPluginDirectory(const FString& AppendPath = TEXT(""));
 	static const FString& GetSpotExe();
 	static const FString& GetSpatialExe();
