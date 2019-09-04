@@ -454,7 +454,13 @@ bool IsSupportedClass(UClass* SupportedClass)
 	// User told us to ignore this class
 	if (SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("[%s] Not Spatial Type, not supported for schema gen"), *GetPathNameSafe(SupportedClass));
+		UE_LOG(LogTemp, Display, TEXT("[%s] Not Spatial Type, not supported for schema gen"), *GetPathNameSafe(SupportedClass));
+		return false;
+	}
+
+	if (!SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_ExplicitSpatialType))
+	{
+		UE_LOG(LogTemp, Display, TEXT("[%s] Not Explicit Spatial Type, not supported for schema gen"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
@@ -487,18 +493,6 @@ bool IsSupportedClass(UClass* SupportedClass)
 	}))
 	{
 		UE_LOG(LogTemp, Verbose, TEXT("[%s] Inside Directory to never cook for schema gen"), *GetPathNameSafe(SupportedClass));
-		return false;
-	}
-
-	if (SupportedClass->ClassDefaultObject == nullptr)
-	{
-		UE_LOG(LogTemp, Display, TEXT("[%s] No CDO, not supported. Class may become valid once CDO is created."), *GetPathNameSafe(SupportedClass));
-		return false;
-	}
-
-	if (!SupportedClass->ClassDefaultObject->IsSupportedForNetworking())
-	{
-		UE_LOG(LogTemp, Display, TEXT("[%s] Not supported for networking so not for schema gen"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 

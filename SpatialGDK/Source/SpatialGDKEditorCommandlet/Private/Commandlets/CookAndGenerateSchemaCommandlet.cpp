@@ -15,18 +15,32 @@ struct FObjectListener : public FUObjectArray::FUObjectCreateListener
 	~FObjectListener()
 	{
 	}
-
+public:
 	virtual void NotifyUObjectCreated(const class UObjectBase *Object, int32 Index) override
 	{
-		if (!VisitedClasses.Contains(Object->GetClass()) && IsSupportedClass(Object->GetClass()))
+		FSoftClassPath SoftClass = FSoftClassPath(Object->GetClass());
+		if (UnsupportedClasses.Contains(SoftClass))
 		{
-			UE_LOG(LogTemp, Display, TEXT("[Object Created] Path: %s Class: %s"), *Object->GetFName().ToString(), *GetPathNameSafe(Object->GetClass()));
-			VisitedClasses.Add(FSoftClassPath(Object->GetClass()));
+			return;
+		}
+		if (!VisitedClasses.Contains(SoftClass))
+		{
+			if (IsSupportedClass(Object->GetClass()))
+			{
+				UE_LOG(LogTemp, Display, TEXT("[Object Created] Path: %s, Class: %s, SpatialFlags: %#06x"), *Object->GetFName().ToString(), *GetPathNameSafe(Object->GetClass()),
+					Object->GetClass()->GetSpatialClassFlags());
+					VisitedClasses.Add(SoftClass);
+			}
+			else
+			{
+				UnsupportedClasses.Add(SoftClass);
+			}
 		}
 	}
 
-public:
+
 	TSet<FSoftClassPath> VisitedClasses;
+	TSet<FSoftClassPath> UnsupportedClasses;
 };
 
 UCookAndGenerateSchemaCommandlet::UCookAndGenerateSchemaCommandlet()
@@ -35,8 +49,6 @@ UCookAndGenerateSchemaCommandlet::UCookAndGenerateSchemaCommandlet()
 	IsEditor = true;
 	IsServer = false;
 	LogToConsole = true;
-
-	ObjectListener = new FObjectListener();
 }
 
 UCookAndGenerateSchemaCommandlet::~UCookAndGenerateSchemaCommandlet()
@@ -53,6 +65,12 @@ bool UCookAndGenerateSchemaCommandlet::IsEditorOnly() const
 int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Cook and Generate Schema Started."));
+	ObjectListener = new FObjectListener();
+	for (TObjectIterator<UObject> Itr; Itr; ++Itr)
+	{
+		ObjectListener->NotifyUObjectCreated(*Itr, 0);
+	}
+
 
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Try Load Schema Database."));
 	if (!TryLoadExistingSchemaDatabase())
@@ -60,11 +78,11 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		return 1;
 	}
 
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Generate Schema for in-memory Classes."));
-	if (!SpatialGDKGenerateSchema(false /* bSaveSchemaDatabase */, false /* bRunSchemaCompiler */))
-	{
-		return 2;
-	}
+	//UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Generate Schema for in-memory Classes."));
+	//if (!SpatialGDKGenerateSchema(false /* bSaveSchemaDatabase */, false /* bRunSchemaCompiler */))
+	//{
+	//	return 2;
+	//}
 
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Starting Cook Command."));
 	int32 CookResult = Super::Main(CmdLineParams);
