@@ -24,11 +24,6 @@ void USpatialMetrics::Init(USpatialNetDriver* InNetDriver)
 
 	bRPCTrackingEnabled = false;
 	RPCTrackingStartTime = 0.0f;
-
-	WorkerMetricsRecievedDelegate.AddLambda([this](TMap<FString, double> WorkerMetrics)
-	{
-		WorkerMetricsTestDelegate(WorkerMetrics);
-	});
 }
 
 void USpatialMetrics::TickMetrics()
@@ -293,12 +288,4 @@ void USpatialMetrics::TrackSentRPC(UFunction* Function, ESchemaComponentType RPC
 	RPCStat& Stat = RecentRPCs[FunctionName];
 	Stat.Calls++;
 	Stat.TotalPayload += PayloadSize;
-}
-
-void USpatialMetrics::WorkerMetricsTestDelegate(TMap<FString, double> WorkerMetrics)
-{
-	for (auto& WorkerMetric : WorkerMetrics)
-	{
-		UE_LOG(LogSpatialMetrics, Display, TEXT("Key: %s - Value: %f"), *WorkerMetric.Key, WorkerMetric.Value);
-	}
 }

@@ -120,7 +120,6 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 
 void USpatialDispatcher::HandleWorkerMetrics(Worker_Op* Op)
 {
-	UE_LOG(LogSpatialView, Display, TEXT("SpatialOS Metrics"));
 	if (NetDriver->SpatialMetrics->WorkerMetricsRecieved.IsBound())
 	{
 		int32 NumMetrics = Op->metrics.metrics.gauge_metric_count;
