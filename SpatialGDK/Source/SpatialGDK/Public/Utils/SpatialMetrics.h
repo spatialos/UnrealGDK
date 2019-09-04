@@ -46,6 +46,13 @@ public:
 
 	void TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize);
 
+	void WorkerMetricsTestDelegate(TMap<FString, double> WorkerMetrics);
+
+	// The user can bind their own delegate to handle worker metrics.
+	typedef TMap<FString, double> WorkerMetrics;
+	DECLARE_MULTICAST_DELEGATE_OneParam(WorkerMetricsDelegate, WorkerMetrics)
+	WorkerMetricsDelegate WorkerMetricsRecieved;
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
