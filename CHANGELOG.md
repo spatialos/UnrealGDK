@@ -13,9 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
+- Attempting to replicate unsupported types (such as TMap) produce a log error rather than crashing the game.
 - Generating schema when the schema database is locked by another process will no longer crash the editor.
 - When schema compiler fails, schema generation correctly shows an error.
 - Fixed crash during initialization when running GenerateSchemaCommandlet.
+- Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
 
 ## [`0.6.1`] - 2019-08-15
 

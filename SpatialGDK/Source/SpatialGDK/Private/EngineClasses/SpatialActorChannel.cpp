@@ -204,7 +204,7 @@ void USpatialActorChannel::UpdateShadowData()
 {
 	check(Actor);
 
-	// If this channel was responsible for creating the channel, we do not want to initialize our shadow data
+	// If this channel was responsible for creating the actor, we do not want to initialize our shadow data
 	// to the latest state since there could have been state that has changed between creation of the entity
 	// and gaining of authority. Revisit this with UNR-1034
 	// TODO: UNR-1029 - log when the shadow data differs from the current state of the Actor.
@@ -352,8 +352,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
 	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
-	APlayerController* PlayerController = Cast<APlayerController>(Actor);
-	if (PlayerController)
+	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
 		PlayerController->SendClientAdjustment();
 	}
@@ -422,6 +421,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
 			Sender->SendCreateEntityRequest(this);
+			bCreatedEntity = true;
 
 			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
 			Actor->Role = ROLE_SimulatedProxy;
@@ -909,21 +909,27 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		// UNR-630 - Temporary hack to avoid failure to create entities due to timeout on large maps
 		if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
 		{
 			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Failed to create entity for actor %s Reason: %s. Retrying..."), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
 			Sender->SendCreateEntityRequest(this);
 		}
-		else
+#if !UE_BUILD_SHIPPING
+		// Commands can timeout locally, but still be processed by the runtime. When this occurs, our follow up `CreateEntityRequest` will be
+		// superfluous, as the entity will already be created. If we detect that the entity is already in our view, reduce the message severity
+		else if (NetDriver->StaticComponentView->GetComponentData<SpatialGDK::Position>(GetEntityId()) == nullptr)
 		{
 			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to create entity for actor %s: Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
 		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Failed to create entity for actor %s, entity already in view : Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+		}
+#endif // !UE_BUILD_SHIPPING
 
 		return;
 	}
 
-	bCreatedEntity = true;
 	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Created entity (%lld) for: %s."), Op.entity_id, *Actor->GetName());
 }
 

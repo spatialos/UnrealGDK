@@ -248,7 +248,7 @@ void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSi
 
 bool FSpatialGDKEditor::FullScanRequired()
 {
-	return !GeneratedSchemaFolderExists();
+	return !GeneratedSchemaFolderExists() || !GeneratedSchemaDatabaseExists();
 }
 
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()
