@@ -1754,11 +1754,11 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 				continue;
 			}
 		}
-		if (UActorComponent* AsActorComponent = Cast<UActorComponent>(ReplicatingObject))
+		else if (AActor* OuterActor = ReplicatingObject->GetTypedOuter<AActor>())
 		{
-			if (AsActorComponent->GetOwner()->GetTearOff())
+			if (OuterActor->GetTearOff())
 			{
-				UE_LOG(LogSpatialActorChannel, Log, TEXT("Owning Actor of the ActorComponent to be resolved was torn off, so ignoring incoming operations. Object ref: %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+				UE_LOG(LogSpatialActorChannel, Log, TEXT("Owning Actor of the object to be resolved was torn off, so ignoring incoming operations. Object ref: %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
 				UnresolvedRefsMap.Remove(ChannelObjectPair);
 				continue;
 			}
