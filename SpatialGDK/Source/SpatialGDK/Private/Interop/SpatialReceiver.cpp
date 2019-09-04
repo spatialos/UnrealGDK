@@ -1700,7 +1700,7 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
 	ResolveIncomingOperations(Object, ObjectRef);
-	if (Object->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	if (Object->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && !Object->IsFullNameStableForNetworking())
 	{
 		// When resolving a singleton, also resolve using class path (in case any properties
 		// were set from a server that hasn't resolved the singleton yet)
