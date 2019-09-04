@@ -1754,7 +1754,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 				continue;
 			}
 		}
-		if (UActorComponent* AsActorComponent = Cast<UActorComponent>(ReplicatingObject))
+		else if (UActorComponent* AsActorComponent = Cast<UActorComponent>(ReplicatingObject))
 		{
 			if (AsActorComponent->GetOwner()->GetTearOff())
 			{
