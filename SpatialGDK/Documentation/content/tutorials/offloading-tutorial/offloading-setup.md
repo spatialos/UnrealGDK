@@ -76,8 +76,8 @@ authority over the turrets & player.
 </br>
 
 <br/>------------<br/>
-_2019-08-29 Page updated as limited editorial review: tutorial is now a full walkthrough on setting up offloading, rather than using pre-set configurations_<br/>
-_2019-07-30 Page added as limited editorial review_
+_2019-08-29 Page updated without editorial review: added setting up offloading and removed pre-set configurations_<br/>
+_2019-07-30 Page added without editorial review_
 <br/>
 <br/>
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1142)
