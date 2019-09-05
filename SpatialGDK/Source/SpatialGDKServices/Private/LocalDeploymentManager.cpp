@@ -16,7 +16,7 @@ DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 static const FString SpatialServiceVersion(TEXT("20190716.094149.1b6d448edd"));
 
-FLocalDeploymentManager::FLocalDeploymentManager(const FString SpatialDirectory)
+FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
 	, bSpatialServiceRunning(false)
 	, bSpatialServiceInProjectDirectory(false)
@@ -24,7 +24,6 @@ FLocalDeploymentManager::FLocalDeploymentManager(const FString SpatialDirectory)
 	, bStoppingDeployment(false)
 	, bStartingSpatialService(false)
 	, bStoppingSpatialService(false)
-	, SpatialOSDirectory(SpatialDirectory)
 {
 #if PLATFORM_WINDOWS
 	// Don't kick off background processes when running commandlets
@@ -57,12 +56,13 @@ FLocalDeploymentManager::FLocalDeploymentManager(const FString SpatialDirectory)
 #endif
 }
 
-void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher(const FString SpatialDirectory)
+void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 {
 	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
 	if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
 	{
 		// Watch the worker config directory for changes.
+		const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
 		FString WorkerConfigDirectory = FPaths::Combine(SpatialDirectory, TEXT("workers"));
 
 		if (FPaths::DirectoryExists(WorkerConfigDirectory))
@@ -83,15 +83,14 @@ void FLocalDeploymentManager::OnWorkerConfigDirectoryChanged(const TArray<FFileC
 	WorkerBuildConfigAsync();
 }
 
-void FLocalDeploymentManager::WorkerBuildConfigAsync(const FString SpatialDirectory)
+void FLocalDeploymentManager::WorkerBuildConfigAsync()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		FString BuildConfigArgs = TEXT("worker build build-config");
-		FString SpatialDirectory;
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
-		FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), BuildConfigArgs, SpatialDirectory, WorkerBuildConfigResult, ExitCode);
+		FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
 
 		if (ExitCode == ExitCodeSuccess)
 		{
@@ -104,12 +103,11 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync(const FString SpatialDirect
 	});
 }
 
-void FLocalDeploymentManager::RefreshServiceStatus(const FString SpatialDirectory)
+void FLocalDeploymentManager::RefreshServiceStatus()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
-		FString SpatialDirectory;
-		IsServiceRunningAndInCorrectDirectory(SpatialDirectory);
+		IsServiceRunningAndInCorrectDirectory();
 		GetLocalDeploymentStatus();
 
 		// Timers must be started on the game thread.
@@ -122,15 +120,14 @@ void FLocalDeploymentManager::RefreshServiceStatus(const FString SpatialDirector
 				FTimerHandle RefreshTimer;
 				GEditor->GetTimerManager()->SetTimer(RefreshTimer, [this]()
 				{
-					FString SpatialDirectory;
-					RefreshServiceStatus(SpatialDirectory);
+					RefreshServiceStatus();
 				}, RefreshFrequency, false);
 			}
 		});
 	});
 }
 
-bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, const FString SpatialDirectory)
+bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs)
 {
 	bRedeployRequired = false;
 
@@ -156,7 +153,7 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	// If the service is not running then start it.
 	if (!bSpatialServiceRunning)
 	{
-		TryStartSpatialService(SpatialDirectory);
+		TryStartSpatialService();
 	}
 
 	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json %s"), *LaunchConfig, *FSpatialGDKServicesModule::GetProjectName(), *LaunchArgs);
@@ -283,7 +280,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	return bSuccess;
 }
 
-bool FLocalDeploymentManager::TryStartSpatialService(const FString SpatialDirectory)
+bool FLocalDeploymentManager::TryStartSpatialService()
 {
 	if (bSpatialServiceRunning)
 	{
@@ -296,7 +293,7 @@ bool FLocalDeploymentManager::TryStartSpatialService(const FString SpatialDirect
 	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s"), *SpatialServiceVersion);
 	FString ServiceStartResult;
 	int32 ExitCode;
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), SpatialServiceStartArgs, SpatialDirectory, ServiceStartResult, ExitCode);
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStartResult, ExitCode);
 
 	bStartingSpatialService = false;
 
@@ -321,14 +318,14 @@ bool FLocalDeploymentManager::TryStartSpatialService(const FString SpatialDirect
 	}
 }
 
-bool FLocalDeploymentManager::TryStopSpatialService(const FString SpatialDirectory)
+bool FLocalDeploymentManager::TryStopSpatialService()
 {
 	bStoppingSpatialService = true;
 
 	FString SpatialServiceStartArgs = TEXT("service stop");
 	FString ServiceStopResult;
 	int32 ExitCode;
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), SpatialServiceStartArgs, SpatialDirectory, ServiceStopResult, ExitCode);
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStopResult, ExitCode);
 	bStoppingSpatialService = false;
 
 	if (ExitCode == ExitCodeSuccess)
@@ -414,7 +411,7 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 	return false;
 }
 
-bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory(const FString SpatialDirectory)
+bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
 {
 	FString SpotProjectInfoArgs = TEXT("alpha service project-info --json");
 	FString SpotProjectInfoResult;
@@ -458,7 +455,7 @@ bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory(const FStrin
 	// Get the project file path and ensure it matches the one for the currently running project.
 	if (bParsingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("projectFilePath"), SpatialServiceProjectPath))
 	{
-		FString CurrentProjectSpatialPath = FPaths::Combine(SpatialDirectory, TEXT("spatialos.json"));
+		FString CurrentProjectSpatialPath = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("spatialos.json"));
 		FPaths::NormalizeDirectoryName(SpatialServiceProjectPath);
 		FPaths::RemoveDuplicateSlashes(SpatialServiceProjectPath);
 
