@@ -275,7 +275,7 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 	for (const auto& TypeInfo : TypeInfos)
 	{
 		Progress.EnterProgressFrame(1.f);
-		UE_LOG(LogTemp, Display, TEXT("[%s] Generate Complete Schema."), *GetPathNameSafe(TypeInfo->Type));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("[%s] Generate Complete Schema."), *GetPathNameSafe(TypeInfo->Type));
 		GenerateCompleteSchemaFromClass(CombinedSchemaPath, IdGenerator, TypeInfo);
 	}
 }
@@ -441,20 +441,20 @@ bool IsSupportedClass(UClass* SupportedClass)
 {
 	if (!IsValid(SupportedClass))
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("[%s] Invalid Class Not supported for schema gen"), *GetPathNameSafe(SupportedClass));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Invalid Class Not supported for schema gen"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
 	if (SupportedClass->IsEditorOnly())
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("[%s] Editor-only Class Not supported for schema gen"), *GetPathNameSafe(SupportedClass));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Editor-only Class Not supported for schema gen"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
 	// User told us to ignore this class
 	if (SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
 	{
-		UE_LOG(LogTemp, Display, TEXT("[%s] Not Spatial Type, not supported for schema gen"), *GetPathNameSafe(SupportedClass));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Not Spatial Type, not supported for schema gen"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
@@ -463,15 +463,14 @@ bool IsSupportedClass(UClass* SupportedClass)
 		// Check if parent class is supported.
 		if (!IsSupportedClass(SupportedClass->GetSuperClass()))
 		{
-			UE_LOG(LogTemp, Display, TEXT("[%s] Not Explicit Spatial Type, parent not supported either, not supported for schema gen (SpatialClassFlags: %#06x)"), *GetPathNameSafe(SupportedClass),
-				SupportedClass->GetSpatialClassFlags());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Not Explicit Spatial Type, parent not supported either, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
 			return false;
 		}
 	}
 
 	if (SupportedClass->HasAnyClassFlags(CLASS_LayoutChanging))
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("[%s] Layout changing, not supported"), *GetPathNameSafe(SupportedClass));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Layout changing, not supported"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
@@ -484,7 +483,7 @@ bool IsSupportedClass(UClass* SupportedClass)
 		|| SupportedClass->GetName().StartsWith(TEXT("PLACEHOLDER-CLASS_"), ESearchCase::CaseSensitive)
 		|| SupportedClass->GetName().StartsWith(TEXT("ORPHANED_DATA_ONLY_"), ESearchCase::CaseSensitive))
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("[%s] Transient Class not supported for schema gen"), *GetPathNameSafe(SupportedClass));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Transient Class not supported for schema gen"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
@@ -497,11 +496,11 @@ bool IsSupportedClass(UClass* SupportedClass)
 		return ClassPath.StartsWith(Directory.Path);
 	}))
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("[%s] Inside Directory to never cook for schema gen"), *GetPathNameSafe(SupportedClass));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Inside Directory to never cook for schema gen"), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
-	UE_LOG(LogTemp, Display, TEXT("[%s] Supported Class"), *GetPathNameSafe(SupportedClass));
+	UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Supported Class"), *GetPathNameSafe(SupportedClass));
 	return true;
 }
 

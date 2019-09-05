@@ -27,9 +27,8 @@ public:
 		{
 			if (IsSupportedClass(Object->GetClass()))
 			{
-				UE_LOG(LogTemp, Display, TEXT("[Object Created] Path: %s, Class: %s, SpatialFlags: %#06x"), *Object->GetFName().ToString(), *GetPathNameSafe(Object->GetClass()),
-					Object->GetClass()->GetSpatialClassFlags());
-					VisitedClasses.Add(SoftClass);
+				UE_LOG(LogTemp, Verbose, TEXT("[Object Created] Path: %s, Class: %s"), *Object->GetFName().ToString(), *GetPathNameSafe(Object->GetClass()));
+				VisitedClasses.Add(SoftClass);
 			}
 			else
 			{
@@ -66,19 +65,14 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Cook and Generate Schema Started."));
 	ObjectListener = new FObjectListener();
-	/*for (TObjectIterator<UObject> Itr; Itr; ++Itr)
-	{
-		ObjectListener->NotifyUObjectCreated(*Itr, 0);
-	}*/
-
-
+	
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Try Load Schema Database."));
 	if (!TryLoadExistingSchemaDatabase())
 	{
 		return 1;
 	}
 
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Generate Schema for in-memory Classes."));
+	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("[%s] Generate Schema for C++ and in-memory Classes."), *FDateTime::Now().ToIso8601());
 	if (!SpatialGDKGenerateSchema(false /* bSaveSchemaDatabase */, false /* bRunSchemaCompiler */))
 	{
 		return 2;
@@ -94,7 +88,8 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Discovered %d Classes during cook."), ReferencedClasses.Num());
 
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Load/Gen Started at %s."), *FDateTime::Now().ToIso8601());
+	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Start Schema Generation for discovered assets."));
+	FDateTime StartTime = FDateTime::Now();
 	TSet<UClass*> Classes;
 	const int BatchSize = 100;
 	for (FSoftClassPath SoftPath : ReferencedClasses)
@@ -102,7 +97,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		if (!SoftPath.GetAssetPathString().StartsWith(TEXT("/Game"))) continue;
 		if (UClass* LoadedClass = SoftPath.TryLoadClass<UObject>())
 		{
-			UE_LOG(LogTemp, Display, TEXT("Reloaded %s, add to batch"), *GetPathNameSafe(LoadedClass));
+			UE_LOG(LogTemp, Verbose, TEXT("Reloaded %s, add to batch"), *GetPathNameSafe(LoadedClass));
 			Classes.Add(LoadedClass);
 			if (Classes.Num() >= BatchSize)
 			{
@@ -112,12 +107,15 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		}
 		else
 		{
-			UE_LOG(LogTemp, Display, TEXT("Failed to load %s for schema gen"), *SoftPath.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("Failed to load %s for schema gen"), *SoftPath.ToString());
 		}
 	}
 	SpatialGDKGenerateSchemaForClasses(Classes);
 
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Load/Gen Finished at %s."), *FDateTime::Now().ToIso8601());
+	FTimespan Duration = FDateTime::Now() - StartTime;
+
+
+	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Load/Gen Finished in %.2f seconds"), Duration.GetTotalSeconds());
 	
 	if (!SaveSchemaDatabase())
 	{
