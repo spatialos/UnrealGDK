@@ -156,7 +156,7 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		TryStartSpatialService();
 	}
 
-	SnapshotName.RemoveFromEnd(".snapshot");
+	SnapshotName.RemoveFromEnd(TEXT(".snapshot"));
 	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json --starting-snapshot-id=\"%s\" %s"), *LaunchConfig, *FSpatialGDKServicesModule::GetProjectName(), *SnapshotName, *LaunchArgs);
 
 	FDateTime SpotCreateStart = FDateTime::Now();
