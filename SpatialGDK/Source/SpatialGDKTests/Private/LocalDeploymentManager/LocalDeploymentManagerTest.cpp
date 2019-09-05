@@ -36,7 +36,7 @@ namespace
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
 		const FString SpatialExe(TEXT("spatial.exe"));
-		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialExe, BuildConfigArgs, GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
+		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialExe, BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
 
 		const int32 ExitCodeSuccess = 0;
 		return (ExitCode == ExitCodeSuccess);
@@ -44,7 +44,7 @@ namespace
 
 	bool GenerateWorkerJson()
 	{
-		const FString WorkerJsonDir = GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(TEXT("workers/unreal"));
+		const FString WorkerJsonDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("workers/unreal"));
 
 		FString JsonPath = FPaths::Combine(WorkerJsonDir, TEXT("spatialos.UnrealAutomation.worker.json"));
 		if (!FPaths::FileExists(JsonPath))
