@@ -460,8 +460,13 @@ bool IsSupportedClass(UClass* SupportedClass)
 
 	if (!SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_ExplicitSpatialType))
 	{
-		UE_LOG(LogTemp, Display, TEXT("[%s] Not Explicit Spatial Type, not supported for schema gen"), *GetPathNameSafe(SupportedClass));
-		return false;
+		// Check if parent class is supported.
+		if (!IsSupportedClass(SupportedClass->GetSuperClass()))
+		{
+			UE_LOG(LogTemp, Display, TEXT("[%s] Not Explicit Spatial Type, parent not supported either, not supported for schema gen (SpatialClassFlags: %#06x)"), *GetPathNameSafe(SupportedClass),
+				SupportedClass->GetSpatialClassFlags());
+			return false;
+		}
 	}
 
 	if (SupportedClass->HasAnyClassFlags(CLASS_LayoutChanging))

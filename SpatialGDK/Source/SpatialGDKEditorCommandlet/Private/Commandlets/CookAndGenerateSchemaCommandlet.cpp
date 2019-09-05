@@ -66,10 +66,10 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Cook and Generate Schema Started."));
 	ObjectListener = new FObjectListener();
-	for (TObjectIterator<UObject> Itr; Itr; ++Itr)
+	/*for (TObjectIterator<UObject> Itr; Itr; ++Itr)
 	{
 		ObjectListener->NotifyUObjectCreated(*Itr, 0);
-	}
+	}*/
 
 
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Try Load Schema Database."));
@@ -78,11 +78,11 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		return 1;
 	}
 
-	//UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Generate Schema for in-memory Classes."));
-	//if (!SpatialGDKGenerateSchema(false /* bSaveSchemaDatabase */, false /* bRunSchemaCompiler */))
-	//{
-	//	return 2;
-	//}
+	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Generate Schema for in-memory Classes."));
+	if (!SpatialGDKGenerateSchema(false /* bSaveSchemaDatabase */, false /* bRunSchemaCompiler */))
+	{
+		return 2;
+	}
 
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Starting Cook Command."));
 	int32 CookResult = Super::Main(CmdLineParams);
