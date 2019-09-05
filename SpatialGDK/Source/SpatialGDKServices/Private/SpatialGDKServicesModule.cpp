@@ -31,6 +31,11 @@ FLocalDeploymentManager* FSpatialGDKServicesModule::GetLocalDeploymentManager()
 	return &LocalDeploymentManager;
 }
 
+FString FSpatialGDKServicesModule::GetSpatialOSDirectory(const FString& AppendPath)
+{
+	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/"), AppendPath));
+}
+
 FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& AppendPath)
 {
 	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
@@ -59,7 +64,7 @@ bool FSpatialGDKServicesModule::SpatialPreRunChecks()
 {
 	FString SpatialExistenceCheckResult;
 	int32 ExitCode;
-	ExecuteAndReadOutput(GetSpatialExe(), TEXT("version"), GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), SpatialExistenceCheckResult, ExitCode);
+	ExecuteAndReadOutput(GetSpatialExe(), TEXT("version"), GetSpatialOSDirectory(), SpatialExistenceCheckResult, ExitCode);
 
 	if (ExitCode != 0)
 	{
@@ -122,7 +127,7 @@ void FSpatialGDKServicesModule::ExecuteAndReadOutput(const FString& Executable, 
 FString FSpatialGDKServicesModule::ParseProjectName()
 {
 	FString ProjectNameParsed;
-	const FString SpatialDirectory = GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory();
+	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
 
 	FString SpatialFileName = TEXT("spatialos.json");
 	FString SpatialFileResult;

@@ -234,8 +234,6 @@ public:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostInitProperties() override;
 
-	static FString GetSpatialOSDirectory(const FString& AppendPath = TEXT(""));
-
 private:
 
 	/** Set WorkerTypes in runtime settings. */
@@ -350,12 +348,12 @@ public:
 
 	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), TEXT("snapshots")));
+		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("snapshots")));
 	}
 
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))));
+		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))));
 	}
 
 	FORCEINLINE FString GetSpatialOSCommandLineLaunchFlags() const
