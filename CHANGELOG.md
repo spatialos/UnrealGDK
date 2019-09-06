@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - Visual Studio 2019 is now supported.
+- Schema and snapshot missing checks before local deployment start. In case of error proper log will be produced.
 
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
