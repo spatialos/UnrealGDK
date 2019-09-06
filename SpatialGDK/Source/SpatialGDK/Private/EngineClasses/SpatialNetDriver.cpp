@@ -692,15 +692,18 @@ static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Act
 {
 	if (GetDefault<USpatialGDKSettings>()->UseIsActorRelevantForConnection)
 	{
+		// If an actor is set to be always relevant, no need to evaluate connection relevancy.
+		// An actor without a channel yet will need to be replicated at least once to have an
+		// actor channel and entity created for it
+		if (Actor->bAlwaysRelevant || Cast<USpatialActorChannel>(ActorChannel) == nullptr)
+		{
+			return true;
+		}
+
 		for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
 		{
 			// Do a net relevancy check for Actor in net view cull distance for viewer
-			// If an actor has bAlwaysRelevant set to true, it will always return true
-			// If an actor is being replicated but doesn't have a channel yet, we want to
-			// replicate it once to create the entity, then only replicate if relevant after
-			if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation) ||
-				Actor->bAlwaysRelevant ||
-				Cast<USpatialActorChannel>(ActorChannel) == nullptr)
+			if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
 			{
 				return true;
 			}
