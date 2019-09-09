@@ -18,5 +18,5 @@ public:
 	virtual int32 Main(const FString& Params) override;
 
 protected:
-	bool HandleDeleteSchemaOption(const TArray<FString>& Switches);
+	virtual bool HandleOptions(const TArray<FString>& Switches);
 };
