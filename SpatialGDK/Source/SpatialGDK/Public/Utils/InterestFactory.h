@@ -7,7 +7,6 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
-class USpatialNetDriver;
 class USpatialPackageMapClient;
 class AActor;
 
@@ -21,7 +20,7 @@ void GatherClientInterestDistances();
 class SPATIALGDK_API InterestFactory
 {
 public:
-	InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialNetDriver* InNetDriver);
+	InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
 
 	Worker_ComponentData CreateInterestData() const;
 	Worker_ComponentUpdate CreateInterestUpdate() const;
@@ -54,7 +53,7 @@ private:
 
 	AActor* Actor;
 	const FClassInfo& Info;
-	USpatialNetDriver* NetDriver;
+	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;
 };
 
