@@ -23,11 +23,14 @@
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
+#include "Settings/SpatialPersistenceConfig.h"
+#include "Settings/SpatialWorldSettings.h"
 #include "SpatialConstants.h"
 #include "Utils/ActorGroupManager.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SettingUtils.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialMetrics.h"
 
@@ -202,9 +205,13 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(Position(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
-	ComponentDatas.Add(Persistence().CreatePersistenceData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
+
+	if (ShouldClassPersist(Cast<ASpatialWorldSettings>(NetDriver->World->GetWorldSettings()), Class))
+	{
+		ComponentDatas.Add(Persistence().CreatePersistenceData());
+	}
 
 	if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
 	{
