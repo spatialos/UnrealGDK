@@ -64,8 +64,9 @@ DEFINE_LATENT_COMMAND(StartDeployment)
 		FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
 		const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
 		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
+		const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
 
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags]
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName]
 		{
 			if (!GenerateWorkerJson())
 			{
@@ -89,7 +90,7 @@ DEFINE_LATENT_COMMAND(StartDeployment)
 				return;
 			}
 
-			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags);
+			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName);
 		});
 	}
 
