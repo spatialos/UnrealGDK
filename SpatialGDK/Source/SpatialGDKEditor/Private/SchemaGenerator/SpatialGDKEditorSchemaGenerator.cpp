@@ -186,10 +186,7 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 		TSharedPtr<FUnrealType>& SubobjectTypeInfo = It.Value;
 		FString NextSchemaSubobjectName = UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString());
 
-		FString SubObjectPath = SubobjectTypeInfo->Object->GetPathName();
-		//SubObjectPath.ReplaceInline(TEXT("_GEN_VARIABLE"), TEXT(""));
-
-		if (!CheckSchemaNameValidity(NextSchemaSubobjectName, SubObjectPath, TEXT("Subobject")))
+		if (!CheckSchemaNameValidity(NextSchemaSubobjectName, SubobjectTypeInfo->Object->GetPathName(), TEXT("Subobject")))
 		{
 			bOutSuccess = false;
 		}
@@ -252,8 +249,8 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	{
 		if (Collision.Value.Num() > 1)
 		{
-			/*UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for classes [%s]"),
-				*Collision.Key, *FString::Join(Collision.Value, TEXT(", ")));*/
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for classes [%s]"),
+				*Collision.Key, *FString::Join(Collision.Value, TEXT(", ")));
 		}
 	}
 
@@ -275,7 +272,6 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 	for (const auto& TypeInfo : TypeInfos)
 	{
 		Progress.EnterProgressFrame(1.f);
-		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("[%s] Generate Complete Schema."), *GetPathNameSafe(TypeInfo->Type));
 		GenerateCompleteSchemaFromClass(CombinedSchemaPath, IdGenerator, TypeInfo);
 	}
 }
@@ -790,7 +786,7 @@ SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Class
 			return true;
 		}, true);
 	}
-	
+
 	if (!ValidateIdentifierNames(TypeInfos))
 	{
 		return false;
@@ -798,7 +794,7 @@ SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Class
 
 	FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 
-	//UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
+	UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
 
 	// Check schema path is valid.
 	if (!FPaths::CollapseRelativeDirectories(SchemaOutputPath))

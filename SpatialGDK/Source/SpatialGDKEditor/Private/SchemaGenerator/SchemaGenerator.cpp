@@ -633,7 +633,7 @@ void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUn
 
 			if (Value != nullptr && IsSupportedClass(Value->GetClass()))
 			{
-				UClass* Class = Cast<UClass>(PropertyTypeInfo->Type);
+				UClass* Class = Value->GetClass();
 				if (!AlreadyImported.Contains(Class) && SchemaGeneratedClasses.Contains(Class))
 				{
 					Writer.Printf("import \"unreal/generated/Subobjects/{0}.schema\";", *ClassPathToSchemaName[Class->GetPathName()]);

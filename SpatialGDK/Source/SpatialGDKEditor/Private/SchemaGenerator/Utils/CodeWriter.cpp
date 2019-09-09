@@ -114,7 +114,6 @@ FCodeWriter& FCodeWriter::End()
 void FCodeWriter::WriteToFile(const FString& Filename)
 {
 	check(Scope == 0);
-	UE_LOG(LogTemp, Display, TEXT("Writing File %s"), *Filename);
 	FFileHelper::SaveStringToFile(OutputSource, *Filename);
 }
 

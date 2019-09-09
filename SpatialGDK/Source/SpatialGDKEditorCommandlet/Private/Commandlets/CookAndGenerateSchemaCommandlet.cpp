@@ -5,6 +5,8 @@
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 
+DEFINE_LOG_CATEGORY(LogCookAndGenerateSchemaCommandlet);
+
 struct FObjectListener : public FUObjectArray::FUObjectCreateListener
 {
 	FObjectListener()
@@ -27,7 +29,8 @@ public:
 		{
 			if (IsSupportedClass(Object->GetClass()))
 			{
-				UE_LOG(LogTemp, Verbose, TEXT("[Object Created] Path: %s, Class: %s"), *Object->GetFName().ToString(), *GetPathNameSafe(Object->GetClass()));
+				UE_LOG(LogCookAndGenerateSchemaCommandlet, Verbose, TEXT("Object [%s] Created, Consider Class [%s] For Schema."),
+					*Object->GetFName().ToString(), *GetPathNameSafe(Object->GetClass()));
 				VisitedClasses.Add(SoftClass);
 			}
 			else
@@ -56,76 +59,69 @@ UCookAndGenerateSchemaCommandlet::~UCookAndGenerateSchemaCommandlet()
 	ObjectListener = nullptr;
 }
 
-bool UCookAndGenerateSchemaCommandlet::IsEditorOnly() const
-{
-	return true;
-}
-
 int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 {
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Cook and Generate Schema Started."));
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook and Generate Schema Started."));
 	ObjectListener = new FObjectListener();
 	
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Try Load Schema Database."));
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Try Load Schema Database."));
 	if (!TryLoadExistingSchemaDatabase())
 	{
 		return 1;
 	}
 
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("[%s] Generate Schema for C++ and in-memory Classes."), *FDateTime::Now().ToIso8601());
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Generate Schema for C++ and in-memory Classes."));
 	if (!SpatialGDKGenerateSchema(false /* bSaveSchemaDatabase */, false /* bRunSchemaCompiler */))
 	{
 		return 2;
 	}
 
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Starting Cook Command."));
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Starting Cook Command."));
 	int32 CookResult = Super::Main(CmdLineParams);
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Cook Command Completed."));
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook Command Completed."));
 
 	GUObjectArray.RemoveUObjectCreateListener(ObjectListener);
 
-	ReferencedClasses.Append(ObjectListener->VisitedClasses);
+	TSet<FSoftClassPath> ReferencedClasses = ObjectListener->VisitedClasses;
 
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Discovered %d Classes during cook."), ReferencedClasses.Num());
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Discovered %d Classes during cook."), ReferencedClasses.Num());
 
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Start Schema Generation for discovered assets."));
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Start Schema Generation for discovered assets."));
 	FDateTime StartTime = FDateTime::Now();
 	TSet<UClass*> Classes;
 	const int BatchSize = 100;
 	for (FSoftClassPath SoftPath : ReferencedClasses)
 	{
-		if (!SoftPath.GetAssetPathString().StartsWith(TEXT("/Game"))) continue;
 		if (UClass* LoadedClass = SoftPath.TryLoadClass<UObject>())
 		{
-			UE_LOG(LogTemp, Verbose, TEXT("Reloaded %s, add to batch"), *GetPathNameSafe(LoadedClass));
+			UE_LOG(LogCookAndGenerateSchemaCommandlet, Verbose, TEXT("Reloaded %s, adding to batch"), *GetPathNameSafe(LoadedClass));
 			Classes.Add(LoadedClass);
 			if (Classes.Num() >= BatchSize)
 			{
 				SpatialGDKGenerateSchemaForClasses(Classes);
-				Classes.Empty(100);
+				Classes.Empty(BatchSize);
 			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to load %s for schema gen"), *SoftPath.ToString());
+			UE_LOG(LogCookAndGenerateSchemaCommandlet, Warning, TEXT("Failed to reload %s"), *SoftPath.ToString());
 		}
 	}
 	SpatialGDKGenerateSchemaForClasses(Classes);
 
 	FTimespan Duration = FDateTime::Now() - StartTime;
 
-
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Load/Gen Finished in %.2f seconds"), Duration.GetTotalSeconds());
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Schema Generation Finished in %.2f seconds"), Duration.GetTotalSeconds());
 	
 	if (!SaveSchemaDatabase())
 	{
-		UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("Failed to save schema database."));
+		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to save schema database."));
 		return 3;
 	}
 
 	if (!RunSchemaCompiler())
 	{
-		UE_LOG(LogSpatialGDKEditorCommandlet, Warning, TEXT("Failed to run schema compiler."));
+		UE_LOG(LogCookAndGenerateSchemaCommandlet, Warning, TEXT("Failed to run schema compiler."));
 	}
 
 	return CookResult;
