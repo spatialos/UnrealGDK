@@ -270,9 +270,13 @@ public:
 	bool bAutoStartLocalDeployment;
 
 private:
-	/** Name of your SpatialOS snapshot file. */
-	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
-	FString SpatialOSSnapshotFile;
+	/** Name of your SpatialOS snapshot file that will be generated. */
+	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot to save"))
+	FString SpatialOSSnapshotToSave;
+
+	/** Name of your SpatialOS snapshot file that will be loaded during deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot to load"))
+	FString SpatialOSSnapshotToLoad;
 
 	/** Add flags to the `spatial local launch` command; they alter the deployment’s behavior. Select the trash icon to remove all the flags.*/
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Command line flags for local launch"))
@@ -325,11 +329,28 @@ public:
 			: SpatialOSLaunchConfig.FilePath;
 	}
 
-	FORCEINLINE FString GetSpatialOSSnapshotFile() const
+	FORCEINLINE FString GetSpatialOSSnapshotToSave() const
 	{
-		return SpatialOSSnapshotFile.IsEmpty()
+		return SpatialOSSnapshotToSave.IsEmpty()
 			? FString(TEXT("default.snapshot"))
-			: SpatialOSSnapshotFile;
+			: SpatialOSSnapshotToSave;
+	}
+
+	FORCEINLINE FString GetSpatialOSSnapshotToSavePath() const
+	{
+		return FPaths::Combine(GetSpatialOSSnapshotFolderPath(), GetSpatialOSSnapshotToSave());
+	}
+
+	FORCEINLINE FString GetSpatialOSSnapshotToLoad() const
+	{
+		return SpatialOSSnapshotToLoad.IsEmpty()
+			? FString(TEXT("default.snapshot"))
+			: SpatialOSSnapshotToLoad;
+	}
+
+	FORCEINLINE FString GetSpatialOSSnapshotToLoadPath() const
+	{
+		return FPaths::Combine(GetSpatialOSSnapshotFolderPath(), GetSpatialOSSnapshotToLoad());
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
@@ -381,7 +402,7 @@ public:
 	{
 		const USpatialGDKEditorSettings* SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 		return SnapshotPath.FilePath.IsEmpty()
-			? FPaths::Combine(SpatialEditorSettings->GetSpatialOSSnapshotFolderPath(), SpatialEditorSettings->GetSpatialOSSnapshotFile())
+			? SpatialEditorSettings->GetSpatialOSSnapshotToSavePath()
 			: SnapshotPath.FilePath;
 	}
 
