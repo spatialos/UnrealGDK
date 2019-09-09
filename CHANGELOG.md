@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 - Added logging for queued RPCs.
+- Added several new STAT annotations into the ServerReplicateActors call chain.
 
 ### Features:
 - Visual Studio 2019 is now supported.
