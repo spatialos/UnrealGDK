@@ -1700,7 +1700,7 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
 	ResolveIncomingOperations(Object, ObjectRef);
-	if (Object->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	if (Object->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && !Object->IsFullNameStableForNetworking())
 	{
 		// When resolving a singleton, also resolve using class path (in case any properties
 		// were set from a server that hasn't resolved the singleton yet)
@@ -1743,6 +1743,26 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 
 		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key.Get();
 		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
+		
+		// Check whether the resolved object has been torn off, or is on an actor that has been torn off.
+		if (AActor* AsActor = Cast<AActor>(ReplicatingObject))
+		{
+			if (AsActor->GetTearOff())
+			{
+				UE_LOG(LogSpatialActorChannel, Log, TEXT("Actor to be resolved was torn off, so ignoring incoming operations. Object ref: %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+				UnresolvedRefsMap.Remove(ChannelObjectPair);
+				continue;
+			}
+		}
+		else if (AActor* OuterActor = ReplicatingObject->GetTypedOuter<AActor>())
+		{
+			if (OuterActor->GetTearOff())
+			{
+				UE_LOG(LogSpatialActorChannel, Log, TEXT("Owning Actor of the object to be resolved was torn off, so ignoring incoming operations. Object ref: %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+				UnresolvedRefsMap.Remove(ChannelObjectPair);
+				continue;
+			}
+		}
 
 		bool bStillHasUnresolved = false;
 		bool bSomeObjectsWereMapped = false;

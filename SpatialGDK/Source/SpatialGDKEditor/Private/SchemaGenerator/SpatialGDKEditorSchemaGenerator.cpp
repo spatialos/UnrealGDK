@@ -400,7 +400,7 @@ TMap<uint32, FString> CreateComponentIdToClassPathMap()
 
 bool SaveSchemaDatabase()
 {
-	FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
+	FString PackagePath = SpatialConstants::SCHEMA_DATABASE_ASSET_PATH;
 	UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
@@ -600,9 +600,9 @@ void ClearGeneratedSchema()
 
 bool TryLoadExistingSchemaDatabase()
 {
-	const FString SchemaDatabasePackagePath = TEXT("/Game/Spatial/SchemaDatabase");
-	const FString SchemaDatabaseAssetPath = FString::Printf(TEXT("%s.SchemaDatabase"), *SchemaDatabasePackagePath);
-	const FString SchemaDatabaseFileName = FPackageName::LongPackageNameToFilename(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH);
+	const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	const FString SchemaDatabaseAssetPath = FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase"));
 
 	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*SchemaDatabaseFileName);
 
@@ -649,6 +649,15 @@ SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists()
 	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	return PlatformFile.DirectoryExists(*SchemaOutputPath);
+}
+
+bool GeneratedSchemaDatabaseExists()
+{
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH);
+	const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	return PlatformFile.FileExists(*SchemaDatabaseFileName);
 }
 
 void ResolveClassPathToSchemaName(const FString& ClassPath, const FString& SchemaName)
