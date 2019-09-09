@@ -55,6 +55,7 @@ public:
 	static FName GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass);
 
 private:
+
 	static bool IsSpatialOffloadingEnabled();
 	static class UActorGroupManager* GetActorGroupManager(const UObject* WorldContext);
 	static FName GetCurrentWorkerType(const UObject* WorldContext);
