@@ -303,8 +303,14 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	const UWorld* const ActorWorld = Actor->GetWorld();
 
-	// Time how long it takes to replicate this particular actor
-	STAT(FScopeCycleCounterUObject FunctionScope(Actor));
+#if STATS
+	// Group specific actor class stats by parent native class, which is what vanilla Unreal does.
+	UClass* ParentNativeClass = GetParentNativeClass(Actor->GetClass());
+	SCOPE_CYCLE_UOBJECT(ParentNativeClass, ParentNativeClass);
+#endif
+
+	// Group actors by exact class, one level below parent native class.
+	SCOPE_CYCLE_UOBJECT(ReplicateActor, Actor);
 
 	// Create an outgoing bunch (to satisfy some of the functions below).
 	FOutBunch Bunch(this, 0);
@@ -603,6 +609,15 @@ const FClassInfo* USpatialActorChannel::TryResolveNewDynamicSubobjectAndGetClass
 bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicationFlags& RepFlags)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateSubobject);
+
+#if STATS
+	// Break down the subobject timing stats by parent native class.
+	UClass* ParentNativeClass = GetParentNativeClass(Object->GetClass());
+	SCOPE_CYCLE_UOBJECT(ReplicateSubobjectParentClass, ParentNativeClass);
+#endif
+
+	// Further break down the subobject timing stats by class.
+	SCOPE_CYCLE_UOBJECT(ReplicateSubobjectSpecificClass, Object);
 
 	bool bCreatedReplicator = false;
 
