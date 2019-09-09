@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features:
 - Visual Studio 2019 is now supported.
 - Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
+- It is now possible to specify in Unreal which actors should persist as entities in the Snapshot.
 
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
