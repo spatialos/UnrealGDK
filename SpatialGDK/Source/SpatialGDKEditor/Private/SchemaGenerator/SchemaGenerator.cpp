@@ -603,6 +603,10 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 			}
 			SubobjectData = GenerateSchemaForStaticallyAttachedSubobject(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, 0, ExistingSubobjectSchemaData);
 		}
+		else
+		{
+			continue;
+		}
 
 		SubobjectData.Name = SubobjectTypeInfo->Name;
 		uint32 SubobjectOffset = SubobjectData.SchemaComponents[SCHEMA_Data];
