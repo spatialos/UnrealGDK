@@ -23,7 +23,7 @@ bool ShouldClassPersist(const ASpatialWorldSettings* SpatialWorldSettings, const
 	}
 
 	const EPersistenceSelectionMode Mode = SpatialPersistenceConfig->GetPersistenceSelectionMode();
-	const TArray<UClass*> ClassList = SpatialPersistenceConfig->GetClassList();
+	const TArray<UClass*>& ClassList = SpatialPersistenceConfig->GetClassList();
 
 	for (const UClass* Class : ClassList)
 	{
