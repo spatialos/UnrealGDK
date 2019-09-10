@@ -22,10 +22,9 @@ DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
 void USpatialPackageMapClient::Init(USpatialNetDriver* InNetDriver, FTimerManager* TimerManager)
 {
-	NetDriver = InNetDriver;
-
+	bIsServer = InNetDriver->IsServer();
 	// Entity Pools should never exist on clients
-	if (NetDriver->IsServer())
+	if (bIsServer)
 	{
 		EntityPool = NewObject<UEntityPool>();
 		EntityPool->Init(InNetDriver, TimerManager);
@@ -67,7 +66,7 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor* Actor)
 {
 	check(Actor);
-	checkf(NetDriver->IsServer(), TEXT("Tried to allocate an Entity ID on the client, this shouldn't happen."));
+	checkf(bIsServer, TEXT("Tried to allocate an Entity ID on the client, this shouldn't happen."));
 
 	Worker_EntityId EntityId = EntityPool->GetNextEntityId();
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
@@ -86,7 +85,7 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 {
 	FNetworkGUID NetGUID;
 
-	if (!NetDriver->IsServer())
+	if (!bIsServer)
 	{
 		return NetGUID;
 	}
@@ -253,7 +252,9 @@ AActor* USpatialPackageMapClient::GetSingletonByClassRef(const FUnrealObjectRef&
 	if (UClass* SingletonClass = Cast<UClass>(GetObjectFromUnrealObjectRef(SingletonClassRef)))
 	{
 		TArray<AActor*> FoundActors;
-		UGameplayStatics::GetAllActorsOfClass(NetDriver->World, SingletonClass, FoundActors);
+		// USpatialPackageMapClient is an inner object of UNetConnection,
+		// which in turn contains a NetDriver and gets the UWorld it references
+		UGameplayStatics::GetAllActorsOfClass(this, SingletonClass, FoundActors);
 
 		// There should be only one singleton actor per class
 		if (FoundActors.Num() == 1)

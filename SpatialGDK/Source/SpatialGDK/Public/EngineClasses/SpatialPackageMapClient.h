@@ -68,8 +68,7 @@ private:
 	UPROPERTY()
 	UEntityPool* EntityPool;
 
-	UPROPERTY()
-	USpatialNetDriver* NetDriver;
+	bool bIsServer = false;
 
 	// Entities that have been assigned on this server and not created yet
 	TSet<Worker_EntityId_Key> PendingCreationEntityIds;
