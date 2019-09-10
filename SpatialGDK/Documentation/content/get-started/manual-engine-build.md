@@ -17,12 +17,7 @@ You must have followed the [Get started]({{urlRoot}}/content/get-started/introdu
 * [1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
 * [2 - Set up the fork and plugin]({{urlRoot}}/content/get-started/build-unreal-fork.md) up to [step 5]({{urlRoot}}/content/get-started/build-unreal-fork#step-5-clone-and-install-the-plugin)
 
-## Step 1: Unreal Linux cross-platform support</br>
-
-To build the server software for SpatialOS deployments correctly, you need to build the Unreal Engine fork targeting Linux. This requires Linux cross-compilation of your SpatialOS project and the Unreal Engine fork. To do this, you need to download and unzip the Linux cross-compilation toolchain.</br></br>
-For guidance on this, see the _Getting the toolchain_ section of Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation. As you follow the guidance there, select **v11 clang 5.0.0-based** to download the `v11_clang-5.0.0-centos7.zip` archive, then unzip this file into a suitable directory.
-
-## Step 2: Add a LINUX_MULTIARCH_ROOT environment variable
+## Step 1: Add a LINUX_MULTIARCH_ROOT environment variable
 
 To build the To build the SpatialOS-compatible version of Unreal Engine, you need to add an environment variable to set the path to the Linux cross-compilation toolchain so you have Unreal Linux cross-platform support (`LINUX_MULTIARCH_ROOT`).
 
@@ -32,7 +27,7 @@ Set the variable value as the path to the directory of the Linux cross-compilati
 1. Test the variable is set correctly: close and restart your terminal window and run `echo %LINUX_MULTIARCH_ROOT%` (Command Prompt) or `echo $Env:LINUX_MULTIARCH_ROOT` (PowerShell). </br>
 If you have registered the environment variable correctly, this returns the path you unzipped `v11_clang-5.0.0-centos7.zip` into. If it doesn’t, go back to the Environment Variables dialog box via File Explorer and check that you’ve set the environment variable correctly.
 
-## Step 3: Build Unreal Engine
+## Step 2: Build Unreal Engine
 
 1. In File Explorer navigate to the directory you cloned the Unreal Engine fork into.
 
@@ -54,7 +49,7 @@ Visual Studio then builds Unreal Engine, which can take up to a couple of hours.
 
 You have now built Unreal Engine 4 with cross-compilation for Linux. 
 
-## Step 4: Clone and install the SpatialOS GDK for Unreal plugin
+## Step 3: Clone and install the SpatialOS GDK for Unreal plugin
 
 You need to add the plugin to your project's plugins folder in order to use SpatialOS.
 
