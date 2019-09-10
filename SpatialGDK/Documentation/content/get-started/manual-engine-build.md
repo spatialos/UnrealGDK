@@ -17,39 +17,29 @@ You must have followed the [Get started]({{urlRoot}}/content/get-started/introdu
 * [1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
 * [2 - Set up the fork and plugin]({{urlRoot}}/content/get-started/build-unreal-fork.md) up to [step 5]({{urlRoot}}/content/get-started/build-unreal-fork#step-5-clone-and-install-the-plugin)
 
-## Step 1: Add a LINUX_MULTIARCH_ROOT environment variable
-
-To build the To build the SpatialOS-compatible version of Unreal Engine, you need to add an environment variable to set the path to the Linux cross-compilation toolchain so you have Unreal Linux cross-platform support (`LINUX_MULTIARCH_ROOT`).
-
-1. Open File Explorer and navigate to **Control Panel** > **System and Security** > **System** > **Advanced system settings** > **Advanced** > **Environment variables** to display the Environment Variables dialog box.
-1. In the dialog box, select **New...** to create a new system variable named `LINUX_MULTIARCH_ROOT`. </br>
-Set the variable value as the path to the directory of the Linux cross-compilation toolchain you downloaded and unzipped earlier.
-1. Test the variable is set correctly: close and restart your terminal window and run `echo %LINUX_MULTIARCH_ROOT%` (Command Prompt) or `echo $Env:LINUX_MULTIARCH_ROOT` (PowerShell). </br>
-If you have registered the environment variable correctly, this returns the path you unzipped `v11_clang-5.0.0-centos7.zip` into. If it doesn’t, go back to the Environment Variables dialog box via File Explorer and check that you’ve set the environment variable correctly.
-
-## Step 2: Build Unreal Engine
+## Step 1: Build Unreal Engine
 
 1. In File Explorer navigate to the directory you cloned the Unreal Engine fork into.
 
-1. Double-click **Setup.bat**.
+2. Double-click **Setup.bat**.
 This installs prerequisites for building Unreal Engine 4.<br>
 This process can take a long time to complete.
 
 > While running the Setup file, you should see `Checking dependencies (excluding Mac, Android)...`. If it also says `excluding Linux`, make sure that you set the environment variable `LINUX_MULTIARCH_ROOT` correctly, and run the Setup file again.
 
-1. In the same directory, double-click **GenerateProjectFiles.bat**. This file automatically sets up the project files you require to build Unreal Engine 4.<br/>
+3. In the same directory, double-click **GenerateProjectFiles.bat**. This file automatically sets up the project files you require to build Unreal Engine 4.<br/>
 
 > If you encounter the message, `error MSB4036: The "GetReferenceNearestTargetFrameworkTask" task was not found` when building with Visual Studio 2017, check that you have the NuGet Package Manager installed via the Visual Studio installer.    
 
-1. In the same directory, open **UE4.sln** in Visual Studio.
-1. In Visual Studio, on the toolbar, navigate to **Build** > **Configuration Manager**; set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
-1. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first). <br>
+4. In the same directory, open **UE4.sln** in Visual Studio.
+5. In Visual Studio, on the toolbar, navigate to **Build** > **Configuration Manager**; set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
+6. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first). <br>
 
 Visual Studio then builds Unreal Engine, which can take up to a couple of hours.
 
 You have now built Unreal Engine 4 with cross-compilation for Linux. 
 
-## Step 3: Clone and install the SpatialOS GDK for Unreal plugin
+## Step 2: Clone and install the SpatialOS GDK for Unreal plugin
 
 You need to add the plugin to your project's plugins folder in order to use SpatialOS.
 
