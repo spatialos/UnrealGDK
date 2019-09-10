@@ -114,31 +114,48 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
 
 Interest InterestFactory::CreateServerWorkerInterest()
 {
-	QueryConstraint Constraint;
-
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
 	{
 		UE_LOG(LogInterestFactory, Warning, TEXT("For performance reasons, it's recommended to disable server QBI when using offloading"));
 	}
 
+	ComponentInterest Queries;
+
 	if (!SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
 	{
+		QueryConstraint Constraint;
 		// In offloading scenarios, hijack the server worker entity to ensure each server has interest in all entities
 		Constraint.ComponentConstraint = SpatialConstants::POSITION_COMPONENT_ID;
+
+		Query Query;
+		Query.Constraint = Constraint;
+		Query.FullSnapshotResult = true;
+
+		Queries.Queries.Add(Query);
 	}
 	else
 	{
-		// Ensure server worker receives the GSM entity
-		Constraint.EntityIdConstraint = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
+		// Ensure server workers receive these entities
+		const SpatialConstants::EntityIds EntityInterest[] =
+		{
+			SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
+			SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID
+		};
+
+		const int NumEntityInterestEntries = sizeof(EntityInterest) / sizeof(EntityInterest[0]);
+		for (int i = 0; i < NumEntityInterestEntries; ++i)
+		{
+			QueryConstraint Constraint;
+			Constraint.EntityIdConstraint = EntityInterest[i];
+
+			Query Query;
+			Query.Constraint = Constraint;
+			Query.FullSnapshotResult = true;
+
+			Queries.Queries.Add(Query);
+		}
 	}
-
-	Query Query;
-	Query.Constraint = Constraint;
-	Query.FullSnapshotResult = true;
-
-	ComponentInterest Queries;
-	Queries.Queries.Add(Query);
 
 	Interest ServerInterest;
 	ServerInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, Queries);
