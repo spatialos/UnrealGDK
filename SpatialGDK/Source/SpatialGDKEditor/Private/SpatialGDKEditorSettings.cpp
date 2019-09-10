@@ -24,7 +24,8 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
-	SpatialOSSnapshotFile = GetSpatialOSSnapshotFile();
+	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
+	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)

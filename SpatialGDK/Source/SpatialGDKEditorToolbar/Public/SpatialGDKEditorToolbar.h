@@ -97,6 +97,9 @@ private:
 
 	void GenerateSchema(bool bFullScan);
 
+	bool IsSnapshotGenerated() const;
+	bool IsSchemaGenerated() const;
+
 	static void ShowCompileLog();
 
 	TSharedPtr<FUICommandList> PluginCommands;
