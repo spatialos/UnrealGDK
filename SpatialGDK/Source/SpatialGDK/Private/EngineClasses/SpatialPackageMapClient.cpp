@@ -20,9 +20,16 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
-void USpatialPackageMapClient::Init(USpatialNetDriver* InNetDriver)
+void USpatialPackageMapClient::Init(USpatialNetDriver* InNetDriver, FTimerManager* TimerManager)
 {
 	NetDriver = InNetDriver;
+
+	// Entity Pools should never exist on clients
+	if (NetDriver->IsServer())
+	{
+		EntityPool = NewObject<UEntityPool>();
+		EntityPool->Init(InNetDriver, TimerManager);
+	}
 }
 
 void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
@@ -62,7 +69,7 @@ Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor
 	check(Actor);
 	checkf(NetDriver->IsServer(), TEXT("Tried to allocate an Entity ID on the client, this shouldn't happen."));
 
-	Worker_EntityId EntityId = NetDriver->EntityPool->GetNextEntityId();
+	Worker_EntityId EntityId = EntityPool->GetNextEntityId();
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogSpatialPackageMap, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
@@ -102,7 +109,7 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 	}
 
 	// Resolve as an entity if it is an unregistered actor
-	if (Actor->Role == ROLE_Authority && NetDriver->PackageMap->GetEntityIdFromObject(Actor) == SpatialConstants::INVALID_ENTITY_ID)
+	if (Actor->Role == ROLE_Authority && GetEntityIdFromObject(Actor) == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		Worker_EntityId EntityId = AllocateEntityIdAndResolveActor(Actor);
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
@@ -272,6 +279,11 @@ bool USpatialPackageMapClient::CanClientLoadObject(UObject* Object)
 {
 	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
 	return GuidCache->CanClientLoadObject(Object, NetGUID);
+}
+
+bool USpatialPackageMapClient::IsEntityPoolReady() const
+{
+	return (EntityPool != nullptr) && (EntityPool->IsReady());
 }
 
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)

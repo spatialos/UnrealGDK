@@ -16,13 +16,14 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 
 class USpatialClassInfoManager;
 class USpatialNetDriver;
+class UEntityPool;
 
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()		
 public:
-	void Init(USpatialNetDriver* NetDriver);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* TimerManager);
 
 	Worker_EntityId AllocateEntityIdAndResolveActor(AActor* Actor);
 	FNetworkGUID TryResolveObjectAsEntity(UObject* Value);
@@ -56,11 +57,16 @@ public:
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
 
+	bool IsEntityPoolReady() const;
+
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
 private:
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
+
+	UPROPERTY()
+	UEntityPool* EntityPool;
 
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;

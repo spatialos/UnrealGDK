@@ -129,8 +129,6 @@ public:
 	UPROPERTY()
 	USnapshotManager* SnapshotManager;
 	UPROPERTY()
-	UEntityPool* EntityPool;
-	UPROPERTY()
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;

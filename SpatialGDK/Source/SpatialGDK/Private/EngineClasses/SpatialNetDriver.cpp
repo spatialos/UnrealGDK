@@ -304,8 +304,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
-	PackageMap->Init(this);
 	Dispatcher->Init(this);
 	Sender->Init(this, &TimerManager);
 	Receiver->Init(this, &TimerManager);
@@ -314,18 +312,17 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
 
-	// Entity Pools should never exist on clients
-	if (IsServer())
-	{
-		EntityPool->Init(this, &TimerManager);
-	}
+	// PackageMap value has been set earlier in USpatialNetConnection::InitBase
+	// Making sure the value is the same
+	USpatialPackageMapClient* NewPackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+	check(NewPackageMap == PackageMap);
+
+	PackageMap->Init(this, &TimerManager);
 }
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 {
 	check(!bConnectAsClient);
-
-	EntityPool = NewObject<UEntityPool>();
 
 	USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(NetConnection);
@@ -1351,7 +1348,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
 
-	if (IsServer() && GetSpatialOSNetConnection() != nullptr && EntityPool->IsReady())
+	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady())
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
@@ -1910,7 +1907,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 	// Search for entity id reservation response and process it.  The entity id reservation
 	// can fail to reserve entity ids.  In that case, the EntityPool will not be marked ready,
 	// a new query will be sent, and we will process the new response here when it arrives.
-	if (!EntityPool->IsReady())
+	if (!PackageMap->IsEntityPoolReady())
 	{
 		Worker_Op* EntityIdReservationResponseOp = nullptr;
 		FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE, &EntityIdReservationResponseOp);
@@ -1964,7 +1961,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		Dispatcher->MarkOpToSkip(Op);
 	}
 
-	if (EntityPool->IsReady() &&
+	if (PackageMap->IsEntityPoolReady() &&
 		GlobalStateManager->IsReadyToCallBeginPlay())
 	{
 		// Return whether or not we are ready to start
