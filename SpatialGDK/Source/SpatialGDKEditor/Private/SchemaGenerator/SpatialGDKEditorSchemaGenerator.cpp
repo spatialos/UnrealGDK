@@ -539,7 +539,7 @@ TSet<UClass*> FilterClasses(TSet<UClass*> Classes)
 
 void CopyWellKnownSchemaFiles()
 {
-	FString PluginDir = GetDefault<USpatialGDKEditorSettings>()->GetGDKPluginDirectory();
+	FString PluginDir = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory();
 
 	FString GDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
 	FString GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
@@ -726,7 +726,7 @@ void ResetUsedNames()
 
 bool RunSchemaCompiler()
 {
-	FString PluginDir = GetDefault<USpatialGDKEditorSettings>()->GetGDKPluginDirectory();
+	FString PluginDir = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory();
 
 	// Get the schema_compiler path and arguments
 	FString SchemaCompilerExe = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe"));

@@ -322,24 +322,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration file options"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
-	FORCEINLINE FString GetGDKPluginDirectory() const
-	{
-		// Get the correct plugin directory.
-		FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
-
-		if (!FPaths::DirectoryExists(PluginDir))
-		{
-			// If the Project Plugin doesn't exist then use the Engine Plugin.
-			PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
-		}
-
-		return PluginDir;
-	}
-
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
 		return SpatialOSLaunchConfig.FilePath.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/default_launch.json")))
+			? FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("default_launch.json"))
 			: SpatialOSLaunchConfig.FilePath;
 	}
 
@@ -374,7 +360,7 @@ public:
 
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))));
+		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/generated/")));
 	}
 
 	FORCEINLINE FString GetSpatialOSCommandLineLaunchFlags() const
@@ -389,8 +375,6 @@ public:
 
 		return CommandLineLaunchFlags;
 	}
-
-	FString GetProjectNameFromSpatial() const;
 
 	void SetPrimaryDeploymentName(const FString& Name);
 	FORCEINLINE FString GetPrimaryDeploymentName() const
@@ -473,7 +457,7 @@ public:
 
 	FORCEINLINE FString GetDeploymentLauncherPath() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(GetGDKPluginDirectory() / TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher")));
+		return FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher"));
 	}
 
 	bool IsDeploymentConfigurationValid() const;
