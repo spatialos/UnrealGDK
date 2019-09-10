@@ -2,7 +2,9 @@
 
 #include "SpatialGDKServicesModule.h"
 
+#include "HAL/PlatformFilemanager.h"
 #include "Misc/FileHelper.h"
+#include "Misc/PackageName.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesPrivate.h"
