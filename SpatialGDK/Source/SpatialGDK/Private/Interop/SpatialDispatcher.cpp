@@ -2,22 +2,18 @@
 
 #include "Interop/SpatialDispatcher.h"
 
-#include "EngineClasses/SpatialNetConnection.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "UObject/UObjectIterator.h"
 #include "Utils/OpUtils.h"
 
-
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void USpatialDispatcher::Init(USpatialNetDriver* InNetDriver)
+void USpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView)
 {
-	NetDriver = InNetDriver;
-	Receiver = InNetDriver->Receiver;
-	StaticComponentView = InNetDriver->StaticComponentView;
+	Receiver = InReceiver;
+	StaticComponentView = InStaticComponentView;
 }
 
 void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)

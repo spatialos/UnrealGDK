@@ -304,7 +304,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	Dispatcher->Init(this);
+	Dispatcher->Init(Receiver, StaticComponentView);
 	Sender->Init(this, &TimerManager);
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);

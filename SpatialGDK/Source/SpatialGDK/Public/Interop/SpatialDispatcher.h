@@ -17,7 +17,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
 
-class USpatialNetDriver;
 class USpatialReceiver;
 class USpatialStaticComponentView;
 
@@ -29,7 +28,7 @@ class SPATIALGDK_API USpatialDispatcher : public UObject
 public:
 	using FCallbackId = uint32;
 
-	void Init(USpatialNetDriver* NetDriver);
+	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView);
 	void ProcessOps(Worker_OpList* OpList);
 	// The following 2 methods should *only* be used by the Startup OpList Queueing flow
 	// from the SpatialNetDriver, and should be temporary since an alternative solution will be available via the Worker SDK soon.
@@ -66,9 +65,6 @@ private:
 	void ProcessExternalSchemaOp(Worker_Op* Op);
 	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
-
-	UPROPERTY()
-	USpatialNetDriver* NetDriver;
 
 	UPROPERTY()
 	USpatialReceiver* Receiver;
