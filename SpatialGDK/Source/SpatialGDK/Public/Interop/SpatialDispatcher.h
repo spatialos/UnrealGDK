@@ -17,6 +17,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
 
+class USpatialMetrics;
 class USpatialReceiver;
 class USpatialStaticComponentView;
 
@@ -28,7 +29,7 @@ class SPATIALGDK_API USpatialDispatcher : public UObject
 public:
 	using FCallbackId = uint32;
 
-	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView);
+	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics);
 	void ProcessOps(Worker_OpList* OpList);
 
 	// The following 2 methods should *only* be used by the Startup OpList Queueing flow
@@ -72,6 +73,9 @@ private:
 
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
+
+	UPROPERTY()
+	USpatialMetrics* SpatialMetrics;
 
 	// This index is incremented and returned every time an AddOpCallback function is called.
 	// CallbackIds enable you to deregister callbacks using the RemoveOpCallback function. 

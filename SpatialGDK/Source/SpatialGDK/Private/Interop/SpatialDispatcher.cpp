@@ -11,10 +11,11 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void USpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView)
+void USpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics)
 {
 	Receiver = InReceiver;
 	StaticComponentView = InStaticComponentView;
+	SpatialMetrics = InSpatialMetrics;
 }
 
 void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
@@ -100,7 +101,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			break;
 		case WORKER_OP_TYPE_METRICS:
 #if !UE_BUILD_SHIPPING
-			NetDriver->SpatialMetrics->HandleWorkerMetrics(Op);
+			SpatialMetrics->HandleWorkerMetrics(Op);
 #endif
 			break;
 		case WORKER_OP_TYPE_DISCONNECT:
