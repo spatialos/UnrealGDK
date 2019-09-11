@@ -17,6 +17,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 class USpatialClassInfoManager;
 class USpatialNetDriver;
 class UEntityPool;
+class FTimerManager;
 
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient

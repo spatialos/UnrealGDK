@@ -7,6 +7,7 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
+class USpatialClassInfoManager;
 class USpatialPackageMapClient;
 class AActor;
 
