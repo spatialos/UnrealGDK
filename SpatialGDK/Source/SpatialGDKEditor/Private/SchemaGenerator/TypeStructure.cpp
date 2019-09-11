@@ -31,7 +31,7 @@ void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TShared
 		bool bShouldRecurseFurther = Visitor(PropertyPair.Value);
 		if (bShouldRecurseFurther && PropertyPair.Value->Type.IsValid())
 		{
-			// Either recurse into subobjects if they're structs or bRecurseIntoSubobjects is true.
+			// Recurse into properties if they're structs.
 			if (PropertyPair.Value->Property->IsA<UStructProperty>())
 			{
 				VisitAllProperties(PropertyPair.Value->Type, Visitor);
