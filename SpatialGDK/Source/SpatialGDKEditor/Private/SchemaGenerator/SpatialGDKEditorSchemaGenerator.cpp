@@ -155,33 +155,6 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 		}
 	}
 
-	// Check RPC name validity.
-	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
-	for (auto Group : GetRPCTypes())
-	{
-		TMap<FString, TSharedPtr<FUnrealRPC>> SchemaRPCNames;
-		for (auto& RPC : RPCsByType[Group])
-		{
-			FString NextSchemaRPCName = SchemaRPCName(RPC->Function);
-
-			if (!CheckSchemaNameValidity(NextSchemaRPCName, RPC->Function->GetPathName(), TEXT("RPC")))
-			{
-				bOutSuccess = false;
-			}
-
-			if (TSharedPtr<FUnrealRPC>* ExistingRPC = SchemaRPCNames.Find(NextSchemaRPCName))
-			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("RPC name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
-					*NextSchemaRPCName, *ExistingRPC->Get()->Function->GetPathName(), *RPC->Function->GetPathName());
-				bOutSuccess = false;
-			}
-			else
-			{
-				SchemaRPCNames.Add(NextSchemaRPCName, RPC);
-			}
-		}
-	}
-
 	// Check subobject name validity.
 	FSubobjectMap Subobjects = GetAllSubobjects(TypeInfo);
 	TMap<FString, TSharedPtr<FUnrealType>> SchemaSubobjectNames;
@@ -725,7 +698,7 @@ bool SpatialGDKGenerateSchema()
 	for (const auto& Class : SchemaGeneratedClasses)
 	{
 		// Parent and static array index start at 0 for checksum calculations.
-		TypeInfos.Add(CreateUnrealTypeInfo(Class, 0, 0, false));
+		TypeInfos.Add(CreateUnrealTypeInfo(Class, 0, 0));
 	}
 
 	if (!ValidateIdentifierNames(TypeInfos))

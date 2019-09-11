@@ -65,11 +65,6 @@ FString SchemaHandoverDataName(UClass* Class)
 	return FString::Printf(TEXT("%sHandover"), *UnrealNameToSchemaComponentName(ClassPathToSchemaName[Class->GetPathName()]));
 }
 
-FString SchemaRPCName(UFunction* Function)
-{
-	return UnrealNameToSchemaName(Function->GetName().ToLower());
-}
-
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 {
 	// Transform the property chain into a chain of names.
