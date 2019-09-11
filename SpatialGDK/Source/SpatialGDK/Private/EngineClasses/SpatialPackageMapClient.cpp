@@ -20,14 +20,14 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
-void USpatialPackageMapClient::Init(USpatialNetDriver* InNetDriver, FTimerManager* TimerManager)
+void USpatialPackageMapClient::Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager)
 {
-	bIsServer = InNetDriver->IsServer();
+	bIsServer = NetDriver->IsServer();
 	// Entity Pools should never exist on clients
 	if (bIsServer)
 	{
 		EntityPool = NewObject<UEntityPool>();
-		EntityPool->Init(InNetDriver, TimerManager);
+		EntityPool->Init(NetDriver, TimerManager);
 	}
 }
 
