@@ -44,7 +44,11 @@
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
 DECLARE_CYCLE_STAT(TEXT("ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ProcessPrioritizedActors"), STAT_SpatialProcessPrioritizedActors, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("PrioritizeActors"), STAT_SpatialPrioritizeActors, STATGROUP_SpatialNet);
 DEFINE_STAT(STAT_SpatialConsiderList);
+DEFINE_STAT(STAT_SpatialActorsRelevant);
+DEFINE_STAT(STAT_SpatialActorsChanged);
 
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -728,6 +732,8 @@ static FORCEINLINE_DEBUGGABLE bool ShouldActorGoDormant(AActor* Actor, const TAr
 
 int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float DeltaSeconds)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialPrioritizeActors);
+
 	int32 NumClientsToTick = ClientConnections.Num();
 
 	bool bFoundReadyConnection = false;
@@ -873,12 +879,17 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialProcessPrioritizedActors);
+
 	// Since this function signature is copied from NetworkDriver.cpp, I don't want to change the signature. But we expect
 	// that the input connection will be the SpatialOS server connection to the runtime (the first client connection),
 	// so let's make sure that assumption continues to hold.
 	check(InConnection != nullptr);
 	check(GetSpatialOSNetConnection() != nullptr);
 	check(InConnection == GetSpatialOSNetConnection());
+
+	SET_DWORD_STAT(STAT_SpatialActorsRelevant, 0);
+	SET_DWORD_STAT(STAT_SpatialActorsChanged, 0);
 
 	// SpatialGDK - Here Unreal would check if the InConnection was saturated (!IsNetReady) and early out. Removed this as we do not currently use channel saturation.
 
@@ -1061,6 +1072,9 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 			}
 		}
 	}
+
+	SET_DWORD_STAT(STAT_SpatialActorsRelevant, ActorUpdatesThisConnection);
+	SET_DWORD_STAT(STAT_SpatialActorsChanged, ActorUpdatesThisConnectionSent);
 
 	// SpatialGDK - Here Unreal would return the position of the last replicated actor in PriorityActors before the channel became saturated.
 	// In Spatial we use ActorReplicationRateLimit and EntityCreationRateLimit to limit replication so this return value is not relevant.

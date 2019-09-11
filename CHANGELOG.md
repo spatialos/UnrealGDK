@@ -6,9 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 - Added logging for queued RPCs.
+- Added several new STAT annotations into the ServerReplicateActors call chain.
 
 ### Features:
 - Visual Studio 2019 is now supported.
+- Added toolbar and commandlet options to delete the schema database.
+- Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
 
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
@@ -17,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generating schema when the schema database is locked by another process will no longer crash the editor.
 - When schema compiler fails, schema generation correctly shows an error.
 - Fixed crash during initialization when running GenerateSchemaCommandlet.
+- Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
 
 ## [`0.6.1`] - 2019-08-15
 
