@@ -103,7 +103,9 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
 			break;
 		case WORKER_OP_TYPE_METRICS:
+#if !UE_BUILD_SHIPPING
 			NetDriver->SpatialMetrics->HandleWorkerMetrics(Op);
+#endif
 			break;
 		case WORKER_OP_TYPE_DISCONNECT:
 			Receiver->OnDisconnect(Op->disconnect);
