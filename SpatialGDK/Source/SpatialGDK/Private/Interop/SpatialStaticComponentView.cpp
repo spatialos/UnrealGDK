@@ -10,6 +10,10 @@
 #include "Schema/ServerRPCEndpoint.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
+// TODO: Remove
+#include "Schema/ClientRPCEndpointRB.h"
+#include "Schema/ServerRPCEndpointRB.h"
+#include "Schema/MulticastEndpointRB.h"
 
 Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
@@ -81,6 +85,16 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ServerRPCEndpoint>>(Op.data);
 		break;
+	// TODO: Remove
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_RB:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ClientRPCEndpointRB>>(Op.data);
+		break;
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_RB:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ServerRPCEndpointRB>>(Op.data);
+		break;
+	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_RB:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::MulticastRPCEndpointRB>>(Op.data);
+		break;
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.
 		Data = nullptr;
@@ -124,6 +138,16 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::ServerRPCEndpoint>(Op.entity_id);
+		break;
+		// TODO: Remove
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_RB:
+		Component = GetComponentData<SpatialGDK::ClientRPCEndpointRB>(Op.entity_id);
+		break;
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_RB:
+		Component = GetComponentData<SpatialGDK::ServerRPCEndpointRB>(Op.entity_id);
+		break;
+	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_RB:
+		Component = GetComponentData<SpatialGDK::MulticastRPCEndpointRB>(Op.entity_id);
 		break;
 	default:
 		return;

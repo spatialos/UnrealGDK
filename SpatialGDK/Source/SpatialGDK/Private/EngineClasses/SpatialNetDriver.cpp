@@ -27,6 +27,7 @@
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialRingBufferManager.h"
 #include "Interop/SpatialSender.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -295,6 +296,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
 	SnapshotManager = NewObject<USnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
+	RPCRingBufferManager = NewObject<USpatialRingBufferManager>();
 
 #if !UE_BUILD_SHIPPING
 	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client
@@ -313,6 +315,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
+	RPCRingBufferManager->Init(this);
 
 	// Entity Pools should never exist on clients
 	if (IsServer())

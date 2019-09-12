@@ -38,11 +38,25 @@ FORCEINLINE ESchemaComponentType FunctionFlagsToRPCSchemaType(EFunctionFlags Fun
 {
 	if (FunctionFlags & FUNC_NetClient)
 	{
-		return SCHEMA_ClientReliableRPC;
+		if (FunctionFlags & FUNC_NetReliable)
+		{
+			return SCHEMA_ClientReliableRPC;
+		}
+		else
+		{
+			return SCHEMA_ClientUnreliableRPC;
+		}
 	}
 	else if (FunctionFlags & FUNC_NetServer)
 	{
-		return SCHEMA_ServerReliableRPC;
+		if (FunctionFlags & FUNC_NetReliable)
+		{
+			return SCHEMA_ServerReliableRPC;
+		}
+		else
+		{
+			return SCHEMA_ServerUnreliableRPC;
+		}
 	}
 	else if (FunctionFlags & FUNC_NetMulticast)
 	{
@@ -114,6 +128,11 @@ namespace SpatialConstants
 	const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
 	const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
 	const Worker_ComponentId ALWAYS_RELEVANT_COMPONENT_ID					= 9983;
+
+	// TEMP
+	const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_RB			= CLIENT_RPC_ENDPOINT_COMPONENT_ID - 10;
+	const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID_RB			= SERVER_RPC_ENDPOINT_COMPONENT_ID - 10;
+	const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID_RB				= NETMULTICAST_RPCS_COMPONENT_ID - 10;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 

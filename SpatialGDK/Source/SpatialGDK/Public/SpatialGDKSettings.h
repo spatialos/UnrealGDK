@@ -176,4 +176,17 @@ public:
 	/** Available server worker types. */
 	UPROPERTY(Config)
 	TSet<FName> ServerWorkerTypes;
+
+private:
+	/** Default ring buffer size (used if size per RPC type is not specified). */
+	UPROPERTY(Config)
+	uint32 DefaultRPCRingBufferSize;
+
+	/** Ring buffer size per RPC type. */
+	UPROPERTY(Config)
+	TMap<uint32, uint32> RPCRingBufferSizeMap;
+	// TODO: Add UENUM for RPCs?
+
+public:
+	uint32 GetRPCRingBufferSize(ESchemaComponentType RPCType) const;
 };

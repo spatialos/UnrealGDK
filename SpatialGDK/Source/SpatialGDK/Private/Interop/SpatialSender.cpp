@@ -13,6 +13,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialRingBufferManager.h"
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/Heartbeat.h"
@@ -23,6 +24,11 @@
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
+// TODO: Remove
+#include "Schema/ClientRPCEndpointRB.h"
+#include "Schema/ServerRPCEndpointRB.h"
+#include "Schema/MulticastEndpointRB.h"
+
 #include "SpatialConstants.h"
 #include "Utils/ActorGroupManager.h"
 #include "Utils/ComponentFactory.h"
@@ -76,6 +82,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 {
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
+	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 
@@ -124,6 +131,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 
+	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_RB, OwningClientOnlyRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_RB, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_RB, AuthoritativeWorkerRequirementSet);
+
 	// If there are pending RPCs, add this component.
 	if (OutgoingOnCreateEntityRPCs.Contains(Actor))
 	{
@@ -157,7 +168,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
 		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding write acls
-		TWeakObjectPtr<UObject> Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
+		TWeakObjectPtr<UObject> Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, SubobjectInfoPair.Key));
 		if (!Subobject.IsValid())
 		{
 			continue;
@@ -251,6 +262,14 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(ServerRPCEndpoint().CreateRPCEndpointData());
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 
+	const QueuedRPCMap* QueuedRPCs = NetDriver->RPCRingBufferManager->RPCsToSendMap.Find(EntityId);
+	ComponentDatas.Add(ClientRPCEndpointRB::CreateRPCEndpointData());
+	ComponentDatas.Add(ServerRPCEndpointRB().CreateRPCEndpointData(QueuedRPCs));
+	ComponentDatas.Add(MulticastRPCEndpointRB().CreateRPCEndpointData(QueuedRPCs));
+
+	// TODO: Leave reliable RPCs in if overflowed.
+	NetDriver->RPCRingBufferManager->RPCsToSendMap.Remove(EntityId);
+
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
 	{
@@ -304,7 +323,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
 		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding write acls
-		TWeakObjectPtr<UObject> WeakSubobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
+		TWeakObjectPtr<UObject> WeakSubobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, SubobjectInfoPair.Key));
 		if (!WeakSubobject.IsValid())
 		{
 			continue;
@@ -333,7 +352,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 
-	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
 	PendingActorRequests.Add(CreateEntityRequestId, Channel);
 
@@ -690,6 +708,14 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			check(NetDriver->IsServer());
 
 			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Payload);
+			if (Channel->GetEntityId() != SpatialConstants::INVALID_ENTITY_ID)
+			{
+				NetDriver->RPCRingBufferManager->RPCsToSendMap.FindOrAdd(Channel->GetEntityId()).FindOrAdd(FunctionFlagsToRPCSchemaType(Function->FunctionFlags)).Add(Payload);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("No entity yet huh %s"), *TargetObject->GetFullName());
+			}
 #if !UE_BUILD_SHIPPING
 			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING

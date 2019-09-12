@@ -38,10 +38,17 @@ struct RPCPayload
 		AddBytesToSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, Data, sizeof(uint8) * NumElems);
 	}
 
+	void WriteToSchemaObject(Schema_Object* RPCObject) const
+	{
+		WriteToSchemaObject(RPCObject, Offset, Index, PayloadData.GetData(), PayloadData.Num());
+	}
+
 	uint32 Offset;
 	uint32 Index;
 	TArray<uint8> PayloadData;
 };
+
+using QueuedRPCMap = TMap<ESchemaComponentType, TArray<RPCPayload>>;
 
 struct RPCsOnEntityCreation : Component
 {
