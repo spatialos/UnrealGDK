@@ -244,7 +244,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 	ComponentDatas.Append(DynamicComponentDatas);
 
-	InterestFactory InterestDataFactory(Actor, Info, NetDriver);
+	InterestFactory InterestDataFactory(Actor, Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
 	ComponentDatas.Add(ClientRPCEndpoint().CreateRPCEndpointData());
@@ -1095,7 +1095,7 @@ bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& O
 
 void USpatialSender::UpdateInterestComponent(AActor* Actor)
 {
-	InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), NetDriver);
+	InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), NetDriver->ClassInfoManager, NetDriver->PackageMap);
 	Worker_ComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
 
 	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
