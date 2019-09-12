@@ -9,7 +9,6 @@
 
 #include "EngineClasses/Components/ActorInterestComponent.h"
 #include "EngineClasses/SpatialNetConnection.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
@@ -70,10 +69,7 @@ void GatherClientInterestDistances()
 	// Sort the map for iteration so that parent classes are seen before derived classes. This lets us skip
 	// derived classes that have a smaller interest distance than a parent class.
 	DiscoveredInterestDistancesSquared.KeySort([](const UClass& LHS, const UClass& RHS) {
-		return
-			LHS.IsChildOf(&RHS) ? -1 :
-			RHS.IsChildOf(&LHS) ? 1 :
-			0;
+		return LHS.IsChildOf(&RHS);
 	});
 
 	// If an actor's interest distance is smaller than that of a parent class, there's no need to add interest for that actor.
@@ -97,11 +93,11 @@ void GatherClientInterestDistances()
 	}
 }
 
-InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialNetDriver* InNetDriver)
+InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
 	: Actor(InActor)
 	, Info(InInfo)
-	, NetDriver(InNetDriver)
-	, PackageMap(InNetDriver->PackageMap)
+	, ClassInfoManager(InClassInfoManager)
+	, PackageMap(InPackageMap)
 {
 }
 
@@ -113,6 +109,40 @@ Worker_ComponentData InterestFactory::CreateInterestData() const
 Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
 {
 	return CreateInterest().CreateInterestUpdate();
+}
+
+Interest InterestFactory::CreateServerWorkerInterest()
+{
+	QueryConstraint Constraint;
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
+	{
+		UE_LOG(LogInterestFactory, Warning, TEXT("For performance reasons, it's recommended to disable server QBI when using offloading"));
+	}
+
+	if (!SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
+	{
+		// In offloading scenarios, hijack the server worker entity to ensure each server has interest in all entities
+		Constraint.ComponentConstraint = SpatialConstants::POSITION_COMPONENT_ID;
+	}
+	else
+	{
+		// Ensure server worker receives the GSM entity
+		Constraint.EntityIdConstraint = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
+	}
+
+	Query Query;
+	Query.Constraint = Constraint;
+	Query.FullSnapshotResult = true;
+
+	ComponentInterest Queries;
+	Queries.Queries.Add(Query);
+
+	Interest ServerInterest;
+	ServerInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, Queries);
+
+	return ServerInterest;
 }
 
 Interest InterestFactory::CreateInterest() const
@@ -226,13 +256,13 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
 {
 	check(Actor);
-	check(NetDriver != nullptr && NetDriver->ClassInfoManager);
+	check(ClassInfoManager);
 
 	TArray<UActorInterestComponent*> ActorInterestComponents;
 	Actor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
 	if (ActorInterestComponents.Num() == 1)
 	{
-		ActorInterestComponents[0]->CreateQueries(*NetDriver->ClassInfoManager, LevelConstraints, OutQueries);
+		ActorInterestComponents[0]->CreateQueries(*ClassInfoManager, LevelConstraints, OutQueries);
 	}
 	else if (ActorInterestComponents.Num() > 1)
 	{
@@ -398,8 +428,8 @@ void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8
 
 void InterestFactory::AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint) const
 {
-	check(NetDriver && NetDriver->ClassInfoManager);
-	TArray<Worker_ComponentId> ComponentIds = NetDriver->ClassInfoManager->GetComponentIdsForClassHierarchy(BaseType);
+	check(ClassInfoManager);
+	TArray<Worker_ComponentId> ComponentIds = ClassInfoManager->GetComponentIdsForClassHierarchy(BaseType);
 	for (Worker_ComponentId ComponentId : ComponentIds)
 	{
 		QueryConstraint ComponentTypeConstraint;
@@ -426,7 +456,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints() const
 	// Create component constraints for every loaded sublevel
 	for (const auto& LevelPath : LoadedLevels)
 	{
-		const uint32 ComponentId = NetDriver->ClassInfoManager->GetComponentIdFromLevelPath(LevelPath.ToString());
+		const uint32 ComponentId = ClassInfoManager->GetComponentIdFromLevelPath(LevelPath.ToString());
 		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			QueryConstraint SpecificLevelConstraint;

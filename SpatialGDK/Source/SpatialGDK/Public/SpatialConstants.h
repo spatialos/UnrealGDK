@@ -144,6 +144,14 @@ namespace SpatialConstants
 	const Schema_FieldId MODIFY_SETTING_PAYLOAD_NAME_ID						= 1;
 	const Schema_FieldId MODIFY_SETTING_PAYLOAD_VALUE_ID					= 2;
 
+	// UnrealObjectRef Field IDs
+	const Schema_FieldId UNREAL_OBJECT_REF_ENTITY_ID						= 1;
+	const Schema_FieldId UNREAL_OBJECT_REF_OFFSET_ID						= 2;
+	const Schema_FieldId UNREAL_OBJECT_REF_PATH_ID							= 3;
+	const Schema_FieldId UNREAL_OBJECT_REF_NO_LOAD_ON_CLIENT_ID				= 4;
+	const Schema_FieldId UNREAL_OBJECT_REF_OUTER_ID							= 5;
+	const Schema_FieldId UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID		= 6;
+
 	// UnrealRPCPayload Field IDs
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID						= 1;
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_INDEX_ID					= 2;
@@ -202,6 +210,9 @@ namespace SpatialConstants
 	const uint16 LOCATOR_PORT = 444;
 
 	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
+
+	const FString SCHEMA_DATABASE_FILE_PATH = TEXT("Spatial/SchemaDatabase");
+	const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 }
 
 FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)

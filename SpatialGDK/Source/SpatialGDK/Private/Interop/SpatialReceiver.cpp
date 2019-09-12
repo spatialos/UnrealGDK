@@ -42,6 +42,8 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
 	TimerManager = InTimerManager;
+
+	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
 }
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
@@ -440,7 +442,7 @@ bool USpatialReceiver::IsReceivedEntityTornOff(Worker_EntityId EntityId)
 
 		Worker_ComponentData* ComponentData = PendingAddComponent.Data->ComponentData;
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData->schema_type);
-		return Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID);
+		return GetBoolFromSchema(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID);
 	}
 
 	return false;
@@ -589,6 +591,10 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Taken from PostNetInit
 		if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 		{
+			// Whenever we receive an actor over the wire, the expectation is that it is not in an authoritative
+			// state.  This is because it should already have had authoritative BeginPlay() called.  If we have
+			// authority here, we are calling BeginPlay() with authority on this actor a 2nd time, which is always incorrect.
+			check(!EntityActor->HasAuthority());
 			EntityActor->DispatchBeginPlay();
 		}
 
@@ -723,7 +729,7 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity Query Failed! %s"), Op.message);
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity Query Failed! %s"), UTF8_TO_TCHAR(Op.message));
 			return;
 		}
 
@@ -822,28 +828,17 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 		return nullptr;
 	}
 
+	const bool bIsServer = NetDriver->IsServer();
+
 	// Initial Singleton Actor replication is handled with GlobalStateManager::LinkExistingSingletonActors
-	if (NetDriver->IsServer() && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	if (bIsServer && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		return FindSingletonActor(ActorClass);
 	}
 
-	// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
-	if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
-	{
-		checkf(!UnrealMetadataComp->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
-
-		FString URLString = FURL().ToString();
-		URLString += TEXT("?workerAttribute=") + UnrealMetadataComp->OwnerWorkerAttribute;
-
-		// TODO: Once we can checkout PlayerController and PlayerState atomically, we can grab the UniqueId and online subsystem type from PlayerState. UNR-933
-		UNetConnection* Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), true);
-		check(Connection);
-
-		return Connection->PlayerController;
-	}
-
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
+
+	const bool bCreatingPlayerController = ActorClass->IsChildOf(APlayerController::StaticClass());
 
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -854,6 +849,11 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 
 	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnDataComp->Rotation, SpawnLocation), SpawnInfo);
 	check(NewActor);
+
+	if (bIsServer && bCreatingPlayerController)
+	{
+		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), UnrealMetadataComp->OwnerWorkerAttribute);
+	}
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
 	const float Epsilon = 0.001f;
@@ -925,7 +925,7 @@ void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp&
 		return;
 	}
 
-	// Object already exists, we can apply data directly. 
+	// Object already exists, we can apply data directly.
 	if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset)).Get())
 	{
 		ApplyComponentData(Object, NetDriver->GetActorChannelByEntityId(Op.entity_id), Op.data);
@@ -1225,24 +1225,11 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 			}
 		}
 
-		FPendingRPCParamsPtr Params = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
 		if (UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
-			const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-			UFunction* Function = ClassInfo.RPCs[Payload.Index];
-			const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-
-			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
-			{
-				// Apply if possible, queue otherwise
-				if (ApplyRPC(*Params))
-				{
-					continue;
-				}
-			}
+			ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload));
 		}
 
-		QueueIncomingRPC(MoveTemp(Params));
 	}
 }
 
@@ -1320,20 +1307,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
 
-	bool bAppliedRPC = false;
-	if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
-	{
-		if (ApplyRPC(TargetObject, Function, Payload, FString()))
-		{
-			bAppliedRPC = true;
-		}
-	}
-
-	if (!bAppliedRPC)
-	{
-		QueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload)));
-	}
-
+	ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload));
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
 
@@ -1427,7 +1401,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 		// Check if bTearOff has been set to true
-		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
+		if (GetBoolFromSchema(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
 #if ENGINE_MINOR_VERSION <= 20
 			Channel->ConditionalCleanUp();
@@ -1441,9 +1415,9 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
-bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs /* = false */)
+ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs /* = false */)
 {
-	bool bApplied = false;
+	ERPCResult Result = ERPCResult::Unknown;
 
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	FMemory::Memzero(Parms, Function->ParmsSize);
@@ -1482,7 +1456,11 @@ bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, cons
 		}
 
 		TargetObject->ProcessEvent(Function, Parms);
-		bApplied = true;
+		Result = ERPCResult::Success;
+	}
+	else
+	{
+		Result = ERPCResult::UnresolvedParameters;
 	}
 
 	// Destroy the parameters.
@@ -1491,33 +1469,35 @@ bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, cons
 	{
 		It->DestroyValue_InContainer(Parms);
 	}
-	return bApplied;
+	return Result;
 }
 
-bool USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
+FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
-		return false;
+		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Receive, ERPCResult::UnresolvedTargetObject };
 	}
 
+	UObject* TargetObject = TargetObjectWeakPtr.Get();
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return false;
+		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Receive, ERPCResult::MissingFunctionInfo };
 	}
 
 	bool bApplyWithUnresolvedRefs = false;
-	const float TimeDiff = (FDateTime::Now() - Params.QueuedTimestamp).GetTotalSeconds();
+	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
 	if (GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCWaitTime < TimeDiff)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing RPC %s::%s with unresolved references after %f seconds of queueing"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), TimeDiff);
 		bApplyWithUnresolvedRefs = true;
 	}
 
-	return ApplyRPC(TargetObjectWeakPtr.Get(), Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
+	ERPCResult Result = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
+	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
@@ -1659,15 +1639,7 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPC
 		const FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor);
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
-		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
-		{
-			if (ApplyRPC(Actor, Function, RPC, FString()))
-			{
-				continue;
-			}
-		}
-
-		QueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(RPC)));
+		ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(RPC));
 	}
 }
 
@@ -1705,9 +1677,9 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 	}
 }
 
-void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
+void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload)
 {
-	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("The object has been deleted, dropping the RPC"));
@@ -1716,22 +1688,30 @@ void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
+	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	ESchemaComponentType Type = RPCInfo.Type;
 
-	IncomingRPCs.QueueRPC(MoveTemp(Params), Type);
+	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, Type, MoveTemp(InPayload));
 }
 
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
-	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
-	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
+	if (Object->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && !Object->IsFullNameStableForNetworking())
+	{
+		// When resolving a singleton, also resolve using class path (in case any properties
+		// were set from a server that hasn't resolved the singleton yet)
+		FUnrealObjectRef ClassObjectRef = FUnrealObjectRef::GetSingletonClassRef(Object, PackageMap);
+		if (ClassObjectRef.IsValid())
+		{
+			ResolveIncomingOperations(Object, ClassObjectRef);
+		}
+	}
 	// TODO: UNR-1650 We're trying to resolve all queues, which introduces more overhead.
-	ResolveIncomingRPCs();
+	IncomingRPCs.ProcessRPCs();
 }
 
 void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
@@ -1764,6 +1744,26 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key.Get();
 		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
 
+		// Check whether the resolved object has been torn off, or is on an actor that has been torn off.
+		if (AActor* AsActor = Cast<AActor>(ReplicatingObject))
+		{
+			if (AsActor->GetTearOff())
+			{
+				UE_LOG(LogSpatialActorChannel, Log, TEXT("Actor to be resolved was torn off, so ignoring incoming operations. Object ref: %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+				UnresolvedRefsMap.Remove(ChannelObjectPair);
+				continue;
+			}
+		}
+		else if (AActor* OuterActor = ReplicatingObject->GetTypedOuter<AActor>())
+		{
+			if (OuterActor->GetTearOff())
+			{
+				UE_LOG(LogSpatialActorChannel, Log, TEXT("Owning Actor of the object to be resolved was torn off, so ignoring incoming operations. Object ref: %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+				UnresolvedRefsMap.Remove(ChannelObjectPair);
+				continue;
+			}
+		}
+
 		bool bStillHasUnresolved = false;
 		bool bSomeObjectsWereMapped = false;
 		TArray<UProperty*> RepNotifies;
@@ -1788,13 +1788,6 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 	}
 
 	IncomingRefsMap.Remove(ObjectRef);
-}
-
-void USpatialReceiver::ResolveIncomingRPCs()
-{
-	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(this, &USpatialReceiver::ApplyRPC);
-	IncomingRPCs.ProcessRPCs(Delegate);
 }
 
 void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved)
@@ -1858,11 +1851,11 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		{
 			FUnrealObjectRef& ObjectRef = *UnresolvedIt;
 
-			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-			if (NetGUID.IsValid())
+			bool bUnresolved = false;
+			UObject* Object = FUnrealObjectRef::ToObjectPtr(ObjectRef, PackageMap, bUnresolved);
+			if (!bUnresolved)
 			{
-				UObject* Object = PackageMap->GetObjectFromNetGUID(NetGUID, true);
-				check(Object);
+				check(Object != nullptr);
 
 				UE_LOG(LogSpatialReceiver, Verbose, TEXT("ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
 
@@ -1984,4 +1977,4 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 		NetConnection->CleanUp();
 		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 	}
-} 
+}

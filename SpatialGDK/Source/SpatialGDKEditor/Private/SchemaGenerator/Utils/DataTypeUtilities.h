@@ -25,9 +25,6 @@ FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UClass* Class);
 // For example: UnrealCharacterHandoverData
 FString SchemaHandoverDataName(UClass* Class);
 
-// Given a UFunction, generates the schema command name. Currently just returns the function name in lowercase.
-FString SchemaRPCName(UFunction* Function);
-
 // Given a property node, generates the schema field name.
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property);
 
