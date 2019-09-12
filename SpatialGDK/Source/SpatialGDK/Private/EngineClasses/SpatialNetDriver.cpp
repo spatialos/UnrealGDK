@@ -1080,6 +1080,8 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 	// In Spatial we use ActorReplicationRateLimit and EntityCreationRateLimit to limit replication so this return value is not relevant.
 }
 
+#endif
+
 void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters)
 {
 	// The RPC might have been called by an actor directly, or by a subobject on that actor
@@ -1110,8 +1112,6 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 
 	Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, MoveTemp(Payload));
 }
-
-#endif
 
 // SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
 // In our implementation, connections on the server do not represent clients. They represent direct connections to SpatialOS.
