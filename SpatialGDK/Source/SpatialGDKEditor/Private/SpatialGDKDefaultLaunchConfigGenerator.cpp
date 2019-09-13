@@ -11,8 +11,6 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKDefaultLaunchConfigGenerator);
 
 #define LOCTEXT_NAMESPACE "SpatialGDKDefaultLaunchConfigGenerator"
 
-using namespace SpatialGDK;
-
 namespace
 {
 bool WriteFlagSection(TSharedRef<TJsonWriter<>> Writer, const FString& Key, const FString& Value)
@@ -96,7 +94,7 @@ bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& Wo
 	return true;
 }
 
-}
+}  // anonymous namespace
 
 bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription)
 {
