@@ -129,7 +129,8 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		return;
 	}
 
-	if (Component) {
+	if (Component)
+	{
 		Component->ApplyComponentUpdate(Op.update);
 	}
 }

@@ -135,6 +135,13 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
 		return;
+	case SpatialConstants::DORMANT_COMPONENT_ID:
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+		{
+			// This same logic is called from within UChannel::ReceivedSequencedBunch when a dormant cmd is received
+			//Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
+			Channel->StartBecomingDormant();
+		}
 	}
 
 	if (ClassInfoManager->IsSublevelComponent(Op.data.component_id))
@@ -604,6 +611,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		EntityActor->UpdateOverlaps();
+
+		if (StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
+		{
+			// This same logic is called from within UChannel::ReceivedSequencedBunch when a dormant cmd is received
+			//Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
+			Channel->StartBecomingDormant();
+		}
 	}
 }
 

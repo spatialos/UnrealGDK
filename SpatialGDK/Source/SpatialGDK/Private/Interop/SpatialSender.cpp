@@ -225,6 +225,11 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ComponentDatas.Add(AlwaysRelevant().CreateData());
 	}
 
+	if (Actor->NetDormancy == DORM_DormantAll)
+	{
+		ComponentDatas.Add(Dormant().CreateData());
+	}
+
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Actor));
 

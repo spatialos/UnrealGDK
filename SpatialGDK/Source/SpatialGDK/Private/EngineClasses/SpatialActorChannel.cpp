@@ -20,6 +20,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Schema/AlwaysRelevant.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/ServerRPCEndpoint.h"
 #include "SpatialConstants.h"
@@ -156,7 +157,8 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 	{
 		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
 
-		if (bDeleteDynamicEntities &&
+		if (bForDestroy &&
+			bDeleteDynamicEntities &&
 			NetDriver->IsServer() &&
 			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
 		{
@@ -196,6 +198,11 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	if (Reason != EChannelCloseReason::Dormancy)
 	{
 		DeleteEntityIfAuthoritative();
+	}
+	else
+	{
+		auto Data = SpatialGDK::Dormant().CreateData();
+		NetDriver->Connection->SendAddComponent(GetEntityId(), &Data);
 	}
 
 	return Super::Close(Reason);
