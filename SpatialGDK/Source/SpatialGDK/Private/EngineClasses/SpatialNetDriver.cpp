@@ -654,6 +654,12 @@ void USpatialNetDriver::Shutdown()
 	Super::Shutdown();
 }
 
+void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* Connection)
+{
+	// Similar to NetDriver::NotifyActorFullyDormantForConnection, however we only care about a single connection
+	GetNetworkObjectList().MarkDormant(Actor, Connection, 1, this);
+}
+
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 {
 	if (!IsServer())
@@ -1432,7 +1438,8 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 
 	SpatialConnection->InitRemoteConnection(this, nullptr, InUrl, *FromAddr, USOCK_Open);
 	Notify->NotifyAcceptedConnection(SpatialConnection);
-	AddClientConnection(SpatialConnection);
+	ClientConnections.Add(SpatialConnection);
+	//AddClientConnection(SpatialConnection);
 
 	// Set the unique net ID for this player. This and the code below is adapted from World.cpp:4499
 	SpatialConnection->PlayerId = UniqueId;

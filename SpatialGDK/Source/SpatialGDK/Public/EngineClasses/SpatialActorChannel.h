@@ -109,7 +109,7 @@ public:
 		return FindOrCreateReplicator(Object)->RepState->StaticBuffer;
 	}
 
-	// UChannel interface
+	// Begin UChannel interface
 #if ENGINE_MINOR_VERSION <= 20
 	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, bool bOpenedLocally) override;
 	virtual int64 Close() override;
@@ -117,13 +117,18 @@ public:
 	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, EChannelCreateFlags CreateFlag) override;
 	virtual int64 Close(EChannelCloseReason Reason) override;
 #endif
+	// End UChannel interface
+
+	// Begin UActorChannel inteface
 	virtual int64 ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
+	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
+	// End UActorChannel interface
 
 	bool TryResolveActor();
 
 	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
-	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
+	
 
 	TMap<UObject*, const FClassInfo*> GetHandoverSubobjects();
 
@@ -156,12 +161,18 @@ public:
 	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
 protected:
-	// UChannel Interface
+	// Begin UChannel interface
 #if ENGINE_MINOR_VERSION <= 20
 	virtual bool CleanUp(const bool bForDestroy) override;
 #else
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
 #endif
+	// End UChannel interface
+
+	// Begin UActorChannel interface
+	virtual void BecomeDormant() override;
+	// End UActorChannel interface
+
 
 private:
 	void DynamicallyAttachSubobject(UObject* Object);

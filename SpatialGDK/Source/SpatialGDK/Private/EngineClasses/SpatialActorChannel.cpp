@@ -110,7 +110,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 
 void USpatialActorChannel::DeleteEntityIfAuthoritative()
 {
-	if (NetDriver->Connection == nullptr)
+	if (NetDriver->Connection == nullptr || Actor == nullptr)
 	{
 		return;
 	}
@@ -176,6 +176,14 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 #endif
 }
 
+void USpatialActorChannel::BecomeDormant()
+{
+	UE_LOG(LogNetDormancy, Verbose, TEXT("BecomeDormant: %s"), *Describe());
+	bPendingDormancy = false;
+	Dormant = true;
+	Close(EChannelCloseReason::Dormancy);
+}
+
 #if ENGINE_MINOR_VERSION <= 20
 int64 USpatialActorChannel::Close()
 {
@@ -185,7 +193,11 @@ int64 USpatialActorChannel::Close()
 #else
 int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 {
-	DeleteEntityIfAuthoritative();
+	if (Reason != EChannelCloseReason::Dormancy)
+	{
+		DeleteEntityIfAuthoritative();
+	}
+
 	return Super::Close(Reason);
 }
 #endif
@@ -440,6 +452,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 
 		bWroteSomethingImportant = true;
+
 		if (RepChanged.Num() > 0)
 		{
 			ActorReplicator->RepState->HistoryEnd++;
@@ -449,6 +462,8 @@ int64 USpatialActorChannel::ReplicateActor()
 	UpdateChangelistHistory(ActorReplicator->RepState);
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+	ActorReplicator->RepState->OpenAckedCalled = true;
+	ActorReplicator->bLastUpdateEmpty = 1;
 
 	if (bCreatingNewEntity)
 	{
