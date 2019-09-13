@@ -689,11 +689,30 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 #if WITH_SERVER_CODE
 
 // Returns true if this actor should replicate to *any* of the passed in connections
-static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, const TArray<FNetViewer>& ConnectionViewers)
+static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, UActorChannel* ActorChannel, const TArray<FNetViewer>& ConnectionViewers)
 {
-	// SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
-	// We might make some exceptions in the future, so keeping this function.
-	// TODO: UNR-837 Start using IsNetRelevantFor again for relevancy checks rather than returning true.
+	if (GetDefault<USpatialGDKSettings>()->UseIsActorRelevantForConnection)
+	{
+		// If an actor is set to be always relevant, no need to evaluate connection relevancy.
+		// An actor without a channel yet will need to be replicated at least once to have an
+		// actor channel and entity created for it
+		if (Actor->bAlwaysRelevant || Cast<USpatialActorChannel>(ActorChannel) == nullptr)
+		{
+			return true;
+		}
+
+		for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
+		{
+			// Do a net relevancy check for Actor in net view cull distance for viewer
+			if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	return true;
 }
 
@@ -829,7 +848,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			// SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
 			// We have removed the level load check because it doesn't apply.
 			// Relevancy checking is also mostly just a pass through, might be removed later.
-			if (!IsActorRelevantToConnection(Actor, ConnectionViewers))
+			if (!IsActorRelevantToConnection(Actor, Channel, ConnectionViewers))
 			{
 				// If not relevant (and we don't have a channel), skip
 				continue;
