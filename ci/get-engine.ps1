@@ -1,3 +1,7 @@
+param(
+  [string] $engine_cache_directory = "UnrealEngine-Cache"
+)
+
 pushd "$($gdk_home)"
 
     # Fetch the version of Unreal Engine we need
@@ -14,10 +18,11 @@ pushd "$($gdk_home)"
     popd
 
 
-    ## Create an UnrealEngine-Cache directory if it doesn't already exist
-    New-Item -Name "UnrealEngine-Cache" -ItemType Directory -Force
+    ## Create an UnrealEngine-Cache directory if it doesn't already exist.
+    # This directory does not get cleaned up from agents after builds (this is defined in .buildkite/premerge.steps.yaml)
+    New-Item -Name $engine_cache_directory -ItemType Directory -Force
 
-    pushd "UnrealEngine-Cache"
+    pushd $engine_cache_directory
         Start-Event "download-unreal-engine" "get-unreal-engine"
 
         $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
@@ -54,7 +59,7 @@ pushd "$($gdk_home)"
 
     ## Create an UnrealEngine symlink to the correct directory
     Remove-Item $unreal_path -ErrorAction ignore -Recurse -Force
-    cmd /c mklink /J $unreal_path "UnrealEngine-Cache\$($unreal_version)"
+    cmd /c mklink /J $unreal_path "$engine_cache_directory\$($unreal_version)"
 
     $clang_path = "$($gdk_home)\UnrealEngine\ClangToolchain"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
