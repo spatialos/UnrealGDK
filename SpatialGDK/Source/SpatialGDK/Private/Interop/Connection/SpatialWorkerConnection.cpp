@@ -20,6 +20,7 @@
 #include <gdk/initial_op_list_connection_handler.h>
 #include <cstddef>
 #include <memory>
+#include "EngineClasses/SpatialPackageMapClient.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
@@ -283,14 +284,14 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 				{
 					return true;
 				}
-				auto* EntityPool = GetSpatialNetDriverChecked()->EntityPool;
+				auto* PackageMap = GetSpatialNetDriverChecked()->PackageMap;
 				auto* GlobalStateManager = GetSpatialNetDriverChecked()->GlobalStateManager;
-				if (EntityPool == nullptr || GlobalStateManager == nullptr)
+				if (PackageMap == nullptr || GlobalStateManager == nullptr)
 				{
 					return false;
 				}
 				const gdk::ComponentId StartUpId = STARTUP_ACTOR_MANAGER_COMPONENT_ID;
-				if (GlobalStateManager->IsReadyToCallBeginPlay() && EntityPool->IsReady())
+				if (GlobalStateManager->IsReadyToCallBeginPlay() && PackageMap->IsEntityPoolReady())
 				{
 					GlobalStateManager->TriggerBeginPlay();
 					return true;
@@ -302,7 +303,7 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 					{
 						ExtractedOpList->AddOp(OpList, i);
 					}
-					if (op.op_type == WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE && !EntityPool->IsReady())
+					if (op.op_type == WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE && !PackageMap->IsEntityPoolReady())
 					{
 						ExtractedOpList->AddOp(OpList, i);
 					}
