@@ -270,9 +270,13 @@ public:
 	bool bAutoStartLocalDeployment;
 
 private:
-	/** Name of your SpatialOS snapshot file. */
-	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
-	FString SpatialOSSnapshotFile;
+	/** Name of your SpatialOS snapshot file that will be generated. */
+	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot to save"))
+	FString SpatialOSSnapshotToSave;
+
+	/** Name of your SpatialOS snapshot file that will be loaded during deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot to load"))
+	FString SpatialOSSnapshotToLoad;
 
 	/** Add flags to the `spatial local launch` command; they alter the deployment’s behavior. Select the trash icon to remove all the flags.*/
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Command line flags for local launch"))
@@ -318,32 +322,35 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration file options"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
-	FORCEINLINE FString GetGDKPluginDirectory() const
-	{
-		// Get the correct plugin directory.
-		FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
-
-		if (!FPaths::DirectoryExists(PluginDir))
-		{
-			// If the Project Plugin doesn't exist then use the Engine Plugin.
-			PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
-		}
-
-		return PluginDir;
-	}
-
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
 		return SpatialOSLaunchConfig.FilePath.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/default_launch.json")))
+			? FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("default_launch.json"))
 			: SpatialOSLaunchConfig.FilePath;
 	}
 
-	FORCEINLINE FString GetSpatialOSSnapshotFile() const
+	FORCEINLINE FString GetSpatialOSSnapshotToSave() const
 	{
-		return SpatialOSSnapshotFile.IsEmpty()
+		return SpatialOSSnapshotToSave.IsEmpty()
 			? FString(TEXT("default.snapshot"))
-			: SpatialOSSnapshotFile;
+			: SpatialOSSnapshotToSave;
+	}
+
+	FORCEINLINE FString GetSpatialOSSnapshotToSavePath() const
+	{
+		return FPaths::Combine(GetSpatialOSSnapshotFolderPath(), GetSpatialOSSnapshotToSave());
+	}
+
+	FORCEINLINE FString GetSpatialOSSnapshotToLoad() const
+	{
+		return SpatialOSSnapshotToLoad.IsEmpty()
+			? FString(TEXT("default.snapshot"))
+			: SpatialOSSnapshotToLoad;
+	}
+
+	FORCEINLINE FString GetSpatialOSSnapshotToLoadPath() const
+	{
+		return FPaths::Combine(GetSpatialOSSnapshotFolderPath(), GetSpatialOSSnapshotToLoad());
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
@@ -353,7 +360,7 @@ public:
 
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))));
+		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/generated/")));
 	}
 
 	FORCEINLINE FString GetSpatialOSCommandLineLaunchFlags() const
@@ -368,8 +375,6 @@ public:
 
 		return CommandLineLaunchFlags;
 	}
-
-	FString GetProjectNameFromSpatial() const;
 
 	void SetPrimaryDeploymentName(const FString& Name);
 	FORCEINLINE FString GetPrimaryDeploymentName() const
@@ -397,7 +402,7 @@ public:
 	{
 		const USpatialGDKEditorSettings* SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 		return SnapshotPath.FilePath.IsEmpty()
-			? FPaths::Combine(SpatialEditorSettings->GetSpatialOSSnapshotFolderPath(), SpatialEditorSettings->GetSpatialOSSnapshotFile())
+			? SpatialEditorSettings->GetSpatialOSSnapshotToSavePath()
 			: SnapshotPath.FilePath;
 	}
 
@@ -452,7 +457,7 @@ public:
 
 	FORCEINLINE FString GetDeploymentLauncherPath() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(GetGDKPluginDirectory() / TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher")));
+		return FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher"));
 	}
 
 	bool IsDeploymentConfigurationValid() const;

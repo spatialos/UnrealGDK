@@ -729,7 +729,7 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity Query Failed! %s"), Op.message);
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity Query Failed! %s"), UTF8_TO_TCHAR(Op.message));
 			return;
 		}
 
@@ -925,7 +925,7 @@ void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp&
 		return;
 	}
 
-	// Object already exists, we can apply data directly. 
+	// Object already exists, we can apply data directly.
 	if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset)).Get())
 	{
 		ApplyComponentData(Object, NetDriver->GetActorChannelByEntityId(Op.entity_id), Op.data);
@@ -1700,7 +1700,7 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
 	ResolveIncomingOperations(Object, ObjectRef);
-	if (Object->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	if (Object->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && !Object->IsFullNameStableForNetworking())
 	{
 		// When resolving a singleton, also resolve using class path (in case any properties
 		// were set from a server that hasn't resolved the singleton yet)
@@ -1743,6 +1743,26 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 
 		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key.Get();
 		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
+
+		// Check whether the resolved object has been torn off, or is on an actor that has been torn off.
+		if (AActor* AsActor = Cast<AActor>(ReplicatingObject))
+		{
+			if (AsActor->GetTearOff())
+			{
+				UE_LOG(LogSpatialActorChannel, Log, TEXT("Actor to be resolved was torn off, so ignoring incoming operations. Object ref: %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+				UnresolvedRefsMap.Remove(ChannelObjectPair);
+				continue;
+			}
+		}
+		else if (AActor* OuterActor = ReplicatingObject->GetTypedOuter<AActor>())
+		{
+			if (OuterActor->GetTearOff())
+			{
+				UE_LOG(LogSpatialActorChannel, Log, TEXT("Owning Actor of the object to be resolved was torn off, so ignoring incoming operations. Object ref: %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+				UnresolvedRefsMap.Remove(ChannelObjectPair);
+				continue;
+			}
+		}
 
 		bool bStillHasUnresolved = false;
 		bool bSomeObjectsWereMapped = false;
@@ -1957,4 +1977,4 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 		NetConnection->CleanUp();
 		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 	}
-} 
+}

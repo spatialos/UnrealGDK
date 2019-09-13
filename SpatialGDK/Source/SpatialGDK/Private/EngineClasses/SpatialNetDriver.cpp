@@ -44,7 +44,11 @@
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
 DECLARE_CYCLE_STAT(TEXT("ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ProcessPrioritizedActors"), STAT_SpatialProcessPrioritizedActors, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("PrioritizeActors"), STAT_SpatialPrioritizeActors, STATGROUP_SpatialNet);
 DEFINE_STAT(STAT_SpatialConsiderList);
+DEFINE_STAT(STAT_SpatialActorsRelevant);
+DEFINE_STAT(STAT_SpatialActorsChanged);
 
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -300,9 +304,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
-	PackageMap->Init(this);
-	Dispatcher->Init(this);
+	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
 	Sender->Init(this, &TimerManager);
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
@@ -310,18 +312,17 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
 
-	// Entity Pools should never exist on clients
-	if (IsServer())
-	{
-		EntityPool->Init(this, &TimerManager);
-	}
+	// PackageMap value has been set earlier in USpatialNetConnection::InitBase
+	// Making sure the value is the same
+	USpatialPackageMapClient* NewPackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+	check(NewPackageMap == PackageMap);
+
+	PackageMap->Init(this, &TimerManager);
 }
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 {
 	check(!bConnectAsClient);
-
-	EntityPool = NewObject<UEntityPool>();
 
 	USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(NetConnection);
@@ -747,6 +748,8 @@ static FORCEINLINE_DEBUGGABLE bool ShouldActorGoDormant(AActor* Actor, const TAr
 
 int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float DeltaSeconds)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialPrioritizeActors);
+
 	int32 NumClientsToTick = ClientConnections.Num();
 
 	bool bFoundReadyConnection = false;
@@ -892,12 +895,17 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialProcessPrioritizedActors);
+
 	// Since this function signature is copied from NetworkDriver.cpp, I don't want to change the signature. But we expect
 	// that the input connection will be the SpatialOS server connection to the runtime (the first client connection),
 	// so let's make sure that assumption continues to hold.
 	check(InConnection != nullptr);
 	check(GetSpatialOSNetConnection() != nullptr);
 	check(InConnection == GetSpatialOSNetConnection());
+
+	SET_DWORD_STAT(STAT_SpatialActorsRelevant, 0);
+	SET_DWORD_STAT(STAT_SpatialActorsChanged, 0);
 
 	// SpatialGDK - Here Unreal would check if the InConnection was saturated (!IsNetReady) and early out. Removed this as we do not currently use channel saturation.
 
@@ -1081,9 +1089,14 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 		}
 	}
 
+	SET_DWORD_STAT(STAT_SpatialActorsRelevant, ActorUpdatesThisConnection);
+	SET_DWORD_STAT(STAT_SpatialActorsChanged, ActorUpdatesThisConnectionSent);
+
 	// SpatialGDK - Here Unreal would return the position of the last replicated actor in PriorityActors before the channel became saturated.
 	// In Spatial we use ActorReplicationRateLimit and EntityCreationRateLimit to limit replication so this return value is not relevant.
 }
+
+#endif // WITH_SERVER_CODE
 
 void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters)
 {
@@ -1115,8 +1128,6 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 
 	Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, MoveTemp(Payload));
 }
-
-#endif
 
 // SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
 // In our implementation, connections on the server do not represent clients. They represent direct connections to SpatialOS.
@@ -1356,7 +1367,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
 
-	if (IsServer() && GetSpatialOSNetConnection() != nullptr && EntityPool->IsReady())
+	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady())
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
@@ -1915,7 +1926,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 	// Search for entity id reservation response and process it.  The entity id reservation
 	// can fail to reserve entity ids.  In that case, the EntityPool will not be marked ready,
 	// a new query will be sent, and we will process the new response here when it arrives.
-	if (!EntityPool->IsReady())
+	if (!PackageMap->IsEntityPoolReady())
 	{
 		Worker_Op* EntityIdReservationResponseOp = nullptr;
 		FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE, &EntityIdReservationResponseOp);
@@ -1969,7 +1980,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		Dispatcher->MarkOpToSkip(Op);
 	}
 
-	if (EntityPool->IsReady() &&
+	if (PackageMap->IsEntityPoolReady() &&
 		GlobalStateManager->IsReadyToCallBeginPlay())
 	{
 		// Return whether or not we are ready to start

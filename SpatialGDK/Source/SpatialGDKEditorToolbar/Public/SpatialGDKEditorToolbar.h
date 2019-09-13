@@ -74,6 +74,7 @@ private:
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
 	void SchemaGenerateFullButtonClicked();
+	void DeleteSchemaDatabaseButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
 	void ShowSimulatedPlayerDeploymentDialog();
@@ -96,6 +97,9 @@ private:
 	bool ValidateGeneratedLaunchConfig() const;
 
 	void GenerateSchema(bool bFullScan);
+
+	bool IsSnapshotGenerated() const;
+	bool IsSchemaGenerated() const;
 
 	static void ShowCompileLog();
 
