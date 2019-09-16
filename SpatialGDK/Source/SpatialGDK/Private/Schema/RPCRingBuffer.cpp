@@ -46,28 +46,25 @@ void RPCRingBuffer::WriteToSchema(Schema_Object* Fields, const TArray<RPCPayload
 	}
 }
 
-TArray<RPCPayload> RPCRingBuffer::GetRPCsSince(uint64 LastExecutedRPCId)
+void RPCRingBuffer::GetRPCsSince(uint64 LastExecutedRPCId, TArray<RPCPayload>& OutRPCs)
 {
 	if (LastSentRPCId - LastExecutedRPCId > RingBufferSize)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Oopsie"));
 	}
 
-	TArray<RPCPayload> RPCs;
 	for (uint64 i = FMath::Max<int64>(LastExecutedRPCId, LastSentRPCId - RingBufferSize) + 1; i <= LastSentRPCId; i++)
 	{
-		int RingBufferIndex = i % RingBufferSize;
+		int RingBufferIndex = (i - 1) % RingBufferSize;
 		if (!RingBuffer[RingBufferIndex].IsSet())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Whammy"));
 		}
 		else
 		{
-			RPCs.Add(RingBuffer[RingBufferIndex].GetValue());
+			OutRPCs.Emplace(MoveTemp(RingBuffer[RingBufferIndex].GetValue()));
 		}
 	}
-
-	return RPCs;
 }
 
 } // namespace SpatialGDK

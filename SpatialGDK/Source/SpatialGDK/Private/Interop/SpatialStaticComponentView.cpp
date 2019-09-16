@@ -76,9 +76,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Heartbeat>>(Op.data);
 		break;
-	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::RPCsOnEntityCreation>>(Op.data);
-		break;
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ClientRPCEndpoint>>(Op.data);
 		break;

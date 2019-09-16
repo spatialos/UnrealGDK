@@ -1396,6 +1396,10 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	{
 		Sender->FlushPackedRPCs();
 	}
+	if (RPCRingBufferManager != nullptr)
+	{
+		RPCRingBufferManager->SendRPCs();
+	}
 
 	// Tick the timer manager
 	{

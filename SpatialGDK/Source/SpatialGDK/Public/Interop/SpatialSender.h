@@ -58,7 +58,6 @@ struct FPendingRPC
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation>;
 using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<Worker_ComponentUpdate>>;
 using FChannelsToUpdatePosition = TSet<TWeakObjectPtr<USpatialActorChannel>>;
 
@@ -84,9 +83,6 @@ public:
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void SendDeleteEntityRequest(Worker_EntityId EntityId);
-
-	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
-	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 
 	void SendClientEndpointReadyUpdate(Worker_EntityId EntityId);
 	void SendServerEndpointReadyUpdate(Worker_EntityId EntityId);
@@ -152,7 +148,6 @@ private:
 	FTimerManager* TimerManager;
 
 	FRPCContainer OutgoingRPCs;
-	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 

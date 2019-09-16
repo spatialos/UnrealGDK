@@ -177,6 +177,10 @@ public:
 	UPROPERTY(Config)
 	TSet<FName> ServerWorkerTypes;
 
+	/* Awesome stuff. */
+	UPROPERTY(EditAnywhere, Config, Category = "WIP")
+	bool bRPCRingBuffers;
+
 private:
 	/** Default ring buffer size (used if size per RPC type is not specified). */
 	UPROPERTY(Config)

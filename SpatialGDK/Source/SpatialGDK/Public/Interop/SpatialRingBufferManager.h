@@ -13,7 +13,7 @@
 #include "SpatialRingBufferManager.generated.h"
 
 class USpatialNetDriver;
-class USpatialSender;
+class USpatialWorkerConnection;
 class USpatialStaticComponentView;
 
 UCLASS()
@@ -24,11 +24,13 @@ class USpatialRingBufferManager : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver);
 
+	void SendRPCs();
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 	UPROPERTY()
-	USpatialSender* Sender;
+	USpatialWorkerConnection* WorkerConnection;
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 

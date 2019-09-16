@@ -135,12 +135,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_RB, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_RB, AuthoritativeWorkerRequirementSet);
 
-	// If there are pending RPCs, add this component.
-	if (OutgoingOnCreateEntityRPCs.Contains(Actor))
-	{
-		ComponentWriteAcl.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, AuthoritativeWorkerRequirementSet);
-	}
-
 	// If Actor is a PlayerController, add the heartbeat component.
 	if (Actor->IsA<APlayerController>())
 	{
@@ -216,15 +210,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(Persistence().CreatePersistenceData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
-
-	if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
-	{
-		if (QueuedRPCs->HasRPCPayloadData())
-		{
-			ComponentDatas.Add(QueuedRPCs->CreateRPCPayloadData());
-		}
-		OutgoingOnCreateEntityRPCs.Remove(Actor);
-	}
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
@@ -707,9 +692,9 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			}
 			check(NetDriver->IsServer());
 
-			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Payload);
 			if (Channel->GetEntityId() != SpatialConstants::INVALID_ENTITY_ID)
 			{
+				UE_LOG(LogTemp, Warning, TEXT("S%d Sending %s::%s"), GPlayInEditorID, *TargetObject->GetFullName(), *Function->GetName());
 				NetDriver->RPCRingBufferManager->RPCsToSendMap.FindOrAdd(Channel->GetEntityId()).FindOrAdd(FunctionFlagsToRPCSchemaType(Function->FunctionFlags)).Add(Payload);
 			}
 			else
@@ -770,6 +755,20 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			return ERPCResult::UnresolvedTargetObject;
 		}
 
+		// Queue RPC into RingBufferManager
+		EntityId = TargetObjectRef.Entity;
+		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+
+		UE_LOG(LogTemp, Warning, TEXT("%s%d Sending %s::%s"), NetDriver->IsServer() ? TEXT("S") : TEXT("C"), GPlayInEditorID, *TargetObject->GetFullName(), *Function->GetName());
+
+		if (GetDefault<USpatialGDKSettings>()->bRPCRingBuffers)
+		{
+			NetDriver->RPCRingBufferManager->RPCsToSendMap.FindOrAdd(EntityId).FindOrAdd(RPCInfo.Type).Add(Payload);
+			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
+
+			return ERPCResult::Success;
+		}
+
 		if (RPCInfo.Type != SCHEMA_NetMulticastRPC && !Channel->IsListening())
 		{
 			// If the Entity endpoint is not yet ready to receive RPCs -
@@ -777,9 +776,6 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			// However, it doesn't matter in case of Multicast
 			return ERPCResult::SpatialActorChannelNotListening;
 		}
-
-		EntityId = TargetObjectRef.Entity;
-		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
 		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo.Type);
 
@@ -915,19 +911,6 @@ void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)
 void USpatialSender::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
 	Connection->SendDeleteEntityRequest(EntityId);
-}
-
-void USpatialSender::SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId)
-{
-	Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
-	NetDriver->Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION);
-}
-
-void USpatialSender::ClearRPCsOnEntityCreation(Worker_EntityId EntityId)
-{
-	check(NetDriver->IsServer());
-	Worker_ComponentUpdate Update = RPCsOnEntityCreation::CreateClearFieldsUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }
 
 void USpatialSender::SendClientEndpointReadyUpdate(Worker_EntityId EntityId)

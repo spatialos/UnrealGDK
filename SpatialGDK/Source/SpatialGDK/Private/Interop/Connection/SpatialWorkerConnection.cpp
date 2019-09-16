@@ -366,6 +366,11 @@ void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, con
 	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate);
 }
 
+void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate& ComponentUpdate)
+{
+	QueueOutgoingMessage<FComponentUpdate>(EntityId, ComponentUpdate);
+}
+
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
 {
 	QueueOutgoingMessage<FCommandRequest>(EntityId, *Request, CommandId);

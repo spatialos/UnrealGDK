@@ -21,8 +21,7 @@ struct RPCRingBuffer
 	// Always writes all the RPCs, even if need to overwrite.
 	void WriteToSchema(Schema_Object* Data, const TArray<RPCPayload>& RPCs);
 
-	// TODO: Get RPCs since given ID?
-	TArray<RPCPayload> GetRPCsSince(uint64 LastExecutedRPCId);
+	void GetRPCsSince(uint64 LastExecutedRPCId, TArray<RPCPayload>& OutRPCs);
 
 	inline Schema_FieldId GetLastSentRPCIdFieldId()
 	{

@@ -16,6 +16,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
+#include "Interop/SpatialRingBufferManager.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/DynamicComponent.h"
@@ -23,6 +24,11 @@
 #include "Schema/ServerRPCEndpoint.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
+
+#include "Schema/ClientRPCEndpointRB.h"
+#include "Schema/ServerRPCEndpointRB.h"
+#include "Schema/MulticastEndpointRB.h"
+
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/ErrorCodeRemapping.h"
@@ -118,7 +124,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
-	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
@@ -287,19 +292,20 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
-	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
+	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_RB
 		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		check(!NetDriver->IsServer());
-		if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(Op.entity_id))
-		{
-			if (QueuedRPCs->HasRPCPayloadData())
-			{
-				ProcessQueuedActorRPCsOnEntityCreation(Actor, *QueuedRPCs);
-			}
 
-			Sender->SendRequestToClearRPCsOnEntityCreation(Op.entity_id);
-		}
+		HandleEndpointRPCs<ClientRPCEndpointRB, ServerRPCEndpointRB>(Op.entity_id);
+	}
+
+	if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_RB
+		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		check(NetDriver->IsServer());
+
+		HandleEndpointRPCs<ServerRPCEndpointRB, ClientRPCEndpointRB>(Op.entity_id);
 	}
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
@@ -1077,13 +1083,8 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
-	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
-	// TODO: Remove
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_RB:
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_RB:
-	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_RB:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
@@ -1108,6 +1109,11 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 		HandleRPC(Op);
+		return;
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_RB:
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_RB:
+	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_RB:
+		HandleRPCRB(Op);
 		return;
 	}
 
@@ -1241,6 +1247,75 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 	}
 }
 
+template <typename LocalEndpointType, typename RemoteEndpointType>
+void USpatialReceiver::HandleEndpointRPCs(Worker_EntityId EntityId)
+{
+	if (!StaticComponentView->HasAuthority(EntityId, LocalEndpointType::ComponentId))
+	{
+		return;
+	}
+
+	LocalEndpointType* LocalEndpoint = StaticComponentView->GetComponentData<LocalEndpointType>(EntityId);
+	RemoteEndpointType* RemoteEndpoint = StaticComponentView->GetComponentData<RemoteEndpointType>(EntityId);
+	if (LocalEndpoint == nullptr || RemoteEndpoint == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Client/server endpoint missing"));
+		return;
+	}
+
+	if (!RemoteEndpoint->HasNewRPCs(*LocalEndpoint))
+	{
+		return;
+	}
+
+	TSet<ESchemaComponentType>& RPCTypesExecuted = NetDriver->RPCRingBufferManager->LastHandledRPCMap.FindOrAdd(EntityId);
+	TArray<RPCPayload> RPCsToExecute = RemoteEndpoint->RetrieveNewRPCs(*LocalEndpoint, RPCTypesExecuted);
+
+	for (RPCPayload& RPC : RPCsToExecute)
+	{
+		FUnrealObjectRef ObjectRef(EntityId, RPC.Offset);
+		ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(RPC));
+	}
+}
+
+void USpatialReceiver::HandleRPCRB(const Worker_ComponentUpdateOp& Op)
+{
+	switch (Op.update.component_id)
+	{
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_RB:
+	{
+		HandleEndpointRPCs<ServerRPCEndpointRB, ClientRPCEndpointRB>(Op.entity_id);
+
+		break;
+	}
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_RB:
+	{
+		HandleEndpointRPCs<ClientRPCEndpointRB, ServerRPCEndpointRB>(Op.entity_id);
+
+		break;
+	}
+	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_RB:
+	{
+		MulticastRPCEndpointRB* MulticastEndpoint = StaticComponentView->GetComponentData<MulticastRPCEndpointRB>(Op.entity_id);
+		if (MulticastEndpoint == nullptr)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Multicast endpoint missing"));
+			return;
+		}
+
+		TArray<RPCPayload> RPCsToExecute = MulticastEndpoint->RetrieveNewRPCs();
+
+		for (RPCPayload& RPC : RPCsToExecute)
+		{
+			FUnrealObjectRef ObjectRef(Op.entity_id, RPC.Offset);
+			ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(RPC));
+		}
+
+		break;
+	}
+	}
+}
+
 void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 {
 	Schema_FieldId CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
@@ -1254,12 +1329,6 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 		// 2. The attribute of the specific worker that sent the request
 		// We want to give authority to the specific worker, so we grab the second element from the attribute set.
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Payload, Op.caller_attribute_set.attributes[1], Op.request_id);
-		return;
-	}
-	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
-	{
-		Sender->ClearRPCsOnEntityCreation(Op.entity_id);
-		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 		return;
 	}
 #if WITH_EDITOR
@@ -1636,21 +1705,6 @@ void USpatialReceiver::ProcessQueuedResolvedObjects()
 	ResolvedObjectQueue.Empty();
 }
 
-void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPCsOnEntityCreation& QueuedRPCs)
-{
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
-	for (auto& RPC : QueuedRPCs.RPCs)
-	{
-		UFunction* Function = Info.RPCs[RPC.Index];
-		const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(Actor, Function);
-		const FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor);
-		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
-
-		ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(RPC));
-	}
-}
-
 void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
 {
 	if (bInCriticalSection)
@@ -1699,6 +1753,8 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	ESchemaComponentType Type = RPCInfo.Type;
+
+	UE_LOG(LogTemp, Warning, TEXT("%s%d Receiving %s::%s"), NetDriver->IsServer() ? TEXT("S") : TEXT("C"), GPlayInEditorID, *TargetObject->GetFullName(), *Function->GetName());
 
 	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, Type, MoveTemp(InPayload));
 }
