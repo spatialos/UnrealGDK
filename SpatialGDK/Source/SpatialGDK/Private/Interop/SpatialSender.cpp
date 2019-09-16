@@ -23,14 +23,11 @@
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
-#include "Settings/SpatialPersistenceConfig.h"
-#include "Settings/SpatialWorldSettings.h"
 #include "SpatialConstants.h"
 #include "Utils/ActorGroupManager.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SettingUtils.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialMetrics.h"
 
@@ -208,7 +205,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
 
-	if (ShouldClassPersist(Cast<ASpatialWorldSettings>(NetDriver->World->GetWorldSettings()), Class))
+	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
 	{
 		ComponentDatas.Add(Persistence().CreatePersistenceData());
 	}
