@@ -74,6 +74,7 @@ private:
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
 	void SchemaGenerateFullButtonClicked();
+	void DeleteSchemaDatabaseButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
 	void ShowSimulatedPlayerDeploymentDialog();

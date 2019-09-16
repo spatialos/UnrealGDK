@@ -289,3 +289,25 @@ void USpatialMetrics::TrackSentRPC(UFunction* Function, ESchemaComponentType RPC
 	Stat.Calls++;
 	Stat.TotalPayload += PayloadSize;
 }
+
+void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
+{
+	if (WorkerMetricsRecieved.IsBound())
+	{
+		int32 NumMetrics = Op->metrics.metrics.gauge_metric_count;
+
+		if (NumMetrics > 0)
+		{
+			// Construct a map to store all the metrics and pass it to the users delegate
+			TMap<FString, double> WorkerMetrics;
+			WorkerMetrics.Reserve(NumMetrics);
+
+			for (int32 i = 0; i < NumMetrics; i++)
+			{
+				WorkerMetrics.Add(Op->metrics.metrics.gauge_metrics[i].key, Op->metrics.metrics.gauge_metrics[i].value);
+			}
+
+			WorkerMetricsRecieved.Broadcast(WorkerMetrics);
+		}
+	}
+}
