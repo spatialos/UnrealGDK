@@ -50,7 +50,7 @@ void GatherClientInterestDistances()
 		}
 
 		const AActor* IteratedDefaultActor = Cast<AActor>(It->GetDefaultObject());
-		if (IteratedDefaultActor->NetCullDistanceSquared != DefaultDistanceSquared)
+		if (IteratedDefaultActor->NetCullDistanceSquared > DefaultDistanceSquared)
 		{
 			float ActorNetCullDistanceSquared = IteratedDefaultActor->NetCullDistanceSquared;
 

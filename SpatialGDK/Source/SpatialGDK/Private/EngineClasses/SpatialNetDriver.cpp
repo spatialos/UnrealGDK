@@ -691,29 +691,24 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 // Returns true if this actor should replicate to *any* of the passed in connections
 static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, UActorChannel* ActorChannel, const TArray<FNetViewer>& ConnectionViewers)
 {
-	if (GetDefault<USpatialGDKSettings>()->UseIsActorRelevantForConnection)
+	// If an actor is set to be always relevant, no need to evaluate connection relevancy.
+	// An actor without a channel yet will need to be replicated at least once to have an
+	// actor channel and entity created for it
+	if (Actor->bAlwaysRelevant || ActorChannel == nullptr)
 	{
-		// If an actor is set to be always relevant, no need to evaluate connection relevancy.
-		// An actor without a channel yet will need to be replicated at least once to have an
-		// actor channel and entity created for it
-		if (Actor->bAlwaysRelevant || Cast<USpatialActorChannel>(ActorChannel) == nullptr)
+		return true;
+	}
+
+	for (auto viewer : ConnectionViewers)
+	{
+		// Do a net relevancy check for Actor in net view cull distance for viewer
+		if (Actor->IsNetRelevantFor(viewer.InViewer, viewer.ViewTarget, viewer.ViewLocation))
 		{
 			return true;
 		}
-
-		for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
-		{
-			// Do a net relevancy check for Actor in net view cull distance for viewer
-			if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
-			{
-				return true;
-			}
-		}
-
-		return false;
 	}
 
-	return true;
+	return false;
 }
 
 // Returns true if this actor is considered dormant (and all properties caught up) to the current connection
@@ -822,6 +817,8 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 		AGameNetworkManager* const NetworkManager = World->NetworkManager;
 		const bool bLowNetBandwidth = NetworkManager ? NetworkManager->IsInLowBandwidthMode() : false;
 
+		const bool bNetRelevancy = GetDefault<USpatialGDKSettings>()->UseIsActorRelevantForConnection;
+
 		for (FNetworkObjectInfo* ActorInfo : ConsiderList)
 		{
 			AActor* Actor = ActorInfo->Actor;
@@ -848,7 +845,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			// SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
 			// We have removed the level load check because it doesn't apply.
 			// Relevancy checking is also mostly just a pass through, might be removed later.
-			if (!IsActorRelevantToConnection(Actor, Channel, ConnectionViewers))
+			if (bNetRelevancy && !IsActorRelevantToConnection(Actor, Channel, ConnectionViewers))
 			{
 				// If not relevant (and we don't have a channel), skip
 				continue;
