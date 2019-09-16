@@ -10,11 +10,6 @@ This guide shows you how to port your own Unreal project to the GDK; you will mo
 We recommend following steps 1 to 3 of the [Get started]({{urlRoot}}/content/get-started/introduction) guide and setting up the [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) before porting your project. This gives you an overview of the GDK and using SpatialOS.
 <br/>
 
-**Tip: Reference project**
-<br/>
- As you port your own Unreal project to SpatialOS, you could use our pre-ported [Unreal Shooter Game](https://docs.unrealengine.com/en-us/Resources/SampleGames/ShooterGame) as a reference. You should already have this project as it is included in the `Samples` directory of [the SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine) which you downloaded as part of the _Get started_ steps. </br>
-(If you want to see the game running, there's a [video on youtube](https://www.youtube.com/watch?v=xojgH7hJgQs&feature=youtu.be) to check out.)
-
 ## **Terms used in this guide**
 
 - `<GameRoot>` - The directory containing your project's `.uproject` file and `Source` directory.  
