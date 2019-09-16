@@ -63,6 +63,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 {
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook and Generate Schema Started."));
 	ObjectListener = new FObjectListener();
+	TSet<FSoftClassPath> ReferencedClasses;
 	
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Try Load Schema Database."));
 	if (!TryLoadExistingSchemaDatabase())
@@ -70,10 +71,15 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		return 1;
 	}
 
-	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Generate Schema for C++ and in-memory Classes."));
-	if (!SpatialGDKGenerateSchema(false /* bSaveSchemaDatabase */, false /* bRunSchemaCompiler */))
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Finding supported C++ and in-memory Classes."));
+	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
-		return 2;
+		UClass* SupportedClass = *ClassIt;
+
+		if (IsSupportedClass(SupportedClass))
+		{
+			ReferencedClasses.Add(FSoftClassPath(SupportedClass));
+		}
 	}
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Starting Cook Command."));
@@ -82,8 +88,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 
 	GUObjectArray.RemoveUObjectCreateListener(ObjectListener);
 
-	TSet<FSoftClassPath> ReferencedClasses = ObjectListener->VisitedClasses;
-
+	ReferencedClasses.Append(ObjectListener->VisitedClasses);
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Discovered %d Classes during cook."), ReferencedClasses.Num());
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Start Schema Generation for discovered assets."));
