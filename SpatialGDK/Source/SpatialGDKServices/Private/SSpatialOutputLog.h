@@ -158,8 +158,6 @@ protected:
 	FTextLayout* TextLayout;
 };
 
-
-
 /**
  * Widget which holds a list view of logs of the program output
  * as well as a combo box for entering in new commands
@@ -188,24 +186,21 @@ public:
 	 */
 	void Construct( const FArguments& InArgs );
 
-	void WatchLogFile();
-	void ReadLogFile(FString LogFilePath);
-	void TailLogFile(FString LogFilePath);
 
 	void StartPollingLogFile(FString LogFilePath);
 	void PollLogFile(FString LogFilePath);
+	void StartPollTimer(FString LogFilePath);
+	void FormatRawLogLine(FString& LogLine);
+
 	void StartUpRootLogDirWatcher();
-	void StartUpLogDirectoryWatcher(FString LogDirectory);
 	void ShutdownLogDirectoryWatcher(FString LogDirectory);
-	void WatchLatestLogDirectory();
-	FString GetNewLogFolder();
 	void OnRootLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
-	void OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
+
 	FDelegateHandle LogDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged LogDirectoryChangedDelegate;
 
 	FTimerHandle PollTimer;
-
+	TUniquePtr<FArchive> LogReader;
 
 	/**
 	 * Creates FLogMessage objects from FOutputDevice log callback

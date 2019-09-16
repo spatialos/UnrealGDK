@@ -32,6 +32,191 @@
 
 #define LOCTEXT_NAMESPACE "SSpatialOutputLog"
 
+void SSpatialOutputLog::StartPollingLogFile(FString LogFilePath)
+{
+	if (GEditor != nullptr)
+	{
+		// Delete the old timer if one exists.
+		GEditor->GetTimerManager()->ClearTimer(PollTimer);
+	}
+
+	// Clean up the the previous file reader if it existed.
+	if (LogReader)
+	{
+		LogReader->Close();
+		LogReader = nullptr;
+	}
+
+	// FILEREAD_AllowWrite is required as we must match the permissions of the other processes writing to our log file in order to read from it.
+	LogReader = TUniquePtr<FArchive>(IFileManager::Get().CreateFileReader(*LogFilePath, FILEREAD_AllowWrite));
+
+	PollLogFile(LogFilePath);
+}
+
+void SSpatialOutputLog::PollLogFile(FString LogFilePath)
+{
+	FScopedLoadingState ScopedLoadingState(*LogFilePath);
+
+	// Find out the current size of the log file. This is a cheaper operation than opening a new file reader on every poll.
+	FFileStatData LogStatData = IFileManager::Get().GetStatData(*LogFilePath);
+
+	int32 SizeDifference = LogStatData.FileSize - LogReader->Tell();
+
+	// New log lines have been added, serialize them.
+	if (SizeDifference > 0)
+	{
+		uint8* Ch = (uint8*)FMemory::Malloc(SizeDifference);
+
+		LogReader->Serialize(Ch, SizeDifference);
+
+		FString ReadResult;
+		FFileHelper::BufferToString(ReadResult, Ch, SizeDifference);
+
+		TArray<FString> LogLines;
+
+		// TODO: This is apparently inefficient
+		int32 lineCount = ReadResult.ParseIntoArray(LogLines, TEXT("\n"), true);
+
+		for (FString LogLine : LogLines)
+		{
+			FormatRawLogLine(LogLine);
+		}
+
+		FMemory::Free(Ch);
+	}
+
+	StartPollTimer(LogFilePath);
+}
+
+void SSpatialOutputLog::StartPollTimer(FString LogFilePath)
+{
+	// Start a timer to read the log file every 0.1s
+	// Timers must be started on the game thread.
+	AsyncTask(ENamedThreads::GameThread, [this, LogFilePath]
+		{
+			// It's possible that GEditor won't exist when shutting down.
+			if (GEditor != nullptr)
+			{
+				// Start checking for the service status.
+				GEditor->GetTimerManager()->SetTimer(PollTimer, [this, LogFilePath]()
+					{
+						PollLogFile(LogFilePath);
+					}, 0.05f, false);
+			}
+		});
+}
+
+// DO NOT REVIEW THIS FUNCTION -- GOING TO CHANGE BASED ON SPATIALD IMPLEMENTATION
+void SSpatialOutputLog::FormatRawLogLine(FString& LogLine)
+{
+	LogLine = LogLine.ReplaceEscapedCharWithChar();
+
+	// TODO: Do this with some proper formatting or with regex
+	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
+
+	FString Left;
+	FString Verbosity;
+
+	LogLine.Split(TEXT("level"), &Left, &Verbosity);
+
+	if (LogLine.Contains(TEXT("error")))
+	{
+		LogVerbosity = ELogVerbosity::Error;
+	}
+	else if (LogLine.Contains(TEXT("warn")))
+	{
+		LogVerbosity = ELogVerbosity::Warning;
+	}
+	else if (LogLine.Contains(TEXT("debug")))
+	{
+		LogVerbosity = ELogVerbosity::Verbose;
+	}
+	else if (LogLine.Contains(TEXT("verbose")))
+	{
+		LogVerbosity = ELogVerbosity::Verbose;
+	}
+	else
+	{
+		LogVerbosity = ELogVerbosity::Log;
+	}
+
+	FString Content;
+	FString LogCategory;
+
+	Verbosity.Split(TEXT("msg"), &Left, &Content);
+	Content.Split(TEXT("]"), &LogCategory, &Content);
+	LogCategory.Split(TEXT("."), nullptr, &LogCategory, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+
+	Serialize(*Content, LogVerbosity, FName(*LogCategory));
+}
+// DO NOT REVIEW THIS FUNCTION -- GOING TO CHANGE BASED ON SPATIALD IMPLEMENTATION
+
+void SSpatialOutputLog::StartUpRootLogDirWatcher()
+{
+	FString RootLogDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("logs/localdeployment"));
+	AsyncTask(ENamedThreads::GameThread, [this, RootLogDir]
+		{
+			FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
+			if (IDirectoryWatcher * DirectoryWatcher = DirectoryWatcherModule.Get())
+			{
+				// Watch the log directory for changes.
+				if (FPaths::DirectoryExists(RootLogDir))
+				{
+					LogDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &SSpatialOutputLog::OnRootLogDirectoryChanged);
+					// TODO: Change this to use the IDirectoryWatcher::Flags to only watch for folder creations and thus reduce how much the delegate gets triggered.
+					// We can use the name of the new folders and simply append launch.log to get the correct log files.
+					// We can also use this as a point to stop the old polling.
+					DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(RootLogDir, LogDirectoryChangedDelegate, LogDirectoryChangedDelegateHandle, IDirectoryWatcher::WatchOptions::IncludeDirectoryChanges | IDirectoryWatcher::WatchOptions::IgnoreChangesInSubtree);
+				}
+				else
+				{
+					// TODO: Create it?
+					UE_LOG(LogTemp, Error, TEXT("Log directory does not exist!"));
+				}
+			}
+		});
+}
+
+void SSpatialOutputLog::ShutdownLogDirectoryWatcher(FString LogDirectory)
+{
+	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
+	{
+		FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
+		if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
+		{
+			// TODO: Logging and bool check.
+			DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegateHandle);
+		}
+	});
+}
+
+void SSpatialOutputLog::OnRootLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
+{
+	// If this is a new folder creation then switch to watching the log files in that new log folder.
+	for (FFileChangeData FileChange : FileChanges)
+	{
+		// TODO: Isn't this slow as fuck?
+		if (FileChange.Action == FFileChangeData::FCA_Added)
+		{
+			// Now we can start reading the new log file in the new log folder. (Hopefully exists)
+			UE_LOG(LogTemp, Display, TEXT("New folder added: %s"), *FileChange.Filename);
+			StartPollingLogFile(FPaths::Combine(FileChange.Filename, TEXT("launch.log")));
+		}
+	}
+}
+
+SSpatialOutputLog::~SSpatialOutputLog()
+{
+	FCoreDelegates::OnHandleSystemError.RemoveAll(this);
+}
+
+void SSpatialOutputLog::OnCrash()
+{
+}
+
+// NOTE: THE BELOW CODE IS COPIED DIRECTLY FROM OutputLog.cpp from the Engine. This is done to minimise engine changes.
+// TODO: UNR-???? Refactor engine code to prevent duplication.
+
 /** Expression context to test the given messages against the current text filter */
 class FLogFilter_TextFilterExpressionContext : public ITextFilterExpressionContext
 {
@@ -51,7 +236,6 @@ private:
 	/** Message that is being filtered */
 	const FSpatialLogMessage* Message;
 };
-
 
 TSharedRef< FSpatialOutputLogTextLayoutMarshaller > FSpatialOutputLogTextLayoutMarshaller::Create(TArray< TSharedPtr<FSpatialLogMessage> > InMessages, FSpatialLogFilter* InFilter)
 {
@@ -232,9 +416,8 @@ FSpatialOutputLogTextLayoutMarshaller::FSpatialOutputLogTextLayoutMarshaller(TAr
 {
 }
 
-
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
-void SSpatialOutputLog::Construct( const FArguments& InArgs )
+void SSpatialOutputLog::Construct(const FArguments& InArgs)
 {
 	// Build list of available log categories from historical logs
 	for (const auto& Message : InArgs._Messages)
@@ -256,74 +439,74 @@ void SSpatialOutputLog::Construct( const FArguments& InArgs )
 		.ContextMenuExtender(this, &SSpatialOutputLog::ExtendTextBoxMenu);
 
 	ChildSlot
-	[
-		SNew(SBorder)
-		.Padding(3)
+		[
+			SNew(SBorder)
+			.Padding(3)
 		.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
 		[
 			SNew(SVerticalBox)
 
 			// Output Log Filter
-			+SVerticalBox::Slot()
-			.AutoHeight()
-			.Padding(FMargin(0.0f, 0.0f, 0.0f, 4.0f))
-			[
-				SNew(SHorizontalBox)
-			
-				+SHorizontalBox::Slot()
-				.AutoWidth()
-				[
-					SNew(SComboButton)
-					.ComboButtonStyle(FEditorStyle::Get(), "GenericFilters.ComboButtonStyle")
-					.ForegroundColor(FLinearColor::White)
-					.ContentPadding(0)
-					.ToolTipText(LOCTEXT("AddFilterToolTip", "Add an output log filter."))
-					.OnGetMenuContent(this, &SSpatialOutputLog::MakeAddFilterMenu)
-					.HasDownArrow(true)
-					.ContentPadding(FMargin(1, 0))
-					.ButtonContent()
-					[
-						SNew(SHorizontalBox)
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(FMargin(0.0f, 0.0f, 0.0f, 4.0f))
+		[
+			SNew(SHorizontalBox)
 
-						+SHorizontalBox::Slot()
-						.AutoWidth()
-						[
-							SNew(STextBlock)
-							.TextStyle(FEditorStyle::Get(), "GenericFilters.TextStyle")
-							.Font(FEditorStyle::Get().GetFontStyle("FontAwesome.9"))
-							.Text(FText::FromString(FString(TEXT("\xf0b0"))) /*fa-filter*/)
-						]
+			+ SHorizontalBox::Slot()
+		.AutoWidth()
+		[
+			SNew(SComboButton)
+			.ComboButtonStyle(FEditorStyle::Get(), "GenericFilters.ComboButtonStyle")
+		.ForegroundColor(FLinearColor::White)
+		.ContentPadding(0)
+		.ToolTipText(LOCTEXT("AddFilterToolTip", "Add an output log filter."))
+		.OnGetMenuContent(this, &SSpatialOutputLog::MakeAddFilterMenu)
+		.HasDownArrow(true)
+		.ContentPadding(FMargin(1, 0))
+		.ButtonContent()
+		[
+			SNew(SHorizontalBox)
 
-						+SHorizontalBox::Slot()
-						.AutoWidth()
-						.Padding(2, 0, 0, 0)
-						[
-							SNew(STextBlock)
-							.TextStyle(FEditorStyle::Get(), "GenericFilters.TextStyle")
-							.Text(LOCTEXT("Filters", "Filters"))
-						]
-					]
-				]
-
-				+SHorizontalBox::Slot()
-				.Padding(4, 1, 0, 0)
-				[
-					SAssignNew(FilterTextBox, SSearchBox)
-					.HintText(LOCTEXT("SearchLogHint", "Search Log"))
-					.OnTextChanged(this, &SSpatialOutputLog::OnFilterTextChanged)
-					.OnTextCommitted(this, &SSpatialOutputLog::OnFilterTextCommitted)
-					.DelayChangeNotificationsWhileTyping(true)
-				]
-			]
-
-			// Output log area
-			+SVerticalBox::Slot()
-			.FillHeight(1)
-			[
-				MessagesTextBox.ToSharedRef()
-			]
+			+ SHorizontalBox::Slot()
+		.AutoWidth()
+		[
+			SNew(STextBlock)
+			.TextStyle(FEditorStyle::Get(), "GenericFilters.TextStyle")
+		.Font(FEditorStyle::Get().GetFontStyle("FontAwesome.9"))
+		.Text(FText::FromString(FString(TEXT("\xf0b0"))) /*fa-filter*/)
 		]
-	];
+
+	+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.Padding(2, 0, 0, 0)
+		[
+			SNew(STextBlock)
+			.TextStyle(FEditorStyle::Get(), "GenericFilters.TextStyle")
+		.Text(LOCTEXT("Filters", "Filters"))
+		]
+		]
+		]
+
+	+ SHorizontalBox::Slot()
+		.Padding(4, 1, 0, 0)
+		[
+			SAssignNew(FilterTextBox, SSearchBox)
+			.HintText(LOCTEXT("SearchLogHint", "Search Log"))
+		.OnTextChanged(this, &SSpatialOutputLog::OnFilterTextChanged)
+		.OnTextCommitted(this, &SSpatialOutputLog::OnFilterTextCommitted)
+		.DelayChangeNotificationsWhileTyping(true)
+		]
+		]
+
+	// Output log area
+	+ SVerticalBox::Slot()
+		.FillHeight(1)
+		[
+			MessagesTextBox.ToSharedRef()
+		]
+		]
+		];
 
 	// Remove itself on crash (crashmalloc has limited memory and echoing logs here at that point is useless).
 	FCoreDelegates::OnHandleSystemError.AddRaw(this, &SSpatialOutputLog::OnCrash);
@@ -334,212 +517,6 @@ void SSpatialOutputLog::Construct( const FArguments& InArgs )
 	StartUpRootLogDirWatcher();
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
-
-int32 SizeDifference;
-int32 OldSize;
-int32 NewSize;
-
-
-void SSpatialOutputLog::StartPollingLogFile(FString LogFilePath)
-{
-	if (GEditor != nullptr)
-	{
-		// Start checking for the service status.
-		GEditor->GetTimerManager()->ClearTimer(PollTimer);
-	}
-
-	SizeDifference = 0;
-	OldSize = 0;
-	NewSize = 0;
-
-	PollLogFile(LogFilePath);
-}
-
-void SSpatialOutputLog::PollLogFile(FString LogFilePath)
-{
-	// Read log file live.
-	FString Result;
-
-	FScopedLoadingState ScopedLoadingState(*LogFilePath);
-
-	TUniquePtr<FArchive> LogReader = TUniquePtr<FArchive>(IFileManager::Get().CreateFileReader(*LogFilePath, FILEREAD_AllowWrite));
-
-	int32 Size = LogReader->TotalSize();
-
-	if (!Size)
-	{
-		Result.Empty();
-		UE_LOG(LogTemp, Warning, TEXT("Log empty!"));
-	}
-
-	NewSize = Size;
-	SizeDifference = NewSize - OldSize;
-
-	if (SizeDifference <= 0)
-	{
-		LogReader->Close();
-		LogReader = nullptr;
-		OldSize = NewSize;
-
-		// Start a timer to read the log file every 0.1s
-		// Timers must be started on the game thread.
-		AsyncTask(ENamedThreads::GameThread, [this, LogFilePath]
-			{
-			// It's possible that GEditor won't exist when shutting down.
-			if (GEditor != nullptr)
-			{
-				// Start checking for the service status.
-				GEditor->GetTimerManager()->SetTimer(PollTimer, [this, LogFilePath]()
-				{
-					PollLogFile(LogFilePath);
-				}, 0.05f, false);
-			}
-			});
-
-		return;
-	}
-
-	uint8* Ch = (uint8*)FMemory::Malloc(SizeDifference);
-
-	LogReader->Seek(OldSize);
-	LogReader->Serialize(Ch, SizeDifference);
-
-	FFileHelper::BufferToString(Result, Ch, SizeDifference);
-
-	TArray<FString> LogLines;
-
-	// TODO: This is apparently inefficient
-	int32 lineCount = Result.ParseIntoArray(LogLines, TEXT("\n"), true);
-
-	for (FString LogLine : LogLines)
-	{
-		LogLine = LogLine.ReplaceEscapedCharWithChar();
-
-		// TODO: Do this with some proper formatting or with regex
-		ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
-
-		FString Left;
-		FString Verbosity;
-
-		LogLine.Split(TEXT("level"), &Left, &Verbosity);
-
-		if (Verbosity.Contains(TEXT("error")))
-		{
-			LogVerbosity = ELogVerbosity::Error;
-		}
-		else if (Verbosity.Contains(TEXT("warn")))
-		{
-			LogVerbosity = ELogVerbosity::Warning;
-		}
-		else if (Verbosity.Contains(TEXT("debug")))
-		{
-			LogVerbosity = ELogVerbosity::Verbose;
-		}
-		else if (Verbosity.Contains(TEXT("verbose")))
-		{
-			LogVerbosity = ELogVerbosity::Verbose;
-		}
-		else
-		{
-			LogVerbosity = ELogVerbosity::Log;
-		}
-
-		FString Content;
-		FString LogCategory;
-
-		Verbosity.Split(TEXT("msg"), &Left, &Content);
-		Content.Split(TEXT("]"), &LogCategory, &Content);
-		LogCategory.Split(TEXT("."), nullptr, &LogCategory, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
-
-		Serialize(*Content, LogVerbosity, FName(*LogCategory));
-	}
-
-	FMemory::Free(Ch);
-
-	LogReader->Close();
-	LogReader = nullptr;
-	OldSize = NewSize;
-
-	// Start a timer to read the log file every 0.1s
-	// Timers must be started on the game thread.
-	AsyncTask(ENamedThreads::GameThread, [this, LogFilePath]
-	{
-		// It's possible that GEditor won't exist when shutting down.
-		if (GEditor != nullptr)
-		{
-			// Start checking for the service status.
-			GEditor->GetTimerManager()->SetTimer(PollTimer, [this, LogFilePath]()
-			{
-				PollLogFile(LogFilePath);
-			}, 0.05f, false);
-		}
-	});
-}
-
-void SSpatialOutputLog::StartUpRootLogDirWatcher()
-{
-	FString RootLogDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("logs/localdeployment"));
-	AsyncTask(ENamedThreads::GameThread, [this, RootLogDir]
-		{
-			FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-			if (IDirectoryWatcher * DirectoryWatcher = DirectoryWatcherModule.Get())
-			{
-				// Watch the log directory for changes.
-				if (FPaths::DirectoryExists(RootLogDir))
-				{
-					LogDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &SSpatialOutputLog::OnRootLogDirectoryChanged);
-					// TODO: Change this to use the IDirectoryWatcher::Flags to only watch for folder creations and thus reduce how much the delegate gets triggered.
-					// We can use the name of the new folders and simply append launch.log to get the correct log files.
-					// We can also use this as a point to stop the old polling.
-					DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(RootLogDir, LogDirectoryChangedDelegate, LogDirectoryChangedDelegateHandle, IDirectoryWatcher::WatchOptions::IncludeDirectoryChanges | IDirectoryWatcher::WatchOptions::IgnoreChangesInSubtree);
-				}
-				else
-				{
-					// TODO: Create it?
-					UE_LOG(LogTemp, Error, TEXT("Log directory does not exist!"));
-				}
-			}
-		});
-}
-
-void SSpatialOutputLog::ShutdownLogDirectoryWatcher(FString LogDirectory)
-{
-	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
-	{
-		FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-		if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
-		{
-			// TODO: Logging and bool check.
-			DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegateHandle);
-		}
-	});
-}
-
-void SSpatialOutputLog::OnRootLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
-{
-	//UE_LOG(LogTemp, Display, TEXT("Root log dir update."));
-
-	// If this is a new folder creation then switch to watching the log files in that new log folder.
-	for (FFileChangeData FileChange : FileChanges)
-	{
-		// TODO: Isn't this slow as fuck?
-		if (FileChange.Action == FFileChangeData::FCA_Added)
-		{
-			// Now we can start reading the new log file in the new log folder. (Hopefully exists)
-			UE_LOG(LogTemp, Display, TEXT("New folder added: %s"), *FileChange.Filename);
-			StartPollingLogFile(FPaths::Combine(FileChange.Filename, TEXT("launch.log")));
-		}
-	}
-}
-
-SSpatialOutputLog::~SSpatialOutputLog()
-{
-	FCoreDelegates::OnHandleSystemError.RemoveAll(this);
-}
-
-void SSpatialOutputLog::OnCrash()
-{
-}
 
 bool SSpatialOutputLog::CreateLogMessages( const TCHAR* V, ELogVerbosity::Type Verbosity, const class FName& Category, TArray< TSharedPtr<FSpatialLogMessage> >& OutMessages )
 {
