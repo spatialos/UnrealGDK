@@ -1,5 +1,6 @@
 param(
-  [string] $engine_cache_directory = "UnrealEngine-Cache"
+  [string] $engine_cache_directory = "UnrealEngine-Cache",
+  [string] $unreal_path = "$($gdk_home)\UnrealEngine"
 )
 
 pushd "$($gdk_home)"
@@ -55,13 +56,11 @@ pushd "$($gdk_home)"
         }
     popd
 
-    $unreal_path = "$($gdk_home)\UnrealEngine"
-
     ## Create an UnrealEngine symlink to the correct directory
     Remove-Item $unreal_path -ErrorAction ignore -Recurse -Force
     cmd /c mklink /J $unreal_path "$engine_cache_directory\$($unreal_version)"
 
-    $clang_path = "$($gdk_home)\UnrealEngine\ClangToolchain"
+    $clang_path = "$unreal_path\ClangToolchain"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
     [Environment]::SetEnvironmentVariable("LINUX_MULTIARCH_ROOT", "$($clang_path)", "Machine")
     $Env:LINUX_MULTIARCH_ROOT = "$($clang_path)"
