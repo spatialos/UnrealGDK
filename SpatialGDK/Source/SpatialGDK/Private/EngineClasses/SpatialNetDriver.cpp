@@ -817,7 +817,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 		AGameNetworkManager* const NetworkManager = World->NetworkManager;
 		const bool bLowNetBandwidth = NetworkManager ? NetworkManager->IsInLowBandwidthMode() : false;
 
-		const bool bNetRelevancy = GetDefault<USpatialGDKSettings>()->UseIsActorRelevantForConnection;
+		const bool bNetRelevancyEnabled = GetDefault<USpatialGDKSettings>()->UseIsActorRelevantForConnection;
 
 		for (FNetworkObjectInfo* ActorInfo : ConsiderList)
 		{
@@ -842,10 +842,9 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
 
-			// SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
-			// We have removed the level load check because it doesn't apply.
-			// Relevancy checking is also mostly just a pass through, might be removed later.
-			if (bNetRelevancy && !IsActorRelevantToConnection(Actor, Channel, ConnectionViewers))
+			// If Net Relevancy is enabled in the GDK settings, the actors relevancy
+			// for replication is determined by distance from each player controllers in game
+			if (bNetRelevancyEnabled && !IsActorRelevantToConnection(Actor, Channel, ConnectionViewers))
 			{
 				// If not relevant (and we don't have a channel), skip
 				continue;
