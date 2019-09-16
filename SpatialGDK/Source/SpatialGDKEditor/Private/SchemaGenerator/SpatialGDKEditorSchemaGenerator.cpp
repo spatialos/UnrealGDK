@@ -414,26 +414,27 @@ bool IsSupportedClass(UClass* SupportedClass)
 {
 	if (!IsValid(SupportedClass))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Invalid Class Not supported for schema gen"), *GetPathNameSafe(SupportedClass));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Invalid Class not supported for schema gen."), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
 	if (SupportedClass->IsEditorOnly())
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Editor-only Class Not supported for schema gen"), *GetPathNameSafe(SupportedClass));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Editor-only Class not supported for schema gen."), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
 	// User told us to ignore this class
 	if (SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Not Spatial Type, not supported for schema gen"), *GetPathNameSafe(SupportedClass));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Not Spatial Type, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
 	if (!SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_ExplicitSpatialType))
 	{
-		// Check if parent class is supported.
+		// Check if parent class is supported, we need to do this because we have changed the defaults but Blueprint classes will
+		// not inherit these correctly if the files are locked by source control.
 		if (!IsSupportedClass(SupportedClass->GetSuperClass()))
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Not Explicit Spatial Type, parent not supported either, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
@@ -495,7 +496,7 @@ TSet<UClass*> GetAllSupportedClasses()
 	return Classes;
 }
 
-TSet<UClass*> FilterClasses(TSet<UClass*> Classes)
+TSet<UClass*> FilterClasses(const TSet<UClass*>& Classes)
 {
 	TSet<UClass*> FilteredClasses;
 
@@ -617,7 +618,7 @@ bool TryLoadExistingSchemaDatabase()
 	return true;
 }
 
-SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists()
+bool GeneratedSchemaFolderExists()
 {
 	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
@@ -766,7 +767,7 @@ bool SpatialGDKGenerateSchema(bool bSaveSchemaDatabase, bool bRunSchemaCompiler)
 	return true;
 }
 
-SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes)
+bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes)
 {
 	ResetUsedNames();
 	TSet<UClass*> NewClasses = FilterClasses(Classes);
@@ -778,7 +779,10 @@ SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Class
 
 	for (const auto& Class : SortedClasses)
 	{
-		if (SchemaGeneratedClasses.Contains(Class)) continue;
+		if (SchemaGeneratedClasses.Contains(Class))
+		{
+			continue;
+		}
 
 		SchemaGeneratedClasses.Add(Class);
 		// Parent and static array index start at 0 for checksum calculations.
