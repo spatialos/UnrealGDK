@@ -691,18 +691,16 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 // Returns true if this actor should replicate to *any* of the passed in connections
 static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, UActorChannel* ActorChannel, const TArray<FNetViewer>& ConnectionViewers)
 {
-	// If an actor is set to be always relevant, no need to evaluate connection relevancy.
-	// An actor without a channel yet will need to be replicated at least once to have an
-	// actor channel and entity created for it
-	if (Actor->bAlwaysRelevant || ActorChannel == nullptr)
+	// An actor without a channel yet will need to be replicated at least
+	// once to have a channel and entity created for it
+	if (ActorChannel == nullptr)
 	{
 		return true;
 	}
 
-	for (auto viewer : ConnectionViewers)
+	for (const auto& Viewer : ConnectionViewers)
 	{
-		// Do a net relevancy check for Actor in net view cull distance for viewer
-		if (Actor->IsNetRelevantFor(viewer.InViewer, viewer.ViewTarget, viewer.ViewLocation))
+		if (Actor->IsNetRelevantFor(Viewer.InViewer, Viewer.ViewTarget, Viewer.ViewLocation))
 		{
 			return true;
 		}
@@ -842,8 +840,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
 
-			// If Net Relevancy is enabled in the GDK settings, the actors relevancy
-			// for replication is determined by distance from each player controllers in game
+			// Check actor relevancy if Net Relevancy is enabled in the GDK settings
 			if (bNetRelevancyEnabled && !IsActorRelevantToConnection(Actor, Channel, ConnectionViewers))
 			{
 				// If not relevant (and we don't have a channel), skip
