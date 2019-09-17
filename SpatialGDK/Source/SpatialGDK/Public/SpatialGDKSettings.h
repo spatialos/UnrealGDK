@@ -73,7 +73,7 @@ public:
 	uint32 EntityCreationRateLimit;
 
 	/**
-	 * When enabled only entities which are in the net relevancy range of player controllers will be replicated to SpatialOS.
+	 * When enabled, only entities which are in the net relevancy range of player controllers will be replicated to SpatialOS.
 	 * This should only be used in single server configurations. The state of the world in the inspector will no longer be up to date.
 	 */
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Only Replicate Net Relevant Actors"))
