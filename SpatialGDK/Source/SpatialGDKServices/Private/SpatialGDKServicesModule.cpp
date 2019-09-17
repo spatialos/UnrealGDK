@@ -43,7 +43,7 @@ public:
 	}
 
 	/** Gets all captured messages */
-	const TArray<TSharedPtr<FSpatialLogMessage>>& GetMessages() const
+	const TArray<TSharedPtr<FLogMessage>>& GetMessages() const
 	{
 		return Messages;
 	}
@@ -59,7 +59,7 @@ protected:
 private:
 
 	/** All log messages since this module has been started */
-	TArray<TSharedPtr<FSpatialLogMessage>> Messages;
+	TArray<TSharedPtr<FLogMessage>> Messages;
 };
 
 /** Spatial output log app spawner */

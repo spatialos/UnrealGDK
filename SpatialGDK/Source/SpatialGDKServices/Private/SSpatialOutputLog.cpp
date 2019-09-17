@@ -210,211 +210,212 @@ SSpatialOutputLog::~SSpatialOutputLog()
 	FCoreDelegates::OnHandleSystemError.RemoveAll(this);
 }
 
-void SSpatialOutputLog::OnCrash()
-{
-}
+//void SSpatialOutputLog::OnCrash()
+//{
+//}
 
 // NOTE: THE BELOW CODE IS COPIED DIRECTLY FROM OutputLog.cpp from the Engine. This is done to minimise engine changes.
 // TODO: UNR-???? Refactor engine code to prevent duplication.
 
-/** Expression context to test the given messages against the current text filter */
-class FLogFilter_TextFilterExpressionContext : public ITextFilterExpressionContext
-{
-public:
-	explicit FLogFilter_TextFilterExpressionContext(const FSpatialLogMessage& InMessage) : Message(&InMessage) {}
+///** Expression context to test the given messages against the current text filter */
+//class FLogFilter_TextFilterExpressionContext : public ITextFilterExpressionContext
+//{
+//public:
+//	explicit FLogFilter_TextFilterExpressionContext(const FLogMessage& InMessage) : Message(&InMessage) {}
+//
+//	/** Test the given value against the strings extracted from the current item */
+//	virtual bool TestBasicStringExpression(const FTextFilterString& InValue, const ETextFilterTextComparisonMode InTextComparisonMode) const override { return TextFilterUtils::TestBasicStringExpression(*Message->Message, InValue, InTextComparisonMode); }
+//
+//	/**
+//	* Perform a complex expression test for the current item
+//	* No complex expressions in this case - always returns false
+//	*/
+//	virtual bool TestComplexExpression(const FName& InKey, const FTextFilterString& InValue, const ETextFilterComparisonOperation InComparisonOperation, const ETextFilterTextComparisonMode InTextComparisonMode) const override { return false; }
+//
+//private:
+//	/** Message that is being filtered */
+//	const FLogMessage* Message;
+//};
 
-	/** Test the given value against the strings extracted from the current item */
-	virtual bool TestBasicStringExpression(const FTextFilterString& InValue, const ETextFilterTextComparisonMode InTextComparisonMode) const override { return TextFilterUtils::TestBasicStringExpression(*Message->Message, InValue, InTextComparisonMode); }
-
-	/**
-	* Perform a complex expression test for the current item
-	* No complex expressions in this case - always returns false
-	*/
-	virtual bool TestComplexExpression(const FName& InKey, const FTextFilterString& InValue, const ETextFilterComparisonOperation InComparisonOperation, const ETextFilterTextComparisonMode InTextComparisonMode) const override { return false; }
-
-private:
-	/** Message that is being filtered */
-	const FSpatialLogMessage* Message;
-};
-
-TSharedRef< FSpatialOutputLogTextLayoutMarshaller > FSpatialOutputLogTextLayoutMarshaller::Create(TArray< TSharedPtr<FSpatialLogMessage> > InMessages, FSpatialLogFilter* InFilter)
-{
-	return MakeShareable(new FSpatialOutputLogTextLayoutMarshaller(MoveTemp(InMessages), InFilter));
-}
-
-FSpatialOutputLogTextLayoutMarshaller::~FSpatialOutputLogTextLayoutMarshaller()
-{
-}
-
-void FSpatialOutputLogTextLayoutMarshaller::SetText(const FString& SourceString, FTextLayout& TargetTextLayout)
-{
-	TextLayout = &TargetTextLayout;
-	AppendMessagesToTextLayout(Messages);
-}
-
-void FSpatialOutputLogTextLayoutMarshaller::GetText(FString& TargetString, const FTextLayout& SourceTextLayout)
-{
-	SourceTextLayout.GetAsText(TargetString);
-}
-
-bool FSpatialOutputLogTextLayoutMarshaller::AppendMessage(const TCHAR* InText, const ELogVerbosity::Type InVerbosity, const FName& InCategory)
-{
-	TArray< TSharedPtr<FSpatialLogMessage> > NewMessages;
-	if (SSpatialOutputLog::CreateLogMessages(InText, InVerbosity, InCategory, NewMessages))
-	{
-		const bool bWasEmpty = Messages.Num() == 0;
-		Messages.Append(NewMessages);
-
-		// Add new message categories to the filter's available log categories
-		for (const auto& NewMessage : NewMessages)
-		{
-			Filter->AddAvailableLogCategory(NewMessage->Category);
-		}
-
-		if (TextLayout)
-		{
-			// If we were previously empty, then we'd have inserted a dummy empty line into the document
-			// We need to remove this line now as it would cause the message indices to get out-of-sync with the line numbers, which would break auto-scrolling
-			if (bWasEmpty)
-			{
-				TextLayout->ClearLines();
-			}
-
-			// If we've already been given a text layout, then append these new messages rather than force a refresh of the entire document
-			AppendMessagesToTextLayout(NewMessages);
-		}
-		else
-		{
-			MarkMessagesCacheAsDirty();
-			MakeDirty();
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-void FSpatialOutputLogTextLayoutMarshaller::AppendMessageToTextLayout(const TSharedPtr<FSpatialLogMessage>& InMessage)
-{
-	if (!Filter->IsMessageAllowed(InMessage))
-	{
-		return;
-	}
-
-	// Increment the cached count if we're not rebuilding the log
-	if (!IsDirty())
-	{
-		CachedNumMessages++;
-	}
-
-	const FTextBlockStyle& MessageTextStyle = FEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>(InMessage->Style);
-
-	TSharedRef<FString> LineText = InMessage->Message;
-
-	TArray<TSharedRef<IRun>> Runs;
-	Runs.Add(FSlateTextRun::Create(FRunInfo(), LineText, MessageTextStyle));
-
-	TextLayout->AddLine(FSlateTextLayout::FNewLineData(MoveTemp(LineText), MoveTemp(Runs)));
-}
-
-void FSpatialOutputLogTextLayoutMarshaller::AppendMessagesToTextLayout(const TArray<TSharedPtr<FSpatialLogMessage>>& InMessages)
-{
-	TArray<FTextLayout::FNewLineData> LinesToAdd;
-	LinesToAdd.Reserve(InMessages.Num());
-
-	int32 NumAddedMessages = 0;
-
-	for (const auto& CurrentMessage : InMessages)
-	{
-		if (!Filter->IsMessageAllowed(CurrentMessage))
-		{
-			continue;
-		}
-
-		++NumAddedMessages;
-
-		const FTextBlockStyle& MessageTextStyle = FEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>(CurrentMessage->Style);
-
-		TSharedRef<FString> LineText = CurrentMessage->Message;
-
-		TArray<TSharedRef<IRun>> Runs;
-		Runs.Add(FSlateTextRun::Create(FRunInfo(), LineText, MessageTextStyle));
-
-		LinesToAdd.Emplace(MoveTemp(LineText), MoveTemp(Runs));
-	}
-
-	// Increment the cached message count if the log is not being rebuilt
-	if (!IsDirty())
-	{
-		CachedNumMessages += NumAddedMessages;
-	}
-
-	TextLayout->AddLines(LinesToAdd);
-}
-
-void FSpatialOutputLogTextLayoutMarshaller::ClearMessages()
-{
-	Messages.Empty();
-	MakeDirty();
-}
-
-void FSpatialOutputLogTextLayoutMarshaller::CountMessages()
-{
-	// Do not re-count if not dirty
-	if (!bNumMessagesCacheDirty)
-	{
-		return;
-	}
-
-	CachedNumMessages = 0;
-
-	for (const auto& CurrentMessage : Messages)
-	{
-		if (Filter->IsMessageAllowed(CurrentMessage))
-		{
-			CachedNumMessages++;
-		}
-	}
-
-	// Cache re-built, remove dirty flag
-	bNumMessagesCacheDirty = false;
-}
-
-int32 FSpatialOutputLogTextLayoutMarshaller::GetNumMessages() const
-{
-	return Messages.Num();
-}
-
-int32 FSpatialOutputLogTextLayoutMarshaller::GetNumFilteredMessages()
-{
-	// No need to filter the messages if the filter is not set
-	if (!Filter->IsFilterSet())
-	{
-		return GetNumMessages();
-	}
-
-	// Re-count messages if filter changed before we refresh
-	if (bNumMessagesCacheDirty)
-	{
-		CountMessages();
-	}
-
-	return CachedNumMessages;
-}
-
-void FSpatialOutputLogTextLayoutMarshaller::MarkMessagesCacheAsDirty()
-{
-	bNumMessagesCacheDirty = true;
-}
-
-FSpatialOutputLogTextLayoutMarshaller::FSpatialOutputLogTextLayoutMarshaller(TArray<TSharedPtr<FSpatialLogMessage>> InMessages, FSpatialLogFilter* InFilter)
-	: Messages(MoveTemp(InMessages))
-	, CachedNumMessages(0)
-	, Filter(InFilter)
-	, TextLayout(nullptr)
-{
-}
+//
+//TSharedRef< FSpatialOutputLogTextLayoutMarshaller > FSpatialOutputLogTextLayoutMarshaller::Create(TArray< TSharedPtr<FLogMessage> > InMessages, FLogFilter* InFilter)
+//{
+//	return MakeShareable(new FSpatialOutputLogTextLayoutMarshaller(MoveTemp(InMessages), InFilter));
+//}
+//
+//FSpatialOutputLogTextLayoutMarshaller::~FSpatialOutputLogTextLayoutMarshaller()
+//{
+//}
+//
+//void FSpatialOutputLogTextLayoutMarshaller::SetText(const FString& SourceString, FTextLayout& TargetTextLayout)
+//{
+//	TextLayout = &TargetTextLayout;
+//	AppendMessagesToTextLayout(Messages);
+//}
+//
+//void FSpatialOutputLogTextLayoutMarshaller::GetText(FString& TargetString, const FTextLayout& SourceTextLayout)
+//{
+//	SourceTextLayout.GetAsText(TargetString);
+//}
+//
+//bool FSpatialOutputLogTextLayoutMarshaller::AppendMessage(const TCHAR* InText, const ELogVerbosity::Type InVerbosity, const FName& InCategory)
+//{
+//	TArray< TSharedPtr<FLogMessage> > NewMessages;
+//	if (SSpatialOutputLog::CreateLogMessages(InText, InVerbosity, InCategory, NewMessages))
+//	{
+//		const bool bWasEmpty = Messages.Num() == 0;
+//		Messages.Append(NewMessages);
+//
+//		// Add new message categories to the filter's available log categories
+//		for (const auto& NewMessage : NewMessages)
+//		{
+//			Filter->AddAvailableLogCategory(NewMessage->Category);
+//		}
+//
+//		if (TextLayout)
+//		{
+//			// If we were previously empty, then we'd have inserted a dummy empty line into the document
+//			// We need to remove this line now as it would cause the message indices to get out-of-sync with the line numbers, which would break auto-scrolling
+//			if (bWasEmpty)
+//			{
+//				TextLayout->ClearLines();
+//			}
+//
+//			// If we've already been given a text layout, then append these new messages rather than force a refresh of the entire document
+//			AppendMessagesToTextLayout(NewMessages);
+//		}
+//		else
+//		{
+//			MarkMessagesCacheAsDirty();
+//			MakeDirty();
+//		}
+//
+//		return true;
+//	}
+//
+//	return false;
+//}
+//
+//void FSpatialOutputLogTextLayoutMarshaller::AppendMessageToTextLayout(const TSharedPtr<FLogMessage>& InMessage)
+//{
+//	if (!Filter->IsMessageAllowed(InMessage))
+//	{
+//		return;
+//	}
+//
+//	// Increment the cached count if we're not rebuilding the log
+//	if (!IsDirty())
+//	{
+//		CachedNumMessages++;
+//	}
+//
+//	const FTextBlockStyle& MessageTextStyle = FEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>(InMessage->Style);
+//
+//	TSharedRef<FString> LineText = InMessage->Message;
+//
+//	TArray<TSharedRef<IRun>> Runs;
+//	Runs.Add(FSlateTextRun::Create(FRunInfo(), LineText, MessageTextStyle));
+//
+//	TextLayout->AddLine(FSlateTextLayout::FNewLineData(MoveTemp(LineText), MoveTemp(Runs)));
+//}
+//
+//void FSpatialOutputLogTextLayoutMarshaller::AppendMessagesToTextLayout(const TArray<TSharedPtr<FLogMessage>>& InMessages)
+//{
+//	TArray<FTextLayout::FNewLineData> LinesToAdd;
+//	LinesToAdd.Reserve(InMessages.Num());
+//
+//	int32 NumAddedMessages = 0;
+//
+//	for (const auto& CurrentMessage : InMessages)
+//	{
+//		if (!Filter->IsMessageAllowed(CurrentMessage))
+//		{
+//			continue;
+//		}
+//
+//		++NumAddedMessages;
+//
+//		const FTextBlockStyle& MessageTextStyle = FEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>(CurrentMessage->Style);
+//
+//		TSharedRef<FString> LineText = CurrentMessage->Message;
+//
+//		TArray<TSharedRef<IRun>> Runs;
+//		Runs.Add(FSlateTextRun::Create(FRunInfo(), LineText, MessageTextStyle));
+//
+//		LinesToAdd.Emplace(MoveTemp(LineText), MoveTemp(Runs));
+//	}
+//
+//	// Increment the cached message count if the log is not being rebuilt
+//	if (!IsDirty())
+//	{
+//		CachedNumMessages += NumAddedMessages;
+//	}
+//
+//	TextLayout->AddLines(LinesToAdd);
+//}
+//
+//void FSpatialOutputLogTextLayoutMarshaller::ClearMessages()
+//{
+//	Messages.Empty();
+//	MakeDirty();
+//}
+//
+//void FSpatialOutputLogTextLayoutMarshaller::CountMessages()
+//{
+//	// Do not re-count if not dirty
+//	if (!bNumMessagesCacheDirty)
+//	{
+//		return;
+//	}
+//
+//	CachedNumMessages = 0;
+//
+//	for (const auto& CurrentMessage : Messages)
+//	{
+//		if (Filter->IsMessageAllowed(CurrentMessage))
+//		{
+//			CachedNumMessages++;
+//		}
+//	}
+//
+//	// Cache re-built, remove dirty flag
+//	bNumMessagesCacheDirty = false;
+//}
+//
+//int32 FSpatialOutputLogTextLayoutMarshaller::GetNumMessages() const
+//{
+//	return Messages.Num();
+//}
+//
+//int32 FSpatialOutputLogTextLayoutMarshaller::GetNumFilteredMessages()
+//{
+//	// No need to filter the messages if the filter is not set
+//	if (!Filter->IsFilterSet())
+//	{
+//		return GetNumMessages();
+//	}
+//
+//	// Re-count messages if filter changed before we refresh
+//	if (bNumMessagesCacheDirty)
+//	{
+//		CountMessages();
+//	}
+//
+//	return CachedNumMessages;
+//}
+//
+//void FSpatialOutputLogTextLayoutMarshaller::MarkMessagesCacheAsDirty()
+//{
+//	bNumMessagesCacheDirty = true;
+//}
+//
+//FSpatialOutputLogTextLayoutMarshaller::FSpatialOutputLogTextLayoutMarshaller(TArray<TSharedPtr<FLogMessage>> InMessages, FLogFilter* InFilter)
+//	: Messages(MoveTemp(InMessages))
+//	, CachedNumMessages(0)
+//	, Filter(InFilter)
+//	, TextLayout(nullptr)
+//{
+//}
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SSpatialOutputLog::Construct(const FArguments& InArgs)
@@ -425,7 +426,7 @@ void SSpatialOutputLog::Construct(const FArguments& InArgs)
 		Filter.AddAvailableLogCategory(Message->Category);
 	}
 
-	MessagesTextMarshaller = FSpatialOutputLogTextLayoutMarshaller::Create(InArgs._Messages, &Filter);
+	MessagesTextMarshaller = FOutputLogTextLayoutMarshaller::Create(InArgs._Messages, &Filter);
 
 
 	MessagesTextBox = SNew(SMultiLineEditableTextBox)
@@ -518,7 +519,7 @@ void SSpatialOutputLog::Construct(const FArguments& InArgs)
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-bool SSpatialOutputLog::CreateLogMessages( const TCHAR* V, ELogVerbosity::Type Verbosity, const class FName& Category, TArray< TSharedPtr<FSpatialLogMessage> >& OutMessages )
+bool SSpatialOutputLog::CreateLogMessages( const TCHAR* V, ELogVerbosity::Type Verbosity, const class FName& Category, TArray< TSharedPtr<FLogMessage> >& OutMessages )
 {
 	if (Verbosity == ELogVerbosity::SetColor)
 	{
@@ -582,14 +583,14 @@ bool SSpatialOutputLog::CreateLogMessages( const TCHAR* V, ELogVerbosity::Type V
 						HardWrapLineLen = FMath::Min(HardWrapLen - MessagePrefix.Len(), Line.Len() - CurrentStartIndex);
 						FString HardWrapLine = Line.Mid(CurrentStartIndex, HardWrapLineLen);
 
-						OutMessages.Add(MakeShared<FSpatialLogMessage>(MakeShared<FString>(MessagePrefix + HardWrapLine), Verbosity, Category, Style));
+						OutMessages.Add(MakeShared<FLogMessage>(MakeShared<FString>(MessagePrefix + HardWrapLine), Verbosity, Category, Style));
 					}
 					else
 					{
 						HardWrapLineLen = FMath::Min(HardWrapLen, Line.Len() - CurrentStartIndex);
 						FString HardWrapLine = Line.Mid(CurrentStartIndex, HardWrapLineLen);
 
-						OutMessages.Add(MakeShared<FSpatialLogMessage>(MakeShared<FString>(MoveTemp(HardWrapLine)), Verbosity, Category, Style));
+						OutMessages.Add(MakeShared<FLogMessage>(MakeShared<FString>(MoveTemp(HardWrapLine)), Verbosity, Category, Style));
 					}
 
 					bIsFirstLineInMessage = false;
@@ -602,361 +603,361 @@ bool SSpatialOutputLog::CreateLogMessages( const TCHAR* V, ELogVerbosity::Type V
 	}
 }
 
-void SSpatialOutputLog::Serialize(const TCHAR* V, ELogVerbosity::Type Verbosity, const class FName& Category)
-{
-	if ( MessagesTextMarshaller->AppendMessage(V, Verbosity, Category) )
-	{
-		// Don't scroll to the bottom automatically when the user is scrolling the view or has scrolled it away from the bottom.
-		if( !bIsUserScrolled )
-		{
-			RequestForceScroll();
-		}
-	}
-}
+//void SSpatialOutputLog::Serialize(const TCHAR* V, ELogVerbosity::Type Verbosity, const class FName& Category)
+//{
+//	if ( MessagesTextMarshaller->AppendMessage(V, Verbosity, Category) )
+//	{
+//		// Don't scroll to the bottom automatically when the user is scrolling the view or has scrolled it away from the bottom.
+//		if( !bIsUserScrolled )
+//		{
+//			RequestForceScroll();
+//		}
+//	}
+//}
 
-void SSpatialOutputLog::ExtendTextBoxMenu(FMenuBuilder& Builder)
-{
-	FUIAction ClearOutputLogAction(
-		FExecuteAction::CreateRaw( this, &SSpatialOutputLog::OnClearLog ),
-		FCanExecuteAction::CreateSP( this, &SSpatialOutputLog::CanClearLog )
-		);
+//void SSpatialOutputLog::ExtendTextBoxMenu(FMenuBuilder& Builder)
+//{
+//	FUIAction ClearOutputLogAction(
+//		FExecuteAction::CreateRaw( this, &SSpatialOutputLog::OnClearLog ),
+//		FCanExecuteAction::CreateSP( this, &SSpatialOutputLog::CanClearLog )
+//		);
+//
+//	Builder.AddMenuEntry(
+//		NSLOCTEXT("OutputLog", "ClearLogLabel", "Clear Log"), 
+//		NSLOCTEXT("OutputLog", "ClearLogTooltip", "Clears all log messages"), 
+//		FSlateIcon(), 
+//		ClearOutputLogAction
+//		);
+//}
+//
+//void SSpatialOutputLog::OnClearLog()
+//{
+//	// Make sure the cursor is back at the start of the log before we clear it
+//	MessagesTextBox->GoTo(FTextLocation(0));
+//
+//	MessagesTextMarshaller->ClearMessages();
+//	MessagesTextBox->Refresh();
+//	bIsUserScrolled = false;
+//}
+//
+//void SSpatialOutputLog::OnUserScrolled(float ScrollOffset)
+//{
+//	bIsUserScrolled = ScrollOffset < 1.0 && !FMath::IsNearlyEqual(ScrollOffset, 1.0f);
+//}
+//
+//bool SSpatialOutputLog::CanClearLog() const
+//{
+//	return MessagesTextMarshaller->GetNumMessages() > 0;
+//}
+//
+//void SSpatialOutputLog::OnConsoleCommandExecuted()
+//{
+//	RequestForceScroll();
+//}
+//
+//void SSpatialOutputLog::RequestForceScroll()
+//{
+//	if (MessagesTextMarshaller->GetNumFilteredMessages() > 0)
+//	{
+//		MessagesTextBox->ScrollTo(FTextLocation(MessagesTextMarshaller->GetNumFilteredMessages() - 1));
+//		bIsUserScrolled = false;
+//	}
+//}
 
-	Builder.AddMenuEntry(
-		NSLOCTEXT("OutputLog", "ClearLogLabel", "Clear Log"), 
-		NSLOCTEXT("OutputLog", "ClearLogTooltip", "Clears all log messages"), 
-		FSlateIcon(), 
-		ClearOutputLogAction
-		);
-}
-
-void SSpatialOutputLog::OnClearLog()
-{
-	// Make sure the cursor is back at the start of the log before we clear it
-	MessagesTextBox->GoTo(FTextLocation(0));
-
-	MessagesTextMarshaller->ClearMessages();
-	MessagesTextBox->Refresh();
-	bIsUserScrolled = false;
-}
-
-void SSpatialOutputLog::OnUserScrolled(float ScrollOffset)
-{
-	bIsUserScrolled = ScrollOffset < 1.0 && !FMath::IsNearlyEqual(ScrollOffset, 1.0f);
-}
-
-bool SSpatialOutputLog::CanClearLog() const
-{
-	return MessagesTextMarshaller->GetNumMessages() > 0;
-}
-
-void SSpatialOutputLog::OnConsoleCommandExecuted()
-{
-	RequestForceScroll();
-}
-
-void SSpatialOutputLog::RequestForceScroll()
-{
-	if (MessagesTextMarshaller->GetNumFilteredMessages() > 0)
-	{
-		MessagesTextBox->ScrollTo(FTextLocation(MessagesTextMarshaller->GetNumFilteredMessages() - 1));
-		bIsUserScrolled = false;
-	}
-}
-
-void SSpatialOutputLog::Refresh()
-{
-	// Re-count messages if filter changed before we refresh
-	MessagesTextMarshaller->CountMessages();
-
-	MessagesTextBox->GoTo(FTextLocation(0));
-	MessagesTextMarshaller->MakeDirty();
-	MessagesTextBox->Refresh();
-	RequestForceScroll();
-}
-
-void SSpatialOutputLog::OnFilterTextChanged(const FText& InFilterText)
-{
-	if (Filter.GetFilterText().ToString().Equals(InFilterText.ToString(), ESearchCase::CaseSensitive))
-	{
-		// nothing to do
-		return;
-	}
-
-	// Flag the messages count as dirty
-	MessagesTextMarshaller->MarkMessagesCacheAsDirty();
-
-	// Set filter phrases
-	Filter.SetFilterText(InFilterText);
-
-	// Report possible syntax errors back to the user
-	FilterTextBox->SetError(Filter.GetSyntaxErrors());
-
-	// Repopulate the list to show only what has not been filtered out.
-	Refresh();
-
-	// Apply the new search text
-	MessagesTextBox->BeginSearch(InFilterText);
-}
-
-void SSpatialOutputLog::OnFilterTextCommitted(const FText& InFilterText, ETextCommit::Type InCommitType)
-{
-	OnFilterTextChanged(InFilterText);
-}
-
-TSharedRef<SWidget> SSpatialOutputLog::MakeAddFilterMenu()
-{
-	FMenuBuilder MenuBuilder(/*bInShouldCloseWindowAfterMenuSelection=*/true, nullptr);
-	
-	MenuBuilder.BeginSection("OutputLogVerbosityEntries", LOCTEXT("OutputLogVerbosityHeading", "Verbosity"));
-	{
-		MenuBuilder.AddMenuEntry(
-			LOCTEXT("ShowMessages", "Messages"), 
-			LOCTEXT("ShowMessages_Tooltip", "Filter the Output Log to show messages"), 
-			FSlateIcon(), 
-			FUIAction(FExecuteAction::CreateSP(this, &SSpatialOutputLog::VerbosityLogs_Execute), 
-				FCanExecuteAction::CreateLambda([] { return true; }), 
-				FIsActionChecked::CreateSP(this, &SSpatialOutputLog::VerbosityLogs_IsChecked)), 
-			NAME_None, 
-			EUserInterfaceActionType::ToggleButton
-		);
-
-		MenuBuilder.AddMenuEntry(
-			LOCTEXT("ShowWarnings", "Warnings"), 
-			LOCTEXT("ShowWarnings_Tooltip", "Filter the Output Log to show warnings"), 
-			FSlateIcon(), 
-			FUIAction(FExecuteAction::CreateSP(this, &SSpatialOutputLog::VerbosityWarnings_Execute), 
-				FCanExecuteAction::CreateLambda([] { return true; }), 
-				FIsActionChecked::CreateSP(this, &SSpatialOutputLog::VerbosityWarnings_IsChecked)), 
-			NAME_None, 
-			EUserInterfaceActionType::ToggleButton
-		);
-
-		MenuBuilder.AddMenuEntry(
-			LOCTEXT("ShowErrors", "Errors"), 
-			LOCTEXT("ShowErrors_Tooltip", "Filter the Output Log to show errors"), 
-			FSlateIcon(), 
-			FUIAction(FExecuteAction::CreateSP(this, &SSpatialOutputLog::VerbosityErrors_Execute), 
-				FCanExecuteAction::CreateLambda([] { return true; }), 
-				FIsActionChecked::CreateSP(this, &SSpatialOutputLog::VerbosityErrors_IsChecked)), 
-			NAME_None, 
-			EUserInterfaceActionType::ToggleButton
-		);
-	}
-	MenuBuilder.EndSection();
-
-	MenuBuilder.BeginSection("OutputLogMiscEntries", LOCTEXT("OutputLogMiscHeading", "Miscellaneous"));
-	{
-		MenuBuilder.AddSubMenu(
-			LOCTEXT("Categories", "Categories"), 
-			LOCTEXT("SelectCategoriesToolTip", "Select Categories to display."), 
-			FNewMenuDelegate::CreateSP(this, &SSpatialOutputLog::MakeSelectCategoriesSubMenu)
-		);
-	}
-
-	return MenuBuilder.MakeWidget();
-}
-
-void SSpatialOutputLog::MakeSelectCategoriesSubMenu(FMenuBuilder& MenuBuilder)
-{
-	MenuBuilder.BeginSection("OutputLogCategoriesEntries");
-	{
-		MenuBuilder.AddMenuEntry(
-			LOCTEXT("ShowAllCategories", "Show All"),
-			LOCTEXT("ShowAllCategories_Tooltip", "Filter the Output Log to show all categories"),
-			FSlateIcon(),
-			FUIAction(FExecuteAction::CreateSP(this, &SSpatialOutputLog::CategoriesShowAll_Execute),
-			FCanExecuteAction::CreateLambda([] { return true; }),
-			FIsActionChecked::CreateSP(this, &SSpatialOutputLog::CategoriesShowAll_IsChecked)),
-			NAME_None,
-			EUserInterfaceActionType::ToggleButton
-		);
-		
-		for (const FName Category : Filter.GetAvailableLogCategories())
-		{
-			MenuBuilder.AddMenuEntry(
-				FText::AsCultureInvariant(Category.ToString()),
-				FText::Format(LOCTEXT("Category_Tooltip", "Filter the Output Log to show category: {0}"), FText::AsCultureInvariant(Category.ToString())),
-				FSlateIcon(),
-				FUIAction(FExecuteAction::CreateSP(this, &SSpatialOutputLog::CategoriesSingle_Execute, Category),
-				FCanExecuteAction::CreateLambda([] { return true; }),
-				FIsActionChecked::CreateSP(this, &SSpatialOutputLog::CategoriesSingle_IsChecked, Category)),
-				NAME_None,
-				EUserInterfaceActionType::ToggleButton
-			);
-		}
-	}
-	MenuBuilder.EndSection();
-}
-
-bool SSpatialOutputLog::VerbosityLogs_IsChecked() const
-{
-	return Filter.bShowLogs;
-}
-
-bool SSpatialOutputLog::VerbosityWarnings_IsChecked() const
-{
-	return Filter.bShowWarnings;
-}
-
-bool SSpatialOutputLog::VerbosityErrors_IsChecked() const
-{
-	return Filter.bShowErrors;
-}
-
-void SSpatialOutputLog::VerbosityLogs_Execute()
-{ 
-	Filter.bShowLogs = !Filter.bShowLogs;
-
-	// Flag the messages count as dirty
-	MessagesTextMarshaller->MarkMessagesCacheAsDirty();
-
-	Refresh();
-}
-
-void SSpatialOutputLog::VerbosityWarnings_Execute()
-{
-	Filter.bShowWarnings = !Filter.bShowWarnings;
-
-	// Flag the messages count as dirty
-	MessagesTextMarshaller->MarkMessagesCacheAsDirty();
-
-	Refresh();
-}
-
-void SSpatialOutputLog::VerbosityErrors_Execute()
-{
-	Filter.bShowErrors = !Filter.bShowErrors;
-
-	// Flag the messages count as dirty
-	MessagesTextMarshaller->MarkMessagesCacheAsDirty();
-
-	Refresh();
-}
-
-bool SSpatialOutputLog::CategoriesShowAll_IsChecked() const
-{
-	return Filter.bShowAllCategories;
-}
-
-bool SSpatialOutputLog::CategoriesSingle_IsChecked(FName InName) const
-{
-	return Filter.IsLogCategoryEnabled(InName);
-}
-
-void SSpatialOutputLog::CategoriesShowAll_Execute()
-{
-	Filter.bShowAllCategories = !Filter.bShowAllCategories;
-
-	Filter.ClearSelectedLogCategories();
-	if (Filter.bShowAllCategories)
-	{
-		for (const auto& AvailableCategory : Filter.GetAvailableLogCategories())
-		{
-			Filter.ToggleLogCategory(AvailableCategory);
-		}
-	}
-
-	// Flag the messages count as dirty
-	MessagesTextMarshaller->MarkMessagesCacheAsDirty();
-
-	Refresh();
-}
-
-void SSpatialOutputLog::CategoriesSingle_Execute(FName InName)
-{
-	Filter.ToggleLogCategory(InName);
-
-	// Flag the messages count as dirty
-	MessagesTextMarshaller->MarkMessagesCacheAsDirty();
-
-	Refresh();
-}
-
-bool FSpatialLogFilter::IsMessageAllowed(const TSharedPtr<FSpatialLogMessage>& Message)
-{
-	// Filter Verbosity
-	{
-		if (Message->Verbosity == ELogVerbosity::Error && !bShowErrors)
-		{
-			return false;
-		}
-
-		if (Message->Verbosity == ELogVerbosity::Warning && !bShowWarnings)
-		{
-			return false;
-		}
-
-		if (Message->Verbosity != ELogVerbosity::Error && Message->Verbosity != ELogVerbosity::Warning && !bShowLogs)
-		{
-			return false;
-		}
-	}
-
-	// Filter by Category
-	{
-		if (!IsLogCategoryEnabled(Message->Category))
-		{
-			return false;
-		}
-	}
-
-	// Filter search phrase
-	{
-		if (!TextFilterExpressionEvaluator.TestTextFilter(FLogFilter_TextFilterExpressionContext(*Message)))
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-void FSpatialLogFilter::AddAvailableLogCategory(FName& LogCategory)
-{
-	// Use an insert-sort to keep AvailableLogCategories alphabetically sorted
-	int32 InsertIndex = 0;
-	for (InsertIndex = AvailableLogCategories.Num() - 1; InsertIndex >= 0; --InsertIndex)
-	{
-		FName CheckCategory = AvailableLogCategories[InsertIndex];
-		// No duplicates
-		if (CheckCategory == LogCategory)
-		{
-			return;
-		}
-		else if (CheckCategory.Compare(LogCategory) < 0)
-		{
-			break;
-		}
-	}
-	AvailableLogCategories.Insert(LogCategory, InsertIndex + 1);
-	if (bShowAllCategories)
-	{
-		ToggleLogCategory(LogCategory);
-	}
-}
-
-void FSpatialLogFilter::ToggleLogCategory(const FName& LogCategory)
-{
-	int32 FoundIndex = SelectedLogCategories.Find(LogCategory);
-	if (FoundIndex == INDEX_NONE)
-	{
-		SelectedLogCategories.Add(LogCategory);
-	}
-	else
-	{
-		SelectedLogCategories.RemoveAt(FoundIndex, /*Count=*/1, /*bAllowShrinking=*/false);
-	}
-}
-
-bool FSpatialLogFilter::IsLogCategoryEnabled(const FName& LogCategory) const
-{
-	return SelectedLogCategories.Contains(LogCategory);
-}
-
-void FSpatialLogFilter::ClearSelectedLogCategories()
-{
-	// No need to churn memory each time the selected categories are cleared
-	SelectedLogCategories.Reset(SelectedLogCategories.GetAllocatedSize());
-}
+//void SSpatialOutputLog::Refresh()
+//{
+//	// Re-count messages if filter changed before we refresh
+//	MessagesTextMarshaller->CountMessages();
+//
+//	MessagesTextBox->GoTo(FTextLocation(0));
+//	MessagesTextMarshaller->MakeDirty();
+//	MessagesTextBox->Refresh();
+//	RequestForceScroll();
+//}
+//
+//void SSpatialOutputLog::OnFilterTextChanged(const FText& InFilterText)
+//{
+//	if (Filter.GetFilterText().ToString().Equals(InFilterText.ToString(), ESearchCase::CaseSensitive))
+//	{
+//		// nothing to do
+//		return;
+//	}
+//
+//	// Flag the messages count as dirty
+//	MessagesTextMarshaller->MarkMessagesCacheAsDirty();
+//
+//	// Set filter phrases
+//	Filter.SetFilterText(InFilterText);
+//
+//	// Report possible syntax errors back to the user
+//	FilterTextBox->SetError(Filter.GetSyntaxErrors());
+//
+//	// Repopulate the list to show only what has not been filtered out.
+//	Refresh();
+//
+//	// Apply the new search text
+//	MessagesTextBox->BeginSearch(InFilterText);
+//}
+//
+//void SSpatialOutputLog::OnFilterTextCommitted(const FText& InFilterText, ETextCommit::Type InCommitType)
+//{
+//	OnFilterTextChanged(InFilterText);
+//}
+//
+//TSharedRef<SWidget> SSpatialOutputLog::MakeAddFilterMenu()
+//{
+//	FMenuBuilder MenuBuilder(/*bInShouldCloseWindowAfterMenuSelection=*/true, nullptr);
+//	
+//	MenuBuilder.BeginSection("OutputLogVerbosityEntries", LOCTEXT("OutputLogVerbosityHeading", "Verbosity"));
+//	{
+//		MenuBuilder.AddMenuEntry(
+//			LOCTEXT("ShowMessages", "Messages"), 
+//			LOCTEXT("ShowMessages_Tooltip", "Filter the Output Log to show messages"), 
+//			FSlateIcon(), 
+//			FUIAction(FExecuteAction::CreateSP(this, &SSpatialOutputLog::VerbosityLogs_Execute), 
+//				FCanExecuteAction::CreateLambda([] { return true; }), 
+//				FIsActionChecked::CreateSP(this, &SSpatialOutputLog::VerbosityLogs_IsChecked)), 
+//			NAME_None, 
+//			EUserInterfaceActionType::ToggleButton
+//		);
+//
+//		MenuBuilder.AddMenuEntry(
+//			LOCTEXT("ShowWarnings", "Warnings"), 
+//			LOCTEXT("ShowWarnings_Tooltip", "Filter the Output Log to show warnings"), 
+//			FSlateIcon(), 
+//			FUIAction(FExecuteAction::CreateSP(this, &SSpatialOutputLog::VerbosityWarnings_Execute), 
+//				FCanExecuteAction::CreateLambda([] { return true; }), 
+//				FIsActionChecked::CreateSP(this, &SSpatialOutputLog::VerbosityWarnings_IsChecked)), 
+//			NAME_None, 
+//			EUserInterfaceActionType::ToggleButton
+//		);
+//
+//		MenuBuilder.AddMenuEntry(
+//			LOCTEXT("ShowErrors", "Errors"), 
+//			LOCTEXT("ShowErrors_Tooltip", "Filter the Output Log to show errors"), 
+//			FSlateIcon(), 
+//			FUIAction(FExecuteAction::CreateSP(this, &SSpatialOutputLog::VerbosityErrors_Execute), 
+//				FCanExecuteAction::CreateLambda([] { return true; }), 
+//				FIsActionChecked::CreateSP(this, &SSpatialOutputLog::VerbosityErrors_IsChecked)), 
+//			NAME_None, 
+//			EUserInterfaceActionType::ToggleButton
+//		);
+//	}
+//	MenuBuilder.EndSection();
+//
+//	MenuBuilder.BeginSection("OutputLogMiscEntries", LOCTEXT("OutputLogMiscHeading", "Miscellaneous"));
+//	{
+//		MenuBuilder.AddSubMenu(
+//			LOCTEXT("Categories", "Categories"), 
+//			LOCTEXT("SelectCategoriesToolTip", "Select Categories to display."), 
+//			FNewMenuDelegate::CreateSP(this, &SSpatialOutputLog::MakeSelectCategoriesSubMenu)
+//		);
+//	}
+//
+//	return MenuBuilder.MakeWidget();
+//}
+//
+//void SSpatialOutputLog::MakeSelectCategoriesSubMenu(FMenuBuilder& MenuBuilder)
+//{
+//	MenuBuilder.BeginSection("OutputLogCategoriesEntries");
+//	{
+//		MenuBuilder.AddMenuEntry(
+//			LOCTEXT("ShowAllCategories", "Show All"),
+//			LOCTEXT("ShowAllCategories_Tooltip", "Filter the Output Log to show all categories"),
+//			FSlateIcon(),
+//			FUIAction(FExecuteAction::CreateSP(this, &SSpatialOutputLog::CategoriesShowAll_Execute),
+//			FCanExecuteAction::CreateLambda([] { return true; }),
+//			FIsActionChecked::CreateSP(this, &SSpatialOutputLog::CategoriesShowAll_IsChecked)),
+//			NAME_None,
+//			EUserInterfaceActionType::ToggleButton
+//		);
+//		
+//		for (const FName Category : Filter.GetAvailableLogCategories())
+//		{
+//			MenuBuilder.AddMenuEntry(
+//				FText::AsCultureInvariant(Category.ToString()),
+//				FText::Format(LOCTEXT("Category_Tooltip", "Filter the Output Log to show category: {0}"), FText::AsCultureInvariant(Category.ToString())),
+//				FSlateIcon(),
+//				FUIAction(FExecuteAction::CreateSP(this, &SSpatialOutputLog::CategoriesSingle_Execute, Category),
+//				FCanExecuteAction::CreateLambda([] { return true; }),
+//				FIsActionChecked::CreateSP(this, &SSpatialOutputLog::CategoriesSingle_IsChecked, Category)),
+//				NAME_None,
+//				EUserInterfaceActionType::ToggleButton
+//			);
+//		}
+//	}
+//	MenuBuilder.EndSection();
+//}
+//
+//bool SSpatialOutputLog::VerbosityLogs_IsChecked() const
+//{
+//	return Filter.bShowLogs;
+//}
+//
+//bool SSpatialOutputLog::VerbosityWarnings_IsChecked() const
+//{
+//	return Filter.bShowWarnings;
+//}
+//
+//bool SSpatialOutputLog::VerbosityErrors_IsChecked() const
+//{
+//	return Filter.bShowErrors;
+//}
+//
+//void SSpatialOutputLog::VerbosityLogs_Execute()
+//{ 
+//	Filter.bShowLogs = !Filter.bShowLogs;
+//
+//	// Flag the messages count as dirty
+//	MessagesTextMarshaller->MarkMessagesCacheAsDirty();
+//
+//	Refresh();
+//}
+//
+//void SSpatialOutputLog::VerbosityWarnings_Execute()
+//{
+//	Filter.bShowWarnings = !Filter.bShowWarnings;
+//
+//	// Flag the messages count as dirty
+//	MessagesTextMarshaller->MarkMessagesCacheAsDirty();
+//
+//	Refresh();
+//}
+//
+//void SSpatialOutputLog::VerbosityErrors_Execute()
+//{
+//	Filter.bShowErrors = !Filter.bShowErrors;
+//
+//	// Flag the messages count as dirty
+//	MessagesTextMarshaller->MarkMessagesCacheAsDirty();
+//
+//	Refresh();
+//}
+//
+//bool SSpatialOutputLog::CategoriesShowAll_IsChecked() const
+//{
+//	return Filter.bShowAllCategories;
+//}
+//
+//bool SSpatialOutputLog::CategoriesSingle_IsChecked(FName InName) const
+//{
+//	return Filter.IsLogCategoryEnabled(InName);
+//}
+//
+//void SSpatialOutputLog::CategoriesShowAll_Execute()
+//{
+//	Filter.bShowAllCategories = !Filter.bShowAllCategories;
+//
+//	Filter.ClearSelectedLogCategories();
+//	if (Filter.bShowAllCategories)
+//	{
+//		for (const auto& AvailableCategory : Filter.GetAvailableLogCategories())
+//		{
+//			Filter.ToggleLogCategory(AvailableCategory);
+//		}
+//	}
+//
+//	// Flag the messages count as dirty
+//	MessagesTextMarshaller->MarkMessagesCacheAsDirty();
+//
+//	Refresh();
+//}
+//
+//void SSpatialOutputLog::CategoriesSingle_Execute(FName InName)
+//{
+//	Filter.ToggleLogCategory(InName);
+//
+//	// Flag the messages count as dirty
+//	MessagesTextMarshaller->MarkMessagesCacheAsDirty();
+//
+//	Refresh();
+//}
+//
+//bool FLogFilter::IsMessageAllowed(const TSharedPtr<FLogMessage>& Message)
+//{
+//	// Filter Verbosity
+//	{
+//		if (Message->Verbosity == ELogVerbosity::Error && !bShowErrors)
+//		{
+//			return false;
+//		}
+//
+//		if (Message->Verbosity == ELogVerbosity::Warning && !bShowWarnings)
+//		{
+//			return false;
+//		}
+//
+//		if (Message->Verbosity != ELogVerbosity::Error && Message->Verbosity != ELogVerbosity::Warning && !bShowLogs)
+//		{
+//			return false;
+//		}
+//	}
+//
+//	// Filter by Category
+//	{
+//		if (!IsLogCategoryEnabled(Message->Category))
+//		{
+//			return false;
+//		}
+//	}
+//
+//	// Filter search phrase
+//	{
+//		if (!TextFilterExpressionEvaluator.TestTextFilter(FLogFilter_TextFilterExpressionContext(*Message)))
+//		{
+//			return false;
+//		}
+//	}
+//
+//	return true;
+//}
+//
+//void FLogFilter::AddAvailableLogCategory(FName& LogCategory)
+//{
+//	// Use an insert-sort to keep AvailableLogCategories alphabetically sorted
+//	int32 InsertIndex = 0;
+//	for (InsertIndex = AvailableLogCategories.Num() - 1; InsertIndex >= 0; --InsertIndex)
+//	{
+//		FName CheckCategory = AvailableLogCategories[InsertIndex];
+//		// No duplicates
+//		if (CheckCategory == LogCategory)
+//		{
+//			return;
+//		}
+//		else if (CheckCategory.Compare(LogCategory) < 0)
+//		{
+//			break;
+//		}
+//	}
+//	AvailableLogCategories.Insert(LogCategory, InsertIndex + 1);
+//	if (bShowAllCategories)
+//	{
+//		ToggleLogCategory(LogCategory);
+//	}
+//}
+//
+//void FLogFilter::ToggleLogCategory(const FName& LogCategory)
+//{
+//	int32 FoundIndex = SelectedLogCategories.Find(LogCategory);
+//	if (FoundIndex == INDEX_NONE)
+//	{
+//		SelectedLogCategories.Add(LogCategory);
+//	}
+//	else
+//	{
+//		SelectedLogCategories.RemoveAt(FoundIndex, /*Count=*/1, /*bAllowShrinking=*/false);
+//	}
+//}
+//
+//bool FLogFilter::IsLogCategoryEnabled(const FName& LogCategory) const
+//{
+//	return SelectedLogCategories.Contains(LogCategory);
+//}
+//
+//void FLogFilter::ClearSelectedLogCategories()
+//{
+//	// No need to churn memory each time the selected categories are cleared
+//	SelectedLogCategories.Reset(SelectedLogCategories.GetAllocatedSize());
+//}
 
 #undef LOCTEXT_NAMESPACE
