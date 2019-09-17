@@ -30,4 +30,6 @@ Before porting your project you _**must**_ follow:
 
 <br/>
 
-<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>
+<br/>------------<br/>
+2019-09-17 Page updated without editorial review - removal of ShooterGame reference.<br/>
+2019-07-16 Page updated with editorial review.<br/>
