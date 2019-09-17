@@ -1095,9 +1095,14 @@ bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& O
 
 void USpatialSender::UpdateInterestComponent(AActor* Actor)
 {
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return;
+	}
+
 	InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), NetDriver->ClassInfoManager, NetDriver->PackageMap);
 	Worker_ComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
 
-	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
