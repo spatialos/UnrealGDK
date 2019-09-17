@@ -22,6 +22,7 @@
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
+#include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ActorGroupManager.h"
@@ -123,6 +124,13 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
+
+	const bool bIsStartupActor = Actor->IsNetStartupActor() && Actor->GetIsReplicated();
+
+	if (bIsStartupActor)
+	{
+		ComponentWriteAcl.Add(SpatialConstants::TOMBSTONE_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	}
 
 	// If there are pending RPCs, add this component.
 	if (OutgoingOnCreateEntityRPCs.Contains(Actor))
@@ -250,6 +258,11 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(ClientRPCEndpoint().CreateRPCEndpointData());
 	ComponentDatas.Add(ServerRPCEndpoint().CreateRPCEndpointData());
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
+
+	if (bIsStartupActor)
+	{
+		ComponentDatas.Add(Tombstone().CreateTombstoneData());
+	}
 
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
@@ -888,7 +901,24 @@ void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)
 
 void USpatialSender::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
-	Connection->SendDeleteEntityRequest(EntityId);
+	const AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId).Get());
+
+	if (Actor && Actor->IsNetStartupActor() && Actor->GetIsReplicated())
+	{
+		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
+		Receiver->RemoveActor(EntityId);
+
+		check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID));
+		Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(EntityId);
+		TombstoneComponent->bIsDead = true;
+
+		Worker_ComponentUpdate ComponentUpdate = TombstoneComponent->CreateTombstoneUpdate();
+		NetDriver->Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+	}
+	else
+	{
+		Connection->SendDeleteEntityRequest(EntityId);
+	}
 }
 
 void USpatialSender::SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId)

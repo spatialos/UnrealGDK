@@ -22,6 +22,7 @@
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerRPCEndpoint.h"
 #include "Schema/SpawnData.h"
+#include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
@@ -123,6 +124,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -1101,7 +1103,21 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 		HandleRPC(Op);
 		return;
+	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
+		Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id);
+		if (TombstoneComponent->bIsDead)
+		{
+			RemoveActor(Op.entity_id);
+			return;
+		}
 	}
+
+	// If this entity has a Tombstone component marked dead, abort all component processing
+	//Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id);
+	//if (TombstoneComponent && TombstoneComponent->bIsDead)
+	//{
+	//	return;
+	//}
 
 	if (ClassInfoManager->IsSublevelComponent(Op.update.component_id))
 	{

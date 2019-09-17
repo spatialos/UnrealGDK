@@ -114,6 +114,7 @@ namespace SpatialConstants
 	const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
 	const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
 	const Worker_ComponentId ALWAYS_RELEVANT_COMPONENT_ID					= 9983;
+	const Worker_ComponentId TOMBSTONE_COMPONENT_ID                         = 9982;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -166,6 +167,9 @@ namespace SpatialConstants
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID						= 1;
 
 	const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
+
+	// Tombstone Field IDs
+	const Schema_FieldId TOMBSTONE_ISDEAD_ID								= 1;
 
 	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
