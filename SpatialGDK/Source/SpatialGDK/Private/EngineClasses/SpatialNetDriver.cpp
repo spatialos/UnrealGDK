@@ -843,7 +843,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			// Check actor relevancy if Net Relevancy is enabled in the GDK settings
 			if (bNetRelevancyEnabled && !IsActorRelevantToConnection(Actor, Channel, ConnectionViewers))
 			{
-				// If not relevant (and we don't have a channel), skip
+				// Early out and do not replicate if actor is not relevant
 				continue;
 			}
 
