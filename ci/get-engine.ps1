@@ -1,6 +1,8 @@
 param(
-  [string] $engine_cache_directory = "UnrealEngine-Cache",
-  [string] $unreal_path = "$($gdk_home)\UnrealEngine"
+  [string] $unreal_path = "$($gdk_home)\UnrealEngine",
+  # Note: this directory is soutside the build directory and will not get automatically cleaned up from agents unless agents are restarted.
+  [string] $engine_cache_path = "$gdk_home\..\..\..",
+  [string] $engine_cache_folder = "UnrealEngine-Cache"
 )
 
 pushd "$($gdk_home)"
@@ -20,8 +22,8 @@ pushd "$($gdk_home)"
 
 
     ## Create an UnrealEngine-Cache directory if it doesn't already exist.
-    # This directory does not get cleaned up from agents after builds (this is defined in .buildkite/premerge.steps.yaml)
-    New-Item -Name $engine_cache_directory -ItemType Directory -Force
+    New-Item -Path $engine_cache_path -Name $engine_cache_folder -ItemType Directory -Force
+    $engine_cache_directory = "$engine_cache_path\$engine_cache_folder"
 
     pushd $engine_cache_directory
         Start-Event "download-unreal-engine" "get-unreal-engine"
@@ -68,6 +70,7 @@ pushd "$($gdk_home)"
     Start-Event "installing-unreal-engine-prerequisites" "get-unreal-engine"
         # This runs an opaque exe downloaded in the previous step that does *some stuff* that UE needs to occur.
         # Trapping error codes on this is tricky, because it doesn't always return 0 on success, and frankly, we just don't know what it _will_ return.
+        # Note: this fails to install .NET framework, but it's probably fine, as it's set up on Unreal build agents already (check gdk-for-unreal.build-capability/roles/gdk_for_unreal_choco/tasks/Windows.yml)
         Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($unreal_path)/Engine/Extras/Redist/en-us/UE4PrereqSetup_x64.exe" -ArgumentList @(`
             "/quiet" `
         )
