@@ -43,11 +43,20 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 		// Watch the worker config directory for changes.
 		StartUpWorkerConfigDirectoryWatcher();
 
-		// Restart the spatial service so it is guaranteed to be running in the current project.
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 		{
+			// Stop existing spatial service to guarantee that any new existing spatial service would be running in the current project.
 			TryStopSpatialService();
-			TryStartSpatialService();
+
+			// Start spatial service in the current project if spatial networking is enabled
+			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+			{
+				TryStartSpatialService();
+			}
+			else
+			{
+				UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("SpatialOS deployment not started because spatial networking is disabled."));
+			}
 
 			// Ensure we have an up to date state of the spatial service and local deployment.
 			RefreshServiceStatus();
