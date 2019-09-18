@@ -2,6 +2,7 @@
 
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
+#include "SpatialGDKEditorCloudDebugger.h"
 
 class FSpatialGDKEditorModule : public IModuleInterface
 {
@@ -20,4 +21,6 @@ private:
 	bool HandleEditorSettingsSaved();
 	bool HandleRuntimeSettingsSaved();
 	bool HandleCloudLauncherSettingsSaved();
+
+	FSpatialGDKEditorCloudDebugger CloudDebugger;
 };

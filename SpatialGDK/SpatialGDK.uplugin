@@ -60,6 +60,10 @@
     {
       "Name": "GameplayAbilities",
       "Enabled": true
+    },
+    {
+      "Name": "TcpMessaging",
+      "Enabled": true
     }
   ]
 }
