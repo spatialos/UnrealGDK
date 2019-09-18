@@ -13,14 +13,20 @@ class USpatialNetDriver;
 namespace SpatialGDK
 {
 
-class SpatialFastArrayNetSerializeCB : public INetSerializeCB
-{
-public:
-	SpatialFastArrayNetSerializeCB(USpatialNetDriver* InNetDriver)
-		: NetDriver(InNetDriver)
-	{ }
+	class SpatialFastArrayNetSerializeCB : public INetSerializeCB
+	{
+	public:
+		SpatialFastArrayNetSerializeCB(USpatialNetDriver* InNetDriver)
+			: NetDriver(InNetDriver)
+		{ }
 
-	virtual void NetSerializeStruct(UScriptStruct* Struct, FBitArchive& Ar, UPackageMap* PackageMap, void* Data, bool& bHasUnmapped);
+		virtual void NetSerializeStruct(FNetDeltaSerializeInfo& Params);
+
+		//TODO: Look at whether we need to implement these
+		virtual void GatherGuidReferencesForFastArray(struct FFastArrayDeltaSerializeParams& Params) {};
+		virtual bool MoveGuidToUnmappedForFastArray(struct FFastArrayDeltaSerializeParams& Params) { return false; };
+		virtual void UpdateUnmappedGuidsForFastArray(struct FFastArrayDeltaSerializeParams& Params) {};
+		virtual bool NetDeltaSerializeForFastArray(struct FFastArrayDeltaSerializeParams& Params) { return false; };
 
 private:
 	USpatialNetDriver* NetDriver;

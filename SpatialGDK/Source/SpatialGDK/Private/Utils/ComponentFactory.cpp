@@ -36,7 +36,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 	if (Changes.RepChanged.Num() > 0)
 	{
 		FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
-		FRepHandleIterator HandleIterator(ChangelistIterator, Changes.RepLayout.Cmds, Changes.RepLayout.BaseHandleToCmdIndex, 0, 1, 0, Changes.RepLayout.Cmds.Num() - 1);
+		FRepHandleIterator HandleIterator(Object->GetClass(), ChangelistIterator, Changes.RepLayout.Cmds, Changes.RepLayout.BaseHandleToCmdIndex, 0, 1, 0, Changes.RepLayout.Cmds.Num() - 1);
 		while (HandleIterator.NextHandle())
 		{
 			const FRepLayoutCmd& Cmd = Changes.RepLayout.Cmds[HandleIterator.CmdIndex];

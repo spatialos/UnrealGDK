@@ -41,32 +41,32 @@ namespace
 // In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
 void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 {
-	check(RepState->HistoryEnd >= RepState->HistoryStart);
+	check(RepState->GetSendingRepState()->HistoryEnd >= RepState->GetSendingRepState()->HistoryStart);
 
-	const int32 HistoryCount = RepState->HistoryEnd - RepState->HistoryStart;
-	check(HistoryCount < FRepState::MAX_CHANGE_HISTORY);
+	const int32 HistoryCount = RepState->GetSendingRepState()->HistoryEnd - RepState->GetSendingRepState()->HistoryStart;
+	check(HistoryCount < FSendingRepState::MAX_CHANGE_HISTORY);
 
-	for (int32 i = RepState->HistoryStart; i < RepState->HistoryEnd; i++)
+	for (int32 i = RepState->GetSendingRepState()->HistoryStart; i < RepState->GetSendingRepState()->HistoryEnd; i++)
 	{
-		const int32 HistoryIndex = i % FRepState::MAX_CHANGE_HISTORY;
+		const int32 HistoryIndex = i % FSendingRepState::MAX_CHANGE_HISTORY;
 
-		FRepChangedHistory & HistoryItem = RepState->ChangeHistory[HistoryIndex];
+		FRepChangedHistory & HistoryItem = RepState->GetSendingRepState()->ChangeHistory[HistoryIndex];
 
 		// All active history items should contain a change list
 		check(HistoryItem.Changed.Num() > 0);
 
 		HistoryItem.Changed.Empty();
 		HistoryItem.OutPacketIdRange = FPacketIdRange();
-		RepState->HistoryStart++;
+		RepState->GetSendingRepState()->HistoryStart++;
 	}
 
 	// Remove any tiling in the history markers to keep them from wrapping over time
-	const int32 NewHistoryCount = RepState->HistoryEnd - RepState->HistoryStart;
+	const int32 NewHistoryCount = RepState->GetSendingRepState()->HistoryEnd - RepState->GetSendingRepState()->HistoryStart;
 
-	check(NewHistoryCount <= FRepState::MAX_CHANGE_HISTORY);
+	check(NewHistoryCount <= FSendingRepState::MAX_CHANGE_HISTORY);
 
-	RepState->HistoryStart = RepState->HistoryStart % FRepState::MAX_CHANGE_HISTORY;
-	RepState->HistoryEnd = RepState->HistoryStart + NewHistoryCount;
+	RepState->GetSendingRepState()->HistoryStart = RepState->GetSendingRepState()->HistoryStart % FSendingRepState::MAX_CHANGE_HISTORY;
+	RepState->GetSendingRepState()->HistoryEnd = RepState->GetSendingRepState()->HistoryStart + NewHistoryCount;
 }
 }
 
@@ -221,13 +221,15 @@ void USpatialActorChannel::UpdateShadowData()
 	}
 
 	// Refresh shadow data when crossing over servers to prevent stale/out-of-date data.
-	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
+	//TODO: Needs a replacement for InitShadowData
+	//ActorReplicator->RepLayout->InitShadowData(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
 
 	// Refresh the shadow data for all replicated components of this actor as well.
 	for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
 	{
 		FObjectReplicator& ComponentReplicator = FindOrCreateReplicator(ActorComponent).Get();
-		ComponentReplicator.RepLayout->InitShadowData(ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, ActorComponent->GetClass(), (uint8*)ActorComponent);
+		//TODO: Needs a replacement for InitShadowData
+		//ComponentReplicator.RepLayout->InitShadowData(ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, ActorComponent->GetClass(), (uint8*)ActorComponent);
 	}
 }
 
@@ -382,14 +384,14 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
-	ActorReplicator->ChangelistMgr->Update(ActorReplicator->RepState.Get(), Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
+	ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr, Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 
-	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
-	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
+	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->GetSendingRepState()->HistoryEnd % FSendingRepState::MAX_CHANGE_HISTORY;
+	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->GetSendingRepState()->ChangeHistory[PossibleNewHistoryIndex];
 	TArray<uint16>& RepChanged = PossibleNewHistoryItem.Changed;
 
 	// Gather all change lists that are new since we last looked, and merge them all together into a single CL
-	for (int32 i = ActorReplicator->RepState->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
+	for (int32 i = ActorReplicator->RepState->GetSendingRepState()->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
 	{
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
@@ -405,7 +407,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
+	ActorReplicator->RepState->GetSendingRepState()->LastCompareIndex = ChangelistState->CompareIndex;
 
 	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
@@ -443,7 +445,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 		if (RepChanged.Num() > 0)
 		{
-			ActorReplicator->RepState->HistoryEnd++;
+			ActorReplicator->RepState->GetSendingRepState()->HistoryEnd++;
 		}
 	}
 
@@ -462,7 +464,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		--FramesTillDormancyAllowed;
 	}
 
-	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+	ActorReplicator->RepState->GetSendingRepState()->LastChangelistIndex = ChangelistState->HistoryEnd;
 	ActorReplicator->RepState->OpenAckedCalled = true;
 	ActorReplicator->bLastUpdateEmpty = 1;
 
@@ -656,14 +658,14 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	}
 
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
-	Replicator.ChangelistMgr->Update(Replicator.RepState.Get(), Object, Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
+	Replicator.RepLayout->UpdateChangelistMgr(Replicator.RepState->GetSendingRepState(), *Replicator.ChangelistMgr, Object, Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 
-	const int32 PossibleNewHistoryIndex = Replicator.RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
-	FRepChangedHistory& PossibleNewHistoryItem = Replicator.RepState->ChangeHistory[PossibleNewHistoryIndex];
+	const int32 PossibleNewHistoryIndex = Replicator.RepState->GetSendingRepState()->HistoryEnd % FSendingRepState::MAX_CHANGE_HISTORY;
+	FRepChangedHistory& PossibleNewHistoryItem = Replicator.RepState->GetSendingRepState()->ChangeHistory[PossibleNewHistoryIndex];
 	TArray<uint16>& RepChanged = PossibleNewHistoryItem.Changed;
 
 	// Gather all change lists that are new since we last looked, and merge them all together into a single CL
-	for (int32 i = Replicator.RepState->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
+	for (int32 i = Replicator.RepState->GetSendingRepState()->LastChangelistIndex; i < ChangelistState->HistoryEnd; i++)
 	{
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
@@ -679,7 +681,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		}
 	}
 
-	Replicator.RepState->LastCompareIndex = ChangelistState->CompareIndex;
+	Replicator.RepState->GetSendingRepState()->LastCompareIndex = ChangelistState->CompareIndex;
 
 	if (RepChanged.Num() > 0)
 	{
@@ -695,11 +697,11 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
 		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr);
 
-		Replicator.RepState->HistoryEnd++;
+		Replicator.RepState->GetSendingRepState()->HistoryEnd++;
 	}
 
 	UpdateChangelistHistory(Replicator.RepState);
-	Replicator.RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+	Replicator.RepState->GetSendingRepState()->LastChangelistIndex = ChangelistState->HistoryEnd;
 	Replicator.RepState->OpenAckedCalled = true;
 	Replicator.bLastUpdateEmpty = 1;
 
@@ -819,9 +821,9 @@ FHandoverChangeState USpatialActorChannel::GetHandoverChangeList(TArray<uint8>& 
 	return HandoverChanged;
 }
 
-void USpatialActorChannel::SetChannelActor(AActor* InActor)
+void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlags Flags)
 {
-	Super::SetChannelActor(InActor);
+	Super::SetChannelActor(InActor, Flags);
 	
 	USpatialPackageMapClient* PackageMap = NetDriver->PackageMap;
 	EntityId = PackageMap->GetEntityIdFromObject(InActor);
@@ -902,7 +904,8 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PreNetReceive();
-	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
+	//TODO: Needs a replacement for InitShadowData
+	//Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
 
 	return &Replicator;
 }
@@ -912,7 +915,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
 
-	Replicator.RepState->RepNotifies = RepNotifies;
+	Replicator.RepState->GetReceivingRepState()->RepNotifies = RepNotifies;
 
 	Replicator.CallRepNotifies(false);
 

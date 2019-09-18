@@ -106,7 +106,7 @@ public:
 	FORCEINLINE FRepStateStaticBuffer& GetObjectStaticBuffer(UObject* Object)
 	{
 		check(ObjectHasReplicator(Object));
-		return FindOrCreateReplicator(Object)->RepState->StaticBuffer;
+		return FindOrCreateReplicator(Object)->RepState->GetReceivingRepState()->StaticBuffer;
 	}
 
 	// Begin UChannel interface
@@ -116,7 +116,7 @@ public:
 
 	// Begin UActorChannel inteface
 	virtual int64 ReplicateActor() override;
-	virtual void SetChannelActor(AActor* InActor) override;
+	virtual void SetChannelActor(AActor* InActor, ESetChannelActorFlags Flags) override;
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 	virtual bool ReadyForDormancy(bool suppressLogs = false) override;
 	// End UActorChannel interface

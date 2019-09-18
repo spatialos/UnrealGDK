@@ -1900,7 +1900,7 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 		}
 		else
 		{
-			Channel->SetChannelActor(Actor);
+			Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
 		}
 	}
 
