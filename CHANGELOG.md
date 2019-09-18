@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Visual Studio 2019 is now supported.
 - Added toolbar and commandlet options to delete the schema database.
 - Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
+- Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
 
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
