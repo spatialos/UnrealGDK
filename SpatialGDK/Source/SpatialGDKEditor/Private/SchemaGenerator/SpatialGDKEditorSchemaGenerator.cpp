@@ -799,7 +799,7 @@ bool SpatialGDKGenerateSchemaForClasses(const TSet<UClass*>& Classes)
 				}
 			}
 			return true;
-		}, true);
+		});
 	}
 
 	if (!ValidateIdentifierNames(TypeInfos))

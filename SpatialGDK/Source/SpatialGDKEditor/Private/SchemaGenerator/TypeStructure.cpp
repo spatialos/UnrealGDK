@@ -24,18 +24,15 @@ FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 	return Group == REP_SingleClient ? TEXT("OwnerOnly") : TEXT("");
 }
 
-void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects)
+void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor)
 {
 	bool bShouldRecurseFurther = Visitor(TypeNode);
 	for (auto& PropertyPair : TypeNode->Properties)
 	{
 		if (bShouldRecurseFurther && PropertyPair.Value->Type.IsValid())
 		{
-			// Either recurse into subobjects if they're structs or bRecurseIntoSubobjects is true.	
-			if (bRecurseIntoSubobjects || PropertyPair.Value->Property->IsA<UStructProperty>())
-			{
-				VisitAllObjects(PropertyPair.Value->Type, Visitor, bRecurseIntoSubobjects);
-			}
+			// Recurse into subobjects.
+			VisitAllObjects(PropertyPair.Value->Type, Visitor);
 		}
 	}
 }
