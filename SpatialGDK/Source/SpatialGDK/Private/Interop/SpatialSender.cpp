@@ -202,9 +202,13 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(Position(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
-	ComponentDatas.Add(Persistence().CreatePersistenceData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
+
+	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
+	{
+		ComponentDatas.Add(Persistence().CreatePersistenceData());
+	}
 
 	if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
 	{
