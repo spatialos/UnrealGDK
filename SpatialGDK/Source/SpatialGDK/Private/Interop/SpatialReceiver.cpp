@@ -1104,14 +1104,8 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
-		if (const Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id))
-		{
-			if (TombstoneComponent->bIsDead)
-			{
-				RemoveActor(Op.entity_id);
-				return;
-			}
-		}
+		OnTombstoneComponentUpdate(Op);
+		return;
 	}
 
 	// If this entity has a Tombstone component marked dead, abort all component processing
@@ -1997,5 +1991,18 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 		// Client has disconnected, let's clean up their connection.
 		NetConnection->CleanUp();
 		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
+	}
+}
+
+void USpatialReceiver::OnTombstoneComponentUpdate(const Worker_ComponentUpdateOp& Op)
+{
+	const Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
+
+	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID) == 1)
+	{
+		if (GetBoolFromSchema(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID))
+		{
+			RemoveActor(Op.entity_id);
+		}
 	}
 }
