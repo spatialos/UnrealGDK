@@ -129,7 +129,6 @@ private:
 
 	TArray<Worker_InterestOverride> CreateComponentInterestForActor(USpatialActorChannel* Channel, bool bIsNetOwned);
 
-
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
