@@ -55,7 +55,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 			}
 			else
 			{
-				UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("SpatialOS deployment not started because spatial networking is disabled."));
+				UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("SpatialOS daemon not started because spatial networking is disabled."));
 			}
 
 			// Ensure we have an up to date state of the spatial service and local deployment.
