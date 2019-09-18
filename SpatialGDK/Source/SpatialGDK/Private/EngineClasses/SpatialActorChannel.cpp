@@ -133,7 +133,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		}
 		else
 		{
-			Sender->SendDeleteEntityRequest(EntityId);
+			Sender->RequestEntityDeletion(EntityId);
 		}
 	}
 

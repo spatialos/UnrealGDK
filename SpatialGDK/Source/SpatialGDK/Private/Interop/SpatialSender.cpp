@@ -899,28 +899,6 @@ void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
-void USpatialSender::SendDeleteEntityRequest(Worker_EntityId EntityId)
-{
-	const AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId).Get());
-
-	if (Actor && Actor->IsNetStartupActor() && Actor->GetIsReplicated())
-	{
-		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
-		Receiver->RemoveActor(EntityId);
-
-		check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID));
-		Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(EntityId);
-		TombstoneComponent->bIsDead = true;
-
-		Worker_ComponentUpdate ComponentUpdate = TombstoneComponent->CreateTombstoneUpdate();
-		NetDriver->Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
-	}
-	else
-	{
-		Connection->SendDeleteEntityRequest(EntityId);
-	}
-}
-
 void USpatialSender::SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId)
 {
 	Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
@@ -1130,4 +1108,34 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 
 	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	Connection->SendComponentUpdate(EntityId, &Update);
+}
+
+void USpatialSender::RequestEntityDeletion(const Worker_EntityId EntityId, const bool bForceDelete /* = false */)
+{
+	const AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId).Get());
+
+	if (Actor &&
+		Actor->IsNetStartupActor() &&
+		Actor->GetIsReplicated() &&
+		bForceDelete == false)
+	{
+		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
+		MarkEntityTombstone(EntityId);
+	}
+	else
+	{
+		Connection->SendDeleteEntityRequest(EntityId);
+	}
+}
+
+void USpatialSender::MarkEntityTombstone(const Worker_EntityId EntityId)
+{
+	Receiver->RemoveActor(EntityId);
+
+	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID));
+	Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(EntityId);
+	TombstoneComponent->bIsDead = true;
+
+	Worker_ComponentUpdate ComponentUpdate = TombstoneComponent->CreateTombstoneUpdate();
+	NetDriver->Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 }

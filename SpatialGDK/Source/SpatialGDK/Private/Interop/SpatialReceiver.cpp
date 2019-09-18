@@ -343,7 +343,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 				else
 				{
 					UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to delete it earlier, when it had no authority. Retrying to delete now."), *Actor->GetName(), Op.entity_id);
-					Sender->SendDeleteEntityRequest(Op.entity_id);
+					Sender->RequestEntityDeletion(Op.entity_id);
 				}
 			}
 			else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
@@ -1104,20 +1104,25 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
-		Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id);
-		if (TombstoneComponent->bIsDead)
+		if (const Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id))
 		{
-			RemoveActor(Op.entity_id);
-			return;
+			if (TombstoneComponent->bIsDead)
+			{
+				RemoveActor(Op.entity_id);
+				return;
+			}
 		}
 	}
 
 	// If this entity has a Tombstone component marked dead, abort all component processing
-	//Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id);
-	//if (TombstoneComponent && TombstoneComponent->bIsDead)
-	//{
-	//	return;
-	//}
+	if (const Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id))
+	{
+		if (TombstoneComponent->bIsDead)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Received component update for Entity: %lld Component: %d after tombstone marked dead.  Aborting update."), Op.entity_id, Op.update.component_id);
+			return;
+		}
+	}
 
 	if (ClassInfoManager->IsSublevelComponent(Op.update.component_id))
 	{

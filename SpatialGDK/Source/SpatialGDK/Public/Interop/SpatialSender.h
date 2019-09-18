@@ -83,7 +83,7 @@ public:
 	void SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
-	void SendDeleteEntityRequest(Worker_EntityId EntityId);
+	void RequestEntityDeletion(const Worker_EntityId EntityId, const bool bForceDelete = false);
 
 	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
@@ -117,6 +117,8 @@ private:
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
 	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
 
+	void MarkEntityTombstone(const Worker_EntityId EntityId);
+
 	// RPC Construction
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId) const;
 
@@ -126,6 +128,7 @@ private:
 	ERPCResult AddPendingRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId RPCIndext);
 
 	TArray<Worker_InterestOverride> CreateComponentInterestForActor(USpatialActorChannel* Channel, bool bIsNetOwned);
+
 
 private:
 	UPROPERTY()

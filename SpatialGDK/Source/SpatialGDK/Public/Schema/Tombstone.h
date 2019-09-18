@@ -2,14 +2,8 @@
 
 #pragma once
 
-#include "GameFramework/Actor.h"
-#include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Component.h"
-#include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
-#include "UObject/Package.h"
-#include "UObject/UObjectHash.h"
-#include "Utils/SchemaUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -25,27 +19,27 @@ struct Tombstone : Component
 
 	Tombstone(const Worker_ComponentData& Data)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		const Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		if (Schema_GetBoolCount(ComponentObject, 1) == 1)
+		if (Schema_GetBoolCount(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID) == 1)
 		{
 			bIsDead = GetBoolFromSchema(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID);
 		}
 	}
 
-	Worker_ComponentData CreateTombstoneData()
+	Worker_ComponentData CreateTombstoneData() const
 	{
-		Worker_ComponentData Data = {};
-		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Worker_ComponentData ComponentData = {};
+		ComponentData.component_id = ComponentId;
+		ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
 		Schema_AddBool(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID, bIsDead);
 
-		return Data;
+		return ComponentData;
 	}
 
-	Worker_ComponentUpdate CreateTombstoneUpdate()
+	Worker_ComponentUpdate CreateTombstoneUpdate() const
 	{
 		Worker_ComponentUpdate ComponentUpdate = {};
 		ComponentUpdate.component_id = ComponentId;
@@ -59,7 +53,7 @@ struct Tombstone : Component
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		const Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 		bIsDead = GetBoolFromSchema(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID);
 	}
 
