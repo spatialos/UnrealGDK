@@ -180,7 +180,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 #if ENGINE_MINOR_VERSION <= 20
 				bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.Offset, Data);
 #else
-				bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+				bool bIsIdentical = Cmd.Property->Identical(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
 #endif
 
 				// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.

@@ -106,7 +106,7 @@ public:
 	FORCEINLINE FRepStateStaticBuffer& GetObjectStaticBuffer(UObject* Object)
 	{
 		check(ObjectHasReplicator(Object));
-		return FindOrCreateReplicator(Object)->RepState->StaticBuffer;
+		return FindOrCreateReplicator(Object)->RepState->GetReceivingRepState()->StaticBuffer;
 	}
 
 	// UChannel interface
@@ -118,7 +118,7 @@ public:
 	virtual int64 Close(EChannelCloseReason Reason) override;
 #endif
 	virtual int64 ReplicateActor() override;
-	virtual void SetChannelActor(AActor* InActor) override;
+	virtual void SetChannelActor(AActor* InActor, ESetChannelActorFlags Flags) override;
 
 	bool TryResolveActor();
 
