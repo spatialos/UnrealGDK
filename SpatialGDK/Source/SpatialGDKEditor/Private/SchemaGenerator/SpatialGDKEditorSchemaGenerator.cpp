@@ -767,7 +767,7 @@ bool SpatialGDKGenerateSchema(bool bSaveSchemaDatabase, bool bRunSchemaCompiler)
 	return true;
 }
 
-bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes)
+bool SpatialGDKGenerateSchemaForClasses(const TSet<UClass*>& Classes)
 {
 	ResetUsedNames();
 	TSet<UClass*> NewClasses = FilterClasses(Classes);
@@ -788,7 +788,8 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes)
 		// Parent and static array index start at 0 for checksum calculations.
 		TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, 0, 0);
 		TypeInfos.Add(TypeInfo);
-		VisitAllObjects(TypeInfo, [&](TSharedPtr<FUnrealType> TypeNode) {
+		VisitAllObjects(TypeInfo, [&](TSharedPtr<FUnrealType> TypeNode)
+		{
 			if (UClass* NestedClass = Cast<UClass>(TypeNode->Type))
 			{
 				if (!NewClasses.Contains(NestedClass) && !SchemaGeneratedClasses.Contains(NestedClass) && IsSupportedClass(NestedClass))

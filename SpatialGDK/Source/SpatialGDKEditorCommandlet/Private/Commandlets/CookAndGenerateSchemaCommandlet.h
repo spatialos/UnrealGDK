@@ -21,11 +21,6 @@ class SPATIALGDKEDITORCOMMANDLET_API UCookAndGenerateSchemaCommandlet : public U
 
 	UCookAndGenerateSchemaCommandlet();
 
-	virtual ~UCookAndGenerateSchemaCommandlet();
-
-private:
-	FObjectListener* ObjectListener;
-
 public:
 	virtual int32 Main(const FString& CmdLineParams) override;
 };

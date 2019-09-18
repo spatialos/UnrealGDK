@@ -125,7 +125,7 @@ FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group);
 
 // Given an AST, this applies the function 'Visitor' to all FUnrealType's contained transitively within the properties. bRecurseIntoObjects will control	
 // whether this function will recurse into a UObject's properties, which may not always be desirable. However, it will always recurse into substructs.	
-// If the Visitor function returns false, it will not recurse any further into that part of the tree.	// If the Visitor function returns false, it will not recurse any further into that part of the tree.
+// If the Visitor function returns false, it will not recurse any further into that part of the tree.
 void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor, bool bRecurseIntoSubobjects);
 
 // Given an AST, this applies the function 'Visitor' to all properties contained transitively within the type. This will recurse into substructs.

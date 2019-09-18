@@ -9,15 +9,18 @@ DEFINE_LOG_CATEGORY(LogCookAndGenerateSchemaCommandlet);
 
 struct FObjectListener : public FUObjectArray::FUObjectCreateListener
 {
-	FObjectListener()
+public:
+	void StartListening()
 	{
 		GUObjectArray.AddUObjectCreateListener(this);
 	}
 
-	~FObjectListener()
+	TSet<FSoftClassPath> StopListening()
 	{
+		GUObjectArray.RemoveUObjectCreateListener(this);
+		return MoveTemp(VisitedClasses);
 	}
-public:
+
 	virtual void NotifyUObjectCreated(const class UObjectBase *Object, int32 Index) override
 	{
 		FSoftClassPath SoftClass = FSoftClassPath(Object->GetClass());
@@ -40,6 +43,7 @@ public:
 		}
 	}
 
+private:
 
 	TSet<FSoftClassPath> VisitedClasses;
 	TSet<FSoftClassPath> UnsupportedClasses;
@@ -53,21 +57,17 @@ UCookAndGenerateSchemaCommandlet::UCookAndGenerateSchemaCommandlet()
 	LogToConsole = true;
 }
 
-UCookAndGenerateSchemaCommandlet::~UCookAndGenerateSchemaCommandlet()
-{
-	delete ObjectListener;
-	ObjectListener = nullptr;
-}
-
 int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 {
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook and Generate Schema Started."));
-	ObjectListener = new FObjectListener();
+	FObjectListener ObjectListener;
+	ObjectListener.StartListening();
 	TSet<FSoftClassPath> ReferencedClasses;
 	
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Try Load Schema Database."));
 	if (!TryLoadExistingSchemaDatabase())
 	{
+		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to load Schema Database."));
 		return 1;
 	}
 
@@ -86,16 +86,14 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	int32 CookResult = Super::Main(CmdLineParams);
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook Command Completed."));
 
-	GUObjectArray.RemoveUObjectCreateListener(ObjectListener);
-
-	ReferencedClasses.Append(ObjectListener->VisitedClasses);
+	ReferencedClasses.Append(ObjectListener.StopListening());
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Discovered %d Classes during cook."), ReferencedClasses.Num());
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Start Schema Generation for discovered assets."));
 	FDateTime StartTime = FDateTime::Now();
 	TSet<UClass*> Classes;
 	const int BatchSize = 100;
-	for (FSoftClassPath SoftPath : ReferencedClasses)
+	for (const FSoftClassPath& SoftPath : ReferencedClasses)
 	{
 		if (UClass* LoadedClass = SoftPath.TryLoadClass<UObject>())
 		{
@@ -121,12 +119,13 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	if (!SaveSchemaDatabase())
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to save schema database."));
-		return 3;
+		return 1;
 	}
 
 	if (!RunSchemaCompiler())
 	{
-		UE_LOG(LogCookAndGenerateSchemaCommandlet, Warning, TEXT("Failed to run schema compiler."));
+		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to run schema compiler."));
+		return 1;
 	}
 
 	return CookResult;
