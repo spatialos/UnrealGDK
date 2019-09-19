@@ -496,21 +496,6 @@ TSet<UClass*> GetAllSupportedClasses()
 	return Classes;
 }
 
-TSet<UClass*> FilterClasses(const TSet<UClass*>& Classes)
-{
-	TSet<UClass*> FilteredClasses;
-
-	for (auto Class : Classes)
-	{
-		if (IsSupportedClass(Class))
-		{
-			FilteredClasses.Add(Class);
-		}
-	}
-
-	return FilteredClasses;
-}
-
 void CopyWellKnownSchemaFiles()
 {
 	FString PluginDir = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory();
@@ -770,8 +755,7 @@ bool SpatialGDKGenerateSchema(bool bSaveSchemaDatabase, bool bRunSchemaCompiler)
 bool SpatialGDKGenerateSchemaForClasses(const TSet<UClass*>& Classes)
 {
 	ResetUsedNames();
-	TSet<UClass*> NewClasses = FilterClasses(Classes);
-	TArray<UClass*> SortedClasses = NewClasses.Array();
+	TArray<UClass*> SortedClasses = Classes.Array();
 	SortedClasses.Sort();
 	
 	// Generate Type Info structs for all classes
@@ -792,7 +776,7 @@ bool SpatialGDKGenerateSchemaForClasses(const TSet<UClass*>& Classes)
 		{
 			if (UClass* NestedClass = Cast<UClass>(TypeNode->Type))
 			{
-				if (!NewClasses.Contains(NestedClass) && !SchemaGeneratedClasses.Contains(NestedClass) && IsSupportedClass(NestedClass))
+				if (!Classes.Contains(NestedClass) && !SchemaGeneratedClasses.Contains(NestedClass) && IsSupportedClass(NestedClass))
 				{
 					TypeInfos.Add(CreateUnrealTypeInfo(NestedClass, 0, 0));
 					SchemaGeneratedClasses.Add(NestedClass);
