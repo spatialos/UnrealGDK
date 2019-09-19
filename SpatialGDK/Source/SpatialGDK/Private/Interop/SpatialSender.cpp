@@ -1098,6 +1098,7 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
+		UE_LOG(LogSpatialSender, Verbose, TEXT("Attempted to update interest for non replicated actor: %s"), *Actor->GetName());
 		return;
 	}
 
