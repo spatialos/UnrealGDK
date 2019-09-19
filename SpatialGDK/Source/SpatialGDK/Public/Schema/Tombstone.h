@@ -17,47 +17,14 @@ struct Tombstone : Component
 
 	Tombstone() = default;
 
-	Tombstone(const Worker_ComponentData& Data)
+	FORCEINLINE Worker_ComponentData CreateData()
 	{
-		const Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Worker_ComponentData Data = {};
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData(ComponentId);
 
-		if (Schema_GetBoolCount(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID) == 1)
-		{
-			bIsDead = GetBoolFromSchema(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID);
-		}
+		return Data;
 	}
-
-	Worker_ComponentData CreateTombstoneData() const
-	{
-		Worker_ComponentData ComponentData = {};
-		ComponentData.component_id = ComponentId;
-		ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
-
-		Schema_AddBool(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID, bIsDead);
-
-		return ComponentData;
-	}
-
-	Worker_ComponentUpdate CreateTombstoneUpdate() const
-	{
-		Worker_ComponentUpdate ComponentUpdate = {};
-		ComponentUpdate.component_id = ComponentId;
-		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
-
-		Schema_AddBool(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID, bIsDead);
-
-		return ComponentUpdate;
-	}
-
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-	{
-		const Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
-		bIsDead = GetBoolFromSchema(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID);
-	}
-
-	bool bIsDead;
 };
 
 } // namespace SpatialGDK

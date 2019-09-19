@@ -3,6 +3,4 @@ package unreal;
 
 component Tombstone {
     id = 9982;
-
-    bool is_dead = 1;
 }

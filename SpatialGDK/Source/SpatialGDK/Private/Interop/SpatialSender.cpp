@@ -259,11 +259,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(ServerRPCEndpoint().CreateRPCEndpointData());
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 
-	if (bIsStartupActor)
-	{
-		ComponentDatas.Add(Tombstone().CreateTombstoneData());
-	}
-
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
 	{
@@ -1120,7 +1115,8 @@ void USpatialSender::RequestEntityDeletion(const Worker_EntityId EntityId, const
 		bForceDelete == false)
 	{
 		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
-		MarkEntityTombstone(EntityId);
+		Receiver->RemoveActor(EntityId);
+		AddTombstoneToEntity(EntityId);
 	}
 	else
 	{
@@ -1128,14 +1124,10 @@ void USpatialSender::RequestEntityDeletion(const Worker_EntityId EntityId, const
 	}
 }
 
-void USpatialSender::MarkEntityTombstone(const Worker_EntityId EntityId)
+void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
 {
-	Receiver->RemoveActor(EntityId);
-
 	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID));
-	Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(EntityId);
-	TombstoneComponent->bIsDead = true;
-
-	Worker_ComponentUpdate ComponentUpdate = TombstoneComponent->CreateTombstoneUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+	Worker_ComponentData ComponentData = Tombstone().CreateData();
+	
+	Connection->SendAddComponent(EntityId, &ComponentData);
 }

@@ -168,9 +168,6 @@ namespace SpatialConstants
 
 	const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
 
-	// Tombstone Field IDs
-	const Schema_FieldId TOMBSTONE_ISDEAD_ID								= 1;
-
 	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
 

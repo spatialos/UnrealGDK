@@ -124,7 +124,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -136,6 +135,9 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
+		return;
+	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
+		RemoveActor(Op.entity_id);
 		return;
 	}
 
@@ -1103,19 +1105,13 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 		HandleRPC(Op);
 		return;
-	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
-		OnTombstoneComponentUpdate(Op);
-		return;
 	}
 
 	// If this entity has a Tombstone component marked dead, abort all component processing
 	if (const Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id))
 	{
-		if (TombstoneComponent->bIsDead)
-		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Received component update for Entity: %lld Component: %d after tombstone marked dead.  Aborting update."), Op.entity_id, Op.update.component_id);
-			return;
-		}
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received component update for Entity: %lld Component: %d after tombstone marked dead.  Aborting update."), Op.entity_id, Op.update.component_id);
+		return;
 	}
 
 	if (ClassInfoManager->IsSublevelComponent(Op.update.component_id))
@@ -1994,15 +1990,3 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 	}
 }
 
-void USpatialReceiver::OnTombstoneComponentUpdate(const Worker_ComponentUpdateOp& Op)
-{
-	const Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
-
-	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID) == 1)
-	{
-		if (GetBoolFromSchema(ComponentObject, SpatialConstants::TOMBSTONE_ISDEAD_ID))
-		{
-			RemoveActor(Op.entity_id);
-		}
-	}
-}

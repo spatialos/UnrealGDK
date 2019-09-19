@@ -117,7 +117,7 @@ private:
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
 	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
 
-	void MarkEntityTombstone(const Worker_EntityId EntityId);
+	void AddTombstoneToEntity(const Worker_EntityId EntityId);
 
 	// RPC Construction
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId) const;
