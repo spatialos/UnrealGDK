@@ -70,7 +70,7 @@ TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
 	return SNew(SDockTab)
 		.Icon(FEditorStyle::GetBrush("Log.TabIcon"))
 		.TabRole(ETabRole::NomadTab)
-		.Label(NSLOCTEXT("OutputLog", "SpatialTabTitle", "Spatial Output Log"))
+		.Label(NSLOCTEXT("OutputLog", "TabTitle", "Spatial Output"))
 		[
 			SNew(SSpatialOutputLog).Messages(SpatialOutputLogHistory->GetMessages())
 		];

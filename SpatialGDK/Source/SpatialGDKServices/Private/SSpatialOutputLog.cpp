@@ -32,6 +32,27 @@
 
 #define LOCTEXT_NAMESPACE "SSpatialOutputLog"
 
+void FArchiveLogFileReader::UpdateFileSize()
+{
+	Size = IFileManager::Get().GetStatData(*Filename).FileSize;
+}
+
+TUniquePtr<FArchiveLogFileReader> SSpatialOutputLog::CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize)
+{
+	IFileHandle* Handle = FPlatformFileManager::Get().GetPlatformFile().OpenRead(InFilename, !!(Flags & FILEREAD_AllowWrite));
+	if (!Handle)
+	{
+		if (Flags & FILEREAD_NoFail)
+		{
+			UE_LOG(LogTemp, Fatal, TEXT("Failed to read file: %s"), InFilename);
+		}
+
+		return nullptr;
+	}
+
+	return TUniquePtr<FArchiveLogFileReader>(new FArchiveLogFileReader(Handle, InFilename, Handle->Size(), BufferSize));
+}
+
 void SSpatialOutputLog::StartPollingLogFile(FString LogFilePath)
 {
 	if (GEditor != nullptr)
@@ -48,7 +69,7 @@ void SSpatialOutputLog::StartPollingLogFile(FString LogFilePath)
 	}
 
 	// FILEREAD_AllowWrite is required as we must match the permissions of the other processes writing to our log file in order to read from it.
-	LogReader = TUniquePtr<FArchive>(IFileManager::Get().CreateFileReader(*LogFilePath, FILEREAD_AllowWrite));
+	LogReader = CreateLogFileReader(*LogFilePath, FILEREAD_AllowWrite, PLATFORM_FILE_READER_BUFFER_SIZE);
 
 	PollLogFile(LogFilePath);
 }
@@ -58,9 +79,9 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 	FScopedLoadingState ScopedLoadingState(*LogFilePath);
 
 	// Find out the current size of the log file. This is a cheaper operation than opening a new file reader on every poll.
-	FFileStatData LogStatData = IFileManager::Get().GetStatData(*LogFilePath);
+	LogReader->UpdateFileSize();
 
-	int32 SizeDifference = LogStatData.FileSize - LogReader->Tell();
+	int32 SizeDifference = LogReader->TotalSize() - LogReader->Tell();
 
 	// New log lines have been added, serialize them.
 	if (SizeDifference > 0)
@@ -147,6 +168,12 @@ void SSpatialOutputLog::FormatRawLogLine(FString& LogLine)
 	Content.Split(TEXT("]"), &LogCategory, &Content);
 	LogCategory.Split(TEXT("."), nullptr, &LogCategory, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
 
+	// Filter out java connection exceptions for the time being.
+	if (LogCategory.Contains(TEXT("connections")))
+	{
+		return;
+	}
+
 	Serialize(*Content, LogVerbosity, FName(*LogCategory));
 }
 // DO NOT REVIEW THIS FUNCTION -- GOING TO CHANGE BASED ON SPATIALD IMPLEMENTATION
@@ -195,7 +222,6 @@ void SSpatialOutputLog::OnRootLogDirectoryChanged(const TArray<FFileChangeData>&
 	// If this is a new folder creation then switch to watching the log files in that new log folder.
 	for (FFileChangeData FileChange : FileChanges)
 	{
-		// TODO: Isn't this slow as fuck?
 		if (FileChange.Action == FFileChangeData::FCA_Added)
 		{
 			// Now we can start reading the new log file in the new log folder. (Hopefully exists)

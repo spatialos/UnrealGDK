@@ -17,8 +17,20 @@
 
 #include "IDirectoryWatcher.h"
 #include "Developer/OutputLog/Private/SOutputLog.h"
+#include "HAL/FileManagerGeneric.h"
 
+// Child class of the file reader used by Unreal but with the ability to update the known file size.
+// This allows us to read a log file while it is being written to.
+class FArchiveLogFileReader : public FArchiveFileReaderGeneric
+{
+public:
+	FArchiveLogFileReader(IFileHandle* InHandle, const TCHAR* InFilename, int64 InSize, uint32 InBufferSize /*= PLATFORM_FILE_READER_BUFFER_SIZE*/)
+		: FArchiveFileReaderGeneric(InHandle, InFilename, InSize, InBufferSize)
+	{}
+	void UpdateFileSize();
+};
 /**
+
  * Widget which holds a list view of logs of the program output
  * as well as a combo box for entering in new commands
  */
@@ -46,6 +58,7 @@ public:
 	 */
 	void Construct( const FArguments& InArgs );
 
+	TUniquePtr<FArchiveLogFileReader> CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize);
 	void StartPollingLogFile(FString LogFilePath);
 	void PollLogFile(FString LogFilePath);
 	void StartPollTimer(FString LogFilePath);
@@ -59,7 +72,7 @@ public:
 	IDirectoryWatcher::FDirectoryChanged LogDirectoryChangedDelegate;
 
 	FTimerHandle PollTimer;
-	TUniquePtr<FArchive> LogReader;
+	TUniquePtr<FArchiveLogFileReader> LogReader;
 
 	FString CurrentLogDir;
 	FString CurrentLogFile;
