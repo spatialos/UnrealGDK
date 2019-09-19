@@ -15,7 +15,8 @@ pushd "$($gdk_home)"
             $unreal_version = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
             Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($unreal_version)"
         } else {
-            $unreal_version = Get-Content -Path "unreal-engine.version" -Raw
+            # Read Engine version from the file and trim any trailing white spaces and new lines.
+            $unreal_version = (Get-Content -Path "unreal-engine.version" -Raw).Trim()
             Write-Log "Using engine version found in unreal-engine.version file: $($unreal_version)"
         }
     popd
