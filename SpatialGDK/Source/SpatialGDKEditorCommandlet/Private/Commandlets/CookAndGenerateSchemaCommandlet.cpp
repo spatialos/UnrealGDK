@@ -11,15 +11,15 @@ DEFINE_LOG_CATEGORY(LogCookAndGenerateSchemaCommandlet);
 struct FObjectListener : public FUObjectArray::FUObjectCreateListener
 {
 public:
-	void StartListening()
+	void StartListening(TSet<FSoftClassPath>* ClassesFound)
 	{
+		VisitedClasses = ClassesFound;
 		GUObjectArray.AddUObjectCreateListener(this);
 	}
 
-	TSet<FSoftClassPath> StopListening()
+	void StopListening()
 	{
 		GUObjectArray.RemoveUObjectCreateListener(this);
-		return MoveTemp(VisitedClasses);
 	}
 
 	virtual void NotifyUObjectCreated(const UObjectBase* Object, int32 Index) override
@@ -29,13 +29,13 @@ public:
 		{
 			return;
 		}
-		if (!VisitedClasses.Contains(SoftClass))
+		if (!VisitedClasses->Contains(SoftClass))
 		{
 			if (IsSupportedClass(Object->GetClass()))
 			{
 				UE_LOG(LogCookAndGenerateSchemaCommandlet, Verbose, TEXT("Object [%s] Created, Consider Class [%s] For Schema."),
 					*Object->GetFName().ToString(), *GetPathNameSafe(Object->GetClass()));
-				VisitedClasses.Add(SoftClass);
+				VisitedClasses->Add(SoftClass);
 			}
 			else
 			{
@@ -46,7 +46,7 @@ public:
 
 private:
 
-	TSet<FSoftClassPath> VisitedClasses;
+	TSet<FSoftClassPath>* VisitedClasses;
 	TSet<FSoftClassPath> UnsupportedClasses;
 };
 
@@ -62,8 +62,8 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 {
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook and Generate Schema Started."));
 	FObjectListener ObjectListener;
-	ObjectListener.StartListening();
 	TSet<FSoftClassPath> ReferencedClasses;
+	ObjectListener.StartListening(&ReferencedClasses);
 	
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Try Load Schema Database."));
 	if (!TryLoadExistingSchemaDatabase())
@@ -82,8 +82,15 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	int32 CookResult = Super::Main(CmdLineParams);
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook Command Completed."));
 
-	ReferencedClasses.Append(ObjectListener.StopListening());
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Discovered %d Classes during cook."), ReferencedClasses.Num());
+
+	ObjectListener.StopListening();
+
+	// Sort classes here so that batching does not have an effect on ordering.
+	ReferencedClasses.Sort([](const FSoftClassPath& A, const FSoftClassPath& B)
+	{
+		return A.GetAssetPathName() < B.GetAssetPathName();
+	});
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Start Schema Generation for discovered assets."));
 	FDateTime StartTime = FDateTime::Now();

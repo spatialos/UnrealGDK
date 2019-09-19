@@ -16,7 +16,7 @@ namespace SpatialGDKEditor
 		
 		SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchema(bool bSaveSchemaDatabase = true, bool bRunSchemaCompiler = true);
 		
-		SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(const TSet<UClass*>& Classes);
+		SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes);
 		
 		SPATIALGDKEDITOR_API bool TryLoadExistingSchemaDatabase();
 		

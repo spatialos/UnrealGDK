@@ -752,16 +752,18 @@ bool SpatialGDKGenerateSchema(bool bSaveSchemaDatabase, bool bRunSchemaCompiler)
 	return true;
 }
 
-bool SpatialGDKGenerateSchemaForClasses(const TSet<UClass*>& Classes)
+bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes)
 {
 	ResetUsedNames();
-	TArray<UClass*> SortedClasses = Classes.Array();
-	SortedClasses.Sort();
+	Classes.Sort([](const UClass& A, const UClass& B)
+	{
+		return A.GetPathName() < B.GetPathName();
+	});
 	
 	// Generate Type Info structs for all classes
 	TArray<TSharedPtr<FUnrealType>> TypeInfos;
 
-	for (const auto& Class : SortedClasses)
+	for (const auto& Class : Classes)
 	{
 		if (SchemaGeneratedClasses.Contains(Class))
 		{
