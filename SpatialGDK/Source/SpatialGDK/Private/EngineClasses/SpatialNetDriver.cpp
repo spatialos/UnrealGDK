@@ -1869,12 +1869,12 @@ void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType
 	}
 }
 
-void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay)
+void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay, const bool bTryTombstone /* = true */)
 {
 	FTimerHandle RetryTimer;
-	TimerManager.SetTimer(RetryTimer, [this, EntityId]()
+	TimerManager.SetTimer(RetryTimer, [this, EntityId, bTryTombstone]()
 	{
-		Sender->RequestEntityDeletion(EntityId);
+		Sender->RequestEntityDeletion(EntityId, bTryTombstone);
 	}, Delay, false);
 }
 

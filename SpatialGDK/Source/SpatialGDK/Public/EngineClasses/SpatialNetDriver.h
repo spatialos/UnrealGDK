@@ -163,7 +163,7 @@ public:
 	// Per actor, maps from RPC type to the reliable RPC index used to detect if reliable RPCs go out of order.
 	TMap<TWeakObjectPtr<AActor>, FRPCTypeToReliableRPCIdMap> ReliableRPCIdMap;
 
-	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
+	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay, const bool bTryTombstone = true);
 
 #if WITH_EDITOR
 	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.
