@@ -69,7 +69,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	if (!TryLoadExistingSchemaDatabase())
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to load Schema Database."));
-		return 1;
+		return 0;
 	}
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Finding supported C++ and in-memory Classes."));
@@ -122,13 +122,13 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	if (!SaveSchemaDatabase())
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to save schema database."));
-		return 1;
+		return 0;
 	}
 
 	if (!RunSchemaCompiler())
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to run schema compiler."));
-		return 1;
+		return 0;
 	}
 
 	return CookResult;
