@@ -57,7 +57,9 @@ const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContent
 const FString SchemaDatabaseAssetPath = FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase"));
 const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 
-namespace
+namespace SpatialGDKEditor
+{
+namespace Schema
 {
 
 void AddPotentialNameCollision(const FString& DesiredSchemaName, const FString& ClassPath, const FString& GeneratedSchemaName)
@@ -239,8 +241,6 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 
 	return bSuccess;
 }
-
-}// ::
 
 void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath, FComponentIdGenerator& IdGenerator)
 {
@@ -814,3 +814,6 @@ bool SpatialGDKGenerateSchemaForClasses(const TSet<UClass*>& Classes)
 }
 
 #undef LOCTEXT_NAMESPACE
+
+} // Schema
+} // SpatialGDKEditor

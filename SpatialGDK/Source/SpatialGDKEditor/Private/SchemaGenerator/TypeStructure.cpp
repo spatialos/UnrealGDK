@@ -7,11 +7,7 @@
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "Utils/RepLayoutUtils.h"
 
-namespace Errors
-{
-	FString DuplicateComponentError = TEXT("WARNING: Unreal GDK does not currently support multiple static components of the same type.\n"
-		"Make sure {0} has only one instance of {1} or don't generate type bindings for {2}");
-}
+using namespace SpatialGDKEditor::Schema;
 
 TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 {

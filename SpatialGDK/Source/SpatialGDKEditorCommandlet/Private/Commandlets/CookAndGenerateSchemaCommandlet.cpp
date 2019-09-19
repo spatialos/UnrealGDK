@@ -4,6 +4,8 @@
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 
+using namespace SpatialGDKEditor::Schema;
+
 DEFINE_LOG_CATEGORY(LogCookAndGenerateSchemaCommandlet);
 
 struct FObjectListener : public FUObjectArray::FUObjectCreateListener
@@ -20,7 +22,7 @@ public:
 		return MoveTemp(VisitedClasses);
 	}
 
-	virtual void NotifyUObjectCreated(const class UObjectBase *Object, int32 Index) override
+	virtual void NotifyUObjectCreated(const UObjectBase* Object, int32 Index) override
 	{
 		FSoftClassPath SoftClass = FSoftClassPath(Object->GetClass());
 		if (UnsupportedClasses.Contains(SoftClass))

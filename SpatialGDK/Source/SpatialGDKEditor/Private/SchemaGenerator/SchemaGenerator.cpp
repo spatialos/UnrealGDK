@@ -14,6 +14,8 @@
 #include "Utils/DataTypeUtilities.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 
+using namespace SpatialGDKEditor::Schema;
+
 DEFINE_LOG_CATEGORY(LogSchemaGenerator);
 
 ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup Group)
