@@ -57,7 +57,7 @@ void USpatialWorkerConnection::DestroyConnection()
 	{
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerLocator = WorkerLocator]
 		{
-			Worker_Alpha_Locator_Destroy(WorkerLocator);
+			Worker_Locator_Destroy(WorkerLocator);
 		});
 
 		WorkerLocator = nullptr;
@@ -242,12 +242,12 @@ void USpatialWorkerConnection::ConnectToLocator()
 	FTCHARToUTF8 PlayerIdentityTokenCStr(*LocatorConfig.PlayerIdentityToken);
 	FTCHARToUTF8 LoginTokenCStr(*LocatorConfig.LoginToken);
 
-	Worker_Alpha_LocatorParameters LocatorParams = {};
+	Worker_LocatorParameters LocatorParams = {};
 	LocatorParams.player_identity.player_identity_token = PlayerIdentityTokenCStr.Get();
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 
 	// Connect to the locator on the default port(0 will choose the default)
-	WorkerLocator = Worker_Alpha_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), 0, &LocatorParams);
+	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), 0, &LocatorParams);
 
 	// TODO UNR-1271: Move creation of connection parameters into a function somehow
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
@@ -269,7 +269,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	ConnectionParams.enable_dynamic_components = true;
 	// end TODO
 
-	Worker_ConnectionFuture* ConnectionFuture = Worker_Alpha_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);
+	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);
 
 	FinishConnecting(ConnectionFuture);
 }
@@ -590,7 +590,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
 
 			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
-			Worker_Alpha_Connection_SendComponentUpdate(WorkerConnection,
+			Worker_Connection_SendComponentUpdate(WorkerConnection,
 				Message->EntityId,
 				&Message->Update,
 				&DisableLoopback);
@@ -604,7 +604,6 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			Worker_Connection_SendCommandRequest(WorkerConnection,
 				Message->EntityId,
 				&Message->Request,
-				Message->CommandId,
 				nullptr,
 				&DefaultCommandParams);
 			break;

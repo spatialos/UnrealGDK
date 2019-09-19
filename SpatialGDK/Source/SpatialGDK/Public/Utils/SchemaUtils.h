@@ -243,14 +243,14 @@ inline void DeepCopySchemaObject(Schema_Object* Source, Schema_Object* Target)
 {
 	uint32_t Length = Schema_GetWriteBufferLength(Source);
 	uint8_t* Buffer = Schema_AllocateBuffer(Target, Length);
-	Schema_WriteToBuffer(Source, Buffer);
+	Schema_SerializeToBuffer(Source, Buffer, Length);
 	Schema_Clear(Target);
 	Schema_MergeFromBuffer(Target, Buffer, Length);
 }
 
 inline Schema_ComponentData* DeepCopyComponentData(Schema_ComponentData* Source)
 {
-	Schema_ComponentData* Copy = Schema_CreateComponentData(Schema_GetComponentDataComponentId(Source));
+	Schema_ComponentData* Copy = Schema_CreateComponentData();
 	DeepCopySchemaObject(Schema_GetComponentDataFields(Source), Schema_GetComponentDataFields(Copy));
 	return Copy;
 }

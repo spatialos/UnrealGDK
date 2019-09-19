@@ -106,7 +106,7 @@ call :MarkStartOfBlock "Unpack dependencies"
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip\"         -DestinationPath \"%BINARIES_DIR%\IOS\" -Force;"^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"                    -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                               -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
-    xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%"
+    xcopy /s /i /q "%BINARIES_DIR%\Headers\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
 
 if exist "%SPATIAL_DIR%" (

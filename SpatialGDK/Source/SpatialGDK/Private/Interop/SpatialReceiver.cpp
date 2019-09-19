@@ -721,7 +721,7 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 
 	Worker_Constraint StartupActorConstraint{};
 	StartupActorConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
-	StartupActorConstraint.entity_id_constraint = StartupActorConstraintEntityId;
+	StartupActorConstraint.constraint.entity_id_constraint = StartupActorConstraintEntityId;
 
 	Worker_EntityQuery StartupActorQuery{};
 	StartupActorQuery.constraint = StartupActorConstraint;
@@ -1237,7 +1237,7 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 
 void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 {
-	Schema_FieldId CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
+	Schema_FieldId CommandIndex = Op.request.command_index;
 
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
 	{
