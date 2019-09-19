@@ -73,14 +73,9 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	}
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Finding supported C++ and in-memory Classes."));
-	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
+	for (const auto& SupportedClass : GetAllSupportedClasses())
 	{
-		UClass* SupportedClass = *ClassIt;
-
-		if (IsSupportedClass(SupportedClass))
-		{
-			ReferencedClasses.Add(FSoftClassPath(SupportedClass));
-		}
+		ReferencedClasses.Add(FSoftClassPath(SupportedClass));
 	}
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Starting Cook Command."));

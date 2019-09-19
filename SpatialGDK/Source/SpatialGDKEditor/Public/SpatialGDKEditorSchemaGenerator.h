@@ -11,6 +11,8 @@ namespace SpatialGDKEditor
 	namespace Schema
 	{
 		SPATIALGDKEDITOR_API bool IsSupportedClass(UClass* SupportedClass);
+
+		SPATIALGDKEDITOR_API TSet<UClass*> GetAllSupportedClasses();
 		
 		SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchema(bool bSaveSchemaDatabase = true, bool bRunSchemaCompiler = true);
 		
