@@ -125,9 +125,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 
-	const bool bIsStartupActor = Actor->IsNetStartupActor() && Actor->GetIsReplicated();
-
-	if (bIsStartupActor)
+	if (Actor->IsNetStartupActor())
 	{
 		ComponentWriteAcl.Add(SpatialConstants::TOMBSTONE_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	}
@@ -1111,7 +1109,6 @@ void USpatialSender::RequestEntityDeletion(const Worker_EntityId EntityId, const
 
 	if (Actor &&
 		Actor->IsNetStartupActor() &&
-		Actor->GetIsReplicated() &&
 		bForceDelete == false)
 	{
 		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.

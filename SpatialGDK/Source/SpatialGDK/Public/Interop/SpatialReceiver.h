@@ -206,8 +206,6 @@ private:
 
 	void OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp& Op);
 
-	void OnTombstoneComponentUpdate(const Worker_ComponentUpdateOp& Op);
-
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 
