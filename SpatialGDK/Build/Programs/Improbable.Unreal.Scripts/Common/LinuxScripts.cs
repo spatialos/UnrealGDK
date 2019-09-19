@@ -31,6 +31,9 @@ if [ ! -f $SCRIPT ]; then
     exit 1
 fi
 
+# Output the public IP address of the worker node (for vanilla Unreal client connections).
+curl -w ""\n"" -s bot.whatismyipaddress.com
+
 chmod +x $SCRIPT
 echo ""Running ${{SCRIPT}} to start worker...""
 gosu $NEW_USER ""${{SCRIPT}}"" ""$@""";
@@ -42,6 +45,8 @@ NEW_USER=unrealworker
 WORKER_ID=$1
 shift 1
 
+touch ""/improbable/logs/${{WORKER_ID}}.log""
+
 # 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
 useradd $NEW_USER -m -d /improbable/logs/ >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 chown -R $NEW_USER:$NEW_USER $(pwd) >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
@@ -49,7 +54,7 @@ chmod -R o+rw /improbable/logs >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 SCRIPT=""$(pwd)/{0}.sh""
 chmod +x $SCRIPT >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
 
-echo ""Trying to launch worker {0} with id ${{WORKER_ID}}"" > ""/improbable/logs/${{WORKER_ID}}.log""
+echo ""Trying to launch worker {0} with id ${{WORKER_ID}} and arguments $@"" > ""/improbable/logs/${{WORKER_ID}}.log""
 gosu $NEW_USER ""${{SCRIPT}}"" ""$@"" >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1";
 
         public const string SimulatedPlayerCoordinatorShellScript =

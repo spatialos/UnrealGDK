@@ -13,6 +13,29 @@ namespace Improbable
 {
     public static class Build
     {
+
+        private const string RunVanillaUnrealServerScript =
+            @"@echo off
+:: Change configs to non-Spatial networking
+start {0}Server.exe -log -OverrideSpatialNetworking=false";
+
+        private const string RunVanillaUnrealClientScript =
+            @"@echo off
+:: Change configs to non-Spatial networking
+start _{0}.exe 127.0.0.1 -log -OverrideSpatialNetworking=false";
+
+        private const string LauncherConfigWithNoLogging =
+            @"{{
+  ""command"": "".\\_Scavenger.exe"",
+  ""arguments"": [
+    ""GameLaunchLevel"",
+    ""-workerType"",
+    ""UnrealClient"",
+    ""-OverrideSpatialNetworking"",
+    ""-NoLogToSpatial""
+  ]
+}}";
+
         public static void Main(string[] args)
         {
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
@@ -193,11 +216,20 @@ namespace Improbable
                     Console.WriteLine("Could not find the executable to rename.");
                 }
 
+                File.WriteAllText(Path.Combine(windowsNoEditorPath, "_RunLocalVanillaUnrealClient.bat"), string.Format(RunVanillaUnrealClientScript, baseGameName).Replace("\r\n", "\n"), new UTF8Encoding(false));
+                File.WriteAllText(Path.Combine(windowsNoEditorPath, "launcher_client_config.json"), string.Format(LauncherConfigWithNoLogging).Replace("\r\n", "\n"), new UTF8Encoding(false));
+
+                var DestArchive = Quote(Path.Combine(outputDir, "LauncherClient@Windows.zip"));
+                if (File.Exists(DestArchive))
+                {
+                    File.Delete(DestArchive);
+                }
+
                 Common.RunRedirected(runUATBat, new[]
                 {
                     "ZipUtils",
                     "-add=" + Quote(windowsNoEditorPath),
-                    "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
+                    "-archive=" + DestArchive,
                 });
             }
             else if (gameName == baseGameName + "SimulatedPlayer") // This is for internal use only. We do not support Linux clients.
@@ -302,6 +334,12 @@ namespace Improbable
                     // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
                     // Also ensure script uses Linux line endings
                     LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetUnrealWorkerShellScript(baseGameName), Path.Combine(serverPath, "StartWorker.sh"));
+                }
+
+                // Create a script for setting configs to native Unreal networking and launching a server.
+                if (platform == "Win64")
+                {
+                    File.WriteAllText(Path.Combine(serverPath, "RunLocalVanillaUnrealServer.bat"), string.Format(RunVanillaUnrealServerScript, baseGameName).Replace("\r\n", "\n"), new UTF8Encoding(false));
                 }
 
                 Common.RunRedirected(runUATBat, new[]
