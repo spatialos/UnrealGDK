@@ -563,10 +563,21 @@ void USpatialNetDriver::BeginDestroy()
 {
 	Super::BeginDestroy();
 
-	// If we are still connected, cleanup our corresponding worker entity if it exists.
+	// If we are still connected...
 	if (Connection != nullptr && WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 	{
-		Connection->SendDeleteEntityRequest(WorkerEntityId);
+		// cleanup our corresponding worker entity if it exists.
+		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Connection->SendDeleteEntityRequest(WorkerEntityId);
+		}
+		
+		// destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
+		if (!bPersistSpatialConnection)
+		{
+			Connection->DestroyConnection();
+			Connection = nullptr;
+		}
 	}
 
 #if WITH_EDITOR
