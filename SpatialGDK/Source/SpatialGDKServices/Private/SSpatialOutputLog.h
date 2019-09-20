@@ -3,21 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SlateFwd.h"
-#include "Widgets/DeclarativeSyntaxSupport.h"
-#include "Input/Reply.h"
-#include "Widgets/SWidget.h"
-#include "Widgets/SCompoundWidget.h"
-#include "Widgets/Input/SMultiLineEditableTextBox.h"
-#include "Widgets/Views/STableViewBase.h"
-#include "Widgets/Views/STableRow.h"
-#include "Framework/Text/BaseTextLayoutMarshaller.h"
-#include "Misc/TextFilterExpressionEvaluator.h"
-#include "HAL/IConsoleManager.h"
-
-#include "IDirectoryWatcher.h"
 #include "Developer/OutputLog/Private/SOutputLog.h"
 #include "HAL/FileManagerGeneric.h"
+#include "IDirectoryWatcher.h"
+#include "SlateFwd.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOutputLog, Log, All);
 
 // Child class of the file reader used by Unreal but with the ability to update the known file size.
 // This allows us to read a log file while it is being written to.
@@ -29,51 +20,45 @@ public:
 	{}
 	void UpdateFileSize();
 };
-/**
 
- * Widget which holds a list view of logs of the program output
- * as well as a combo box for entering in new commands
- */
-class SSpatialOutputLog 
+class SSpatialOutputLog
 	: public SOutputLog
 {
 
 public:
 	SLATE_BEGIN_ARGS( SSpatialOutputLog )
-		: _Messages()
-		{}
+	: _Messages()
+	{}
 		
-		/** All messages captured before this log window has been created */
-		SLATE_ARGUMENT( TArray< TSharedPtr<FLogMessage> >, Messages )
+	/** All messages captured before this log window has been created */
+	SLATE_ARGUMENT( TArray< TSharedPtr<FLogMessage> >, Messages )
 
 	SLATE_END_ARGS()
 
-	///** Destructor for output log, so we can unregister from notifications */
-	//~SSpatialOutputLog();
+	~SSpatialOutputLog();
 
-	/**
-	 * Construct this widget.  Called by the SNew() Slate macro.
-	 *
-	 * @param	InArgs	Declaration used by the SNew() macro to construct this widget
-	 */
 	void Construct( const FArguments& InArgs );
 
+	//END_SLATE_FUNCTION_BUILD_OPTIMIZATION void ReadLatestLogFile();
 	TUniquePtr<FArchiveLogFileReader> CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize);
+
+protected:
+	void OnCrash();
+
 	void StartPollingLogFile(FString LogFilePath);
-	void PollLogFile(FString LogFilePath);
 	void StartPollTimer(FString LogFilePath);
+	void PollLogFile(FString LogFilePath);
+	void CloseLogReader();
+
 	void FormatRawLogLine(FString& LogLine);
 
-	void StartUpRootLogDirWatcher();
+	void StartUpLogDirectoryWatcher(FString LogDirectory);
 	void ShutdownLogDirectoryWatcher(FString LogDirectory);
-	void OnRootLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
+	void OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
 	FDelegateHandle LogDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged LogDirectoryChangedDelegate;
 
 	FTimerHandle PollTimer;
 	TUniquePtr<FArchiveLogFileReader> LogReader;
-
-	FString CurrentLogDir;
-	FString CurrentLogFile;
 };
