@@ -77,7 +77,6 @@ void USpatialGameInstance::DestroySpatialWorkerConnection()
 	if (SpatialConnection != nullptr)
 	{
 		SpatialConnection->DestroyConnection();
-		SpatialConnection->ConditionalBeginDestroy();
 		SpatialConnection = nullptr;
 	}
 }
