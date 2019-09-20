@@ -1761,15 +1761,22 @@ void USpatialNetDriver::FlushActorDormancy(AActor* Actor)
 	{
 		if (!bDormancyComponentExists)
 		{
-			Worker_ComponentData Data = SpatialGDK::Dormant().CreateData();
-			Connection->SendAddComponent(EntityId, &Data);
+			Worker_AddComponentOp AddComponentOp{};
+			AddComponentOp.entity_id = EntityId;
+			AddComponentOp.data = SpatialGDK::Dormant().CreateData();
+			Connection->SendAddComponent(AddComponentOp.entity_id, &AddComponentOp.data);
+			StaticComponentView->OnAddComponent(AddComponentOp);
 		}
 	}
 	else
 	{
 		if (bDormancyComponentExists)
 		{
+			Worker_RemoveComponentOp RemoveComponentOp{};
+			RemoveComponentOp.entity_id = EntityId;
+			RemoveComponentOp.component_id = SpatialConstants::DORMANT_COMPONENT_ID;
 			Connection->SendRemoveComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
+			StaticComponentView->OnRemoveComponent(RemoveComponentOp);
 		}
 	}
 	

@@ -94,11 +94,6 @@ void USpatialStaticComponentView::OnRemoveComponent(const Worker_RemoveComponent
 	{
 		ComponentMap->Remove(Op.component_id);
 	}
-
-	if (auto* AuthorityMap = EntityComponentAuthorityMap.Find(Op.entity_id))
-	{
-		AuthorityMap->Remove(Op.component_id);
-	}
 }
 
 void USpatialStaticComponentView::OnRemoveEntity(Worker_EntityId EntityId)
