@@ -26,20 +26,14 @@ public:
 
 private:
 	float RTPing;
-
-	uint32 LastSentPingID;
-	uint32 LastReceivedPingID;
-
+	float LastReceivedPingID;
 	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedPingID)
-	uint32 ReplicatedPingID;
+	float ReplicatedPingID;
 
 	FTimerHandle PingTimerHandle;
 
 	UFUNCTION()
 	void TickPingComponent();
-
-	TArray<uint32> SentPingIDs;
-	TArray<float> SentPingTimes;
 
 	void SendNewPing();
 
@@ -47,5 +41,5 @@ private:
 	virtual void OnRep_ReplicatedPingID();
 
 	UFUNCTION(Server, Unreliable, WithValidation)
-	virtual void SendServerWorkerPingID(const uint32 PingID);
+	virtual void SendServerWorkerPingID(const float PingID);
 };
