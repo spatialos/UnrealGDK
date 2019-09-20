@@ -90,7 +90,10 @@ void USpatialNetConnection::FlushDormancy(class AActor* Actor)
 {
 	Super::FlushDormancy(Actor);
 
-	Cast<USpatialNetDriver>(Driver)->FlushActorDormancy(Actor);
+	if (bReliableSpatialConnection)
+	{
+		Cast<USpatialNetDriver>(Driver)->FlushActorDormancy(Actor);
+	}
 }
 
 void USpatialNetConnection::UpdateActorInterest(AActor* Actor)

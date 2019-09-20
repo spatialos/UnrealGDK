@@ -1735,29 +1735,27 @@ USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_Entity
 
 void USpatialNetDriver::FlushActorDormancy(AActor* Actor)
 {
-	if (Actor == nullptr)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempt to flush dormancy on nullptr Actor"));
-		return;
-	}
+	check(IsServer());
+	check(Actor);
 
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempt to flush dormancy on Actor without entity id"));
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s) without entity id"), *Actor->GetName());
 		return;
 	}
 
 	const bool bHasAuthority = StaticComponentView->HasAuthority(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
 	if (bHasAuthority == false)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempt to flush dormancy on Actor without authority"));
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Unable to flush dormancy on actor (%s) without authority"), *Actor->GetName());
 		return;
 	}
 
 	const bool bDormancyComponentExists = StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
 
-	if (Actor->NetDormancy == DORM_DormantAll)
+	// If the work wants to go dormant, ensure the Dormant component is attached
+	if (Actor->NetDormancy >= DORM_DormantAll)
 	{
 		if (!bDormancyComponentExists)
 		{
@@ -1779,7 +1777,6 @@ void USpatialNetDriver::FlushActorDormancy(AActor* Actor)
 			StaticComponentView->OnRemoveComponent(RemoveComponentOp);
 		}
 	}
-	
 }
 
 void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)

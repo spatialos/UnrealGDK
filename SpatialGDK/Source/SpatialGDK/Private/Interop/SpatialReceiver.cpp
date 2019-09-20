@@ -347,7 +347,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				const bool bDormantActor = (Actor->NetDormancy == DORM_DormantAll);
+				const bool bDormantActor = (Actor->NetDormancy >= DORM_DormantAll);
 
 				if (IsValid(NetDriver->GetActorChannelByEntityId(Op.entity_id)) || bDormantActor)
 				{

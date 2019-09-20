@@ -226,7 +226,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ComponentDatas.Add(AlwaysRelevant().CreateData());
 	}
 
-	if (Actor->NetDormancy == DORM_DormantAll)
+	if (Actor->NetDormancy >= DORM_DormantAll)
 	{
 		ComponentDatas.Add(Dormant().CreateData());
 	}
