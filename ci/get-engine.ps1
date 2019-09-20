@@ -21,7 +21,7 @@ pushd "$($gdk_home)"
         Start-Event "download-unreal-engine" "get-unreal-engine"
 
         if ($unreal_version.StartsWith("HEAD/")) {
-            $head_artifacts_gcs_path = "gs://$($gcs_publish_bucket)/$(unreal_version)/UnrealEngine-*"
+            $head_artifacts_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version)/UnrealEngine-*"
             $get_head_artifact_result = Call-CaptureOutput "gsutil" -ArgumentList @(`
                 "ls", `
                 $head_artifacts_gcs_path `
@@ -43,8 +43,11 @@ pushd "$($gdk_home)"
             }
 
             $engine_gcs_path = $head_artifacts[0]
+            $version_name = $engine_gcs_path.Split("/")[-1]
+            $version_name = $version_name.Split(".")[0]
         } else {
-            $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
+            $version_name = $unreal_version
+            $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($version_name).zip"
         }
         Write-Log "Downloading Unreal Engine artifacts from $($engine_gcs_path)"
 
@@ -52,7 +55,7 @@ pushd "$($gdk_home)"
             "cp", `
             "-n", ` # noclobber
             "$($engine_gcs_path)", `
-            "$($unreal_version).zip" `
+            "$($version_name).zip" `
         )
         Finish-Event "download-unreal-engine" "get-unreal-engine"
         if ($gsu_proc.ExitCode -ne 0) {
@@ -64,8 +67,8 @@ pushd "$($gdk_home)"
         Write-Log "Unzipping Unreal Engine"
         $zip_proc = Start-Process -Wait -PassThru -NoNewWindow "7z" -ArgumentList @(`
         "x", `
-        "$($unreal_version).zip", `
-        "-o$($unreal_version)", `
+        "$($version_name).zip", `
+        "-o$($version_name)", `
         "-aos" ` # skip existing files
         )
         Finish-Event "unzip-unreal-engine" "get-unreal-engine"
@@ -79,7 +82,7 @@ pushd "$($gdk_home)"
 
     ## Create an UnrealEngine symlink to the correct directory
     Remove-Item $unreal_path -ErrorAction ignore -Recurse -Force
-    cmd /c mklink /J $unreal_path "UnrealEngine-Cache\$($unreal_version)"
+    cmd /c mklink /J $unreal_path "UnrealEngine-Cache\$($version_name)"
 
     $clang_path = "$($gdk_home)\UnrealEngine\ClangToolchain"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
