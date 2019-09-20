@@ -15,6 +15,7 @@
 class USpatialNetDriver;
 class USpatialWorkerConnection;
 class USpatialStaticComponentView;
+class USpatialPackageMapClient;
 
 UCLASS()
 class USpatialRingBufferManager : public UObject
@@ -27,12 +28,10 @@ public:
 	void SendRPCs();
 
 private:
-	UPROPERTY()
 	USpatialNetDriver* NetDriver;
-	UPROPERTY()
 	USpatialWorkerConnection* WorkerConnection;
-	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
+	USpatialPackageMapClient* PackageMap;
 
 public:
 	// TODO: Clean up these when entities are deleted / removed from view
