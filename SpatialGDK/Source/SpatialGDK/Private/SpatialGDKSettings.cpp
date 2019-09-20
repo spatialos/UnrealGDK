@@ -19,6 +19,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, HeartbeatTimeoutSeconds(10.0f)
 	, ActorReplicationRateLimit(0)
 	, EntityCreationRateLimit(0)
+	, UseIsActorRelevantForConnection(false)
 	, OpsUpdateRate(1000.0f)
 	, bEnableHandover(true)
 	, MaxNetCullDistanceSquared(900000000.0f) // Set to twice the default Actor NetCullDistanceSquared (300m)

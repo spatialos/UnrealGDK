@@ -32,48 +32,11 @@ ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup
 	}
 }
 
-ESchemaComponentType RPCTypeToSchemaComponentType(ERPCType RPC)
-{
-	if (RPC == RPC_Client)
-	{
-		return SCHEMA_ClientReliableRPC;
-	}
-	else if (RPC == RPC_Server)
-	{
-		return SCHEMA_ServerReliableRPC;
-	}
-	else if (RPC == RPC_NetMulticast)
-	{
-		return SCHEMA_NetMulticastRPC;
-	}
-	else if (RPC == RPC_CrossServer)
-	{
-		return SCHEMA_CrossServerRPC;
-	}
-	else
-	{
-		checkNoEntry();
-		return SCHEMA_Invalid;
-	}
-
-}
-
 // Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
 // type used in schema.
-FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
+FString PropertyToSchemaType(UProperty* Property)
 {
 	FString DataType;
-
-	// For RPC arguments we may wish to handle them differently.
-	if (bIsRPCProperty)
-	{
-		if (Property->ArrayDim > 1) // Static arrays in RPC arguments are replicated as lists.
-		{
-			DataType = PropertyToSchemaType(Property, false); // Have to get the type of the property inside the static array.
-			DataType = FString::Printf(TEXT("list<%s>"), *DataType);
-			return DataType;
-		}
-	}
 
 	if (Property->IsA(UStructProperty::StaticClass()))
 	{
@@ -135,7 +98,7 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 	}
 	else if (Property->IsA(UArrayProperty::StaticClass()))
 	{
-		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner, bIsRPCProperty);
+		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner);
 		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
 	}
 	else if (Property->IsA(UEnumProperty::StaticClass()))
@@ -153,7 +116,7 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const int FieldCounter)
 {
 	Writer.Printf("{0} {1} = {2};",
-		*PropertyToSchemaType(RepProp->Property, false),
+		*PropertyToSchemaType(RepProp->Property),
 		*SchemaFieldName(RepProp),
 		FieldCounter
 	);
@@ -162,42 +125,10 @@ void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> 
 void WriteSchemaHandoverField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> HandoverProp, const int FieldCounter)
 {
 	Writer.Printf("{0} {1} = {2};",
-		*PropertyToSchemaType(HandoverProp->Property, false),
+		*PropertyToSchemaType(HandoverProp->Property),
 		*SchemaFieldName(HandoverProp),
 		FieldCounter
 	);
-}
-
-void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrealProperty> RPCProp, const int FieldCounter)
-{
-	Writer->Printf("{0} {1} = {2};",
-		*PropertyToSchemaType(RPCProp->Property, true),
-		*SchemaFieldName(RPCProp),
-		FieldCounter
-	);
-}
-
-bool IsReplicatedSubobject(TSharedPtr<FUnrealType> TypeInfo)
-{
-	for (auto& PropertyGroup : GetFlatRepData(TypeInfo))
-	{
-		if (PropertyGroup.Value.Num() > 0)
-		{
-			return true;
-		}
-	}
-
-	if (GetFlatHandoverData(TypeInfo).Num() > 0)
-	{
-		return true;
-	}
-
-	if (TypeInfo->RPCs.Num() > 0)
-	{
-		return true;
-	}
-
-	return false;
 }
 
 void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
