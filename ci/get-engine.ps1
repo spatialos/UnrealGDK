@@ -24,7 +24,7 @@ pushd "$($gdk_home)"
             $head_artifacts_gcs_path = "gs://$($gcs_publish_bucket)/$(unreal_version)/UnrealEngine-*"
             $get_head_artifact_result = Call-CaptureOutput "gsutil" -ArgumentList @(`
                 "ls", `
-                head_artifacts_gcs_path `
+                $head_artifacts_gcs_path `
             )
 
             if ($get_head_artifact_result.ExitCode -ne 0) {
