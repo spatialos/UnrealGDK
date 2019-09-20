@@ -5,8 +5,7 @@
 #include "Utils/SchemaOption.h"
 
 #include <cstdint>
-
-using Worker_EntityId = std::int64_t;
+#include <WorkerSDK/improbable/c_worker.h>
 
 class USpatialPackageMapClient;
 
