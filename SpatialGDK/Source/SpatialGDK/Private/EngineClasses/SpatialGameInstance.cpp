@@ -74,9 +74,12 @@ void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 
 void USpatialGameInstance::DestroySpatialWorkerConnection()
 {
-	SpatialConnection->DestroyConnection();
-	SpatialConnection->ConditionalBeginDestroy();
-	SpatialConnection = nullptr;
+	if (SpatialConnection != nullptr)
+	{
+		SpatialConnection->DestroyConnection();
+		SpatialConnection->ConditionalBeginDestroy();
+		SpatialConnection = nullptr;
+	}
 }
 
 #if WITH_EDITOR
