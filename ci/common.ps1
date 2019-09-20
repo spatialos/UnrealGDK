@@ -40,4 +40,22 @@ function Finish-Event() {
     ) | Out-Null
 }
 
+function Call-CaptureOutput() {
+    param(
+        [string] $FilePath,
+        [string[]] $ArgumentList
+    )
+
+    $out_file = New-TemporaryFile
+    $proc_handle = Start-Process -Wait -PassThru -NoNewWindow $FilePath -ArgumentList $ArgumentList -RedirectStandardOutput $out_file.FullName
+    $stdout = Get-Content $out_file.FullName
+    Remove-Item $out_file
+
+        # return an object with exit code and stdout string
+    [PsCustomObject]@{
+        ExitCode = $proc_handle.ExitCode;
+        Stdout = $stdout;
+    }
+}
+
 $ErrorActionPreference = 'Stop'

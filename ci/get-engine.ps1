@@ -20,7 +20,32 @@ pushd "$($gdk_home)"
     pushd "UnrealEngine-Cache"
         Start-Event "download-unreal-engine" "get-unreal-engine"
 
-        $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
+        if ($unreal_version.StartsWith("HEAD/")) {
+            $head_artifacts_gcs_path = "gs://$($gcs_publish_bucket)/$(unreal_version)/UnrealEngine-*"
+            $get_head_artifact_result = Call-CaptureOutput "gsutil" -ArgumentList @(`
+                "ls", `
+                head_artifacts_gcs_path `
+            )
+
+            if ($get_head_artifact_result.ExitCode -ne 0) {
+                Write-Log "Could not list artifacts at $($head_artifacts_gcs_path). Error: $($get_head_artifact_result.ExitCode)"
+                Throw "Could not list head artifacts"
+            }
+
+            $head_artifacts = $get_head_artifact_result.Stdout.Split("`n")
+            if ($head_artifacts.Length -eq 0) {
+                Write-Log "Could not find a head artifact."
+                Throw "Could not find a head artifact"
+            }
+            if ($head_artifacts.Length -gt 1) {
+                Write-Log "Found more than one head artifact."
+                Throw "Found more than one head artifact."
+            }
+
+            $engine_gcs_path = $head_artifacts[0]
+        } else {
+            $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
+        }
         Write-Log "Downloading Unreal Engine artifacts from $($engine_gcs_path)"
 
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
