@@ -72,6 +72,13 @@ void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 	SpatialConnection->Init(this);
 }
 
+void USpatialGameInstance::DestroySpatialWorkerConnection()
+{
+	SpatialConnection->DestroyConnection();
+	SpatialConnection->ConditionalBeginDestroy();
+	SpatialConnection = nullptr;
+}
+
 #if WITH_EDITOR
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
