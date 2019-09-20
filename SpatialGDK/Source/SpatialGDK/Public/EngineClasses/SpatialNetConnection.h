@@ -36,7 +36,7 @@ public:
 	/** Called by PlayerController to tell connection about client level visibility change */
 	virtual void UpdateLevelVisibility(const FName& PackageName, bool bIsVisible) override;
 
-	virtual bool IsReplayConnection() const override { return false; }
+	virtual void FlushDormancy(class AActor* Actor) override;
 
 	// These functions don't make a lot of sense in a SpatialOS implementation.
 	virtual FString LowLevelGetRemoteAddress(bool bAppendPort = false) override { return TEXT(""); }
@@ -44,6 +44,8 @@ public:
 	virtual FString RemoteAddressToString() override { return TEXT(""); }
 	///////
 	// End NetConnection Interface
+
+	virtual bool IsReplayConnection() const override { return false; }
 
 	void InitHeartbeat(class FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity);
 	void SetHeartbeatTimeoutTimer();

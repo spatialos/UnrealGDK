@@ -71,7 +71,7 @@ public:
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
 	virtual void Shutdown() override;
-	virtual void NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* Connection) override;
+	virtual void NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection) override;
 	// End UNetDriver interface.
 
 	virtual void OnOwnerUpdated(AActor* Actor);
@@ -102,6 +102,10 @@ public:
 
 	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject);
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
+
+	void FlushActorDormancy(AActor* Actor);
+
+	void RegisterDormantEntityId(Worker_EntityId EntityId);
 
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
@@ -176,6 +180,7 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TArray<Worker_OpList*> QueuedStartupOpLists;
+	TArray<Worker_EntityId_Key> DormantEntities;
 
 	FTimerManager TimerManager;
 

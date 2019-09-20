@@ -165,11 +165,23 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 			DeleteEntityIfAuthoritative();
 		}
+
+		if (CloseReason == EChannelCloseReason::Dormancy)
+		{
+			NetDriver->RegisterDormantEntityId(EntityId);
+		}
 	}
 #endif
 
-	// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects
-	Receiver->CleanupDeletedEntity(EntityId);
+	if (bForDestroy)
+	{
+		// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects
+		Receiver->CleanupDeletedEntity(EntityId);
+	}
+	else
+	{
+		NetDriver->RemoveActorChannel(EntityId);
+	}
 
 #if ENGINE_MINOR_VERSION <= 20
 	return UActorChannel::CleanUp(bForDestroy);
@@ -201,8 +213,7 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	}
 	else
 	{
-		auto Data = SpatialGDK::Dormant().CreateData();
-		NetDriver->Connection->SendAddComponent(GetEntityId(), &Data);
+		NetDriver->FlushActorDormancy(Actor);
 	}
 
 	return Super::Close(Reason);

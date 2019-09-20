@@ -139,9 +139,12 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 		{
 			// This same logic is called from within UChannel::ReceivedSequencedBunch when a dormant cmd is received
-			//Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
-			Channel->StartBecomingDormant();
+			Channel->Dormant = 1;
+			Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
+
+			UE_LOG( LogTemp, Warning, TEXT("Dynamic dormancy add op: %s %lld"), NetDriver->IsServer() ? TEXT("Server") : TEXT("Client"), Op.entity_id)
 		}
+		return;
 	}
 
 	if (ClassInfoManager->IsSublevelComponent(Op.data.component_id))
@@ -206,7 +209,27 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 
 	if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id).Get()))
 	{
-		if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Op.component_id)).Get())
+		if (Op.component_id == SpatialConstants::DORMANT_COMPONENT_ID)
+		{
+			UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
+
+			// Set up actor channel.
+#if ENGINE_MINOR_VERSION <= 20
+			USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
+#else
+			USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
+#endif
+
+			if (!Channel)
+			{
+				UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), Op.entity_id);
+				Actor->Destroy(true);
+				return;
+			}
+
+			Channel->SetChannelActor(Actor);
+		}
+		else if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Op.component_id)).Get())
 		{
 			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 			{
@@ -324,7 +347,9 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				if (IsValid(NetDriver->GetActorChannelByEntityId(Op.entity_id)))
+				const bool bDormantActor = (Actor->NetDormancy == DORM_DormantAll);
+
+				if (IsValid(NetDriver->GetActorChannelByEntityId(Op.entity_id)) || bDormantActor)
 				{
 					Actor->Role = ROLE_Authority;
 					Actor->RemoteRole = ROLE_SimulatedProxy;
@@ -341,10 +366,17 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						}
 					}
 
-					UpdateShadowData(Op.entity_id);
+					if (bDormantActor == false)
+					{
+						UpdateShadowData(Op.entity_id);
+					}
 
 					Actor->OnAuthorityGained();
 				}
+// 				else if ()
+// 				{
+// 					UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received authority over dormant actor %s, with entity id %lld. "), *Actor->GetName(), Op.entity_id);
+// 				}
 				else
 				{
 					UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to delete it earlier, when it had no authority. Retrying to delete now."), *Actor->GetName(), Op.entity_id);
@@ -615,8 +647,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		if (StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
 		{
 			// This same logic is called from within UChannel::ReceivedSequencedBunch when a dormant cmd is received
-			//Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
-			Channel->StartBecomingDormant();
+			Channel->Dormant = 1;
+			Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
 		}
 	}
 }

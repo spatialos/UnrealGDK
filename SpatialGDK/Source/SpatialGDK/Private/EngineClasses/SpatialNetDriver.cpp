@@ -28,6 +28,7 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ActorGroupManager.h"
@@ -40,6 +41,7 @@
 #if WITH_EDITOR
 #include "SpatialGDKServicesModule.h"
 #endif
+#include "AlwaysRelevant.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -651,13 +653,26 @@ void USpatialNetDriver::Shutdown()
 		}
 	}
 
+	const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
+
+	if (bDeleteDynamicEntities && IsServer())
+	{
+		for (const auto& EntityId : DormantEntities)
+		{
+			if (StaticComponentView->GetAuthority(EntityId, SpatialGDK::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE)
+			{
+				Sender->SendDeleteEntityRequest(EntityId);
+			}
+		}
+	}
+
 	Super::Shutdown();
 }
 
-void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* Connection)
+void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection)
 {
 	// Similar to NetDriver::NotifyActorFullyDormantForConnection, however we only care about a single connection
-	GetNetworkObjectList().MarkDormant(Actor, Connection, 1, this);
+	GetNetworkObjectList().MarkDormant(Actor, NetConnection, 1, this);
 }
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
@@ -1716,6 +1731,53 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_EntityId EntityId) const
 {
 	return EntityToActorChannel.FindRef(EntityId);
+}
+
+void USpatialNetDriver::FlushActorDormancy(AActor* Actor)
+{
+	if (Actor == nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempt to flush dormancy on nullptr Actor"));
+		return;
+	}
+
+	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempt to flush dormancy on Actor without entity id"));
+		return;
+	}
+
+	const bool bHasAuthority = StaticComponentView->HasAuthority(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
+	if (bHasAuthority == false)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempt to flush dormancy on Actor without authority"));
+		return;
+	}
+
+	const bool bDormancyComponentExists = StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
+
+	if (Actor->NetDormancy == DORM_DormantAll)
+	{
+		if (!bDormancyComponentExists)
+		{
+			Worker_ComponentData Data = SpatialGDK::Dormant().CreateData();
+			Connection->SendAddComponent(EntityId, &Data);
+		}
+	}
+	else
+	{
+		if (bDormancyComponentExists)
+		{
+			Connection->SendRemoveComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
+		}
+	}
+	
+}
+
+void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)
+{
+	DormantEntities.Emplace(EntityId);
 }
 
 USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor)
