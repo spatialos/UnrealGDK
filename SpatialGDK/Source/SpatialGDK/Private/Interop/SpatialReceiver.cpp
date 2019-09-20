@@ -334,7 +334,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 					}
 					else if (APawn* Pawn = Cast<APawn>(Actor))
 					{
-						// This check will return false on non-authoritative servers if the PlayerState hasn't been received yet.
+						// The following check will return false on non-authoritative servers if the PlayerState hasn't been received yet.
 						if (Pawn->IsPlayerControlled())
 						{
 							Pawn->RemoteRole = ROLE_AutonomousProxy;
@@ -342,7 +342,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 					}
 					else if (const APlayerState* PlayerState = Cast<APlayerState>(Actor))
 					{
-						// This check will return false on non-authoritative servers if the Pawn hasn't been received yet.
+						// The following check will return false on non-authoritative servers if the Pawn hasn't been received yet.
 						if (APawn* PawnFromPlayerState = PlayerState->GetPawn())
 						{
 							check(PlayerState->bIsABot || PawnFromPlayerState->IsPlayerControlled());
