@@ -1131,4 +1131,8 @@ void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
 	Worker_ComponentData ComponentData = Tombstone().CreateData();
 	
 	Connection->SendAddComponent(EntityId, &ComponentData);
+
+#if WITH_EDITOR
+	NetDriver->TrackTombstone(EntityId);
+#endif
 }

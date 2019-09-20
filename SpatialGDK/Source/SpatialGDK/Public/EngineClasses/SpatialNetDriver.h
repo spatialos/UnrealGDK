@@ -168,6 +168,8 @@ public:
 #if WITH_EDITOR
 	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.
 	int32 PlayInEditorID;
+
+	void TrackTombstone(const Worker_EntityId EntityId);
 #endif
 
 private:
@@ -239,5 +241,10 @@ private:
 
 #if !UE_BUILD_SHIPPING
 	int32 ConsiderListSize = 0;
+#endif
+
+#if WITH_EDITOR
+	static const int32 EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT = 256;
+	TArray<Worker_EntityId> TombstonedEntities;
 #endif
 };

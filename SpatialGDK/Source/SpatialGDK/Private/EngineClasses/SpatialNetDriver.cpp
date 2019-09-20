@@ -38,6 +38,7 @@
 #include "Utils/SpatialMetricsDisplay.h"
 
 #if WITH_EDITOR
+#include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKServicesModule.h"
 #endif
 
@@ -163,6 +164,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		}
 	}
 
+	TombstonedEntities.Reserve(EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT);
 #endif
 
 	InitiateConnectionToSpatialOS(URL);
@@ -642,6 +644,17 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 void USpatialNetDriver::Shutdown()
 {
+#if WITH_EDITOR
+	if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
+	{
+		for (const Worker_EntityId EntityId : TombstonedEntities)
+		{
+			const bool bTryTombstone = false;
+			Sender->RequestEntityDeletion(EntityId, bTryTombstone);
+		}
+	}
+#endif
+
 	if (!IsServer())
 	{
 		// Notify the server that we're disconnecting so it can clean up our actors.
@@ -1982,3 +1995,10 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 
 	return false;
 }
+
+#if WITH_EDITOR
+void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
+{
+	TombstonedEntities.Add(EntityId);
+}
+#endif
