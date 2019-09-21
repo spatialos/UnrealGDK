@@ -644,17 +644,6 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 void USpatialNetDriver::Shutdown()
 {
-#if WITH_EDITOR
-	if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
-	{
-		for (const Worker_EntityId EntityId : TombstonedEntities)
-		{
-			const bool bTryTombstone = false;
-			Sender->RequestEntityDeletion(EntityId, bTryTombstone);
-		}
-	}
-#endif
-
 	if (!IsServer())
 	{
 		// Notify the server that we're disconnecting so it can clean up our actors.
@@ -665,6 +654,17 @@ void USpatialNetDriver::Shutdown()
 	}
 
 	Super::Shutdown();
+
+#if WITH_EDITOR
+	if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
+	{
+		for (const Worker_EntityId EntityId : TombstonedEntities)
+		{
+			Sender->RetireEntity(EntityId);
+		}
+	}
+#endif
+
 }
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
@@ -1882,12 +1882,12 @@ void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType
 	}
 }
 
-void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay, const bool bTryTombstone /* = true */)
+void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay)
 {
 	FTimerHandle RetryTimer;
-	TimerManager.SetTimer(RetryTimer, [this, EntityId, bTryTombstone]()
+	TimerManager.SetTimer(RetryTimer, [this, EntityId]()
 	{
-		Sender->RequestEntityDeletion(EntityId, bTryTombstone);
+		Sender->RetireEntity(EntityId);
 	}, Delay, false);
 }
 

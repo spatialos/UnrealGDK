@@ -83,7 +83,7 @@ public:
 	void SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
-	void RequestEntityDeletion(const Worker_EntityId EntityId, const bool bTryTombstone = true);
+	void RetireEntity(const Worker_EntityId EntityId);
 
 	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);

@@ -166,7 +166,7 @@ protected:
 private:
 	void DynamicallyAttachSubobject(UObject* Object);
 
-	void DeleteEntityIfAuthoritative(const bool bTryTombstone = true);
+	void DeleteEntityIfAuthoritative();
 	bool IsSingletonEntity();
 
 	void SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition);

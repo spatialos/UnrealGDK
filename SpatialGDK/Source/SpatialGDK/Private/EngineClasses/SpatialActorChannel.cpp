@@ -108,7 +108,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 }
 #endif
 
-void USpatialActorChannel::DeleteEntityIfAuthoritative(const bool bTryTombstone /* = true */)
+void USpatialActorChannel::DeleteEntityIfAuthoritative()
 {
 	if (NetDriver->Connection == nullptr)
 	{
@@ -125,7 +125,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative(const bool bTryTombstone 
 		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
 		if (Actor->GetTearOff())
 		{
-			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f, bTryTombstone);
+			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
 			// Since the entity deletion is delayed, this creates a situation,
 			// when the Actor is torn off, but still replicates. 
 			// Disabling replication makes RPC calls impossible for this Actor.
@@ -133,7 +133,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative(const bool bTryTombstone 
 		}
 		else
 		{
-			Sender->RequestEntityDeletion(EntityId, bTryTombstone);
+			Sender->RetireEntity(EntityId);
 		}
 	}
 
@@ -161,8 +161,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
 		{
 			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
-			const bool bTryTombstone = false;
-			DeleteEntityIfAuthoritative(bTryTombstone);
+			DeleteEntityIfAuthoritative();
 		}
 	}
 #endif
