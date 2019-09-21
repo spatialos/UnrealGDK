@@ -1107,7 +1107,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	// If this entity has a Tombstone component marked dead, abort all component processing
+	// If this entity has a Tombstone component, abort all component processing
 	if (const Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id))
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received component update for Entity: %lld Component: %d after tombstone marked dead.  Aborting update."), Op.entity_id, Op.update.component_id);

@@ -660,7 +660,7 @@ void USpatialNetDriver::Shutdown()
 	{
 		for (const Worker_EntityId EntityId : TombstonedEntities)
 		{
-			Sender->RetireEntity(EntityId);
+			Connection->SendDeleteEntityRequest(EntityId);
 		}
 	}
 #endif

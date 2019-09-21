@@ -1109,18 +1109,29 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 
 void USpatialSender::RetireEntity(const Worker_EntityId EntityId)
 {
-	const AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId).Get());
-
-	if (Actor &&
-		Actor->IsNetStartupActor())
+	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
-		Receiver->RemoveActor(EntityId);
-		AddTombstoneToEntity(EntityId);
+		if (AActor* Actor = ActorChannel->GetActor())
+		{
+			if (Actor->IsNetStartupActor())
+			{
+				// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
+				Receiver->RemoveActor(EntityId);
+				AddTombstoneToEntity(EntityId);
+			}
+			else
+			{
+				Connection->SendDeleteEntityRequest(EntityId);
+			}
+		}
+		else
+		{
+			UE_LOG(LogSpatialSender, Warning, TEXT("RetireEntity: Couldn't find Actor for EntityId: %lld"), EntityId);
+		}
 	}
 	else
 	{
-		Connection->SendDeleteEntityRequest(EntityId);
+		UE_LOG(LogSpatialSender, Warning, TEXT("RetireEntity: Couldn't find SpatialActorChannel for EntityId: %lld"), EntityId);
 	}
 }
 
