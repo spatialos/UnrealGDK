@@ -201,7 +201,11 @@ void USpatialVirtualWorkerTranslator::ProcessQueuedAclAssignmentRequests()
 		}
 
 		const FString& VirtualWorkerId = MyAuthorityIntentComponent->VirtualWorkerId;
-		check(!VirtualWorkerId.IsEmpty());
+
+		if (VirtualWorkerId.IsEmpty())
+		{
+			continue;
+		}
 
 		int32 VirtualWorkerIndex;
 		VirtualWorkers.Find(VirtualWorkerId, VirtualWorkerIndex);

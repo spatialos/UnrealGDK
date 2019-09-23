@@ -516,7 +516,16 @@ int64 USpatialActorChannel::ReplicateActor()
 		Actor->HasAuthority() &&
 		NetDriver->LoadBalancer->ShouldChangeAuthority(*Actor))
 	{
-		Sender->SendAuthorityUpdate(*Actor, NetDriver->LoadBalancer->GetAuthoritativeVirtualWorkerId(*Actor));
+		const FString NewAuthVirtualWorkerId = NetDriver->LoadBalancer->GetAuthoritativeVirtualWorkerId(*Actor);
+
+		if (NewAuthVirtualWorkerId.IsEmpty() == false)
+		{
+			Sender->SendAuthorityUpdate(*Actor, NewAuthVirtualWorkerId);
+		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Should transition actor %s to new server, but auth virtual worker id is empty!"), *Actor->GetName());
+		}
 	}
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
