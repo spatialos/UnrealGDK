@@ -261,13 +261,13 @@ private:
 	FFilePath SpatialOSLaunchConfig;
 
 public:
-	/** Attempt connecting to a SpatialOS runtime at a particular IP address. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Use custom runtime IP address"))
-	bool bUseCustomRuntimeIP;
+	/** Expose the runtime on a particular IP address when it is running on this machine. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Expose local runtime"))
+	bool bExposeRuntimeIP;
 
-	/** IP address of the SpatialOS runtime to connect to. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bUseCustomRuntimeIP", ConfigRestartRequired = false, DisplayName = "Custom runtime IP address"))
-	FString CustomRuntimeIP;
+	/** If the runtime is set to be exposed, specify on which IP address it should be reachable. Changes are applied on next deployment startup. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bExposeRuntimeIP", ConfigRestartRequired = false, DisplayName = "Exposed local runtime IP address"))
+	FString ExposedRuntimeIP;
 
 	/** Select the check box to stop your game’s local deployment when you shut down Unreal Editor. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Stop local deployment on exit"))

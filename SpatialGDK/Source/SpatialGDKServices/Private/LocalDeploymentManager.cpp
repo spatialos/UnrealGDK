@@ -14,7 +14,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
-static const FString SpatialServiceVersion(TEXT("20190716.094149.1b6d448edd"));
+static const FString SpatialServiceVersion(TEXT("20190910.165122.cb2c30cb51"));
 
 FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
@@ -117,7 +117,7 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 	});
 }
 
-bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString CustomRuntimeIP)
+bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose)
 {
 	bRedeployRequired = false;
 
@@ -140,15 +140,21 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	bStartingDeployment = true;
 
+	// Stop the currently running service if the runtime IP is to be exposed, but is different from the one specified
+	if (ExposedRuntimeIP != RuntimeIPToExpose)
+	{
+		TryStopSpatialService();
+	}
+
 	// If the service is not running then start it.
 	if (!bSpatialServiceRunning)
 	{
-		if (CustomRuntimeIP == TEXT("NONE")) {
+		if (RuntimeIPToExpose == TEXT("NONE")) {
 			TryStartSpatialService();
 		}
 		else
 		{
-			TryStartSpatialService(CustomRuntimeIP);
+			TryStartSpatialService(RuntimeIPToExpose);
 		}
 	}
 
@@ -277,7 +283,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	return bSuccess;
 }
 
-bool FLocalDeploymentManager::TryStartSpatialService(FString CustomRuntimeIP)
+bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
 {
 	if (bSpatialServiceRunning)
 	{
@@ -294,10 +300,11 @@ bool FLocalDeploymentManager::TryStartSpatialService(FString CustomRuntimeIP)
 
 	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s"), *SpatialServiceVersion);
 
-	// Pass custom runtime IP if it has been specified
-	if (CustomRuntimeIP != TEXT("NONE"))
+	// Pass exposed runtime IP if one has been specified
+	if (RuntimeIPToExpose != TEXT("NONE"))
 	{
-		SpatialServiceStartArgs.Append(FString::Printf(TEXT(" --runtime_ip=%s"), *CustomRuntimeIP));
+		SpatialServiceStartArgs.Append(FString::Printf(TEXT(" --runtime_ip=%s"), *RuntimeIPToExpose));
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Trying to start spatial service with exposed runtime ip: %s"), *RuntimeIPToExpose);
 	}
 
 	FString ServiceStartResult;
@@ -315,6 +322,7 @@ bool FLocalDeploymentManager::TryStartSpatialService(FString CustomRuntimeIP)
 	if (ServiceStartResult.Contains(TEXT("RUNNING")))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service started!"));
+		ExposedRuntimeIP = RuntimeIPToExpose;
 		bSpatialServiceRunning = true;
 		return true;
 	}

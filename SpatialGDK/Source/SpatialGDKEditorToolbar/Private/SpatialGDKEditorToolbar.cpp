@@ -85,24 +85,22 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	}
 
 #if PLATFORM_WINDOWS
-	// If a service or deployment was running before settings were loaded,
-	// restart service or deployment to reflect the loaded settings and guarantee that the service is running in this project.
-	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Restarting Spatial service and deployment to use loaded SpatialOS settings and this project."));
+	// If a service was running, restart to guarantee that the service is running in this project with the correct settings.
+	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("(Re)starting Spatial service in this project."));
 
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	FString CustomRuntimeIP = SpatialGDKSettings->CustomRuntimeIP;
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, CustomRuntimeIP]
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, SpatialGDKSettings]
 	{
 		LocalDeploymentManager->TryStopSpatialService();
 
-		// Pass custom runtime IP if it has been specified
-		if (CustomRuntimeIP != TEXT("NONE"))
+		// Pass exposed runtime IP if one has been specified
+		if (SpatialGDKSettings->bExposeRuntimeIP)
 		{
 			LocalDeploymentManager->TryStartSpatialService();
 		}
 		else
 		{
-			LocalDeploymentManager->TryStartSpatialService(CustomRuntimeIP);
+			LocalDeploymentManager->TryStartSpatialService(SpatialGDKSettings->ExposedRuntimeIP);
 		}
 
 		// Ensure we have an up to date state of the spatial service and local deployment.
@@ -551,12 +549,12 @@ void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 		FDateTime StartTime = FDateTime::Now();
 		OnShowTaskStartNotification(TEXT("Starting spatial service..."));
 
-		// If a custom runtime IP is to be used, pass it to the spatial service
+		// If the runtime IP is to be exposed, pass it to the spatial service on startup
 		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 		bool bSpatialServiceStarted;
-		if (SpatialGDKSettings->bUseCustomRuntimeIP)
+		if (SpatialGDKSettings->bExposeRuntimeIP)
 		{
-			bSpatialServiceStarted = LocalDeploymentManager->TryStartSpatialService(SpatialGDKSettings->CustomRuntimeIP);
+			bSpatialServiceStarted = LocalDeploymentManager->TryStartSpatialService(SpatialGDKSettings->ExposedRuntimeIP);
 		}
 		else
 		{
@@ -678,9 +676,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
 		bool bLocalDeploymentStarted;
-		if (SpatialGDKSettings->bUseCustomRuntimeIP)
+		if (SpatialGDKSettings->bExposeRuntimeIP)
 		{
-			bLocalDeploymentStarted = LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, SpatialGDKSettings->CustomRuntimeIP);
+			bLocalDeploymentStarted = LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, SpatialGDKSettings->ExposedRuntimeIP);
 		}
 		else
 		{
@@ -821,56 +819,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 				UEditorEngine::TryStartSpatialDeployment.Unbind();
 			}
 		}
-		else if (PropertyName.ToString() == TEXT("bUseCustomRuntimeIP") || PropertyName.ToString() == TEXT("CustomRuntimeIP"))
-		{
-			// Restart a running spatial service if custom IP settings are changed
-			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Custom runtime IP settings changed. Restarting Spatial service and deployment if running."));
-			TryRestartServiceAndDeploymentIfRunning();
-		}
 	}
-}
-
-void FSpatialGDKEditorToolbarModule::TryRestartServiceAndDeploymentIfRunning()
-{
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
-	{
-		if (LocalDeploymentManager->IsSpatialServiceRunning())
-		{
-			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Restarting Spatial service."));
-
-			bool bShouldRestartLocalDeployment = LocalDeploymentManager->IsLocalDeploymentRunning();
-
-			if (!LocalDeploymentManager->TryStopSpatialService())
-			{
-				UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to stop Spatial service. Aborting service and deployment restart."));
-				return;
-			}
-
-			const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-			if (SpatialGDKSettings->bUseCustomRuntimeIP)
-			{
-				if (!LocalDeploymentManager->TryStartSpatialService(SpatialGDKSettings->CustomRuntimeIP))
-				{
-					UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to start Spatial service. Aborting service and deployment restart."));
-					return;
-				}
-			}
-			else
-			{
-				if (!LocalDeploymentManager->TryStartSpatialService())
-				{
-					UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to start Spatial service. Aborting service and deployment restart."));
-					return;
-				}
-			}
-
-			if (bShouldRestartLocalDeployment)
-			{
-				UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Restarting deployment."));
-				VerifyAndStartDeployment();
-			}
-		}
-	});
 }
 
 void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()

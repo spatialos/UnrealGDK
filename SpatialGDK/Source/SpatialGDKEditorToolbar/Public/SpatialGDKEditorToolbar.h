@@ -52,8 +52,6 @@ private:
 
 	void VerifyAndStartDeployment();
 
-	void TryRestartServiceAndDeploymentIfRunning();
-
 	void StartSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
 

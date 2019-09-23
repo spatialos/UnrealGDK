@@ -19,10 +19,10 @@ public:
 
 	void SPATIALGDKSERVICES_API RefreshServiceStatus();
 
-	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString CustomRuntimeIP = TEXT("NONE"));
+	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose = TEXT("NONE"));
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 
-	bool SPATIALGDKSERVICES_API TryStartSpatialService(FString CustomRuntimeIP = TEXT("NONE"));
+	bool SPATIALGDKSERVICES_API TryStartSpatialService(FString RuntimeIPToExpose = TEXT("NONE"));
 	bool SPATIALGDKSERVICES_API TryStopSpatialService();
 
 	bool SPATIALGDKSERVICES_API GetLocalDeploymentStatus();
@@ -72,6 +72,8 @@ private:
 
 	bool bStartingSpatialService;
 	bool bStoppingSpatialService;
+
+	FString ExposedRuntimeIP;
 
 	FString LocalRunningDeploymentID;
 
