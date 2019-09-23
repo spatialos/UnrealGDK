@@ -16,9 +16,9 @@ FSpatialGDKEditorCloudDebugger::FSpatialGDKEditorCloudDebugger()
 
 void FSpatialGDKEditorCloudDebugger::DebugWorker(const FString& InDeploymentName, const FString& InWorkerId)
 {
-	FModuleManager::LoadModuleChecked<ITcpMessagingModule>("TcpMessaging").AddOutgoingConnection("127.0.0.1:8666");
+	FModuleManager::LoadModuleChecked<ITcpMessagingModule>("TcpMessaging").AddOutgoingConnection("127.0.0.1:6667");
 
-	FString SpatialArgs = FString::Printf(TEXT("project deployment worker port-forward -d=%s -w=%s -p=8666"), *InDeploymentName, *InWorkerId);
+	FString SpatialArgs = FString::Printf(TEXT("project deployment worker port-forward -d=%s -w=%s -p=6667"), *InDeploymentName, *InWorkerId);
 
 	FProcHandle handle = FPlatformProcess::CreateProc(*FSpatialGDKServicesModule::GetSpatialExe(), *SpatialArgs, true, false, false, NULL, 0, *FSpatialGDKServicesModule::GetSpatialOSDirectory(), NULL);
 	if (handle.IsValid())

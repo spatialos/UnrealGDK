@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Improbable.Unreal.Build.Common;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
-using LinuxScripts = Improbable.Unreal.Build.Common.LinuxScripts;
 
 namespace Improbable
 {
@@ -305,6 +305,9 @@ exit /b !ERRORLEVEL!";
                     // Also ensure script uses Linux line endings
                     LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetUnrealWorkerShellScript(baseGameName), Path.Combine(serverPath, "StartWorker.sh"));
                 }
+
+                string engineIniPath = Path.Combine(serverPath, baseGameName, "Config", "DefaultEngine.ini");
+                FileModifier.AddTcpPluginListener(engineIniPath); 
 
                 Common.RunRedirected(runUATBat, new[]
                 {
