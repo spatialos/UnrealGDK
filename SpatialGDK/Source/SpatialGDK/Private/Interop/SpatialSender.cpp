@@ -24,6 +24,7 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
+#include "SpatialLogMacros.h"
 #include "Utils/ActorGroupManager.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
@@ -70,6 +71,11 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	TimerManager = InTimerManager;
 
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
+}
+
+UWorld* USpatialSender::GetWorld() const
+{
+	return NetDriver ? NetDriver->GetWorld() : nullptr;
 }
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
@@ -356,7 +362,7 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 		}
 		else
 		{
-			UE_LOG(LogSpatialSender, Error, TEXT("Could not find Streaming Level Component for Level %s, processing Actor %s. Have you generated schema?"),
+			SPATIAL_LOG(LogSpatialSender, Error, TEXT("Could not find Streaming Level Component for Level %s, processing Actor %s. Have you generated schema?"),
 				*ActorWorld->GetOuter()->GetPathName(), *Actor->GetPathName());
 		}
 	}
@@ -494,7 +500,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendComponentUpdates);
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
-	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
+	SPATIAL_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
 	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver);
 
@@ -504,7 +510,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	{
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, Update.component_id))
 		{
-			UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
+			SPATIAL_LOG(LogSpatialSender, Verbose, TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
 
 			// This is a temporary fix. A task to improve this has been created: UNR-955
 			// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the update, to send upon receiving authority.
@@ -640,7 +646,7 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 #if !UE_BUILD_SHIPPING
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
+		SPATIAL_LOG(LogSpatialSender, Verbose, TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
 		return;
 	}
 #endif
@@ -677,7 +683,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 	if (!Channel)
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
+		SPATIAL_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
 		return ERPCResult::NoActorChannel;
 	}
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
@@ -689,7 +695,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			if (Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 			{
 				// TODO: UNR-1437 - Add Support for Multicast RPCs on Entity Creation
-				UE_LOG(LogSpatialSender, Warning, TEXT("NetMulticast RPC %s triggered on Object %s too close to initial creation."), *Function->GetName(), *TargetObject->GetName());
+				SPATIAL_LOG(LogSpatialSender, Warning, TEXT("NetMulticast RPC %s triggered on Object %s too close to initial creation."), *Function->GetName(), *TargetObject->GetName());
 			}
 			check(NetDriver->IsServer());
 
@@ -701,7 +707,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		}
 		else
 		{
-			UE_LOG(LogSpatialSender, Warning, TEXT("CrossServer RPC %s triggered on Object %s too close to initial creation."), *Function->GetName(), *TargetObject->GetName());
+			SPATIAL_LOG(LogSpatialSender, Warning, TEXT("CrossServer RPC %s triggered on Object %s too close to initial creation."), *Function->GetName(), *TargetObject->GetName());
 		}
 	}
 
@@ -724,13 +730,13 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 		if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
 		{
-			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
+			SPATIAL_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
 				EntityId, CommandRequest.component_id, *Function->GetName());
 			Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Payload.PayloadData, 0));
 		}
 		else
 		{
-			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"),
+			SPATIAL_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"),
 				EntityId, CommandRequest.component_id, *Function->GetName());
 		}
 
@@ -777,7 +783,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 					{
 						if (!ActorGroupManager->IsSameWorkerType(TargetActor, ConnectionOwner))
 						{
-							UE_LOG(LogSpatialSender, Verbose, TEXT("RPC %s Cannot be packed as TargetActor (%s) and Connection Owner (%s) are on different worker types."),
+							SPATIAL_LOG(LogSpatialSender, Verbose, TEXT("RPC %s Cannot be packed as TargetActor (%s) and Connection Owner (%s) are on different worker types."),
 								*Function->GetName(),
 								*TargetActor->GetName(),
 								*ConnectionOwner->GetName()
@@ -850,7 +856,7 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 	FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
 	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Actor %s got unresolved (?) before RPC %s could be retried. This RPC will not be sent."), *TargetObject->GetName(), *RetryRPC->Function->GetName());
+		SPATIAL_LOG(LogSpatialSender, Warning, TEXT("Actor %s got unresolved (?) before RPC %s could be retried. This RPC will not be sent."), *TargetObject->GetName(), *RetryRPC->Function->GetName());
 		return;
 	}
 
@@ -859,7 +865,7 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 
 	// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 	RetryRPC->Attempts++;
-	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: %d)"),
+	SPATIAL_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: %d)"),
 		TargetObjectRef.Entity, RetryRPC->ComponentId, *RetryRPC->Function->GetName(), RetryRPC->Attempts);
 	Receiver->AddPendingReliableRPC(RequestId, RetryRPC);
 }
@@ -884,7 +890,7 @@ void USpatialSender::ProcessPositionUpdates()
 
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)
 {
-	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s with EntityId %lld"), *Channel->Actor->GetName(), Channel->GetEntityId());
+	SPATIAL_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s with EntityId %lld"), *Channel->Actor->GetName(), Channel->GetEntityId());
 
 	Worker_RequestId RequestId = CreateEntity(Channel);
 	Receiver->AddPendingActorRequest(RequestId, Channel);
@@ -1017,7 +1023,7 @@ ERPCResult USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Funct
 	UNetConnection* OwningConnection = TargetActor->GetNetConnection();
 	if (OwningConnection == nullptr)
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingRPC: No connection for object %s (RPC %s, actor %s, entity %lld)"),
+		SPATIAL_LOG(LogSpatialSender, Warning, TEXT("AddPendingRPC: No connection for object %s (RPC %s, actor %s, entity %lld)"),
 			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity);
 		return ERPCResult::NoNetConnection;
 	}
@@ -1025,7 +1031,7 @@ ERPCResult USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Funct
 	APlayerController* Controller = Cast<APlayerController>(OwningConnection->OwningActor);
 	if (Controller == nullptr)
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingRPC: Connection's owner is not a player controller for object %s (RPC %s, actor %s, entity %lld): connection owner %s"),
+		SPATIAL_LOG(LogSpatialSender, Warning, TEXT("AddPendingRPC: Connection's owner is not a player controller for object %s (RPC %s, actor %s, entity %lld): connection owner %s"),
 			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity, *OwningConnection->OwningActor->GetName());
 		return ERPCResult::NoOwningController;
 	}
@@ -1083,7 +1089,7 @@ bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& O
 
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to update EntityACL but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
+		SPATIAL_LOG(LogSpatialSender, Warning, TEXT("Trying to update EntityACL but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
 		return false;
 	}
 

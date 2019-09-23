@@ -70,6 +70,8 @@ class SPATIALGDK_API USpatialSender : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
 
+	virtual UWorld* GetWorld() const override;
+
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
 	void SendComponentInterestForActor(USpatialActorChannel* Channel, Worker_EntityId EntityId, bool bNetOwned);

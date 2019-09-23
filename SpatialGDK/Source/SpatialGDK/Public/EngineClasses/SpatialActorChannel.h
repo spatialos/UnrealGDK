@@ -27,6 +27,8 @@ class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 public:
 	USpatialActorChannel(const FObjectInitializer & ObjectInitializer = FObjectInitializer::Get());
 
+	virtual UWorld* GetWorld() const override;
+
 	// SpatialOS Entity ID.
 	FORCEINLINE Worker_EntityId GetEntityId() const
 	{

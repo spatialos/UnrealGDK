@@ -115,6 +115,8 @@ class USpatialReceiver : public UObject
 public:
 	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager);
 
+	virtual UWorld* GetWorld() const override;
+
 	// Dispatcher Calls
 	void OnCriticalSection(bool InCriticalSection);
 	void OnAddEntity(const Worker_AddEntityOp& Op);
