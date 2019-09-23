@@ -52,6 +52,8 @@ private:
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 	void AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint) const;
 
+	UWorld* GetWorld() const { return Actor != nullptr ? Actor->GetWorld() : nullptr; }
+
 	AActor* Actor;
 	const FClassInfo& Info;
 	USpatialClassInfoManager* ClassInfoManager;

@@ -26,6 +26,7 @@ class SPATIALGDK_API USnapshotManager : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver);
 
+	virtual UWorld* GetWorld() const override;
 	void WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate& Delegate);
 	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
 	void LoadSnapshot(const FString& SnapshotName);

@@ -11,6 +11,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "SpatialConstants.h"
+#include "SpatialLogMacros.h"
 #include "Utils/SchemaUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -26,6 +27,11 @@ void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* 
 	TimerManager = InTimerManager;
 
 	NumberOfAttempts = 0;
+}
+
+UWorld* USpatialPlayerSpawner::GetWorld() const
+{
+	return NetDriver != nullptr ? NetDriver->GetWorld() : nullptr;
 }
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, const char* CallerAttribute, Worker_RequestId RequestId )
@@ -54,7 +60,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 		{
 			URLString += TEXT("?simulatedPlayer=1");
 		}
-		
+
 		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName);
 	}
 
@@ -86,11 +92,11 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
-			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Entity query for SpatialSpawner failed: %s"), UTF8_TO_TCHAR(Op.message));
+			SPATIAL_LOG(LogSpatialPlayerSpawner, Error, TEXT("Entity query for SpatialSpawner failed: %s"), UTF8_TO_TCHAR(Op.message));
 		}
 		else if (Op.result_count == 0)
 		{
-			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Could not find SpatialSpawner via entity query: %s"), UTF8_TO_TCHAR(Op.message));
+			SPATIAL_LOG(LogSpatialPlayerSpawner, Error, TEXT("Could not find SpatialSpawner via entity query: %s"), UTF8_TO_TCHAR(Op.message));
 		}
 		else
 		{
@@ -121,7 +127,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 		}
 	});
 
-	UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Sending player spawn request"));
+	SPATIAL_LOG(LogSpatialPlayerSpawner, Log, TEXT("Sending player spawn request"));
 	NetDriver->Receiver->AddEntityQueryDelegate(RequestID, SpatialSpawnerQueryDelegate);
 
 	++NumberOfAttempts;
@@ -131,11 +137,11 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(const Worker_CommandRespo
 {
 	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialPlayerSpawner, Display, TEXT("Player spawned sucessfully"));
+		SPATIAL_LOG(LogSpatialPlayerSpawner, Display, TEXT("Player spawned sucessfully"));
 	}
 	else if (NumberOfAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 	{
-		UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""),
+		SPATIAL_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""),
 			UTF8_TO_TCHAR(Op.message));
 
 		FTimerHandle RetryTimer;
@@ -149,7 +155,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(const Worker_CommandRespo
 	}
 	else
 	{
-		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Player spawn request failed too many times. (%u attempts)"),
+		SPATIAL_LOG(LogSpatialPlayerSpawner, Error, TEXT("Player spawn request failed too many times. (%u attempts)"),
 			SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
 	}
 }

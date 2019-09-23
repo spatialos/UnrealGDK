@@ -13,6 +13,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Schema/Interest.h"
 #include "SpatialConstants.h"
+#include "SpatialLogMacros.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/InterestFactory.h"
 
@@ -27,6 +28,11 @@ ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNet
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, bInterestHasChanged(bInterestDirty)
 { }
+
+UWorld* ComponentFactory::GetWorld() const
+{
+	return NetDriver != nullptr ? NetDriver->GetWorld() : nullptr;
+}
 
 bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
 {
@@ -127,7 +133,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			// Check the success of the serialization and print a warning if it failed. This is how native handles failed serialization.
 			if (!bSuccess)
 			{
-				UE_LOG(LogSpatialNetSerialize, Warning, TEXT("AddProperty: NetSerialize %s failed."), *Struct->GetFullName());
+				SPATIAL_LOG(LogSpatialNetSerialize, Warning, TEXT("AddProperty: NetSerialize %s failed."), *Struct->GetFullName());
 				return;
 			}
 		}
@@ -237,15 +243,15 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 	else if (Property->IsA<UMapProperty>())
 	{
-		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TMaps are not supported."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
+		SPATIAL_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TMaps are not supported."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
 	}
 	else if (Property->IsA<USetProperty>())
 	{
-		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TSets are not supported."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
+		SPATIAL_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TSets are not supported."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
 	}
 	else
 	{
-		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Attempted to add unknown property type."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
+		SPATIAL_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Attempted to add unknown property type."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
 	}
 }
 

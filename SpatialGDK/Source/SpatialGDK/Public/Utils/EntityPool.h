@@ -32,6 +32,7 @@ class SPATIALGDK_API UEntityPool : public UObject
 
 public:
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* TimerManager);
+	virtual UWorld* GetWorld() const override;
 	void ReserveEntityIDs(int32 EntitiesToReserve);
 	Worker_EntityId GetNextEntityId();
 

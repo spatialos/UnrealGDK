@@ -5,6 +5,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialWorkerFlags.h"
+#include "SpatialLogMacros.h"
 #include "UObject/UObjectIterator.h"
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialMetrics.h"
@@ -16,6 +17,11 @@ void USpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticCompon
 	Receiver = InReceiver;
 	StaticComponentView = InStaticComponentView;
 	SpatialMetrics = InSpatialMetrics;
+}
+
+UWorld* USpatialDispatcher::GetWorld() const
+{
+	return Receiver != nullptr ? Receiver->GetWorld() : nullptr;
 }
 
 void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
@@ -97,7 +103,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			USpatialWorkerFlags::ApplyWorkerFlagUpdate(Op->flag_update);
 			break;
 		case WORKER_OP_TYPE_LOG_MESSAGE:
-			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
+			SPATIAL_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
 			break;
 		case WORKER_OP_TYPE_METRICS:
 #if !UE_BUILD_SHIPPING

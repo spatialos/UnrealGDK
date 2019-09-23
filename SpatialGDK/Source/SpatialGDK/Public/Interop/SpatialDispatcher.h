@@ -30,6 +30,7 @@ public:
 	using FCallbackId = uint32;
 
 	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics);
+	virtual UWorld* GetWorld() const override;
 	void ProcessOps(Worker_OpList* OpList);
 
 	// The following 2 methods should *only* be used by the Startup OpList Queueing flow

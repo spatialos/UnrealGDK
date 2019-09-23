@@ -6,6 +6,7 @@
 
 #include "Interop/SpatialReceiver.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialLogMacros.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEntityPool);
 
@@ -20,9 +21,14 @@ void UEntityPool::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerMan
 	ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolInitialReservationCount);
 }
 
+UWorld* UEntityPool::GetWorld() const
+{
+	return NetDriver != nullptr ? NetDriver->GetWorld() : nullptr;
+}
+
 void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 {
-	UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Sending bulk entity ID Reservation Request for %d IDs"), EntitiesToReserve);
+	SPATIAL_LOG(LogSpatialEntityPool, Verbose, TEXT("Sending bulk entity ID Reservation Request for %d IDs"), EntitiesToReserve);
 
 	checkf(!bIsAwaitingResponse, TEXT("Trying to reserve Entity IDs while another reserve request is in flight"));
 
@@ -35,12 +41,12 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 			// UNR-630 - Temporary hack to avoid failure to reserve entities due to timeout on large maps
 			if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
 			{
-				UE_LOG(LogSpatialEntityPool, Warning, TEXT("Failed to reserve entity IDs Reason: %s. Retrying..."), UTF8_TO_TCHAR(Op.message));
+				SPATIAL_LOG(LogSpatialEntityPool, Warning, TEXT("Failed to reserve entity IDs Reason: %s. Retrying..."), UTF8_TO_TCHAR(Op.message));
 				ReserveEntityIDs(EntitiesToReserve);
 			}
 			else
 			{
-				UE_LOG(LogSpatialEntityPool, Error, TEXT("Failed to reserve entity IDs Reason: %s."), UTF8_TO_TCHAR(Op.message));
+				SPATIAL_LOG(LogSpatialEntityPool, Error, TEXT("Failed to reserve entity IDs Reason: %s."), UTF8_TO_TCHAR(Op.message));
 			}
 
 			return;
@@ -60,7 +66,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 		NewEntityRange.LastEntityId = Op.first_entity_id + (Op.number_of_entity_ids - 1);
 		NewEntityRange.EntityRangeId = NextEntityRangeId++;
 
-		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserved %d entities, caching in pool, Entity IDs: (%d, %d) Range ID: %d"), Op.number_of_entity_ids, Op.first_entity_id, NewEntityRange.LastEntityId, NewEntityRange.EntityRangeId);
+		SPATIAL_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserved %d entities, caching in pool, Entity IDs: (%d, %d) Range ID: %d"), Op.number_of_entity_ids, Op.first_entity_id, NewEntityRange.LastEntityId, NewEntityRange.EntityRangeId);
 
 		ReservedEntityIDRanges.Add(NewEntityRange);
 
@@ -91,7 +97,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 
 void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)
 {
-	UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Entity range expired! Range ID: %d"), ExpiringEntityRangeId);
+	SPATIAL_LOG(LogSpatialEntityPool, Verbose, TEXT("Entity range expired! Range ID: %d"), ExpiringEntityRangeId);
 
 	int32 FoundEntityRangeIndex = ReservedEntityIDRanges.IndexOfByPredicate([ExpiringEntityRangeId](const EntityRange& Element)
 	{
@@ -101,14 +107,14 @@ void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)
 	if (FoundEntityRangeIndex == INDEX_NONE)
 	{
 		// This entity range has already been cleaned up as a result of running out of Entity IDs.
-		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Entity range ID: %d has already been depleted"), ExpiringEntityRangeId);
+		SPATIAL_LOG(LogSpatialEntityPool, Verbose, TEXT("Entity range ID: %d has already been depleted"), ExpiringEntityRangeId);
 		return;
 	}
 
 	if (FoundEntityRangeIndex < ReservedEntityIDRanges.Num() - 1)
 	{
 		// This is not the most recent entity range, just clean up without requesting additional IDs.
-		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Newer range detected, cleaning up Entity range ID: %d without new request"), ExpiringEntityRangeId);
+		SPATIAL_LOG(LogSpatialEntityPool, Verbose, TEXT("Newer range detected, cleaning up Entity range ID: %d without new request"), ExpiringEntityRangeId);
 		ReservedEntityIDRanges.RemoveAt(FoundEntityRangeIndex);
 	}
 	else
@@ -116,7 +122,7 @@ void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)
 		// Reserve then cleanup
 		if (!bIsAwaitingResponse)
 		{
-			UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserving new Entity range to replace Entity range ID: %d"), ExpiringEntityRangeId);
+			SPATIAL_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserving new Entity range to replace Entity range ID: %d"), ExpiringEntityRangeId);
 			ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolRefreshCount);
 		}
 		// Mark this entity range as expired, so it gets cleaned up when we receive a new entity range from Spatial.
@@ -129,7 +135,7 @@ Worker_EntityId UEntityPool::GetNextEntityId()
 	if (ReservedEntityIDRanges.Num() == 0)
 	{
 		// TODO: Improve error message
-		UE_LOG(LogSpatialEntityPool, Warning, TEXT("Tried to pop an entity ID from the pool when there were no entity IDs. Try altering your Entity Pool configuration"));
+		SPATIAL_LOG(LogSpatialEntityPool, Warning, TEXT("Tried to pop an entity ID from the pool when there were no entity IDs. Try altering your Entity Pool configuration"));
 		return SpatialConstants::INVALID_ENTITY_ID;
 	}
 
@@ -142,11 +148,11 @@ Worker_EntityId UEntityPool::GetNextEntityId()
 		TotalRemainingEntityIds += Range.LastEntityId - Range.CurrentEntityId + 1;
 	}
 
-	UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Popped ID, %i IDs remaining"), TotalRemainingEntityIds);
+	SPATIAL_LOG(LogSpatialEntityPool, Verbose, TEXT("Popped ID, %i IDs remaining"), TotalRemainingEntityIds);
 
 	if (TotalRemainingEntityIds < GetDefault<USpatialGDKSettings>()->EntityPoolRefreshThreshold && !bIsAwaitingResponse)
 	{
-		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Pool under threshold, reserving more entity IDs"));
+		SPATIAL_LOG(LogSpatialEntityPool, Verbose, TEXT("Pool under threshold, reserving more entity IDs"));
 		ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolRefreshCount);
 	}
 

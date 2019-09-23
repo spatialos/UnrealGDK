@@ -12,6 +12,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "SpatialConstants.h"
+#include "SpatialLogMacros.h"
 #include "SpatialGDKSettings.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -108,7 +109,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 	{
 		if (!Cast<USpatialNetDriver>(Driver)->StaticComponentView->HasAuthority(PlayerControllerEntity, SpatialConstants::HEARTBEAT_COMPONENT_ID))
 		{
-			UE_LOG(LogSpatialNetConnection, Warning, TEXT("Quit the game but no authority over Heartbeat component: NetConnection %s, PlayerController entity %lld"), *GetName(), PlayerControllerEntity);
+			SPATIAL_LOG(LogSpatialNetConnection, Warning, TEXT("Quit the game but no authority over Heartbeat component: NetConnection %s, PlayerController entity %lld"), *GetName(), PlayerControllerEntity);
 			return;
 		}
 
@@ -123,7 +124,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 	}
 	else
 	{
-		UE_LOG(LogSpatialNetConnection, Warning, TEXT("Quitting before Heartbeat component has been initialized: NetConnection %s"), *GetName());
+		SPATIAL_LOG(LogSpatialNetConnection, Warning, TEXT("Quitting before Heartbeat component has been initialized: NetConnection %s"), *GetName());
 	}
 }
 

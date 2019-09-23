@@ -22,7 +22,7 @@ public:
 		RepFlags.bRepPhysics = ActorChannel->Actor->ReplicatedMovement.bRepPhysics;
 
 #if 0
-		UE_LOG(LogTemp, Verbose, TEXT("CMF Actor %s (%lld) NetOwner %d Simulated %d RepPhysics %d Client %s"),
+		SPATIAL_LOG(LogTemp, Verbose, TEXT("CMF Actor %s (%lld) NetOwner %d Simulated %d RepPhysics %d Client %s"),
 			*ActorChannel->Actor->GetName(),
 			ActorChannel->GetEntityId(),
 			RepFlags.bNetOwner,

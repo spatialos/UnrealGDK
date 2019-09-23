@@ -25,6 +25,8 @@ class USpatialMetrics : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver);
 
+	virtual UWorld* GetWorld() const override;
+
 	void TickMetrics();
 
 	double CalculateLoad() const;

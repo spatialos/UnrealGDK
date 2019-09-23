@@ -99,6 +99,7 @@ public:
 	void UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef);
 
 private:
+	UWorld* GetWorld() const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRefInternal(const FUnrealObjectRef& ObjectRef);
 
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(UObject* Object);

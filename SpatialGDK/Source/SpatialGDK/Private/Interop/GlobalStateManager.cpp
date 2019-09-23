@@ -22,6 +22,7 @@
 #include "Runtime/Engine/Public/TimerManager.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
+#include "SpatialLogMacros.h"
 #include "UObject/UObjectGlobals.h"
 #include "Utils/EntityPool.h"
 
@@ -53,9 +54,14 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 		}
 	}
 #endif // WITH_EDITOR
-  
+
 	bAcceptingPlayers = false;
 	bCanBeginPlay = false;
+}
+
+UWorld* UGlobalStateManager::GetWorld() const
+{
+	return NetDriver != nullptr ? NetDriver->GetWorld() : nullptr;
 }
 
 void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& Data)
@@ -67,7 +73,7 @@ void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& 
 void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-	
+
 	// Set the Deployment Map URL.
 	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
 
@@ -114,7 +120,7 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 {
 	if (bAcceptingPlayersUpdate != bAcceptingPlayers)
 	{
-		UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - AcceptingPlayers: %s"), bAcceptingPlayersUpdate ? TEXT("true") : TEXT("false"));
+		SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - AcceptingPlayers: %s"), bAcceptingPlayersUpdate ? TEXT("true") : TEXT("false"));
 		bAcceptingPlayers = bAcceptingPlayersUpdate;
 
 		// Tell the SpatialNetDriver that AcceptingPlayers has changed.
@@ -134,7 +140,7 @@ void UGlobalStateManager::SendShutdownMultiProcessRequest()
 	  * Standard UnrealEngine behavior is to call TerminateProc on external processes and there is no method to send any messaging
 	  * to those external process.
 	  * The GDK requires shutdown code to be ran for workers to disconnect cleanly so instead of abruptly shutting down the server worker,
-	  * just send a command to the worker to begin it's shutdown phase. 
+	  * just send a command to the worker to begin it's shutdown phase.
 	  */
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
@@ -147,9 +153,9 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 {
 	if (NetDriver && NetDriver->GetNetMode() == NM_DedicatedServer)
 	{
-		UE_LOG(LogGlobalStateManager, Log, TEXT("Received shutdown multi-process request."));
-		
-		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server. 
+		SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("Received shutdown multi-process request."));
+
+		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server.
 		SetAcceptingPlayers(false);
 
 		// If we have multiple servers, they need to be informed of PIE session ending.
@@ -173,7 +179,7 @@ void UGlobalStateManager::ReceiveShutdownAdditionalServersEvent()
 {
 	if (NetDriver && NetDriver->GetNetMode() == NM_DedicatedServer)
 	{
-		UE_LOG(LogGlobalStateManager, Log, TEXT("Received shutdown additional servers event."));
+		SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("Received shutdown additional servers event."));
 
 		FGenericPlatformMisc::RequestExit(false);
 	}
@@ -183,7 +189,7 @@ void UGlobalStateManager::SendShutdownAdditionalServersEvent()
 {
 	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID))
 	{
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to send shutdown_additional_servers event on the GSM but this worker does not have authority."));
+		SPATIAL_LOG(LogGlobalStateManager, Warning, TEXT("Tried to send shutdown_additional_servers event on the GSM but this worker does not have authority."));
 		return;
 	}
 
@@ -220,7 +226,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	if (SingletonEntityIdPtr == nullptr)
 	{
 		// No entry in SingletonNameToEntityId for this singleton class type
-		UE_LOG(LogGlobalStateManager, Verbose, TEXT("LinkExistingSingletonActor %s failed to find entry"), *SingletonActorClass->GetName());
+		SPATIAL_LOG(LogGlobalStateManager, Verbose, TEXT("LinkExistingSingletonActor %s failed to find entry"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -228,7 +234,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	if (SingletonEntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		// Singleton Entity hasn't been created yet
-		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor %s entity id is invalid"), *SingletonActorClass->GetName());
+		SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor %s entity id is invalid"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -238,7 +244,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 		// Dynamically spawn singleton actor if we have queued up data - ala USpatialReceiver::ReceiveActor - JIRA: 735
 
 		// No local actor has registered itself as replicatible on this worker
-		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor no actor registered"), *SingletonActorClass->GetName());
+		SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor no actor registered"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -248,7 +254,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	if (Channel != nullptr)
 	{
 		// Channel has already been setup
-		UE_LOG(LogGlobalStateManager, Verbose, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup"), *SingletonActorClass->GetName());
+		SPATIAL_LOG(LogGlobalStateManager, Verbose, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -279,7 +285,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 
 	Channel->SetChannelActor(SingletonActor);
 
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
+	SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
 }
 
 void UGlobalStateManager::LinkAllExistingSingletonActors()
@@ -295,7 +301,7 @@ void UGlobalStateManager::LinkAllExistingSingletonActors()
 		UClass* SingletonActorClass = LoadObject<UClass>(nullptr, *Pair.Key);
 		if (SingletonActorClass == nullptr)
 		{
-			UE_LOG(LogGlobalStateManager, Error, TEXT("Failed to find Singleton Actor Class: %s"), *Pair.Key);
+			SPATIAL_LOG(LogGlobalStateManager, Error, TEXT("Failed to find Singleton Actor Class: %s"), *Pair.Key);
 			continue;
 		}
 
@@ -317,7 +323,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	// Just return the channel if it's already been setup
 	if (Channel != nullptr)
 	{
-		UE_LOG(LogGlobalStateManager, Log, TEXT("AddSingleton called when channel already setup: %s"), *SingletonActor->GetName());
+		SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("AddSingleton called when channel already setup: %s"), *SingletonActor->GetName());
 		return Channel;
 	}
 
@@ -346,7 +352,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 		}
 
 		Channel->SetChannelActor(SingletonActor);
-		UE_LOG(LogGlobalStateManager, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActorClass->GetName());
+		SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActorClass->GetName());
 	}
 	else
 	{
@@ -384,7 +390,7 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 
 	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID))
 	{
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("UpdateSingletonEntityId: no authority over the GSM! Update will not be sent. Singleton class: %s, entity: %lld"), *ClassName, SingletonEntityId);
+		SPATIAL_LOG(LogGlobalStateManager, Warning, TEXT("UpdateSingletonEntityId: no authority over the GSM! Update will not be sent. Singleton class: %s, entity: %lld"), *ClassName, SingletonEntityId);
 		return;
 	}
 
@@ -415,7 +421,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
 
 	// Send the component update that we can now accept players.
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
+	SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
@@ -449,7 +455,7 @@ void UGlobalStateManager::SetCanBeginPlay(const bool bInCanBeginPlay)
 
 void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."), AuthOp.component_id,
+	SPATIAL_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."), AuthOp.component_id,
 		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT ("does not have"));
 
 	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
@@ -580,11 +586,11 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
-			UE_LOG(LogGlobalStateManager, Warning, TEXT("Could not find GSM via entity query: %s"), UTF8_TO_TCHAR(Op.message));
+			SPATIAL_LOG(LogGlobalStateManager, Warning, TEXT("Could not find GSM via entity query: %s"), UTF8_TO_TCHAR(Op.message));
 		}
 		else if (Op.result_count == 0)
 		{
-			UE_LOG(LogGlobalStateManager, Log, TEXT("GSM entity query shows the GSM does not yet exist in the world."));
+			SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("GSM entity query shows the GSM does not yet exist in the world."));
 		}
 		else
 		{
@@ -592,7 +598,7 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 
 			if (!bNewAcceptingPlayers && bRetryUntilAcceptingPlayers)
 			{
-				UE_LOG(LogGlobalStateManager, Log, TEXT("Not yet accepting new players. Will retry query for GSM."));
+				SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("Not yet accepting new players. Will retry query for GSM."));
 				RetryQueryGSM(bRetryUntilAcceptingPlayers);
 			}
 			else
@@ -644,7 +650,7 @@ bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(const Worker_Enti
 		}
 	}
 
-	UE_LOG(LogGlobalStateManager, Warning, TEXT("Entity query response for the GSM did not contain an AcceptingPlayers state."));
+	SPATIAL_LOG(LogGlobalStateManager, Warning, TEXT("Entity query response for the GSM did not contain an AcceptingPlayers state."));
 
 	return false;
 }
@@ -662,7 +668,7 @@ void UGlobalStateManager::RetryQueryGSM(bool bRetryUntilAcceptingPlayers)
 	RetryTimerDelay = 0.1f;
 #endif
 
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
+	SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
 	FTimerHandle RetryTimer;
 	TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<UGlobalStateManager>(this), bRetryUntilAcceptingPlayers]()
 	{
@@ -675,6 +681,6 @@ void UGlobalStateManager::RetryQueryGSM(bool bRetryUntilAcceptingPlayers)
 
 void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 {
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
+	SPATIAL_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;
 }

@@ -14,8 +14,8 @@
 #include "Engine/World.h"
 #include "Misc/Paths.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialLogMacros.h"
 #include "Utils/ErrorCodeRemapping.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
@@ -25,6 +25,11 @@ using namespace SpatialGDK;
 void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
 {
 	GameInstance = InGameInstance;
+}
+
+UWorld* USpatialWorkerConnection::GetWorld() const
+{
+	return GameInstance.Get() ? GameInstance->GetWorld() : nullptr;
 }
 
 void USpatialWorkerConnection::FinishDestroy()
@@ -178,7 +183,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
 		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType.ToString() : SpatialConstants::DefaultServerWorkerType.ToString();
-		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
+		SPATIAL_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
 	}
 
 #if WITH_EDITOR
@@ -231,7 +236,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	if (LocatorConfig.WorkerType.IsEmpty())
 	{
 		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
-		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *LocatorConfig.WorkerType);
+		SPATIAL_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *LocatorConfig.WorkerType);
 	}
 
 	if (LocatorConfig.WorkerId.IsEmpty())

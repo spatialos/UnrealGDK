@@ -7,6 +7,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "SpatialConstants.h"
+#include "SpatialLogMacros.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSnapshotManager);
@@ -20,13 +21,18 @@ void USnapshotManager::Init(USpatialNetDriver* InNetDriver)
 	GlobalStateManager = InNetDriver->GlobalStateManager;
 }
 
+UWorld* USnapshotManager::GetWorld() const
+{
+	return NetDriver ? NetDriver->GetWorld() : nullptr;
+}
+
 // WorldWipe will send out an expensive entity query for every entity in the deployment.
 // It does this by having an entity query for all entities that are not the GSM (workaround for not having the ability to make a query for all entities).
 // Once it has the response to this query, it will send deletion requests for all found entities and then one for the GSM itself.
 // Should only be triggered by the worker which is authoritative over the GSM.
 void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate& PostWorldWipeDelegate)
 {
-	UE_LOG(LogSnapshotManager, Log, TEXT("World wipe for deployment has been triggered. All entities will be deleted!"));
+	SPATIAL_LOG(LogSnapshotManager, Log, TEXT("World wipe for deployment has been triggered. All entities will be deleted!"));
 
 	Worker_Constraint GSMConstraint;
 	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
@@ -51,11 +57,11 @@ void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate&
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
-			UE_LOG(LogSnapshotManager, Error, TEXT("SnapshotManager WorldWipe - World entity query failed: %s"), UTF8_TO_TCHAR(Op.message));
+			SPATIAL_LOG(LogSnapshotManager, Error, TEXT("SnapshotManager WorldWipe - World entity query failed: %s"), UTF8_TO_TCHAR(Op.message));
 		}
 		else if (Op.result_count == 0)
 		{
-			UE_LOG(LogSnapshotManager, Error, TEXT("SnapshotManager WorldWipe - No entities found in world entity query"));
+			SPATIAL_LOG(LogSnapshotManager, Error, TEXT("SnapshotManager WorldWipe - No entities found in world entity query"));
 		}
 		else
 		{
@@ -75,11 +81,11 @@ void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate&
 
 void USnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op)
 {
-	UE_LOG(LogSnapshotManager, Log, TEXT("Deleting %u entities."), Op.result_count);
+	SPATIAL_LOG(LogSnapshotManager, Log, TEXT("Deleting %u entities."), Op.result_count);
 
 	for (uint32_t i = 0; i < Op.result_count; i++)
 	{
-		UE_LOG(LogSnapshotManager, Verbose, TEXT("Sending delete request for: %i"), Op.results[i].entity_id);
+		SPATIAL_LOG(LogSnapshotManager, Verbose, TEXT("Sending delete request for: %i"), Op.results[i].entity_id);
 		NetDriver->Connection->SendDeleteEntityRequest(Op.results[i].entity_id);
 	}
 }
@@ -103,7 +109,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 {
 	FString SnapshotPath = GetSnapshotPath(SnapshotName);
 
-	UE_LOG(LogSnapshotManager, Log, TEXT("Loading snapshot: '%s'"), *SnapshotPath);
+	SPATIAL_LOG(LogSnapshotManager, Log, TEXT("Loading snapshot: '%s'"), *SnapshotPath);
 
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_SnapshotParameters Parameters{};
@@ -114,7 +120,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 	FString Error = Worker_SnapshotInputStream_GetError(Snapshot);
 	if (!Error.IsEmpty())
 	{
-		UE_LOG(LogSnapshotManager, Error, TEXT("Error when attempting to read snapshot '%s': %s"), *SnapshotPath, *Error);
+		SPATIAL_LOG(LogSnapshotManager, Error, TEXT("Error when attempting to read snapshot '%s': %s"), *SnapshotPath, *Error);
 		Worker_SnapshotInputStream_Destroy(Snapshot);
 		return;
 	}
@@ -127,7 +133,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 		Error = Worker_SnapshotInputStream_GetError(Snapshot);
 		if (!Error.IsEmpty())
 		{
-			UE_LOG(LogSnapshotManager, Error, TEXT("Error when reading snapshot. Aborting load snapshot: %s"), *Error);
+			SPATIAL_LOG(LogSnapshotManager, Error, TEXT("Error when reading snapshot. Aborting load snapshot: %s"), *Error);
 			Worker_SnapshotInputStream_Destroy(Snapshot);
 			return;
 		}
@@ -152,7 +158,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 		}
 		else
 		{
-			UE_LOG(LogSnapshotManager, Error, TEXT("Error when reading snapshot. Aborting load snapshot: %s"), *Error);
+			SPATIAL_LOG(LogSnapshotManager, Error, TEXT("Error when reading snapshot. Aborting load snapshot: %s"), *Error);
 			Worker_SnapshotInputStream_Destroy(Snapshot);
 			return;
 		}
@@ -164,7 +170,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 	ReserveEntityIDsDelegate SpawnEntitiesDelegate;
 	SpawnEntitiesDelegate.BindLambda([EntitiesToSpawn, this](const Worker_ReserveEntityIdsResponseOp& Op)
 	{
-		UE_LOG(LogSnapshotManager, Log, TEXT("Creating entities in snapshot, number of entities to spawn: %i"), Op.number_of_entity_ids);
+		SPATIAL_LOG(LogSnapshotManager, Log, TEXT("Creating entities in snapshot, number of entities to spawn: %i"), Op.number_of_entity_ids);
 
 		// Ensure we have the same number of reserved IDs as we have entities to spawn
 		check(EntitiesToSpawn.Num() == Op.number_of_entity_ids);
@@ -185,7 +191,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 				}
 			}
 
-			UE_LOG(LogSnapshotManager, Log, TEXT("Sending entity create request for: %i"), ReservedEntityID);
+			SPATIAL_LOG(LogSnapshotManager, Log, TEXT("Sending entity create request for: %i"), ReservedEntityID);
 			NetDriver->Connection->SendCreateEntityRequest(MoveTemp(EntityToSpawn), &ReservedEntityID);
 		}
 

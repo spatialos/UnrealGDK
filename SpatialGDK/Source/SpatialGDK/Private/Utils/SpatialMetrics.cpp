@@ -11,6 +11,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialLogMacros.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
@@ -24,6 +25,11 @@ void USpatialMetrics::Init(USpatialNetDriver* InNetDriver)
 
 	bRPCTrackingEnabled = false;
 	RPCTrackingStartTime = 0.0f;
+}
+
+UWorld* USpatialMetrics::GetWorld() const
+{
+	return NetDriver != nullptr ? NetDriver->GetWorld() : nullptr; 
 }
 
 void USpatialMetrics::TickMetrics()
@@ -74,11 +80,11 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 {
 	if (bRPCTrackingEnabled)
 	{
-		UE_LOG(LogSpatialMetrics, Log, TEXT("Already recording RPC metrics"));
+		SPATIAL_LOG(LogSpatialMetrics, Log, TEXT("Already recording RPC metrics"));
 		return;
 	}
 
-	UE_LOG(LogSpatialMetrics, Log, TEXT("Recording RPC metrics"));
+	SPATIAL_LOG(LogSpatialMetrics, Log, TEXT("Recording RPC metrics"));
 
 	bRPCTrackingEnabled = true;
 	RPCTrackingStartTime = FPlatformTime::Seconds();
@@ -98,7 +104,7 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 		}
 		else
 		{
-			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialStartRPCMetrics: Could not resolve local PlayerController entity! RPC metrics will not start on the server."));
+			SPATIAL_LOG(LogSpatialMetrics, Warning, TEXT("SpatialStartRPCMetrics: Could not resolve local PlayerController entity! RPC metrics will not start on the server."));
 		}
 	}
 }
@@ -112,13 +118,13 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 {
 	if (!bRPCTrackingEnabled)
 	{
-		UE_LOG(LogSpatialMetrics, Log, TEXT("Could not stop recording RPC metrics. RPC metrics not yet started."));
+		SPATIAL_LOG(LogSpatialMetrics, Log, TEXT("Could not stop recording RPC metrics. RPC metrics not yet started."));
 		return;
 	}
 
 	// Display recorded sent RPCs.
 	const double TrackRPCInterval = FPlatformTime::Seconds() - RPCTrackingStartTime;
-	UE_LOG(LogSpatialMetrics, Log, TEXT("Recorded %d unique RPCs over the last %.3f seconds:"), RecentRPCs.Num(), TrackRPCInterval);
+	SPATIAL_LOG(LogSpatialMetrics, Log, TEXT("Recorded %d unique RPCs over the last %.3f seconds:"), RecentRPCs.Num(), TrackRPCInterval);
 
 	if (RecentRPCs.Num() > 0)
 	{
@@ -145,9 +151,9 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 		int TotalCalls = 0;
 		int TotalPayload = 0;
 
-		UE_LOG(LogSpatialMetrics, Log, TEXT("---------------------------"));
-		UE_LOG(LogSpatialMetrics, Log, TEXT("Recently sent RPCs - %s:"), NetDriver->IsServer() ? TEXT("Server") : TEXT("Client"));
-		UE_LOG(LogSpatialMetrics, Log, TEXT("RPC Type           | %s | # of calls |  Calls/sec | Total payload | Avg. payload | Payload/sec"), *FString(TEXT("RPC Name")).RightPad(MaxRPCNameLen));
+		SPATIAL_LOG(LogSpatialMetrics, Log, TEXT("---------------------------"));
+		SPATIAL_LOG(LogSpatialMetrics, Log, TEXT("Recently sent RPCs - %s:"), NetDriver->IsServer() ? TEXT("Server") : TEXT("Client"));
+		SPATIAL_LOG(LogSpatialMetrics, Log, TEXT("RPC Type           | %s | # of calls |  Calls/sec | Total payload | Avg. payload | Payload/sec"), *FString(TEXT("RPC Name")).RightPad(MaxRPCNameLen));
 
 		FString SeparatorLine = FString::Printf(TEXT("-------------------+-%s-+------------+------------+---------------+--------------+------------"), *FString::ChrN(MaxRPCNameLen, '-'));
 
@@ -159,14 +165,14 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 			{
 				RPCTypeField = RPCSchemaTypeToString(Stat.Type);
 				PrevType = Stat.Type;
-				UE_LOG(LogSpatialMetrics, Log, TEXT("%s"), *SeparatorLine);
+				SPATIAL_LOG(LogSpatialMetrics, Log, TEXT("%s"), *SeparatorLine);
 			}
-			UE_LOG(LogSpatialMetrics, Log, TEXT("%s | %s | %10d | %10.4f | %13d | %12.4f | %11.4f"), *RPCTypeField.RightPad(18), *Stat.Name.RightPad(MaxRPCNameLen), Stat.Calls, Stat.Calls / TrackRPCInterval, Stat.TotalPayload, (float)Stat.TotalPayload / Stat.Calls, Stat.TotalPayload / TrackRPCInterval);
+			SPATIAL_LOG(LogSpatialMetrics, Log, TEXT("%s | %s | %10d | %10.4f | %13d | %12.4f | %11.4f"), *RPCTypeField.RightPad(18), *Stat.Name.RightPad(MaxRPCNameLen), Stat.Calls, Stat.Calls / TrackRPCInterval, Stat.TotalPayload, (float)Stat.TotalPayload / Stat.Calls, Stat.TotalPayload / TrackRPCInterval);
 			TotalCalls += Stat.Calls;
 			TotalPayload += Stat.TotalPayload;
 		}
-		UE_LOG(LogSpatialMetrics, Log, TEXT("%s"), *SeparatorLine);
-		UE_LOG(LogSpatialMetrics, Log, TEXT("Total              | %s | %10d | %10.4f | %13d | %12.4f | %11.4f"), *FString::ChrN(MaxRPCNameLen, ' '), TotalCalls, TotalCalls / TrackRPCInterval, TotalPayload, (float)TotalPayload / TotalCalls, TotalPayload / TrackRPCInterval);
+		SPATIAL_LOG(LogSpatialMetrics, Log, TEXT("%s"), *SeparatorLine);
+		SPATIAL_LOG(LogSpatialMetrics, Log, TEXT("Total              | %s | %10d | %10.4f | %13d | %12.4f | %11.4f"), *FString::ChrN(MaxRPCNameLen, ' '), TotalCalls, TotalCalls / TrackRPCInterval, TotalPayload, (float)TotalPayload / TotalCalls, TotalPayload / TrackRPCInterval);
 
 		RecentRPCs.Empty();
 	}
@@ -188,7 +194,7 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 		}
 		else
 		{
-			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialStopRPCMetrics: Could not resolve local PlayerController entity! RPC metrics will not stop on the server."));
+			SPATIAL_LOG(LogSpatialMetrics, Warning, TEXT("SpatialStopRPCMetrics: Could not resolve local PlayerController entity! RPC metrics will not stop on the server."));
 		}
 	}
 }
@@ -210,7 +216,7 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 			Worker_CommandRequest Request = {};
 			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
 			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID);
-			
+
 			Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
 			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_NAME_ID, Name);
 			Schema_AddFloat(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_VALUE_ID, Value);
@@ -219,7 +225,7 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 		}
 		else
 		{
-			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialModifySetting: Could not resolve local PlayerController entity! Setting will not be sent to server."));
+			SPATIAL_LOG(LogSpatialMetrics, Warning, TEXT("SpatialModifySetting: Could not resolve local PlayerController entity! Setting will not be sent to server."));
 		}
 	}
 	else
@@ -248,11 +254,11 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 
 		if (bKnownSetting)
 		{
-			UE_LOG(LogSpatialMetrics, Log, TEXT("SpatialModifySetting: Spatial GDK setting %s set to %f"), *Name, Value);
+			SPATIAL_LOG(LogSpatialMetrics, Log, TEXT("SpatialModifySetting: Spatial GDK setting %s set to %f"), *Name, Value);
 		}
 		else
 		{
-			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialModifySetting: Invalid setting %s"), *Name);
+			SPATIAL_LOG(LogSpatialMetrics, Warning, TEXT("SpatialModifySetting: Invalid setting %s"), *Name);
 		}
 	}
 }

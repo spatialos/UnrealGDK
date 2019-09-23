@@ -24,6 +24,7 @@ public:
 
 private:
 	USpatialNetDriver* NetDriver;
+	UWorld* GetWorld() const { return NetDriver != nullptr ? NetDriver->GetWorld() : nullptr; }
 };
 
 struct FSpatialNetDeltaSerializeInfo : FNetDeltaSerializeInfo

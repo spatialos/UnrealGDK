@@ -29,6 +29,8 @@ class SPATIALGDK_API UGlobalStateManager : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
 
+	virtual UWorld* GetWorld() const override;
+
 	void ApplySingletonManagerData(const Worker_ComponentData& Data);
 	void ApplyDeploymentMapData(const Worker_ComponentData& Data);
 	void ApplyStartupActorManagerData(const Worker_ComponentData& Data);

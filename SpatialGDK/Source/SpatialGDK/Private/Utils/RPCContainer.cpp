@@ -3,6 +3,7 @@
 #include "Utils/RPCContainer.h"
 
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialLogMacros.h"
 
 DEFINE_LOG_CATEGORY(LogRPCContainer);
 
@@ -153,7 +154,7 @@ bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, E
 
 	return false;
 }
- 
+
 void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 {
 	ProcessingFunction = Function;

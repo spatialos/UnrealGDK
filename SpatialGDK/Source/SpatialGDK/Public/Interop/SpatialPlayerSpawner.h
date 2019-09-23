@@ -24,6 +24,8 @@ public:
 
 	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
 
+	virtual UWorld* GetWorld() const override;
+
 	// Server
 	void ReceivePlayerSpawnRequest(Schema_Object* Payload, const char* CallerAttribute, Worker_RequestId RequestId);
 

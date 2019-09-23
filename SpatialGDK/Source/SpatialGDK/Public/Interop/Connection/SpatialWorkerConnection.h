@@ -35,6 +35,8 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 public:
 	void Init(USpatialGameInstance* InGameInstance);
 
+	virtual UWorld* GetWorld() const override;
+
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 

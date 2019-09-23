@@ -12,6 +12,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
+#include "SpatialLogMacros.h"
 #include "UObject/UObjectIterator.h"
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
@@ -266,7 +267,7 @@ void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstrai
 	}
 	else if (ActorInterestComponents.Num() > 1)
 	{
-		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestQueryComponent"), *Actor->GetPathName());
+		SPATIAL_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestQueryComponent"), *Actor->GetPathName());
 	}
 }
 
@@ -465,7 +466,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints() const
 		}
 		else
 		{
-			UE_LOG(LogInterestFactory, Error, TEXT("Error creating query constraints for Actor %s. "
+			SPATIAL_LOG(LogInterestFactory, Error, TEXT("Error creating query constraints for Actor %s. "
 				"Could not find Streaming Level Component for Level %s. Have you generated schema?"), *Actor->GetName(), *LevelPath.ToString());
 		}
 	}
