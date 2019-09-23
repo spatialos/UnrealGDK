@@ -42,16 +42,6 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 
 		// Watch the worker config directory for changes.
 		StartUpWorkerConfigDirectoryWatcher();
-
-		// Restart the spatial service so it is guaranteed to be running in the current project.
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
-		{
-			TryStopSpatialService();
-			TryStartSpatialService();
-
-			// Ensure we have an up to date state of the spatial service and local deployment.
-			RefreshServiceStatus();
-		});
 	}
 #endif
 }
@@ -127,7 +117,7 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 	});
 }
 
-bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName)
+bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString CustomRuntimeIP)
 {
 	bRedeployRequired = false;
 
@@ -153,7 +143,13 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	// If the service is not running then start it.
 	if (!bSpatialServiceRunning)
 	{
-		TryStartSpatialService();
+		if (CustomRuntimeIP == TEXT("NONE")) {
+			TryStartSpatialService();
+		}
+		else
+		{
+			TryStartSpatialService(CustomRuntimeIP);
+		}
 	}
 
 	SnapshotName.RemoveFromEnd(TEXT(".snapshot"));
@@ -281,17 +277,29 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	return bSuccess;
 }
 
-bool FLocalDeploymentManager::TryStartSpatialService()
+bool FLocalDeploymentManager::TryStartSpatialService(FString CustomRuntimeIP)
 {
 	if (bSpatialServiceRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start spatial service but it is already running."));
 		return false;
 	}
+	else if (bStartingSpatialService)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start spatial service but it is already being started."));
+		return false;
+	}
 
 	bStartingSpatialService = true;
 
 	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s"), *SpatialServiceVersion);
+
+	// Pass custom runtime IP if it has been specified
+	if (CustomRuntimeIP != TEXT("NONE"))
+	{
+		SpatialServiceStartArgs.Append(FString::Printf(TEXT(" --runtime_ip=%s"), *CustomRuntimeIP));
+	}
+
 	FString ServiceStartResult;
 	int32 ExitCode;
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStartResult, ExitCode);
@@ -321,6 +329,12 @@ bool FLocalDeploymentManager::TryStartSpatialService()
 
 bool FLocalDeploymentManager::TryStopSpatialService()
 {
+	if (bStoppingSpatialService)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Tried to stop spatial service but it is already being stopped."));
+		return false;
+	}
+
 	bStoppingSpatialService = true;
 
 	FString SpatialServiceStartArgs = TEXT("service stop");
