@@ -14,14 +14,23 @@ class SPATIALGDK_API USpatialPingComponent : public UActorComponent
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SpatialPing)
-	bool bCanPing = true;
+	bool bStartWithPingEnabled = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SpatialPing)
 	float PingFrequency = 0.5f;
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	UFUNCTION(BlueprintCallable, Category = SpatialPing)
+	//Returns whether this component can ping
+	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Ping")
+	bool GetIsPingEnabled() const;
+
+	//Set whether this component can ping
+	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Ping")
+	void SetPingEnabled(bool bSetEnabled);
+
+	//Returns the latest raw round-trip ping value in seconds
+	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Ping")
 	float GetPing() const;
 
 private:
@@ -30,7 +39,15 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedPingID)
 	float ReplicatedPingID;
 
+	bool bIsPingEnabled = false;
+
 	FTimerHandle PingTimerHandle;
+
+	APlayerController* OwningController;
+
+	void EnablePing();
+
+	void DisablePing();
 
 	UFUNCTION()
 	void TickPingComponent();

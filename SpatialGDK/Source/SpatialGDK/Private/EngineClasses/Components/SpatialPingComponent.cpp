@@ -14,6 +14,8 @@ USpatialPingComponent::USpatialPingComponent(const FObjectInitializer& ObjectIni
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 
 	bReplicates = true;
+
+	bStartWithPingEnabled = true;
 }
 
 void USpatialPingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -26,23 +28,31 @@ void USpatialPingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 void USpatialPingComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	UWorld* World = GetWorld();
-	if (World)
-	{
-		//Only run on clients
-		if (GEngine->GetNetMode(World) == NM_Client)
-		{
-			World->GetTimerManager().SetTimer(PingTimerHandle, this, &USpatialPingComponent::TickPingComponent, PingFrequency, true);
-		}
-	}
+	OwningController = Cast<APlayerController>(GetOwner());
+	if (bStartWithPingEnabled)
+		SetPingEnabled(true);
 }
 
 void USpatialPingComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	//Ensure the timer is cleaned up
-	GetWorld()->GetTimerManager().ClearTimer(PingTimerHandle);
+	//Clear up the timer before the component is disabled or destroyed
+	SetPingEnabled(false);
+}
+
+bool USpatialPingComponent::GetIsPingEnabled() const
+{
+	return bIsPingEnabled;
+}
+
+void USpatialPingComponent::SetPingEnabled(bool bSetEnabled)
+{
+	if (bSetEnabled && !bIsPingEnabled) {
+		EnablePing();
+	}
+	else if(!bSetEnabled && bIsPingEnabled) {
+		DisablePing();
+	}	
 }
 
 float USpatialPingComponent::GetPing() const
@@ -50,14 +60,35 @@ float USpatialPingComponent::GetPing() const
 	return RTPing;
 }
 
+void USpatialPingComponent::EnablePing()
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		//Only run on clients, not server 
+		if (GEngine->GetNetMode(World) == NM_Client)
+		{
+			World->GetTimerManager().SetTimer(PingTimerHandle, this, &USpatialPingComponent::TickPingComponent, PingFrequency, true);
+			bIsPingEnabled = true;
+		}
+	}
+}
+
+void USpatialPingComponent::DisablePing()
+{
+	//Clear the timer
+	GetWorld()->GetTimerManager().ClearTimer(PingTimerHandle);
+	bIsPingEnabled = false;
+	RTPing = 0.f;
+}
+
 void USpatialPingComponent::TickPingComponent()
 {
 	SendNewPing();
 	//If component is attached to a player controller then forward the ping on to the controller's PlayerState
-	APlayerController* Controller = Cast<APlayerController>(GetOwner());
-	if (Controller)
+	if (OwningController)
 	{
-		Controller->UpdatePing(RTPing);
+		OwningController->UpdatePing(RTPing);
 	}
 }
 
@@ -74,7 +105,7 @@ void USpatialPingComponent::OnRep_ReplicatedPingID()
 	{
 		return;
 	}
-	//Calculate the delta between the sent ping timestamp and the current time to determine round trip latency
+	//Calculate the delta between the sent ping timestamp and the current time to determine round trip latency in seconds
 	RTPing = GetWorld()->GetRealTimeSeconds() - ReplicatedPingID;
 	//Update last received ping to match replicated
 	LastReceivedPingID = ReplicatedPingID;
