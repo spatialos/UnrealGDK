@@ -24,7 +24,7 @@ void USpatialRingBufferManager::SendRPCs()
 {
 	TSet<Worker_EntityId_Key> EntityIds;
 
-	for (auto It : RPCsToSendMap)
+	for (auto& It : RPCsToSendMap)
 	{
 		Worker_EntityId EntityId = It.Key;
 		if (PackageMap->IsEntityIdPendingCreation(EntityId))
@@ -34,7 +34,7 @@ void USpatialRingBufferManager::SendRPCs()
 		EntityIds.Add(EntityId);
 	}
 
-	for (auto It : LastHandledRPCMap)
+	for (auto& It : LastHandledRPCMap)
 	{
 		Worker_EntityId EntityId = It.Key;
 		if (PackageMap->IsEntityIdPendingCreation(EntityId))
