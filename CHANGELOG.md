@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When schema compiler fails, schema generation correctly shows an error.
 - Fixed crash during initialization when running GenerateSchemaCommandlet.
 - Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
+- Streaming levels with QBI enabled no longer produces errors if the player connection owns unreplicated actors.
 - Fixed an issue that would prevent player movement in a zoned deployment.
 
 ## [`0.6.1`] - 2019-08-15
