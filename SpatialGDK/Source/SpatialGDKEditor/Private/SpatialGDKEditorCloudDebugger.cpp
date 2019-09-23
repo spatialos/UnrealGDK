@@ -2,31 +2,46 @@
 
 #include "SpatialGDKEditorCloudDebugger.h"
 
-#include "ISessionFrontendModule.h"
+
 #include "Modules/ModuleManager.h"
-#include "ITcpMessagingModule.h"
 #include "SpatialGDKServicesModule.h"
 #include "Logging/LogMacros.h"
 #include "SpatialGDKEditor.h"
 
 FSpatialGDKEditorCloudDebugger::FSpatialGDKEditorCloudDebugger()
 {
-	FModuleManager::LoadModuleChecked<ISessionFrontendModule>("SessionFrontend").DebugWorkerDelegate.BindRaw(this, &FSpatialGDKEditorCloudDebugger::DebugWorker);
+	SessionFrontendModule = &FModuleManager::LoadModuleChecked<ISessionFrontendModule>("SessionFrontend");
+	TcpMessagingModule = &FModuleManager::LoadModuleChecked<ITcpMessagingModule>("TcpMessaging");
+
+	SessionFrontendModule->DebugWorkerDelegate.BindRaw(this, &FSpatialGDKEditorCloudDebugger::DebugWorker);
+	TcpMessagingModule->AddOutgoingConnection("127.0.0.1:6667");
+}
+
+FSpatialGDKEditorCloudDebugger::~FSpatialGDKEditorCloudDebugger()
+{
+	ClosePortForward();
+	TcpMessagingModule->RemoveOutgoingConnection("127.0.0.1:6667");
 }
 
 void FSpatialGDKEditorCloudDebugger::DebugWorker(const FString& InDeploymentName, const FString& InWorkerId)
 {
-	FModuleManager::LoadModuleChecked<ITcpMessagingModule>("TcpMessaging").AddOutgoingConnection("127.0.0.1:6667");
+	ClosePortForward();
 
+	FString SpatialExe = FSpatialGDKServicesModule::GetSpatialExe();
 	FString SpatialArgs = FString::Printf(TEXT("project deployment worker port-forward -d=%s -w=%s -p=6667"), *InDeploymentName, *InWorkerId);
 
-	FProcHandle handle = FPlatformProcess::CreateProc(*FSpatialGDKServicesModule::GetSpatialExe(), *SpatialArgs, true, false, false, NULL, 0, *FSpatialGDKServicesModule::GetSpatialOSDirectory(), NULL);
-	if (handle.IsValid())
+	PortForwardHandle = FPlatformProcess::CreateProc(*SpatialExe, *SpatialArgs, true, false, false, NULL, 0, *FSpatialGDKServicesModule::GetSpatialOSDirectory(), NULL);
+	if (!PortForwardHandle.IsValid())
 	{
-		UE_LOG(LogSpatialGDKEditor, Warning, TEXT("handle is valid"));
+		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Creating tcp port forwarding failed!"));
 	}
-	else
+}
+
+void FSpatialGDKEditorCloudDebugger::ClosePortForward()
+{
+	if (PortForwardHandle.IsValid())
 	{
-		UE_LOG(LogSpatialGDKEditor, Error, TEXT("handle is invalid"));
+		FPlatformProcess::TerminateProc(PortForwardHandle, true);
+		FPlatformProcess::CloseProc(PortForwardHandle);
 	}
 }
