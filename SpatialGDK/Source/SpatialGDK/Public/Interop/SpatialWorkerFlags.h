@@ -32,8 +32,9 @@ public:
 	static void UnbindFromOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdatedBP& InDelegate);
 
 	static FOnWorkerFlagsUpdated OnWorkerFlagsUpdated;
-private:
+
 	static void ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op);
+private:
 
 	static TMap<FString, FString> WorkerFlags;
 

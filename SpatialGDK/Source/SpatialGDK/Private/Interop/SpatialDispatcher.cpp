@@ -9,6 +9,8 @@
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialMetrics.h"
 
+#include "WorkerSDK/improbable/c_worker.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
 void USpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics)
