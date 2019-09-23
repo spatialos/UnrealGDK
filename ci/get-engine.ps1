@@ -21,34 +21,30 @@ pushd "$($gdk_home)"
         Start-Event "download-unreal-engine" "get-unreal-engine"
 
         if ($unreal_version.StartsWith("HEAD/")) {
-            $head_artifacts_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version)/UnrealEngine-*"
-            $get_head_artifact_result = Call-CaptureOutput "gsutil" -ArgumentList @(`
-                "ls", `
-                $head_artifacts_gcs_path `
+            $version_branch = $unreal_version.Remove(0, "HEAD/".Length)
+            $version_branch = $version_branch.Replace("/", "_")
+
+            $head_pointer_gcs_path = "gs://$($gcs_publish_bucket)/HEAD/$($version_branch).version"
+
+            $head_pointer_file = New-TemporaryFile
+            $pointer_dl_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(` # download pointer file
+                "cp", `
+                "-n", ` # noclobber
+                $head_pointer_gcs_path, `
+                $head_pointer_file.FullName
             )
-
-            if ($get_head_artifact_result.ExitCode -ne 0) {
-                Write-Log "Could not list artifacts at $($head_artifacts_gcs_path). Error: $($get_head_artifact_result.ExitCode)"
-                Throw "Could not list head artifacts"
+            if ($pointer_dl_proc.ExitCode -ne 0) {
+                Write-Log "Failed to download head pointer file. Error: $($pointer_dl_proc.ExitCode)"
+                Throw "Failed to download head pointer file."
             }
 
-            $head_artifacts = $get_head_artifact_result.Stdout.Split("`n")
-            if ($head_artifacts.Length -eq 0) {
-                Write-Log "Could not find a head artifact."
-                Throw "Could not find a head artifact"
-            }
-            if ($head_artifacts.Length -gt 1) {
-                Write-Log "Found more than one head artifact."
-                Throw "Found more than one head artifact."
-            }
-
-            $engine_gcs_path = $head_artifacts[0]
-            $version_name = $engine_gcs_path.Split("/")[-1]
-            $version_name = $version_name.Split(".")[0]
+            $version_name = Get-Content -Path $head_pointer_file.FullName -Raw
+            Remove-Item $head_pointer_file
         } else {
             $version_name = $unreal_version
-            $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($version_name).zip"
         }
+
+        $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($version_name).zip"
         Write-Log "Downloading Unreal Engine artifacts from $($engine_gcs_path)"
 
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
