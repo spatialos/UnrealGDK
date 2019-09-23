@@ -1109,38 +1109,35 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 
 void USpatialSender::RetireEntity(const Worker_EntityId EntityId)
 {
-	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
+	if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
-		if (AActor* Actor = ActorChannel->GetActor())
+		if (Actor->IsNetStartupActor())
 		{
-			if (Actor->IsNetStartupActor())
-			{
-				// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
-				Receiver->RemoveActor(EntityId);
-				AddTombstoneToEntity(EntityId);
-			}
-			else
-			{
-				Connection->SendDeleteEntityRequest(EntityId);
-			}
+			check(StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID) == false);
+			// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
+			Receiver->RemoveActor(EntityId);
+			AddTombstoneToEntity(EntityId);
 		}
 		else
 		{
-			UE_LOG(LogSpatialSender, Warning, TEXT("RetireEntity: Couldn't find Actor for EntityId: %lld"), EntityId);
+			Connection->SendDeleteEntityRequest(EntityId);
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("RetireEntity: Couldn't find SpatialActorChannel for EntityId: %lld"), EntityId);
+		UE_LOG(LogSpatialSender, Warning, TEXT("RetireEntity: Couldn't get Actor from PackageMap for EntityId: %lld"), EntityId);
 	}
 }
 
 void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
 {
 	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID));
-	Worker_ComponentData ComponentData = Tombstone().CreateData();
-	
-	Connection->SendAddComponent(EntityId, &ComponentData);
+
+	Worker_AddComponentOp AddComponentOp{};
+	AddComponentOp.entity_id = EntityId;
+	AddComponentOp.data = Tombstone().CreateData();
+	Connection->SendAddComponent(EntityId, &AddComponentOp.data);
+	StaticComponentView->OnAddComponent(AddComponentOp);
 
 #if WITH_EDITOR
 	NetDriver->TrackTombstone(EntityId);
