@@ -410,7 +410,7 @@ bool SaveSchemaDatabase()
 	return true;
 }
 
-bool IsSupportedClass(UClass* SupportedClass)
+bool IsSupportedClass(const UClass* SupportedClass)
 {
 	if (!IsValid(SupportedClass))
 	{
@@ -727,7 +727,7 @@ bool RunSchemaCompiler()
 	}
 }
 
-bool SpatialGDKGenerateSchema(bool bSaveSchemaDatabase, bool bRunSchemaCompiler)
+bool SpatialGDKGenerateSchema()
 {
 	// Generate Schema for classes loaded in memory.
 
@@ -736,20 +736,12 @@ bool SpatialGDKGenerateSchema(bool bSaveSchemaDatabase, bool bRunSchemaCompiler)
 		return false;
 	}
 
-	if (bSaveSchemaDatabase)
+	if (!SaveSchemaDatabase())
 	{
-		if (!SaveSchemaDatabase())
-		{
-			return false;
-		}
+		return false;
 	}
 
-	if (bRunSchemaCompiler)
-	{
-		return RunSchemaCompiler();
-	}
-
-	return true;
+	return RunSchemaCompiler();
 }
 
 bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes)
@@ -778,7 +770,7 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes)
 		{
 			if (UClass* NestedClass = Cast<UClass>(TypeNode->Type))
 			{
-				if (!Classes.Contains(NestedClass) && !SchemaGeneratedClasses.Contains(NestedClass) && IsSupportedClass(NestedClass))
+				if (!SchemaGeneratedClasses.Contains(NestedClass) && IsSupportedClass(NestedClass))
 				{
 					TypeInfos.Add(CreateUnrealTypeInfo(NestedClass, 0, 0));
 					SchemaGeneratedClasses.Add(NestedClass);
@@ -815,7 +807,7 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes)
 	return true;
 }
 
-#undef LOCTEXT_NAMESPACE
-
 } // Schema
 } // SpatialGDKEditor
+
+#undef LOCTEXT_NAMESPACE
