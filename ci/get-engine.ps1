@@ -20,26 +20,25 @@ pushd "$($gdk_home)"
     pushd "UnrealEngine-Cache"
         Start-Event "download-unreal-engine" "get-unreal-engine"
 
-        if ($unreal_version.StartsWith("HEAD/")) {
-            $version_branch = $unreal_version.Remove(0, "HEAD/".Length)
+        if ($unreal_version.StartsWith("HEAD ")) {
+            $version_branch = $unreal_version.Remove(0, "HEAD ".Length)
             $version_branch = $version_branch.Replace("/", "_")
 
             $head_pointer_gcs_path = "gs://$($gcs_publish_bucket)/HEAD/$($version_branch).version"
 
-            $head_pointer_file = New-TemporaryFile
             $pointer_dl_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(` # download pointer file
                 "cp", `
                 "-n", ` # noclobber
                 $head_pointer_gcs_path, `
-                $head_pointer_file.FullName
+                "branch.version"
             )
             if ($pointer_dl_proc.ExitCode -ne 0) {
                 Write-Log "Failed to download head pointer file. Error: $($pointer_dl_proc.ExitCode)"
                 Throw "Failed to download head pointer file."
             }
 
-            $version_name = Get-Content -Path $head_pointer_file.FullName -Raw
-            Remove-Item $head_pointer_file
+            $version_name = Get-Content -Path "branch.version" -Raw
+            Remove-Item "branch.version"
         } else {
             $version_name = $unreal_version
         }
