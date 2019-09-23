@@ -24,6 +24,7 @@
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
 #include "SpatialGDKEditor.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
@@ -154,6 +155,10 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator));
 
 	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked));
+
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator));
@@ -264,6 +269,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuCont
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKSchemaOptionsHeader", "Schema Generation"));
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaFull);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase);
 	}
 	MenuBuilder.EndSection();
 
@@ -277,10 +283,26 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 
 	SpatialGDKEditorInstance->GenerateSnapshot(
-		GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotFile(),
+		GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotToSave(),
 		FSimpleDelegate::CreateLambda([this]() { OnShowSuccessNotification("Snapshot successfully generated!"); }),
 		FSimpleDelegate::CreateLambda([this]() { OnShowFailedNotification("Snapshot generation failed!"); }),
 		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
+}
+
+void FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked()
+{
+	if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("DeleteSchemaDatabasePrompt", "Are you sure you want to delete the schema database?")) == EAppReturnType::Yes)
+	{
+		OnShowTaskStartNotification(TEXT("Deleting schema database"));
+		if (DeleteSchemaDatabase())
+		{
+			OnShowSuccessNotification(TEXT("Schema database deleted"));
+		}
+		else
+		{
+			OnShowFailedNotification(TEXT("Failed to delete schema database"));
+		}
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
@@ -547,6 +569,18 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		return;
 	}
 
+	if (!IsSnapshotGenerated())
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but snapshot is not generated."));
+		return;
+	}
+
+	if (!IsSchemaGenerated())
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but schema is not generated."));
+		return;
+	}
+
 	// Get the latest launch config.
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -581,8 +615,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	}
 
 	const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
+	const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags]
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName]
 	{
 		// If the last local deployment is still stopping then wait until it's finished.
 		while (LocalDeploymentManager->IsDeploymentStopping())
@@ -604,7 +639,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
-		if (LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags))
+		if (LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName))
 		{
 			OnShowSuccessNotification(TEXT("Local deployment started!"));
 		}
@@ -809,6 +844,19 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 			OnShowFailedNotification("Incremental Schema Generation failed");
 		}
 	}
+}
+
+bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return FPaths::FileExists(SpatialGDKSettings->GetSpatialOSSnapshotToLoadPath());
+}
+
+bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
+{
+	FString DescriptorPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("build/assembly/schema/schema.descriptor"));
+	FString GdkFolderPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("schema/unreal/gdk"));
+	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && GeneratedSchemaDatabaseExists();
 }
 
 #undef LOCTEXT_NAMESPACE

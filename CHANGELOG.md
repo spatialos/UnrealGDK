@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - Visual Studio 2019 is now supported.
+- Added toolbar and commandlet options to delete the schema database.
+- Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
+- Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
+- It is now possible to specify in Unreal which actors should not persist as entities in the Snapshot.
 
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
@@ -19,13 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When schema compiler fails, schema generation correctly shows an error.
 - Fixed crash during initialization when running GenerateSchemaCommandlet.
 - Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
+- Streaming levels with QBI enabled no longer produces errors if the player connection owns unreplicated actors.
+- Fixed an issue that would prevent player movement in a zoned deployment.
 
 ## [`0.6.1`] - 2019-08-15
 
 ### Features:
 - The [Multiserver zoning shooter tutorial](https://docs.improbable.io/unreal/alpha/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) has been updated to use the Example Project.
 
-### Bug fixes: 
+### Bug fixes:
 - Simulated player launch configurations are no longer invalid when the GDK is installed as an Engine Plugin.
 - RPCs that have been queued for execution for more than 1 second (the default value in `SpatialGDKSettings QueuedIncomingRPCWaitTime`) are now executed even if there are unresolved parameters. This stops unresolved parameters from blocking the execution queue.
 - Offloading is no longer enabled by default in the Example Project. You can toggle offloading on using [these steps](https://docs.improbable.io/unreal/alpha/content/tutorials/offloading-tutorial/offloading-setup#step-4-enable-offloading).

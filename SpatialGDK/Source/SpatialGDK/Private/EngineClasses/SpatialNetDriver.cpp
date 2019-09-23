@@ -195,10 +195,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	if (!bPersistSpatialConnection)
 	{
 		// Destroy the old connection
-		if (USpatialWorkerConnection* OldConnection = GameInstance->GetSpatialWorkerConnection())
-		{
-			OldConnection->DestroyConnection();
-		}
+		GameInstance->DestroySpatialWorkerConnection();
 
 		// Create a new SpatialWorkerConnection in the SpatialGameInstance.
 		GameInstance->CreateNewSpatialWorkerConnection();
@@ -304,9 +301,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
-	PackageMap->Init(this);
-	Dispatcher->Init(this);
+	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
 	Sender->Init(this, &TimerManager);
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
@@ -314,18 +309,17 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
 
-	// Entity Pools should never exist on clients
-	if (IsServer())
-	{
-		EntityPool->Init(this, &TimerManager);
-	}
+	// PackageMap value has been set earlier in USpatialNetConnection::InitBase
+	// Making sure the value is the same
+	USpatialPackageMapClient* NewPackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+	check(NewPackageMap == PackageMap);
+
+	PackageMap->Init(this, &TimerManager);
 }
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 {
 	check(!bConnectAsClient);
-
-	EntityPool = NewObject<UEntityPool>();
 
 	USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(NetConnection);
@@ -566,10 +560,20 @@ void USpatialNetDriver::BeginDestroy()
 {
 	Super::BeginDestroy();
 
-	// If we are still connected, cleanup our corresponding worker entity if it exists.
-	if (Connection != nullptr && WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+	if (Connection != nullptr)
 	{
-		Connection->SendDeleteEntityRequest(WorkerEntityId);
+		// Cleanup our corresponding worker entity if it exists.
+		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Connection->SendDeleteEntityRequest(WorkerEntityId);
+		}
+		
+		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
+		if (!bPersistSpatialConnection)
+		{
+			Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->DestroySpatialWorkerConnection();
+			Connection = nullptr;
+		}
 	}
 
 #if WITH_EDITOR
@@ -692,12 +696,24 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 #if WITH_SERVER_CODE
 
 // Returns true if this actor should replicate to *any* of the passed in connections
-static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, const TArray<FNetViewer>& ConnectionViewers)
+static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, UActorChannel* ActorChannel, const TArray<FNetViewer>& ConnectionViewers)
 {
-	// SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
-	// We might make some exceptions in the future, so keeping this function.
-	// TODO: UNR-837 Start using IsNetRelevantFor again for relevancy checks rather than returning true.
-	return true;
+	// An actor without a channel yet will need to be replicated at least
+	// once to have a channel and entity created for it
+	if (ActorChannel == nullptr)
+	{
+		return true;
+	}
+
+	for (const auto& Viewer : ConnectionViewers)
+	{
+		if (Actor->IsNetRelevantFor(Viewer.InViewer, Viewer.ViewTarget, Viewer.ViewLocation))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 // Returns true if this actor is considered dormant (and all properties caught up) to the current connection
@@ -806,6 +822,8 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 		AGameNetworkManager* const NetworkManager = World->NetworkManager;
 		const bool bLowNetBandwidth = NetworkManager ? NetworkManager->IsInLowBandwidthMode() : false;
 
+		const bool bNetRelevancyEnabled = GetDefault<USpatialGDKSettings>()->UseIsActorRelevantForConnection;
+
 		for (FNetworkObjectInfo* ActorInfo : ConsiderList)
 		{
 			AActor* Actor = ActorInfo->Actor;
@@ -829,12 +847,10 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
 
-			// SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
-			// We have removed the level load check because it doesn't apply.
-			// Relevancy checking is also mostly just a pass through, might be removed later.
-			if (!IsActorRelevantToConnection(Actor, ConnectionViewers))
+			// Check actor relevancy if Net Relevancy is enabled in the GDK settings
+			if (bNetRelevancyEnabled && !IsActorRelevantToConnection(Actor, Channel, ConnectionViewers))
 			{
-				// If not relevant (and we don't have a channel), skip
+				// Early out and do not replicate if actor is not relevant
 				continue;
 			}
 
@@ -1080,6 +1096,8 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 	// In Spatial we use ActorReplicationRateLimit and EntityCreationRateLimit to limit replication so this return value is not relevant.
 }
 
+#endif // WITH_SERVER_CODE
+
 void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters)
 {
 	// The RPC might have been called by an actor directly, or by a subobject on that actor
@@ -1110,8 +1128,6 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 
 	Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, MoveTemp(Payload));
 }
-
-#endif
 
 // SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
 // In our implementation, connections on the server do not represent clients. They represent direct connections to SpatialOS.
@@ -1351,7 +1367,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
 
-	if (IsServer() && GetSpatialOSNetConnection() != nullptr && EntityPool->IsReady())
+	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady())
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
@@ -1910,7 +1926,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 	// Search for entity id reservation response and process it.  The entity id reservation
 	// can fail to reserve entity ids.  In that case, the EntityPool will not be marked ready,
 	// a new query will be sent, and we will process the new response here when it arrives.
-	if (!EntityPool->IsReady())
+	if (!PackageMap->IsEntityPoolReady())
 	{
 		Worker_Op* EntityIdReservationResponseOp = nullptr;
 		FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE, &EntityIdReservationResponseOp);
@@ -1964,7 +1980,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		Dispatcher->MarkOpToSkip(Op);
 	}
 
-	if (EntityPool->IsReady() &&
+	if (PackageMap->IsEntityPoolReady() &&
 		GlobalStateManager->IsReadyToCallBeginPlay())
 	{
 		// Return whether or not we are ready to start

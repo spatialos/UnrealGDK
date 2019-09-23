@@ -5,6 +5,7 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
@@ -313,6 +314,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
 		// and set our RemoteRole to be ROLE_AutonomousProxy if the actor has an owning connection.
+		// Note: Pawn, PlayerController, and PlayerState for player-owned characters can arrive in
+		// any order on non-authoritative servers, so it's possible that we don't yet know if a pawn
+		// is player controlled when gaining authority over the pawn and need to wait for the player
+		// state. Likewise, it's possible that the player state doesn't have a pointer to its pawn
+		// yet, so we need to wait for the pawn to arrive.
 		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
@@ -328,9 +334,22 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 					}
 					else if (APawn* Pawn = Cast<APawn>(Actor))
 					{
+						// The following check will return false on non-authoritative servers if the PlayerState hasn't been received yet.
 						if (Pawn->IsPlayerControlled())
 						{
 							Pawn->RemoteRole = ROLE_AutonomousProxy;
+						}
+					}
+					else if (const APlayerState* PlayerState = Cast<APlayerState>(Actor))
+					{
+						// The following check will return false on non-authoritative servers if the Pawn hasn't been received yet.
+						if (APawn* PawnFromPlayerState = PlayerState->GetPawn())
+						{
+							check(PlayerState->bIsABot || PawnFromPlayerState->IsPlayerControlled());
+							if (PawnFromPlayerState->IsPlayerControlled())
+							{
+								PawnFromPlayerState->RemoteRole = ROLE_AutonomousProxy;
+							}
 						}
 					}
 
@@ -729,7 +748,7 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity Query Failed! %s"), Op.message);
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity Query Failed! %s"), UTF8_TO_TCHAR(Op.message));
 			return;
 		}
 
@@ -925,7 +944,7 @@ void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp&
 		return;
 	}
 
-	// Object already exists, we can apply data directly. 
+	// Object already exists, we can apply data directly.
 	if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset)).Get())
 	{
 		ApplyComponentData(Object, NetDriver->GetActorChannelByEntityId(Op.entity_id), Op.data);
@@ -1743,7 +1762,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 
 		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key.Get();
 		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
-		
+
 		// Check whether the resolved object has been torn off, or is on an actor that has been torn off.
 		if (AActor* AsActor = Cast<AActor>(ReplicatingObject))
 		{
@@ -1977,4 +1996,4 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 		NetConnection->CleanUp();
 		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 	}
-} 
+}

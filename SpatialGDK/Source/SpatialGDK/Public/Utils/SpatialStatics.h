@@ -21,6 +21,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "SpatialOS")
 	static bool IsSpatialNetworkingEnabled();
 
+       /**
+        * Returns true if SpatialOS Offloading is enabled.
+        */
+       UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading")
+       static bool IsSpatialOffloadingEnabled();
+
 	/**
 	 * Returns true if the current Worker Type owns the Actor Group this Actor belongs to.
 	 * Equivalent to World->GetNetMode() != NM_Client when Spatial Networking is disabled.
@@ -56,7 +62,6 @@ public:
 
 private:
 
-	static bool IsSpatialOffloadingEnabled();
 	static class UActorGroupManager* GetActorGroupManager(const UObject* WorldContext);
 	static FName GetCurrentWorkerType(const UObject* WorldContext);
 };
