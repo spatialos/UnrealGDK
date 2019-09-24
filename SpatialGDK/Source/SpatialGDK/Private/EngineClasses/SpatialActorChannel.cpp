@@ -108,7 +108,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	{
 		// Workaround to delay the delete entity request if tearing off.
 		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
-		if (Actor->GetTearOff())
+		if (Actor != nullptr && Actor->GetTearOff())
 		{
 			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
 			// Since the entity deletion is delayed, this creates a situation,
@@ -121,8 +121,6 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 			Sender->SendDeleteEntityRequest(EntityId);
 		}
 	}
-
-	Receiver->CleanupDeletedEntity(EntityId);
 }
 
 bool USpatialActorChannel::IsSingletonEntity()
@@ -145,23 +143,17 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 			DeleteEntityIfAuthoritative();
 		}
-
-		if (CloseReason == EChannelCloseReason::Dormancy)
-		{
-			NetDriver->RegisterDormantEntityId(EntityId);
-		}
 	}
 #endif
 
+	// TODO: Should be able to use the `bForDestory` here, but may want to use the close reason instead
 	if (bForDestroy)
 	{
 		// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects
-		Receiver->CleanupDeletedEntity(EntityId);
+		NetDriver->PackageMap->RemoveEntityActor(EntityId);
 	}
-	else
-	{
-		NetDriver->RemoveActorChannel(EntityId);
-	}
+
+	NetDriver->RemoveActorChannel(EntityId);
 
 	return UActorChannel::CleanUp(bForDestroy, CloseReason);
 }
@@ -174,6 +166,7 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	}
 	else
 	{
+		// Closed for dormancy reasons, ensure we update the component state of this entity
 		NetDriver->FlushActorDormancy(Actor);
 	}
 

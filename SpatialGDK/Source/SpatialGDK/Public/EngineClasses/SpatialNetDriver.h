@@ -106,6 +106,7 @@ public:
 	void FlushActorDormancy(AActor* Actor);
 
 	void RegisterDormantEntityId(Worker_EntityId EntityId);
+	void UnregisterDormantEntityId(Worker_EntityId EntityId);
 
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
@@ -180,7 +181,7 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TArray<Worker_OpList*> QueuedStartupOpLists;
-	TArray<Worker_EntityId_Key> DormantEntities;
+	TSet<Worker_EntityId_Key> DormantEntities;
 
 	FTimerManager TimerManager;
 

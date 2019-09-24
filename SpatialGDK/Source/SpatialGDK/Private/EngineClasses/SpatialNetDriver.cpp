@@ -1774,6 +1774,8 @@ void USpatialNetDriver::FlushActorDormancy(AActor* Actor)
 			Connection->SendAddComponent(AddComponentOp.entity_id, &AddComponentOp.data);
 			StaticComponentView->OnAddComponent(AddComponentOp);
 		}
+
+		RegisterDormantEntityId(EntityId);
 	}
 	else
 	{
@@ -1785,12 +1787,19 @@ void USpatialNetDriver::FlushActorDormancy(AActor* Actor)
 			Connection->SendRemoveComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
 			StaticComponentView->OnRemoveComponent(RemoveComponentOp);
 		}
+
+		UnregisterDormantEntityId(EntityId);
 	}
 }
 
 void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)
 {
 	DormantEntities.Emplace(EntityId);
+}
+
+void USpatialNetDriver::UnregisterDormantEntityId(Worker_EntityId EntityId)
+{
+	DormantEntities.Remove(EntityId);
 }
 
 USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor)

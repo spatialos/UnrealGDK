@@ -145,8 +145,6 @@ public:
 
 	void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
-	void CleanupDeletedEntity(Worker_EntityId EntityId);
-
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();
 

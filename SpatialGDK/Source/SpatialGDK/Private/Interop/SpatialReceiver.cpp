@@ -143,6 +143,11 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			Channel->Dormant = 1;
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
 		}
+		else
+		{
+			// This would normally get registered through the channel cleanup, but we don't have one for this entity
+			NetDriver->RegisterDormantEntityId(Op.entity_id);
+		}
 		return;
 	}
 
@@ -210,23 +215,11 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 	{
 		if (Op.component_id == SpatialConstants::DORMANT_COMPONENT_ID)
 		{
-			UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
+			USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
+			check(!Channel->bCreatingNewEntity);
+			check(Channel->GetEntityId() == Op.entity_id);
 
-			// Set up actor channel.
-#if ENGINE_MINOR_VERSION <= 20
-			USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
-#else
-			USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
-#endif
-
-			if (!Channel)
-			{
-				UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), Op.entity_id);
-				Actor->Destroy(true);
-				return;
-			}
-
-			Channel->SetChannelActor(Actor);
+			NetDriver->UnregisterDormantEntityId(Op.entity_id);
 		}
 		else if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Op.component_id)).Get())
 		{
@@ -829,12 +822,6 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	NetDriver->StopIgnoringAuthoritativeDestruction();
 
 	check(PackageMap->GetObjectFromEntityId(EntityId) == nullptr);
-}
-
-void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
-{
-	PackageMap->RemoveEntityActor(EntityId);
-	NetDriver->RemoveActorChannel(EntityId);
 }
 
 AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp)
@@ -1446,7 +1433,6 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 		if (GetBoolFromSchema(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
-			CleanupDeletedEntity(Channel->GetEntityId());
 		}
 	}
 
