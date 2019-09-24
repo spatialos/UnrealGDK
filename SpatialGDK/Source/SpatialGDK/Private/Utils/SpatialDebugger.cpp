@@ -102,7 +102,6 @@ void ASpatialDebugger::LoadIcons()
 	{
 		UTexture2D* Texture = (UTexture2D*)StaticLoadObject(UTexture2D::StaticClass(), NULL, *IconFilenames[i], NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
 		Icons[i] = UCanvas::MakeIcon(Texture, 0.0f, 0.0f, 16.0f, 16.0f);
-		GetNetDriver()->LogMe(FString::Format(TEXT("Loaded Icon {0}"), { *IconFilenames[i] }));
 	}
 }
 
@@ -194,10 +193,12 @@ void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* /* Co
 			if (bShowAuthIntent)
 			{
 				const int VirtualWorkerId = VirtualWorkerIdToInt(GetVirtualWorkerId((Worker_EntityId)EntityActorPair.Key));
-				check(VirtualWorkerId != -1);
 
-				Canvas->SetDrawColor(WorkerColors[VirtualWorkerId]);
-				Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X - 16.0f, ScreenLocation.Y - ActorCountAtLocation * 32.0f, 1.0f);
+				if (VirtualWorkerId != -1)
+				{
+					Canvas->SetDrawColor(WorkerColors[VirtualWorkerId]);
+					Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X - 16.0f, ScreenLocation.Y - ActorCountAtLocation * 32.0f, 1.0f);
+				}
 			}
 
 			if (bShowLock)
