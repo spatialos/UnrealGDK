@@ -6,5 +6,5 @@ component AlwaysRelevant {
 }
 
 component Dormant {
-    id = 9982;
+    id = 9981;
 }

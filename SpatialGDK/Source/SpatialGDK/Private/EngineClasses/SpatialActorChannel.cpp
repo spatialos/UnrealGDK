@@ -111,7 +111,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 
 void USpatialActorChannel::DeleteEntityIfAuthoritative()
 {
-	if (NetDriver->Connection == nullptr || Actor == nullptr)
+	if (NetDriver->Connection == nullptr)
 	{
 		return;
 	}
