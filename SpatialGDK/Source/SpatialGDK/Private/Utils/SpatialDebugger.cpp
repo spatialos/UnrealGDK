@@ -22,6 +22,7 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, LocalPawn(nullptr)
 	, LocalPlayerController(nullptr)
+	, RenderFont(nullptr)
 	, MaxRange(100.0f * 100.0f)
 	, bShowAuth(true)
 	, bShowAuthIntent(true)
@@ -35,32 +36,6 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	bAlwaysRelevant = true;
 
 	NetUpdateFrequency = 1.f;
-}
-
-void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
-{
-	check(GetNetDriver() != nullptr);
-	check(GetNetDriver()->IsServer() == false);
-
-	TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(EntityId);
-
-	if (ExistingActor != nullptr)
-	{
-		return;
-	}
-
-	if (AActor* Actor = Cast<AActor>(Cast<USpatialNetDriver>(GetNetDriver())->PackageMap->GetObjectFromEntityId(EntityId).Get()))
-	{
-		EntityActorMapping.Add(EntityId, Actor);
-	}
-}
-
-void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
-{
-	check(GetNetDriver() != nullptr);
-	check(GetNetDriver()->IsServer() == false);
-
-	EntityActorMapping.Remove(EntityId);
 }
 
 void ASpatialDebugger::Tick(float DeltaSeconds)
@@ -101,26 +76,68 @@ void ASpatialDebugger::BeginPlay()
 		TArray<Worker_EntityId_Key> EntityIds;
 		Cast<USpatialNetDriver>(GetNetDriver())->StaticComponentView->GetEntityIds(EntityIds);
 
+		// Capture any entities that are already present on this client (ie they came over the wire before the SpatialDebugger did)
 		for (const Worker_EntityId_Key EntityId : EntityIds)
 		{
 			OnEntityAdded(EntityId);
 		}
 
+		// Register callbacks to get notified of all future entity arrivals / deletes
 		Cast<USpatialNetDriver>(GetNetDriver())->Receiver->OnEntityAdded.BindUObject(this, &ASpatialDebugger::OnEntityAdded);
 		Cast<USpatialNetDriver>(GetNetDriver())->Receiver->OnEntityRemoved.BindUObject(this, &ASpatialDebugger::OnEntityRemoved);
+
+		ActorLocationCountMapping.Reserve(POSITION_HASH_BUCKETS);
+
+		FontRenderInfo.bEnableShadow = true;
+		RenderFont = GEngine->GetSmallFont();
 	}
 }
 
-void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* Controller)
+void ASpatialDebugger::LoadIcons()
 {
 	check(GetNetDriver() != nullptr);
 	check(GetNetDriver()->IsServer() == false);
 
-	FFontRenderInfo FontRenderInfo = Canvas->CreateFontRenderInfo(false, true);
-	UFont* RenderFont = GEngine->GetSmallFont();
+	for (int i = 0; i < ICON_MAX; ++i)
+	{
+		UTexture2D* Texture = (UTexture2D*)StaticLoadObject(UTexture2D::StaticClass(), NULL, *IconFilenames[i], NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
+		Icons[i] = UCanvas::MakeIcon(Texture, 0.0f, 0.0f, 16.0f, 16.0f);
+		GetNetDriver()->LogMe(FString::Format(TEXT("Loaded Icon {0}"), { *IconFilenames[i] }));
+	}
+}
 
-	TMap<float, int32> ActorsPerLocation;
-	ActorsPerLocation.Reserve(POSITION_HASH_BUCKETS);
+void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
+{
+	check(GetNetDriver() != nullptr);
+	check(GetNetDriver()->IsServer() == false);
+
+	TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(EntityId);
+
+	if (ExistingActor != nullptr)
+	{
+		return;
+	}
+
+	if (AActor* Actor = Cast<AActor>(Cast<USpatialNetDriver>(GetNetDriver())->PackageMap->GetObjectFromEntityId(EntityId).Get()))
+	{
+		EntityActorMapping.Add(EntityId, Actor);
+	}
+}
+
+void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
+{
+	check(GetNetDriver() != nullptr);
+	check(GetNetDriver()->IsServer() == false);
+
+	EntityActorMapping.Remove(EntityId);
+}
+
+void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* /* Controller */) // Controller is invalid
+{
+	SCOPE_CYCLE_COUNTER(STAT_DebugDraw);
+
+	check(GetNetDriver() != nullptr);
+	check(GetNetDriver()->IsServer() == false);
 
 	FVector PlayerLocation = FVector::ZeroVector;
 
@@ -128,6 +145,8 @@ void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* Contr
 	{
 		PlayerLocation = LocalPawn->GetActorLocation();
 	}
+
+	ActorLocationCountMapping.Reset();
 
 	for (auto& EntityActorPair : EntityActorMapping)
 	{
@@ -150,15 +169,15 @@ void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* Contr
 				continue;
 			}
 
-			//if (FVector::Dist(PlayerLocation, ActorLocation) > MaxRange)
-			//{
-			//	continue;
-			//}
+			if (FVector::Dist(PlayerLocation, ActorLocation) > MaxRange)
+			{
+				continue;
+			}
 
 			// If actors are very close together in world space, stack their icons/entityids vertically
 			// TODO: maybe we want to do this in screen space instead...
 			// TODO: fix the jumpiness on server worker transition...disabled for now.
-			//int32& ActorCountAtLocation = ActorsPerLocation.FindOrAdd(HashPosition(ActorLocation));
+			//int32& ActorCountAtLocation = ActorLocationCountMapping.FindOrAdd(HashPosition(ActorLocation));
 			int32 ActorCountAtLocation = 0;
 
 			FVector2D ScreenLocation = FVector2D::ZeroVector;
@@ -188,7 +207,6 @@ void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* Contr
 				const ELockStatus LockStatus = bIsLocked ? LOCKSTATUS_CLOSED : LOCKSTATUS_OPEN;
 				const EIcon LockIcon = bIsLocked ? ICON_LOCK_CLOSED : ICON_LOCK_OPEN;
 
-				//Canvas->SetDrawColor(LockColors[LockStatus]);
 				Canvas->SetDrawColor(FColor::White);
 				Canvas->DrawIcon(Icons[LockIcon], ScreenLocation.X, ScreenLocation.Y - ActorCountAtLocation * 32.0f, 1.0f);
 			}
@@ -196,25 +214,25 @@ void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* Contr
 			if (bShowEntityId)
 			{
 				Canvas->SetDrawColor(FColor::Green);
-				Canvas->DrawText(RenderFont, FString::Printf(TEXT("%lld"), EntityActorPair.Key), ScreenLocation.X + 16.0f, ScreenLocation.Y - ActorCountAtLocation * 32.0f, 1.0f, 1.0f, FontRenderInfo);
+				Canvas->DrawText(RenderFont, FString::Printf(TEXT("%lld"), EntityActorPair.Key), ScreenLocation.X + 20.0f, ScreenLocation.Y - ActorCountAtLocation * 32.0f, 1.0f, 1.0f, FontRenderInfo);
 			}
 		}
 	}
 }
 
-void ASpatialDebugger::LoadIcons()
+FString ASpatialDebugger::GetVirtualWorkerId(const Worker_EntityId EntityId) const
 {
 	check(GetNetDriver() != nullptr);
 	check(GetNetDriver()->IsServer() == false);
 
-	for (int i = 0; i < ICON_MAX; ++i)
+	const AuthorityIntent* AuthorityIntentComponent = Cast<USpatialNetDriver>(GetNetDriver())->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+	if (AuthorityIntentComponent != nullptr)
 	{
-		UTexture2D* Texture = (UTexture2D*)StaticLoadObject(UTexture2D::StaticClass(), NULL, *IconFilenames[i], NULL, LOAD_NoWarn | LOAD_Quiet, NULL);
-		Icons[i] = UCanvas::MakeIcon(Texture, 0.0f, 0.0f, 16.0f, 16.0f);
-		GetNetDriver()->LogMe(FString::Format(TEXT("Loaded Icon {0}"), { *IconFilenames[i] }));
+		return AuthorityIntentComponent->VirtualWorkerId;
 	}
-}
 
+	return TEXT("INVALID VIRTUALWORKERID");
+}
 
 // TODO: When VirtualWorkerId is converted to int, this conversion function will no longer be necessary
 int ASpatialDebugger::VirtualWorkerIdToInt(const FString& VirtualWorkerId)
@@ -236,20 +254,6 @@ int ASpatialDebugger::VirtualWorkerIdToInt(const FString& VirtualWorkerId)
 	}
 
 	return -1;
-}
-
-FString ASpatialDebugger::GetVirtualWorkerId(const Worker_EntityId EntityId) const
-{
-	check(GetNetDriver() != nullptr);
-	check(GetNetDriver()->IsServer() == false);
-
-	const AuthorityIntent* AuthorityIntentComponent = Cast<USpatialNetDriver>(GetNetDriver())->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
-	if (AuthorityIntentComponent != nullptr)
-	{
-		return AuthorityIntentComponent->VirtualWorkerId;
-	}
-
-	return TEXT("INVALID VIRTUALWORKERID");
 }
 
 // Hashing Positions with hash algorithm from the following paper

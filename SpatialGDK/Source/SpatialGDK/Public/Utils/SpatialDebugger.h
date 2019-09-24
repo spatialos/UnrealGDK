@@ -14,6 +14,10 @@
 class APawn;
 class APlayerController;
 class USpatialNetDriver;
+class UFont;
+
+DECLARE_STATS_GROUP(TEXT("SpatialDebugger"), STATGROUP_SpatialDebugger, STATCAT_Advanced);
+DECLARE_CYCLE_STAT(TEXT("DebugDraw"), STAT_DebugDraw, STATGROUP_SpatialDebugger);
 
 UCLASS(SpatialType=Singleton)
 class SPATIALGDK_API ASpatialDebugger :
@@ -22,13 +26,23 @@ class SPATIALGDK_API ASpatialDebugger :
 	GENERATED_UCLASS_BODY()
 
 public:
-	void OnEntityAdded(const Worker_EntityId EntityId);
-	void OnEntityRemoved(const Worker_EntityId EntityId);
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
 
 private:
+
+	void LoadIcons();
+
+	void OnEntityAdded(const Worker_EntityId EntityId);
+	void OnEntityRemoved(const Worker_EntityId EntityId);
+
+	void DrawDebug(class UCanvas* Canvas, APlayerController* Controller);
+
+	FString GetVirtualWorkerId(const Worker_EntityId EntityId) const;
+
+	static int32 VirtualWorkerIdToInt(const FString& VirtualWorkerId);
+	static int32 HashPosition(const FVector& Position);
 
 	static const int VIRTUAL_WORKER_MAX_COUNT = 4;
 	static const int POSITION_HASH_BUCKETS = 1024;
@@ -49,35 +63,30 @@ private:
 		LOCKSTATUS_MAX
 	};
 
-	// This Mapping is maintained independently on each client, and corresponds to each client's view on the SpatialOS world
+	// These mappings are maintained independently on each client
+	// Mapping of the entities a client has checked out
 	TMap<int64, TWeakObjectPtr<AActor>> EntityActorMapping;
+	// Quantized mapping of position -> # actors at that position (1cm grid resolution) to allow us to stack info vertically for co-located actors
+	TMap<float, int32> ActorLocationCountMapping;
 
 	FDelegateHandle DrawDebugDelegateHandle;
-	void DrawDebug(class UCanvas* Canvas, APlayerController* Controller);
 
 	APawn* LocalPawn;
 	APlayerController *LocalPlayerController;
+	UFont* RenderFont;
 
-	float MaxRange;
-
-	bool bShowAuth;
-	bool bShowAuthIntent;
-	bool bShowLock;
-	bool bShowEntityId;
-
-	void LoadIcons();
+	FFontRenderInfo FontRenderInfo;
+	FCanvasIcon Icons[ICON_MAX];
 
 	const FString IconFilenames[ICON_MAX] =
 	{
 		FString(TEXT("/SpatialGDK/SpatialDebugger/Icons/Auth.Auth")),
 		FString(TEXT("/SpatialGDK/SpatialDebugger/Icons/AuthIntent.AuthIntent")),
-		FString(TEXT("/SpatialGDK/SpatialDebugger/Icons/LockOpenSmall.LockOpenSmall")),
-		FString(TEXT("/SpatialGDK/SpatialDebugger/Icons/LockClosedSmall.LockClosedSmall"))
+		FString(TEXT("/SpatialGDK/SpatialDebugger/Icons/LockOpen.LockOpen")),
+		FString(TEXT("/SpatialGDK/SpatialDebugger/Icons/LockClosed.LockClosed"))
 	};
 
-	FCanvasIcon Icons[ICON_MAX];
-
-	FColor WorkerColors[VIRTUAL_WORKER_MAX_COUNT] =
+	const FColor WorkerColors[VIRTUAL_WORKER_MAX_COUNT] =
 	{
 		FColor::Red,
 		FColor::Green,
@@ -85,14 +94,10 @@ private:
 		FColor::Yellow
 	};
 
-	FColor LockColors[LOCKSTATUS_MAX] =
-	{
-		FColor::Green,
-		FColor::Yellow
-	};
+	float MaxRange;
 
-	
-	FString GetVirtualWorkerId(const Worker_EntityId EntityId) const;
-	static int32 VirtualWorkerIdToInt(const FString& VirtualWorkerId);
-	static int32 HashPosition(const FVector& Position);
+	bool bShowAuth;
+	bool bShowAuthIntent;
+	bool bShowLock;
+	bool bShowEntityId;
 };
