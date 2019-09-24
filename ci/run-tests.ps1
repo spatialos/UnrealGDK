@@ -13,35 +13,28 @@ function Force-Resolve-Path {
     return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($path)
 }
 
-$absolute_uproject = Force-Resolve-Path $uproject_path
-$absolute_output_dir = Force-Resolve-Path $output_dir
-$absoute_log_path = Force-Resolve-Path $log_path
+$ue_path_absolute = Force-Resolve-Path $ue_path
+$uproject_path_absolute = Force-Resolve-Path $uproject_path
+$output_dir_absolute = Force-Resolve-Path $output_dir
+$log_path_absolute = Force-Resolve-Path $log_path
 
 $cmd_list = @( `
-    "`"$($absolute_uproject)`"",
-    "-ExecCmds=`"Automation runtests SpatialGDK`"", `
+    # "`"$($uproject_path_absolute)`"",
+    "-ExecCmds=`"automation runtests now SpatialGDK; quit`"", `
+    "-nopause", `
+    "-nosplash", `
     "-Unattended", `
     "-NullRHI", `
     "-TestExit=`"Automation Test Queue Empty`"", `
-    "-ReportOutputPath=`"$($absolute_output_dir)`"", `
-    "-Log=`"$($absoute_log_path)`""
+    "-ReportOutputPath=`"$($output_dir_absolute)`"", `
+    "Log=`"$($log_path_absolute)`""
 )
 
-Write-Host "Running UE4Editor.exe with: $($cmd_list)"
+Write-Host "Running $($ue_path_absolute) $($cmd_list)"
 
-$test_proc = Start-Process -Wait -PassThru -NoNewWindow $ue_path -ArgumentList @( `
-    "`"$($absolute_uproject)`"",
-    "-ExecCmds=`"Automation runtests SpatialGDK`"", `
-    "-Unattended", `
-    "-NullRHI", `
-    "-TestExit=`"Automation Test Queue Empty`"", `
-    "-ReportOutputPath=`"$($absolute_output_dir)`"", `
-    "-Log=`"$($absoute_log_path)`""
-)
+$test_proc = Start-Process -Wait -PassThru -NoNewWindow $ue_path_absolute -ArgumentList $cmd_list
 
-# $test_proc = Start-Process -Wait -PassThru -NoNewWindow $ue_path -ArgumentList @( `
-#     "`"$($uproject_path)`""
-# )
+Write-Host "Exited with code: $($test_proc.ExitCode)"
 
 if ($test_proc.ExitCode -ne 0) {
     Write-Host "Exited with code: $($test_proc.ExitCode)"
