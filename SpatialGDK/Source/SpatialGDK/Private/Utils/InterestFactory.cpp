@@ -39,6 +39,10 @@ void GatherClientInterestDistances()
 		{
 			continue;
 		}
+		if (!It->HasAnySpatialClassFlags(SPATIALCLASS_ExplicitSpatialType))
+		{
+			continue;
+		}
 		if (It->HasAnyClassFlags(CLASS_NewerVersionExists))
 		{
 			// This skips classes generated for hot reload etc (i.e. REINST_, SKEL_, TRASHCLASS_)
