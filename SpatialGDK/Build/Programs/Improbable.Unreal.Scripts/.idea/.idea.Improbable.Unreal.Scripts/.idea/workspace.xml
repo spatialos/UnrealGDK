@@ -1,0 +1,621 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="300a5e40-914b-4dc9-a698-29eb5d632f14" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/DeploymentLauncher/DeploymentLauncher.cs" beforeDir="false" afterPath="$PROJECT_DIR$/DeploymentLauncher/DeploymentLauncher.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Improbable.Unreal.Scripts.sln" beforeDir="false" afterPath="$PROJECT_DIR$/Improbable.Unreal.Scripts.sln" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/WorkerCoordinator/ManagedWorkerCoordinator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/WorkerCoordinator/ManagedWorkerCoordinator.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/WorkerCoordinator/WorkerCoordinator.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/WorkerCoordinator/WorkerCoordinator.csproj" afterDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FUSProjectUsageTrigger">
+    <session id="-452052372">
+      <usages-collector id="statistics.lifecycle.project">
+        <counts>
+          <entry key="project.open.time.1" value="2" />
+          <entry key="project.open.time.10" value="1" />
+          <entry key="project.open.time.5" value="2" />
+          <entry key="project.open.time.8" value="1" />
+          <entry key="project.open.time.9" value="1" />
+          <entry key="project.opened" value="7" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.open">
+        <counts>
+          <entry key="Config" value="1" />
+          <entry key="config" value="2" />
+          <entry key="cs" value="5" />
+          <entry key="csproj" value="6" />
+          <entry key="sln" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.open">
+        <counts>
+          <entry key="C#" value="5" />
+          <entry key="Config" value="3" />
+          <entry key="Csproj" value="6" />
+          <entry key="Solution File" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.edit">
+        <counts>
+          <entry key="cs" value="2264" />
+          <entry key="csproj" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.edit">
+        <counts>
+          <entry key="C#" value="2264" />
+          <entry key="Csproj" value="1" />
+        </counts>
+      </usages-collector>
+    </session>
+  </component>
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/WorkerCoordinator/WorkerCoordinator.csproj">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1650">
+              <caret line="110" column="23" selection-start-line="110" selection-start-column="23" selection-end-line="110" selection-end-column="23" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/WorkerCoordinator/ManagedWorkerCoordinator.cs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="2815">
+              <caret line="298" column="45" selection-start-line="298" selection-start-column="45" selection-end-line="298" selection-end-column="45" />
+              <folding>
+                <marker date="1568907984006" expanded="false" signature="71:464" ph="..." />
+                <marker date="1568907984006" expanded="true" signature="504:16321" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="511:729" ph="/// Worker coordinator that connects and runs simulated players. ... " />
+                <marker date="1568907984006" expanded="true" signature="801:16319" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="2977:5159" ph="/// The arguments to start the coordinator must begin with: ... " />
+                <marker date="1568907984006" expanded="true" signature="5245:6822" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="5268:5557" ph="/* Keeps track of the number of arguments used for the coordinator. ... */" />
+                <marker date="1568907984006" expanded="true" signature="5817:5984" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="6053:6209" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="6279:6811" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="6894:6977" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="7013:9833" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="8346:8855" ph="/* Distribute player connections uniformly by generating a random time to connect between now and maxDelayMillis, ... */" />
+                <marker date="1568907984006" expanded="true" signature="8997:9105" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="9222:9729" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="9407:9516" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="10068:15515" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="10245:15340" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="11469:11571" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="11864:12441" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="11890:12297" ph="/* A client must provide a matchmaking type when send a join request and matchers retrieve waiting parties by a s ... */" />
+                <marker date="1568907984006" expanded="true" signature="12697:13236" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="12916:13092" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="13432:13745" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="13770:14194" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="14377:14633" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="14657:14855" ph="/* Prepend the simulated player id as an argument to the start client script. ... */" />
+                <marker date="1568907984006" expanded="true" signature="15376:15501" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="15630:15863" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="15751:15819" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="15937:16313" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="15972:16303" ph="{...}" />
+                <marker date="1568907984006" expanded="true" signature="16124:16217" ph="{...}" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/WorkerCoordinator/packages.config">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/WorkerCoordinator/Authentication.cs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <folding>
+                <marker date="1568734386342" expanded="false" signature="67:183" ph="..." />
+                <marker date="1568734386342" expanded="true" signature="223:2745" ph="{...}" />
+                <marker date="1568734386342" expanded="true" signature="250:2743" ph="{...}" />
+                <marker date="1568734386342" expanded="true" signature="480:1271" ph="{...}" />
+                <marker date="1568734386342" expanded="true" signature="690:880" ph="{...}" />
+                <marker date="1568734386342" expanded="true" signature="962:1208" ph="{...}" />
+                <marker date="1568734386342" expanded="true" signature="1375:2186" ph="{...}" />
+                <marker date="1568734386342" expanded="true" signature="1572:1776" ph="{...}" />
+                <marker date="1568734386342" expanded="true" signature="1866:2123" ph="{...}" />
+                <marker date="1568734386342" expanded="true" signature="2295:2737" ph="{...}" />
+                <marker date="1568734386342" expanded="true" signature="2477:2687" ph="{...}" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$USER_HOME$/AppData/Roaming/NuGet/NuGet.Config">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/DeploymentLauncher/DeploymentLauncher.cs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="26">
+              <caret line="141" column="53" selection-start-line="141" selection-start-column="53" selection-end-line="141" selection-end-column="53" />
+              <folding>
+                <marker date="1569329873555" expanded="false" signature="67:432" ph="..." />
+                <marker date="1569329873555" expanded="true" signature="454:21348" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="494:21346" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="911:2907" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="1130:1292" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="1404:1510" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="1555:1729" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="2317:2403" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="2658:2840" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="2967:6328" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="3756:4153" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="3974:4139" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="4170:5829" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="4360:4495" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="4967:5124" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="5421:5585" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="5874:6295" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="5962:6197" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="6218:6281" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="6478:6696" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="6851:7567" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="7098:7281" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="7462:7555" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="7911:9698" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="8221:8321" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="8428:8824" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="8537:8630" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="8949:9189" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="8980:9116" ph="/* This tag needs to be added to allow simulated players to connect using login ... */" />
+                <marker date="1569329873555" expanded="true" signature="9577:9642" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="10112:14933" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="10450:10669" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="12137:12766" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="12236:12752" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="12780:13205" ph="/* Specify the number of managed coordinator workers to start by editing ... */" />
+                <marker date="1569329873555" expanded="true" signature="13364:13686" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="13455:13672" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="13867:14264" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="13976:14048" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="14814:14878" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="14993:15830" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="15154:15396" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="15631:15797" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="15951:16620" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="15977:16274" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="16154:16258" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="16319:16610" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="16407:16512" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="16533:16596" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="16679:17693" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="16969:17660" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="17254:17448" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="17469:17646" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="17823:18831" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="17936:18193" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="18257:18819" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="18428:18550" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="18634:18775" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="18872:19953" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="20001:21340" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="20263:20346" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="20363:20801" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="20418:20505" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="20545:20631" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="20671:20757" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="20846:21257" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="20941:21075" ph="{...}" />
+                <marker date="1569329873555" expanded="true" signature="21096:21243" ph="{...}" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/DeploymentLauncher/DeploymentLauncher.csproj">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/CodeGenerator/CodeGenerator.csproj">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Common/Common.csproj">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://C:/Program Files (x86)/NuGet/Config/Microsoft.VisualStudio.Offline.config">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>0.0.0.0</find>
+      <find>PublicKeyToken=nu</find>
+      <find>ready</find>
+      <find>target</find>
+      <find>target_dep</find>
+      <find>target_deploym</find>
+    </findStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../../.." />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://C:/Program Files (x86)/NuGet/Config/Microsoft.VisualStudio.Offline.config" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/DeploymentLauncher/DeploymentLauncher.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Roaming/NuGet/NuGet.Config" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/WorkerCoordinator/ManagedWorkerCoordinator.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Build/Build.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/WorkerCoordinator/Authentication.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/WorkerCoordinator/packages.config" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Common/LinuxScripts.cs" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/WorkerCoordinator/WorkerCoordinator.csproj" />
+        <option value="$PROJECT_DIR$/WorkerCoordinator/ManagedWorkerCoordinator.cs" />
+        <option value="$PROJECT_DIR$/DeploymentLauncher/DeploymentLauncher.cs" />
+      </list>
+    </option>
+  </component>
+  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsGulpfileManager">
+    <detection-done>true</detection-done>
+    <sorting>DEFINITION_ORDER</sorting>
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="-12" />
+    <option name="y" value="-12" />
+    <option name="width" value="2586" />
+    <option name="height" value="1386" />
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectView">
+    <navigator currentView="SolutionExplorer" proportions="" version="1">
+      <autoscrollFromSource SolutionExplorer="true" />
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="SolutionExplorer">
+        <subPane>
+          <expand>
+            <path>
+              <item name="Project" type="784c90a0:SolutionExplorerRootNode" />
+              <item name="Improbable.Unreal.Scripts" type="24d0babc:SolutionExplorerModelNode" />
+            </path>
+            <path>
+              <item name="Project" type="784c90a0:SolutionExplorerRootNode" />
+              <item name="Improbable.Unreal.Scripts" type="24d0babc:SolutionExplorerModelNode" />
+              <item name="DeploymentLauncher" type="24d0babc:SolutionExplorerModelNode" />
+            </path>
+            <path>
+              <item name="Project" type="784c90a0:SolutionExplorerRootNode" />
+              <item name="Improbable.Unreal.Scripts" type="24d0babc:SolutionExplorerModelNode" />
+              <item name="WorkerCoordinator" type="24d0babc:SolutionExplorerModelNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+        <option name="show-all-files" value="false" />
+      </pane>
+      <pane id="FileSystemExplorer" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="Rider.DefaultBreakpoints.AreToggled" value="true" />
+    <property name="Rider.ProjectViewActivator.IsNotFirstRun" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../../../../../../online-services/services/csharp/online-services.sln" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager">
+    <configuration name="ExampleProjectLauncher" type="DotNetProject" factoryName=".NET Project">
+      <option name="EXE_PATH" value="$PROJECT_DIR$/DeploymentLauncher/bin/Debug/DeploymentLauncher.exe" />
+      <option name="PROGRAM_PARAMETERS" value="create demo simmatchmaking shooter_matchmaker $PROJECT_DIR$/../../../../../../../spatial/one_worker_test.json $PROJECT_DIR$/../../../../../../../spatial/snapshots/default.snapshot EU simplayermatch $PROJECT_DIR$/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json EU 10" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Build/bin/Debug" />
+      <option name="PASS_PARENT_ENVS" value="1" />
+      <option name="USE_EXTERNAL_CONSOLE" value="0" />
+      <option name="USE_MONO" value="0" />
+      <option name="RUNTIME_ARGUMENTS" value="" />
+      <option name="PROJECT_PATH" value="$PROJECT_DIR$/Build/Build.csproj" />
+      <option name="PROJECT_EXE_PATH_TRACKING" value="0" />
+      <option name="PROJECT_ARGUMENTS_TRACKING" value="1" />
+      <option name="PROJECT_WORKING_DIRECTORY_TRACKING" value="1" />
+      <option name="PROJECT_KIND" value="Console" />
+      <option name="PROJECT_TFM" value=".NETFramework,Version=v4.5" />
+      <method v="2">
+        <option name="Build" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="300a5e40-914b-4dc9-a698-29eb5d632f14" name="Default Changelist" comment="" />
+      <created>1568736603538</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1568736603538</updated>
+      <workItem from="1568736605182" duration="1278000" />
+      <workItem from="1568798932446" duration="2982000" />
+      <workItem from="1568808241086" duration="11549000" />
+      <workItem from="1568884829318" duration="4898000" />
+      <workItem from="1568895349780" duration="7022000" />
+      <workItem from="1568972811088" duration="2992000" />
+      <workItem from="1568991571547" duration="4944000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TimeTrackingManager">
+    <option name="totallyTimeSpent" value="35665000" />
+  </component>
+  <component name="TodoView">
+    <todo-panel id="selected-file">
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+    <todo-panel id="all">
+      <are-packages-shown value="true" />
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-6" y="-6" width="1293" height="693" extended-state="6" />
+    <layout>
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2242915" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.3328137" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.39952904" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" weight="0.3320251" />
+      <window_info anchor="bottom" id="NuGet" order="7" weight="0.32967034" />
+      <window_info anchor="bottom" id="Docker" order="8" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="9" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Database Changes" order="10" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Unit Tests" order="11" weight="0.32967034" />
+      <window_info anchor="bottom" id="Terminal" order="12" weight="0.32967034" />
+      <window_info anchor="bottom" id="Event Log" order="13" side_tool="true" />
+      <window_info anchor="bottom" id="Build" order="14" visible="true" weight="0.23978686" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Errors In Solution" order="3" />
+      <window_info anchor="right" id="Database" order="4" />
+      <window_info anchor="right" id="Unit Tests Coverage" order="5" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
+  <component name="UnityUnitTestConfiguration" currentTestLauncher="NUnit" />
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <breakpoint enabled="true" suspend="NONE" type="DotNet Exception Breakpoints">
+          <properties exception="System.Threading.ThreadAbortException" displayValue="System.Threading.ThreadAbortException" />
+          <option name="timeStamp" value="1" />
+        </breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/Improbable.Unreal.Scripts.sln">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Build/Build.cs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="452">
+          <caret line="317" column="53" selection-start-line="317" selection-start-column="53" selection-end-line="317" selection-end-column="53" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Build/Build.csproj">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="24" column="33" selection-start-line="24" selection-start-column="33" selection-end-line="24" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WorkerCoordinator/WorkerCoordinator.csproj">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1650">
+          <caret line="110" column="23" selection-start-line="110" selection-start-column="23" selection-end-line="110" selection-end-column="23" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WorkerCoordinator/packages.config">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WorkerCoordinator/Authentication.cs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <folding>
+            <marker date="1568734386342" expanded="false" signature="67:183" ph="..." />
+            <marker date="1568734386342" expanded="true" signature="223:2745" ph="{...}" />
+            <marker date="1568734386342" expanded="true" signature="250:2743" ph="{...}" />
+            <marker date="1568734386342" expanded="true" signature="480:1271" ph="{...}" />
+            <marker date="1568734386342" expanded="true" signature="690:880" ph="{...}" />
+            <marker date="1568734386342" expanded="true" signature="962:1208" ph="{...}" />
+            <marker date="1568734386342" expanded="true" signature="1375:2186" ph="{...}" />
+            <marker date="1568734386342" expanded="true" signature="1572:1776" ph="{...}" />
+            <marker date="1568734386342" expanded="true" signature="1866:2123" ph="{...}" />
+            <marker date="1568734386342" expanded="true" signature="2295:2737" ph="{...}" />
+            <marker date="1568734386342" expanded="true" signature="2477:2687" ph="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/AppData/Roaming/NuGet/NuGet.Config">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/DeploymentLauncher/DeploymentLauncher.csproj">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CodeGenerator/CodeGenerator.csproj">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Common/Common.csproj">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://C:/Program Files (x86)/NuGet/Config/Microsoft.VisualStudio.Offline.config">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/DeploymentLauncher/DeploymentLauncher.cs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="26">
+          <caret line="141" column="53" selection-start-line="141" selection-start-column="53" selection-end-line="141" selection-end-column="53" />
+          <folding>
+            <marker date="1569329873555" expanded="false" signature="67:432" ph="..." />
+            <marker date="1569329873555" expanded="true" signature="454:21348" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="494:21346" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="911:2907" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="1130:1292" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="1404:1510" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="1555:1729" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="2317:2403" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="2658:2840" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="2967:6328" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="3756:4153" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="3974:4139" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="4170:5829" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="4360:4495" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="4967:5124" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="5421:5585" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="5874:6295" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="5962:6197" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="6218:6281" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="6478:6696" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="6851:7567" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="7098:7281" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="7462:7555" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="7911:9698" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="8221:8321" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="8428:8824" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="8537:8630" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="8949:9189" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="8980:9116" ph="/* This tag needs to be added to allow simulated players to connect using login ... */" />
+            <marker date="1569329873555" expanded="true" signature="9577:9642" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="10112:14933" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="10450:10669" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="12137:12766" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="12236:12752" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="12780:13205" ph="/* Specify the number of managed coordinator workers to start by editing ... */" />
+            <marker date="1569329873555" expanded="true" signature="13364:13686" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="13455:13672" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="13867:14264" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="13976:14048" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="14814:14878" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="14993:15830" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="15154:15396" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="15631:15797" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="15951:16620" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="15977:16274" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="16154:16258" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="16319:16610" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="16407:16512" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="16533:16596" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="16679:17693" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="16969:17660" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="17254:17448" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="17469:17646" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="17823:18831" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="17936:18193" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="18257:18819" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="18428:18550" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="18634:18775" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="18872:19953" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="20001:21340" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="20263:20346" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="20363:20801" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="20418:20505" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="20545:20631" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="20671:20757" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="20846:21257" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="20941:21075" ph="{...}" />
+            <marker date="1569329873555" expanded="true" signature="21096:21243" ph="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WorkerCoordinator/ManagedWorkerCoordinator.cs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2815">
+          <caret line="298" column="45" selection-start-line="298" selection-start-column="45" selection-end-line="298" selection-end-column="45" />
+          <folding>
+            <marker date="1568907984006" expanded="false" signature="71:464" ph="..." />
+            <marker date="1568907984006" expanded="true" signature="504:16321" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="511:729" ph="/// Worker coordinator that connects and runs simulated players. ... " />
+            <marker date="1568907984006" expanded="true" signature="801:16319" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="2977:5159" ph="/// The arguments to start the coordinator must begin with: ... " />
+            <marker date="1568907984006" expanded="true" signature="5245:6822" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="5268:5557" ph="/* Keeps track of the number of arguments used for the coordinator. ... */" />
+            <marker date="1568907984006" expanded="true" signature="5817:5984" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="6053:6209" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="6279:6811" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="6894:6977" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="7013:9833" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="8346:8855" ph="/* Distribute player connections uniformly by generating a random time to connect between now and maxDelayMillis, ... */" />
+            <marker date="1568907984006" expanded="true" signature="8997:9105" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="9222:9729" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="9407:9516" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="10068:15515" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="10245:15340" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="11469:11571" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="11864:12441" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="11890:12297" ph="/* A client must provide a matchmaking type when send a join request and matchers retrieve waiting parties by a s ... */" />
+            <marker date="1568907984006" expanded="true" signature="12697:13236" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="12916:13092" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="13432:13745" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="13770:14194" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="14377:14633" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="14657:14855" ph="/* Prepend the simulated player id as an argument to the start client script. ... */" />
+            <marker date="1568907984006" expanded="true" signature="15376:15501" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="15630:15863" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="15751:15819" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="15937:16313" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="15972:16303" ph="{...}" />
+            <marker date="1568907984006" expanded="true" signature="16124:16217" ph="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>

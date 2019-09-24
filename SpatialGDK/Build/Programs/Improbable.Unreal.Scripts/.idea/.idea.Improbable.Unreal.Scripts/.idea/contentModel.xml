@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="C:\Users\boyan.INTERNAL\.Rider2018.2\system\extResources" t="IncludeRecursive" />
+    <e p="C:\Users\boyan.INTERNAL\.Rider2018.2\system\resharper-host\local\Transient\ReSharperHost\v182\SolutionCaches\_Improbable.Unreal.Scripts.-1770998172.00" t="ExcludeRecursive" />
+    <e p="C:\Users\boyan.INTERNAL\Develop\UnrealGDKExampleProject\Game\Plugins\UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\worker_sdk\core\libCoreSdkDll.so" t="Include" />
+    <e p="C:\Users\boyan.INTERNAL\Develop\UnrealGDKExampleProject\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts" t="IncludeFlat">
+      <e p="Build" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Build.cs" t="Include" />
+        <e p="Build.csproj" t="IncludeRecursive" />
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="packages.config" t="Include" />
+        <e p="Properties" t="Include" />
+      </e>
+      <e p="CodeGenerator" t="IncludeRecursive">
+        <e p="Base" t="Include">
+          <e p="Bundle.cs" t="Include" />
+          <e p="ICodeGenerator.cs" t="Include" />
+          <e p="Model.cs" t="Include" />
+          <e p="SchemaBundleLoader.cs" t="Include" />
+          <e p="Text.cs" t="Include" />
+          <e p="TypeDescription.cs" t="Include" />
+        </e>
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="CodeGenerator.csproj" t="IncludeRecursive" />
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="Program.cs" t="Include" />
+        <e p="Unreal" t="Include">
+          <e p="EnumGenerator.cs" t="Include" />
+          <e p="HeaderGenerator.cs" t="Include" />
+          <e p="HelperFunctions.cs" t="Include" />
+          <e p="InterfaceGenerator.cs" t="Include" />
+          <e p="MapEquals.cs" t="Include" />
+          <e p="Serialization.cs" t="Include" />
+          <e p="SourceGenerator.cs" t="Include" />
+          <e p="Types.cs" t="Include" />
+          <e p="UnrealGenerator.cs" t="Include" />
+        </e>
+      </e>
+      <e p="Common" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Common.cs" t="Include" />
+        <e p="Common.csproj" t="IncludeRecursive" />
+        <e p="LinuxScripts.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="Properties" t="Include" />
+      </e>
+      <e p="DeploymentLauncher" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="DeploymentLauncher.cs" t="Include" />
+        <e p="DeploymentLauncher.csproj" t="IncludeRecursive" />
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="Properties" t="Include" />
+      </e>
+      <e p="Improbable.Unreal.Scripts.sln" t="IncludeFlat" />
+      <e p="Linter" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Linter.cs" t="Include" />
+        <e p="Linter.csproj" t="IncludeRecursive" />
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="Properties" t="Include" />
+      </e>
+      <e p="packages" t="ExcludeRecursive">
+        <e p="Grpc.Core.1.19.0\runtimes\linux\native\libgrpc_csharp_ext.x64.so" t="Include" />
+        <e p="Grpc.Core.1.19.0\runtimes\linux\native\libgrpc_csharp_ext.x86.so" t="Include" />
+        <e p="Grpc.Core.1.19.0\runtimes\osx\native\libgrpc_csharp_ext.x64.dylib" t="Include" />
+        <e p="Grpc.Core.1.19.0\runtimes\osx\native\libgrpc_csharp_ext.x86.dylib" t="Include" />
+        <e p="Grpc.Core.1.19.0\runtimes\win\native\grpc_csharp_ext.x64.dll" t="Include" />
+        <e p="Grpc.Core.1.19.0\runtimes\win\native\grpc_csharp_ext.x86.dll" t="Include" />
+      </e>
+      <e p="WorkerCoordinator" t="IncludeRecursive">
+        <e p="AbstractWorkerCoordinator.cs" t="Include" />
+        <e p="Authentication.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="CoordinatorConnection.cs" t="Include" />
+        <e p="Logger.cs" t="Include" />
+        <e p="ManagedWorkerCoordinator.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="packages.config" t="Include" />
+        <e p="Program.cs" t="Include" />
+        <e p="RegisseurWorkerCoordinator.cs" t="Include" />
+        <e p="Util.cs" t="Include" />
+        <e p="WorkerCoordinator.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="WriteLinuxScript" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="Properties" t="Include" />
+        <e p="WriteLinuxScript.cs" t="Include" />
+        <e p="WriteLinuxScript.csproj" t="IncludeRecursive" />
+      </e>
+    </e>
+  </component>
+</project>

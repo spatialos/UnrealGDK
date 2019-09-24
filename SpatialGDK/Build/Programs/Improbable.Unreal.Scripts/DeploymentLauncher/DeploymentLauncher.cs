@@ -94,6 +94,11 @@ namespace Improbable
             var simDeploymentRegion = string.Empty;
             var simNumPlayers = 0;
 
+            // TODO: Change to IP if unreachable
+            var gatewayServerTarget = "34.89.69.9:4000";
+            var partyServerTarget = "34.89.11.254:4000";
+            var deploymentTag = "game1";
+
             if (launchSimPlayerDeployment)
             {
                 simDeploymentName = args[7];
@@ -111,45 +116,15 @@ namespace Improbable
             {
                 var deploymentServiceClient = DeploymentServiceClient.Create();
 
-                if (DeploymentExists(deploymentServiceClient, projectName, mainDeploymentName))
-                {
-                    StopDeploymentByName(deploymentServiceClient, projectName, mainDeploymentName);
-                }
-
-                var createMainDeploymentOp = CreateMainDeploymentAsync(deploymentServiceClient, launchSimPlayerDeployment, projectName, assemblyName, mainDeploymentName, mainDeploymentJsonPath, mainDeploymentSnapshotPath, mainDeploymentRegion);
-
-                if (!launchSimPlayerDeployment)
-                {
-                    // Don't launch a simulated player deployment. Wait for main deployment to be created and then return.
-                    Console.WriteLine("Waiting for deployment to be ready...");
-                    var result = createMainDeploymentOp.PollUntilCompleted().GetResultOrNull();
-                    if (result == null)
-                    {
-                        Console.WriteLine("Failed to create the main deployment");
-                        return 1;
-                    }
-
-                    Console.WriteLine("Successfully created the main deployment");
-                    return 0;
-                }
-
                 if (DeploymentExists(deploymentServiceClient, projectName, simDeploymentName))
                 {
                     StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
                 }
 
-                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, mainDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simNumPlayers);
+                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName,
+                    assemblyName, mainDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion,
+                    simNumPlayers, partyServerTarget, gatewayServerTarget, deploymentTag);
 
-                // Wait for both deployments to be created.
-                Console.WriteLine("Waiting for deployments to be ready...");
-                var mainDeploymentResult = createMainDeploymentOp.PollUntilCompleted().GetResultOrNull();
-                if (mainDeploymentResult == null)
-                {
-                    Console.WriteLine("Failed to create the main deployment");
-                    return 1;
-                }
-
-                Console.WriteLine("Successfully created the main deployment");
                 var simPlayerDeployment = createSimDeploymentOp.PollUntilCompleted().GetResultOrNull();
                 if (simPlayerDeployment == null)
                 {
@@ -163,7 +138,7 @@ namespace Improbable
                 simPlayerDeployment.WorkerFlags.Add(new WorkerFlag
                 {
                     Key = "target_deployment_ready",
-                    Value = "true",
+                    Value = "false",
                     WorkerType = CoordinatorWorkerName
                 });
                 deploymentServiceClient.UpdateDeployment(new UpdateDeploymentRequest { Deployment = simPlayerDeployment });
@@ -266,7 +241,8 @@ namespace Improbable
         }
 
         private static Operation<Deployment, CreateDeploymentMetadata> CreateSimPlayerDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
-            string projectName, string assemblyName, string mainDeploymentName, string simDeploymentName, string simDeploymentJsonPath, string regionCode, int simNumPlayers)
+            string projectName, string assemblyName, string mainDeploymentName, string simDeploymentName, string simDeploymentJsonPath, string regionCode,
+            int simNumPlayers, string partyServerTarget, string gatewayServerTarget, string deploymentTag)
         {
             var playerAuthServiceClient = PlayerAuthServiceClient.Create();
 
@@ -292,6 +268,18 @@ namespace Improbable
             numSimulatedPlayersFlag.Add("name", "total_num_simulated_players");
             numSimulatedPlayersFlag.Add("value", $"{simNumPlayers}");
 
+            var targetPartyServerFlag = new JObject();
+            targetPartyServerFlag.Add("name", "target_party_server");
+            targetPartyServerFlag.Add("value", $"{partyServerTarget}");
+
+            var targetGatewayServerFlag = new JObject();
+            targetGatewayServerFlag.Add("name", "target_gateway_server");
+            targetGatewayServerFlag.Add("value", $"{gatewayServerTarget}");
+
+            var deploymentTagFlag = new JObject();
+            deploymentTagFlag.Add("name", "deployment_tag");
+            deploymentTagFlag.Add("value", $"{deploymentTag}");
+
             var simWorkerConfigJson = File.ReadAllText(simDeploymentJsonPath);
             dynamic simWorkerConfig = JObject.Parse(simWorkerConfigJson);
 
@@ -302,6 +290,9 @@ namespace Improbable
                     simWorkerConfig.workers[i].flags.Add(devAuthTokenFlag);
                     simWorkerConfig.workers[i].flags.Add(targetDeploymentFlag);
                     simWorkerConfig.workers[i].flags.Add(numSimulatedPlayersFlag);
+                    simWorkerConfig.workers[i].flags.Add(targetPartyServerFlag);
+                    simWorkerConfig.workers[i].flags.Add(targetGatewayServerFlag);
+                    simWorkerConfig.workers[i].flags.Add(deploymentTagFlag);
                 }
             }
 

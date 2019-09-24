@@ -1,10 +1,17 @@
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+    // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Google.Api.Gax.Grpc;
+using Google.LongRunning;
+using Grpc.Core;
 using Improbable.Collections;
+using Improbable.OnlineServices.Proto.Gateway;
+using Improbable.OnlineServices.Proto.Party;
+using Improbable.SpatialOS.Platform.Common;
+using Improbable.SpatialOS.PlayerAuth.V2Alpha1;
 using Improbable.Worker;
 
 namespace Improbable.WorkerCoordinator
@@ -15,6 +22,8 @@ namespace Improbable.WorkerCoordinator
     /// </summary>
     internal class ManagedWorkerCoordinator : AbstractWorkerCoordinator
     {
+        private const string PitRequestHeaderName = "player-identity-token";
+
         // Arguments for the coordinator.
         private const string SimulatedPlayerSpawnCountArg = "simulated_player_spawn_count";
         private const string InitialStartDelayArg = "coordinator_start_delay_millis";
@@ -24,6 +33,12 @@ namespace Improbable.WorkerCoordinator
         private const string TargetDeploymentWorkerFlag = "simulated_players_target_deployment";
         private const string DeploymentTotalNumSimulatedPlayersWorkerFlag = "total_num_simulated_players";
         private const string TargetDeploymentReadyWorkerFlag = "target_deployment_ready";
+
+        // Matchmaking
+        private const string SPATIAL_REFRESH_TOKEN_FLAG = "spatial_refresh_token";
+        private const string PARTY_SERVER_TARGER_FLAG = "target_party_server";
+        private const string GATEWAY_SERVER_TARGER_FLAG = "target_gateway_server";
+        private const string DEPLOYMENT_TAG = "deployment_tag";
 
         private const int AverageDelayMillisBetweenConnections = 1500;
         private const int PollTargetDeploymentReadyIntervalMillis = 5000;
@@ -116,9 +131,15 @@ namespace Improbable.WorkerCoordinator
 
         public override void Run()
         {
+            string partyServerTarget, gatewayServerTarget, deploymentTag, refreshToken;
+
             var connection = CoordinatorConnection.ConnectAndKeepAlive(Logger, ReceptionistHost, ReceptionistPort, CoordinatorWorkerId, CoordinatorWorkerType);
 
             // Read worker flags.
+            partyServerTarget = connection.GetWorkerFlag(PARTY_SERVER_TARGER_FLAG).Value;
+            gatewayServerTarget = connection.GetWorkerFlag(GATEWAY_SERVER_TARGER_FLAG).Value;
+            deploymentTag = connection.GetWorkerFlag(DEPLOYMENT_TAG).Value;
+
             Option<string> devAuthTokenOpt = connection.GetWorkerFlag(DevAuthTokenWorkerFlag);
             Option<string> targetDeploymentOpt = connection.GetWorkerFlag(TargetDeploymentWorkerFlag);
             int deploymentTotalNumSimulatedPlayers = int.Parse(GetWorkerFlagOrDefault(connection, DeploymentTotalNumSimulatedPlayersWorkerFlag, "100"));
@@ -136,75 +157,133 @@ namespace Improbable.WorkerCoordinator
             // There can be multiple coordinator workers per deployment, to ensure that the combined connections created by all
             // coordinators are spread out uniformly, generate a start delay for each player independently of other players' start delays.
             var startDelaysMillis = new int[NumSimulatedPlayersToStart];
-            for (int i = 0; i < NumSimulatedPlayersToStart; i++)
-            {
-                startDelaysMillis[i] = Random.Next(maxDelayMillis);
-            }
-
-            Array.Sort(startDelaysMillis);
-            for (int i = 0; i < NumSimulatedPlayersToStart; i++)
-            {
-                string clientName = "SimulatedPlayer" + Guid.NewGuid();
-                var timeToSleep = startDelaysMillis[i];
-                if (i > 0)
+                for (int i = 0; i < NumSimulatedPlayersToStart; i++)
                 {
-                    timeToSleep -= startDelaysMillis[i - 1];
+                    startDelaysMillis[i] = Random.Next(maxDelayMillis);
                 }
 
-                Thread.Sleep(timeToSleep);
-                StartSimulatedPlayer(clientName, devAuthTokenOpt, targetDeploymentOpt);
+                Array.Sort(startDelaysMillis);
+                for (int i = 0; i < NumSimulatedPlayersToStart; i++)
+                {
+                    string clientName = "SimulatedPlayer" + Guid.NewGuid();
+                    var timeToSleep = startDelaysMillis[i];
+                    if (i > 0)
+                    {
+                        timeToSleep -= startDelaysMillis[i - 1];
+                    }
+
+                    Thread.Sleep(timeToSleep);
+                    StartSimulatedPlayer(clientName, devAuthTokenOpt, targetDeploymentOpt, partyServerTarget, gatewayServerTarget, deploymentTag);
+                }
+
+                // Wait for all clients to exit.
+                WaitForPlayersToExit();
             }
 
-            // Wait for all clients to exit.
-            WaitForPlayersToExit();
-        }
-
-        private void StartSimulatedPlayer(string simulatedPlayerName, Option<string> devAuthTokenOpt, Option<string> targetDeploymentOpt)
-        {
-            try
+            private void StartSimulatedPlayer(string simulatedPlayerName, Option<string> devAuthTokenOpt,
+                Option<string> targetDeploymentOpt, string partyServerTarget, string gatewayServerTarget, string deploymentTag)
             {
                 // Create player identity token and login token
-                string pit = "";
-                string loginToken = "";
-                if (devAuthTokenOpt.HasValue)
-                {
-                    pit = Authentication.GetDevelopmentPlayerIdentityToken(devAuthTokenOpt.Value, simulatedPlayerName);
+                Metadata pitMetadata;
+                string pit, loginToken;
 
-                    if (targetDeploymentOpt.HasValue)
+                try
+                {
+                    string clientName = "SimulatedPlayer" + Guid.NewGuid();
+
+                    ChannelCredentials partyCredentials = ChannelCredentials.Insecure;
+                    ChannelCredentials gatewayCredentials = ChannelCredentials.Insecure;
+                    var partyClient =
+                        new PartyService.PartyServiceClient(new Channel(partyServerTarget, partyCredentials));
+                    var gatewayClient = new GatewayService.GatewayServiceClient(
+                        new Channel(gatewayServerTarget, gatewayCredentials));
+                    /* We use the ops client to check the state of our request. */
+
+                    var gatewayOpsClient =
+                        OperationsClient.Create(new Channel(gatewayServerTarget, gatewayCredentials));
+
+                    pit = Authentication.GetDevelopmentPlayerIdentityToken(devAuthTokenOpt.Value, clientName);
+
+                    Logger.WriteLog($"PIT created: {pit}");
+
+                    pitMetadata = new Metadata {{PitRequestHeaderName, pit}};
+                    Logger.WriteLog("Creating and joining a solo party");
+                    partyClient.CreateParty(new CreatePartyRequest
                     {
-                        var loginTokens = Authentication.GetDevelopmentLoginTokens(SimulatedPlayerWorkerType, pit);
-                        loginToken = Authentication.SelectLoginToken(loginTokens, targetDeploymentOpt.Value);
+                        MinMembers = 1,
+                        MaxMembers = 1
+                    }, pitMetadata);
+
+                    Logger.WriteLog("Successfully created and joined a solo party");
+
+                    Logger.WriteLog($"Sending a join request for a deployment with tag {deploymentTag}");
+                    var op = gatewayClient.Join(new JoinRequest
+                    {
+                        /* A client must provide a matchmaking type when send a join request and matchers retrieve waiting parties by a specified matchmaking type.
+                         * You can think of this as a namespace - this allows you to use the gateway service for multiple match types.
+                         * E.g. you could have types "Free For All" and "Team Deathmatch" and different matchers to service them. */
+                        MatchmakingType = "match",
+                        Metadata = {{"deployment_tag", deploymentTag}}
+                    }, pitMetadata);
+
+                    DateTime timeBeforeQueue = DateTime.Now;
+                    int millisecondBetweenPrints = 60000;
+                    int currentMillisecondBetweenPrints = millisecondBetweenPrints;
+                    while (!op.Done)
+                    {
+                        Thread.Sleep(1000);
+                        currentMillisecondBetweenPrints += 1000;
+                        if (currentMillisecondBetweenPrints > millisecondBetweenPrints)
+                        {
+                            currentMillisecondBetweenPrints = 0;
+                            Logger.WriteLog("Waiting...");
+                        }
+
+                        op = gatewayOpsClient.GetOperation(op.Name, CallSettings.FromHeader(PitRequestHeaderName, pit));
+                    }
+
+                    Logger.WriteLog(
+                        $"{clientName} spent {(DateTime.Now - timeBeforeQueue).Milliseconds} ms waiting for op.");
+
+                    if (op.Error != null)
+                    {
+                        Logger.WriteError($"Failed to find a match: {op.Error}");
+                        Logger.WriteError(
+                            $"This is likely because there is no running deployment with tag {deploymentTag}");
+                        return;
                     }
                     else
                     {
-                        Logger.WriteLog($"Not generating a login token for player {simulatedPlayerName}, no target deployment provided through worker flag \"{TargetDeploymentWorkerFlag}\".");
+                        Logger.WriteLog($"Found a match!");
+                        var assignment = op.Response.Unpack<JoinResponse>();
+                        Logger.WriteLog($"Deployment name: {assignment.DeploymentName}");
+                        Logger.WriteLog($"Deployment Login Token: {assignment.LoginToken}");
+                        loginToken = assignment.LoginToken;
                     }
+
+                    string[] simulatedPlayerArgs = Util.ReplacePlaceholderArgs(SimulatedPlayerArgs,
+                        new Dictionary<string, string>()
+                        {
+                            {SimulatedPlayerWorkerNamePlaceholderArg, simulatedPlayerName},
+                            {PlayerIdentityTokenPlaceholderArg, pit},
+                            {LoginTokenPlaceholderArg, loginToken}
+                        });
+
+                    // Prepend the simulated player id as an argument to the start client script.
+                    // This argument is consumed by the start client script and will not be passed to the client worker.
+                    simulatedPlayerArgs = new string[] {simulatedPlayerName}.Concat(simulatedPlayerArgs).ToArray();
+
+                    // Start the client
+                    string flattenedArgs = string.Join(" ", simulatedPlayerArgs);
+                    Logger.WriteLog($"Starting simulated player {simulatedPlayerName} with args: {flattenedArgs}");
+                    CreateSimulatedPlayerProcess(SimulatedPlayerFilename, flattenedArgs);
+                    ;
                 }
-                else
+                catch (Exception e)
                 {
-                    Logger.WriteLog($"Not generating a player identity token and login token for player {simulatedPlayerName}, no development auth token provided through worker flag \"{DevAuthTokenWorkerFlag}\".");
+                    Logger.WriteError($"Failed to start simulated player: {e.Message}");
                 }
-
-                string[] simulatedPlayerArgs = Util.ReplacePlaceholderArgs(SimulatedPlayerArgs, new Dictionary<string, string>() {
-                    { SimulatedPlayerWorkerNamePlaceholderArg, simulatedPlayerName },
-                    { PlayerIdentityTokenPlaceholderArg, pit },
-                    { LoginTokenPlaceholderArg, loginToken }
-                });
-
-                // Prepend the simulated player id as an argument to the start client script.
-                // This argument is consumed by the start client script and will not be passed to the client worker.
-                simulatedPlayerArgs = new string[] { simulatedPlayerName }.Concat(simulatedPlayerArgs).ToArray();
-
-                // Start the client
-                string flattenedArgs = string.Join(" ", simulatedPlayerArgs);
-                Logger.WriteLog($"Starting simulated player {simulatedPlayerName} with args: {flattenedArgs}");
-                CreateSimulatedPlayerProcess(SimulatedPlayerFilename, flattenedArgs);;
             }
-            catch (Exception e)
-            {
-                Logger.WriteError($"Failed to start simulated player: {e.Message}");
-            }
-        }
 
         private static string GetWorkerFlagOrDefault(Connection connection, string flagName, string defaultValue)
         {
