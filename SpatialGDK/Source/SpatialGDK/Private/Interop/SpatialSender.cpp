@@ -203,9 +203,13 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(Position(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
-	ComponentDatas.Add(Persistence().CreatePersistenceData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
+
+	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
+	{
+		ComponentDatas.Add(Persistence().CreatePersistenceData());
+	}
 
 	if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
 	{
@@ -260,11 +264,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
 	{
-#if ENGINE_MINOR_VERSION <= 20
-		if (UObject* Subobject = RepSubobject.Key().Get())
-#else
 		if (UObject* Subobject = RepSubobject.Value()->GetWeakObjectPtr().Get())
-#endif
 		{
 			if (Subobject == Actor)
 			{
@@ -1101,9 +1101,15 @@ bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& O
 
 void USpatialSender::UpdateInterestComponent(AActor* Actor)
 {
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogSpatialSender, Verbose, TEXT("Attempted to update interest for non replicated actor: %s"), *Actor->GetName());
+		return;
+	}
+
 	InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), NetDriver->ClassInfoManager, NetDriver->PackageMap);
 	Worker_ComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
 
-	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	Connection->SendComponentUpdate(EntityId, &Update);
 }

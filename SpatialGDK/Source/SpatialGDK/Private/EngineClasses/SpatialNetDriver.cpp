@@ -82,9 +82,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
 
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
-#if ENGINE_MINOR_VERSION <= 20
-	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
-#else
 	// Copied from what the Engine does with UActorChannel
 	FChannelDefinition SpatialChannelDefinition{};
 	SpatialChannelDefinition.ChannelName = NAME_Actor;
@@ -94,7 +91,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	ChannelDefinitions[CHTYPE_Actor] = SpatialChannelDefinition;
 	ChannelDefinitionMap[NAME_Actor] = SpatialChannelDefinition;
-#endif
 
 	// Extract the snapshot to load (if any) from the map URL so that once we are connected to a deployment we can load that snapshot into the Spatial deployment.
 	SnapshotToLoad = URL.GetOption(*SpatialConstants::SnapshotURLOption, TEXT(""));
@@ -197,10 +193,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	if (!bPersistSpatialConnection)
 	{
 		// Destroy the old connection
-		if (USpatialWorkerConnection* OldConnection = GameInstance->GetSpatialWorkerConnection())
-		{
-			OldConnection->DestroyConnection();
-		}
+		GameInstance->DestroySpatialWorkerConnection();
 
 		// Create a new SpatialWorkerConnection in the SpatialGameInstance.
 		GameInstance->CreateNewSpatialWorkerConnection();
@@ -565,10 +558,20 @@ void USpatialNetDriver::BeginDestroy()
 {
 	Super::BeginDestroy();
 
-	// If we are still connected, cleanup our corresponding worker entity if it exists.
-	if (Connection != nullptr && WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+	if (Connection != nullptr)
 	{
-		Connection->SendDeleteEntityRequest(WorkerEntityId);
+		// Cleanup our corresponding worker entity if it exists.
+		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Connection->SendDeleteEntityRequest(WorkerEntityId);
+		}
+		
+		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
+		if (!bPersistSpatialConnection)
+		{
+			Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->DestroySpatialWorkerConnection();
+			Connection = nullptr;
+		}
 	}
 
 #if WITH_EDITOR
@@ -623,11 +626,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 				check(Channel->OpenedLocally);
 				Channel->bClearRecentActorRefs = false;
 				// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
-#if ENGINE_MINOR_VERSION <= 20
-				Channel->Close();
-#else
 				Channel->Close(EChannelCloseReason::Destroyed);
-#endif
 			}
 
 			// Remove it from any dormancy lists
@@ -710,12 +709,24 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 #if WITH_SERVER_CODE
 
 // Returns true if this actor should replicate to *any* of the passed in connections
-static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, const TArray<FNetViewer>& ConnectionViewers)
+static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, UActorChannel* ActorChannel, const TArray<FNetViewer>& ConnectionViewers)
 {
-	// SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
-	// We might make some exceptions in the future, so keeping this function.
-	// TODO: UNR-837 Start using IsNetRelevantFor again for relevancy checks rather than returning true.
-	return true;
+	// An actor without a channel yet will need to be replicated at least
+	// once to have a channel and entity created for it
+	if (ActorChannel == nullptr)
+	{
+		return true;
+	}
+
+	for (const auto& Viewer : ConnectionViewers)
+	{
+		if (Actor->IsNetRelevantFor(Viewer.InViewer, Viewer.ViewTarget, Viewer.ViewLocation))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 // Returns true if this actor is considered dormant (and all properties caught up) to the current connection
@@ -824,6 +835,8 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 		AGameNetworkManager* const NetworkManager = World->NetworkManager;
 		const bool bLowNetBandwidth = NetworkManager ? NetworkManager->IsInLowBandwidthMode() : false;
 
+		const bool bNetRelevancyEnabled = GetDefault<USpatialGDKSettings>()->UseIsActorRelevantForConnection;
+
 		for (FNetworkObjectInfo* ActorInfo : ConsiderList)
 		{
 			AActor* Actor = ActorInfo->Actor;
@@ -847,12 +860,10 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
 
-			// SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
-			// We have removed the level load check because it doesn't apply.
-			// Relevancy checking is also mostly just a pass through, might be removed later.
-			if (!IsActorRelevantToConnection(Actor, ConnectionViewers))
+			// Check actor relevancy if Net Relevancy is enabled in the GDK settings
+			if (bNetRelevancyEnabled && !IsActorRelevantToConnection(Actor, Channel, ConnectionViewers))
 			{
-				// If not relevant (and we don't have a channel), skip
+				// Early out and do not replicate if actor is not relevant
 				continue;
 			}
 
@@ -935,11 +946,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 				// This deletion entry is for an actor in a streaming level the connection doesn't have loaded, so skip it
 				continue;
 			}
-#if ENGINE_MINOR_VERSION <= 20
-			UActorChannel* Channel = (UActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
-#else
 			UActorChannel* Channel = (UActorChannel*)InConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally);
-#endif
 			if (Channel)
 			{
 				UE_LOG(LogNetTraffic, Log, TEXT("Server replicate actor creating destroy channel for NetGUID <%s,%s> Priority: %d"), *PriorityActors[j]->DestructionInfo->NetGUID.ToString(), *PriorityActors[j]->DestructionInfo->PathName, PriorityActors[j]->Priority);
@@ -1081,11 +1088,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 				{
 					UE_LOG(LogNetTraffic, Log, TEXT("- Closing channel for no longer relevant actor %s"), *Actor->GetName());
 					// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
-#if ENGINE_MINOR_VERSION <= 20
-					Channel->Close();
-#else
 					Channel->Close(Actor->GetTearOff() ? EChannelCloseReason::TearOff : EChannelCloseReason::Relevancy);
-#endif
 				}
 			}
 		}
@@ -1804,11 +1807,7 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 	}
 	else
 	{
-#if ENGINE_MINOR_VERSION <= 20
-		Channel = static_cast<USpatialActorChannel*>(NetConnection->CreateChannel(CHTYPE_Actor, 1));
-#else
 		Channel = static_cast<USpatialActorChannel*>(NetConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
-#endif
 		if (Channel == nullptr)
 		{
 			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Failed to create a channel for actor %s."), *GetNameSafe(Actor));
