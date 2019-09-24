@@ -569,9 +569,9 @@ void USpatialNetDriver::BeginDestroy()
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
 		if (!bPersistSpatialConnection)
 		{
-			if (UWorld* World = GetWorld())
+			if (UWorld* LocalWorld = GetWorld())
 			{
-				Cast<USpatialGameInstance>(World->GetGameInstance())->DestroySpatialWorkerConnection();
+				Cast<USpatialGameInstance>(LocalWorld->GetGameInstance())->DestroySpatialWorkerConnection();
 			}
 			
 			Connection = nullptr;
