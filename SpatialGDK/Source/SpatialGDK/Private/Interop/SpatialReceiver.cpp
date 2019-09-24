@@ -508,6 +508,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			return;
 		}
 
+		// Don't spawn if we're tombstoned
+		if (NetDriver->StaticComponentView->GetComponentData<Tombstone>(EntityId) != nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("The received actor with entity id %lld was tombstoned. The actor will not be spawned."), EntityId);
+			return;
+		}
+
 		EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp);
 
 		if (EntityActor == nullptr)
