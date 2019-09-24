@@ -1,6 +1,6 @@
 param(
   [string] $unreal_path = "$($gdk_home)\UnrealEngine",
-  # Note: this directory is soutside the build directory and will not get automatically cleaned up from agents unless agents are restarted.
+  # Note: this directory is outside the build directory and will not get automatically cleaned up from agents unless agents are restarted.
   [string] $engine_cache_path = "$gdk_home\..\..\..",
   [string] $engine_cache_folder = "UnrealEngine-Cache"
 )
