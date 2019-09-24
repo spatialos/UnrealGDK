@@ -1593,22 +1593,26 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseO
 			"Request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
 	case WORKER_STATUS_CODE_TIMEOUT:
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request timed out and will not be retried. "
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request timed out. "
 			"Request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
 	case WORKER_STATUS_CODE_APPLICATION_ERROR:
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request failed. Either the reservation expired or the entity already existed. "
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request failed. "
+			"Either the reservation expired, the entity already existed, or the entity was invalid. "
 			"Request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
-	default: ;
-		UE_LOG(LogSpatialReceiver, Error, TEXT("Create entity request failed. This likely indicates a bug in the Unreal GDK and should be reported."
+	default:
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Create entity request failed. This likely indicates a bug in the Unreal GDK and should be reported. "
 			"Request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
 	}
 
 	if (CreateEntityDelegate* Delegate = CreateEntityDelegates.Find(Op.request_id))
 	{
-		Delegate->ExecuteIfBound(Op);
+		if (Delegate->ExecuteIfBound(Op))
+		{
+			return;
+		}
 	}
 
 	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
@@ -1620,7 +1624,9 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseO
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received CreateEntityResponse for actor which no longer has an actor channel: request id: %d, entity id: %lld. This should only happen in the case where we attempt to delete the entity before we have authority. The entity will therefore be deleted once authority is gained."), Op.request_id, Op.entity_id);
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received CreateEntityResponse for actor which no longer has an actor channel: "
+			"request id: %d, entity id: %lld. This should only happen in the case where we attempt to delete the entity before we have authority. "
+			"The entity will therefore be deleted once authority is gained."), Op.request_id, Op.entity_id);
 	}
 }
 
