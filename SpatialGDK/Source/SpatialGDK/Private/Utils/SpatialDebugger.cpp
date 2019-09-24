@@ -43,7 +43,6 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 	check(GetNetDriver()->IsServer() == false);
 
 	TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(EntityId);
-	check(ExistingActor == nullptr || ExistingActor->Get()->IsA<ASpatialDebugger>());
 
 	if (ExistingActor != nullptr)
 	{
@@ -191,7 +190,7 @@ void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* Contr
 
 				//Canvas->SetDrawColor(LockColors[LockStatus]);
 				Canvas->SetDrawColor(FColor::White);
-				Canvas->DrawIcon(Icons[ICON_LOCK_CLOSED], ScreenLocation.X, ScreenLocation.Y - ActorCountAtLocation * 32.0f, 1.0f);
+				Canvas->DrawIcon(Icons[LockIcon], ScreenLocation.X, ScreenLocation.Y - ActorCountAtLocation * 32.0f, 1.0f);
 			}
 
 			if (bShowEntityId)
