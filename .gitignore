@@ -93,3 +93,5 @@ SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Build/Build.csproj.user
 _ReSharper.caches
 
 **/.DS_Store
+
+node_modules/
