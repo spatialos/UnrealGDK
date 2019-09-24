@@ -57,15 +57,15 @@ public class SpatialGDK : ModuleRules
                 bAddDelayLoad = true;
                 break;
             case UnrealTargetPlatform.Mac:
-                LibPrefix = "lib";
+                LibPrefix = "libimprobable_";
                 ImportLibSuffix = SharedLibSuffix = ".dylib";
                 break;
             case UnrealTargetPlatform.Linux:
-                LibPrefix = "lib";
+                LibPrefix = "libimprobable_";
                 ImportLibSuffix = SharedLibSuffix = ".so";
                 break;
             case UnrealTargetPlatform.PS4:
-                LibPrefix = "lib";
+                LibPrefix = "libimprobable_";
                 ImportLibSuffix = "_stub.a";
                 SharedLibSuffix = ".prx";
                 bAddDelayLoad = true;

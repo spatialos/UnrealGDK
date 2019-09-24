@@ -243,6 +243,10 @@ void USpatialWorkerConnection::ConnectToLocator()
 	FTCHARToUTF8 LoginTokenCStr(*LocatorConfig.LoginToken);
 
 	Worker_LocatorParameters LocatorParams = {};
+	FString ProjectName;
+	FParse::Value(FCommandLine::Get(), TEXT("projectName"), ProjectName);
+	LocatorParams.project_name = TCHAR_TO_UTF8(*ProjectName);
+	LocatorParams.credentials_type = Worker_LocatorCredentialsTypes::WORKER_LOCATOR_PLAYER_IDENTITY_CREDENTIALS;
 	LocatorParams.player_identity.player_identity_token = PlayerIdentityTokenCStr.Get();
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 
