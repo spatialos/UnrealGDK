@@ -5,6 +5,7 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
@@ -313,6 +314,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
 		// and set our RemoteRole to be ROLE_AutonomousProxy if the actor has an owning connection.
+		// Note: Pawn, PlayerController, and PlayerState for player-owned characters can arrive in
+		// any order on non-authoritative servers, so it's possible that we don't yet know if a pawn
+		// is player controlled when gaining authority over the pawn and need to wait for the player
+		// state. Likewise, it's possible that the player state doesn't have a pointer to its pawn
+		// yet, so we need to wait for the pawn to arrive.
 		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
@@ -328,9 +334,22 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 					}
 					else if (APawn* Pawn = Cast<APawn>(Actor))
 					{
+						// The following check will return false on non-authoritative servers if the PlayerState hasn't been received yet.
 						if (Pawn->IsPlayerControlled())
 						{
 							Pawn->RemoteRole = ROLE_AutonomousProxy;
+						}
+					}
+					else if (const APlayerState* PlayerState = Cast<APlayerState>(Actor))
+					{
+						// The following check will return false on non-authoritative servers if the Pawn hasn't been received yet.
+						if (APawn* PawnFromPlayerState = PlayerState->GetPawn())
+						{
+							check(PlayerState->bIsABot || PawnFromPlayerState->IsPlayerControlled());
+							if (PawnFromPlayerState->IsPlayerControlled())
+							{
+								PawnFromPlayerState->RemoteRole = ROLE_AutonomousProxy;
+							}
 						}
 					}
 
@@ -533,11 +552,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		// Set up actor channel.
-#if ENGINE_MINOR_VERSION <= 20
-		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
-#else
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
-#endif
 
 		if (!Channel)
 		{
@@ -645,11 +660,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("RemoveActor: actor for entity %lld was already deleted (likely on the authoritative worker) but still has an open actor channel."), EntityId);
-#if ENGINE_MINOR_VERSION <= 20
-			ActorChannel->ConditionalCleanUp();
-#else
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
-#endif
 		}
 		return;
 	}
@@ -659,11 +670,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	{
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
-#if ENGINE_MINOR_VERSION <= 20
-			ActorChannel->ConditionalCleanUp();
-#else
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
-#endif
 		}
 		return;
 	}
@@ -760,12 +767,7 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	// Clean up the actor channel. For clients, this will also call destroy on the actor.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-
-#if ENGINE_MINOR_VERSION <= 20
-		ActorChannel->ConditionalCleanUp();
-#else
 		ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
-#endif
 	}
 	else
 	{
@@ -1403,11 +1405,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 		// Check if bTearOff has been set to true
 		if (GetBoolFromSchema(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
-#if ENGINE_MINOR_VERSION <= 20
-			Channel->ConditionalCleanUp();
-#else
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
-#endif
 			CleanupDeletedEntity(Channel->GetEntityId());
 		}
 	}
@@ -1811,11 +1809,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		bool bIsHandover = ObjectReferences.ParentIndex == -1;
 		FRepParentCmd* Parent = ObjectReferences.ParentIndex >= 0 ? &RepLayout.Parents[ObjectReferences.ParentIndex] : nullptr;
 
-#if ENGINE_MINOR_VERSION <= 20
-		int32 StoredDataOffset = AbsOffset;
-#else
 		int32 StoredDataOffset = ObjectReferences.ShadowOffset;
-#endif
 
 		if (ObjectReferences.Array)
 		{
