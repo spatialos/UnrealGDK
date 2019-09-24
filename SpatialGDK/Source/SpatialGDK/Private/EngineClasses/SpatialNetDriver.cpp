@@ -28,6 +28,7 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Schema/AlwaysRelevant.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -41,7 +42,6 @@
 #if WITH_EDITOR
 #include "SpatialGDKServicesModule.h"
 #endif
-#include "AlwaysRelevant.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -675,7 +675,10 @@ void USpatialNetDriver::Shutdown()
 void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection)
 {
 	// Similar to NetDriver::NotifyActorFullyDormantForConnection, however we only care about a single connection
-	GetNetworkObjectList().MarkDormant(Actor, NetConnection, 1, this);
+	const int NumConnections = 1;
+	GetNetworkObjectList().MarkDormant(Actor, NetConnection, NumConnections, this);
+
+	// Intentionally don't call Super::NotifyActorFullyDormantForConnection
 }
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
