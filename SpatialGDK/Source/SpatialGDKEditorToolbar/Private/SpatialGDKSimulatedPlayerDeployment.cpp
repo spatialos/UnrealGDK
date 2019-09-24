@@ -35,6 +35,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 	ParentWindowPtr = InArgs._ParentWindow;
 	SpatialGDKEditorPtr = InArgs._SpatialGDKEditor;
 
+	// clang-format off
 	ChildSlot
 		[
 			SNew(SBorder)
@@ -94,7 +95,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 							[
 								SNew(SSeparator)
 							]
-							// Project 
+							// Project
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -116,7 +117,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.IsEnabled(false)
 								]
 							]
-							// Assembly Name 
+							// Assembly Name
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -139,7 +140,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited, ETextCommit::Default)
 								]
 							]
-							// Pirmary Deployment Name 
+							// Pirmary Deployment Name
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -318,7 +319,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.IsEnabled_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)
 								]
 							]
-							// Simulated Players Number 
+							// Simulated Players Number
 							+ SVerticalBox::Slot()
 							.AutoHeight()
 							.Padding(2.0f)
@@ -398,6 +399,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 				]
 			]
 		];
+		//clang-format on
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited(const FText& InText, ETextCommit::Type InCommitType)
@@ -456,7 +458,7 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetSimulatedPlayerDe
 			MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
 		}
 	}
-	
+
 	return MenuBuilder.MakeWidget();
 }
 
