@@ -3,8 +3,8 @@
 #include "Interop/GlobalStateManager.h"
 
 #if WITH_EDITOR
-#include "Settings/LevelEditorPlaySettings.h"
 #include "Editor.h"
+#include "Settings/LevelEditorPlaySettings.h"
 #endif
 
 #include "Engine/Classes/AI/AISystemBase.h"
@@ -53,7 +53,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 		}
 	}
 #endif // WITH_EDITOR
-  
+
 	bAcceptingPlayers = false;
 	bCanBeginPlay = false;
 }
@@ -67,7 +67,7 @@ void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& 
 void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-	
+
 	// Set the Deployment Map URL.
 	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
 
@@ -148,8 +148,8 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	if (NetDriver && NetDriver->GetNetMode() == NM_DedicatedServer)
 	{
 		UE_LOG(LogGlobalStateManager, Log, TEXT("Received shutdown multi-process request."));
-		
-		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server. 
+
+		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server.
 		SetAcceptingPlayers(false);
 
 		// If we have multiple servers, they need to be informed of PIE session ending.
@@ -449,8 +449,7 @@ void UGlobalStateManager::SetCanBeginPlay(const bool bInCanBeginPlay)
 
 void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."), AuthOp.component_id,
-		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT ("does not have"));
+	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."), AuthOp.component_id, AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
 
 	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -576,8 +575,7 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
 
 	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this, bRetryUntilAcceptingPlayers](const Worker_EntityQueryResponseOp& Op)
-	{
+	GSMQueryDelegate.BindLambda([this, bRetryUntilAcceptingPlayers](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogGlobalStateManager, Warning, TEXT("Could not find GSM via entity query: %s"), UTF8_TO_TCHAR(Op.message));
@@ -664,13 +662,15 @@ void UGlobalStateManager::RetryQueryGSM(bool bRetryUntilAcceptingPlayers)
 
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
 	FTimerHandle RetryTimer;
-	TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<UGlobalStateManager>(this), bRetryUntilAcceptingPlayers]()
-	{
-		if (UGlobalStateManager* GSM = WeakThis.Get())
-		{
-			GSM->QueryGSM(bRetryUntilAcceptingPlayers);
-		}
-	}, RetryTimerDelay, false);
+	TimerManager->SetTimer(
+		RetryTimer, [WeakThis = TWeakObjectPtr<UGlobalStateManager>(this), bRetryUntilAcceptingPlayers]() {
+			if (UGlobalStateManager* GSM = WeakThis.Get())
+			{
+				GSM->QueryGSM(bRetryUntilAcceptingPlayers);
+			}
+		},
+		RetryTimerDelay,
+		false);
 }
 
 void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)

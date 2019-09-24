@@ -19,8 +19,7 @@ bool SpatialGDKCloudLaunch()
 		*SpatialGDKSettings->GetPrimaryDeploymentName(),
 		*SpatialGDKSettings->GetPrimaryLanchConfigPath(),
 		*SpatialGDKSettings->GetSnapshotPath(),
-		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
-	);
+		*SpatialGDKSettings->GetPrimaryRegionCode().ToString());
 
 	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
 	{
@@ -30,22 +29,19 @@ bool SpatialGDKCloudLaunch()
 			*SpatialGDKSettings->GetSimulatedPlayerDeploymentName(),
 			*SpatialGDKSettings->GetSimulatedPlayerLaunchConfigPath(),
 			*SpatialGDKSettings->GetSimulatedPlayerRegionCode().ToString(),
-			*FString::FromInt(SpatialGDKSettings->GetNumberOfSimulatedPlayer())
-		);
+			*FString::FromInt(SpatialGDKSettings->GetNumberOfSimulatedPlayer()));
 	}
 
 	LauncherCmdArguments = FString::Printf(
 		TEXT("%s ^& pause"),
-		*LauncherCmdArguments
-	);
+		*LauncherCmdArguments);
 
 	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
-		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0,
-		*SpatialGDKSettings->GetDeploymentLauncherPath(), nullptr, nullptr);
+		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0, *SpatialGDKSettings->GetDeploymentLauncherPath(), nullptr, nullptr);
 
 	return DeploymentLauncherProcHandle.IsValid();
 }
- 
+
 bool SpatialGDKCloudStop()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -54,8 +50,7 @@ bool SpatialGDKCloudStop()
 	const FString LauncherCmdArguments = TEXT("/c DeploymentLauncher.exe stop");
 
 	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
-		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0,
-		*SpatialGDKSettings->GetDeploymentLauncherPath(), nullptr, nullptr);
+		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0, *SpatialGDKSettings->GetDeploymentLauncherPath(), nullptr, nullptr);
 
 	return DeploymentLauncherProcHandle.IsValid();
 }

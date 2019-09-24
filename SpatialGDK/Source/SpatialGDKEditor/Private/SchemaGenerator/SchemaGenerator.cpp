@@ -118,8 +118,7 @@ void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> 
 	Writer.Printf("{0} {1} = {2};",
 		*PropertyToSchemaType(RepProp->Property),
 		*SchemaFieldName(RepProp),
-		FieldCounter
-	);
+		FieldCounter);
 }
 
 void WriteSchemaHandoverField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> HandoverProp, const int FieldCounter)
@@ -127,8 +126,7 @@ void WriteSchemaHandoverField(FCodeWriter& Writer, const TSharedPtr<FUnrealPrope
 	Writer.Printf("{0} {1} = {2};",
 		*PropertyToSchemaType(HandoverProp->Property),
 		*SchemaFieldName(HandoverProp),
-		FieldCounter
-	);
+		FieldCounter);
 }
 
 void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
@@ -188,9 +186,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 			if (!(ExpectedReplicatesPropData.IsValid() && ExpectedReplicatesPropData->Property == ReplicatesProp))
 			{
-				UE_LOG(LogSchemaGenerator, Error, TEXT("Did not find ActorComponent->bReplicates at field %d for class %s. Modifying the base Actor Component class is currently not supported."),
-					SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID,
-					*Class->GetName());
+				UE_LOG(LogSchemaGenerator, Error, TEXT("Did not find ActorComponent->bReplicates at field %d for class %s. Modifying the base Actor Component class is currently not supported."), SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID, *Class->GetName());
 			}
 		}
 
@@ -235,8 +231,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 	if (ExistingSchemaData != nullptr && !ExistingSchemaData->GeneratedSchemaName.IsEmpty()
 		&& ExistingSchemaData->GeneratedSchemaName != ClassPathToSchemaName[Class->GetPathName()])
 	{
-		UE_LOG(LogSchemaGenerator, Error, TEXT("Saved generated schema name does not match in-memory version for class %s - schema %s : %s"),
-			*Class->GetPathName(), *ExistingSchemaData->GeneratedSchemaName, *ClassPathToSchemaName[Class->GetPathName()]);
+		UE_LOG(LogSchemaGenerator, Error, TEXT("Saved generated schema name does not match in-memory version for class %s - schema %s : %s"), *Class->GetPathName(), *ExistingSchemaData->GeneratedSchemaName, *ClassPathToSchemaName[Class->GetPathName()]);
 		UE_LOG(LogSchemaGenerator, Error, TEXT("Schema generation may have resulted in component name clash, recommend you perform a full schema generation"));
 	}
 
@@ -339,7 +334,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 			continue;
 		}
 
-		// If this class is an Actor, it MUST have bTearOff at field ID 3.	
+		// If this class is an Actor, it MUST have bTearOff at field ID 3.
 		if (Group == REP_MultiClient && Class->IsChildOf<AActor>())
 		{
 			TSharedPtr<FUnrealProperty> ExpectedReplicatesPropData = RepData[Group].FindRef(SpatialConstants::ACTOR_TEAROFF_ID);
@@ -347,9 +342,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 
 			if (!(ExpectedReplicatesPropData.IsValid() && ExpectedReplicatesPropData->Property == ReplicatesProp))
 			{
-				UE_LOG(LogSchemaGenerator, Error, TEXT("Did not find Actor->bTearOff at field %d for class %s. Modifying the base Actor class is currently not supported."),
-					SpatialConstants::ACTOR_TEAROFF_ID,
-					*Class->GetName());
+				UE_LOG(LogSchemaGenerator, Error, TEXT("Did not find Actor->bTearOff at field %d for class %s. Modifying the base Actor class is currently not supported."), SpatialConstants::ACTOR_TEAROFF_ID, *Class->GetName());
 			}
 		}
 

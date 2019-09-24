@@ -24,7 +24,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 	if (WorldContext != nullptr)
 	{
 		UWorld* World = GetWorld();
-		UNetDriver * NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
+		UNetDriver* NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
 		bool bShouldDestroyNetDriver = false;
 
 		if (NetDriver == nullptr)
@@ -32,10 +32,9 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 			// If Spatial networking is enabled, override the GameNetDriver with the SpatialNetDriver
 			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
 			{
-				if (FNetDriverDefinition* DriverDefinition = GEngine->NetDriverDefinitions.FindByPredicate([](const FNetDriverDefinition& CurDef)
-				{
-					return CurDef.DefName == NAME_GameNetDriver;
-				}))
+				if (FNetDriverDefinition* DriverDefinition = GEngine->NetDriverDefinitions.FindByPredicate([](const FNetDriverDefinition& CurDef) {
+						return CurDef.DefName == NAME_GameNetDriver;
+					}))
 				{
 					DriverDefinition->DriverClassName = DriverDefinition->DriverClassNameFallback = TEXT("/Script/SpatialGDK.SpatialNetDriver");
 				}
@@ -59,8 +58,8 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 	if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking && !bHasSpatialNetDriver)
 	{
 		UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
-										  "Please make sure you set up the net driver definitions as specified in the porting "
-										  "guide and that you don't override the main net driver."));
+												   "Please make sure you set up the net driver definitions as specified in the porting "
+												   "guide and that you don't override the main net driver."));
 	}
 
 	return bHasSpatialNetDriver;

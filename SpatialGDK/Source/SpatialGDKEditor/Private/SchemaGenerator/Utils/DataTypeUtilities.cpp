@@ -69,8 +69,7 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 {
 	// Transform the property chain into a chain of names.
 	TArray<FString> ChainNames;
-	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
-	{
+	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString {
 		FString PropName = Property->Property->GetName().ToLower();
 		if (Property->Property->ArrayDim > 1)
 		{

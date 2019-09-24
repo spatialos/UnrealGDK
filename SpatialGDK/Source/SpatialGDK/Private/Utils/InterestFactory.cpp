@@ -2,16 +2,16 @@
 
 #include "Utils/InterestFactory.h"
 
-#include "Engine/World.h"
 #include "Engine/Classes/GameFramework/Actor.h"
+#include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "UObject/UObjectIterator.h"
 
 #include "EngineClasses/Components/ActorInterestComponent.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 #include "UObject/UObjectIterator.h"
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
@@ -56,8 +56,7 @@ void GatherClientInterestDistances()
 
 			if (MaxDistanceSquared != 0.f && IteratedDefaultActor->NetCullDistanceSquared > MaxDistanceSquared)
 			{
-				UE_LOG(LogInterestFactory, Warning, TEXT("NetCullDistanceSquared for %s too large, clamping from %f to %f"),
-					*It->GetName(), ActorNetCullDistanceSquared, MaxDistanceSquared);
+				UE_LOG(LogInterestFactory, Warning, TEXT("NetCullDistanceSquared for %s too large, clamping from %f to %f"), *It->GetName(), ActorNetCullDistanceSquared, MaxDistanceSquared);
 
 				ActorNetCullDistanceSquared = MaxDistanceSquared;
 			}
@@ -334,7 +333,7 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 	CheckoutRadiusConstraints.OrConstraint.Add(DefaultCheckoutRadiusConstraint);
 
 	// For every interest distance that we still want, add a constraint with the distance for the actor type and all of its derived types.
-	for (const auto& InterestDistanceSquared: ClientInterestDistancesSquared)
+	for (const auto& InterestDistanceSquared : ClientInterestDistancesSquared)
 	{
 		QueryConstraint CheckoutRadiusConstraint;
 
@@ -383,7 +382,6 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint() const
 
 	return AlwaysInterestedConstraint;
 }
-
 
 QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint() const
 {
@@ -466,7 +464,9 @@ QueryConstraint InterestFactory::CreateLevelConstraints() const
 		else
 		{
 			UE_LOG(LogInterestFactory, Error, TEXT("Error creating query constraints for Actor %s. "
-				"Could not find Streaming Level Component for Level %s. Have you generated schema?"), *Actor->GetName(), *LevelPath.ToString());
+												   "Could not find Streaming Level Component for Level %s. Have you generated schema?"),
+				*Actor->GetName(),
+				*LevelPath.ToString());
 		}
 	}
 

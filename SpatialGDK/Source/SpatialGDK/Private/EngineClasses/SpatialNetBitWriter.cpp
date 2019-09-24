@@ -14,7 +14,8 @@ DEFINE_LOG_CATEGORY(LogSpatialNetSerialize);
 
 FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap)
 	: FNetBitWriter(InPackageMap, 0)
-{}
+{
+}
 
 void FSpatialNetBitWriter::SerializeObjectRef(FUnrealObjectRef& ObjectRef)
 {

@@ -13,20 +13,20 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Schema/Interest.h"
 #include "SpatialConstants.h"
-#include "Utils/RepLayoutUtils.h"
 #include "Utils/InterestFactory.h"
+#include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogComponentFactory);
 
 namespace SpatialGDK
 {
-
 ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, bInterestHasChanged(bInterestDirty)
-{ }
+{
+}
 
 bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
 {

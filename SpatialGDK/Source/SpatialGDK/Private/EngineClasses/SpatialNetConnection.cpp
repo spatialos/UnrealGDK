@@ -6,8 +6,8 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Gameframework/PlayerController.h"
 #include "Gameframework/Pawn.h"
+#include "Gameframework/PlayerController.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -51,7 +51,7 @@ void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSock
 }
 
 #if ENGINE_MINOR_VERSION <= 20
-void USpatialNetConnection::LowLevelSend(void * Data, int32 CountBytes, int32 CountBits)
+void USpatialNetConnection::LowLevelSend(void* Data, int32 CountBytes, int32 CountBits)
 {
 	//Intentionally does not call Super::
 }
@@ -145,36 +145,41 @@ void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_
 
 void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 {
-	TimerManager->SetTimer(HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]()
-	{
-		if (USpatialNetConnection* Connection = WeakThis.Get())
-		{
-			// This client timed out. Disconnect it and trigger OnDisconnected logic.
-			Connection->CleanUp();
-		}
-	}, GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds, false);
+	TimerManager->SetTimer(
+		HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]() {
+			if (USpatialNetConnection* Connection = WeakThis.Get())
+			{
+				// This client timed out. Disconnect it and trigger OnDisconnected logic.
+				Connection->CleanUp();
+			}
+		},
+		GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds,
+		false);
 }
 
 void USpatialNetConnection::SetHeartbeatEventTimer()
 {
-	TimerManager->SetTimer(HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]()
-	{
-		if (USpatialNetConnection* Connection = WeakThis.Get())
-		{
-			Worker_ComponentUpdate ComponentUpdate = {};
-
-			ComponentUpdate.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
-			ComponentUpdate.schema_type = Schema_CreateComponentUpdate(SpatialConstants::HEARTBEAT_COMPONENT_ID);
-			Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
-			Schema_AddObject(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
-
-			USpatialWorkerConnection* WorkerConnection = Cast<USpatialNetDriver>(Connection->Driver)->Connection;
-			if (WorkerConnection->IsConnected())
+	TimerManager->SetTimer(
+		HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]() {
+			if (USpatialNetConnection* Connection = WeakThis.Get())
 			{
-				WorkerConnection->SendComponentUpdate(Connection->PlayerControllerEntity, &ComponentUpdate);
+				Worker_ComponentUpdate ComponentUpdate = {};
+
+				ComponentUpdate.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
+				ComponentUpdate.schema_type = Schema_CreateComponentUpdate(SpatialConstants::HEARTBEAT_COMPONENT_ID);
+				Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
+				Schema_AddObject(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
+
+				USpatialWorkerConnection* WorkerConnection = Cast<USpatialNetDriver>(Connection->Driver)->Connection;
+				if (WorkerConnection->IsConnected())
+				{
+					WorkerConnection->SendComponentUpdate(Connection->PlayerControllerEntity, &ComponentUpdate);
+				}
 			}
-		}
-	}, GetDefault<USpatialGDKSettings>()->HeartbeatIntervalSeconds, true, 0.0f);
+		},
+		GetDefault<USpatialGDKSettings>()->HeartbeatIntervalSeconds,
+		true,
+		0.0f);
 }
 
 void USpatialNetConnection::DisableHeartbeat()

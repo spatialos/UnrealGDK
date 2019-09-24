@@ -59,13 +59,13 @@ Worker_LogLevel FSpatialOutputDevice::ConvertLogLevelToSpatial(ELogVerbosity::Ty
 {
 	switch (Verbosity)
 	{
-	case ELogVerbosity::Fatal:
-		return WORKER_LOG_LEVEL_FATAL;
-	case ELogVerbosity::Error:
-		return WORKER_LOG_LEVEL_ERROR;
-	case ELogVerbosity::Warning:
-		return WORKER_LOG_LEVEL_WARN;
-	default:
-		return WORKER_LOG_LEVEL_INFO;
+		case ELogVerbosity::Fatal:
+			return WORKER_LOG_LEVEL_FATAL;
+		case ELogVerbosity::Error:
+			return WORKER_LOG_LEVEL_ERROR;
+		case ELogVerbosity::Warning:
+			return WORKER_LOG_LEVEL_WARN;
+		default:
+			return WORKER_LOG_LEVEL_INFO;
 	}
 }

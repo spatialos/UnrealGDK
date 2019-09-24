@@ -28,8 +28,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate CacheEntityIDsDelegate;
-	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](const Worker_ReserveEntityIdsResponseOp& Op)
-	{
+	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](const Worker_ReserveEntityIdsResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			// UNR-630 - Temporary hack to avoid failure to reserve entities due to timeout on large maps
@@ -50,8 +49,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 		check(EntitiesToReserve == Op.number_of_entity_ids);
 
 		// Clean up any expired Entity ranges
-		ReservedEntityIDRanges = ReservedEntityIDRanges.FilterByPredicate([](const EntityRange& Element)
-		{
+		ReservedEntityIDRanges = ReservedEntityIDRanges.FilterByPredicate([](const EntityRange& Element) {
 			return !Element.bExpired;
 		});
 
@@ -66,13 +64,15 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 
 		FTimerHandle ExpirationTimer;
 		TWeakObjectPtr<UEntityPool> WeakThis(this);
-		TimerManager->SetTimer(ExpirationTimer, [WeakThis, ExpiringEntityRangeId = NewEntityRange.EntityRangeId]()
-		{
-			if (UEntityPool* Pool = WeakThis.Get())
-			{
-				Pool->OnEntityRangeExpired(ExpiringEntityRangeId);
-			}
-		}, SpatialConstants::ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS, false);
+		TimerManager->SetTimer(
+			ExpirationTimer, [WeakThis, ExpiringEntityRangeId = NewEntityRange.EntityRangeId]() {
+				if (UEntityPool* Pool = WeakThis.Get())
+				{
+					Pool->OnEntityRangeExpired(ExpiringEntityRangeId);
+				}
+			},
+			SpatialConstants::ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS,
+			false);
 
 		bIsAwaitingResponse = false;
 		if (!bIsReady)
@@ -93,8 +93,7 @@ void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)
 {
 	UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Entity range expired! Range ID: %d"), ExpiringEntityRangeId);
 
-	int32 FoundEntityRangeIndex = ReservedEntityIDRanges.IndexOfByPredicate([ExpiringEntityRangeId](const EntityRange& Element)
-	{
+	int32 FoundEntityRangeIndex = ReservedEntityIDRanges.IndexOfByPredicate([ExpiringEntityRangeId](const EntityRange& Element) {
 		return Element.EntityRangeId == ExpiringEntityRangeId;
 	});
 

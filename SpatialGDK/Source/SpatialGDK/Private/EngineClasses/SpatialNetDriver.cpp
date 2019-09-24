@@ -144,20 +144,19 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		if (LocalDeploymentManager->ShouldWaitForDeployment())
 		{
 			UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Waiting for local SpatialOS deployment to start before connecting..."));
-			SpatialDeploymentStartHandle = LocalDeploymentManager->OnDeploymentStart.AddLambda([WeakThis = TWeakObjectPtr<USpatialNetDriver>(this), URL]
+			SpatialDeploymentStartHandle = LocalDeploymentManager->OnDeploymentStart.AddLambda([WeakThis = TWeakObjectPtr<USpatialNetDriver>(this), URL] {
+				if (!WeakThis.IsValid())
 				{
-					if (!WeakThis.IsValid())
-					{
-						return;
-					}
-					UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Local deployment started, connecting with URL: %s"), *URL.ToString());
+					return;
+				}
+				UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Local deployment started, connecting with URL: %s"), *URL.ToString());
 
-					WeakThis.Get()->InitiateConnectionToSpatialOS(URL);
-					if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
-					{
-						GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(WeakThis.Get()->SpatialDeploymentStartHandle);
-					}
-				});
+				WeakThis.Get()->InitiateConnectionToSpatialOS(URL);
+				if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
+				{
+					GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(WeakThis.Get()->SpatialDeploymentStartHandle);
+				}
+			});
 
 			return true;
 		}
@@ -533,8 +532,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 
 	// FinishServerTravel - Allows Unreal to finish it's normal server travel.
 	USpatialNetDriver::PostWorldWipeDelegate FinishServerTravel;
-	FinishServerTravel.BindLambda([World, NetDriver, NewURL, NetMode, bSeamless, bAbsolute]
-	{
+	FinishServerTravel.BindLambda([World, NetDriver, NewURL, NetMode, bSeamless, bAbsolute] {
 		UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Finishing Server Travel : %s"), *NewURL);
 		check(World);
 		World->NextURL = NewURL;
@@ -567,7 +565,7 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			Connection->SendDeleteEntityRequest(WorkerEntityId);
 		}
-		
+
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
 		if (!bPersistSpatialConnection)
 		{
@@ -947,12 +945,10 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 			continue;
 		}
 
-#if !( UE_BUILD_SHIPPING || UE_BUILD_TEST )
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 		static IConsoleVariable* DebugObjectCvar = IConsoleManager::Get().FindConsoleVariable(TEXT("net.PackageMap.DebugObject"));
 		static IConsoleVariable* DebugAllObjectsCvar = IConsoleManager::Get().FindConsoleVariable(TEXT("net.PackageMap.DebugAll"));
-		if (PriorityActors[j]->ActorInfo &&
-			((DebugObjectCvar && !DebugObjectCvar->GetString().IsEmpty() && PriorityActors[j]->ActorInfo->Actor->GetName().Contains(DebugObjectCvar->GetString())) ||
-			(DebugAllObjectsCvar && DebugAllObjectsCvar->GetInt() != 0)))
+		if (PriorityActors[j]->ActorInfo && ((DebugObjectCvar && !DebugObjectCvar->GetString().IsEmpty() && PriorityActors[j]->ActorInfo->Actor->GetName().Contains(DebugObjectCvar->GetString())) || (DebugAllObjectsCvar && DebugAllObjectsCvar->GetInt() != 0)))
 		{
 			UE_LOG(LogNetPackageMap, Log, TEXT("Evaluating actor for replication %s"), *PriorityActors[j]->ActorInfo->Actor->GetName());
 		}
@@ -1200,7 +1196,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 		if (ClientConnection->ViewTarget != nullptr)
 		{
-			new(ConnectionViewers)FNetViewer(ClientConnection, DeltaSeconds);
+			new (ConnectionViewers) FNetViewer(ClientConnection, DeltaSeconds);
 
 			if (ClientConnection->Children.Num() > 0)
 			{
@@ -1341,7 +1337,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 					Out = Out->NextOutParm;
 				}
 
-				void* Dest = It->ContainerPtrToValuePtr< void >(Parameters);
+				void* Dest = It->ContainerPtrToValuePtr<void>(Parameters);
 
 				const int32 CopySize = It->ElementSize * It->ArrayDim;
 
@@ -1418,7 +1414,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	Super::TickFlush(DeltaTime);
 }
 
-USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
+USpatialNetConnection* USpatialNetDriver::GetSpatialOSNetConnection() const
 {
 	if (ServerConnection)
 	{
@@ -1470,7 +1466,8 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	// skip to the first option in the URL
 	const FString UrlString = InUrl.ToString();
 	const TCHAR* Tmp = *UrlString;
-	for (; *Tmp && *Tmp != '?'; Tmp++);
+	for (; *Tmp && *Tmp != '?'; Tmp++)
+		;
 
 	FString ErrorMsg;
 	AGameModeBase* GameMode = GetWorld()->GetAuthGameMode();
@@ -1571,7 +1568,7 @@ bool USpatialNetDriver::HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOu
 
 		for (int32 i = 0; i < ClassIt->NetFields.Num(); i++)
 		{
-			UFunction * Function = Cast<UFunction>(ClassIt->NetFields[i]);
+			UFunction* Function = Cast<UFunction>(ClassIt->NetFields[i]);
 
 			if (Function != NULL && Function->FunctionFlags & FUNC_NetCrossServer)
 			{
@@ -1589,15 +1586,15 @@ bool USpatialNetDriver::HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOu
 
 		for (int32 i = 0; i < ClassIt->NetFields.Num(); i++)
 		{
-			UFunction * Function = Cast<UFunction>(ClassIt->NetFields[i]);
+			UFunction* Function = Cast<UFunction>(ClassIt->NetFields[i]);
 
 			if (Function != NULL && Function->FunctionFlags & FUNC_NetCrossServer)
 			{
-				const FClassNetCache * ClassCache = NetCache->GetClassNetCache(*ClassIt);
+				const FClassNetCache* ClassCache = NetCache->GetClassNetCache(*ClassIt);
 
-				const FFieldNetCache * FieldCache = ClassCache->GetFromField(Function);
+				const FFieldNetCache* FieldCache = ClassCache->GetFromField(Function);
 
-				TArray< UProperty * > Parms;
+				TArray<UProperty*> Parms;
 
 				for (TFieldIterator<UProperty> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
 				{
@@ -1789,8 +1786,7 @@ uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentTy
 			// We previously used to receive RPCs of this type, now we're about to send one, so we reset the reliable RPC index.
 			// This should only be possible for CrossServer RPCs.
 			check(RPCType == SCHEMA_CrossServerRPC);
-			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Used to receive reliable CrossServer RPCs from worker %s, now about to send one. The entity must have crossed boundary."),
-				*Actor->GetName(), *TargetObject->GetName(), *RPCIdEntry->WorkerId);
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Used to receive reliable CrossServer RPCs from worker %s, now about to send one. The entity must have crossed boundary."), *Actor->GetName(), *TargetObject->GetName(), *RPCIdEntry->WorkerId);
 			RPCIdEntry->WorkerId = FString();
 			RPCIdEntry->RPCId = 0;
 		}
@@ -1820,14 +1816,12 @@ void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentTyp
 			{
 				// We previously used to send RPCs of this type, now we received one. This should only be possible for CrossServer RPCs.
 				check(RPCType == SCHEMA_CrossServerRPC);
-				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Used to send reliable CrossServer RPCs, now received one from worker %s. The entity must have crossed boundary."),
-					*Actor->GetName(), *TargetObject->GetName(), *WorkerId);
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Used to send reliable CrossServer RPCs, now received one from worker %s. The entity must have crossed boundary."), *Actor->GetName(), *TargetObject->GetName(), *WorkerId);
 			}
 			else
 			{
 				// We received an RPC from a different worker than the one we used to receive RPCs of this type from.
-				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Received a reliable %s RPC from a different worker %s. Previously received from worker %s."),
-					*Actor->GetName(), *TargetObject->GetName(), *RPCSchemaTypeToString(RPCType), *WorkerId, *RPCIdEntry->WorkerId);
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Received a reliable %s RPC from a different worker %s. Previously received from worker %s."), *Actor->GetName(), *TargetObject->GetName(), *RPCSchemaTypeToString(RPCType), *WorkerId, *RPCIdEntry->WorkerId);
 			}
 			RPCIdEntry->WorkerId = WorkerId;
 		}
@@ -1835,18 +1829,15 @@ void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentTyp
 		{
 			if (RPCId < RPCIdEntry->RPCId)
 			{
-				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Actor %s: Reliable %s RPC received out of order! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
-					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
+				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Actor %s: Reliable %s RPC received out of order! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"), *Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
 			}
 			else if (RPCId == RPCIdEntry->RPCId)
 			{
-				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Actor %s: Reliable %s RPC index duplicated! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
-					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
+				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Actor %s: Reliable %s RPC index duplicated! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"), *Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
 			}
 			else
 			{
-				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Actor %s: One or more reliable %s RPCs skipped! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
-					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
+				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Actor %s: One or more reliable %s RPCs skipped! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"), *Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
 			}
 		}
 
@@ -1869,8 +1860,7 @@ void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType
 	{
 		if (ReliableRPCIds->Contains(RPCType))
 		{
-			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s: Gained authority over %s RPC component. Resetting previous reliable RPC counter."),
-				*Actor->GetName(), *RPCSchemaTypeToString(RPCType));
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s: Gained authority over %s RPC component. Resetting previous reliable RPC counter."), *Actor->GetName(), *RPCSchemaTypeToString(RPCType));
 			ReliableRPCIds->Remove(RPCType);
 		}
 	}
@@ -1879,10 +1869,12 @@ void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType
 void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay)
 {
 	FTimerHandle RetryTimer;
-	TimerManager.SetTimer(RetryTimer, [this, EntityId]()
-	{
-		Sender->SendDeleteEntityRequest(EntityId);
-	}, Delay, false);
+	TimerManager.SetTimer(
+		RetryTimer, [this, EntityId]() {
+			Sender->SendDeleteEntityRequest(EntityId);
+		},
+		Delay,
+		false);
 }
 
 void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists)
@@ -1897,7 +1889,7 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 
 	if (!bIsReadyToStart)
 	{
-	    return;
+		return;
 	}
 
 	// We've found and dispatched all ops we need for startup, trigger BeginPlay()
@@ -1980,8 +1972,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		Dispatcher->MarkOpToSkip(Op);
 	}
 
-	if (PackageMap->IsEntityPoolReady() &&
-		GlobalStateManager->IsReadyToCallBeginPlay())
+	if (PackageMap->IsEntityPoolReady() && GlobalStateManager->IsReadyToCallBeginPlay())
 	{
 		// Return whether or not we are ready to start
 		return true;

@@ -44,8 +44,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 		StartUpWorkerConfigDirectoryWatcher();
 
 		// Restart the spatial service so it is guaranteed to be running in the current project.
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
-		{
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
 			TryStopSpatialService();
 			TryStartSpatialService();
 
@@ -85,8 +84,7 @@ void FLocalDeploymentManager::OnWorkerConfigDirectoryChanged(const TArray<FFileC
 
 void FLocalDeploymentManager::WorkerBuildConfigAsync()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
-	{
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
 		FString BuildConfigArgs = TEXT("worker build build-config");
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
@@ -105,23 +103,23 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 
 void FLocalDeploymentManager::RefreshServiceStatus()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
-	{
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
 		IsServiceRunningAndInCorrectDirectory();
 		GetLocalDeploymentStatus();
 
 		// Timers must be started on the game thread.
-		AsyncTask(ENamedThreads::GameThread, [this]
-		{
+		AsyncTask(ENamedThreads::GameThread, [this] {
 			// It's possible that GEditor won't exist when shutting down.
 			if (GEditor != nullptr)
 			{
 				// Start checking for the service status.
 				FTimerHandle RefreshTimer;
-				GEditor->GetTimerManager()->SetTimer(RefreshTimer, [this]()
-				{
-					RefreshServiceStatus();
-				}, RefreshFrequency, false);
+				GEditor->GetTimerManager()->SetTimer(
+					RefreshTimer, [this]() {
+						RefreshServiceStatus();
+					},
+					RefreshFrequency,
+					false);
 			}
 		});
 	});
@@ -470,8 +468,7 @@ bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error,
-				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
 
 			bSpatialServiceInProjectDirectory = false;
 			bSpatialServiceRunning = false;

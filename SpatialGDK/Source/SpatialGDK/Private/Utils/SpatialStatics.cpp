@@ -11,7 +11,7 @@
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
-    return GetDefault<UGeneralProjectSettings>()->bSpatialNetworking;
+	return GetDefault<UGeneralProjectSettings>()->bSpatialNetworking;
 }
 
 UActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* WorldContext)
@@ -41,7 +41,7 @@ FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
 
 bool USpatialStatics::IsSpatialOffloadingEnabled()
 {
-    return IsSpatialNetworkingEnabled() && GetDefault<USpatialGDKSettings>()->bEnableOffloading;
+	return IsSpatialNetworkingEnabled() && GetDefault<USpatialGDKSettings>()->bEnableOffloading;
 }
 
 bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)

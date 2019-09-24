@@ -27,7 +27,7 @@ struct EditorWorkerController
 
 	void OnSpatialShutdown()
 	{
-		LastPIEEndTime = 0;	// Reset PIE end time to ensure replace-a-worker isn't called
+		LastPIEEndTime = 0; // Reset PIE end time to ensure replace-a-worker isn't called
 		FEditorDelegates::PrePIEEnded.Remove(PIEEndHandle);
 	}
 
@@ -69,13 +69,15 @@ struct EditorWorkerController
 
 		const FString CmdArgs = FString::Printf(
 			TEXT("local worker replace "
-				"--local_service_grpc_port %s "
-				"--existing_worker_id %s "
-				"--replacing_worker_id %s"), *ServicePort, *OldWorker, *NewWorker);
+				 "--local_service_grpc_port %s "
+				 "--existing_worker_id %s "
+				 "--replacing_worker_id %s"),
+			*ServicePort,
+			*OldWorker,
+			*NewWorker);
 		uint32 ProcessID = 0;
 		FProcHandle ProcHandle = FPlatformProcess::CreateProc(
-			*(CmdExecutable), *CmdArgs, false, true, true, &ProcessID, 2 /*PriorityModifier*/,
-			nullptr, nullptr, nullptr);
+			*(CmdExecutable), *CmdArgs, false, true, true, &ProcessID, 2 /*PriorityModifier*/, nullptr, nullptr, nullptr);
 
 		return ProcHandle;
 	}
@@ -97,7 +99,7 @@ struct EditorWorkerController
 
 	TArray<FString> WorkerIds;
 	TArray<FProcHandle> ReplaceProcesses;
-	int64 LastPIEEndTime = 0;	// Unix epoch time in seconds
+	int64 LastPIEEndTime = 0; // Unix epoch time in seconds
 	FDelegateHandle PIEEndHandle;
 	FDelegateHandle SpatialShutdownHandle;
 	bool bHasInitialized = false;

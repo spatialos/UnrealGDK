@@ -53,7 +53,7 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 	{
 		const int32 HistoryIndex = i % FRepState::MAX_CHANGE_HISTORY;
 
-		FRepChangedHistory & HistoryItem = RepState->ChangeHistory[HistoryIndex];
+		FRepChangedHistory& HistoryItem = RepState->ChangeHistory[HistoryIndex];
 
 		// All active history items should contain a change list
 		check(HistoryItem.Changed.Num() > 0);
@@ -71,7 +71,7 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 	RepState->HistoryStart = RepState->HistoryStart % FRepState::MAX_CHANGE_HISTORY;
 	RepState->HistoryEnd = RepState->HistoryStart + NewHistoryCount;
 }
-}
+} // namespace
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
@@ -127,7 +127,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		{
 			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
 			// Since the entity deletion is delayed, this creates a situation,
-			// when the Actor is torn off, but still replicates. 
+			// when the Actor is torn off, but still replicates.
 			// Disabling replication makes RPC calls impossible for this Actor.
 			Actor->SetReplicates(false);
 		}
@@ -156,9 +156,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 	{
 		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
 
-		if (bDeleteDynamicEntities &&
-			NetDriver->IsServer() &&
-			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
+		if (bDeleteDynamicEntities && NetDriver->IsServer() && NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
 		{
 			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 			DeleteEntityIfAuthoritative();
@@ -258,8 +256,8 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 			DynamicArrayDepth++;
 
 			// For the first layer of each dynamic array encountered at the root level
-			// add the number of array properties to conform to Unreal's RepLayout design and 
-			// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an index into 
+			// add the number of array properties to conform to Unreal's RepLayout design and
+			// allow FRepHandleIterator to jump over arrays. Cmd.EndCmd is an index into
 			// RepLayout->Cmds[] that points to the value after the termination NULL of this array.
 			if (DynamicArrayDepth == 1)
 			{
@@ -295,7 +293,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		return 0;
 	}
-	
+
 	check(Actor);
 	check(!Closing);
 	check(Connection);
@@ -349,7 +347,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
 
-	FMemMark MemMark(FMemStack::Get());	// The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
+	FMemMark MemMark(FMemStack::Get()); // The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
 
 	// ----------------------------------------------------------
 	// Replicate Actor and Component properties and RPCs
@@ -374,7 +372,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			UpdateSpatialPositionWithFrequencyCheck();
 		}
 	}
-	
+
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
@@ -513,9 +511,9 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	bIsReplicatingActor = false;
 
-	bForceCompareProperties = false;		// Only do this once per frame when set
+	bForceCompareProperties = false; // Only do this once per frame when set
 
-	return (bWroteSomethingImportant) ? 1 : 0;	// TODO: return number of bits written (UNR-664)
+	return (bWroteSomethingImportant) ? 1 : 0; // TODO: return number of bits written (UNR-664)
 }
 
 void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
@@ -597,7 +595,9 @@ const FClassInfo* USpatialActorChannel::TryResolveNewDynamicSubobjectAndGetClass
 	if (Info == nullptr)
 	{
 		UE_LOG(LogSpatialActorChannel, Error, TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
-			" the max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), *Actor->GetName());
+												   " the max number of dynamically attached subobjects per class in the SpatialOS runtime settings."),
+			*Object->GetClass()->GetName(),
+			*Actor->GetName());
 		return Info;
 	}
 
@@ -628,7 +628,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
 #endif
 
-	// If we're creating an entity, don't try replicating 
+	// If we're creating an entity, don't try replicating
 	if (bCreatingNewEntity)
 	{
 		return false;
@@ -688,7 +688,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Attempted to replicate an invalid ObjectRef. This may be a dynamic component that couldn't attach: %s"), *Object->GetName());
 			return false;
 		}
-		
+
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
 		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr);
 
@@ -732,7 +732,6 @@ TMap<UObject*, const FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 		{
 			Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, SubobjectInfoPair.Key)).Get();
 		}
-
 
 		if (Object == nullptr)
 		{
@@ -800,7 +799,7 @@ FHandoverChangeState USpatialActorChannel::GetHandoverChangeList(TArray<uint8>& 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
 {
 	Super::SetChannelActor(InActor);
-	
+
 	USpatialPackageMapClient* PackageMap = NetDriver->PackageMap;
 	EntityId = PackageMap->GetEntityIdFromObject(InActor);
 
@@ -852,7 +851,7 @@ bool USpatialActorChannel::TryResolveActor()
 	{
 		return false;
 	}
-	
+
 	// If a Singleton was created, update the GSM with the proper Id.
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
@@ -882,7 +881,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
 	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
 
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
+		FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
 
 #if ENGINE_MINOR_VERSION <= 20
@@ -954,7 +953,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	if ((ActorOwner != nullptr || Actor->GetNetConnection() != nullptr) && !Actor->IsA<APlayerController>())
 	{
 		// If this Actor's owner is not replicated (e.g. parent = AI Controller), the actor will not have it's spatial
-		// position updated as this code will never be run for the parent. 
+		// position updated as this code will never be run for the parent.
 		if (!(Actor->GetNetConnection() == nullptr && ActorOwner != nullptr && !ActorOwner->GetIsReplicated()))
 		{
 			return;
@@ -1027,8 +1026,7 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 {
 	// Prevent rep notify callbacks from being issued when unresolved obj references exist inside UStructs.
 	// This prevents undefined behaviour when engine rep callbacks are issued where they don't expect unresolved objects in native flow.
-	RepNotifies.RemoveAll([&](UProperty* Property)
-	{
+	RepNotifies.RemoveAll([&](UProperty* Property) {
 		for (auto& ObjRef : RefMap)
 		{
 			// ParentIndex will be -1 for handover properties.

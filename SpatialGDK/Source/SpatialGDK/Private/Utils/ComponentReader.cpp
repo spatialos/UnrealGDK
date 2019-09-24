@@ -11,14 +11,13 @@
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
-#include "Utils/SchemaUtils.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialComponentReader);
 
 namespace SpatialGDK
 {
-
 ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<FUnrealObjectRef>& InUnresolvedRefs)
 	: PackageMap(InNetDriver->PackageMap)
 	, NetDriver(InNetDriver)
@@ -116,7 +115,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 #if ENGINE_MINOR_VERSION <= 20
 		int32 ShadowOffset = 0;
-#else 
+#else
 		int32 ShadowOffset = Cmd.ShadowOffset;
 #endif
 		if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
@@ -198,7 +197,6 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 						RepNotifies.AddUnique(Parent.Property);
 					}
 				}
-
 			}
 		}
 	}

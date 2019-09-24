@@ -18,16 +18,12 @@ void FWorkerTypeCustomization::CustomizeHeader(TSharedRef<class IPropertyHandle>
 	if (WorkerTypeNameProperty->IsValidHandle())
 	{
 		HeaderRow.NameContent()
-			[
-				StructPropertyHandle->CreatePropertyNameWidget()
-			]
-		.ValueContent()
-			[
-				PropertyCustomizationHelpers::MakePropertyComboBox(WorkerTypeNameProperty,
-				FOnGetPropertyComboBoxStrings::CreateStatic(&FWorkerTypeCustomization::OnGetStrings),
-				FOnGetPropertyComboBoxValue::CreateStatic(&FWorkerTypeCustomization::OnGetValue, WorkerTypeNameProperty),
-				FOnPropertyComboBoxValueSelected::CreateStatic(&FWorkerTypeCustomization::OnValueSelected, WorkerTypeNameProperty))
-			];
+			[StructPropertyHandle->CreatePropertyNameWidget()]
+				.ValueContent()
+					[PropertyCustomizationHelpers::MakePropertyComboBox(WorkerTypeNameProperty,
+						FOnGetPropertyComboBoxStrings::CreateStatic(&FWorkerTypeCustomization::OnGetStrings),
+						FOnGetPropertyComboBoxValue::CreateStatic(&FWorkerTypeCustomization::OnGetValue, WorkerTypeNameProperty),
+						FOnPropertyComboBoxValueSelected::CreateStatic(&FWorkerTypeCustomization::OnValueSelected, WorkerTypeNameProperty))];
 	}
 }
 

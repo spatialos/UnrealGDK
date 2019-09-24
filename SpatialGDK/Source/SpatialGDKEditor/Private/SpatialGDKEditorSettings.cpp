@@ -2,15 +2,14 @@
 
 #include "SpatialGDKEditorSettings.h"
 
-#include "Internationalization/Regex.h"
 #include "ISettingsModule.h"
+#include "Internationalization/Regex.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
 #include "Settings/LevelEditorPlaySettings.h"
-#include "Templates/SharedPointer.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-
+#include "Templates/SharedPointer.h"
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -181,18 +180,11 @@ void USpatialGDKEditorSettings::SetNumberOfSimulatedPlayers(uint32 Number)
 
 bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 {
-	bool result = IsAssemblyNameValid(AssemblyName) &&
-		IsDeploymentNameValid(PrimaryDeploymentName) &&
-		!GetSnapshotPath().IsEmpty() &&
-		!GetPrimaryLanchConfigPath().IsEmpty() &&
-		IsRegionCodeValid(PrimaryDeploymentRegionCode);
+	bool result = IsAssemblyNameValid(AssemblyName) && IsDeploymentNameValid(PrimaryDeploymentName) && !GetSnapshotPath().IsEmpty() && !GetPrimaryLanchConfigPath().IsEmpty() && IsRegionCodeValid(PrimaryDeploymentRegionCode);
 
 	if (IsSimulatedPlayersEnabled())
 	{
-		result = result &&
-			IsDeploymentNameValid(SimulatedPlayerDeploymentName) &&
-			!SimulatedPlayerLaunchConfigPath.IsEmpty() &&
-			IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode);
+		result = result && IsDeploymentNameValid(SimulatedPlayerDeploymentName) && !SimulatedPlayerLaunchConfigPath.IsEmpty() && IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode);
 	}
 
 	return result;

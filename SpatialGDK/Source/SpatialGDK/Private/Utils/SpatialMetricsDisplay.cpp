@@ -173,9 +173,7 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
 
-	if (SpatialNetDriver == nullptr ||
-		SpatialNetDriver->Connection == nullptr ||
-		SpatialNetDriver->SpatialMetrics == nullptr)
+	if (SpatialNetDriver == nullptr || SpatialNetDriver->Connection == nullptr || SpatialNetDriver->SpatialMetrics == nullptr)
 	{
 		return;
 	}

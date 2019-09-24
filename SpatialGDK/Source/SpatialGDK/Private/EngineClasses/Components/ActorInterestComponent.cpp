@@ -2,8 +2,8 @@
 
 #include "EngineClasses/Components/ActorInterestComponent.h"
 
-#include "Schema/Interest.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Schema/Interest.h"
 
 void UActorInterestComponent::CreateQueries(const USpatialClassInfoManager& ClassInfoManager, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const
 {
@@ -20,7 +20,7 @@ void UActorInterestComponent::CreateQueries(const USpatialClassInfoManager& Clas
 		{
 			SpatialGDK::QueryConstraint ComponentConstraints;
 			QueryData.Constraint->CreateConstraint(ClassInfoManager, ComponentConstraints);
-		
+
 			NewQuery.Constraint.AndConstraint.Add(ComponentConstraints);
 			NewQuery.Constraint.AndConstraint.Add(AdditionalConstraints);
 		}
@@ -35,5 +35,4 @@ void UActorInterestComponent::CreateQueries(const USpatialClassInfoManager& Clas
 			OutQueries.Push(NewQuery);
 		}
 	}
-
 }

@@ -59,7 +59,6 @@ const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackag
 
 namespace
 {
-
 void AddPotentialNameCollision(const FString& DesiredSchemaName, const FString& ClassPath, const FString& GeneratedSchemaName)
 {
 	PotentialSchemaNameCollisions.FindOrAdd(DesiredSchemaName).Add(FString::Printf(TEXT("%s(%s)"), *ClassPath, *GeneratedSchemaName));
@@ -120,8 +119,7 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 
 			if (TSharedPtr<FUnrealProperty>* ExistingReplicatedProperty = SchemaReplicatedDataNames.Find(NextSchemaReplicatedDataName))
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Replicated property name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
-					*NextSchemaReplicatedDataName, *ExistingReplicatedProperty->Get()->Property->GetPathName(), *RepProp.Value->Property->GetPathName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Replicated property name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"), *NextSchemaReplicatedDataName, *ExistingReplicatedProperty->Get()->Property->GetPathName(), *RepProp.Value->Property->GetPathName());
 				bOutSuccess = false;
 			}
 			else
@@ -145,8 +143,7 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 
 		if (TSharedPtr<FUnrealProperty>* ExistingHandoverData = SchemaHandoverDataNames.Find(NextSchemaHandoverDataName))
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Handover data name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
-				*NextSchemaHandoverDataName, *ExistingHandoverData->Get()->Property->GetPathName(), *Prop.Value->Property->GetPathName());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Handover data name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"), *NextSchemaHandoverDataName, *ExistingHandoverData->Get()->Property->GetPathName(), *Prop.Value->Property->GetPathName());
 			bOutSuccess = false;
 		}
 		else
@@ -170,8 +167,7 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 
 		if (TSharedPtr<FUnrealType>* ExistingSubobject = SchemaSubobjectNames.Find(NextSchemaSubobjectName))
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Subobject name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
-				*NextSchemaSubobjectName, *ExistingSubobject->Get()->Object->GetPathName(), *SubobjectTypeInfo->Object->GetPathName());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Subobject name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"), *NextSchemaSubobjectName, *ExistingSubobject->Get()->Object->GetPathName(), *SubobjectTypeInfo->Object->GetPathName());
 			bOutSuccess = false;
 		}
 		else
@@ -226,8 +222,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	{
 		if (Collision.Value.Num() > 1)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for classes [%s]"),
-				*Collision.Key, *FString::Join(Collision.Value, TEXT(", ")));
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for classes [%s]"), *Collision.Key, *FString::Join(Collision.Value, TEXT(", ")));
 		}
 	}
 
@@ -240,7 +235,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	return bSuccess;
 }
 
-}// ::
+} // namespace
 
 void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath, FComponentIdGenerator& IdGenerator)
 {
@@ -309,7 +304,6 @@ void GenerateSchemaForSublevels(const FString& SchemaPath, FComponentIdGenerator
 					LevelComponentIds.Add(ComponentId);
 				}
 				WriteLevelComponent(Writer, FString::Printf(TEXT("%s%d"), *LevelNameString, i), ComponentId);
-				
 			}
 		}
 		else
@@ -345,15 +339,13 @@ TMap<uint32, FString> CreateComponentIdToClassPathMap()
 
 	for (const auto& ActorSchemaData : ActorClassPathToSchema)
 	{
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-		{
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 			ComponentIdToClassPath.Add(ActorSchemaData.Value.SchemaComponents[Type], ActorSchemaData.Key);
 		});
 
 		for (const auto& SubobjectSchemaData : ActorSchemaData.Value.SubobjectData)
 		{
-			ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-			{
+			ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 				ComponentIdToClassPath.Add(SubobjectSchemaData.Value.SchemaComponents[Type], SubobjectSchemaData.Value.ClassPath);
 			});
 		}
@@ -363,8 +355,7 @@ TMap<uint32, FString> CreateComponentIdToClassPathMap()
 	{
 		for (const auto& DynamicSubobjectData : SubobjectSchemaData.Value.DynamicSubobjectComponents)
 		{
-			ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-			{
+			ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 				ComponentIdToClassPath.Add(DynamicSubobjectData.SchemaComponents[Type], SubobjectSchemaData.Key);
 			});
 		}
@@ -378,7 +369,7 @@ TMap<uint32, FString> CreateComponentIdToClassPathMap()
 bool SaveSchemaDatabase()
 {
 	FString PackagePath = SpatialConstants::SCHEMA_DATABASE_ASSET_PATH;
-	UPackage *Package = CreatePackage(nullptr, *PackagePath);
+	UPackage* Package = CreatePackage(nullptr, *PackagePath);
 
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 	SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
@@ -439,10 +430,9 @@ TArray<UClass*> GetAllSupportedClasses()
 
 		// Avoid processing classes contained in Directories to Never Cook
 		const FString& ClassPath = SupportedClass->GetPathName();
-		if (DirectoriesToNeverCook.ContainsByPredicate([&ClassPath](const FDirectoryPath& Directory)
-		{
-			return ClassPath.StartsWith(Directory.Path);
-		}))
+		if (DirectoriesToNeverCook.ContainsByPredicate([&ClassPath](const FDirectoryPath& Directory) {
+				return ClassPath.StartsWith(Directory.Path);
+			}))
 		{
 			continue;
 		}
@@ -462,7 +452,7 @@ void CopyWellKnownSchemaFiles()
 
 	FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema"));
 	FString CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
-	
+
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
 	if (!PlatformFile.DirectoryExists(*GDKSchemaCopyDir))
@@ -634,10 +624,10 @@ void ResetUsedNames()
 		ResolveClassPathToSchemaName(Entry.Key, Entry.Value.GeneratedSchemaName);
 	}
 
- 	for (const TPair< FString, FSubobjectSchemaData>& Entry : SubobjectClassPathToSchema)
- 	{
+	for (const TPair<FString, FSubobjectSchemaData>& Entry : SubobjectClassPathToSchema)
+	{
 		ResolveClassPathToSchemaName(Entry.Key, Entry.Value.GeneratedSchemaName);
- 	}
+	}
 }
 
 bool RunSchemaCompiler()

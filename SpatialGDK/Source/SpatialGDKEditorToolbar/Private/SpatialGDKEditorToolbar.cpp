@@ -44,7 +44,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorToolbarModule"
 
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
-: bStopSpatialOnExit(false)
+	: bStopSpatialOnExit(false)
 {
 }
 
@@ -78,8 +78,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	// Bind the play button delegate to starting a local spatial deployment.
 	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment)
 	{
-		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
-		{
+		UEditorEngine::TryStartSpatialDeployment.BindLambda([this] {
 			VerifyAndStartDeployment();
 		});
 	}
@@ -186,7 +185,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog),
 		FCanExecuteAction());
-	
+
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartSpatialService,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked),
@@ -209,8 +208,7 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 	{
 		TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender());
 		MenuExtender->AddMenuExtension(
-			"General", EExtensionHook::After, InPluginCommands,
-			FMenuExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddMenuExtension));
+			"General", EExtensionHook::After, InPluginCommands, FMenuExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddMenuExtension));
 
 		LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
 	}
@@ -218,9 +216,7 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 	{
 		TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
 		ToolbarExtender->AddToolBarExtension(
-			"Game", EExtensionHook::After, InPluginCommands,
-			FToolBarExtensionDelegate::CreateRaw(this,
-				&FSpatialGDKEditorToolbarModule::AddToolbarExtension));
+			"Game", EExtensionHook::After, InPluginCommands, FToolBarExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddToolbarExtension));
 
 		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
 	}
@@ -252,8 +248,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 		LOCTEXT("GDKSchemaCombo_Label", "Schema Generation Options"),
 		TAttribute<FText>(),
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "GDK.Schema"),
-		true
-	);
+		true);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
@@ -283,10 +278,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 
 	SpatialGDKEditorInstance->GenerateSnapshot(
-		GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotToSave(),
-		FSimpleDelegate::CreateLambda([this]() { OnShowSuccessNotification("Snapshot successfully generated!"); }),
-		FSimpleDelegate::CreateLambda([this]() { OnShowFailedNotification("Snapshot generation failed!"); }),
-		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
+		GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotToSave(), FSimpleDelegate::CreateLambda([this]() { OnShowSuccessNotification("Snapshot successfully generated!"); }), FSimpleDelegate::CreateLambda([this]() { OnShowFailedNotification("Snapshot generation failed!"); }), FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
 }
 
 void FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked()
@@ -313,12 +305,11 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 {
 	GenerateSchema(true);
-}		
+}
 
 void FSpatialGDKEditorToolbarModule::OnShowTaskStartNotification(const FString& NotificationText)
 {
-	AsyncTask(ENamedThreads::GameThread, [NotificationText]
-	{
+	AsyncTask(ENamedThreads::GameThread, [NotificationText] {
 		if (FSpatialGDKEditorToolbarModule* Module = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 		{
 			Module->ShowTaskStartNotification(NotificationText);
@@ -354,8 +345,7 @@ void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& No
 
 void FSpatialGDKEditorToolbarModule::OnShowSuccessNotification(const FString& NotificationText)
 {
-	AsyncTask(ENamedThreads::GameThread, [NotificationText]
-	{
+	AsyncTask(ENamedThreads::GameThread, [NotificationText] {
 		if (FSpatialGDKEditorToolbarModule* Module = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 		{
 			Module->ShowSuccessNotification(NotificationText);
@@ -384,8 +374,7 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 
 void FSpatialGDKEditorToolbarModule::OnShowFailedNotification(const FString& NotificationText)
 {
-	AsyncTask(ENamedThreads::GameThread, [NotificationText]
-	{
+	AsyncTask(ENamedThreads::GameThread, [NotificationText] {
 		if (FSpatialGDKEditorToolbarModule* Module = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 		{
 			Module->ShowFailedNotification(NotificationText);
@@ -455,8 +444,7 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 		return false;
 	}
 
-	if (!SpatialGDKRuntimeSettings->bEnableHandover && SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
-		{
+	if (!SpatialGDKRuntimeSettings->bEnableHandover && SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section) {
 			return (Section.Rows * Section.Columns) > 1;
 		}))
 	{
@@ -470,8 +458,7 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 		return false;
 	}
 
-	if (SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
-		{
+	if (SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section) {
 			return (Section.Rows * Section.Columns) < Section.NumEditorInstances;
 		}))
 	{
@@ -520,8 +507,7 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 
 void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
-	{
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
 		FDateTime StartTime = FDateTime::Now();
 		OnShowTaskStartNotification(TEXT("Starting spatial service..."));
 
@@ -541,8 +527,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
-	{
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
 		FDateTime StartTime = FDateTime::Now();
 		OnShowTaskStartNotification(TEXT("Stopping spatial service..."));
 
@@ -617,8 +602,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
 	const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName]
-	{
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName] {
 		// If the last local deployment is still stopping then wait until it's finished.
 		while (LocalDeploymentManager->IsDeploymentStopping())
 		{
@@ -629,7 +613,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		if (LocalDeploymentManager->IsRedeployRequired() && LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Local deployment must restart."));
-			OnShowTaskStartNotification(TEXT("Local deployment restarting.")); 
+			OnShowTaskStartNotification(TEXT("Local deployment restarting."));
 			LocalDeploymentManager->TryStopLocalDeployment();
 		}
 		else if (LocalDeploymentManager->IsLocalDeploymentRunning())
@@ -657,8 +641,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
-	{
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
 		OnShowTaskStartNotification(TEXT("Stopping local deployment..."));
 		if (LocalDeploymentManager->TryStopLocalDeployment())
 		{
@@ -668,7 +651,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 		{
 			OnShowFailedNotification(TEXT("Failed to stop local deployment!"));
 		}
-	});	
+	});
 }
 
 void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
@@ -748,8 +731,8 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 	if (USpatialGDKEditorSettings* Settings = Cast<USpatialGDKEditorSettings>(ObjectBeingModified))
 	{
 		FName PropertyName = PropertyChangedEvent.Property != nullptr
-				? PropertyChangedEvent.Property->GetFName()
-				: NAME_None;
+								 ? PropertyChangedEvent.Property->GetFName()
+								 : NAME_None;
 		if (PropertyName.ToString() == TEXT("bStopSpatialOnExit"))
 		{
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
@@ -762,8 +745,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 			if (Settings->bAutoStartLocalDeployment)
 			{
 				// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
-				UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
-				{
+				UEditorEngine::TryStartSpatialDeployment.BindLambda([this] {
 					VerifyAndStartDeployment();
 				});
 			}
@@ -780,21 +762,18 @@ void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
 {
 	// Create and open the cloud configuration dialog
 	SimulatedPlayerDeploymentWindowPtr = SNew(SWindow)
-		.Title(LOCTEXT("SimulatedPlayerConfigurationTitle", "Cloud Deployment"))
-		.HasCloseButton(true)
-		.SupportsMaximize(false)
-		.SupportsMinimize(false)
-		.SizingRule(ESizingRule::Autosized);
+											 .Title(LOCTEXT("SimulatedPlayerConfigurationTitle", "Cloud Deployment"))
+											 .HasCloseButton(true)
+											 .SupportsMaximize(false)
+											 .SupportsMinimize(false)
+											 .SizingRule(ESizingRule::Autosized);
 
 	SimulatedPlayerDeploymentWindowPtr->SetContent(
 		SNew(SBox)
-		.WidthOverride(700.0f)
-		[
-			SAssignNew(SimulatedPlayerDeploymentConfigPtr, SSpatialGDKSimulatedPlayerDeployment)
-			.SpatialGDKEditor(SpatialGDKEditorInstance)
-			.ParentWindow(SimulatedPlayerDeploymentWindowPtr)
-		]
-	);
+			.WidthOverride(700.0f)
+				[SAssignNew(SimulatedPlayerDeploymentConfigPtr, SSpatialGDKSimulatedPlayerDeployment)
+						.SpatialGDKEditor(SpatialGDKEditorInstance)
+						.ParentWindow(SimulatedPlayerDeploymentWindowPtr)]);
 
 	TSharedPtr<SWindow> RootWindow = FGlobalTabmanager::Get()->GetRootWindow();
 

@@ -9,13 +9,14 @@
 
 namespace Errors
 {
-	FString DuplicateComponentError = TEXT("WARNING: Unreal GDK does not currently support multiple static components of the same type.\n"
-		"Make sure {0} has only one instance of {1} or don't generate type bindings for {2}");
+FString DuplicateComponentError = TEXT(
+	"WARNING: Unreal GDK does not currently support multiple static components of the same type.\n"
+	"Make sure {0} has only one instance of {1} or don't generate type bindings for {2}");
 }
 
 TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 {
-	static TArray<EReplicatedPropertyGroup> Groups = {REP_MultiClient, REP_SingleClient};
+	static TArray<EReplicatedPropertyGroup> Groups = { REP_MultiClient, REP_SingleClient };
 	return Groups;
 }
 
@@ -45,9 +46,9 @@ void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TShared
 uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 StaticArrayIndex)
 {
 	uint32 Checksum = 0;
-	Checksum = FCrc::StrCrc32(*Property->GetName().ToLower(), ParentChecksum);            // Evolve checksum on name
-	Checksum = FCrc::StrCrc32(*Property->GetCPPType(nullptr, 0).ToLower(), Checksum);     // Evolve by property type
-	Checksum = FCrc::MemCrc32(&StaticArrayIndex, sizeof(StaticArrayIndex), Checksum);     // Evolve by StaticArrayIndex (to make all unrolled static array elements unique)
+	Checksum = FCrc::StrCrc32(*Property->GetName().ToLower(), ParentChecksum);		  // Evolve checksum on name
+	Checksum = FCrc::StrCrc32(*Property->GetCPPType(nullptr, 0).ToLower(), Checksum); // Evolve by property type
+	Checksum = FCrc::MemCrc32(&StaticArrayIndex, sizeof(StaticArrayIndex), Checksum); // Evolve by StaticArrayIndex (to make all unrolled static array elements unique)
 	return Checksum;
 }
 
@@ -157,9 +158,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			// or the CDO of any of its parent classes.
 			// (this also covers generating schema for a Blueprint derived from the outer's class)
 			UObject* Outer = Value->GetOuter();
-			if ((Outer != nullptr) &&
-				Outer->HasAnyFlags(RF_ClassDefaultObject) &&
-				ContainerCDO->IsA(Outer->GetClass()))
+			if ((Outer != nullptr) && Outer->HasAnyFlags(RF_ClassDefaultObject) && ContainerCDO->IsA(Outer->GetClass()))
 			{
 				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
@@ -219,7 +218,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				for (auto& PropertyPair : TypeNode->Properties)
 				{
 					UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyPair.Key);
-					if (ObjectProperty == nullptr) continue;
+					if (ObjectProperty == nullptr)
+						continue;
 					TSharedPtr<FUnrealProperty> PropertyNode = PropertyPair.Value;
 
 					if (ObjectProperty->GetName().Equals(Node->GetVariableName().ToString()))
@@ -309,12 +309,11 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			for (TSharedPtr<FUnrealProperty>& RootProperty : RootProperties)
 			{
 				checkf(RootProperty->Type.IsValid(), TEXT("Properties in the AST which are parent properties in the rep layout must have child properties"));
-				VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property)
-				{
+				VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property) {
 					if (Property->CompatibleChecksum == Cmd.CompatibleChecksum)
 					{
 						checkf(!PropertyNode.IsValid(), TEXT("We've already found a previous property node with the same property. This indicates that we have a 'diamond of death' style situation."))
-						PropertyNode = Property;
+							PropertyNode = Property;
 					}
 					return true;
 				});
@@ -349,8 +348,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 
 	// Find the handover properties.
 	uint16 HandoverDataHandle = 1;
-	VisitAllProperties(TypeNode, [&HandoverDataHandle, &Class](TSharedPtr<FUnrealProperty> PropertyInfo)
-	{
+	VisitAllProperties(TypeNode, [&HandoverDataHandle, &Class](TSharedPtr<FUnrealProperty> PropertyInfo) {
 		if (PropertyInfo->Property->PropertyFlags & CPF_Handover)
 		{
 			if (UStructProperty* StructProp = Cast<UStructProperty>(PropertyInfo->Property))
@@ -358,8 +356,10 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				if (StructProp->Struct->StructFlags & STRUCT_NetDeltaSerializeNative)
 				{
 					// Warn about delta serialization
-					UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s in %s uses delta serialization. " \
-						"This is not supported and standard serialization will be used instead."), *PropertyInfo->Property->GetName(), *Class->GetName());
+					UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s in %s uses delta serialization. "
+																	   "This is not supported and standard serialization will be used instead."),
+						*PropertyInfo->Property->GetName(),
+						*Class->GetName());
 				}
 			}
 			PropertyInfo->HandoverData = MakeShared<FUnrealHandoverData>();
@@ -377,17 +377,16 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 	RepData.Add(REP_MultiClient);
 	RepData.Add(REP_SingleClient);
 
-	VisitAllProperties(TypeInfo, [&RepData](TSharedPtr<FUnrealProperty> PropertyInfo)
-	{
+	VisitAllProperties(TypeInfo, [&RepData](TSharedPtr<FUnrealProperty> PropertyInfo) {
 		if (PropertyInfo->ReplicationData.IsValid())
 		{
 			EReplicatedPropertyGroup Group = REP_MultiClient;
 			switch (PropertyInfo->ReplicationData->Condition)
 			{
-			case COND_AutonomousOnly:
-			case COND_OwnerOnly:
-				Group = REP_SingleClient;
-				break;
+				case COND_AutonomousOnly:
+				case COND_OwnerOnly:
+					Group = REP_SingleClient;
+					break;
 			}
 			RepData[Group].Add(PropertyInfo->ReplicationData->Handle, PropertyInfo);
 		}
@@ -395,12 +394,10 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 	});
 
 	// Sort by replication handle.
-	RepData[REP_MultiClient].KeySort([](uint16 A, uint16 B)
-	{
+	RepData[REP_MultiClient].KeySort([](uint16 A, uint16 B) {
 		return A < B;
 	});
-	RepData[REP_SingleClient].KeySort([](uint16 A, uint16 B)
-	{
+	RepData[REP_SingleClient].KeySort([](uint16 A, uint16 B) {
 		return A < B;
 	});
 	return RepData;
@@ -409,8 +406,7 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo)
 {
 	FCmdHandlePropertyMap HandoverData;
-	VisitAllProperties(TypeInfo, [&HandoverData](TSharedPtr<FUnrealProperty> PropertyInfo)
-	{
+	VisitAllProperties(TypeInfo, [&HandoverData](TSharedPtr<FUnrealProperty> PropertyInfo) {
 		if (PropertyInfo->HandoverData.IsValid())
 		{
 			HandoverData.Add(PropertyInfo->HandoverData->Handle, PropertyInfo);
@@ -419,8 +415,7 @@ FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo)
 	});
 
 	// Sort by property handle.
-	HandoverData.KeySort([](uint16 A, uint16 B)
-	{
+	HandoverData.KeySort([](uint16 A, uint16 B) {
 		return A < B;
 	});
 	return HandoverData;

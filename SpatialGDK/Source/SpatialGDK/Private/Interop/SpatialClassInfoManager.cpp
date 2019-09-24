@@ -168,8 +168,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
 {
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-	{
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
 
 		if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
@@ -204,8 +203,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 		TSharedRef<FClassInfo> ActorSubobjectInfo = MakeShared<FClassInfo>(SubobjectInfo);
 		ActorSubobjectInfo->SubobjectName = SubobjectSchemaData.Name;
 
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-		{
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 			if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
 			{
 				return;
@@ -231,8 +229,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 			Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(ActorClass));
 			Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(ActorClass));
 
-			UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
-				*ActorClass->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
+			UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"), *ActorClass->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
 		}
 	}
 }
@@ -247,8 +244,7 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 		int32 Offset = DynamicSubobjectData.SchemaComponents[SCHEMA_Data];
 		check(Offset != SpatialConstants::INVALID_COMPONENT_ID);
 
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-		{
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
 
 			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
@@ -286,7 +282,7 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* 
 	{
 		CreateClassInfoForClass(Class);
 	}
-	
+
 	return ClassInfoMap[Class].Get();
 }
 
@@ -377,12 +373,10 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHier
 		{
 			OutComponentIds.Add(ComponentId);
 		}
-
 	}
 
 	return OutComponentIds;
 }
-
 
 bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
 {

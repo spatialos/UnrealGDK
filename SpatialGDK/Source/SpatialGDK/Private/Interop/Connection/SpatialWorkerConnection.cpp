@@ -5,14 +5,13 @@
 #include "Interop/Connection/EditorWorkerController.h"
 #endif
 
-#include "EngineClasses/SpatialGameInstance.h"
-#include "EngineClasses/SpatialNetDriver.h"
-#include "Engine/World.h"
-#include "UnrealEngine.h"
 #include "Async/Async.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "EngineClasses/SpatialGameInstance.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "Misc/Paths.h"
+#include "UnrealEngine.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDKSettings.h"
@@ -45,8 +44,7 @@ void USpatialWorkerConnection::DestroyConnection()
 
 	if (WorkerConnection)
 	{
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerConnection = WorkerConnection]
-		{
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerConnection = WorkerConnection] {
 			Worker_Connection_Destroy(WorkerConnection);
 		});
 
@@ -55,8 +53,7 @@ void USpatialWorkerConnection::DestroyConnection()
 
 	if (WorkerLocator)
 	{
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerLocator = WorkerLocator]
-		{
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerLocator = WorkerLocator] {
 			Worker_Alpha_Locator_Destroy(WorkerLocator);
 		});
 
@@ -87,12 +84,12 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 
 	switch (GetConnectionType())
 	{
-	case SpatialConnectionType::Receptionist:
-		ConnectToReceptionist(bInitAsClient);
-		break;
-	case SpatialConnectionType::Locator:
-		ConnectToLocator();
-		break;
+		case SpatialConnectionType::Receptionist:
+			ConnectToReceptionist(bInitAsClient);
+			break;
+		case SpatialConnectionType::Locator:
+			ConnectToLocator();
+			break;
 	}
 }
 
@@ -220,8 +217,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
-		TCHAR_TO_UTF8(*ReceptionistConfig.ReceptionistHost), ReceptionistConfig.ReceptionistPort,
-		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionParams);
+		TCHAR_TO_UTF8(*ReceptionistConfig.ReceptionistHost), ReceptionistConfig.ReceptionistPort, TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionParams);
 
 	FinishConnecting(ConnectionFuture);
 }
@@ -278,13 +274,11 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 {
 	TWeakObjectPtr<USpatialWorkerConnection> WeakSpatialWorkerConnection(this);
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialWorkerConnection]
-	{
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialWorkerConnection] {
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [WeakSpatialWorkerConnection, NewCAPIWorkerConnection]
-		{
+		AsyncTask(ENamedThreads::GameThread, [WeakSpatialWorkerConnection, NewCAPIWorkerConnection] {
 			USpatialWorkerConnection* SpatialWorkerConnection = WeakSpatialWorkerConnection.Get();
 
 			if (SpatialWorkerConnection == nullptr)
@@ -534,182 +528,182 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 
 		switch (OutgoingMessage->Type)
 		{
-		case EOutgoingMessageType::ReserveEntityIdsRequest:
-		{
-			FReserveEntityIdsRequest* Message = static_cast<FReserveEntityIdsRequest*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendReserveEntityIdsRequest(WorkerConnection,
-				Message->NumOfEntities,
-				nullptr);
-			break;
-		}
-		case EOutgoingMessageType::CreateEntityRequest:
-		{
-			FCreateEntityRequest* Message = static_cast<FCreateEntityRequest*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
-				Message->Components.Num(),
-				Message->Components.GetData(),
-				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
-				nullptr);
-			break;
-		}
-		case EOutgoingMessageType::DeleteEntityRequest:
-		{
-			FDeleteEntityRequest* Message = static_cast<FDeleteEntityRequest*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendDeleteEntityRequest(WorkerConnection,
-				Message->EntityId,
-				nullptr);
-			break;
-		}
-		case EOutgoingMessageType::AddComponent:
-		{
-			FAddComponent* Message = static_cast<FAddComponent*>(OutgoingMessage.Get());
-
-			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
-			Worker_Connection_SendAddComponent(WorkerConnection,
-				Message->EntityId,
-				&Message->Data,
-				&DisableLoopback);
-			break;
-		}
-		case EOutgoingMessageType::RemoveComponent:
-		{
-			FRemoveComponent* Message = static_cast<FRemoveComponent*>(OutgoingMessage.Get());
-
-			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
-			Worker_Connection_SendRemoveComponent(WorkerConnection,
-				Message->EntityId,
-				Message->ComponentId,
-				&DisableLoopback);
-			break;
-		}
-		case EOutgoingMessageType::ComponentUpdate:
-		{
-			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
-
-			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
-			Worker_Alpha_Connection_SendComponentUpdate(WorkerConnection,
-				Message->EntityId,
-				&Message->Update,
-				&DisableLoopback);
-			break;
-		}
-		case EOutgoingMessageType::CommandRequest:
-		{
-			FCommandRequest* Message = static_cast<FCommandRequest*>(OutgoingMessage.Get());
-
-			static const Worker_CommandParameters DefaultCommandParams{};
-			Worker_Connection_SendCommandRequest(WorkerConnection,
-				Message->EntityId,
-				&Message->Request,
-				Message->CommandId,
-				nullptr,
-				&DefaultCommandParams);
-			break;
-		}
-		case EOutgoingMessageType::CommandResponse:
-		{
-			FCommandResponse* Message = static_cast<FCommandResponse*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendCommandResponse(WorkerConnection,
-				Message->RequestId,
-				&Message->Response);
-			break;
-		}
-		case EOutgoingMessageType::CommandFailure:
-		{
-			FCommandFailure* Message = static_cast<FCommandFailure*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendCommandFailure(WorkerConnection,
-				Message->RequestId,
-				TCHAR_TO_UTF8(*Message->Message));
-			break;
-		}
-		case EOutgoingMessageType::LogMessage:
-		{
-			FLogMessage* Message = static_cast<FLogMessage*>(OutgoingMessage.Get());
-
-			FTCHARToUTF8 LoggerName(*Message->LoggerName.ToString());
-			FTCHARToUTF8 LogString(*Message->Message);
-
-			Worker_LogMessage LogMessage{};
-			LogMessage.level = Message->Level;
-			LogMessage.logger_name = LoggerName.Get();
-			LogMessage.message = LogString.Get();
-			Worker_Connection_SendLogMessage(WorkerConnection, &LogMessage);
-			break;
-		}
-		case EOutgoingMessageType::ComponentInterest:
-		{
-			FComponentInterest* Message = static_cast<FComponentInterest*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendComponentInterest(WorkerConnection,
-				Message->EntityId,
-				Message->Interests.GetData(),
-				Message->Interests.Num());
-			break;
-		}
-		case EOutgoingMessageType::EntityQueryRequest:
-		{
-			FEntityQueryRequest* Message = static_cast<FEntityQueryRequest*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendEntityQueryRequest(WorkerConnection,
-				&Message->EntityQuery,
-				nullptr);
-			break;
-		}
-		case EOutgoingMessageType::Metrics:
-		{
-			FMetrics* Message = static_cast<FMetrics*>(OutgoingMessage.Get());
-
-			// Do the conversion here so we can store everything on the stack.
-			Worker_Metrics WorkerMetrics;
-
-			WorkerMetrics.load = Message->Metrics.Load.IsSet() ? &Message->Metrics.Load.GetValue() : nullptr;
-
-			TArray<Worker_GaugeMetric> WorkerGaugeMetrics;
-			WorkerGaugeMetrics.SetNum(Message->Metrics.GaugeMetrics.Num());
-			for (int i = 0; i < Message->Metrics.GaugeMetrics.Num(); i++)
+			case EOutgoingMessageType::ReserveEntityIdsRequest:
 			{
-				WorkerGaugeMetrics[i].key = Message->Metrics.GaugeMetrics[i].Key.c_str();
-				WorkerGaugeMetrics[i].value = Message->Metrics.GaugeMetrics[i].Value;
+				FReserveEntityIdsRequest* Message = static_cast<FReserveEntityIdsRequest*>(OutgoingMessage.Get());
+
+				Worker_Connection_SendReserveEntityIdsRequest(WorkerConnection,
+					Message->NumOfEntities,
+					nullptr);
+				break;
 			}
-
-			WorkerMetrics.gauge_metric_count = static_cast<uint32_t>(WorkerGaugeMetrics.Num());
-			WorkerMetrics.gauge_metrics = WorkerGaugeMetrics.GetData();
-
-			TArray<Worker_HistogramMetric> WorkerHistogramMetrics;
-			TArray<TArray<Worker_HistogramMetricBucket>> WorkerHistogramMetricBuckets;
-			WorkerHistogramMetrics.SetNum(Message->Metrics.HistogramMetrics.Num());
-			for (int i = 0; i < Message->Metrics.HistogramMetrics.Num(); i++)
+			case EOutgoingMessageType::CreateEntityRequest:
 			{
-				WorkerHistogramMetrics[i].key = Message->Metrics.HistogramMetrics[i].Key.c_str();
-				WorkerHistogramMetrics[i].sum = Message->Metrics.HistogramMetrics[i].Sum;
+				FCreateEntityRequest* Message = static_cast<FCreateEntityRequest*>(OutgoingMessage.Get());
 
-				WorkerHistogramMetricBuckets[i].SetNum(Message->Metrics.HistogramMetrics[i].Buckets.Num());
-				for (int j = 0; j < Message->Metrics.HistogramMetrics[i].Buckets.Num(); j++)
+				Worker_Connection_SendCreateEntityRequest(WorkerConnection,
+					Message->Components.Num(),
+					Message->Components.GetData(),
+					Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
+					nullptr);
+				break;
+			}
+			case EOutgoingMessageType::DeleteEntityRequest:
+			{
+				FDeleteEntityRequest* Message = static_cast<FDeleteEntityRequest*>(OutgoingMessage.Get());
+
+				Worker_Connection_SendDeleteEntityRequest(WorkerConnection,
+					Message->EntityId,
+					nullptr);
+				break;
+			}
+			case EOutgoingMessageType::AddComponent:
+			{
+				FAddComponent* Message = static_cast<FAddComponent*>(OutgoingMessage.Get());
+
+				static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
+				Worker_Connection_SendAddComponent(WorkerConnection,
+					Message->EntityId,
+					&Message->Data,
+					&DisableLoopback);
+				break;
+			}
+			case EOutgoingMessageType::RemoveComponent:
+			{
+				FRemoveComponent* Message = static_cast<FRemoveComponent*>(OutgoingMessage.Get());
+
+				static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
+				Worker_Connection_SendRemoveComponent(WorkerConnection,
+					Message->EntityId,
+					Message->ComponentId,
+					&DisableLoopback);
+				break;
+			}
+			case EOutgoingMessageType::ComponentUpdate:
+			{
+				FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
+
+				static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
+				Worker_Alpha_Connection_SendComponentUpdate(WorkerConnection,
+					Message->EntityId,
+					&Message->Update,
+					&DisableLoopback);
+				break;
+			}
+			case EOutgoingMessageType::CommandRequest:
+			{
+				FCommandRequest* Message = static_cast<FCommandRequest*>(OutgoingMessage.Get());
+
+				static const Worker_CommandParameters DefaultCommandParams{};
+				Worker_Connection_SendCommandRequest(WorkerConnection,
+					Message->EntityId,
+					&Message->Request,
+					Message->CommandId,
+					nullptr,
+					&DefaultCommandParams);
+				break;
+			}
+			case EOutgoingMessageType::CommandResponse:
+			{
+				FCommandResponse* Message = static_cast<FCommandResponse*>(OutgoingMessage.Get());
+
+				Worker_Connection_SendCommandResponse(WorkerConnection,
+					Message->RequestId,
+					&Message->Response);
+				break;
+			}
+			case EOutgoingMessageType::CommandFailure:
+			{
+				FCommandFailure* Message = static_cast<FCommandFailure*>(OutgoingMessage.Get());
+
+				Worker_Connection_SendCommandFailure(WorkerConnection,
+					Message->RequestId,
+					TCHAR_TO_UTF8(*Message->Message));
+				break;
+			}
+			case EOutgoingMessageType::LogMessage:
+			{
+				FLogMessage* Message = static_cast<FLogMessage*>(OutgoingMessage.Get());
+
+				FTCHARToUTF8 LoggerName(*Message->LoggerName.ToString());
+				FTCHARToUTF8 LogString(*Message->Message);
+
+				Worker_LogMessage LogMessage{};
+				LogMessage.level = Message->Level;
+				LogMessage.logger_name = LoggerName.Get();
+				LogMessage.message = LogString.Get();
+				Worker_Connection_SendLogMessage(WorkerConnection, &LogMessage);
+				break;
+			}
+			case EOutgoingMessageType::ComponentInterest:
+			{
+				FComponentInterest* Message = static_cast<FComponentInterest*>(OutgoingMessage.Get());
+
+				Worker_Connection_SendComponentInterest(WorkerConnection,
+					Message->EntityId,
+					Message->Interests.GetData(),
+					Message->Interests.Num());
+				break;
+			}
+			case EOutgoingMessageType::EntityQueryRequest:
+			{
+				FEntityQueryRequest* Message = static_cast<FEntityQueryRequest*>(OutgoingMessage.Get());
+
+				Worker_Connection_SendEntityQueryRequest(WorkerConnection,
+					&Message->EntityQuery,
+					nullptr);
+				break;
+			}
+			case EOutgoingMessageType::Metrics:
+			{
+				FMetrics* Message = static_cast<FMetrics*>(OutgoingMessage.Get());
+
+				// Do the conversion here so we can store everything on the stack.
+				Worker_Metrics WorkerMetrics;
+
+				WorkerMetrics.load = Message->Metrics.Load.IsSet() ? &Message->Metrics.Load.GetValue() : nullptr;
+
+				TArray<Worker_GaugeMetric> WorkerGaugeMetrics;
+				WorkerGaugeMetrics.SetNum(Message->Metrics.GaugeMetrics.Num());
+				for (int i = 0; i < Message->Metrics.GaugeMetrics.Num(); i++)
 				{
-					WorkerHistogramMetricBuckets[i][j].upper_bound = Message->Metrics.HistogramMetrics[i].Buckets[j].UpperBound;
-					WorkerHistogramMetricBuckets[i][j].samples = Message->Metrics.HistogramMetrics[i].Buckets[j].Samples;
+					WorkerGaugeMetrics[i].key = Message->Metrics.GaugeMetrics[i].Key.c_str();
+					WorkerGaugeMetrics[i].value = Message->Metrics.GaugeMetrics[i].Value;
 				}
 
-				WorkerHistogramMetrics[i].bucket_count = static_cast<uint32_t>(WorkerHistogramMetricBuckets[i].Num());
-				WorkerHistogramMetrics[i].buckets = WorkerHistogramMetricBuckets[i].GetData();
+				WorkerMetrics.gauge_metric_count = static_cast<uint32_t>(WorkerGaugeMetrics.Num());
+				WorkerMetrics.gauge_metrics = WorkerGaugeMetrics.GetData();
+
+				TArray<Worker_HistogramMetric> WorkerHistogramMetrics;
+				TArray<TArray<Worker_HistogramMetricBucket>> WorkerHistogramMetricBuckets;
+				WorkerHistogramMetrics.SetNum(Message->Metrics.HistogramMetrics.Num());
+				for (int i = 0; i < Message->Metrics.HistogramMetrics.Num(); i++)
+				{
+					WorkerHistogramMetrics[i].key = Message->Metrics.HistogramMetrics[i].Key.c_str();
+					WorkerHistogramMetrics[i].sum = Message->Metrics.HistogramMetrics[i].Sum;
+
+					WorkerHistogramMetricBuckets[i].SetNum(Message->Metrics.HistogramMetrics[i].Buckets.Num());
+					for (int j = 0; j < Message->Metrics.HistogramMetrics[i].Buckets.Num(); j++)
+					{
+						WorkerHistogramMetricBuckets[i][j].upper_bound = Message->Metrics.HistogramMetrics[i].Buckets[j].UpperBound;
+						WorkerHistogramMetricBuckets[i][j].samples = Message->Metrics.HistogramMetrics[i].Buckets[j].Samples;
+					}
+
+					WorkerHistogramMetrics[i].bucket_count = static_cast<uint32_t>(WorkerHistogramMetricBuckets[i].Num());
+					WorkerHistogramMetrics[i].buckets = WorkerHistogramMetricBuckets[i].GetData();
+				}
+
+				WorkerMetrics.histogram_metric_count = static_cast<uint32_t>(WorkerHistogramMetrics.Num());
+				WorkerMetrics.histogram_metrics = WorkerHistogramMetrics.GetData();
+
+				Worker_Connection_SendMetrics(WorkerConnection, &WorkerMetrics);
+				break;
 			}
-
-			WorkerMetrics.histogram_metric_count = static_cast<uint32_t>(WorkerHistogramMetrics.Num());
-			WorkerMetrics.histogram_metrics = WorkerHistogramMetrics.GetData();
-
-			Worker_Connection_SendMetrics(WorkerConnection, &WorkerMetrics);
-			break;
-		}
-		default:
-		{
-			checkNoEntry();
-			break;
-		}
+			default:
+			{
+				checkNoEntry();
+				break;
+			}
 		}
 	}
 }

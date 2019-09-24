@@ -12,10 +12,10 @@ const double FRPCContainer::SECONDS_BEFORE_WARNING = 2.0;
 
 namespace
 {
-	FString ERPCResultToString(ERPCResult Result)
+FString ERPCResultToString(ERPCResult Result)
+{
+	switch (Result)
 	{
-		switch (Result)
-		{
 		case ERPCResult::Success:
 			return TEXT("");
 
@@ -54,33 +54,33 @@ namespace
 
 		default:
 			return TEXT("Unknown");
-		}
-	}
-
-	void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params)
-	{
-		const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
-
-		// The format is expected to be:
-		// Function <objectName>::<functionName> sending/execution queued on server/client for <duration>. Reason: <reason>
-		FString OutputLog = FString::Printf(TEXT("Function %s::%s %s queued on %s for %s. Reason: %s"),
-			ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
-			ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
-			ErrorInfo.QueueType == ERPCQueueType::Send ? TEXT("sending") : ErrorInfo.QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
-			ErrorInfo.bIsServer ? TEXT("server") : TEXT("client"),
-			*TimeDiff.ToString(),
-			*ERPCResultToString(ErrorInfo.ErrorCode));
-
-		if (TimeDiff.GetTotalSeconds() > FRPCContainer::SECONDS_BEFORE_WARNING)
-		{
-			UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
-		}
-		else
-		{
-			UE_LOG(LogRPCContainer, Verbose, TEXT("%s"), *OutputLog);
-		}
 	}
 }
+
+void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params)
+{
+	const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
+
+	// The format is expected to be:
+	// Function <objectName>::<functionName> sending/execution queued on server/client for <duration>. Reason: <reason>
+	FString OutputLog = FString::Printf(TEXT("Function %s::%s %s queued on %s for %s. Reason: %s"),
+		ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
+		ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
+		ErrorInfo.QueueType == ERPCQueueType::Send ? TEXT("sending") : ErrorInfo.QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
+		ErrorInfo.bIsServer ? TEXT("server") : TEXT("client"),
+		*TimeDiff.ToString(),
+		*ERPCResultToString(ErrorInfo.ErrorCode));
+
+	if (TimeDiff.GetTotalSeconds() > FRPCContainer::SECONDS_BEFORE_WARNING)
+	{
+		UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
+	}
+	else
+	{
+		UE_LOG(LogRPCContainer, Verbose, TEXT("%s"), *OutputLog);
+	}
+}
+} // namespace
 
 FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, RPCPayload&& InPayload)
 	: ObjectRef(InTargetObjectRef)
@@ -92,7 +92,7 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 
 void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ESchemaComponentType Type, RPCPayload&& Payload)
 {
-	FPendingRPCParams Params {TargetObjectRef, Type, MoveTemp(Payload)};
+	FPendingRPCParams Params{ TargetObjectRef, Type, MoveTemp(Payload) };
 
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
@@ -129,7 +129,7 @@ void FRPCContainer::ProcessRPCs()
 	for (auto& RPCs : QueuedRPCs)
 	{
 		FRPCMap& MapOfQueues = RPCs.Value;
-		for(auto It = MapOfQueues.CreateIterator(); It; ++It)
+		for (auto It = MapOfQueues.CreateIterator(); It; ++It)
 		{
 			FArrayOfParams& RPCList = It.Value();
 			ProcessRPCs(RPCList);
@@ -143,9 +143,9 @@ void FRPCContainer::ProcessRPCs()
 
 bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const
 {
-	if(const FRPCMap* MapOfQueues = QueuedRPCs.Find(Type))
+	if (const FRPCMap* MapOfQueues = QueuedRPCs.Find(Type))
 	{
-		if(const FArrayOfParams* RPCList = MapOfQueues->Find(EntityId))
+		if (const FArrayOfParams* RPCList = MapOfQueues->Find(EntityId))
 		{
 			return (RPCList->Num() > 0);
 		}
@@ -153,7 +153,7 @@ bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, E
 
 	return false;
 }
- 
+
 void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 {
 	ProcessingFunction = Function;

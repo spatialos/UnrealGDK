@@ -45,45 +45,45 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	TUniquePtr<SpatialGDK::ComponentStorageBase> Data;
 	switch (Op.data.component_id)
 	{
-	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::EntityAcl>>(Op.data);
-		break;
-	case SpatialConstants::METADATA_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Metadata>>(Op.data);
-		break;
-	case SpatialConstants::POSITION_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Position>>(Op.data);
-		break;
-	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Persistence>>(Op.data);
-		break;
-	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::SpawnData>>(Op.data);
-		break;
-	case SpatialConstants::SINGLETON_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Singleton>>(Op.data);
-		break;
-	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::UnrealMetadata>>(Op.data);
-		break;
-	case SpatialConstants::INTEREST_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Interest>>(Op.data);
-		break;
-	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Heartbeat>>(Op.data);
-		break;
-	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::RPCsOnEntityCreation>>(Op.data);
-		break;
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ClientRPCEndpoint>>(Op.data);
-		break;
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ServerRPCEndpoint>>(Op.data);
-		break;
-	default:
-		// Component is not hand written, but we still want to know the existence of it on this entity.
-		Data = nullptr;
+		case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+			Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::EntityAcl>>(Op.data);
+			break;
+		case SpatialConstants::METADATA_COMPONENT_ID:
+			Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Metadata>>(Op.data);
+			break;
+		case SpatialConstants::POSITION_COMPONENT_ID:
+			Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Position>>(Op.data);
+			break;
+		case SpatialConstants::PERSISTENCE_COMPONENT_ID:
+			Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Persistence>>(Op.data);
+			break;
+		case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
+			Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::SpawnData>>(Op.data);
+			break;
+		case SpatialConstants::SINGLETON_COMPONENT_ID:
+			Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Singleton>>(Op.data);
+			break;
+		case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
+			Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::UnrealMetadata>>(Op.data);
+			break;
+		case SpatialConstants::INTEREST_COMPONENT_ID:
+			Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Interest>>(Op.data);
+			break;
+		case SpatialConstants::HEARTBEAT_COMPONENT_ID:
+			Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Heartbeat>>(Op.data);
+			break;
+		case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
+			Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::RPCsOnEntityCreation>>(Op.data);
+			break;
+		case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
+			Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ClientRPCEndpoint>>(Op.data);
+			break;
+		case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
+			Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ServerRPCEndpoint>>(Op.data);
+			break;
+		default:
+			// Component is not hand written, but we still want to know the existence of it on this entity.
+			Data = nullptr;
 	}
 	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = std::move(Data);
 }
@@ -113,23 +113,24 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 
 	switch (Op.update.component_id)
 	{
-	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::EntityAcl>(Op.entity_id);
-		break;
-	case SpatialConstants::POSITION_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::Position>(Op.entity_id);
-		break;
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::ClientRPCEndpoint>(Op.entity_id);
-		break;
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::ServerRPCEndpoint>(Op.entity_id);
-		break;
-	default:
-		return;
+		case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+			Component = GetComponentData<SpatialGDK::EntityAcl>(Op.entity_id);
+			break;
+		case SpatialConstants::POSITION_COMPONENT_ID:
+			Component = GetComponentData<SpatialGDK::Position>(Op.entity_id);
+			break;
+		case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
+			Component = GetComponentData<SpatialGDK::ClientRPCEndpoint>(Op.entity_id);
+			break;
+		case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
+			Component = GetComponentData<SpatialGDK::ServerRPCEndpoint>(Op.entity_id);
+			break;
+		default:
+			return;
 	}
 
-	if (Component) {
+	if (Component)
+	{
 		Component->ApplyComponentUpdate(Op.update);
 	}
 }

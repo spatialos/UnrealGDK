@@ -4,8 +4,8 @@
 
 #include "SpatialGDKEditorSettings.h"
 
-#include "Serialization/JsonWriter.h"
 #include "Misc/FileHelper.h"
+#include "Serialization/JsonWriter.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKDefaultLaunchConfigGenerator);
 
@@ -33,10 +33,10 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunc
 	{
 		Writer->WriteValue(TEXT("worker_type"), *Worker.WorkerTypeName.ToString());
 		Writer->WriteArrayStart(TEXT("flags"));
-			for (const auto& Flag : Worker.Flags)
-			{
-				WriteFlagSection(Writer, Flag.Key, Flag.Value);
-			}
+		for (const auto& Flag : Worker.Flags)
+		{
+			WriteFlagSection(Writer, Flag.Key, Flag.Value);
+		}
 		Writer->WriteArrayEnd();
 		Writer->WriteArrayStart(TEXT("permissions"));
 		{
@@ -120,7 +120,7 @@ bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& Wo
 	return true;
 }
 
-}
+} // namespace
 
 bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription)
 {
@@ -135,7 +135,7 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatial
 		Writer->WriteObjectStart(); // Start of json
 		{
 			Writer->WriteValue(TEXT("template"), LaunchConfigDescription.Template); // Template section
-			Writer->WriteObjectStart(TEXT("world")); // World section begin
+			Writer->WriteObjectStart(TEXT("world"));								// World section begin
 			{
 				Writer->WriteObjectStart(TEXT("dimensions"));
 				{
@@ -163,7 +163,7 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatial
 				}
 				Writer->WriteObjectEnd();
 			}
-			Writer->WriteObjectEnd(); // World section end
+			Writer->WriteObjectEnd();						  // World section end
 			Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
 			{
 				Writer->WriteArrayStart("layer_configurations");
@@ -173,7 +173,7 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatial
 				}
 				Writer->WriteArrayEnd();
 			}
-			Writer->WriteObjectEnd(); // Load balancing section end
+			Writer->WriteObjectEnd();				  // Load balancing section end
 			Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
 			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
 			{

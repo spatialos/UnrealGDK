@@ -11,7 +11,9 @@ DEFINE_LOG_CATEGORY(LogSpatialNetBitReader);
 
 FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<FUnrealObjectRef>& InUnresolvedRefs)
 	: FNetBitReader(InPackageMap, Source, CountBits)
-	, UnresolvedRefs(InUnresolvedRefs) {}
+	, UnresolvedRefs(InUnresolvedRefs)
+{
+}
 
 void FSpatialNetBitReader::DeserializeObjectRef(FUnrealObjectRef& ObjectRef)
 {

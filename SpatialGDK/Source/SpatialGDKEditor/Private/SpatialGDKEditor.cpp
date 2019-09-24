@@ -10,13 +10,13 @@
 #include "Editor.h"
 #include "FileHelpers.h"
 
-#include "AssetRegistryModule.h"
 #include "AssetDataTagMap.h"
+#include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
 #include "Misc/ScopedSlowTask.h"
+#include "Settings/ProjectPackagingSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "UObject/StrongObjectPtr.h"
-#include "Settings/ProjectPackagingSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
@@ -95,7 +95,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
 	bool bResult = SpatialGDKGenerateSchema();
-	
+
 	// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
 	if (ErroredBlueprints.Num() > 0)
 	{
@@ -141,8 +141,7 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 	const TArray<FDirectoryPath>& DirectoriesToNeverCook = GetDefault<UProjectPackagingSettings>()->DirectoriesToNeverCook;
 
 	// Filter assets to game blueprint classes that are not loaded and not inside DirectoriesToNeverCook.
-	FoundAssets = FoundAssets.FilterByPredicate([&DirectoriesToNeverCook](const FAssetData& Data)
-	{
+	FoundAssets = FoundAssets.FilterByPredicate([&DirectoriesToNeverCook](const FAssetData& Data) {
 		if (Data.IsAssetLoaded())
 		{
 			return false;
@@ -189,7 +188,7 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 #endif
 
 		if (GeneratedClassPathPtr != nullptr)
-		{ 
+		{
 			const FString ClassObjectPath = FPackageName::ExportTextPathToObjectPath(*GeneratedClassPathPtr);
 			const FString ClassName = FPackageName::ObjectPathToObjectName(ClassObjectPath);
 			FSoftObjectPath SoftPath = FSoftObjectPath(ClassObjectPath);
@@ -216,34 +215,30 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 
 void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
-	LaunchCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
-		[this, SuccessCallback, FailureCallback]
+	LaunchCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudLaunch, [this, SuccessCallback, FailureCallback] {
+		if (!LaunchCloudResult.IsReady() || LaunchCloudResult.Get() != true)
 		{
-			if (!LaunchCloudResult.IsReady() || LaunchCloudResult.Get() != true)
-			{
-				FailureCallback.ExecuteIfBound();
-			}
-			else
-			{
-				SuccessCallback.ExecuteIfBound();
-			}
-		});
+			FailureCallback.ExecuteIfBound();
+		}
+		else
+		{
+			SuccessCallback.ExecuteIfBound();
+		}
+	});
 }
 
 void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
-	StopCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudStop,
-		[this, SuccessCallback, FailureCallback]
+	StopCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudStop, [this, SuccessCallback, FailureCallback] {
+		if (!StopCloudResult.IsReady() || StopCloudResult.Get() != true)
 		{
-			if (!StopCloudResult.IsReady() || StopCloudResult.Get() != true)
-			{
-				FailureCallback.ExecuteIfBound();
-			}
-			else
-			{
-				SuccessCallback.ExecuteIfBound();
-			}
-		});
+			FailureCallback.ExecuteIfBound();
+		}
+		else
+		{
+			SuccessCallback.ExecuteIfBound();
+		}
+	});
 }
 
 bool FSpatialGDKEditor::FullScanRequired()
@@ -267,7 +262,6 @@ void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()
 			OnAssetLoaded(Asset);
 		});
 	}
-
 }
 
 // This callback is copied from UEditorEngine::OnAssetLoaded so that we can turn it off during schema gen in editor.
@@ -287,11 +281,10 @@ void FSpatialGDKEditor::OnAssetLoaded(UObject* Asset)
 			// Create the world without a physics scene because creating too many physics scenes causes deadlock issues in PhysX. The scene will be created when it is opened in the level editor.
 			// Also, don't create an FXSystem because it consumes too much video memory. This is also created when the level editor opens this world.
 			World->InitWorld(UWorld::InitializationValues()
-				.ShouldSimulatePhysics(false)
-				.EnableTraceCollision(true)
-				.CreatePhysicsScene(false)
-				.CreateFXSystem(false)
-			);
+								 .ShouldSimulatePhysics(false)
+								 .EnableTraceCollision(true)
+								 .CreatePhysicsScene(false)
+								 .CreateFXSystem(false));
 
 			// Update components so the scene is populated
 			World->UpdateWorldComponents(true, true);

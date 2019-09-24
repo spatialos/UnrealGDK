@@ -2,8 +2,8 @@
 
 #include "SpatialGDKSettings.h"
 #include "Improbable/SpatialEngineConstants.h"
-#include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
+#include "Misc/MessageDialog.h"
 #include "SpatialConstants.h"
 
 #if WITH_EDITOR
@@ -79,7 +79,7 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	{
 		FMessageDialog::Open(EAppMsgType::Ok,
 			FText::FromString(FString::Printf(TEXT("You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
-				"Failing to do will result in unintended behavior or crashes!"))));
+												   "Failing to do will result in unintended behavior or crashes!"))));
 	}
 }
 #endif

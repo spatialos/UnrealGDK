@@ -127,8 +127,7 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 		RecentRPCs.GenerateValueArray(RecentRPCArray);
 
 		// Show the most frequently called RPCs at the top.
-		RecentRPCArray.Sort([](const RPCStat& A, const RPCStat& B)
-		{
+		RecentRPCArray.Sort([](const RPCStat& A, const RPCStat& B) {
 			if (A.Type != B.Type)
 			{
 				return static_cast<int>(A.Type) < static_cast<int>(B.Type);
@@ -210,7 +209,7 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 			Worker_CommandRequest Request = {};
 			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
 			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID);
-			
+
 			Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
 			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_NAME_ID, Name);
 			Schema_AddFloat(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_VALUE_ID, Value);

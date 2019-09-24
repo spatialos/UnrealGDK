@@ -32,7 +32,7 @@ FName FSpatialGDKEditorToolbarStyle::GetStyleSetName()
 }
 
 #define IMAGE_BRUSH(RelativePath, ...) \
-  FSlateImageBrush(Style->RootToContentDir(RelativePath, TEXT(".png")), __VA_ARGS__)
+	FSlateImageBrush(Style->RootToContentDir(RelativePath, TEXT(".png")), __VA_ARGS__)
 
 namespace
 {
@@ -40,14 +40,13 @@ const FVector2D Icon16x16(16.0f, 16.0f);
 const FVector2D Icon20x20(20.0f, 20.0f);
 const FVector2D Icon40x40(40.0f, 40.0f);
 const FVector2D Icon100x22(100.0f, 22.0f);
-}
+} // namespace
 
 TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 {
 	TSharedRef<FSlateStyleSet> Style =
 		MakeShareable(new FSlateStyleSet("SpatialGDKEditorToolbarStyle"));
-	Style->SetContentRoot(IPluginManager::Get().FindPlugin("SpatialGDK")->GetBaseDir() /
-		TEXT("Resources"));
+	Style->SetContentRoot(IPluginManager::Get().FindPlugin("SpatialGDK")->GetBaseDir() / TEXT("Resources"));
 
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot",
 		new IMAGE_BRUSH(TEXT("Snapshot"), Icon40x40));
@@ -66,16 +65,16 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 
 	Style->Set("SpatialGDKEditorToolbar.StartSpatialDeployment.Small",
 		new IMAGE_BRUSH(TEXT("Launch@0.5x"), Icon20x20));
-	
+
 	Style->Set("SpatialGDKEditorToolbar.StopSpatialDeployment",
 		new IMAGE_BRUSH(TEXT("Stop"), Icon40x40));
 
 	Style->Set("SpatialGDKEditorToolbar.StopSpatialDeployment.Small",
 		new IMAGE_BRUSH(TEXT("Stop@0.5x"), Icon20x20));
-	
+
 	Style->Set("SpatialGDKEditorToolbar.LaunchInspectorWebPageAction",
 		new IMAGE_BRUSH(TEXT("Inspector"), Icon40x40));
-	
+
 	Style->Set("SpatialGDKEditorToolbar.LaunchInspectorWebPageAction.Small",
 		new IMAGE_BRUSH(TEXT("Inspector@0.5x"), Icon20x20));
 

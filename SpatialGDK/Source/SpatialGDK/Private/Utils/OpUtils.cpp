@@ -30,8 +30,7 @@ void FindFirstOpOfTypeForComponent(const TArray<Worker_OpList*>& InOpLists, cons
 		{
 			Worker_Op* Op = &OpList->ops[i];
 
-			if ((Op->op_type == InOpType) &&
-				GetComponentId(Op) == InComponentId)
+			if ((Op->op_type == InOpType) && GetComponentId(Op) == InComponentId)
 			{
 				*OutOp = Op;
 				return;
@@ -44,20 +43,20 @@ Worker_ComponentId GetComponentId(const Worker_Op* Op)
 {
 	switch (Op->op_type)
 	{
-	case WORKER_OP_TYPE_ADD_COMPONENT:
-		return Op->add_component.data.component_id;
-	case WORKER_OP_TYPE_REMOVE_COMPONENT:
-		return Op->remove_component.component_id;
-	case WORKER_OP_TYPE_COMPONENT_UPDATE:
-		return Op->component_update.update.component_id;
-	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		return Op->authority_change.component_id;
-	case WORKER_OP_TYPE_COMMAND_REQUEST:
-		return Op->command_request.request.component_id;
-	case WORKER_OP_TYPE_COMMAND_RESPONSE:
-		return Op->command_response.response.component_id;
-	default:
-		return SpatialConstants::INVALID_COMPONENT_ID;
+		case WORKER_OP_TYPE_ADD_COMPONENT:
+			return Op->add_component.data.component_id;
+		case WORKER_OP_TYPE_REMOVE_COMPONENT:
+			return Op->remove_component.component_id;
+		case WORKER_OP_TYPE_COMPONENT_UPDATE:
+			return Op->component_update.update.component_id;
+		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+			return Op->authority_change.component_id;
+		case WORKER_OP_TYPE_COMMAND_REQUEST:
+			return Op->command_request.request.component_id;
+		case WORKER_OP_TYPE_COMMAND_RESPONSE:
+			return Op->command_response.response.component_id;
+		default:
+			return SpatialConstants::INVALID_COMPONENT_ID;
 	}
 }
 } // namespace SpatialGDK

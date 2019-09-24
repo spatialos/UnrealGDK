@@ -2,11 +2,11 @@
 
 #include "SpatialGDKEditorModule.h"
 
-#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKSettings.h"
 
-#include "ISettingsModule.h"
 #include "ISettingsContainer.h"
+#include "ISettingsModule.h"
 #include "ISettingsSection.h"
 #include "PropertyEditor/Public/PropertyEditorModule.h"
 #include "WorkerTypeCustomization.h"
@@ -32,23 +32,16 @@ void FSpatialGDKEditorModule::RegisterSettings()
 	{
 		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
-		SettingsContainer->DescribeCategory("SpatialGDKEditor", LOCTEXT("RuntimeWDCategoryName", "SpatialOS GDK for Unreal"),
-			LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS GDK for Unreal"));
+		SettingsContainer->DescribeCategory("SpatialGDKEditor", LOCTEXT("RuntimeWDCategoryName", "SpatialOS GDK for Unreal"), LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS GDK for Unreal"));
 
-		ISettingsSectionPtr EditorSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Editor Settings",
-			LOCTEXT("SpatialEditorGeneralSettingsName", "Editor Settings"),
-			LOCTEXT("SpatialEditorGeneralSettingsDescription", "Editor configuration for the SpatialOS GDK for Unreal"),
-			GetMutableDefault<USpatialGDKEditorSettings>());
+		ISettingsSectionPtr EditorSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Editor Settings", LOCTEXT("SpatialEditorGeneralSettingsName", "Editor Settings"), LOCTEXT("SpatialEditorGeneralSettingsDescription", "Editor configuration for the SpatialOS GDK for Unreal"), GetMutableDefault<USpatialGDKEditorSettings>());
 
 		if (EditorSettingsSection.IsValid())
 		{
 			EditorSettingsSection->OnModified().BindRaw(this, &FSpatialGDKEditorModule::HandleEditorSettingsSaved);
 		}
 
-		ISettingsSectionPtr RuntimeSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Runtime Settings",
-			LOCTEXT("SpatialRuntimeGeneralSettingsName", "Runtime Settings"),
-			LOCTEXT("SpatialRuntimeGeneralSettingsDescription", "Runtime configuration for the SpatialOS GDK for Unreal"),
-			GetMutableDefault<USpatialGDKSettings>());
+		ISettingsSectionPtr RuntimeSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Runtime Settings", LOCTEXT("SpatialRuntimeGeneralSettingsName", "Runtime Settings"), LOCTEXT("SpatialRuntimeGeneralSettingsDescription", "Runtime configuration for the SpatialOS GDK for Unreal"), GetMutableDefault<USpatialGDKSettings>());
 
 		if (RuntimeSettingsSection.IsValid())
 		{

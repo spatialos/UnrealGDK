@@ -28,7 +28,7 @@ void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* 
 	NumberOfAttempts = 0;
 }
 
-void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, const char* CallerAttribute, Worker_RequestId RequestId )
+void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, const char* CallerAttribute, Worker_RequestId RequestId)
 {
 	FString Attributes = FString{ UTF8_TO_TCHAR(CallerAttribute) };
 
@@ -54,7 +54,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 		{
 			URLString += TEXT("?simulatedPlayer=1");
 		}
-		
+
 		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName);
 	}
 
@@ -82,8 +82,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&SpatialSpawnerQuery);
 
 	EntityQueryDelegate SpatialSpawnerQueryDelegate;
-	SpatialSpawnerQueryDelegate.BindLambda([this, RequestID](const Worker_EntityQueryResponseOp& Op)
-	{
+	SpatialSpawnerQueryDelegate.BindLambda([this, RequestID](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Entity query for SpatialSpawner failed: %s"), UTF8_TO_TCHAR(Op.message));
@@ -135,22 +134,22 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(const Worker_CommandRespo
 	}
 	else if (NumberOfAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 	{
-		UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""),
-			UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""), UTF8_TO_TCHAR(Op.message));
 
 		FTimerHandle RetryTimer;
-		TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<USpatialPlayerSpawner>(this)]()
-		{
-			if (USpatialPlayerSpawner* Spawner = WeakThis.Get())
-			{
-				Spawner->SendPlayerSpawnRequest();
-			}
-		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
+		TimerManager->SetTimer(
+			RetryTimer, [WeakThis = TWeakObjectPtr<USpatialPlayerSpawner>(this)]() {
+				if (USpatialPlayerSpawner* Spawner = WeakThis.Get())
+				{
+					Spawner->SendPlayerSpawnRequest();
+				}
+			},
+			SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts),
+			false);
 	}
 	else
 	{
-		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Player spawn request failed too many times. (%u attempts)"),
-			SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
+		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Player spawn request failed too many times. (%u attempts)"), SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
 	}
 }
 

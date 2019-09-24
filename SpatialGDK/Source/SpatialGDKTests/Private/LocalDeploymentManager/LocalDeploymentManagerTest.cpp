@@ -14,48 +14,52 @@
 
 namespace
 {
-	// TODO: UNR-1969 - Prepare LocalDeployment in CI pipeline
-	const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 10.0;
+// TODO: UNR-1969 - Prepare LocalDeployment in CI pipeline
+const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 10.0;
 
-	// TODO: UNR-1964 - Move EDeploymentState enum to LocalDeploymentManager
-	enum class EDeploymentState { IsRunning, IsNotRunning };
+// TODO: UNR-1964 - Move EDeploymentState enum to LocalDeploymentManager
+enum class EDeploymentState
+{
+	IsRunning,
+	IsNotRunning
+};
 
-	const FName AutomationWorkerType = TEXT("AutomationWorker");
-	const FString AutomationLaunchConfig = TEXT("Improbable/AutomationLaunchConfig.json");
+const FName AutomationWorkerType = TEXT("AutomationWorker");
+const FString AutomationLaunchConfig = TEXT("Improbable/AutomationLaunchConfig.json");
 
-	FLocalDeploymentManager* GetLocalDeploymentManager()
-	{
-		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-		FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
-		return LocalDeploymentManager;
-	}
-
-	bool GenerateWorkerAssemblies()
-	{
-		FString BuildConfigArgs = TEXT("worker build build-config");
-		FString WorkerBuildConfigResult;
-		int32 ExitCode;
-		const FString SpatialExe(TEXT("spatial.exe"));
-		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialExe, BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
-
-		const int32 ExitCodeSuccess = 0;
-		return (ExitCode == ExitCodeSuccess);
-	}
-
-	bool GenerateWorkerJson()
-	{
-		const FString WorkerJsonDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("workers/unreal"));
-
-		FString JsonPath = FPaths::Combine(WorkerJsonDir, TEXT("spatialos.UnrealAutomation.worker.json"));
-		if (!FPaths::FileExists(JsonPath))
-		{
-			bool bRedeployRequired = false;
-			return GenerateDefaultWorkerJson(JsonPath, AutomationWorkerType.ToString(), bRedeployRequired);
-		}
-
-		return true;
-	}
+FLocalDeploymentManager* GetLocalDeploymentManager()
+{
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+	return LocalDeploymentManager;
 }
+
+bool GenerateWorkerAssemblies()
+{
+	FString BuildConfigArgs = TEXT("worker build build-config");
+	FString WorkerBuildConfigResult;
+	int32 ExitCode;
+	const FString SpatialExe(TEXT("spatial.exe"));
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialExe, BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
+
+	const int32 ExitCodeSuccess = 0;
+	return (ExitCode == ExitCodeSuccess);
+}
+
+bool GenerateWorkerJson()
+{
+	const FString WorkerJsonDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("workers/unreal"));
+
+	FString JsonPath = FPaths::Combine(WorkerJsonDir, TEXT("spatialos.UnrealAutomation.worker.json"));
+	if (!FPaths::FileExists(JsonPath))
+	{
+		bool bRedeployRequired = false;
+		return GenerateDefaultWorkerJson(JsonPath, AutomationWorkerType.ToString(), bRedeployRequired);
+	}
+
+	return true;
+}
+} // namespace
 
 DEFINE_LATENT_COMMAND(StartDeployment)
 {
@@ -66,8 +70,7 @@ DEFINE_LATENT_COMMAND(StartDeployment)
 		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
 		const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
 
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName]
-		{
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName] {
 			if (!GenerateWorkerJson())
 			{
 				return;
@@ -108,8 +111,7 @@ DEFINE_LATENT_COMMAND(StopDeployment)
 
 	if (!LocalDeploymentManager->IsDeploymentStopping())
 	{
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager]
-		{
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager] {
 			LocalDeploymentManager->TryStopLocalDeployment();
 		});
 	}
@@ -168,7 +170,7 @@ LOCALDEPLOYMENT_TEST(GIVEN_no_deployment_running_WHEN_deployment_started_THEN_de
 	// Cleanup
 	ADD_LATENT_AUTOMATION_COMMAND(StopDeployment());
 	ADD_LATENT_AUTOMATION_COMMAND(WaitForDeployment(this, EDeploymentState::IsNotRunning));
-    return true;
+	return true;
 }
 
 LOCALDEPLOYMENT_TEST(GIVEN_deployment_running_WHEN_deployment_stopped_THEN_deployment_not_running)
@@ -185,5 +187,5 @@ LOCALDEPLOYMENT_TEST(GIVEN_deployment_running_WHEN_deployment_stopped_THEN_deplo
 
 	// THEN
 	ADD_LATENT_AUTOMATION_COMMAND(CheckDeploymentState(this, EDeploymentState::IsNotRunning));
-    return true;
+	return true;
 }

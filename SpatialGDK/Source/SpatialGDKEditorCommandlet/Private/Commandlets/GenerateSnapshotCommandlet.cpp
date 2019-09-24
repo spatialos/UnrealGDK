@@ -1,13 +1,13 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "GenerateSnapshotCommandlet.h"
-#include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditor.h"
+#include "SpatialGDKEditorCommandletPrivate.h"
 
-#include "Kismet/GameplayStatics.h"
 #include "Engine/ObjectLibrary.h"
 #include "Engine/World.h"
 #include "FileHelpers.h"
+#include "Kismet/GameplayStatics.h"
 #include "Misc/Paths.h"
 
 UGenerateSnapshotCommandlet::UGenerateSnapshotCommandlet()
@@ -66,9 +66,7 @@ bool UGenerateSnapshotCommandlet::GenerateSnapshotForMap(FString MapPath)
 	bool bSnapshotGenSuccess = false;
 	FSpatialGDKEditor SpatialGDKEditor;
 	SpatialGDKEditor.GenerateSnapshot(
-		GWorld, FPaths::SetExtension(FPaths::GetCleanFilename(MapPath), TEXT(".snapshot")),
-		FSimpleDelegate::CreateLambda([&bSnapshotGenSuccess]()
-		{
+		GWorld, FPaths::SetExtension(FPaths::GetCleanFilename(MapPath), TEXT(".snapshot")), FSimpleDelegate::CreateLambda([&bSnapshotGenSuccess]() {
 			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Success!"));
 			bSnapshotGenSuccess = true;
 		}),

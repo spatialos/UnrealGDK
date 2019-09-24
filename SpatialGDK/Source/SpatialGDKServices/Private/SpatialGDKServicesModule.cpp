@@ -107,7 +107,7 @@ void FSpatialGDKServicesModule::ExecuteAndReadOutput(const FString& Executable, 
 
 	if (ProcHandle.IsValid())
 	{
-		for (bool bProcessFinished = false; !bProcessFinished; )
+		for (bool bProcessFinished = false; !bProcessFinished;)
 		{
 			bProcessFinished = FPlatformProcess::GetProcReturnCode(ProcHandle, &ExitCode);
 

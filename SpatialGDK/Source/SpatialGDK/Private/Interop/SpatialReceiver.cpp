@@ -101,41 +101,40 @@ void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
 
 void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 {
-	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"),
-		Op.data.component_id, Op.entity_id);
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"), Op.data.component_id, Op.entity_id);
 
 	switch (Op.data.component_id)
 	{
-	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-	case SpatialConstants::METADATA_COMPONENT_ID:
-	case SpatialConstants::POSITION_COMPONENT_ID:
-	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
-	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
-	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
-	case SpatialConstants::SINGLETON_COMPONENT_ID:
-	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
-	case SpatialConstants::INTEREST_COMPONENT_ID:
-	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
-	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
-	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
-	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
-	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
-	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
-		return;
-	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplySingletonManagerData(Op.data);
-		GlobalStateManager->LinkAllExistingSingletonActors();
-		return;
-	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		GlobalStateManager->ApplyDeploymentMapData(Op.data);
-		return;
-	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
-		return;
+		case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+		case SpatialConstants::METADATA_COMPONENT_ID:
+		case SpatialConstants::POSITION_COMPONENT_ID:
+		case SpatialConstants::PERSISTENCE_COMPONENT_ID:
+		case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
+		case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
+		case SpatialConstants::SINGLETON_COMPONENT_ID:
+		case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
+		case SpatialConstants::INTEREST_COMPONENT_ID:
+		case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
+		case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
+		case SpatialConstants::HEARTBEAT_COMPONENT_ID:
+		case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
+		case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
+		case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
+		case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
+		case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
+		case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
+			// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
+			return;
+		case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
+			GlobalStateManager->ApplySingletonManagerData(Op.data);
+			GlobalStateManager->LinkAllExistingSingletonActors();
+			return;
+		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+			GlobalStateManager->ApplyDeploymentMapData(Op.data);
+			return;
+		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+			GlobalStateManager->ApplyStartupActorManagerData(Op.data);
+			return;
 	}
 
 	if (ClassInfoManager->IsSublevelComponent(Op.data.component_id))
@@ -240,8 +239,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 {
 	// Server initializes heartbeat logic based on its authority over the position component,
 	// client does the same for heartbeat component
-	if ((NetDriver->IsServer() && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID) ||
-		(!NetDriver->IsServer() && Op.component_id == SpatialConstants::HEARTBEAT_COMPONENT_ID))
+	if ((NetDriver->IsServer() && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID) || (!NetDriver->IsServer() && Op.component_id == SpatialConstants::HEARTBEAT_COMPONENT_ID))
 	{
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
@@ -432,9 +430,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Op.component_id);
-		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
-			Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID ||
-			Op.component_id == SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
+		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID || Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID || Op.component_id == SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
 		{
 			// This will be called multiple times on each RPC component.
 			NetDriver->OnRPCAuthorityGained(Actor, ComponentType);
@@ -483,8 +479,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
 	{
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker"), \
-			*EntityActor->GetName());
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker"), *EntityActor->GetName());
 
 		// Assume SimulatedProxy until we've been delegated Authority
 		bool bAuthority = StaticComponentView->GetAuthority(EntityId, Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
@@ -507,8 +502,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		UClass* Class = UnrealMetadataComp->GetNativeEntityClass();
 		if (Class == nullptr)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("The received actor with entity id %lld couldn't be loaded. The actor (%s) will not be spawned."),
-				EntityId, *UnrealMetadataComp->ClassPath);
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("The received actor with entity id %lld couldn't be loaded. The actor (%s) will not be spawned."), EntityId, *UnrealMetadataComp->ClassPath);
 			return;
 		}
 
@@ -604,7 +598,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				FInBunch Bunch(NetDriver->ServerConnection);
 				EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 			}
-
 		}
 
 		// Taken from PostNetInit
@@ -744,8 +737,7 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 
 	EntityQueryDelegate StartupActorDelegate;
 	TWeakObjectPtr<AActor> WeakActor(Actor);
-	StartupActorDelegate.BindLambda([this, WeakActor, EntityId](const Worker_EntityQueryResponseOp& Op)
-	{
+	StartupActorDelegate.BindLambda([this, WeakActor, EntityId](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity Query Failed! %s"), UTF8_TO_TCHAR(Op.message));
@@ -779,7 +771,6 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	// Clean up the actor channel. For clients, this will also call destroy on the actor.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-
 #if ENGINE_MINOR_VERSION <= 20
 		ActorChannel->ConditionalCleanUp();
 #else
@@ -940,7 +931,9 @@ void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp&
 	if (!bFoundOffset)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("EntityId %lld, ComponentId %d - Could not find offset for component id "
-			"when receiving dynamic AddComponent."), Op.entity_id, Op.data.component_id);
+												 "when receiving dynamic AddComponent."),
+			Op.entity_id,
+			Op.data.component_id);
 		return;
 	}
 
@@ -958,8 +951,7 @@ void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp&
 	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(Op.data.component_id);
 
 	bool bReadyToCreate = true;
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-	{
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
 
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
@@ -1004,8 +996,7 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 
 	Channel->CreateSubObjects.Add(Subobject);
 
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-	{
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
 
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
@@ -1082,44 +1073,44 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 
 	switch (Op.update.component_id)
 	{
-	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-	case SpatialConstants::METADATA_COMPONENT_ID:
-	case SpatialConstants::POSITION_COMPONENT_ID:
-	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
-	case SpatialConstants::INTEREST_COMPONENT_ID:
-	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
-	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
-	case SpatialConstants::SINGLETON_COMPONENT_ID:
-	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
-	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
-	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
-	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
-	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
-		return;
-	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
+		case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+		case SpatialConstants::METADATA_COMPONENT_ID:
+		case SpatialConstants::POSITION_COMPONENT_ID:
+		case SpatialConstants::PERSISTENCE_COMPONENT_ID:
+		case SpatialConstants::INTEREST_COMPONENT_ID:
+		case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
+		case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
+		case SpatialConstants::SINGLETON_COMPONENT_ID:
+		case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
+		case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
+		case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
+		case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
+		case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
+			return;
+		case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 #if WITH_EDITOR
-		GlobalStateManager->OnShutdownComponentUpdate(Op.update);
+			GlobalStateManager->OnShutdownComponentUpdate(Op.update);
 #endif // WITH_EDITOR
-		return;
-	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		OnHeartbeatComponentUpdate(Op);
-		return;
-	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplySingletonManagerUpdate(Op.update);
-		GlobalStateManager->LinkAllExistingSingletonActors();
-		return;
-	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);
-		return;
-	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-		NetDriver->GlobalStateManager->ApplyStartupActorManagerUpdate(Op.update);
-		return;
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
-		HandleRPC(Op);
-		return;
+			return;
+		case SpatialConstants::HEARTBEAT_COMPONENT_ID:
+			OnHeartbeatComponentUpdate(Op);
+			return;
+		case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
+			GlobalStateManager->ApplySingletonManagerUpdate(Op.update);
+			GlobalStateManager->LinkAllExistingSingletonActors();
+			return;
+		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+			NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);
+			return;
+		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+			NetDriver->GlobalStateManager->ApplyStartupActorManagerUpdate(Op.update);
+			return;
+		case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
+		case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
+		case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
+			HandleRPC(Op);
+			return;
 	}
 
 	if (ClassInfoManager->IsSublevelComponent(Op.update.component_id))
@@ -1190,7 +1181,8 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 	// If the update is to the client rpc endpoint, then the handler should have authority over the server rpc endpoint component and vice versa
 	// Ideally these events are never delivered to workers which are not able to handle them with clever interest management
 	const Worker_ComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
-		? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+														  ? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID
+														  : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
 
 	// Multicast RPCs should be executed by whoever receives them.
 	if (Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
@@ -1229,11 +1221,9 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 		{
 			// When packing unreliable RPCs into one update, they also always go through the PlayerController.
 			// This means we need to retrieve the actual target Entity ID from the payload.
-			if (Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
-				Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
+			if (Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID || Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
 			{
 				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
-
 
 				// In a zoned multiworker scenario we might not have gained authority over the current entity in this bundle in time
 				// before processing so don't ApplyRPCs to an entity that we don't have authority over.
@@ -1248,7 +1238,6 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 		{
 			ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload));
 		}
-
 	}
 }
 
@@ -1285,21 +1274,21 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	{
 		switch (CommandIndex)
 		{
-		case SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID:
-			NetDriver->SpatialMetrics->OnStartRPCMetricsCommand();
-			break;
-		case SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID:
-			NetDriver->SpatialMetrics->OnStopRPCMetricsCommand();
-			break;
-		case SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID:
-		{
-			Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
-			NetDriver->SpatialMetrics->OnModifySettingCommand(Payload);
-			break;
-		}
-		default:
-			UE_LOG(LogSpatialReceiver, Error, TEXT("Unknown command index for DebugMetrics component: %d, entity: %lld"), CommandIndex, Op.entity_id);
-			break;
+			case SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID:
+				NetDriver->SpatialMetrics->OnStartRPCMetricsCommand();
+				break;
+			case SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID:
+				NetDriver->SpatialMetrics->OnStopRPCMetricsCommand();
+				break;
+			case SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID:
+			{
+				Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
+				NetDriver->SpatialMetrics->OnModifySettingCommand(Payload);
+				break;
+			}
+			default:
+				UE_LOG(LogSpatialReceiver, Error, TEXT("Unknown command index for DebugMetrics component: %d, entity: %lld"), CommandIndex, Op.entity_id);
+				break;
 		}
 
 		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
@@ -1323,8 +1312,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	UFunction* Function = Info.RPCs[Payload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
-		Op.entity_id, Op.request.component_id, *Function->GetName());
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"), Op.entity_id, Op.request.component_id, *Function->GetName());
 
 	ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload));
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
@@ -1376,30 +1364,29 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_CommandResponseOp& Op
 		if (bCanRetry)
 		{
 			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(ReliableRPC->Attempts);
-			UE_LOG(LogSpatialReceiver, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"),
-				*ReliableRPC->Function->GetName(), WaitTime, (int)Op.status_code, UTF8_TO_TCHAR(Op.message));
+			UE_LOG(LogSpatialReceiver, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"), *ReliableRPC->Function->GetName(), WaitTime, (int)Op.status_code, UTF8_TO_TCHAR(Op.message));
 
 			if (!ReliableRPC->TargetObject.IsValid())
 			{
-				UE_LOG(LogSpatialReceiver, Warning, TEXT("%s: target object was destroyed before we could deliver the RPC."),
-					*ReliableRPC->Function->GetName());
+				UE_LOG(LogSpatialReceiver, Warning, TEXT("%s: target object was destroyed before we could deliver the RPC."), *ReliableRPC->Function->GetName());
 				return;
 			}
 
 			// Queue retry
 			FTimerHandle RetryTimer;
-			TimerManager->SetTimer(RetryTimer, [WeakSender = TWeakObjectPtr<USpatialSender>(Sender), ReliableRPC]()
-			{
-				if (USpatialSender* SpatialSender = WeakSender.Get())
-				{
-					SpatialSender->EnqueueRetryRPC(ReliableRPC);
-				}
-			}, WaitTime, false);
+			TimerManager->SetTimer(
+				RetryTimer, [WeakSender = TWeakObjectPtr<USpatialSender>(Sender), ReliableRPC]() {
+					if (USpatialSender* SpatialSender = WeakSender.Get())
+					{
+						SpatialSender->EnqueueRetryRPC(ReliableRPC);
+					}
+				},
+				WaitTime,
+				false);
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Error, TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"),
-				*ReliableRPC->Function->GetName(), SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.status_code, UTF8_TO_TCHAR(Op.message));
+			UE_LOG(LogSpatialReceiver, Error, TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"), *ReliableRPC->Function->GetName(), SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.status_code, UTF8_TO_TCHAR(Op.message));
 		}
 	}
 }
@@ -1989,8 +1976,7 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 	}
 
 	Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
-	if (Schema_GetBoolCount(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID) > 0 &&
-		GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
+	if (Schema_GetBoolCount(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID) > 0 && GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
 	{
 		// Client has disconnected, let's clean up their connection.
 		NetConnection->CleanUp();
