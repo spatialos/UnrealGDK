@@ -195,10 +195,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	if (!bPersistSpatialConnection)
 	{
 		// Destroy the old connection
-		if (USpatialWorkerConnection* OldConnection = GameInstance->GetSpatialWorkerConnection())
-		{
-			OldConnection->DestroyConnection();
-		}
+		GameInstance->DestroySpatialWorkerConnection();
 
 		// Create a new SpatialWorkerConnection in the SpatialGameInstance.
 		GameInstance->CreateNewSpatialWorkerConnection();
@@ -563,10 +560,20 @@ void USpatialNetDriver::BeginDestroy()
 {
 	Super::BeginDestroy();
 
-	// If we are still connected, cleanup our corresponding worker entity if it exists.
-	if (Connection != nullptr && WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+	if (Connection != nullptr)
 	{
-		Connection->SendDeleteEntityRequest(WorkerEntityId);
+		// Cleanup our corresponding worker entity if it exists.
+		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Connection->SendDeleteEntityRequest(WorkerEntityId);
+		}
+		
+		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
+		if (!bPersistSpatialConnection)
+		{
+			Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->DestroySpatialWorkerConnection();
+			Connection = nullptr;
+		}
 	}
 
 #if WITH_EDITOR
