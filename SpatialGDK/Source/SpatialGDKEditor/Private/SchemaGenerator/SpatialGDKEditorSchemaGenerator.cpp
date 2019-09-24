@@ -427,19 +427,14 @@ bool IsSupportedClass(const UClass* SupportedClass)
 	// User told us to ignore this class
 	if (SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Not Spatial Type, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Marked as NotSpatialType, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
 	if (!SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_ExplicitSpatialType))
 	{
-		// Check if parent class is supported, we need to do this because we have changed the defaults but Blueprint classes will
-		// not inherit these correctly if the files are locked by source control.
-		if (!IsSupportedClass(SupportedClass->GetSuperClass()))
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Not Explicit Spatial Type, parent not supported either, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
-			return false;
-		}
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] No ExplicitSpatialType flag, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
+		return false;
 	}
 
 	if (SupportedClass->HasAnyClassFlags(CLASS_LayoutChanging))
