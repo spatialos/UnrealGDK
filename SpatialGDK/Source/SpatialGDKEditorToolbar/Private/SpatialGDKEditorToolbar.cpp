@@ -85,27 +85,31 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	}
 
 #if PLATFORM_WINDOWS
-	// If a service was running, restart to guarantee that the service is running in this project with the correct settings.
-	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("(Re)starting Spatial service in this project."));
-
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, SpatialGDKSettings]
+	// Don't kick off background processes when running commandlets
+	if (IsRunningCommandlet() == false)
 	{
-		LocalDeploymentManager->TryStopSpatialService();
+		// If a service was running, restart to guarantee that the service is running in this project with the correct settings.
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("(Re)starting Spatial service in this project."));
 
-		// Pass exposed runtime IP if one has been specified
-		if (SpatialGDKSettings->bExposeRuntimeIP)
+		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, SpatialGDKSettings]
 		{
-			LocalDeploymentManager->TryStartSpatialService();
-		}
-		else
-		{
-			LocalDeploymentManager->TryStartSpatialService(SpatialGDKSettings->ExposedRuntimeIP);
-		}
+			LocalDeploymentManager->TryStopSpatialService();
 
-		// Ensure we have an up to date state of the spatial service and local deployment.
-		LocalDeploymentManager->RefreshServiceStatus();
-	});
+			// Pass exposed runtime IP if one has been specified
+			if (SpatialGDKSettings->bExposeRuntimeIP)
+			{
+				LocalDeploymentManager->TryStartSpatialService(SpatialGDKSettings->ExposedRuntimeIP);
+			}
+			else
+			{
+				LocalDeploymentManager->TryStartSpatialService();
+			}
+
+			// Ensure we have an up to date state of the spatial service and local deployment.
+			LocalDeploymentManager->RefreshServiceStatus();
+		});
+	}
 #endif
 }
 

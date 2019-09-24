@@ -143,6 +143,7 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	// Stop the currently running service if the runtime IP is to be exposed, but is different from the one specified
 	if (ExposedRuntimeIP != RuntimeIPToExpose)
 	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Settings for exposing runtime IP have changed since service startup. Restarting service to reflect changes."));
 		TryStopSpatialService();
 	}
 
