@@ -30,10 +30,35 @@ void FSpatialGDKEditorCloudDebugger::DebugWorker(const FString& InDeploymentName
 	FString SpatialExe = FSpatialGDKServicesModule::GetSpatialExe();
 	FString SpatialArgs = FString::Printf(TEXT("project deployment worker port-forward -d=%s -w=%s -p=6667"), *InDeploymentName, *InWorkerId);
 
-	PortForwardHandle = FPlatformProcess::CreateProc(*SpatialExe, *SpatialArgs, true, false, false, NULL, 0, *FSpatialGDKServicesModule::GetSpatialOSDirectory(), NULL);
-	if (!PortForwardHandle.IsValid())
+	void* PipeRead = nullptr;
+	void* PipeWrite = nullptr;
+	verify(FPlatformProcess::CreatePipe(PipeRead, PipeWrite));
+
+	PortForwardHandle = FPlatformProcess::CreateProc(*SpatialExe, *SpatialArgs, true, false, false, NULL, 0, *FSpatialGDKServicesModule::GetSpatialOSDirectory(), PipeWrite);
+	if (PortForwardHandle.IsValid())
 	{
-		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Creating tcp port forwarding failed!"));
+		FString fullMsg = TEXT("");
+		FString currentMsg = TEXT("");
+		do 
+		{
+			FPlatformProcess::Sleep(0.1);
+			currentMsg = FPlatformProcess::ReadPipe(PipeRead);
+			fullMsg += currentMsg;
+		} while (!currentMsg.IsEmpty() || fullMsg.IsEmpty());
+
+		
+		if (fullMsg.Find(TEXT("level=error")) > 0)
+		{
+			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Tcp port forwarding process returned error: %s"), *fullMsg);	
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKEditor, Log, TEXT("Tcp port forwarding process started successfully"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Creating tcp port forwarding process failed!"));
 	}
 }
 
