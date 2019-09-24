@@ -1453,8 +1453,10 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 
 	SpatialConnection->InitRemoteConnection(this, nullptr, InUrl, *FromAddr, USOCK_Open);
 	Notify->NotifyAcceptedConnection(SpatialConnection);
-	ClientConnections.Add(SpatialConnection);
-	//AddClientConnection(SpatialConnection);
+
+	// TODO: This also currently sets all dormant actors to the active list (because the dormancy needs to be processed for the new connection)
+	// This is unnecessary however, as we only have a single relevant connection in Spatial. Could be a performance win to not do this.
+	AddClientConnection(SpatialConnection);
 
 	// Set the unique net ID for this player. This and the code below is adapted from World.cpp:4499
 	SpatialConnection->PlayerId = UniqueId;

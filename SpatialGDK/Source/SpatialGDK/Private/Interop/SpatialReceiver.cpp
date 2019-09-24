@@ -141,8 +141,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			// This same logic is called from within UChannel::ReceivedSequencedBunch when a dormant cmd is received
 			Channel->Dormant = 1;
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
-
-			UE_LOG( LogTemp, Warning, TEXT("Dynamic dormancy add op: %s %lld"), NetDriver->IsServer() ? TEXT("Server") : TEXT("Client"), Op.entity_id)
 		}
 		return;
 	}
@@ -373,10 +371,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 
 					Actor->OnAuthorityGained();
 				}
-// 				else if ()
-// 				{
-// 					UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received authority over dormant actor %s, with entity id %lld. "), *Actor->GetName(), Op.entity_id);
-// 				}
 				else
 				{
 					UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to delete it earlier, when it had no authority. Retrying to delete now."), *Actor->GetName(), Op.entity_id);
