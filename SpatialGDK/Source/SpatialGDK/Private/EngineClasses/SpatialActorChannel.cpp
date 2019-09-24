@@ -166,14 +166,6 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 	return UActorChannel::CleanUp(bForDestroy, CloseReason);
 }
 
-void USpatialActorChannel::BecomeDormant()
-{
-	UE_LOG(LogNetDormancy, Verbose, TEXT("BecomeDormant: %s"), *Describe());
-	bPendingDormancy = false;
-	Dormant = true;
-	Close(EChannelCloseReason::Dormancy);
-}
-
 int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 {
 	if (Reason != EChannelCloseReason::Dormancy)

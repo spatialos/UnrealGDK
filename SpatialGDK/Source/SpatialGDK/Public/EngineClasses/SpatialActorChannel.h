@@ -161,11 +161,6 @@ protected:
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
 	// End UChannel interface
 
-	// Begin UActorChannel interface
-	virtual void BecomeDormant() override;
-	// End UActorChannel interface
-
-
 private:
 	void DynamicallyAttachSubobject(UObject* Object);
 
