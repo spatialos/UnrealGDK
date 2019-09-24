@@ -27,6 +27,8 @@ class USpatialNetConnection;
 class USpatialSender;
 class UGlobalStateManager;
 class USpatialWorkerTranslator;
+DECLARE_DELEGATE_OneParam(FOnEntityAdded, const Worker_EntityId);
+DECLARE_DELEGATE_OneParam(FOnEntityRemoved, const Worker_EntityId);
 
 struct PendingAddComponentWrapper
 {
@@ -210,6 +212,9 @@ public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
+
+	FOnEntityAdded OnEntityAdded;
+	FOnEntityAdded OnEntityRemoved;
 
 private:
 	UPROPERTY()
