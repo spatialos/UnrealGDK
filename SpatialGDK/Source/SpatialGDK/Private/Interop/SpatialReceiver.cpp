@@ -552,11 +552,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		// Set up actor channel.
-#if ENGINE_MINOR_VERSION <= 20
-		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
-#else
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
-#endif
 
 		if (!Channel)
 		{
@@ -664,11 +660,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("RemoveActor: actor for entity %lld was already deleted (likely on the authoritative worker) but still has an open actor channel."), EntityId);
-#if ENGINE_MINOR_VERSION <= 20
-			ActorChannel->ConditionalCleanUp();
-#else
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
-#endif
 		}
 		return;
 	}
@@ -678,11 +670,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	{
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
-#if ENGINE_MINOR_VERSION <= 20
-			ActorChannel->ConditionalCleanUp();
-#else
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
-#endif
 		}
 		return;
 	}
@@ -779,12 +767,7 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	// Clean up the actor channel. For clients, this will also call destroy on the actor.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-
-#if ENGINE_MINOR_VERSION <= 20
-		ActorChannel->ConditionalCleanUp();
-#else
 		ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
-#endif
 	}
 	else
 	{
@@ -1422,11 +1405,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 		// Check if bTearOff has been set to true
 		if (GetBoolFromSchema(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
-#if ENGINE_MINOR_VERSION <= 20
-			Channel->ConditionalCleanUp();
-#else
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
-#endif
 			CleanupDeletedEntity(Channel->GetEntityId());
 		}
 	}
@@ -1830,11 +1809,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		bool bIsHandover = ObjectReferences.ParentIndex == -1;
 		FRepParentCmd* Parent = ObjectReferences.ParentIndex >= 0 ? &RepLayout.Parents[ObjectReferences.ParentIndex] : nullptr;
 
-#if ENGINE_MINOR_VERSION <= 20
-		int32 StoredDataOffset = AbsOffset;
-#else
 		int32 StoredDataOffset = ObjectReferences.ShadowOffset;
-#endif
 
 		if (ObjectReferences.Array)
 		{
