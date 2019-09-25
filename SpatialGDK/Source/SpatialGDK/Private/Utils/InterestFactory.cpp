@@ -39,7 +39,7 @@ void GatherClientInterestDistances()
 		{
 			continue;
 		}
-		if (!It->HasAnySpatialClassFlags(SPATIALCLASS_ExplicitSpatialType))
+		if (!It->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 		{
 			continue;
 		}

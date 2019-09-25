@@ -424,16 +424,9 @@ bool IsSupportedClass(const UClass* SupportedClass)
 		return false;
 	}
 
-	// User told us to ignore this class
-	if (SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
+	if (!SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Marked as NotSpatialType, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
-		return false;
-	}
-
-	if (!SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_ExplicitSpatialType))
-	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] No ExplicitSpatialType flag, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] No SpatialType flag, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
 		return false;
 	}
 
