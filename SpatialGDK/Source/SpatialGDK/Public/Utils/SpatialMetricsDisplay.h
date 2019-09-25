@@ -8,6 +8,8 @@
 
 #include "SpatialMetricsDisplay.generated.h"
 
+class UWorld;
+
 USTRUCT()
 struct FWorkerStats
 {
@@ -43,8 +45,8 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
-	UFUNCTION(Category = "SpatialGDK", BlueprintCallable)
-	void ToggleStatDisplay();
+	UFUNCTION(Exec, Category = "SpatialGDK", BlueprintCallable)
+	void SpatialToggleStatDisplay();
 
 private:
 

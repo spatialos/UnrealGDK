@@ -106,6 +106,8 @@ public:
 
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
+	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
+
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
 	UPROPERTY()
@@ -131,7 +133,7 @@ public:
 	UPROPERTY()
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
-	ASpatialMetricsDisplay* SpatialMetricsDisplay;
+	ASpatialMetricsDisplay* SpatialMetricsDisplay = nullptr;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
