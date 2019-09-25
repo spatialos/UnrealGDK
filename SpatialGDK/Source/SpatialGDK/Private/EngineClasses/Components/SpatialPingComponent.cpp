@@ -6,7 +6,6 @@
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
-#include "Engine/Engine.h"
 
 USpatialPingComponent::USpatialPingComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
