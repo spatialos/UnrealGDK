@@ -258,11 +258,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
 	{
-#if ENGINE_MINOR_VERSION <= 20
-		if (UObject* Subobject = RepSubobject.Key().Get())
-#else
 		if (UObject* Subobject = RepSubobject.Value()->GetWeakObjectPtr().Get())
-#endif
 		{
 			if (Subobject == Actor)
 			{
