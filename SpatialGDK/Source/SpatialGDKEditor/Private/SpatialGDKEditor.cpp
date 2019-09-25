@@ -178,15 +178,11 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 
 		const FString* GeneratedClassPathPtr = nullptr;
 
-#if ENGINE_MINOR_VERSION <= 20
-		GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass");
-#else
 		FAssetDataTagMapSharedView::FFindTagResult GeneratedClassFindTagResult = Data.TagsAndValues.FindTag("GeneratedClass");
 		if (GeneratedClassFindTagResult.IsSet())
 		{
 			GeneratedClassPathPtr = &GeneratedClassFindTagResult.GetValue();
 		}
-#endif
 
 		if (GeneratedClassPathPtr != nullptr)
 		{ 
