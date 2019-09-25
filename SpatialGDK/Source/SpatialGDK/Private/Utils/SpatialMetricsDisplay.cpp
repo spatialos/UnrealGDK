@@ -33,6 +33,14 @@ ASpatialMetricsDisplay::ASpatialMetricsDisplay(const FObjectInitializer& ObjectI
 		PerformanceModule.CreatePerformanceCounters();
 	}
 #endif
+
+	// For GDK design reasons, this is the approach chosen to get a pointer
+	// on the net driver to the client SpatialMetricsDisplay.  Various alternatives
+	// were considered and this is the best of a bad bunch.
+	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver()))
+	{
+		SpatialNetDriver->SetSpatialMetricsDisplay(this);
+	}
 }
 
 void ASpatialMetricsDisplay::BeginPlay()

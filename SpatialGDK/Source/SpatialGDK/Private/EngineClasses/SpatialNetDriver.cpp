@@ -1973,3 +1973,11 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 
 	return false;
 }
+
+void USpatialNetDriver::SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay)
+{
+	if (SpatialMetricsDisplay == nullptr)
+	{
+		SpatialMetricsDisplay = InSpatialMetricsDisplay;
+	}
+}

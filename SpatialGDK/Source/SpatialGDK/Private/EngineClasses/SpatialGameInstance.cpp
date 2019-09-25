@@ -140,13 +140,10 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 			{
 				return true;
 			}
-		}
 
-		if (GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
-		{
-			if (ASpatialMetricsDisplay* SpatialMetricsDisplay = ASpatialMetricsDisplay::Get(World))
+			if (GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
 			{
-				if (SpatialMetricsDisplay->ProcessConsoleExec(Cmd, Ar, Executor))
+				if (NetDriver->SpatialMetricsDisplay && NetDriver->SpatialMetricsDisplay->ProcessConsoleExec(Cmd, Ar, Executor))
 				{
 					return true;
 				}
