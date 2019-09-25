@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 - Added logging for queued RPCs.
 - Added several new STAT annotations into the ServerReplicateActors call chain.
+- Avoid generating schema for all UObject subclasses. Actor, ActorComponent, GameplayAbility subclasses are enabled by default, other classes can be enabled using SpatialType UCLASS specifier.
+- Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
 
 ### Features:
 - Visual Studio 2019 is now supported.
