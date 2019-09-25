@@ -60,7 +60,7 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 			TryStopSpatialService();
 
 			// Pass exposed runtime IP if one has been specified
-			if (RuntimeIPToExpose == TEXT("NONE"))
+			if (RuntimeIPToExpose.IsEmpty())
 			{
 				TryStartSpatialService();
 			}
@@ -180,7 +180,7 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	// If the service is not running then start it.
 	if (!bSpatialServiceRunning)
 	{
-		if (RuntimeIPToExpose == TEXT("NONE")) {
+		if (RuntimeIPToExpose.IsEmpty()) {
 			TryStartSpatialService();
 		}
 		else
@@ -332,7 +332,7 @@ bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
 	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s"), *SpatialServiceVersion);
 
 	// Pass exposed runtime IP if one has been specified
-	if (RuntimeIPToExpose != TEXT("NONE"))
+	if (!RuntimeIPToExpose.IsEmpty())
 	{
 		SpatialServiceStartArgs.Append(FString::Printf(TEXT(" --runtime_ip=%s"), *RuntimeIPToExpose));
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Trying to start spatial service with exposed runtime ip: %s"), *RuntimeIPToExpose);
