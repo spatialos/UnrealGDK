@@ -27,6 +27,8 @@ void FSpatialGDKEditorCloudDebugger::DebugWorker(const FString& InDeploymentName
 {
 	ClosePortForward();
 
+	ForceSpatialLogin(); // to avoid polluted output if it is the first spatial command used
+
 	FString SpatialExe = FSpatialGDKServicesModule::GetSpatialExe();
 	FString SpatialArgs = FString::Printf(TEXT("project deployment worker port-forward -d=%s -w=%s -p=6667"), *InDeploymentName, *InWorkerId);
 
@@ -44,22 +46,37 @@ void FSpatialGDKEditorCloudDebugger::DebugWorker(const FString& InDeploymentName
 			FPlatformProcess::Sleep(0.1);
 			currentMsg = FPlatformProcess::ReadPipe(PipeRead);
 			fullMsg += currentMsg;
-		} while (!currentMsg.IsEmpty() || fullMsg.IsEmpty());
+		} while ((!currentMsg.IsEmpty() || fullMsg.IsEmpty())
+			&& PortForwardHandle.IsValid());
 
 		
 		if (fullMsg.Find(TEXT("level=error")) > 0)
 		{
-			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Tcp port forwarding process returned error: %s"), *fullMsg);	
+			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Tcp port forwarding process returned error: %s"), *fullMsg);
+			ClosePortForward();
+		}
+		else if(fullMsg.Find(TEXT("level=info")) > 0)
+		{
+			UE_LOG(LogSpatialGDKEditor, Log, TEXT("Tcp port forwarding process started successfully"));
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKEditor, Log, TEXT("Tcp port forwarding process started successfully"));
+			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Tcp port forwarding process returned unexpected message: %s", *fullMsg));
+			ClosePortForward();
 		}
 	}
 	else
 	{
 		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Creating tcp port forwarding process failed!"));
 	}
+
+	FPlatformProcess::ClosePipe(PipeRead, PipeWrite);
+}
+
+void FSpatialGDKEditorCloudDebugger::ForceSpatialLogin()
+{
+	FString SpatialArgs = TEXT("auth login");
+	FPlatformProcess::ExecProcess(*FSpatialGDKServicesModule::GetSpatialExe(), *SpatialArgs, NULL, NULL, NULL, *FSpatialGDKServicesModule::GetSpatialOSDirectory());
 }
 
 void FSpatialGDKEditorCloudDebugger::ClosePortForward()
@@ -68,5 +85,6 @@ void FSpatialGDKEditorCloudDebugger::ClosePortForward()
 	{
 		FPlatformProcess::TerminateProc(PortForwardHandle, true);
 		FPlatformProcess::CloseProc(PortForwardHandle);
+		UE_LOG(LogSpatialGDKEditor, Log, TEXT("Tcp port forwarding process closed"));
 	}
 }

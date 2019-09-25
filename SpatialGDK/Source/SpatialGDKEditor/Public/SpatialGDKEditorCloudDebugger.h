@@ -13,6 +13,7 @@ public:
 	void DebugWorker(const FString& InDeploymentName, const FString& InWorkerId);
 
 private:
+	void ForceSpatialLogin();
 	void ClosePortForward();
 
 	ISessionFrontendModule* SessionFrontendModule;
