@@ -25,15 +25,15 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	//Returns whether this component can ping
+	// Returns whether this component can ping.
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Ping")
 	bool GetIsPingEnabled() const;
 
-	//Set whether this component can ping
+	// Set whether this component can ping.
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Ping")
 	void SetPingEnabled(bool bSetEnabled);
 
-	//Returns the latest raw round-trip ping value in seconds
+	// Returns the latest raw round-trip ping value in seconds.
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Ping")
 	float GetPing() const;
 
@@ -62,5 +62,5 @@ private:
 	virtual void OnRep_ReplicatedPingID();
 
 	UFUNCTION(Server, Unreliable, WithValidation)
-	virtual void SendServerWorkerPingID(const float PingID);
+	virtual void SendServerWorkerPingID(float PingID);
 };
