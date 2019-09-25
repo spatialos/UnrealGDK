@@ -23,5 +23,6 @@ Start-Event "build-gdk" "command"
 Finish-Event "build-gdk" "command"
 
 Start-Event "test-gdk" "command"
+Write-Output "unreal path: $unreal_path"
 &$PSScriptRoot"\run-tests.ps1" -ue_path $unreal_path -uproject_path "$($unreal_path)\Samples\UnrealGDKShooterGame\Game\ShooterGame.uproject" -output_dir "TestResults" -log_file_name "tests.log"
 Finish-Event "test-gdk" "command"
