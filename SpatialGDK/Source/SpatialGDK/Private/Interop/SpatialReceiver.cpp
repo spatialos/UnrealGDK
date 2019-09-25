@@ -508,14 +508,18 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			return;
 		}
 
-		// Don't spawn if we're tombstoned
+
+		EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp);
+
+		// RemoveActor immediately if we've received the tombstone component.
+		// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
 		if (NetDriver->StaticComponentView->GetComponentData<Tombstone>(EntityId) != nullptr)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was tombstoned. The actor will not be spawned."), EntityId);
+			PackageMap->ResolveEntityActor(EntityActor, EntityId);
+			RemoveActor(EntityId);
 			return;
 		}
-
-		EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp);
 
 		if (EntityActor == nullptr)
 		{
@@ -744,7 +748,7 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 			return;
 		}
 
-		if (Op.result_count == 0 && WeakActor.IsValid())
+		if (NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID) && WeakActor.IsValid())
 		{
 			DestroyActor(WeakActor.Get(), EntityId);
 		}
