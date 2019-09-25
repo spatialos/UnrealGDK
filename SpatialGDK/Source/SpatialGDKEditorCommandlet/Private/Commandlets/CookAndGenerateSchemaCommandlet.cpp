@@ -45,7 +45,6 @@ public:
 	}
 
 private:
-
 	TSet<FSoftClassPath>* VisitedClasses;
 	TSet<FSoftClassPath> UnsupportedClasses;
 };
