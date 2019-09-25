@@ -1,8 +1,7 @@
 param(
   [string] $unreal_path = "$($gdk_home)\UnrealEngine",
   # Note: this directory is outside the build directory and will not get automatically cleaned up from agents unless agents are restarted.
-  [string] $engine_cache_path = "$gdk_home\..\..\..",
-  [string] $engine_cache_folder = "UnrealEngine-Cache"
+  [string] $engine_cache_directory = "$($pwd.drive.root)UnrealEngine-Cache"
 )
 
 pushd "$($gdk_home)"
@@ -21,10 +20,8 @@ pushd "$($gdk_home)"
         }
     popd
 
-
     ## Create an UnrealEngine-Cache directory if it doesn't already exist.
-    New-Item -Path $engine_cache_path -Name $engine_cache_folder -ItemType Directory -Force
-    $engine_cache_directory = "$engine_cache_path\$engine_cache_folder"
+    New-Item -ItemType Directory -Path $engine_cache_directory -Force
 
     pushd $engine_cache_directory
         Start-Event "download-unreal-engine" "get-unreal-engine"
