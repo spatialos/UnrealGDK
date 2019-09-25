@@ -571,7 +571,8 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FAddComponent* Message = static_cast<FAddComponent*>(OutgoingMessage.Get());
 
-			static const Worker_UpdateParameters DisableLoopback{ WORKER_COMPONENT_UPDATE_LOOPBACK_NONE };
+			static const Worker_UpdateParameters DisableLoopback;
+			DisableLoopback.loopback = WORKER_COMPONENT_UPDATE_LOOPBACK_NONE;
 			Worker_Connection_SendAddComponent(WorkerConnection,
 				Message->EntityId,
 				&Message->Data,
@@ -582,7 +583,8 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FRemoveComponent* Message = static_cast<FRemoveComponent*>(OutgoingMessage.Get());
 
-			static const Worker_UpdateParameters DisableLoopback{ WORKER_COMPONENT_UPDATE_LOOPBACK_NONE };
+			static const Worker_UpdateParameters DisableLoopback;
+			DisableLoopback.loopback = WORKER_COMPONENT_UPDATE_LOOPBACK_NONE;
 			Worker_Connection_SendRemoveComponent(WorkerConnection,
 				Message->EntityId,
 				Message->ComponentId,
@@ -593,7 +595,8 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
 
-			static const Worker_UpdateParameters DisableLoopback{ WORKER_COMPONENT_UPDATE_LOOPBACK_NONE };
+			static const Worker_UpdateParameters DisableLoopback;
+			DisableLoopback.loopback = WORKER_COMPONENT_UPDATE_LOOPBACK_NONE;
 			Worker_Connection_SendComponentUpdate(WorkerConnection,
 				Message->EntityId,
 				&Message->Update,

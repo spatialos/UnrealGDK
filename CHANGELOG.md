@@ -11,9 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking Changes:
 - If you already have a project that you are upgrading to this version of the GDK, you will need to follow the upgrade process to SpatialOS `14.1.0`:
 1. Open a terminal in the `spatial/` directory of your project.
-1. Run spatial clean.
-1. Open the spatialos.json file in that directory.
-1. Replace the sdk_version value and the version value of all dependencies with 14.1.0.
+1. Run `spatial clean`.
+1. Open the `spatialos.json` file in that directory.
+1. Replace the `sdk_version` value and the version value of all dependencies with `14.1.0`.
 1. Replace all other instances of the version number in the file.
 
 ### Features:
