@@ -1993,4 +1993,3 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 	}
 }
-
