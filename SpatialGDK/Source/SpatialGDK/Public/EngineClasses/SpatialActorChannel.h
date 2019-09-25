@@ -118,6 +118,7 @@ public:
 	virtual int64 ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
+	virtual bool ReadyForDormancy(bool debug = false) override;
 	// End UActorChannel interface
 
 	bool TryResolveActor();
@@ -203,6 +204,8 @@ private:
 
 	FVector LastPositionSinceUpdate;
 	float TimeWhenPositionLastUpdated;
+
+	uint8 FramesTillDormant = 0;
 
 	// Shadow data for Handover properties.
 	// For each object with handover properties, we store a blob of memory which contains

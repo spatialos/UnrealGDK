@@ -87,7 +87,8 @@ void USpatialNetConnection::FlushDormancy(class AActor* Actor)
 	// of dormancy component here. This is slightly backwards, but means we don't have to make an engine change.
 	if (bReliableSpatialConnection)
 	{
-		Cast<USpatialNetDriver>(Driver)->RefreshActorDormancy(Actor, false);
+		const bool bMakeDormant = false;
+		Cast<USpatialNetDriver>(Driver)->RefreshActorDormancy(Actor, bMakeDormant);
 	}
 }
 

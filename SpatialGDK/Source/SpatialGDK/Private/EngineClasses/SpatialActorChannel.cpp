@@ -172,12 +172,11 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	else
 	{
 		// Closed for dormancy reasons, ensure we update the component state of this entity
-		NetDriver->RefreshActorDormancy(Actor, true);
+		const bool bMakeDormant = true;
+		NetDriver->RefreshActorDormancy(Actor, bMakeDormant);
 		NetDriver->RemoveActorChannel(EntityId);
 		NetDriver->RegisterDormantEntityId(EntityId);
 	}
-
-	//NetDriver->RemoveActorChannel(EntityId);
 
 	return Super::Close(Reason);
 }
@@ -435,6 +434,15 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
 	ActorReplicator->RepState->OpenAckedCalled = true;
+	if (ActorReplicator->bLastUpdateEmpty == false)
+	{
+		FramesTillDormant = 2;
+	}
+	else if (FramesTillDormant > 0)
+	{
+		--FramesTillDormant;
+	}
+
 	ActorReplicator->bLastUpdateEmpty = 1;
 
 	if (bCreatingNewEntity)
@@ -679,6 +687,16 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 {
 	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
 	return ReplicateSubobject(Obj, RepFlags);
+}
+
+bool USpatialActorChannel::ReadyForDormancy(bool debug /*= false*/)
+{
+	if (FramesTillDormant > 0)
+	{
+		return false;
+	}
+
+	return Super::ReadyForDormancy(debug);
 }
 
 TMap<UObject*, const FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
