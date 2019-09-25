@@ -527,7 +527,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			return;
 		}
 
-
 		EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp);
 
 		// RemoveActor immediately if we've received the tombstone component.
@@ -1994,4 +1993,3 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 	}
 }
-
