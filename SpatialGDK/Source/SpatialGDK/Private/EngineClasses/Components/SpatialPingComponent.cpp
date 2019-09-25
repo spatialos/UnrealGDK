@@ -28,6 +28,8 @@ void USpatialPingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 void USpatialPingComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	//Attempt to cast the owner of this component to the PlayerController class
+	//Component will do nothing if cast fails
 	OwningController = Cast<APlayerController>(GetOwner());
 	if (bStartWithPingEnabled)
 		SetPingEnabled(true);
@@ -47,12 +49,18 @@ bool USpatialPingComponent::GetIsPingEnabled() const
 
 void USpatialPingComponent::SetPingEnabled(bool bSetEnabled)
 {
-	if (bSetEnabled && !bIsPingEnabled) {
-		EnablePing();
+	if (OwningController) {
+		//Only execute on owning local client
+		if (OwningController->GetLocalRole() == ENetRole::ROLE_AutonomousProxy)
+		{
+			if (bSetEnabled && !bIsPingEnabled) {
+				EnablePing();
+			}
+			else if (!bSetEnabled && bIsPingEnabled) {
+				DisablePing();
+			}
+		}
 	}
-	else if(!bSetEnabled && bIsPingEnabled) {
-		DisablePing();
-	}	
 }
 
 float USpatialPingComponent::GetPing() const
@@ -65,36 +73,34 @@ void USpatialPingComponent::EnablePing()
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		//Only run on clients, not server 
-		if (GEngine->GetNetMode(World) == NM_Client)
-		{
-			World->GetTimerManager().SetTimer(PingTimerHandle, this, &USpatialPingComponent::TickPingComponent, PingFrequency, true);
-			bIsPingEnabled = true;
-		}
+		//Set looping timer to 'tick' this component and send ping RPC with configurable frequency
+		World->GetTimerManager().SetTimer(PingTimerHandle, this, &USpatialPingComponent::TickPingComponent, PingFrequency, true);
+		bIsPingEnabled = true;
 	}
 }
 
 void USpatialPingComponent::DisablePing()
 {
-	//Clear the timer
-	GetWorld()->GetTimerManager().ClearTimer(PingTimerHandle);
-	bIsPingEnabled = false;
-	RTPing = 0.f;
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		//Clear the timer
+		World->GetTimerManager().ClearTimer(PingTimerHandle);
+		bIsPingEnabled = false;
+		RTPing = 0.f;
+	}
 }
 
 void USpatialPingComponent::TickPingComponent()
 {
 	SendNewPing();
-	//If component is attached to a player controller then forward the ping on to the controller's PlayerState
-	if (OwningController)
-	{
-		OwningController->UpdatePing(RTPing);
-	}
+	//Pass latest measured ping to owning controller to be processed by PlayerState
+	OwningController->UpdatePing(RTPing);
 }
 
 void USpatialPingComponent::SendNewPing()
 {
-	//Send a new ping using the current local time as both ID and timestamp
+	//Send a new ping using the current local time since start as both ID and timestamp
 	SendServerWorkerPingID(GetWorld()->GetRealTimeSeconds());
 }
 

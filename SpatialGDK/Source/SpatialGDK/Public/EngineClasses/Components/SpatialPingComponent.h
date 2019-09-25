@@ -7,6 +7,10 @@
 
 #include "SpatialPingComponent.generated.h"
 
+/*
+ Offers a configurable means of measuring round-trip latency in SpatialOS deployments.
+ This component should be attached to a player controller.
+ */
 UCLASS(ClassGroup = (SpatialGDK), Meta = (BlueprintSpawnableComponent))
 class SPATIALGDK_API USpatialPingComponent : public UActorComponent
 {
