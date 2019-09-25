@@ -532,7 +532,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		// RemoveActor immediately if we've received the tombstone component.
 		// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
-		if (NetDriver->StaticComponentView->GetComponentData<Tombstone>(EntityId) != nullptr)
+		if (NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was tombstoned. The actor will not be spawned."), EntityId);
 			PackageMap->ResolveEntityActor(EntityActor, EntityId);
