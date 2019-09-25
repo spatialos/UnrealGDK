@@ -7,6 +7,7 @@
 #include "Engine/Engine.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Utils/SpatialMetrics.h"
 
@@ -40,11 +41,6 @@ void ASpatialMetricsDisplay::BeginPlay()
 
 	WorkerStats.Reserve(PreallocatedWorkerCount);
 	WorkerStatsLastUpdateTime.Reserve(PreallocatedWorkerCount);
-
-	if (!GetWorld()->IsServer() && GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
-	{
-		ToggleStatDisplay();
-	}
 }
 
 void ASpatialMetricsDisplay::Destroyed()
@@ -147,8 +143,12 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 	}
 }
 
-void ASpatialMetricsDisplay::ToggleStatDisplay()
+
+void ASpatialMetricsDisplay::SpatialToggleStatDisplay()
 {
+#if !UE_BUILD_SHIPPING
+	check(Role != ROLE_Authority);
+
 	if (DrawDebugDelegateHandle.IsValid())
 	{
 		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
@@ -158,7 +158,9 @@ void ASpatialMetricsDisplay::ToggleStatDisplay()
 	{
 		DrawDebugDelegateHandle = UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialMetricsDisplay::DrawDebug));
 	}
+#endif
 }
+
 
 void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 {
@@ -255,4 +257,16 @@ bool ASpatialMetricsDisplay::ShouldRemoveStats(const float CurrentTime, const FW
 
 	const float TimeSinceUpdate = CurrentTime - *LastUpdateTime;
 	return TimeSinceUpdate > DropStatsIfNoUpdateForTime;
+}
+
+ASpatialMetricsDisplay* ASpatialMetricsDisplay::Get(const UWorld* World)
+{
+	// This lazily resolves the pointer on each call to this function.  We can't
+	// store the result in a static pointer because in PIE, client and server are in the same process.
+	TArray<AActor*> SpatialMetricsDisplayActors;
+	UGameplayStatics::GetAllActorsOfClass(World, ASpatialMetricsDisplay::StaticClass(), SpatialMetricsDisplayActors);
+
+	const int NumActors = SpatialMetricsDisplayActors.Num();
+	check(NumActors <= 1);
+	return (NumActors == 1) ? Cast<ASpatialMetricsDisplay>(SpatialMetricsDisplayActors[0]) : nullptr;
 }

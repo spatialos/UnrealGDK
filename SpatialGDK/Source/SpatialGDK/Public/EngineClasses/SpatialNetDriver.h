@@ -131,7 +131,7 @@ public:
 	UPROPERTY()
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
-	ASpatialMetricsDisplay* SpatialMetricsDisplay;
+	ASpatialMetricsDisplay* SpatialMetricsDisplay = nullptr;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 

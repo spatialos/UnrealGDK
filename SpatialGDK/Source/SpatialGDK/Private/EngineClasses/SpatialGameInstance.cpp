@@ -14,6 +14,7 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Utils/SpatialMetrics.h"
+#include "Utils/SpatialMetricsDisplay.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
@@ -126,22 +127,34 @@ void USpatialGameInstance::StartGameInstance()
 
 bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& Ar, UObject* Executor)
 {
-	if (!Super::ProcessConsoleExec(Cmd, Ar, Executor))
+	if (Super::ProcessConsoleExec(Cmd, Ar, Executor))
 	{
-		if (GetWorld() == nullptr)
-		{
-			return false;
-		}
-
-		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-		if (NetDriver == nullptr || NetDriver->SpatialMetrics == nullptr)
-		{
-			return false;
-		}
-
-		return NetDriver->SpatialMetrics->ProcessConsoleExec(Cmd, Ar, Executor);
+		return true;
 	}
-	return true;
+
+	if (const UWorld* World = GetWorld())
+	{
+		if (const USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+		{
+			if (NetDriver->SpatialMetrics && NetDriver->SpatialMetrics->ProcessConsoleExec(Cmd, Ar, Executor))
+			{
+				return true;
+			}
+		}
+
+		if (GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
+		{
+			if (ASpatialMetricsDisplay* SpatialMetricsDisplay = ASpatialMetricsDisplay::Get(World))
+			{
+				if (SpatialMetricsDisplay->ProcessConsoleExec(Cmd, Ar, Executor))
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
 }
 
 void USpatialGameInstance::HandleOnConnected()
