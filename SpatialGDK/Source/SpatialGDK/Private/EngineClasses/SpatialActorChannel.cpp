@@ -434,7 +434,12 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
 	ActorReplicator->RepState->OpenAckedCalled = true;
-	if (ActorReplicator->bLastUpdateEmpty == false)
+
+	// This would indicate we need to flush our state before we could consider going dormant. In Spatial, this
+	// dormancy can occur immediately (because we don't require acking), which means that dormancy can be thrashed
+	// on and off if AActor::FlushNetDormancy is being called (possibly because replicated properties are being updated
+	// within blueprints which invokes this call). Give a few frames before allowing channel to go dormant.
+	if (ActorReplicator->bLastUpdateEmpty == 0)
 	{
 		FramesTillDormant = 2;
 	}
