@@ -141,9 +141,8 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 			for (uint32_t i = 0; i < EntityToSpawn->component_count; ++i)
 			{
 				// Entity component data must be deep copied so that it can be used for CreateEntityRequest.
-				Schema_ComponentData* CopySchemaData = DeepCopyComponentData(EntityToSpawn->components[i].schema_type);
+				Schema_ComponentData* CopySchemaData = Schema_CopyComponentData(EntityToSpawn->components[i].schema_type);
 				Worker_ComponentData EntityComponentData{};
-				//TODO: Check if this works
 				EntityComponentData.component_id = EntityToSpawn->components[i].component_id;
 				EntityComponentData.schema_type = CopySchemaData;
 				EntityComponents.Add(EntityComponentData);

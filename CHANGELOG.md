@@ -8,13 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added logging for queued RPCs.
 - Added several new STAT annotations into the ServerReplicateActors call chain.
 
+### Breaking Changes:
+- If you already have a project that you are upgrading to this version of the GDK, you will need to follow the upgrade process to SpatialOS `14.1.0`:
+1. Open a terminal in the `spatial/` directory of your project.
+1. Run spatial clean.
+1. Open the spatialos.json file in that directory.
+1. Replace the sdk_version value and the version value of all dependencies with 14.1.0.
+1. Replace all other instances of the version number in the file.
+
 ### Features:
 - Visual Studio 2019 is now supported.
 - Added toolbar and commandlet options to delete the schema database.
 - Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
 - Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
 - It is now possible to specify in Unreal which actors should not persist as entities in the Snapshot.
-- Upgraded to SpatialOS 14.1.0.
+- The GDK now uses SpatialOS `14.1.0`.
 
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
