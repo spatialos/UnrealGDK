@@ -1,10 +1,10 @@
 ﻿{
-	"reportCreatedOn": "2019.09.23-17.00.14",
+	"reportCreatedOn": "2019.09.25-14.50.49",
 	"succeeded": 9,
 	"succeededWithWarnings": 0,
 	"failed": 2,
 	"notRun": 0,
-	"totalDuration": 28.22808837890625,
+	"totalDuration": 28.824235916137695,
 	"comparisonExported": true,
 	"comparisonExportDirectory": "C:/dev/UnrealEngine/Engine/Plugins/UnrealGDK/ci/TestOutput/0",
 	"tests": [
@@ -23,7 +23,7 @@
 					},
 					"filename": "c:\\dev\\unrealengine\\engine\\source\\runtime\\engine\\private\\unrealengine.cpp",
 					"lineNumber": 10161,
-					"timestamp": "2019.09.23-15.59.50"
+					"timestamp": "2019.09.25-13.50.24"
 				},
 				{
 					"event":
@@ -35,7 +35,7 @@
 					},
 					"filename": "c:\\dev\\unrealengine\\engine\\source\\runtime\\engine\\private\\unrealengine.cpp",
 					"lineNumber": 10161,
-					"timestamp": "2019.09.23-15.59.50"
+					"timestamp": "2019.09.25-13.50.24"
 				},
 				{
 					"event":
@@ -47,7 +47,7 @@
 					},
 					"filename": "c:\\dev\\unrealengine\\engine\\source\\runtime\\engine\\private\\unrealengine.cpp",
 					"lineNumber": 10161,
-					"timestamp": "2019.09.23-15.59.55"
+					"timestamp": "2019.09.25-13.50.29"
 				},
 				{
 					"event":
@@ -59,7 +59,7 @@
 					},
 					"filename": "c:\\dev\\unrealengine\\engine\\source\\runtime\\engine\\private\\unrealengine.cpp",
 					"lineNumber": 10161,
-					"timestamp": "2019.09.23-15.59.55"
+					"timestamp": "2019.09.25-13.50.29"
 				},
 				{
 					"event":
@@ -71,7 +71,7 @@
 					},
 					"filename": "c:\\dev\\unrealengine\\engine\\source\\runtime\\engine\\private\\unrealengine.cpp",
 					"lineNumber": 10161,
-					"timestamp": "2019.09.23-15.59.59"
+					"timestamp": "2019.09.25-13.50.34"
 				},
 				{
 					"event":
@@ -83,7 +83,7 @@
 					},
 					"filename": "c:\\dev\\unrealengine\\engine\\source\\runtime\\engine\\private\\unrealengine.cpp",
 					"lineNumber": 10161,
-					"timestamp": "2019.09.23-15.59.59"
+					"timestamp": "2019.09.25-13.50.34"
 				}
 			],
 			"warnings": 0,
@@ -105,7 +105,7 @@
 					},
 					"filename": "c:\\dev\\unrealengine\\engine\\source\\runtime\\engine\\private\\unrealengine.cpp",
 					"lineNumber": 10161,
-					"timestamp": "2019.09.23-16.00.04"
+					"timestamp": "2019.09.25-13.50.38"
 				},
 				{
 					"event":
@@ -117,7 +117,7 @@
 					},
 					"filename": "c:\\dev\\unrealengine\\engine\\source\\runtime\\engine\\private\\unrealengine.cpp",
 					"lineNumber": 10161,
-					"timestamp": "2019.09.23-16.00.04"
+					"timestamp": "2019.09.25-13.50.38"
 				},
 				{
 					"event":
@@ -129,7 +129,7 @@
 					},
 					"filename": "c:\\dev\\unrealengine\\engine\\source\\runtime\\engine\\private\\unrealengine.cpp",
 					"lineNumber": 10161,
-					"timestamp": "2019.09.23-16.00.09"
+					"timestamp": "2019.09.25-13.50.43"
 				},
 				{
 					"event":
@@ -141,7 +141,31 @@
 					},
 					"filename": "c:\\dev\\unrealengine\\engine\\source\\runtime\\engine\\private\\unrealengine.cpp",
 					"lineNumber": 10161,
-					"timestamp": "2019.09.23-16.00.09"
+					"timestamp": "2019.09.25-13.50.43"
+				},
+				{
+					"event":
+					{
+						"type": "Error",
+						"message": "Json parsing of spot project info result failed. Result: Usage:\nspot alpha [command]\n\nAvailable Commands:\ndeployment  Commands related to SpatialOS deployments.\n\nOptional Flags:\n  -h, --help   help for alpha\n\nGlobal flags:\n      --endpoint string            The Platform API endpoint to connect to in format '<host>:<port>'. (default \"localhost:9876\")\n      --json                       Enables machine-friendly mode, outputing JSON. Useful when calling programmatically and parsing output.\n      --log-level string           Changes the log level. Use one of: error, warn, info, debug, trace. (default \"info\")\n      --request-timeout duration   The request timeout for network requests. (default 10s)\n\nUse \"spot alpha [command] --help\" for more information about a command.\n",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "c:\\dev\\unrealengine\\engine\\source\\runtime\\engine\\private\\unrealengine.cpp",
+					"lineNumber": 10161,
+					"timestamp": "2019.09.25-13.50.48"
+				},
+				{
+					"event":
+					{
+						"type": "Error",
+						"message": "'status' does not exist in Json result from 'spot service project-info': Usage:\nspot alpha [command]\n\nAvailable Commands:\ndeployment  Commands related to SpatialOS deployments.\n\nOptional Flags:\n  -h, --help   help for alpha\n\nGlobal flags:\n      --endpoint string            The Platform API endpoint to connect to in format '<host>:<port>'. (default \"localhost:9876\")\n      --json                       Enables machine-friendly mode, outputing JSON. Useful when calling programmatically and parsing output.\n      --log-level string           Changes the log level. Use one of: error, warn, info, debug, trace. (default \"info\")\n      --request-timeout duration   The request timeout for network requests. (default 10s)\n\nUse \"spot alpha [command] --help\" for more information about a command.\n",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "c:\\dev\\unrealengine\\engine\\source\\runtime\\engine\\private\\unrealengine.cpp",
+					"lineNumber": 10161,
+					"timestamp": "2019.09.25-13.50.48"
 				},
 				{
 					"event":
@@ -153,11 +177,11 @@
 					},
 					"filename": "c:\\dev\\unrealengine\\engine\\plugins\\unrealgdk\\spatialgdk\\source\\spatialgdktests\\private\\localdeploymentmanager\\localdeploymentmanagertest.cpp",
 					"lineNumber": 153,
-					"timestamp": "2019.09.23-16.00.13"
+					"timestamp": "2019.09.25-13.50.48"
 				}
 			],
 			"warnings": 0,
-			"errors": 5,
+			"errors": 7,
 			"artifacts": []
 		},
 		{
@@ -247,7 +271,7 @@
 					},
 					"filename": "c:\\dev\\unrealengine\\engine\\plugins\\unrealgdk\\spatialgdk\\source\\spatialgdktests\\private\\rpccontainer\\rpccontainertest.cpp",
 					"lineNumber": 209,
-					"timestamp": "2019.09.23-15.59.47"
+					"timestamp": "2019.09.25-13.50.22"
 				}
 			],
 			"warnings": 0,
