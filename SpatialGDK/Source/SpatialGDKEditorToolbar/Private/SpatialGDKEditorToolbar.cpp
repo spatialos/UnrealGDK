@@ -68,15 +68,17 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionFailSound->AddToRoot();
 	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
 
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
-	bStopSpatialOnExit = GetDefault<USpatialGDKEditorSettings>()->bStopSpatialOnExit;
+	bStopSpatialOnExit = SpatialGDKEditorSettings->bStopSpatialOnExit;
 
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
-	LocalDeploymentManager->SetAutoDeploy(GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment);
+	LocalDeploymentManager->SetAutoDeploy(SpatialGDKEditorSettings->bAutoStartLocalDeployment);
 
 	// Bind the play button delegate to starting a local spatial deployment.
-	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment)
+	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && SpatialGDKEditorSettings->bAutoStartLocalDeployment)
 	{
 		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
 		{
@@ -84,33 +86,13 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 		});
 	}
 
-#if PLATFORM_WINDOWS
-	// Don't kick off background processes when running commandlets
-	if (IsRunningCommandlet() == false)
-	{
-		// If a service was running, restart to guarantee that the service is running in this project with the correct settings.
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("(Re)starting Spatial service in this project."));
-
-		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, SpatialGDKSettings]
-		{
-			LocalDeploymentManager->TryStopSpatialService();
-
-			// Pass exposed runtime IP if one has been specified
-			if (SpatialGDKSettings->bExposeRuntimeIP)
-			{
-				LocalDeploymentManager->TryStartSpatialService(SpatialGDKSettings->ExposedRuntimeIP);
-			}
-			else
-			{
-				LocalDeploymentManager->TryStartSpatialService();
-			}
-
-			// Ensure we have an up to date state of the spatial service and local deployment.
-			LocalDeploymentManager->RefreshServiceStatus();
-		});
+	if (SpatialGDKEditorSettings->bExposeRuntimeIP) {
+		LocalDeploymentManager->Init(SpatialGDKEditorSettings->ExposedRuntimeIP);
 	}
-#endif
+	else
+	{
+		LocalDeploymentManager->Init();
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()

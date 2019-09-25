@@ -46,6 +46,36 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 #endif
 }
 
+void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
+{
+#if PLATFORM_WINDOWS
+	// Don't kick off background processes when running commandlets
+	if (IsRunningCommandlet() == false)
+	{
+		// If a service was running, restart to guarantee that the service is running in this project with the correct settings.
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("(Re)starting Spatial service in this project."));
+
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeIPToExpose]
+		{
+			TryStopSpatialService();
+
+			// Pass exposed runtime IP if one has been specified
+			if (RuntimeIPToExpose == TEXT("NONE"))
+			{
+				TryStartSpatialService();
+			}
+			else
+			{
+				TryStartSpatialService(RuntimeIPToExpose);
+			}
+
+			// Ensure we have an up to date state of the spatial service and local deployment.
+			RefreshServiceStatus();
+		});
+	}
+#endif
+}
+
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 {
 	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));

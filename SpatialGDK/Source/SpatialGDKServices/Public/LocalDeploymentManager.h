@@ -17,6 +17,8 @@ class FLocalDeploymentManager
 public:
 	FLocalDeploymentManager();
 
+	void SPATIALGDKSERVICES_API Init(FString RuntimeIPToExpose = TEXT("NONE"));
+
 	void SPATIALGDKSERVICES_API RefreshServiceStatus();
 
 	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose = TEXT("NONE"));
