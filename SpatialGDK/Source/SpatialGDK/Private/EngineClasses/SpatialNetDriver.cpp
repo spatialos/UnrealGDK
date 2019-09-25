@@ -1776,11 +1776,6 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 			Connection->SendAddComponent(AddComponentOp.entity_id, &AddComponentOp.data);
 			StaticComponentView->OnAddComponent(AddComponentOp);
 		}
-
-// 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
-// 		{
-// 			Channel->ActorReplicator->bLastUpdateEmpty = 0;
-// 		}
 	}
 	else
 	{
