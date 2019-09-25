@@ -103,7 +103,7 @@ public:
 	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject);
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
 
-	void FlushActorDormancy(AActor* Actor);
+	void RefreshActorDormancy(AActor* Actor, bool bMakeDormant);
 
 	void RegisterDormantEntityId(Worker_EntityId EntityId);
 	void UnregisterDormantEntityId(Worker_EntityId EntityId);

@@ -83,11 +83,11 @@ void USpatialNetConnection::FlushDormancy(class AActor* Actor)
 {
 	Super::FlushDormancy(Actor);
 
-	// This gets called from UNetDriver::FlushActorDormancyInternal for each connection. We inject our flush
+	// This gets called from UNetDriver::FlushActorDormancyInternal for each connection. We inject our refresh
 	// of dormancy component here. This is slightly backwards, but means we don't have to make an engine change.
 	if (bReliableSpatialConnection)
 	{
-		Cast<USpatialNetDriver>(Driver)->FlushActorDormancy(Actor);
+		Cast<USpatialNetDriver>(Driver)->RefreshActorDormancy(Actor, false);
 	}
 }
 

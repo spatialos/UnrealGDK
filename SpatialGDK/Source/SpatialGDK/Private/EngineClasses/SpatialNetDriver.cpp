@@ -1036,6 +1036,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 					}
 
 					Channel = GetOrCreateSpatialActorChannel(Actor);
+					check(Channel == nullptr || Channel->Actor != nullptr);
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
 					{
 						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
@@ -1704,6 +1705,7 @@ void USpatialPendingNetGame::SendJoin()
 
 void USpatialNetDriver::AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel)
 {
+	check(Channel != nullptr && Channel->Actor != nullptr);
 	EntityToActorChannel.Add(EntityId, Channel);
 }
 
@@ -1727,6 +1729,7 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 {
 	check(TargetObject);
 	USpatialActorChannel* Channel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetObject));
+	check(Channel == nullptr || Channel->Actor != nullptr);
 	if (Channel == nullptr)
 	{
 		AActor* TargetActor = Cast<AActor>(TargetObject);
@@ -1745,7 +1748,7 @@ USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_Entity
 	return EntityToActorChannel.FindRef(EntityId);
 }
 
-void USpatialNetDriver::FlushActorDormancy(AActor* Actor)
+void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 {
 	check(IsServer());
 	check(Actor);
@@ -1767,7 +1770,7 @@ void USpatialNetDriver::FlushActorDormancy(AActor* Actor)
 	const bool bDormancyComponentExists = StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
 
 	// If the work wants to go dormant, ensure the Dormant component is attached
-	if (Actor->NetDormancy >= DORM_DormantAll)
+	if (bMakeDormant)
 	{
 		if (!bDormancyComponentExists)
 		{
@@ -1778,7 +1781,10 @@ void USpatialNetDriver::FlushActorDormancy(AActor* Actor)
 			StaticComponentView->OnAddComponent(AddComponentOp);
 		}
 
-		RegisterDormantEntityId(EntityId);
+// 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
+// 		{
+// 			Channel->ActorReplicator->bLastUpdateEmpty = 0;
+// 		}
 	}
 	else
 	{
@@ -1790,13 +1796,14 @@ void USpatialNetDriver::FlushActorDormancy(AActor* Actor)
 			Connection->SendRemoveComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
 			StaticComponentView->OnRemoveComponent(RemoveComponentOp);
 		}
-
-		UnregisterDormantEntityId(EntityId);
 	}
 }
 
 void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)
 {
+	// Register dormant entities when their actor channel has been closed, but their entity is still alive.
+	// This allows us to clean them up when shutting down. Might be nice to not rely on ActorChannels to
+	// cleanup in future, but inspect the StaticView and delete all entities that this worker is authoritative over.
 	DormantEntities.Emplace(EntityId);
 }
 

@@ -215,6 +215,7 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 	{
 		if (Op.component_id == SpatialConstants::DORMANT_COMPONENT_ID)
 		{
+			// Receive would normally create channel in ReceiveActor - we need to recreate it here
 			USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
 			check(!Channel->bCreatingNewEntity);
 			check(Channel->GetEntityId() == Op.entity_id);

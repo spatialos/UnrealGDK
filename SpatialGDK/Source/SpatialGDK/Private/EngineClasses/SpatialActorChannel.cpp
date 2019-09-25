@@ -155,6 +155,11 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 
 	NetDriver->RemoveActorChannel(EntityId);
 
+	if (CloseReason == EChannelCloseReason::Dormancy)
+	{
+		NetDriver->RegisterDormantEntityId(EntityId);
+	}
+
 	return UActorChannel::CleanUp(bForDestroy, CloseReason);
 }
 
@@ -167,8 +172,12 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	else
 	{
 		// Closed for dormancy reasons, ensure we update the component state of this entity
-		NetDriver->FlushActorDormancy(Actor);
+		NetDriver->RefreshActorDormancy(Actor, true);
+		NetDriver->RemoveActorChannel(EntityId);
+		NetDriver->RegisterDormantEntityId(EntityId);
 	}
+
+	//NetDriver->RemoveActorChannel(EntityId);
 
 	return Super::Close(Reason);
 }
@@ -785,6 +794,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 			PackageMap->RemovePendingCreationEntityId(EntityId);
 		}
 		NetDriver->AddActorChannel(EntityId, this);
+		NetDriver->UnregisterDormantEntityId(EntityId);
 	}
 
 	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
