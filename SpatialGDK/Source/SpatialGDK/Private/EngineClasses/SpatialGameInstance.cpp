@@ -14,6 +14,7 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Utils/SpatialMetrics.h"
+#include "Utils/SpatialDebugger.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
@@ -130,7 +131,15 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 			return false;
 		}
 
-		return NetDriver->SpatialMetrics->ProcessConsoleExec(Cmd, Ar, Executor);
+		if (NetDriver->SpatialMetrics->ProcessConsoleExec(Cmd, Ar, Executor))
+		{
+			return true;
+		}
+
+		if (NetDriver->SpatialDebugger && NetDriver->SpatialDebugger->ProcessConsoleExec(Cmd, Ar, Executor))
+		{
+			return true;
+		}
 	}
 	return true;
 }

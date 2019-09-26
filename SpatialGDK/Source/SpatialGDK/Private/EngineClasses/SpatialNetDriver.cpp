@@ -2009,3 +2009,9 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 
 	return false;
 }
+
+void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
+{
+	check(SpatialDebugger == nullptr);
+	SpatialDebugger = InSpatialDebugger;
+}

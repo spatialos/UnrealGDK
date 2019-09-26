@@ -23,16 +23,18 @@ using namespace SpatialGDK;
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, LocalPawn(nullptr)
-	, LocalPlayerController(nullptr)
-	, LocalPlayerState(nullptr)
-	, RenderFont(nullptr)
 	, MaxRange(100.0f * 100.0f)
 	, bShowAuth(true)
 	, bShowAuthIntent(true)
 	, bShowLock(true)
 	, bShowEntityId(true)
 	, bShowActorName(true)
+	, bStack(false)
+	, bAutoStart(true)
+	, LocalPawn(nullptr)
+	, LocalPlayerController(nullptr)
+	, LocalPlayerState(nullptr)
+	, RenderFont(nullptr)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
@@ -41,6 +43,17 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	bAlwaysRelevant = true;
 
 	NetUpdateFrequency = 1.f;
+
+	// For GDK design reasons, this is the approach chosen to get a pointer
+	// on the net driver to the client ASpatialDebugger.  Various alternatives
+	// were considered and this is the best of a bad bunch.
+	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver()))
+	{
+		if (GetNetDriver()->IsServer() == false)
+		{
+			SpatialNetDriver->SetSpatialDebugger(this);
+		}
+	}
 }
 
 void ASpatialDebugger::Tick(float DeltaSeconds)
@@ -73,8 +86,6 @@ void ASpatialDebugger::BeginPlay()
 	{
 		LoadIcons();
 
-		DrawDebugDelegateHandle = UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialDebugger::DrawDebug));
-
 		TArray<Worker_EntityId_Key> EntityIds;
 		Cast<USpatialNetDriver>(GetNetDriver())->StaticComponentView->GetEntityIds(EntityIds);
 
@@ -92,6 +103,21 @@ void ASpatialDebugger::BeginPlay()
 
 		FontRenderInfo.bEnableShadow = true;
 		RenderFont = GEngine->GetSmallFont();
+
+		if (bAutoStart)
+		{
+			SpatialToggleDebugger();
+		}
+	}
+}
+
+void ASpatialDebugger::Destroyed()
+{
+	Super::Destroyed();
+
+	if (DrawDebugDelegateHandle.IsValid())
+	{
+		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
 	}
 }
 
@@ -139,9 +165,9 @@ void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 	EntityActorMapping.Remove(EntityId);
 }
 
-void ASpatialDebugger::DrawEntry(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName)
+void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName)
 {
-	SCOPE_CYCLE_COUNTER(STAT_DrawDebugEntry);
+	SCOPE_CYCLE_COUNTER(STAT_DrawTag);
 
 	if (bShowAuth)
 	{
@@ -154,7 +180,6 @@ void ASpatialDebugger::DrawEntry(UCanvas* Canvas, const FVector2D& ScreenLocatio
 
 	if (bShowAuthIntent)
 	{
-
 		const int VirtualWorkerId = VirtualWorkerIdToInt(GetVirtualWorkerId(EntityId));
 
 		if (VirtualWorkerId != -1)
@@ -197,7 +222,7 @@ void ASpatialDebugger::DrawEntry(UCanvas* Canvas, const FVector2D& ScreenLocatio
 	}
 }
 
-void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* /* Controller */) // Controller is invalid
+void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controller */) // Controller is invalid
 {
 	SCOPE_CYCLE_COUNTER(STAT_DrawDebug);
 
@@ -218,17 +243,10 @@ void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* /* Co
 	for (auto& EntityActorPair : EntityActorMapping)
 	{
 		const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
+		const Worker_EntityId EntityId = (Worker_EntityId)EntityActorPair.Key;
 
 		if (Actor != nullptr)
 		{
-			USceneComponent* SceneComponent = Cast<USceneComponent>(Actor->GetComponentByClass(USceneComponent::StaticClass()));
-
-			if (SceneComponent == nullptr ||
-				SceneComponent->IsVisible() == false)
-			{
-				continue;
-			}
-
 			FVector ActorLocation = Actor->GetActorLocation();
 
 			if (ActorLocation.IsZero())
@@ -241,19 +259,26 @@ void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* /* Co
 				continue;
 			}
 
-			// If actors are very close together in world space, stack their icons/entityids vertically
+			// If actors are very close together in world space, stack their tags vertically
 			// TODO: maybe we want to do this in screen space instead...
-			// TODO: fix the jumpiness on server worker transition...disabled for now.
-			//int32& ActorCountAtLocation = ActorLocationCountMapping.FindOrAdd(HashPosition(ActorLocation));
-			int32 ActorCountAtLocation = 0;
+			// TODO: fix the general jumpiness of tags with this turned on.
+			int32& ActorCountAtLocation = ActorLocationCountMapping.FindOrAdd(HashPosition(ActorLocation));
 
-			FVector2D ScreenLocation = FVector2D::ZeroVector;
+			if (ActorCountAtLocation == 0)
 			{
-				SCOPE_CYCLE_COUNTER(STAT_Projection);
-				UGameplayStatics::ProjectWorldToScreen(LocalPlayerController, ActorLocation + FVector(0.0f, 0.0f, 200.0f), ScreenLocation, false);
+				FVector2D ScreenLocation = FVector2D::ZeroVector;
+				{
+					SCOPE_CYCLE_COUNTER(STAT_Projection);
+					UGameplayStatics::ProjectWorldToScreen(LocalPlayerController, ActorLocation + FVector(0.0f, 0.0f, 200.0f), ScreenLocation, false);
+				}
+
+				DrawTag(Canvas, ScreenLocation - ActorCountAtLocation * FVector2D(0, STACKED_TAG_VERTICAL_OFFSET), EntityId, Actor->GetName());
 			}
 
-			DrawEntry(Canvas, ScreenLocation, (Worker_EntityId)EntityActorPair.Key, Actor->GetName());
+			if (bStack)
+			{
+				ActorCountAtLocation++;
+			}
 		}
 	}
 }
@@ -275,16 +300,15 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 	};
 
 	FVector2D ScreenLocation(PlayerPanelStartX, PlayerPanelStartY);
-;
 
 	for (int i = 0; i < sizeof(LocalPlayerActors)/sizeof(AActor*); ++i)
 	{
 		const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 		const Worker_EntityId EntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(LocalPlayerActors[i]);
 
-		DrawEntry(Canvas, ScreenLocation, EntityId, LocalPlayerActors[i]->GetName());
+		DrawTag(Canvas, ScreenLocation, EntityId, LocalPlayerActors[i]->GetName());
 
-		ScreenLocation.Y += 18;
+		ScreenLocation.Y -= STACKED_TAG_VERTICAL_OFFSET;
 	}
 }
 
@@ -334,4 +358,21 @@ int32 ASpatialDebugger::HashPosition(const FVector& P)
 	const int32 p3 = 83492791;
 
 	return ((int32)P.X * p1 ^ (int32)P.Y * p2 ^ (int32)P.Z * p3) % POSITION_HASH_BUCKETS;
+}
+
+void ASpatialDebugger::SpatialToggleDebugger()
+{
+#if !UE_BUILD_SHIPPING
+	check(GetNetDriver()->IsServer() == false);
+
+	if (DrawDebugDelegateHandle.IsValid())
+	{
+		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
+		DrawDebugDelegateHandle.Reset();
+	}
+	else
+	{
+		DrawDebugDelegateHandle = UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialDebugger::DrawDebug));
+	}
+#endif // !UE_BUILD_SHIPPING
 }

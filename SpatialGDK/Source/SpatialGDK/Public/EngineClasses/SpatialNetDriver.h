@@ -108,6 +108,8 @@ public:
 
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
+	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
+
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
 	UPROPERTY()
