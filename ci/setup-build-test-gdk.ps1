@@ -22,7 +22,12 @@ Start-Event "build-gdk" "command"
 &$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform)
 Finish-Event "build-gdk" "command"
 
-Start-Event "test-gdk" "command"
 $unreal_path = "$($gdk_home)\UnrealEngine"
-&$PSScriptRoot"\run-tests.ps1" -ue_path $unreal_path -uproject_path "$($unreal_path)\Samples\UnrealGDKShooterGame\Game\ShooterGame.uproject" -output_dir "TestResults" -log_file_name "tests.log"
+
+Start-Event "setup-tests" "command"
+&$PSScriptRoot"\setup-tests.ps1" -project_clone_path "$($unreal_path)\Samples"
+Finish-Event "setup-tests" "command"
+
+Start-Event "test-gdk" "command"
+&$PSScriptRoot"\run-tests.ps1" -ue_path $unreal_path -uproject_path "$($unreal_path)\Samples\UnrealGDKExampleProject\Game\GDKShooter.uproject" -output_dir "TestResults" -log_file_name "tests.log"
 Finish-Event "test-gdk" "command"
