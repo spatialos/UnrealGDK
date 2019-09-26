@@ -22,7 +22,7 @@ void USpatialPingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(USpatialPingComponent, ReplicatedPingID);
+	DOREPLIFETIME(USpatialPingComponent, ReplicatedPingTimestamp);
 }
 
 void USpatialPingComponent::BeginPlay()
@@ -70,7 +70,7 @@ void USpatialPingComponent::SetPingEnabled(bool bSetEnabled)
 
 float USpatialPingComponent::GetPing() const
 {
-	return RTPing;
+	return RoundTripPing;
 }
 
 void USpatialPingComponent::EnablePing()
@@ -92,7 +92,7 @@ void USpatialPingComponent::DisablePing()
 		// Clear the timer.
 		World->GetTimerManager().ClearTimer(PingTimerHandle);
 		bIsPingEnabled = false;
-		RTPing = 0.f;
+		RoundTripPing = 0.f;
 	}
 }
 
@@ -100,34 +100,34 @@ void USpatialPingComponent::TickPingComponent()
 {
 	SendNewPing();
 	// Pass latest measured ping to owning controller to be processed by PlayerState.
-	OwningController->UpdatePing(RTPing);
+	OwningController->UpdatePing(RoundTripPing);
 }
 
 void USpatialPingComponent::SendNewPing()
 {
 	// Send a new ping using the current local time since start as both ID and timestamp.
-	SendServerWorkerPingID(GetWorld()->GetRealTimeSeconds());
+	SendServerWorkerPingTimestamp(GetWorld()->GetRealTimeSeconds());
 }
 
-void USpatialPingComponent::OnRep_ReplicatedPingID()
+void USpatialPingComponent::OnRep_ReplicatedPingTimestamp()
 {
 	// If the new replicated ping timestamp is older than prev then we can ignore it.
-	if (ReplicatedPingID < LastReceivedPingID)
+	if (ReplicatedPingTimestamp < LastReceivedPingTimestamp)
 	{
 		return;
 	}
 	// Calculate the delta between the sent ping timestamp and the current time to determine round trip latency in seconds.
-	RTPing = GetWorld()->GetRealTimeSeconds() - ReplicatedPingID;
+	RoundTripPing = GetWorld()->GetRealTimeSeconds() - ReplicatedPingTimestamp;
 	// Update last received ping to match replicated.
-	LastReceivedPingID = ReplicatedPingID;
+	LastReceivedPingTimestamp = ReplicatedPingTimestamp;
 }
 
-bool USpatialPingComponent::SendServerWorkerPingID_Validate(float PingID)
+bool USpatialPingComponent::SendServerWorkerPingTimestamp_Validate(float Timestamp)
 {
 	return true;
 }
 
-void USpatialPingComponent::SendServerWorkerPingID_Implementation(float PingID)
+void USpatialPingComponent::SendServerWorkerPingTimestamp_Implementation(float Timestamp)
 {
-	ReplicatedPingID = PingID;
+	ReplicatedPingTimestamp = Timestamp;
 }

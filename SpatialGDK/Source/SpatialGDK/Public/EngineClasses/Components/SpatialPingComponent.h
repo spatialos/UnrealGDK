@@ -38,10 +38,10 @@ public:
 	float GetPing() const;
 
 private:
-	float RTPing;
-	float LastReceivedPingID;
-	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedPingID)
-	float ReplicatedPingID;
+	float RoundTripPing;
+	float LastReceivedPingTimestamp;
+	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedPingTimestamp)
+	float ReplicatedPingTimestamp;
 
 	bool bIsPingEnabled = false;
 
@@ -59,8 +59,8 @@ private:
 	void SendNewPing();
 
 	UFUNCTION()
-	virtual void OnRep_ReplicatedPingID();
+	virtual void OnRep_ReplicatedPingTimestamp();
 
 	UFUNCTION(Server, Unreliable, WithValidation)
-	virtual void SendServerWorkerPingID(float PingID);
+	virtual void SendServerWorkerPingTimestamp(float Timestamp);
 };
