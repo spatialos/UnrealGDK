@@ -529,22 +529,22 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp);
 
-		// RemoveActor immediately if we've received the tombstone component.
-		// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
-		if (NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
-		{
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was tombstoned. The actor will not be spawned."), EntityId);
-			PackageMap->ResolveEntityActor(EntityActor, EntityId);
-			RemoveActor(EntityId);
-			return;
-		}
-
 		if (EntityActor == nullptr)
 		{
 			// This could be nullptr if:
 			// a stably named actor could not be found
 			// the Actor is a singleton that has arrived over the wire before it has been created on this worker
 			// the class couldn't be loaded
+			return;
+		}
+
+		// RemoveActor immediately if we've received the tombstone component.
+		if (NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
+		{
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was tombstoned. The actor will not be spawned."), EntityId);
+			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
+			PackageMap->ResolveEntityActor(EntityActor, EntityId);
+			RemoveActor(EntityId);
 			return;
 		}
 
@@ -689,14 +689,13 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	// Actor is a startup actor that is a part of the level. We need to do an entity query to see
-	// if the entity was actually deleted or only removed from our view
-	if (Actor->IsFullNameStableForNetworking())
+	// Actor is a startup actor that is a part of the level.  If it's not Tombstone'd, then it
+	// has just fallen out of our view and we should only remove the entity.
+	if (Actor->IsFullNameStableForNetworking() &&
+		StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID) == false)
 	{
-		QueryForStartupActor(Actor, EntityId);
-
 		// We can't call CleanupDeletedEntity here as we need the NetDriver to maintain the EntityId
-		// to Actor Channel mapping for the DestoryActor to function correctly
+		// to Actor Channel mapping for the DestroyActor to function correctly
 		PackageMap->RemoveEntityActor(EntityId);
 		return;
 	}
@@ -726,41 +725,6 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	}
 
 	DestroyActor(Actor, EntityId);
-}
-
-void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId)
-{
-	Worker_EntityIdConstraint StartupActorConstraintEntityId;
-	StartupActorConstraintEntityId.entity_id = EntityId;
-
-	Worker_Constraint StartupActorConstraint{};
-	StartupActorConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
-	StartupActorConstraint.entity_id_constraint = StartupActorConstraintEntityId;
-
-	Worker_EntityQuery StartupActorQuery{};
-	StartupActorQuery.constraint = StartupActorConstraint;
-	StartupActorQuery.result_type = WORKER_RESULT_TYPE_COUNT;
-
-	Worker_RequestId RequestID;
-	RequestID = NetDriver->Connection->SendEntityQueryRequest(&StartupActorQuery);
-
-	EntityQueryDelegate StartupActorDelegate;
-	TWeakObjectPtr<AActor> WeakActor(Actor);
-	StartupActorDelegate.BindLambda([this, WeakActor, EntityId](const Worker_EntityQueryResponseOp& Op)
-	{
-		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity Query Failed! %s"), UTF8_TO_TCHAR(Op.message));
-			return;
-		}
-
-		if (NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID) && WeakActor.IsValid())
-		{
-			DestroyActor(WeakActor.Get(), EntityId);
-		}
-	});
-
-	AddEntityQueryDelegate(RequestID, StartupActorDelegate);
 }
 
 void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
