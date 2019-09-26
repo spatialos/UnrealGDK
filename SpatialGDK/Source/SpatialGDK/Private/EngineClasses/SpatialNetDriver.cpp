@@ -29,7 +29,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/AlwaysRelevant.h"
-#include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ActorGroupManager.h"
@@ -40,6 +39,7 @@
 #include "Utils/SpatialMetricsDisplay.h"
 
 #if WITH_EDITOR
+#include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKServicesModule.h"
 #endif
 
@@ -656,6 +656,7 @@ void USpatialNetDriver::Shutdown()
 		}
 	}
 
+#if WITH_EDITOR
 	const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
 
 	if (bDeleteDynamicEntities && IsServer())
@@ -668,6 +669,7 @@ void USpatialNetDriver::Shutdown()
 			}
 		}
 	}
+#endif //WITH_EDITOR
 
 	Super::Shutdown();
 }
