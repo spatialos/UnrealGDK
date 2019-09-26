@@ -17,9 +17,9 @@ $ue_path_absolute = Force-Resolve-Path $ue_path
 $uproject_path_absolute = Force-Resolve-Path $uproject_path
 $output_dir_absolute = Force-Resolve-Path $output_dir
 
-Write-Output "$(Get-ChildItem $ue_path_absolute)"
-Write-Output "$(Get-ChildItem "$($ue_path_absolute)\Samples")"
-Write-Output "$(Get-ChildItem "$($ue_path_absolute)\Samples\UnrealGDKShooterGame")"
+# Write-Output "$(Get-ChildItem $ue_path_absolute)"
+# Write-Output "$(Get-ChildItem "$($ue_path_absolute)\Samples")"
+# Write-Output "$(Get-ChildItem "$($ue_path_absolute)\Samples\UnrealGDKExampleProject")"
 
 Write-Output $ue_path_absolute
 Write-Output "$(Test-Path $ue_path_absolute)"
@@ -44,14 +44,13 @@ $cmd_list = @( `
 
 Write-Output "Running $($ue_path_absolute) $($cmd_list)"
 
-# $test_proc = Start-Process -Wait -PassThru -NoNewWindow $ue_path_absolute -ArgumentList $cmd_list
+# $run_tests_proc = Start-Process -PassThru -NoNewWindow $ue_path_absolute -ArgumentList $cmd_list
+# Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
 
-# Write-Output "Exited with code: $($test_proc.ExitCode)" # can't find an indication of what the exit codes actually mean, so not relying on them
+# Write-Output "Exited with code: $($run_tests_proc.ExitCode)" # can't find an indication of what the exit codes actually mean, so not relying on them
 
 $results_path = Join-Path -Path $output_dir_absolute -ChildPath "index.json"
 $results_json = Get-Content $results_path -Raw
-
-# Write-Output $results_json
 
 $results_obj = ConvertFrom-Json $results_json
 Write-Output $results_obj
