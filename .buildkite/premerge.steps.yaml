@@ -39,7 +39,7 @@ steps:
       - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
 
   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
-  - trigger: "unrealgdkthirdpersonshooter-nightly"
+  - trigger: "unrealgdkexampleproject-nightly"
     label: "Post merge Example Project build"
     branches: "master preview release"
     async: true
