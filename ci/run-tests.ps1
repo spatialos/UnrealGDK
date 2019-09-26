@@ -17,6 +17,10 @@ $ue_path_absolute = Force-Resolve-Path $ue_path
 $uproject_path_absolute = Force-Resolve-Path $uproject_path
 $output_dir_absolute = Force-Resolve-Path $output_dir
 
+Write-Output Get-ChildItem $ue_path_absolute
+Write-Output Get-ChildItem "$($ue_path_absolute)\Samples"
+Write-Output Get-ChildItem "$($ue_path_absolute)\Samples\UnrealGDKShooterGame"
+
 Write-Output $ue_path_absolute
 Write-Output "$(Test-Path $ue_path_absolute)"
 
