@@ -1,7 +1,8 @@
 param(
-  [string] $unreal_path = "$($gdk_home)\UnrealEngine",
-  # Note: this directory is outside the build directory and will not get automatically cleaned up from agents unless agents are restarted.
-  [string] $engine_cache_directory = "$($pwd.drive.root)UnrealEngine-Cache"
+    # Note: this directory is outside the build directory and will not get automatically cleaned up from agents unless agents are restarted.
+    [string] $engine_cache_directory = "$($pwd.drive.root)UnrealEngine-Cache",
+    # Unreal path is a symlink to a specific Engine version located in Engine cache directory.
+    [string] $unreal_path = "$($gdk_home)\UnrealEngine"
 )
 
 pushd "$($gdk_home)"
