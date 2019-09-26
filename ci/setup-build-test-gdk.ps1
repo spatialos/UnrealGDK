@@ -28,7 +28,7 @@ Write-Log "built plugin folder contents: $(Get-ChildItem $gdk_home/SpatialGDK/In
 $unreal_path = "$($gdk_home)\UnrealEngine"
 
 Start-Event "setup-tests" "command"
-&$PSScriptRoot"\setup-tests.ps1" -project_clone_path "$($unreal_path)\Samples"
+&$PSScriptRoot"\setup-tests.ps1" -project_clone_path "$($unreal_path)\Samples" -unreal_path $unreal_path
 Finish-Event "setup-tests" "command"
 
 Start-Event "test-gdk" "command"
