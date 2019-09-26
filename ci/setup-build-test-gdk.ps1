@@ -21,13 +21,14 @@ Start-Event "build-gdk" "command"
 &$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform)
 Finish-Event "build-gdk" "command"
 
+$gdk_build_path = $gdk_home/SpatialGDK/Intermediate/BuildPackage/Win64
 Write-Log "built plugin is at $($gdk_home)/SpatialGDK/Intermediate/BuildPackage/Win64"
 Write-Log "built plugin folder contents: $(Get-ChildItem $gdk_home/SpatialGDK/Intermediate/BuildPackage/Win64)"
 
 $unreal_path = "$($gdk_home)\UnrealEngine"
 
 Start-Event "setup-tests" "command"
-&$PSScriptRoot"\setup-tests.ps1" -project_clone_path "$($unreal_path)\Samples" -unreal_path $unreal_path
+&$PSScriptRoot"\setup-tests.ps1" -project_clone_path "$($unreal_path)\Samples" -unreal_path $unreal_path -gdk_build_path 
 Finish-Event "setup-tests" "command"
 
 Start-Event "test-gdk" "command"
