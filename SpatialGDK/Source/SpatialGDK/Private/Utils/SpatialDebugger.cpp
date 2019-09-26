@@ -7,7 +7,10 @@
 #include "Engine/Engine.h"
 #include "EngineClasses/SpatialLoadBalancingStrategy.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
+#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
@@ -22,12 +25,14 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, LocalPawn(nullptr)
 	, LocalPlayerController(nullptr)
+	, LocalPlayerState(nullptr)
 	, RenderFont(nullptr)
 	, MaxRange(100.0f * 100.0f)
 	, bShowAuth(true)
 	, bShowAuthIntent(true)
 	, bShowLock(true)
 	, bShowEntityId(true)
+	, bShowActorName(true)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
@@ -43,20 +48,17 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 	if (GetNetDriver() &&
 		GetNetDriver()->IsServer() == false)
 	{
-		if (!LocalPlayerController)
-		{
-			if (const UNetDriver* LocalNetDriver = GetNetDriver())
-			{
-				if (const UWorld* World = LocalNetDriver->GetWorld())
-				{
-					LocalPlayerController = World->GetFirstPlayerController();
-				}
-			}
-		}
-
+		// Since we have no guarantee on the order we'll receive the PC/Pawn/PlayerState
+		// over the wire, we check here once per tick (currently 1 Hz tick rate) to setup our local pointers.
+		// Note that we can capture the PC in OnEntityAdded() since we know we will only receive one of those.
 		if (LocalPlayerController && !LocalPawn)
 		{
 			LocalPawn = LocalPlayerController->GetPawn();
+		}
+
+		if (LocalPawn && !LocalPlayerState)
+		{
+			LocalPlayerState = LocalPawn->GetPlayerState();
 		}
 	}
 }
@@ -120,6 +122,12 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 	if (AActor* Actor = Cast<AActor>(Cast<USpatialNetDriver>(GetNetDriver())->PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
 		EntityActorMapping.Add(EntityId, Actor);
+
+		// Each client will only receive a PlayerController once
+		if (Actor->IsA<APlayerController>())
+		{
+			LocalPlayerController = Cast<APlayerController>(Actor);
+		}
 	}
 }
 
@@ -131,12 +139,72 @@ void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 	EntityActorMapping.Remove(EntityId);
 }
 
+void ASpatialDebugger::DrawEntry(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName)
+{
+	SCOPE_CYCLE_COUNTER(STAT_DrawDebugEntry);
+
+	if (bShowAuth)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
+		// TODO: color code by worker id using WorkerColors array once that field is available
+		const int WorkerId = 0;
+		Canvas->SetDrawColor(FColor::White);
+		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X - 32.0f, ScreenLocation.Y - 32.0f, 1.0f);
+	}
+
+	if (bShowAuthIntent)
+	{
+
+		const int VirtualWorkerId = VirtualWorkerIdToInt(GetVirtualWorkerId(EntityId));
+
+		if (VirtualWorkerId != -1)
+		{
+			SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
+			Canvas->SetDrawColor(WorkerColors[VirtualWorkerId]);
+			Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X - 16.0f, ScreenLocation.Y - 32.0f, 1.0f);
+		}
+	}
+
+	if (bShowLock)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
+		// TODO: retrieve lock status once API is available
+		const bool bIsLocked = false;
+		const EIcon LockIcon = bIsLocked ? ICON_LOCK_CLOSED : ICON_LOCK_OPEN;
+
+		Canvas->SetDrawColor(FColor::White);
+		Canvas->DrawIcon(Icons[LockIcon], ScreenLocation.X, ScreenLocation.Y - 32.0f, 1.0f);
+	}
+
+	FString Label;
+	if (bShowEntityId)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_BuildText);
+		Label += FString::Printf(TEXT("%lld "), EntityId);
+	}
+
+	if (bShowActorName)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_BuildText);
+		Label += FString::Printf(TEXT("(%s)"), *ActorName);
+	}
+
+	if (bShowEntityId || bShowActorName)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_DrawText);
+		Canvas->SetDrawColor(FColor::Green);
+		Canvas->DrawText(RenderFont, Label, ScreenLocation.X + 20.0f, ScreenLocation.Y - 32.0f, 1.0f, 1.0f, FontRenderInfo);
+	}
+}
+
 void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* /* Controller */) // Controller is invalid
 {
-	SCOPE_CYCLE_COUNTER(STAT_DebugDraw);
+	SCOPE_CYCLE_COUNTER(STAT_DrawDebug);
 
 	check(GetNetDriver() != nullptr);
 	check(GetNetDriver()->IsServer() == false);
+
+	DrawDebugLocalPlayer(Canvas);
 
 	FVector PlayerLocation = FVector::ZeroVector;
 
@@ -180,44 +248,43 @@ void ASpatialDebugger::DrawDebug(class UCanvas* Canvas, APlayerController* /* Co
 			int32 ActorCountAtLocation = 0;
 
 			FVector2D ScreenLocation = FVector2D::ZeroVector;
-			UGameplayStatics::ProjectWorldToScreen(LocalPlayerController, ActorLocation + FVector(0.0f, 0.0f, 200.0f), ScreenLocation, false);
-
-			if (bShowAuth)
 			{
-				// TODO: color code by worker id using WorkerColors array once that field is available
-				const int WorkerId = 0;
-				Canvas->SetDrawColor(FColor::White);
-				Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X - 32.0f, ScreenLocation.Y - ActorCountAtLocation * 32.0f, 1.0f);
+				SCOPE_CYCLE_COUNTER(STAT_Projection);
+				UGameplayStatics::ProjectWorldToScreen(LocalPlayerController, ActorLocation + FVector(0.0f, 0.0f, 200.0f), ScreenLocation, false);
 			}
 
-			if (bShowAuthIntent)
-			{
-				const int VirtualWorkerId = VirtualWorkerIdToInt(GetVirtualWorkerId((Worker_EntityId)EntityActorPair.Key));
-
-				if (VirtualWorkerId != -1)
-				{
-					Canvas->SetDrawColor(WorkerColors[VirtualWorkerId]);
-					Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X - 16.0f, ScreenLocation.Y - ActorCountAtLocation * 32.0f, 1.0f);
-				}
-			}
-
-			if (bShowLock)
-			{
-				// TODO: retrieve lock status once API is available
-				const bool bIsLocked = false;
-				const ELockStatus LockStatus = bIsLocked ? LOCKSTATUS_CLOSED : LOCKSTATUS_OPEN;
-				const EIcon LockIcon = bIsLocked ? ICON_LOCK_CLOSED : ICON_LOCK_OPEN;
-
-				Canvas->SetDrawColor(FColor::White);
-				Canvas->DrawIcon(Icons[LockIcon], ScreenLocation.X, ScreenLocation.Y - ActorCountAtLocation * 32.0f, 1.0f);
-			}
-
-			if (bShowEntityId)
-			{
-				Canvas->SetDrawColor(FColor::Green);
-				Canvas->DrawText(RenderFont, FString::Printf(TEXT("%lld"), EntityActorPair.Key), ScreenLocation.X + 20.0f, ScreenLocation.Y - ActorCountAtLocation * 32.0f, 1.0f, 1.0f, FontRenderInfo);
-			}
+			DrawEntry(Canvas, ScreenLocation, (Worker_EntityId)EntityActorPair.Key, Actor->GetName());
 		}
+	}
+}
+
+void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
+{
+	if (LocalPawn == nullptr ||
+		LocalPlayerController == nullptr ||
+		LocalPlayerState == nullptr)
+	{
+		return;
+	}
+
+	AActor* LocalPlayerActors[] =
+	{
+		LocalPawn,
+		LocalPlayerController,
+		LocalPlayerState
+	};
+
+	FVector2D ScreenLocation(PlayerPanelStartX, PlayerPanelStartY);
+;
+
+	for (int i = 0; i < sizeof(LocalPlayerActors)/sizeof(AActor*); ++i)
+	{
+		const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+		const Worker_EntityId EntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(LocalPlayerActors[i]);
+
+		DrawEntry(Canvas, ScreenLocation, EntityId, LocalPlayerActors[i]->GetName());
+
+		ScreenLocation.Y += 18;
 	}
 }
 

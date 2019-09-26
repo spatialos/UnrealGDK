@@ -17,7 +17,12 @@ class USpatialNetDriver;
 class UFont;
 
 DECLARE_STATS_GROUP(TEXT("SpatialDebugger"), STATGROUP_SpatialDebugger, STATCAT_Advanced);
-DECLARE_CYCLE_STAT(TEXT("DebugDraw"), STAT_DebugDraw, STATGROUP_SpatialDebugger);
+DECLARE_CYCLE_STAT(TEXT("DrawDebug"), STAT_DrawDebug, STATGROUP_SpatialDebugger);
+DECLARE_CYCLE_STAT(TEXT("DrawDebugEntry"), STAT_DrawDebugEntry, STATGROUP_SpatialDebugger);
+DECLARE_CYCLE_STAT(TEXT("Projection"), STAT_Projection, STATGROUP_SpatialDebugger);
+DECLARE_CYCLE_STAT(TEXT("DrawIcons"), STAT_DrawIcons, STATGROUP_SpatialDebugger);
+DECLARE_CYCLE_STAT(TEXT("DrawText"), STAT_DrawText, STATGROUP_SpatialDebugger);
+DECLARE_CYCLE_STAT(TEXT("BuildText"), STAT_BuildText, STATGROUP_SpatialDebugger);
 
 UCLASS(SpatialType=Singleton)
 class SPATIALGDK_API ASpatialDebugger :
@@ -38,6 +43,8 @@ private:
 	void OnEntityRemoved(const Worker_EntityId EntityId);
 
 	void DrawDebug(class UCanvas* Canvas, APlayerController* Controller);
+	void DrawEntry(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
+	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
 	FString GetVirtualWorkerId(const Worker_EntityId EntityId) const;
 
@@ -56,13 +63,6 @@ private:
 		ICON_MAX
 	};
 
-	enum ELockStatus
-	{
-		LOCKSTATUS_OPEN,
-		LOCKSTATUS_CLOSED,
-		LOCKSTATUS_MAX
-	};
-
 	// These mappings are maintained independently on each client
 	// Mapping of the entities a client has checked out
 	TMap<int64, TWeakObjectPtr<AActor>> EntityActorMapping;
@@ -72,7 +72,8 @@ private:
 	FDelegateHandle DrawDebugDelegateHandle;
 
 	APawn* LocalPawn;
-	APlayerController *LocalPlayerController;
+	APlayerController* LocalPlayerController;
+	APlayerState* LocalPlayerState;
 	UFont* RenderFont;
 
 	FFontRenderInfo FontRenderInfo;
@@ -94,10 +95,15 @@ private:
 		FColor::Yellow
 	};
 
+	// TODO: These should all be exposed through both the editor and a runtime UI
+	int PlayerPanelStartX = 64;
+	int PlayerPanelStartY = 128;
+
 	float MaxRange;
 
 	bool bShowAuth;
 	bool bShowAuthIntent;
 	bool bShowLock;
 	bool bShowEntityId;
+	bool bShowActorName;
 };
