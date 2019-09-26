@@ -6,16 +6,16 @@ param(
     [string] $log_file_name
 )
 
-function Force-Resolve-Path {
+function Force-ResolvePath {
     param (
         [string] $path
     )
     return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($path)
 }
 
-$ue_path_absolute = Force-Resolve-Path $ue_path
-$uproject_path_absolute = Force-Resolve-Path $uproject_path
-$output_dir_absolute = Force-Resolve-Path $output_dir
+$ue_path_absolute = Force-ResolvePath $ue_path
+$uproject_path_absolute = Force-ResolvePath $uproject_path
+$output_dir_absolute = Force-ResolvePath $output_dir
 
 # Write-Output "$(Get-ChildItem $ue_path_absolute)"
 # Write-Output "$(Get-ChildItem "$($ue_path_absolute)\Samples")"
