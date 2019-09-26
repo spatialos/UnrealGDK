@@ -44,10 +44,15 @@ $cmd_list = @( `
 
 Write-Output "Running $($ue_path_absolute) $($cmd_list)"
 
-# $run_tests_proc = Start-Process -PassThru -NoNewWindow $ue_path_absolute -ArgumentList $cmd_list
-# Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
+$run_tests_proc = Start-Process -PassThru -NoNewWindow $ue_path_absolute -ArgumentList $cmd_list
+Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
 
-# Write-Output "Exited with code: $($run_tests_proc.ExitCode)" # can't find an indication of what the exit codes actually mean, so not relying on them
+# Workaround for UNR-2156
+# clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
+Stop-Process -Name "spatiald" -ErrorAction SilentlyContinue # if no process exists, just keep going
+Stop-Process -Name "java" -ErrorAction SilentlyContinue # if no process exists, just keep going
+
+Write-Output "Exited with code: $($run_tests_proc.ExitCode)" # can't find an indication of what the exit codes actually mean, so not relying on them
 
 $results_path = Join-Path -Path $output_dir_absolute -ChildPath "index.json"
 $results_json = Get-Content $results_path -Raw
