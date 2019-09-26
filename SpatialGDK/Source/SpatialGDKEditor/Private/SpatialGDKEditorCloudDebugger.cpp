@@ -61,7 +61,7 @@ void FSpatialGDKEditorCloudDebugger::DebugWorker(const FString& InDeploymentName
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Tcp port forwarding process returned unexpected message: %s", *fullMsg));
+			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Tcp port forwarding process returned unexpected message: %s"), *fullMsg);
 			ClosePortForward();
 		}
 	}
