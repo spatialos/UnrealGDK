@@ -1974,6 +1974,8 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 	return false;
 }
 
+// This should only be called once on each client, in the SpatialMetricsDisplay constructor after the class is replicated to each client.
+// This is enforced by the fact that the class is a Singleton spawned on servers by the SpatialNetDriver.
 void USpatialNetDriver::SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay)
 {
 	check(SpatialMetricsDisplay == nullptr);

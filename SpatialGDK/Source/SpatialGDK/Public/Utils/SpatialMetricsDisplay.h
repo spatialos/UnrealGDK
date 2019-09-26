@@ -8,8 +8,6 @@
 
 #include "SpatialMetricsDisplay.generated.h"
 
-class UWorld;
-
 USTRUCT()
 struct FWorkerStats
 {

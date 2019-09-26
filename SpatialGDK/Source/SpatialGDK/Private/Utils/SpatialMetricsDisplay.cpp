@@ -157,7 +157,7 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 void ASpatialMetricsDisplay::SpatialToggleStatDisplay()
 {
 #if !UE_BUILD_SHIPPING
-	check(Role != ROLE_Authority);
+	check(GetNetMode() == NM_Client);
 
 	if (DrawDebugDelegateHandle.IsValid())
 	{
@@ -168,7 +168,7 @@ void ASpatialMetricsDisplay::SpatialToggleStatDisplay()
 	{
 		DrawDebugDelegateHandle = UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialMetricsDisplay::DrawDebug));
 	}
-#endif
+#endif // !UE_BUILD_SHIPPING
 }
 
 void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
@@ -267,4 +267,3 @@ bool ASpatialMetricsDisplay::ShouldRemoveStats(const float CurrentTime, const FW
 	const float TimeSinceUpdate = CurrentTime - *LastUpdateTime;
 	return TimeSinceUpdate > DropStatsIfNoUpdateForTime;
 }
-
