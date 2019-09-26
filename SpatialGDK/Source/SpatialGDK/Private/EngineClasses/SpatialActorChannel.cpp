@@ -146,19 +146,18 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 	}
 #endif
 
-	// TODO: Should be able to use the `bForDestory` here, but may want to use the close reason instead
-	if (bForDestroy)
+	if (CloseReason == EChannelCloseReason::Dormancy)
 	{
+		NetDriver->RegisterDormantEntityId(EntityId);
+	}
+	else
+	{
+		check(bForDestroy || CloseReason == EChannelCloseReason::TearOff);
 		// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects
 		NetDriver->PackageMap->RemoveEntityActor(EntityId);
 	}
 
 	NetDriver->RemoveActorChannel(EntityId);
-
-	if (CloseReason == EChannelCloseReason::Dormancy)
-	{
-		NetDriver->RegisterDormantEntityId(EntityId);
-	}
 
 	return UActorChannel::CleanUp(bForDestroy, CloseReason);
 }
@@ -174,9 +173,10 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 		// Closed for dormancy reasons, ensure we update the component state of this entity
 		const bool bMakeDormant = true;
 		NetDriver->RefreshActorDormancy(Actor, bMakeDormant);
-		NetDriver->RemoveActorChannel(EntityId);
 		NetDriver->RegisterDormantEntityId(EntityId);
 	}
+
+	NetDriver->RemoveActorChannel(EntityId);
 
 	return Super::Close(Reason);
 }
