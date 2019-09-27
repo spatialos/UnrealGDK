@@ -16,7 +16,7 @@ pushd $project_clone_path
         if ($clone_proc.ExitCode -ne 0) {
             Write-Log "Could not clone example project, error: $($clone_proc.ExitCode)"
             Throw "Could not clone example project"
-        }    
+        }
     }
 popd
 

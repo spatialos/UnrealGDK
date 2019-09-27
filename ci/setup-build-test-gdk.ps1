@@ -31,6 +31,8 @@ Start-Event "setup-tests" "command"
 &$PSScriptRoot"\setup-tests.ps1" -project_clone_path "$($unreal_path)\Samples"
 Finish-Event "setup-tests" "command"
 
+tree . /a /f > root_dir.txt
+
 Start-Event "test-gdk" "command"
 &$PSScriptRoot"\run-tests.ps1" -ue_path "$($unreal_path)\Engine\Binaries\Win64\UE4Editor.exe" -uproject_path "$($unreal_path)\Samples\UnrealGDKExampleProject\Game\GDKShooter.uproject" -output_dir "TestResults" -log_file_name "tests.log"
 Finish-Event "test-gdk" "command"
