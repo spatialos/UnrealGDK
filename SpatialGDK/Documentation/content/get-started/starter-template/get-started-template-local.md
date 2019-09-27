@@ -94,7 +94,7 @@ You can switch between the two Editor windows to see and interact with each game
 **Note:** If the game does not run automatically after you have selected **New Editor Window (PIE)**, try selecting **Play** on the Editor toolbar. This should to start a local deployment and play the game.<br/><br/>
 
    ![]({{assetRoot}}assets/set-up-template/template-two-clients.png)<br/>
-   _Image: Two game clients running in Ubreal Editor_<br/></br>
+   _Image: Two game clients running in Unreal Editor_<br/></br>
 
 ### Step 3: Inspect and stop play
 
