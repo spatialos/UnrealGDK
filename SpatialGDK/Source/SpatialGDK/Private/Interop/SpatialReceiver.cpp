@@ -139,11 +139,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::DORMANT_COMPONENT_ID:
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 		{
-			// This same logic is called from within UChannel::ReceivedSequencedBunch when a dormant cmd is received
 			NetDriver->AddPendingDormantChannel(Channel);
-			//check(IsPendingOpsOnChannel(Channel) == false);
-			//Channel->Dormant = 1;
-			//Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
 		}
 		else
 		{
@@ -651,11 +647,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		if (StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
 		{
-			// This same logic is called from within UChannel::ReceivedSequencedBunch when a dormant cmd is received
 			NetDriver->AddPendingDormantChannel(Channel);
-			//check(IsPendingOpsOnChannel(Channel) == false);
-			//Channel->Dormant = 1;
-			//Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
 		}
 	}
 }
@@ -809,7 +801,11 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	}
 	else
 	{
-		if (Actor == nullptr)
+		if (NetDriver->IsDormantEntity(EntityId))
+		{
+			NetDriver->PackageMap->RemoveEntityActor(EntityId);
+		}
+		else if (Actor == nullptr)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. EntityId: %lld"), EntityId);
 		}

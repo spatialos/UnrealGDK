@@ -108,6 +108,7 @@ public:
 	void AddPendingDormantChannel(USpatialActorChannel* Channel);
 	void RegisterDormantEntityId(Worker_EntityId EntityId);
 	void UnregisterDormantEntityId(Worker_EntityId EntityId);
+	bool IsDormantEntity(Worker_EntityId EntityId) const;
 
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 

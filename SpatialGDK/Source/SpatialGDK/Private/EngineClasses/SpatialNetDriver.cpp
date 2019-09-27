@@ -1425,13 +1425,13 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		Sender->FlushPackedRPCs();
 	}
 
-	TSet<TWeakObjectPtr<USpatialActorChannel>> RemoveChannels;
+	TArray<TWeakObjectPtr<USpatialActorChannel>> RemoveChannels;
 	for (auto& PendingDormantChannel : PendingDormantChannels)
 	{
 		if (PendingDormantChannel.IsValid())
 		{
-			auto Channel = PendingDormantChannel.Get();
-			if (Channel != nullptr && Channel->Actor != nullptr)
+			USpatialActorChannel* Channel = PendingDormantChannel.Get();
+			if (Channel->Actor != nullptr)
 			{
 				if (Receiver->IsPendingOpsOnChannel(Channel))
 				{
@@ -1439,6 +1439,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 				}
 			}
 
+			// This same logic is called from within UChannel::ReceivedSequencedBunch when a dormant cmd is received
 			Channel->Dormant = 1;
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
 		}
@@ -1449,10 +1450,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		PendingDormantChannels.Remove(RemoveChannel);
 	}
 
-	// Tick the timer manager
-	{
-		TimerManager.Tick(DeltaTime);
-	}
+	TimerManager.Tick(DeltaTime);
 
 	Super::TickFlush(DeltaTime);
 }
@@ -1836,6 +1834,11 @@ void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)
 void USpatialNetDriver::UnregisterDormantEntityId(Worker_EntityId EntityId)
 {
 	DormantEntities.Remove(EntityId);
+}
+
+bool USpatialNetDriver::IsDormantEntity(Worker_EntityId EntityId) const
+{
+	return (DormantEntities.Find(EntityId) != nullptr);
 }
 
 USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor)
