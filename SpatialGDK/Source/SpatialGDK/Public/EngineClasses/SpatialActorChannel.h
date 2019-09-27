@@ -205,7 +205,7 @@ private:
 	FVector LastPositionSinceUpdate;
 	float TimeWhenPositionLastUpdated;
 
-	uint8 FramesTillDormant = 0;
+	uint8 FramesTillDormancyAllowed = 0;
 
 	// Shadow data for Handover properties.
 	// For each object with handover properties, we store a blob of memory which contains

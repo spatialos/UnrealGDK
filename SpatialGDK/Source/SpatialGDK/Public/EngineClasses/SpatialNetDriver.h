@@ -105,6 +105,7 @@ public:
 
 	void RefreshActorDormancy(AActor* Actor, bool bMakeDormant);
 
+	void AddPendingDormantChannel(USpatialActorChannel* Channel);
 	void RegisterDormantEntityId(Worker_EntityId EntityId);
 	void UnregisterDormantEntityId(Worker_EntityId EntityId);
 
@@ -182,6 +183,7 @@ private:
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TArray<Worker_OpList*> QueuedStartupOpLists;
 	TSet<Worker_EntityId_Key> DormantEntities;
+	TSet<TWeakObjectPtr<USpatialActorChannel>> PendingDormantChannels;
 
 	FTimerManager TimerManager;
 

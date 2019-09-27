@@ -432,23 +432,29 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	UpdateChangelistHistory(ActorReplicator->RepState);
 
-	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
-	ActorReplicator->RepState->OpenAckedCalled = true;
-
 	// This would indicate we need to flush our state before we could consider going dormant. In Spatial, this
 	// dormancy can occur immediately (because we don't require acking), which means that dormancy can be thrashed
 	// on and off if AActor::FlushNetDormancy is being called (possibly because replicated properties are being updated
 	// within blueprints which invokes this call). Give a few frames before allowing channel to go dormant.
 	if (ActorReplicator->bLastUpdateEmpty == 0)
 	{
-		FramesTillDormant = 2;
+		FramesTillDormancyAllowed = 2;
 	}
-	else if (FramesTillDormant > 0)
+	else if (FramesTillDormancyAllowed > 0)
 	{
-		--FramesTillDormant;
+		--FramesTillDormancyAllowed;
 	}
 
+	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+	ActorReplicator->RepState->OpenAckedCalled = true;
 	ActorReplicator->bLastUpdateEmpty = 1;
+
+	//for (auto& Replicator : ReplicationMap)
+	//{
+		//Replicator.Value->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+		//Replicator.Value->RepState->OpenAckedCalled = true;
+		//Replicator.Value->bLastUpdateEmpty = 1;
+	//}
 
 	if (bCreatingNewEntity)
 	{
@@ -684,6 +690,8 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 
 	UpdateChangelistHistory(Replicator.RepState);
 	Replicator.RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+	Replicator.RepState->OpenAckedCalled = true;
+	Replicator.bLastUpdateEmpty = 1;
 
 	return RepChanged.Num() > 0;
 }
@@ -703,7 +711,7 @@ bool USpatialActorChannel::ReadyForDormancy(bool debug /*= false*/)
  	}
 
 	// No frames left 
-	if (FramesTillDormant > 0)
+	if (FramesTillDormancyAllowed > 0)
 	{
 		return false;
 	}

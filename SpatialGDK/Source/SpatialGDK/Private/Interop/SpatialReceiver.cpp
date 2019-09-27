@@ -140,8 +140,10 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 		{
 			// This same logic is called from within UChannel::ReceivedSequencedBunch when a dormant cmd is received
-			Channel->Dormant = 1;
-			Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
+			NetDriver->AddPendingDormantChannel(Channel);
+			//check(IsPendingOpsOnChannel(Channel) == false);
+			//Channel->Dormant = 1;
+			//Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
 		}
 		else
 		{
@@ -650,8 +652,10 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		if (StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
 		{
 			// This same logic is called from within UChannel::ReceivedSequencedBunch when a dormant cmd is received
-			Channel->Dormant = 1;
-			Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
+			NetDriver->AddPendingDormantChannel(Channel);
+			//check(IsPendingOpsOnChannel(Channel) == false);
+			//Channel->Dormant = 1;
+			//Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
 		}
 	}
 }
@@ -1693,23 +1697,28 @@ bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel* Channel)
 	check(Channel);
 	check(Channel->Actor);
 
-	FChannelObjectPair ChannelObjectPair(Channel, Channel->Actor);
-	FObjectReferencesMap* UnresolvedRefs = UnresolvedRefsMap.Find(ChannelObjectPair);
-
 	if (UnresolvedRefsMap.Num() > 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Dormancy check"));
+	}
+
+	for (const auto& UnresolvedRef : UnresolvedRefsMap)
+	{
+		if (UnresolvedRef.Key.Key == Channel)
+		{
+			return true;
+		}
 	}
 
 	for (const auto& ActorRequest : PendingActorRequests)
 	{
 		if (ActorRequest.Value == Channel)
 		{
-			return false;
+			return true;
 		}
 	}
 
-	return (UnresolvedRefs != nullptr);
+	return false;
 }
 
 void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs)

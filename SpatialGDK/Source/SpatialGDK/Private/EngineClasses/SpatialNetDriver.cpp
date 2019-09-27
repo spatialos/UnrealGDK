@@ -1425,6 +1425,30 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		Sender->FlushPackedRPCs();
 	}
 
+	TSet<TWeakObjectPtr<USpatialActorChannel>> RemoveChannels;
+	for (auto& PendingDormantChannel : PendingDormantChannels)
+	{
+		if (PendingDormantChannel.IsValid())
+		{
+			auto Channel = PendingDormantChannel.Get();
+			if (Channel != nullptr && Channel->Actor != nullptr)
+			{
+				if (Receiver->IsPendingOpsOnChannel(Channel))
+				{
+					continue;
+				}
+			}
+
+			Channel->Dormant = 1;
+			Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
+		}
+		RemoveChannels.Emplace(PendingDormantChannel);
+	}
+	for (auto& RemoveChannel : RemoveChannels)
+	{
+		PendingDormantChannels.Remove(RemoveChannel);
+	}
+
 	// Tick the timer manager
 	{
 		TimerManager.Tick(DeltaTime);
@@ -1794,6 +1818,11 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 			StaticComponentView->OnRemoveComponent(RemoveComponentOp);
 		}
 	}
+}
+
+void USpatialNetDriver::AddPendingDormantChannel(USpatialActorChannel* Channel)
+{
+	PendingDormantChannels.Emplace(Channel);
 }
 
 void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)
