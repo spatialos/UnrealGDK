@@ -82,7 +82,7 @@ This process opens a command line window and runs some scripts - it can take a l
 <%(#Expandable title="What does `InstallGDK.bat` do?")%>
 The script automatically opens a command line window and performs the following:
 
-* Clones the UnrealGDK into your EU fork's `Plugins` directory 
+* Clones the UnrealGDK into your UE fork's `Plugins` directory 
 * Clones the Example Project into your Engine's `Samples` directory.
 * Sets up the GDK for use with the Example Project by running `Setup.bat` 
 * Generates Visual Studio solution files for the `UnrealGDKExampleProject`.<br/>
