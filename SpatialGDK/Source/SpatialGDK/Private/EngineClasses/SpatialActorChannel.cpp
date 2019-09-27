@@ -449,13 +449,6 @@ int64 USpatialActorChannel::ReplicateActor()
 	ActorReplicator->RepState->OpenAckedCalled = true;
 	ActorReplicator->bLastUpdateEmpty = 1;
 
-	//for (auto& Replicator : ReplicationMap)
-	//{
-		//Replicator.Value->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
-		//Replicator.Value->RepState->OpenAckedCalled = true;
-		//Replicator.Value->bLastUpdateEmpty = 1;
-	//}
-
 	if (bCreatingNewEntity)
 	{
 		bCreatingNewEntity = false;
