@@ -39,9 +39,14 @@ public:
 
 private:
 	float RoundTripPing;
-	float LastReceivedPingTimestamp;
-	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedPingTimestamp)
-	float ReplicatedPingTimestamp;
+
+	TArray<int16> SentPingIDs;
+	TArray<double> SentPingTimestamps;
+
+	int16 LastSentPingID;
+
+	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedPingID)
+	int16 ReplicatedPingID;
 
 	bool bIsPingEnabled = false;
 
@@ -59,8 +64,8 @@ private:
 	void SendNewPing();
 
 	UFUNCTION()
-	virtual void OnRep_ReplicatedPingTimestamp();
+	virtual void OnRep_ReplicatedPingID();
 
 	UFUNCTION(Server, Unreliable, WithValidation)
-	virtual void SendServerWorkerPingTimestamp(float Timestamp);
+	virtual void SendServerWorkerPingID(int16 PingID);
 };

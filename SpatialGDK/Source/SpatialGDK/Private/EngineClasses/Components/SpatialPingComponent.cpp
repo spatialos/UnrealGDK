@@ -22,7 +22,7 @@ void USpatialPingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(USpatialPingComponent, ReplicatedPingTimestamp);
+	DOREPLIFETIME(USpatialPingComponent, ReplicatedPingID);
 }
 
 void USpatialPingComponent::BeginPlay()
@@ -78,6 +78,10 @@ void USpatialPingComponent::EnablePing()
 	UWorld* World = GetWorld();
 	if (World != nullptr)
 	{
+		LastSentPingID = 0;
+		// (Re)initialize TArrays
+		SentPingIDs.Init(0, 0);
+		SentPingTimestamps.Init((double)0, 0);
 		// Set looping timer to 'tick' this component and send ping RPC with configurable frequency.
 		World->GetTimerManager().SetTimer(PingTimerHandle, this, &USpatialPingComponent::TickPingComponent, PingFrequency, true);
 		bIsPingEnabled = true;
@@ -105,29 +109,35 @@ void USpatialPingComponent::TickPingComponent()
 
 void USpatialPingComponent::SendNewPing()
 {
-	// Send a new ping using the current local time since start as both ID and timestamp.
-	SendServerWorkerPingTimestamp(GetWorld()->GetRealTimeSeconds());
+	// Generate a new ping ID
+	int16 NewPingID = LastSentPingID + 1;
+	SentPingIDs.Add(NewPingID);
+	SentPingTimestamps.Add(FPlatformTime::Seconds());
+	SendServerWorkerPingID(NewPingID);
+	LastSentPingID = NewPingID;
 }
 
-void USpatialPingComponent::OnRep_ReplicatedPingTimestamp()
+void USpatialPingComponent::OnRep_ReplicatedPingID()
 {
-	// If the new replicated ping timestamp is older than prev then we can ignore it.
-	if (ReplicatedPingTimestamp < LastReceivedPingTimestamp)
+	int32 PingIndex;
+	//Find replicated ping in ID array
+	if (SentPingIDs.Find(ReplicatedPingID, PingIndex))
 	{
+		//Calculate time delta and update ping value somewhere
+		RoundTripPing = (float)(FPlatformTime::Seconds() - SentPingTimestamps[PingIndex]);
+		//Remove matching elements from the arrays and ALL preceding elements
+		SentPingIDs.RemoveAt(0, PingIndex + 1);
+		SentPingTimestamps.RemoveAt(0, PingIndex + 1);
 		return;
 	}
-	// Calculate the delta between the sent ping timestamp and the current time to determine round trip latency in seconds.
-	RoundTripPing = GetWorld()->GetRealTimeSeconds() - ReplicatedPingTimestamp;
-	// Update last received ping to match replicated.
-	LastReceivedPingTimestamp = ReplicatedPingTimestamp;
 }
 
-bool USpatialPingComponent::SendServerWorkerPingTimestamp_Validate(float Timestamp)
+bool USpatialPingComponent::SendServerWorkerPingID_Validate(int16 PingID)
 {
 	return true;
 }
 
-void USpatialPingComponent::SendServerWorkerPingTimestamp_Implementation(float Timestamp)
+void USpatialPingComponent::SendServerWorkerPingID_Implementation(int16 PingID)
 {
-	ReplicatedPingTimestamp = Timestamp;
+	ReplicatedPingID = PingID;
 }
