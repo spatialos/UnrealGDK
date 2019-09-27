@@ -1,7 +1,5 @@
 param(
-    [string] $project_clone_path,
-    [string] $unreal_path,
-    [string] $gdk_build_path
+    [string] $project_clone_path
 )
 
 pushd $project_clone_path
@@ -23,6 +21,6 @@ pushd $project_clone_path
 popd
 
     # copy the built plugin into the engine
-Copy-Item $gdk_build_path "$($unreal_path)\Engine\Plugins\SpatialGDK" -Recurse
-Write-Log "plugins contents: $(Get-ChildItem $($unreal_path)\Engine\Plugins)"
-Write-Log "spatialgdk contents: $(Get-ChildItem $($unreal_path)\Engine\Plugins\SpatialGDK)"
+# Copy-Item $gdk_build_path "$($unreal_path)\Engine\Plugins\SpatialGDK" -Recurse
+# Write-Log "plugins contents: $(Get-ChildItem $($unreal_path)\Engine\Plugins)"
+# Write-Log "spatialgdk contents: $(Get-ChildItem $($unreal_path)\Engine\Plugins\SpatialGDK)"

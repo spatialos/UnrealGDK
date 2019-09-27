@@ -32,6 +32,7 @@ steps:
     artifact_paths:
       - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
       - "UnrealEngine/Samples/UnrealGDKExampleProject/Game/Saved/Logs/*"
+      - "*.txt"
 
   - label: "build-GDK-:linux:"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
