@@ -39,35 +39,17 @@ Visual Studio then builds Unreal Engine, which can take up to a couple of hours.
 
 You have now built Unreal Engine 4 with cross-compilation for Linux. 
 
-## Step 2: Clone and install the SpatialOS GDK for Unreal plugin
-
-You need to add the plugin to your project's plugins folder in order to use SpatialOS.
-
-To do this: 
-
-1. In File Explorer, navigate to the `<YourProject>\Game` directory and create a `Plugins` folder in this directory.
-1. In a terminal window, navigate to the `<YourProject>\Game\Plugins` directory and clone the [GDK for Unreal](https://github.com/spatialos/UnrealGDK) repository by running either:
-
-|  |  |
-| ----- | ---- |
-| HTTPS | `git clone https://github.com/spatialos/UnrealGDK.git` |
-| SSH | `git clone git@github.com:spatialos/UnrealGDK.git`|
-
-1. In File Explorer, navigate to the root directory of the GDK for Unreal repository (`<YourProject>\Game\Plugins\UnrealGDK\...`), and double-click `Setup.bat`. If you haven’t already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in.
-
-When the build is complete, you can continue to _3 - Set up a project_.
-
-
 </br>
 #### **> Next:** 3 - Set up project
 
 Choose either:
 
-* [Set up the Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) </br>
+* [Set up the Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-manual-setup) </br>
 The Example Project is a session-based FPS game. It gives an overview of the GDK and using SpatialOS, including deploying your game to SpatialOS locally and in the cloud.
-* [Set up the Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro) </br>
+* [Set up the Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup-manual) </br>
 Use as a base for creating your own project running on SpatialOS.
 
 </br>------</br>
+_2019-09-27 Page updated without editorial reivew: remove duplicate clone GDK instructions, link to correct project setup guides._</br>
 _2019-08-12 Page updated with editorial review: added to page orientation._
 
