@@ -1537,7 +1537,7 @@ void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsR
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved ReserveEntityIdsResponse but with no delegate set, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Received ReserveEntityIdsResponse but with no delegate set, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
 		}
 	}
 	else
@@ -1589,7 +1589,7 @@ void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp&
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved EntityQueryResponse but with no delegate set, request id: %d, number of entities: %d, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received EntityQueryResponse but with no delegate set, request id: %d, number of entities: %d, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
 	}
 }
 
@@ -1695,6 +1695,20 @@ bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel* Channel)
 
 	FChannelObjectPair ChannelObjectPair(Channel, Channel->Actor);
 	FObjectReferencesMap* UnresolvedRefs = UnresolvedRefsMap.Find(ChannelObjectPair);
+
+	if (UnresolvedRefsMap.Num() > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Dormancy check"));
+	}
+
+	for (const auto& ActorRequest : PendingActorRequests)
+	{
+		if (ActorRequest.Value == Channel)
+		{
+			return false;
+		}
+	}
+
 	return (UnresolvedRefs != nullptr);
 }
 
