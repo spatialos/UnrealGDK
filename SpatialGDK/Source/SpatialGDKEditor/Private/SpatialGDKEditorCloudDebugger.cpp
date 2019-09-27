@@ -2,11 +2,13 @@
 
 #include "SpatialGDKEditorCloudDebugger.h"
 
-
-#include "Modules/ModuleManager.h"
-#include "SpatialGDKServicesModule.h"
+#include "Containers/Ticker.h"
+#include "EngineServiceMessages.h"
 #include "Logging/LogMacros.h"
+#include "MessageEndpointBuilder.h"
+#include "Modules/ModuleManager.h"
 #include "SpatialGDKEditor.h"
+#include "SpatialGDKServicesModule.h"
 
 FSpatialGDKEditorCloudDebugger::FSpatialGDKEditorCloudDebugger()
 {
@@ -15,12 +17,20 @@ FSpatialGDKEditorCloudDebugger::FSpatialGDKEditorCloudDebugger()
 
 	SessionFrontendModule->DebugWorkerDelegate.BindRaw(this, &FSpatialGDKEditorCloudDebugger::DebugWorker);
 	TcpMessagingModule->AddOutgoingConnection("127.0.0.1:6667");
+
+	MessageEndpoint = FMessageEndpoint::Builder("FSpatialGDKEditorCloudDebugger")
+		.Handling<FEngineServicePong>(this, &FSpatialGDKEditorCloudDebugger::HandleServicePongMessage)
+		.Build();	
+
+	TickDelegateHandle = FTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateRaw(this, &FSpatialGDKEditorCloudDebugger::HandleTicker), 1.f);
 }
 
 FSpatialGDKEditorCloudDebugger::~FSpatialGDKEditorCloudDebugger()
 {
+	FTicker::GetCoreTicker().RemoveTicker(TickDelegateHandle);
 	ClosePortForward();
 	TcpMessagingModule->RemoveOutgoingConnection("127.0.0.1:6667");
+	SessionFrontendModule->DebugWorkerDelegate.Unbind();
 }
 
 void FSpatialGDKEditorCloudDebugger::DebugWorker(const FString& InDeploymentName, const FString& InWorkerId)
@@ -86,5 +96,35 @@ void FSpatialGDKEditorCloudDebugger::ClosePortForward()
 		FPlatformProcess::TerminateProc(PortForwardHandle, true);
 		FPlatformProcess::CloseProc(PortForwardHandle);
 		UE_LOG(LogSpatialGDKEditor, Log, TEXT("Tcp port forwarding process closed"));
+	}
+}
+
+bool FSpatialGDKEditorCloudDebugger::HandleTicker(float DeltaTime)
+{
+	FDateTime Now = FDateTime::UtcNow();
+
+	if (Now >= LastPingTime + FTimespan::FromSeconds(2.5))
+	{
+		if (MessageEndpoint.IsValid())
+		{
+			MessageEndpoint->Publish(new FEngineServicePing(), EMessageScope::Network); // ping other machines to get access to theirs EngineService endpoint address
+		}
+
+		LastPingTime = FDateTime::UtcNow();
+	}	
+
+	return true;
+}
+
+void FSpatialGDKEditorCloudDebugger::HandleServicePongMessage(const FEngineServicePong& Message, const TSharedRef<IMessageContext, ESPMode::ThreadSafe>& Context)
+{
+	if (!TriedAddresses.Contains(Context->GetSender()))
+	{
+		TriedAddresses.Add(Context->GetSender());
+
+		FEngineServiceAuthGrant* message = new FEngineServiceAuthGrant(); //hacky way to give yourself permission to execute remote commands
+		message->UserName = TEXT("unrealworker"); // assumed unreal worker session owner
+		message->UserToGrant = FPlatformProcess::UserName(false);
+		MessageEndpoint->Send(message, Context->GetSender()); // use endpoint address to give yourself permission
 	}
 }

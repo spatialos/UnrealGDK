@@ -25,7 +25,8 @@ public class SpatialGDKEditor : ModuleRules
 				"UnrealEd",
 				"GameplayAbilities",
                 "SessionFrontend",
-                "TcpMessaging"
+                "TcpMessaging",
+                "EngineMessages"
             });
 
 		PrivateIncludePaths.AddRange(
