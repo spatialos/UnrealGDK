@@ -150,6 +150,8 @@ public:
 
 	void OnDisconnect(Worker_DisconnectOp& Op);
 
+	bool IsPendingOpsOnChannel(USpatialActorChannel* Channel);
+
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();

@@ -1688,6 +1688,16 @@ void USpatialReceiver::OnDisconnect(Worker_DisconnectOp& Op)
 	}
 }
 
+bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel* Channel)
+{
+	check(Channel);
+	check(Channel->Actor);
+
+	FChannelObjectPair ChannelObjectPair(Channel, Channel->Actor);
+	FObjectReferencesMap* UnresolvedRefs = UnresolvedRefsMap.Find(ChannelObjectPair);
+	return (UnresolvedRefs != nullptr);
+}
+
 void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs)
 {
 	for (const FUnrealObjectRef& UnresolvedRef : UnresolvedRefs)

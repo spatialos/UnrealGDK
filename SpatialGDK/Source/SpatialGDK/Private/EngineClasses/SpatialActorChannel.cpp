@@ -696,6 +696,13 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 
 bool USpatialActorChannel::ReadyForDormancy(bool debug /*= false*/)
 {
+ 	// Check Receiver doesn't have any pending operations for this channel
+ 	if (Receiver->IsPendingOpsOnChannel(this))
+ 	{
+ 		return false;
+ 	}
+
+	// No frames left 
 	if (FramesTillDormant > 0)
 	{
 		return false;
