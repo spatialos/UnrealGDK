@@ -152,7 +152,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 	}
 	else
 	{
-		check(bForDestroy || CloseReason == EChannelCloseReason::TearOff);
+		//check(bForDestroy || CloseReason == EChannelCloseReason::TearOff);
 		// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects
 		NetDriver->PackageMap->RemoveEntityActor(EntityId);
 	}
