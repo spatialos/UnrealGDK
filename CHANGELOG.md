@@ -12,10 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes:
 - If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you need to enable generating schema for them using SpatialType UCLASS specifier or by checking Spatial Type if it's a blueprint.
-- If you already have a project that you are upgrading to this version of the GDK, you will need to follow the upgrade process to SpatialOS `14.1.0`:
-1. Open a terminal in the `spatial/` directory of your project.
-1. Run `spatial clean`.
-1. Open the `spatialos.json` file in that directory.
+- If you already have a project that you are upgrading to this version of the GDK, it is encouraged to follow the upgrade process to SpatialOS `14.1.0`:
+1. Open the `spatialos.json` file in the `spatial/` directory of your project.
 1. Replace the `sdk_version` value and the version value of all dependencies with `14.1.0`.
 1. Replace all other instances of the version number in the file.
 
