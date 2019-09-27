@@ -71,21 +71,21 @@ In File Explorer, navigate to the root directory of your clone of the SpatialOS 
 In the same directory, double-click **GenerateProjectFiles.bat**.
 
 ### Step 5: Clone and install the plugin
-You need to clone the SpatialOS GDK plugin and install it in the UE fork and Example Project directory. You can follow either auto-install or manual-install, we recommend the auto-install.
+You need to clone the SpatialOS GDK plugin and install it in the UE fork and Example Project directory. You can follow either auto-install or manual-install, we recommend the auto-install. 
 
-> **Tip:** Use auto-install as this makes setting up the Example Project and Starter Template quicker. You will be able to follow tutorials based on the Example Project more quickly. If you follow manual-install, you will need to take extra steps to set up the Example Project or Starer Template and follow tutorials.
+This method will reduce the number of manual steps you have to do to get set up, and will install up the GDK as an Engine plugin rather than a Project plugin. This means you won't have to clone the GDK for each new project you set up.
 
 * **Auto-install** (Recommended) </br>
-To do this:</br>
 Still in File Explorer, in the root directory of your clone of the SpatialOS Unreal Engine fork, double-click **InstallGDK.bat**. </br>
 This process opens a command line window and runs some scripts - it can take a long time to complete. The command line window closes when the process has finished.
 
 <%(#Expandable title="What does `InstallGDK.bat` do?")%>
 The script automatically opens a command line window and performs the following:
-	* Clones the UnrealGDK into your EU fork's `Plugins` directory.
-	* Clones the [Example Project (`UnrealGDKExampleProject`)](https://github.com/spatialos/UnrealGDKExampleProject) into your Engine's `Samples` directory.
-	* Runs the GDK `Setup.bat` script to install the plugin into the cloned `UnrealGDKExampleProject` directory.
-	* Generates Visual Studio solution files for the `UnrealGDKExampleProject`.<br/>
+
+* Clones the UnrealGDK into your EU fork's `Plugins` directory 
+* Clones the Example Project into your Engine's `Samples` directory.
+* Sets up the GDK for use with the Example Project by running `Setup.bat` 
+* Generates Visual Studio solution files for the `UnrealGDKExampleProject`.<br/>
 <%(/Expandable)%>
 
 * **Manual-install**</br>
