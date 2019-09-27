@@ -71,23 +71,27 @@ void USpatialReceiver::LeaveCriticalSection()
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Leaving critical section."));
 	check(bInCriticalSection);
 
-	for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
+	if (NetDriver->GetWorld())
 	{
-		ReceiveActor(PendingAddEntity);
-	}
+		for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
+		{
+			ReceiveActor(PendingAddEntity);
+		}
 
-	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
-	{
-		HandleActorAuthority(PendingAuthorityChange);
+		for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
+		{
+			HandleActorAuthority(PendingAuthorityChange);
+		}
+
+		PendingAddEntities.Empty();
+		PendingAddComponents.Empty();
+		PendingAuthorityChanges.Empty();
+
+		ProcessQueuedResolvedObjects();
 	}
 
 	// Mark that we've left the critical section.
 	bInCriticalSection = false;
-	PendingAddEntities.Empty();
-	PendingAddComponents.Empty();
-	PendingAuthorityChanges.Empty();
-
-	ProcessQueuedResolvedObjects();
 }
 
 void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
