@@ -20,6 +20,11 @@ pushd $project_clone_path
     }
 popd
 
+# for copying the built plugin into its right place within the engine
+# copies everything in gdk_build into gdk_build_dest, keeping the file structure, and ignoring existing files
+# copy-item -Path gdk_build\* -Destination gdk_build_dest -Recurse -Container -ErrorAction SilentlyContinue
+
+
     # copy the built plugin into the engine
 # Copy-Item $gdk_build_path "$($unreal_path)\Engine\Plugins\SpatialGDK" -Recurse
 # Write-Log "plugins contents: $(Get-ChildItem $($unreal_path)\Engine\Plugins)"

@@ -34,3 +34,15 @@ Finish-Event "setup-gdk" "command"
 # Start-Event "test-gdk" "command"
 # &$PSScriptRoot"\run-tests.ps1" -ue_path "$($unreal_path)\Engine\Binaries\Win64\UE4Editor.exe" -uproject_path "$($unreal_path)\Samples\UnrealGDKExampleProject\Game\GDKShooter.uproject" -output_dir "TestResults" -log_file_name "tests.log"
 # Finish-Event "test-gdk" "command"
+
+# steps:
+# get engine
+# set up gdk
+#   symlink gdk into engine plugins folder for expected folder structure
+#   run setup.bat
+# build plugin 
+#   Using UAT, into a folder outside the engine
+#   copy built plugin into SpatialGDK
+# Run tests
+# clean up symlink in UnrealEngine 
+# clean up git hooks? or don't create in the first place
