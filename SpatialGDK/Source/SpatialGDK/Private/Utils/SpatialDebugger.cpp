@@ -84,6 +84,9 @@ void ASpatialDebugger::BeginPlay()
 
 	if (!GetNetDriver()->IsServer())
 	{
+		EntityActorMapping.Reserve(ENTITY_ACTOR_MAP_RESERVATION_COUNT);
+		ActorLocationCountMapping.Reserve(POSITION_HASH_BUCKET_RESERVATION_COUNT);
+
 		LoadIcons();
 
 		TArray<Worker_EntityId_Key> EntityIds;
@@ -99,9 +102,9 @@ void ASpatialDebugger::BeginPlay()
 		Cast<USpatialNetDriver>(GetNetDriver())->Receiver->OnEntityAdded.BindUObject(this, &ASpatialDebugger::OnEntityAdded);
 		Cast<USpatialNetDriver>(GetNetDriver())->Receiver->OnEntityRemoved.BindUObject(this, &ASpatialDebugger::OnEntityRemoved);
 
-		ActorLocationCountMapping.Reserve(POSITION_HASH_BUCKETS);
-
+		FontRenderInfo.bClipText = true;
 		FontRenderInfo.bEnableShadow = true;
+
 		RenderFont = GEngine->GetSmallFont();
 
 		if (bAutoStart)
@@ -357,7 +360,7 @@ int32 ASpatialDebugger::HashPosition(const FVector& P)
 	const int32 p2 = 19349663;
 	const int32 p3 = 83492791;
 
-	return ((int32)P.X * p1 ^ (int32)P.Y * p2 ^ (int32)P.Z * p3) % POSITION_HASH_BUCKETS;
+	return ((int32)P.X * p1 ^ (int32)P.Y * p2 ^ (int32)P.Z * p3) % POSITION_HASH_BUCKET_RESERVATION_COUNT;
 }
 
 void ASpatialDebugger::SpatialToggleDebugger()

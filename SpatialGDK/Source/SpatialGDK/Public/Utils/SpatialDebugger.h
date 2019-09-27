@@ -86,9 +86,10 @@ private:
 	static int32 VirtualWorkerIdToInt(const FString& VirtualWorkerId);
 	static int32 HashPosition(const FVector& Position);
 
-	static const int VIRTUAL_WORKER_MAX_COUNT = 4;
-	static const int POSITION_HASH_BUCKETS = 1024;
+	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
+	static const int POSITION_HASH_BUCKET_RESERVATION_COUNT = 1024;
 	static const int STACKED_TAG_VERTICAL_OFFSET = 18;
+	static const int VIRTUAL_WORKER_MAX_COUNT = 4;
 
 	enum EIcon
 	{
