@@ -118,7 +118,7 @@ public:
 	virtual int64 ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
-	virtual bool ReadyForDormancy(bool debug = false) override;
+	virtual bool ReadyForDormancy(bool suppressLogs = false) override;
 	// End UActorChannel interface
 
 	bool TryResolveActor();

@@ -135,8 +135,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 	{
 		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
 
-		if (bForDestroy &&
-			bDeleteDynamicEntities &&
+		if (bDeleteDynamicEntities &&
 			NetDriver->IsServer() &&
 			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
 		{
@@ -694,7 +693,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 	return ReplicateSubobject(Obj, RepFlags);
 }
 
-bool USpatialActorChannel::ReadyForDormancy(bool debug /*= false*/)
+bool USpatialActorChannel::ReadyForDormancy(bool suppressLogs /*= false*/)
 {
  	// Check Receiver doesn't have any pending operations for this channel
  	if (Receiver->IsPendingOpsOnChannel(this))
@@ -702,13 +701,13 @@ bool USpatialActorChannel::ReadyForDormancy(bool debug /*= false*/)
  		return false;
  	}
 
-	// No frames left 
+	// Hasn't been waiting for dormancy long enough allow dormancy, soft attempt to prevent dormancy thrashing
 	if (FramesTillDormancyAllowed > 0)
 	{
 		return false;
 	}
 
-	return Super::ReadyForDormancy(debug);
+	return Super::ReadyForDormancy(suppressLogs);
 }
 
 TMap<UObject*, const FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()

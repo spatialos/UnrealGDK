@@ -154,8 +154,6 @@ private:
 	FRPCContainer OutgoingRPCs;
 	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 
-	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
-
 	TArray<TSharedRef<FReliableRPCForRetry>> RetryRPCs;
 
 	FUpdatesQueuedUntilAuthority UpdatesQueuedUntilAuthorityMap;

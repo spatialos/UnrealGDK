@@ -1425,30 +1425,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		Sender->FlushPackedRPCs();
 	}
 
-	TArray<TWeakObjectPtr<USpatialActorChannel>> RemoveChannels;
-	for (auto& PendingDormantChannel : PendingDormantChannels)
-	{
-		if (PendingDormantChannel.IsValid())
-		{
-			USpatialActorChannel* Channel = PendingDormantChannel.Get();
-			if (Channel->Actor != nullptr)
-			{
-				if (Receiver->IsPendingOpsOnChannel(Channel))
-				{
-					continue;
-				}
-			}
-
-			// This same logic is called from within UChannel::ReceivedSequencedBunch when a dormant cmd is received
-			Channel->Dormant = 1;
-			Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
-		}
-		RemoveChannels.Emplace(PendingDormantChannel);
-	}
-	for (auto& RemoveChannel : RemoveChannels)
-	{
-		PendingDormantChannels.Remove(RemoveChannel);
-	}
+	ProcessPendingDormancy();
 
 	TimerManager.Tick(DeltaTime);
 
@@ -1531,6 +1508,35 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	GameMode->GameWelcomePlayer(SpatialConnection, RedirectURL);
 
 	return true;
+}
+
+void USpatialNetDriver::ProcessPendingDormancy()
+{
+	TArray<TWeakObjectPtr<USpatialActorChannel>> RemoveChannels;
+	for (auto& PendingDormantChannel : PendingDormantChannels)
+	{
+		if (PendingDormantChannel.IsValid())
+		{
+			USpatialActorChannel* Channel = PendingDormantChannel.Get();
+			if (Channel->Actor != nullptr)
+			{
+				if (Receiver->IsPendingOpsOnChannel(Channel))
+				{
+					continue;
+				}
+			}
+
+			// This same logic is called from within UChannel::ReceivedSequencedBunch when a dormant cmd is received
+			Channel->Dormant = 1;
+			Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
+		}
+		RemoveChannels.Emplace(PendingDormantChannel);
+	}
+
+	for (auto& RemoveChannel : RemoveChannels)
+	{
+		PendingDormantChannels.Remove(RemoveChannel);
+	}
 }
 
 void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName)
@@ -1793,7 +1799,7 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 
 	const bool bDormancyComponentExists = StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
 
-	// If the work wants to go dormant, ensure the Dormant component is attached
+	// If the Actor wants to go dormant, ensure the Dormant component is attached
 	if (bMakeDormant)
 	{
 		if (!bDormancyComponentExists)

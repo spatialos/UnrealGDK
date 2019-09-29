@@ -1690,13 +1690,9 @@ void USpatialReceiver::OnDisconnect(Worker_DisconnectOp& Op)
 
 bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel* Channel)
 {
+	// Don't allow Actors to go dormant if they have any pending operations waiting on their channel
 	check(Channel);
 	check(Channel->Actor);
-
-	if (UnresolvedRefsMap.Num() > 0)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Dormancy check"));
-	}
 
 	for (const auto& UnresolvedRef : UnresolvedRefsMap)
 	{

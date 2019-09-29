@@ -79,7 +79,7 @@ void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool
 	UpdateActorInterest(Cast<AActor>(PlayerController->GetPawn()));
 }
 
-void USpatialNetConnection::FlushDormancy(class AActor* Actor)
+void USpatialNetConnection::FlushDormancy(AActor* Actor)
 {
 	Super::FlushDormancy(Actor);
 

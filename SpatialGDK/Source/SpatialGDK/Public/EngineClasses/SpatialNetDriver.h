@@ -230,6 +230,8 @@ private:
 	void ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters);
 	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn);
 
+	void ProcessPendingDormancy();
+
 	friend USpatialNetConnection;
 	friend USpatialWorkerConnection;
 
