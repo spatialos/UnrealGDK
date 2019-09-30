@@ -204,6 +204,8 @@ private:
 
 	void OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp& Op);
 
+	void PeriodicallyProcessIncomingRPCs();
+
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 
