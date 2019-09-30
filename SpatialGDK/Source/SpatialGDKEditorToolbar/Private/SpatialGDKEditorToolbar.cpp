@@ -86,7 +86,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 		});
 	}
 
-	if (SpatialGDKEditorSettings->bExposeRuntimeIP) {
+	if (SpatialGDKEditorSettings->bExposeRuntimeIP)
+	{
 		LocalDeploymentManager->Init(SpatialGDKEditorSettings->ExposedRuntimeIP);
 	}
 	else
