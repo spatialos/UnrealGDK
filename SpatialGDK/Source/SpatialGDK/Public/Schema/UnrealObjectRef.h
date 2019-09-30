@@ -3,9 +3,7 @@
 #include "CoreMinimal.h"
 
 #include "Utils/SchemaOption.h"
-#include "SpatialCommonTypes.h"
-
-#include <cstdint>
+#include <WorkerSDK/Improbable/c_worker.h>
 
 class USpatialPackageMapClient;
 
