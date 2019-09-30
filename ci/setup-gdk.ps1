@@ -1,7 +1,8 @@
 # expects $gdk_home to be defined
 param (
-    [string] $unreal_path = "$gdk_home\UnrealEngine"
+    [string] $unreal_path = "$($pwd.drive.root)UnrealEngine"
 )
+
 $gdk_in_engine = "$unreal_path\Engine\Plugins\UnrealGDK"
 
     # link the gdk into its expected place in the engine
