@@ -23,9 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
 - Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
 - It is now possible to specify in Unreal which actors should not persist as entities in the Snapshot.
+- Deleted startup actors are now tracked
 - The GDK now uses SpatialOS `14.1.0`.
 
 ### Bug fixes:
+- Fixed a bug where the spatial daemon started even with spatial networking disabled.
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
 - Attempting to replicate unsupported types (such as TMap) produce a log error rather than crashing the game.

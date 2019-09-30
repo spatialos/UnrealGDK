@@ -152,12 +152,13 @@ public:
 
 	void OnDisconnect(Worker_DisconnectOp& Op);
 
+	void RemoveActor(Worker_EntityId EntityId);
+
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
 
 	void ReceiveActor(Worker_EntityId EntityId);
-	void RemoveActor(Worker_EntityId EntityId);
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 
 	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
@@ -166,8 +167,6 @@ private:
 	void ProcessRemoveComponent(const Worker_RemoveComponentOp& Op);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
-
-	void QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId);
 
 	void HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
 	void HandleActorAuthority(const Worker_AuthorityChangeOp& Op);
