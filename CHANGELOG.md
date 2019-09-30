@@ -10,12 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Avoid generating schema for all UObject subclasses. Actor, ActorComponent, GameplayAbility subclasses are enabled by default, other classes can be enabled using SpatialType UCLASS specifier.
 - Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
 
+### Breaking Changes
+- If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you need to enable generating schema for them using SpatialType UCLASS specifier or by checking Spatial Type if it's a blueprint.
+
 ### Features:
 - Visual Studio 2019 is now supported.
 - Added toolbar and commandlet options to delete the schema database.
 - Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
 - Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
 - It is now possible to specify in Unreal which actors should not persist as entities in the Snapshot.
+- Deleted startup actors are now tracked
 
 ### Bug fixes:
 - Fixed an issue that could cause multiple Channels to be created for an Actor.

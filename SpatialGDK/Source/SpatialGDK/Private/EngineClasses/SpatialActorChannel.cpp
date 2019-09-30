@@ -118,7 +118,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		}
 		else
 		{
-			Sender->SendDeleteEntityRequest(EntityId);
+			Sender->RetireEntity(EntityId);
 		}
 	}
 }
