@@ -717,6 +717,9 @@ bool RunSchemaCompiler()
 
 bool SpatialGDKGenerateSchema()
 {
+	// Reset Generated Classes.
+	SchemaGeneratedClasses.Empty();
+
 	// Generate Schema for classes loaded in memory.
 
 	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses()))
