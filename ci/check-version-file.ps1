@@ -1,5 +1,5 @@
 param(
-    $pinned_branches = "master", "release", "feature/ci-use-latest-engine-fake-master"
+    $pinned_branches = @("master", "release", "feature/ci-use-latest-engine-fake-master")
 )
 
 $branch_name = (Get-Item -Path env:BUILDKITE_BRANCH).Value
