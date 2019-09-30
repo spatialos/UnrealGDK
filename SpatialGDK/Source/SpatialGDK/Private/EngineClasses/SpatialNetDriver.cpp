@@ -662,28 +662,22 @@ void USpatialNetDriver::Shutdown()
 
 	if (bDeleteDynamicEntities && IsServer())
 	{
-		for (const auto& EntityId : DormantEntities)
+		for (const Worker_EntityId EntityId : DormantEntities)
 		{
 			if (StaticComponentView->GetAuthority(EntityId, SpatialGDK::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				Sender->SendDeleteEntityRequest(EntityId);
+				Connection->SendDeleteEntityRequest(EntityId);
 			}
 		}
-	}
-#endif //WITH_EDITOR
 
-	Super::Shutdown();
-
-#if WITH_EDITOR
-	if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
-	{
 		for (const Worker_EntityId EntityId : TombstonedEntities)
 		{
 			Connection->SendDeleteEntityRequest(EntityId);
 		}
 	}
-#endif
+#endif //WITH_EDITOR
 
+	Super::Shutdown();
 }
 
 void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection)
