@@ -6,3 +6,5 @@ $gdk_in_engine = "$unreal_path\Engine\Plugins\UnrealGDK"
 
     # clean up the symlink 
 cmd /c rmdir $gdk_in_engine
+
+# TODO remove the `spatial` folder in UnrealEngine

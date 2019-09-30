@@ -11,9 +11,9 @@ pushd $gdk_in_engine
     cmd /c Setup.bat # run the setup # TODO set NO_PAUSE
 popd
 
-pushd $gdk_home
-    tree . /f /a > root_dir.txt
-popd
+# pushd $gdk_home
+#     tree . /f /a > root_dir.txt
+# popd
 # pushd "$($gdk_home)"
 
 #     # Setup variables
