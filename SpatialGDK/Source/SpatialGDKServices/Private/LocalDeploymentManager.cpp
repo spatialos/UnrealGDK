@@ -43,7 +43,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 		// Watch the worker config directory for changes.
 		StartUpWorkerConfigDirectoryWatcher();
 	}
-#endif
+#endif // PLATFORM_WINDOWS
 }
 
 void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
