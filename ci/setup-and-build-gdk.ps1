@@ -7,6 +7,10 @@ param(
 
 . "$PSScriptRoot\common.ps1"
 
+Start-Event "check-version-file" "command"
+&$PSScriptRoot"\check-version-file.ps1"
+Finish-Event "check-version-file" "command"
+
 # Download Unreal Engine
 Start-Event "get-unreal-engine" "command"
 &$PSScriptRoot"\get-engine.ps1"
