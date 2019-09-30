@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deleted startup actors are now tracked
 
 ### Bug fixes:
+- Fixed a bug where the spatial daemon started even with spatial networking disabled.
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
 - Attempting to replicate unsupported types (such as TMap) produce a log error rather than crashing the game.
@@ -31,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
 - Streaming levels with QBI enabled no longer produces errors if the player connection owns unreplicated actors.
 - Fixed an issue that would prevent player movement in a zoned deployment.
+- Fixed an issue that could cause queued incoming RPCs with unresolved references to never be processed.
 
 ## [`0.6.1`] - 2019-08-15
 
