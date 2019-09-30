@@ -168,7 +168,7 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
 	FWorkerType DefaultWorkerType;
 
-	/** Enable running different server worker types to split the simulation by Actor Groups. */
+	/** Enable running different server worker types to split the simulation by Actor Groups. Can be overridden with command line argument OverrideSpatialOffloading. */
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
 	bool bEnableOffloading;
 

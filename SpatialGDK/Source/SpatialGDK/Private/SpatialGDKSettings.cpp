@@ -47,6 +47,18 @@ void USpatialGDKSettings::PostInitProperties()
 {
 	Super::PostInitProperties();
 
+	// Check any command line overrides for using QBI, Offloading (after reading the config value):
+	const TCHAR* CommandLine = FCommandLine::Get();
+
+	if (FParse::Param(CommandLine, TEXT("OverrideSpatialOffloading")))
+	{
+		bEnableOffloading = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideSpatialOffloading="), bEnableOffloading);
+	}
+
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
 	PlayInSettings->bEnableOffloading = bEnableOffloading;

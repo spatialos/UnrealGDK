@@ -43,7 +43,7 @@ public class SpatialGDK : ModuleRules
 
         var WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
 
-        string LibPrefix = "";
+        string LibPrefix = "improbable_";
         string ImportLibSuffix = "";
         string SharedLibSuffix = "";
         bool bAddDelayLoad = false;
@@ -57,15 +57,15 @@ public class SpatialGDK : ModuleRules
                 bAddDelayLoad = true;
                 break;
             case UnrealTargetPlatform.Mac:
-                LibPrefix = "lib";
+                LibPrefix = "libimprobable_";
                 ImportLibSuffix = SharedLibSuffix = ".dylib";
                 break;
             case UnrealTargetPlatform.Linux:
-                LibPrefix = "lib";
+                LibPrefix = "libimprobable_";
                 ImportLibSuffix = SharedLibSuffix = ".so";
                 break;
             case UnrealTargetPlatform.PS4:
-                LibPrefix = "lib";
+                LibPrefix = "libimprobable_";
                 ImportLibSuffix = "_stub.a";
                 SharedLibSuffix = ".prx";
                 bAddDelayLoad = true;
@@ -77,8 +77,8 @@ public class SpatialGDK : ModuleRules
                 // See: https://www.fmod.org/questions/question/deploy-issue-on-xboxone-with-unrealengine-4-14/
                 break;
             case UnrealTargetPlatform.IOS:
-                LibPrefix = "lib";
-                ImportLibSuffix = SharedLibSuffix = "_static_fullylinked.a";
+                LibPrefix = "libimprobable_";
+                ImportLibSuffix = SharedLibSuffix = "_static.a";
                 break;
             default:
                 throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
