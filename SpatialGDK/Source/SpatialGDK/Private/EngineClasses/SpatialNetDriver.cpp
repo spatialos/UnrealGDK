@@ -38,6 +38,7 @@
 #include "Utils/SpatialMetricsDisplay.h"
 
 #if WITH_EDITOR
+#include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKServicesModule.h"
 #endif
 
@@ -159,6 +160,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		}
 	}
 
+	TombstonedEntities.Reserve(EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT);
 #endif
 
 	InitiateConnectionToSpatialOS(URL);
@@ -655,6 +657,17 @@ void USpatialNetDriver::Shutdown()
 	}
 
 	Super::Shutdown();
+
+#if WITH_EDITOR
+	if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
+	{
+		for (const Worker_EntityId EntityId : TombstonedEntities)
+		{
+			Connection->SendDeleteEntityRequest(EntityId);
+		}
+	}
+#endif
+
 }
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
@@ -1865,7 +1878,7 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 	FTimerHandle RetryTimer;
 	TimerManager.SetTimer(RetryTimer, [this, EntityId]()
 	{
-		Sender->SendDeleteEntityRequest(EntityId);
+		Sender->RetireEntity(EntityId);
 	}, Delay, false);
 }
 
@@ -1973,3 +1986,10 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 
 	return false;
 }
+
+#if WITH_EDITOR
+void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
+{
+	TombstonedEntities.Add(EntityId);
+}
+#endif
