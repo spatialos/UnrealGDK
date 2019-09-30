@@ -538,7 +538,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 
 		// If the runtime IP is to be exposed, pass it to the spatial service on startup
 		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-		bool bSpatialServiceStarted;
+		bool bSpatialServiceStarted = false;
 		if (SpatialGDKSettings->bExposeRuntimeIP)
 		{
 			bSpatialServiceStarted = LocalDeploymentManager->TryStartSpatialService(SpatialGDKSettings->ExposedRuntimeIP);
