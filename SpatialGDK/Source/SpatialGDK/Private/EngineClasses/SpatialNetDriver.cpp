@@ -211,8 +211,13 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	{
 		Connection->ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
 
-		// Check for overrides in the travel URL.
-		if (!URL.Host.IsEmpty() && URL.Host.Compare(SpatialConstants::LOCAL_HOST) != 0)
+		// Override the default receptionist with travel URL if it is supplied, but
+		// do not override if we are trying to connect to 127.0.0.1 in a PIE session.
+		// This allows connecting to remote deployment with a PIE session for easier testing,
+		// while still allowing travel to a local deployment after initially connecting to a remote one.
+		// (Vanilla Unreal always passes 127.0.0.1 to PIE clients as a command line argument.)
+		bool bPlayingInEditor = GetWorld() ? GetWorld()->WorldType == EWorldType::PIE : false;
+		if (!URL.Host.IsEmpty() && !(URL.Host == SpatialConstants::LOCAL_HOST && bPlayingInEditor))
 		{
 			Connection->ReceptionistConfig.ReceptionistHost = URL.Host;
 		}
