@@ -12,6 +12,9 @@
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
+
+using namespace SpatialGDKEditor::Schema;
 
 DEFINE_LOG_CATEGORY(LogSchemaGenerator);
 
@@ -565,7 +568,7 @@ void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUn
 		{
 			UObject* Value = PropertyTypeInfo->Object;
 
-			if (Value != nullptr && !Value->IsEditorOnly())
+			if (Value != nullptr && IsSupportedClass(Value->GetClass()))
 			{
 				UClass* Class = Value->GetClass();
 				if (!AlreadyImported.Contains(Class) && SchemaGeneratedClasses.Contains(Class))
