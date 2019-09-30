@@ -11,7 +11,6 @@
 
 #include "SpatialMetrics.generated.h"
 
-struct Schema_Object;
 class USpatialNetDriver;
 class USpatialWorkerConnection;
 

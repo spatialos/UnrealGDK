@@ -46,6 +46,7 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	TimerManager = InTimerManager;
 
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
+	PeriodicallyProcessIncomingRPCs();
 }
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
@@ -1035,12 +1036,6 @@ void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorCh
 
 void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
-	if (StaticComponentView->GetAuthority(Op.entity_id, Op.update.component_id) == WORKER_AUTHORITY_AUTHORITATIVE)
-	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping update because this was short circuited"), Op.entity_id, Op.update.component_id);
-		return;
-	}
-
 	switch (Op.update.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
@@ -1222,7 +1217,7 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 
 void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 {
-	Schema_FieldId CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
+	Schema_FieldId CommandIndex = Op.request.command_index;
 
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
 	{
@@ -1956,4 +1951,16 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 		NetConnection->CleanUp();
 		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 	}
+}
+
+void USpatialReceiver::PeriodicallyProcessIncomingRPCs()
+{
+	FTimerHandle IncomingRPCsPeriodicProcessTimer;
+	TimerManager->SetTimer(IncomingRPCsPeriodicProcessTimer, [WeakThis = TWeakObjectPtr<USpatialReceiver>(this)]()
+	{
+		if (USpatialReceiver* SpatialReceiver = WeakThis.Get())
+		{
+			SpatialReceiver->IncomingRPCs.ProcessRPCs();
+		}
+	}, GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCWaitTime, true);
 }
