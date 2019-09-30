@@ -183,6 +183,7 @@ private:
 	bool bPersistSpatialConnection;
 	bool bWaitingForAcceptingPlayersToSpawn;
 	bool bIsReadyToStart;
+	bool bMapLoaded;
 
 	FString SnapshotToLoad;
 
@@ -198,7 +199,9 @@ private:
 	void HandleOngoingServerTravel();
 
 	void HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists);
-	bool FindAndDispatchStartupOps(const TArray<Worker_OpList*>& InOpLists);
+	bool FindAndDispatchStartupOpsServer(const TArray<Worker_OpList*>& InOpLists);
+	bool FindAndDispatchStartupOpsClient(const TArray<Worker_OpList*>& InOpLists);
+	void SelectiveProcessOps(TArray<Worker_Op*> FoundOps);
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);

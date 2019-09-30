@@ -52,6 +52,8 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
 	, bWaitingForAcceptingPlayersToSpawn(false)
+	, bIsReadyToStart(false)
+	, bMapLoaded(false)
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
 {
@@ -68,8 +70,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
 
 	bConnectAsClient = bInitAsClient;
-	bAuthoritativeDestruction = true;
-	bIsReadyToStart = bInitAsClient;
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
@@ -400,6 +400,8 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			checkNoEntry();
 		}
 	}
+
+	bMapLoaded = true;
 }
 
 void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
@@ -1840,18 +1842,28 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 	}
 
 	QueuedStartupOpLists.Append(InOpLists);
-	bIsReadyToStart = FindAndDispatchStartupOps(InOpLists);
+	if (IsServer())
+	{
+		bIsReadyToStart = FindAndDispatchStartupOpsServer(InOpLists);
+
+		if (bIsReadyToStart)
+		{
+			// We've found and dispatched all ops we need for startup,
+			// trigger BeginPlay() on the GSM and process the queued ops.
+			// Note that FindAndDispatchStartupOps() will have notified the Dispatcher
+			// to skip the startup ops that we've processed already.
+			GlobalStateManager->TriggerBeginPlay();
+		}
+	}
+	else
+	{
+		bIsReadyToStart = FindAndDispatchStartupOpsClient(InOpLists);
+	}
 
 	if (!bIsReadyToStart)
 	{
 	    return;
 	}
-
-	// We've found and dispatched all ops we need for startup, trigger BeginPlay()
-	// on the GSM and process the queued ops.  Note that FindAndDispatchStartupOps()
-	// will have notified the Dispatcher to skip the startup ops that we've
-	// processed already.
-	GlobalStateManager->TriggerBeginPlay();
 
 	for (Worker_OpList* OpList : QueuedStartupOpLists)
 	{
@@ -1866,7 +1878,7 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 	QueuedStartupOpLists.Empty();
 }
 
-bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& InOpLists)
+bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpList*>& InOpLists)
 {
 	TArray<Worker_Op*> FoundOps;
 
@@ -1912,6 +1924,42 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		}
 	}
 
+	SelectiveProcessOps(FoundOps);
+
+	if (EntityPool->IsReady() && GlobalStateManager->IsReadyToCallBeginPlay())
+	{
+		// Return whether or not we are ready to start
+		return true;
+	}
+
+	return false;
+}
+
+bool USpatialNetDriver::FindAndDispatchStartupOpsClient(const TArray<Worker_OpList*>& InOpLists)
+{
+	if (bMapLoaded)
+	{
+		return true;
+	}
+	else
+	{
+		// Search for the entity query response for the GlobalStateManager
+		Worker_Op* Op = nullptr;
+		FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE, &Op);
+
+		TArray<Worker_Op*> FoundOps;
+		if (Op != nullptr)
+		{
+			FoundOps.Add(Op);
+		}
+
+		SelectiveProcessOps(FoundOps);
+		return false;
+	}
+}
+
+void USpatialNetDriver::SelectiveProcessOps(TArray<Worker_Op*> FoundOps)
+{
 	// For each Op we've found, make a Worker_OpList that just contains that Op,
 	// and pass it to the dispatcher for processing. This allows us to avoid copying
 	// the Ops around and dealing with memory that is / should be managed by the Worker SDK.
@@ -1926,13 +1974,4 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		Dispatcher->ProcessOps(&SingleOpList);
 		Dispatcher->MarkOpToSkip(Op);
 	}
-
-	if (EntityPool->IsReady() &&
-		GlobalStateManager->IsReadyToCallBeginPlay())
-	{
-		// Return whether or not we are ready to start
-		return true;
-	}
-
-	return false;
 }
