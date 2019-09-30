@@ -38,6 +38,7 @@
 #include "Utils/SpatialMetricsDisplay.h"
 
 #if WITH_EDITOR
+#include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKServicesModule.h"
 #endif
 
@@ -80,9 +81,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
 
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
-#if ENGINE_MINOR_VERSION <= 20
-	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
-#else
 	// Copied from what the Engine does with UActorChannel
 	FChannelDefinition SpatialChannelDefinition{};
 	SpatialChannelDefinition.ChannelName = NAME_Actor;
@@ -92,7 +90,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	ChannelDefinitions[CHTYPE_Actor] = SpatialChannelDefinition;
 	ChannelDefinitionMap[NAME_Actor] = SpatialChannelDefinition;
-#endif
 
 	// Extract the snapshot to load (if any) from the map URL so that once we are connected to a deployment we can load that snapshot into the Spatial deployment.
 	SnapshotToLoad = URL.GetOption(*SpatialConstants::SnapshotURLOption, TEXT(""));
@@ -163,6 +160,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		}
 	}
 
+	TombstonedEntities.Reserve(EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT);
 #endif
 
 	InitiateConnectionToSpatialOS(URL);
@@ -195,10 +193,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	if (!bPersistSpatialConnection)
 	{
 		// Destroy the old connection
-		if (USpatialWorkerConnection* OldConnection = GameInstance->GetSpatialWorkerConnection())
-		{
-			OldConnection->DestroyConnection();
-		}
+		GameInstance->DestroySpatialWorkerConnection();
 
 		// Create a new SpatialWorkerConnection in the SpatialGameInstance.
 		GameInstance->CreateNewSpatialWorkerConnection();
@@ -563,10 +558,24 @@ void USpatialNetDriver::BeginDestroy()
 {
 	Super::BeginDestroy();
 
-	// If we are still connected, cleanup our corresponding worker entity if it exists.
-	if (Connection != nullptr && WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+	if (Connection != nullptr)
 	{
-		Connection->SendDeleteEntityRequest(WorkerEntityId);
+		// Cleanup our corresponding worker entity if it exists.
+		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Connection->SendDeleteEntityRequest(WorkerEntityId);
+		}
+		
+		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
+		if (!bPersistSpatialConnection)
+		{
+			if (UWorld* LocalWorld = GetWorld())
+			{
+				Cast<USpatialGameInstance>(LocalWorld->GetGameInstance())->DestroySpatialWorkerConnection();
+			}
+
+			Connection = nullptr;
+		}
 	}
 
 #if WITH_EDITOR
@@ -621,11 +630,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 				check(Channel->OpenedLocally);
 				Channel->bClearRecentActorRefs = false;
 				// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
-#if ENGINE_MINOR_VERSION <= 20
-				Channel->Close();
-#else
 				Channel->Close(EChannelCloseReason::Destroyed);
-#endif
 			}
 
 			// Remove it from any dormancy lists
@@ -652,6 +657,17 @@ void USpatialNetDriver::Shutdown()
 	}
 
 	Super::Shutdown();
+
+#if WITH_EDITOR
+	if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
+	{
+		for (const Worker_EntityId EntityId : TombstonedEntities)
+		{
+			Connection->SendDeleteEntityRequest(EntityId);
+		}
+	}
+#endif
+
 }
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
@@ -926,11 +942,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 				// This deletion entry is for an actor in a streaming level the connection doesn't have loaded, so skip it
 				continue;
 			}
-#if ENGINE_MINOR_VERSION <= 20
-			UActorChannel* Channel = (UActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
-#else
 			UActorChannel* Channel = (UActorChannel*)InConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally);
-#endif
 			if (Channel)
 			{
 				UE_LOG(LogNetTraffic, Log, TEXT("Server replicate actor creating destroy channel for NetGUID <%s,%s> Priority: %d"), *PriorityActors[j]->DestructionInfo->NetGUID.ToString(), *PriorityActors[j]->DestructionInfo->PathName, PriorityActors[j]->Priority);
@@ -999,7 +1011,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 				// or it's an editor placed actor and the client hasn't initialized the level it's in
 				if (Channel == nullptr && GuidCache->SupportsObject(Actor->GetClass()) && GuidCache->SupportsObject(Actor->IsNetStartupActor() ? Actor : Actor->GetArchetype()))
 				{
-					if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
+					if (!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 					{
 						// Trying to replicate an actor that isn't supported by Spatial (e.g. marked NotSpatial)
 						continue;
@@ -1072,11 +1084,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 				{
 					UE_LOG(LogNetTraffic, Log, TEXT("- Closing channel for no longer relevant actor %s"), *Actor->GetName());
 					// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
-#if ENGINE_MINOR_VERSION <= 20
-					Channel->Close();
-#else
 					Channel->Close(Actor->GetTearOff() ? EChannelCloseReason::TearOff : EChannelCloseReason::Relevancy);
-#endif
 				}
 			}
 		}
@@ -1306,7 +1314,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	// The RPC might have been called by an actor directly, or by a subobject on that actor
 	UObject* CallingObject = SubObject ? SubObject : Actor;
 
-	if (CallingObject->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
+	if (!CallingObject->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Trying to call RPC %s on object %s (class %s) that isn't supported by Spatial. This RPC will be dropped."), *Function->GetName(), *CallingObject->GetName(), *CallingObject->GetClass()->GetName());
 		return;
@@ -1741,11 +1749,7 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 	}
 	else
 	{
-#if ENGINE_MINOR_VERSION <= 20
-		Channel = static_cast<USpatialActorChannel*>(NetConnection->CreateChannel(CHTYPE_Actor, 1));
-#else
 		Channel = static_cast<USpatialActorChannel*>(NetConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
-#endif
 		if (Channel == nullptr)
 		{
 			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Failed to create a channel for actor %s."), *GetNameSafe(Actor));
@@ -1874,7 +1878,7 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 	FTimerHandle RetryTimer;
 	TimerManager.SetTimer(RetryTimer, [this, EntityId]()
 	{
-		Sender->SendDeleteEntityRequest(EntityId);
+		Sender->RetireEntity(EntityId);
 	}, Delay, false);
 }
 
@@ -1982,3 +1986,10 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 
 	return false;
 }
+
+#if WITH_EDITOR
+void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
+{
+	TombstonedEntities.Add(EntityId);
+}
+#endif

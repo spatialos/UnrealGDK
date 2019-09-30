@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 - Added logging for queued RPCs.
 - Added several new STAT annotations into the ServerReplicateActors call chain.
+- Avoid generating schema for all UObject subclasses. Actor, ActorComponent, GameplayAbility subclasses are enabled by default, other classes can be enabled using SpatialType UCLASS specifier.
+- Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
+
+### Breaking Changes
+- If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you need to enable generating schema for them using SpatialType UCLASS specifier or by checking Spatial Type if it's a blueprint.
 
 ### Features:
 - Visual Studio 2019 is now supported.
@@ -14,8 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
 - Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
 - It is now possible to specify in Unreal which actors should not persist as entities in the Snapshot.
+- Deleted startup actors are now tracked
 
 ### Bug fixes:
+- Fixed a bug where the spatial daemon started even with spatial networking disabled.
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
 - Attempting to replicate unsupported types (such as TMap) produce a log error rather than crashing the game.
@@ -23,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When schema compiler fails, schema generation correctly shows an error.
 - Fixed crash during initialization when running GenerateSchemaCommandlet.
 - Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
+- Streaming levels with QBI enabled no longer produces errors if the player connection owns unreplicated actors.
+- Fixed an issue that would prevent player movement in a zoned deployment.
+- Fixed an issue that could cause queued incoming RPCs with unresolved references to never be processed.
 
 ### Breaking Changes:
 - Chunk based interest is no longer supported. All interest is resolved through QBI. You should remove streaming query and chunk based interest options from worker and launch config files to avoid unnecessary streaming queries being generated.
@@ -32,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features:
 - The [Multiserver zoning shooter tutorial](https://docs.improbable.io/unreal/alpha/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) has been updated to use the Example Project.
 
-### Bug fixes: 
+### Bug fixes:
 - Simulated player launch configurations are no longer invalid when the GDK is installed as an Engine Plugin.
 - RPCs that have been queued for execution for more than 1 second (the default value in `SpatialGDKSettings QueuedIncomingRPCWaitTime`) are now executed even if there are unresolved parameters. This stops unresolved parameters from blocking the execution queue.
 - Offloading is no longer enabled by default in the Example Project. You can toggle offloading on using [these steps](https://docs.improbable.io/unreal/alpha/content/tutorials/offloading-tutorial/offloading-setup#step-4-enable-offloading).

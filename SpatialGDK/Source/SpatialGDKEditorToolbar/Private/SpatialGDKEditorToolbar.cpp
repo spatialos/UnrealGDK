@@ -294,7 +294,7 @@ void FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked()
 	if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("DeleteSchemaDatabasePrompt", "Are you sure you want to delete the schema database?")) == EAppReturnType::Yes)
 	{
 		OnShowTaskStartNotification(TEXT("Deleting schema database"));
-		if (DeleteSchemaDatabase())
+		if (SpatialGDKEditor::Schema::DeleteSchemaDatabase())
 		{
 			OnShowSuccessNotification(TEXT("Schema database deleted"));
 		}
@@ -819,7 +819,7 @@ bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
 {
 	FString DescriptorPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("build/assembly/schema/schema.descriptor"));
 	FString GdkFolderPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("schema/unreal/gdk"));
-	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && GeneratedSchemaDatabaseExists();
+	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();
 }
 
 #undef LOCTEXT_NAMESPACE
