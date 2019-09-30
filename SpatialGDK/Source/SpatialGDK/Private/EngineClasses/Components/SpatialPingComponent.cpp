@@ -111,7 +111,7 @@ void USpatialPingComponent::TickPingComponent()
 void USpatialPingComponent::SendNewPing()
 {
 	// Generate a new ping ID.
-	int16 NewPingID = LastSentPingID + 1;
+	uint16 NewPingID = LastSentPingID + 1;
 	// Send and record new ping ID.
 	SendServerWorkerPingID(NewPingID);
 	LastSentPingID = NewPingID;
@@ -170,12 +170,12 @@ void USpatialPingComponent::OnRep_ReplicatedPingID()
 	}
 }
 
-bool USpatialPingComponent::SendServerWorkerPingID_Validate(int16 PingID)
+bool USpatialPingComponent::SendServerWorkerPingID_Validate(uint16 PingID)
 {
 	return true;
 }
 
-void USpatialPingComponent::SendServerWorkerPingID_Implementation(int16 PingID)
+void USpatialPingComponent::SendServerWorkerPingID_Implementation(uint16 PingID)
 {
 	ReplicatedPingID = PingID;
 }
