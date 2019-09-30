@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed crash during initialization when running GenerateSchemaCommandlet.
 - Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
 
+### Breaking Changes:
+- Chunk based interest is no longer supported. All interest is resolved through QBI. You should remove streaming query and chunk based interest options from worker and launch config files to avoid unnecessary streaming queries being generated.
+
 ## [`0.6.1`] - 2019-08-15
 
 ### Features:
