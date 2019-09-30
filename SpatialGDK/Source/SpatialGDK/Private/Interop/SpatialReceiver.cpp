@@ -5,6 +5,7 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
@@ -22,6 +23,7 @@
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerRPCEndpoint.h"
 #include "Schema/SpawnData.h"
+#include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
@@ -134,6 +136,9 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
+		return;
+	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
+		RemoveActor(Op.entity_id);
 		return;
 	}
 
@@ -313,6 +318,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
 		// and set our RemoteRole to be ROLE_AutonomousProxy if the actor has an owning connection.
+		// Note: Pawn, PlayerController, and PlayerState for player-owned characters can arrive in
+		// any order on non-authoritative servers, so it's possible that we don't yet know if a pawn
+		// is player controlled when gaining authority over the pawn and need to wait for the player
+		// state. Likewise, it's possible that the player state doesn't have a pointer to its pawn
+		// yet, so we need to wait for the pawn to arrive.
 		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
@@ -328,9 +338,22 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 					}
 					else if (APawn* Pawn = Cast<APawn>(Actor))
 					{
+						// The following check will return false on non-authoritative servers if the PlayerState hasn't been received yet.
 						if (Pawn->IsPlayerControlled())
 						{
 							Pawn->RemoteRole = ROLE_AutonomousProxy;
+						}
+					}
+					else if (const APlayerState* PlayerState = Cast<APlayerState>(Actor))
+					{
+						// The following check will return false on non-authoritative servers if the Pawn hasn't been received yet.
+						if (APawn* PawnFromPlayerState = PlayerState->GetPawn())
+						{
+							check(PlayerState->bIsABot || PawnFromPlayerState->IsPlayerControlled());
+							if (PawnFromPlayerState->IsPlayerControlled())
+							{
+								PawnFromPlayerState->RemoteRole = ROLE_AutonomousProxy;
+							}
 						}
 					}
 
@@ -341,7 +364,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 				else
 				{
 					UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to delete it earlier, when it had no authority. Retrying to delete now."), *Actor->GetName(), Op.entity_id);
-					Sender->SendDeleteEntityRequest(Op.entity_id);
+					Sender->RetireEntity(Op.entity_id);
 				}
 			}
 			else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
@@ -515,6 +538,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			return;
 		}
 
+		// RemoveActor immediately if we've received the tombstone component.
+		if (NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
+		{
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was tombstoned. The actor will not be spawned."), EntityId);
+			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
+			PackageMap->ResolveEntityActor(EntityActor, EntityId);
+			RemoveActor(EntityId);
+			return;
+		}
+
 		UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
 
 		if (NetDriver->IsServer())
@@ -533,11 +566,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		// Set up actor channel.
-#if ENGINE_MINOR_VERSION <= 20
-		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
-#else
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
-#endif
 
 		if (!Channel)
 		{
@@ -645,11 +674,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("RemoveActor: actor for entity %lld was already deleted (likely on the authoritative worker) but still has an open actor channel."), EntityId);
-#if ENGINE_MINOR_VERSION <= 20
-			ActorChannel->ConditionalCleanUp();
-#else
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
-#endif
 		}
 		return;
 	}
@@ -659,23 +684,18 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	{
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
-#if ENGINE_MINOR_VERSION <= 20
-			ActorChannel->ConditionalCleanUp();
-#else
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
-#endif
 		}
 		return;
 	}
 
-	// Actor is a startup actor that is a part of the level. We need to do an entity query to see
-	// if the entity was actually deleted or only removed from our view
-	if (Actor->IsFullNameStableForNetworking())
+	// Actor is a startup actor that is a part of the level.  If it's not Tombstone'd, then it
+	// has just fallen out of our view and we should only remove the entity.
+	if (Actor->IsFullNameStableForNetworking() &&
+		StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID) == false)
 	{
-		QueryForStartupActor(Actor, EntityId);
-
 		// We can't call CleanupDeletedEntity here as we need the NetDriver to maintain the EntityId
-		// to Actor Channel mapping for the DestoryActor to function correctly
+		// to Actor Channel mapping for the DestroyActor to function correctly
 		PackageMap->RemoveEntityActor(EntityId);
 		return;
 	}
@@ -707,41 +727,6 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	DestroyActor(Actor, EntityId);
 }
 
-void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId)
-{
-	Worker_EntityIdConstraint StartupActorConstraintEntityId;
-	StartupActorConstraintEntityId.entity_id = EntityId;
-
-	Worker_Constraint StartupActorConstraint{};
-	StartupActorConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
-	StartupActorConstraint.entity_id_constraint = StartupActorConstraintEntityId;
-
-	Worker_EntityQuery StartupActorQuery{};
-	StartupActorQuery.constraint = StartupActorConstraint;
-	StartupActorQuery.result_type = WORKER_RESULT_TYPE_COUNT;
-
-	Worker_RequestId RequestID;
-	RequestID = NetDriver->Connection->SendEntityQueryRequest(&StartupActorQuery);
-
-	EntityQueryDelegate StartupActorDelegate;
-	TWeakObjectPtr<AActor> WeakActor(Actor);
-	StartupActorDelegate.BindLambda([this, WeakActor, EntityId](const Worker_EntityQueryResponseOp& Op)
-	{
-		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity Query Failed! %s"), UTF8_TO_TCHAR(Op.message));
-			return;
-		}
-
-		if (Op.result_count == 0 && WeakActor.IsValid())
-		{
-			DestroyActor(WeakActor.Get(), EntityId);
-		}
-	});
-
-	AddEntityQueryDelegate(RequestID, StartupActorDelegate);
-}
-
 void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 {
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
@@ -760,12 +745,7 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	// Clean up the actor channel. For clients, this will also call destroy on the actor.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-
-#if ENGINE_MINOR_VERSION <= 20
-		ActorChannel->ConditionalCleanUp();
-#else
 		ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
-#endif
 	}
 	else
 	{
@@ -1103,6 +1083,13 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
+	// If this entity has a Tombstone component, abort all component processing
+	if (const Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id))
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received component update for Entity: %lld Component: %d after tombstone marked dead.  Aborting update."), Op.entity_id, Op.update.component_id);
+		return;
+	}
+
 	if (ClassInfoManager->IsSublevelComponent(Op.update.component_id))
 	{
 		return;
@@ -1403,11 +1390,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 		// Check if bTearOff has been set to true
 		if (GetBoolFromSchema(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
-#if ENGINE_MINOR_VERSION <= 20
-			Channel->ConditionalCleanUp();
-#else
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
-#endif
 			CleanupDeletedEntity(Channel->GetEntityId());
 		}
 	}
@@ -1811,11 +1794,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		bool bIsHandover = ObjectReferences.ParentIndex == -1;
 		FRepParentCmd* Parent = ObjectReferences.ParentIndex >= 0 ? &RepLayout.Parents[ObjectReferences.ParentIndex] : nullptr;
 
-#if ENGINE_MINOR_VERSION <= 20
-		int32 StoredDataOffset = AbsOffset;
-#else
 		int32 StoredDataOffset = ObjectReferences.ShadowOffset;
-#endif
 
 		if (ObjectReferences.Array)
 		{

@@ -110,13 +110,9 @@ public:
 	}
 
 	// UChannel interface
-#if ENGINE_MINOR_VERSION <= 20
-	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, bool bOpenedLocally) override;
-	virtual int64 Close() override;
-#else
 	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, EChannelCreateFlags CreateFlag) override;
 	virtual int64 Close(EChannelCloseReason Reason) override;
-#endif
+
 	virtual int64 ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
 
@@ -157,11 +153,7 @@ public:
 
 protected:
 	// UChannel Interface
-#if ENGINE_MINOR_VERSION <= 20
-	virtual bool CleanUp(const bool bForDestroy) override;
-#else
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
-#endif
 
 private:
 	void DynamicallyAttachSubobject(UObject* Object);
