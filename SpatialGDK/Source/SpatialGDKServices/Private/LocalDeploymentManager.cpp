@@ -180,7 +180,8 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	// If the service is not running then start it.
 	if (!bSpatialServiceRunning)
 	{
-		if (RuntimeIPToExpose.IsEmpty()) {
+		if (RuntimeIPToExpose.IsEmpty())
+		{
 			TryStartSpatialService();
 		}
 		else
