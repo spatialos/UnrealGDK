@@ -418,6 +418,21 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 	const USpatialGDKSettings* SpatialGDKRuntimeSettings = GetDefault<USpatialGDKSettings>();
 	const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 
+	if (const FString* EnableChunkInterest = LaunchConfigDescription.World.LegacyFlags.Find(TEXT("enable_chunk_interest")))
+	{
+		if (*EnableChunkInterest == TEXT("true"))
+		{
+			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. Chunk interest is not supported and this flag needs to be set to false.\n\nDo you want to configure your launch config settings now?")));
+
+			if (Result == EAppReturnType::Yes)
+			{
+				FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
+			}
+
+			return false;
+		}
+	}
+
 	if (!SpatialGDKRuntimeSettings->bEnableHandover && SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
 		{
 			return (Section.Rows * Section.Columns) > 1;
