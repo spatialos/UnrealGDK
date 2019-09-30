@@ -17,10 +17,15 @@ class SPATIALGDK_API USpatialPingComponent : public UActorComponent
 	GENERATED_UCLASS_BODY()
 
 public:
+	// Determines whether the component starts with ping behavior enabled.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SpatialPing)
 	bool bStartWithPingEnabled = true;
+	// The minimum time, in seconds, between pings.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SpatialPing)
-	float PingFrequency = 0.5f;
+	float MinPingInterval = 0.5f;
+	// The maximum time, in seconds, to wait for a reply before sending another ping.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SpatialPing)
+	float TimeoutLimit = 4.0f;
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -40,16 +45,17 @@ public:
 private:
 	float RoundTripPing;
 
-	TArray<int16> SentPingIDs;
-	TArray<double> SentPingTimestamps;
-
 	int16 LastSentPingID;
+	double LastSentPingTimestamp;
 
 	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedPingID)
 	int16 ReplicatedPingID;
 
+	int32 TimeoutCount;
+
 	bool bIsPingEnabled = false;
 
+	FTimerHandle PingTickHandle;
 	FTimerHandle PingTimerHandle;
 
 	APlayerController* OwningController;
@@ -61,7 +67,11 @@ private:
 	UFUNCTION()
 	void TickPingComponent();
 
+	UFUNCTION()
 	void SendNewPing();
+
+	UFUNCTION()
+	void OnPingTimeout();
 
 	UFUNCTION()
 	virtual void OnRep_ReplicatedPingID();

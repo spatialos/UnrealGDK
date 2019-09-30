@@ -51,6 +51,7 @@ bool USpatialPingComponent::GetIsPingEnabled() const
 
 void USpatialPingComponent::SetPingEnabled(bool bSetEnabled)
 {
+	// Only execute if this component is attached to a player controller.
 	if (OwningController != nullptr)
 	{
 		// Only execute on owning local client.
@@ -79,11 +80,9 @@ void USpatialPingComponent::EnablePing()
 	if (World != nullptr)
 	{
 		LastSentPingID = 0;
-		// (Re)initialize TArrays
-		SentPingIDs.Init(0, 0);
-		SentPingTimestamps.Init((double)0, 0);
-		// Set looping timer to 'tick' this component and send ping RPC with configurable frequency.
-		World->GetTimerManager().SetTimer(PingTimerHandle, this, &USpatialPingComponent::TickPingComponent, PingFrequency, true);
+		TimeoutCount = 0;
+		// Set looping timer to 'tick' this component with frequency matching minimum ping interval.
+		World->GetTimerManager().SetTimer(PingTickHandle, this, &USpatialPingComponent::TickPingComponent, MinPingInterval, true);
 		bIsPingEnabled = true;
 	}
 }
@@ -93,9 +92,11 @@ void USpatialPingComponent::DisablePing()
 	UWorld* World = GetWorld();
 	if (World != nullptr)
 	{
-		// Clear the timer.
-		World->GetTimerManager().ClearTimer(PingTimerHandle);
 		bIsPingEnabled = false;
+		// Clear the timers.
+		World->GetTimerManager().ClearTimer(PingTickHandle);
+		World->GetTimerManager().ClearTimer(PingTimerHandle);
+		// Reset ping output value.
 		RoundTripPing = 0.f;
 	}
 }
@@ -109,26 +110,63 @@ void USpatialPingComponent::TickPingComponent()
 
 void USpatialPingComponent::SendNewPing()
 {
-	// Generate a new ping ID
+	// Generate a new ping ID.
 	int16 NewPingID = LastSentPingID + 1;
-	SentPingIDs.Add(NewPingID);
-	SentPingTimestamps.Add(FPlatformTime::Seconds());
+	// Send and record new ping ID.
 	SendServerWorkerPingID(NewPingID);
 	LastSentPingID = NewPingID;
+	LastSentPingTimestamp = FPlatformTime::Seconds();
+	UWorld* World = GetWorld();
+	if (World != nullptr)
+	{
+		// Set a timeout timer to await a reply.
+		World->GetTimerManager().SetTimer(PingTimerHandle, this, &USpatialPingComponent::OnPingTimeout, TimeoutLimit, false);
+	}
+}
+
+void USpatialPingComponent::OnPingTimeout()
+{
+	UWorld* World = GetWorld();
+	if (World != nullptr)
+	{
+		// Clear the timeout timer.
+		World->GetTimerManager().ClearTimer(PingTimerHandle);
+	}
+	// Update round trip ping to reflect timeout.
+	TimeoutCount++;
+	RoundTripPing = TimeoutLimit * TimeoutCount;
+	// Attempt to send another ping.
+	SendNewPing();
 }
 
 void USpatialPingComponent::OnRep_ReplicatedPingID()
 {
-	int32 PingIndex;
-	//Find replicated ping in ID array
-	if (SentPingIDs.Find(ReplicatedPingID, PingIndex))
+	// Check that replicated ping ID matches the last sent AND check ping is enabled to catch cases where a value is replicated after being locally disabled.
+	if (ReplicatedPingID == LastSentPingID && bIsPingEnabled)
 	{
-		//Calculate time delta and update ping value somewhere
-		RoundTripPing = (float)(FPlatformTime::Seconds() - SentPingTimestamps[PingIndex]);
-		//Remove matching elements from the arrays and ALL preceding elements
-		SentPingIDs.RemoveAt(0, PingIndex + 1);
-		SentPingTimestamps.RemoveAt(0, PingIndex + 1);
-		return;
+		UWorld* World = GetWorld();
+		if (World != nullptr)
+		{
+			// Clear the timeout timer.
+			World->GetTimerManager().ClearTimer(PingTimerHandle);
+			TimeoutCount = 0;
+		}
+		// Calculate the round trip ping
+		RoundTripPing = static_cast<float>(FPlatformTime::Seconds() - LastSentPingTimestamp);
+		if (RoundTripPing >= MinPingInterval)
+		{
+			// If the current ping exceeds the min interval then send a new ping immediately.
+			SendNewPing();
+		}
+		else
+		{
+			// Otherwise set a timer for the remaining interval before sending another.
+			float RemainingInterval = MinPingInterval - RoundTripPing;
+			if (World != nullptr)
+			{
+				World->GetTimerManager().SetTimer(PingTimerHandle, this, &USpatialPingComponent::SendNewPing, RemainingInterval, false);
+			}
+		}
 	}
 }
 
