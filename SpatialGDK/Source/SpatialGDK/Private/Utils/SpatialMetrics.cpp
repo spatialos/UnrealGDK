@@ -93,7 +93,8 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 		{
 			Worker_CommandRequest Request = {};
 			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
-			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
+			Request.command_index = SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID;
+			Request.schema_type = Schema_CreateCommandRequest();
 			NetDriver->Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
 		}
 		else
@@ -183,7 +184,8 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 		{
 			Worker_CommandRequest Request = {};
 			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
-			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID);
+			Request.command_index = SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID;
+			Request.schema_type = Schema_CreateCommandRequest();
 			NetDriver->Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID);
 		}
 		else
@@ -209,7 +211,8 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 		{
 			Worker_CommandRequest Request = {};
 			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
-			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID);
+			Request.command_index = SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID;
+			Request.schema_type = Schema_CreateCommandRequest();
 			
 			Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
 			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_NAME_ID, Name);
@@ -294,7 +297,7 @@ void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 {
 	if (WorkerMetricsRecieved.IsBound())
 	{
-		int32 NumMetrics = Op->metrics.metrics.gauge_metric_count;
+		int32 NumMetrics = Op->op.metrics.metrics.gauge_metric_count;
 
 		if (NumMetrics > 0)
 		{
@@ -304,7 +307,7 @@ void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
 
 			for (int32 i = 0; i < NumMetrics; i++)
 			{
-				WorkerMetrics.Add(Op->metrics.metrics.gauge_metrics[i].key, Op->metrics.metrics.gauge_metrics[i].value);
+				WorkerMetrics.Add(Op->op.metrics.metrics.gauge_metrics[i].key, Op->op.metrics.metrics.gauge_metrics[i].value);
 			}
 
 			WorkerMetricsRecieved.Broadcast(WorkerMetrics);

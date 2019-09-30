@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 - Added logging for queued RPCs.
 - Added several new STAT annotations into the ServerReplicateActors call chain.
+- Avoid generating schema for all UObject subclasses. Actor, ActorComponent, GameplayAbility subclasses are enabled by default, other classes can be enabled using SpatialType UCLASS specifier.
+- Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
+- Added OverrideSpatialOffloading command line flag that allows toggling of offloading at launch time.
+
+### Breaking Changes:
+- If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you need to enable generating schema for them using SpatialType UCLASS specifier or by checking Spatial Type if it's a blueprint.
+- If you already have a project that you are upgrading to this version of the GDK, it is encouraged to follow the upgrade process to SpatialOS `14.1.0`:
+1. Open the `spatialos.json` file in the `spatial/` directory of your project.
+1. Replace the `sdk_version` value and the version value of all dependencies with `14.1.0`.
+1. Replace all other instances of the version number in the file.
 
 ### Features:
 - Visual Studio 2019 is now supported.
@@ -15,8 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
 - It is now possible to specify in Unreal which actors should not persist as entities in the Snapshot.
 - An actor component is now available for player controllers to measure round-trip ping to their current authoritative server worker.
+- Deleted startup actors are now tracked
+- The GDK now uses SpatialOS `14.1.0`.
 
 ### Bug fixes:
+- Fixed a bug where the spatial daemon started even with spatial networking disabled.
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
 - Attempting to replicate unsupported types (such as TMap) produce a log error rather than crashing the game.
@@ -26,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
 - Streaming levels with QBI enabled no longer produces errors if the player connection owns unreplicated actors.
 - Fixed an issue that would prevent player movement in a zoned deployment.
+- Fixed an issue that could cause queued incoming RPCs with unresolved references to never be processed.
 
 ## [`0.6.1`] - 2019-08-15
 
