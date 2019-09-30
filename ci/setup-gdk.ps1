@@ -7,6 +7,7 @@ pushd "$($gdk_home)"
     $worker_sdk_dir = "$($gdk_home)\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK"
     $worker_sdk_dir_old = "$($gdk_home)\SpatialGDK\Source\Public\WorkerSdk"
     $binaries_dir = "$($gdk_home)\SpatialGDK\Binaries\ThirdParty\Improbable"
+    $msbuild_exe = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MSBuild.exe"
 
     Write-Log "Creating folders.."
     New-Item -Path "$($worker_sdk_dir)" -ItemType Directory -Force
