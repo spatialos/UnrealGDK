@@ -35,6 +35,10 @@ Finish-Event "setup-gdk" "command"
 # &$PSScriptRoot"\run-tests.ps1" -ue_path "$($unreal_path)\Engine\Binaries\Win64\UE4Editor.exe" -uproject_path "$($unreal_path)\Samples\UnrealGDKExampleProject\Game\GDKShooter.uproject" -output_dir "TestResults" -log_file_name "tests.log"
 # Finish-Event "test-gdk" "command"
 
+Start-Event "cleanup" "command"
+&$PSScriptRoot"\cleanup.ps1"
+Finish-Event "cleanup" "command"
+
 # steps:
 # get engine
 # set up gdk

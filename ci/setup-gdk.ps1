@@ -8,7 +8,7 @@ $gdk_in_engine = "$unreal_path\Engine\Plugins\UnrealGDK"
 cmd /c mklink /J $gdk_in_engine $gdk_home
 
 pushd $gdk_in_engine
-    cmd /c Setup.bat # run the setup
+    cmd /c Setup.bat # run the setup # TODO set NO_PAUSE
 popd
 
 pushd $gdk_home
