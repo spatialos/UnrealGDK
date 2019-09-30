@@ -185,6 +185,7 @@ private:
 	bool bPersistSpatialConnection;
 	bool bWaitingForAcceptingPlayersToSpawn;
 	bool bIsReadyToStart;
+	bool bMapLoaded;
 
 	FString SnapshotToLoad;
 
@@ -240,8 +241,6 @@ private:
 	uint32 UniqueClientIpAddressCounter = 0;
 
 	FDelegateHandle SpatialDeploymentStartHandle;
-
-	bool bMapLoaded;
 
 #if !UE_BUILD_SHIPPING
 	int32 ConsiderListSize = 0;

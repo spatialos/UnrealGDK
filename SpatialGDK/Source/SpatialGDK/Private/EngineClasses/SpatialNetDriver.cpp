@@ -57,6 +57,8 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
 	, bWaitingForAcceptingPlayersToSpawn(false)
+	, bIsReadyToStart(false)
+	, bMapLoaded(false)
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
 {
@@ -73,9 +75,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
 
 	bConnectAsClient = bInitAsClient;
-	bAuthoritativeDestruction = true;
-	bIsReadyToStart = false;
-	bMapLoaded = false;
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
@@ -1899,10 +1898,10 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 
 		if (bIsReadyToStart)
 		{
-			// We've found and dispatched all ops we need for startup, trigger BeginPlay()
-			// on the GSM and process the queued ops.  Note that FindAndDispatchStartupOps()
-			// will have notified the Dispatcher to skip the startup ops that we've
-			// processed already.
+			// We've found and dispatched all ops we need for startup,
+			// trigger BeginPlay() on the GSM and process the queued ops.
+			// Note that FindAndDispatchStartupOps() will have notified the Dispatcher
+			// to skip the startup ops that we've processed already.
 			GlobalStateManager->TriggerBeginPlay();
 		}
 	}
@@ -1977,8 +1976,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 	SelectiveProcessOps(FoundOps);
 
-	if (PackageMap->IsEntityPoolReady() &&
-		GlobalStateManager->IsReadyToCallBeginPlay())
+	if (PackageMap->IsEntityPoolReady() && GlobalStateManager->IsReadyToCallBeginPlay())
 	{
 		// Return whether or not we are ready to start
 		return true;
@@ -1991,7 +1989,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsClient(const TArray<Worker_OpLi
 {
 	TArray<Worker_Op*> FoundOps;
 
-	// Search for GSM-related ops we need and process them
+	// Search for the entity query response for the GlobalStateManager
 	if (!bMapLoaded)
 	{
 		Worker_Op* Op = nullptr;
