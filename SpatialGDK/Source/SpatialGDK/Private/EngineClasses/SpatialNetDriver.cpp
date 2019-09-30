@@ -1987,7 +1987,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 bool USpatialNetDriver::FindAndDispatchStartupOpsClient(const TArray<Worker_OpList*>& InOpLists)
 {
-	if(bMapLoaded)
+	if (bMapLoaded)
 	{
 		return true;
 	}
