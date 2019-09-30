@@ -57,7 +57,7 @@ void USpatialGDKSettings::PostInitProperties()
 	}
 	else
 	{
-		FParse::Bool(CommandLine, TEXT("OverrideSpatialOffloading="), OUT bEnableOffloading);
+		FParse::Bool(CommandLine, TEXT("OverrideSpatialOffloading="), bEnableOffloading);
 	}
 
 	if (FParse::Param(CommandLine, TEXT("useQBI")))
@@ -66,7 +66,7 @@ void USpatialGDKSettings::PostInitProperties()
 	}
 	else
 	{
-		FParse::Bool(CommandLine, TEXT("useQBI="), OUT bUsingQBI);
+		FParse::Bool(CommandLine, TEXT("useQBI="), bUsingQBI);
 	}
 
 #if WITH_EDITOR
