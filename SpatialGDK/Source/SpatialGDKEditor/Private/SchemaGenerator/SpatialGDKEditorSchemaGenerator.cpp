@@ -444,7 +444,7 @@ bool IsSupportedClass(const UClass* SupportedClass)
 			Class = Class->GetSuperClass();
 		}
 
-		if (Class != nullptr || Class->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
+		if (Class == nullptr || Class->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] No SpatialType flag, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
 			return false;
