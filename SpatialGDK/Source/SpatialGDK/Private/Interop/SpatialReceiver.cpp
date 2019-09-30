@@ -46,6 +46,7 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	TimerManager = InTimerManager;
 
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
+	PeriodicallyProcessIncomingRPCs();
 }
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
@@ -1950,4 +1951,16 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 		NetConnection->CleanUp();
 		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 	}
+}
+
+void USpatialReceiver::PeriodicallyProcessIncomingRPCs()
+{
+	FTimerHandle IncomingRPCsPeriodicProcessTimer;
+	TimerManager->SetTimer(IncomingRPCsPeriodicProcessTimer, [WeakThis = TWeakObjectPtr<USpatialReceiver>(this)]()
+	{
+		if (USpatialReceiver* SpatialReceiver = WeakThis.Get())
+		{
+			SpatialReceiver->IncomingRPCs.ProcessRPCs();
+		}
+	}, GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCWaitTime, true);
 }
