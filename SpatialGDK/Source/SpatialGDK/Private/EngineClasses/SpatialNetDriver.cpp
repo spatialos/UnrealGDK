@@ -1987,29 +1987,25 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 bool USpatialNetDriver::FindAndDispatchStartupOpsClient(const TArray<Worker_OpList*>& InOpLists)
 {
-	TArray<Worker_Op*> FoundOps;
-
-	// Search for the entity query response for the GlobalStateManager
-	if (!bMapLoaded)
+	if(bMapLoaded)
 	{
+		return true;
+	}
+	else
+	{
+		// Search for the entity query response for the GlobalStateManager
 		Worker_Op* Op = nullptr;
 		FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE, &Op);
 
+		TArray<Worker_Op*> FoundOps;
 		if (Op != nullptr)
 		{
 			FoundOps.Add(Op);
 		}
+
+		SelectiveProcessOps(FoundOps);
+		return false;
 	}
-
-	SelectiveProcessOps(FoundOps);
-
-	if(bMapLoaded)
-	{
-		// Return whether or not we are ready to start
-		return true;
-	}
-
-	return false;
 }
 
 void USpatialNetDriver::SelectiveProcessOps(TArray<Worker_Op*> FoundOps)
