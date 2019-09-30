@@ -168,7 +168,7 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	}
 	else
 	{
-		// Closed for dormancy reasons, ensure we update the component state of this entity
+		// Closed for dormancy reasons, ensure we update the component state of this entity.
 		const bool bMakeDormant = true;
 		NetDriver->RefreshActorDormancy(Actor, bMakeDormant);
 		NetDriver->RegisterDormantEntityId(EntityId);
@@ -693,7 +693,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 	return ReplicateSubobject(Obj, RepFlags);
 }
 
-bool USpatialActorChannel::ReadyForDormancy(bool suppressLogs /*= false*/)
+bool USpatialActorChannel::ReadyForDormancy(bool bSuppressLogs /*= false*/)
 {
  	// Check Receiver doesn't have any pending operations for this channel
  	if (Receiver->IsPendingOpsOnChannel(this))
@@ -707,7 +707,7 @@ bool USpatialActorChannel::ReadyForDormancy(bool suppressLogs /*= false*/)
 		return false;
 	}
 
-	return Super::ReadyForDormancy(suppressLogs);
+	return Super::ReadyForDormancy(bSuppressLogs);
 }
 
 TMap<UObject*, const FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
