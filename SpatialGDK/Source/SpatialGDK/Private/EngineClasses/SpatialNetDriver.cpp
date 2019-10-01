@@ -38,6 +38,7 @@
 #include "Utils/SpatialMetricsDisplay.h"
 
 #if WITH_EDITOR
+#include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKServicesModule.h"
 #endif
 
@@ -56,6 +57,8 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
 	, bWaitingForAcceptingPlayersToSpawn(false)
+	, bIsReadyToStart(false)
+	, bMapLoaded(false)
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
 {
@@ -72,8 +75,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
 
 	bConnectAsClient = bInitAsClient;
-	bAuthoritativeDestruction = true;
-	bIsReadyToStart = bInitAsClient;
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
@@ -159,6 +160,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		}
 	}
 
+	TombstonedEntities.Reserve(EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT);
 #endif
 
 	InitiateConnectionToSpatialOS(URL);
@@ -394,6 +396,8 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			checkNoEntry();
 		}
 	}
+
+	bMapLoaded = true;
 }
 
 void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
@@ -655,6 +659,17 @@ void USpatialNetDriver::Shutdown()
 	}
 
 	Super::Shutdown();
+
+#if WITH_EDITOR
+	if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
+	{
+		for (const Worker_EntityId EntityId : TombstonedEntities)
+		{
+			Connection->SendDeleteEntityRequest(EntityId);
+		}
+	}
+#endif
+
 }
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
@@ -1865,7 +1880,7 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 	FTimerHandle RetryTimer;
 	TimerManager.SetTimer(RetryTimer, [this, EntityId]()
 	{
-		Sender->SendDeleteEntityRequest(EntityId);
+		Sender->RetireEntity(EntityId);
 	}, Delay, false);
 }
 
@@ -1877,18 +1892,28 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 	}
 
 	QueuedStartupOpLists.Append(InOpLists);
-	bIsReadyToStart = FindAndDispatchStartupOps(InOpLists);
+	if (IsServer())
+	{
+		bIsReadyToStart = FindAndDispatchStartupOpsServer(InOpLists);
+
+		if (bIsReadyToStart)
+		{
+			// We've found and dispatched all ops we need for startup,
+			// trigger BeginPlay() on the GSM and process the queued ops.
+			// Note that FindAndDispatchStartupOps() will have notified the Dispatcher
+			// to skip the startup ops that we've processed already.
+			GlobalStateManager->TriggerBeginPlay();
+		}
+	}
+	else
+	{
+		bIsReadyToStart = FindAndDispatchStartupOpsClient(InOpLists);
+	}
 
 	if (!bIsReadyToStart)
 	{
 	    return;
 	}
-
-	// We've found and dispatched all ops we need for startup, trigger BeginPlay()
-	// on the GSM and process the queued ops.  Note that FindAndDispatchStartupOps()
-	// will have notified the Dispatcher to skip the startup ops that we've
-	// processed already.
-	GlobalStateManager->TriggerBeginPlay();
 
 	for (Worker_OpList* OpList : QueuedStartupOpLists)
 	{
@@ -1903,7 +1928,7 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 	QueuedStartupOpLists.Empty();
 }
 
-bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& InOpLists)
+bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpList*>& InOpLists)
 {
 	TArray<Worker_Op*> FoundOps;
 
@@ -1949,6 +1974,42 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		}
 	}
 
+	SelectiveProcessOps(FoundOps);
+
+	if (PackageMap->IsEntityPoolReady() && GlobalStateManager->IsReadyToCallBeginPlay())
+	{
+		// Return whether or not we are ready to start
+		return true;
+	}
+
+	return false;
+}
+
+bool USpatialNetDriver::FindAndDispatchStartupOpsClient(const TArray<Worker_OpList*>& InOpLists)
+{
+	if (bMapLoaded)
+	{
+		return true;
+	}
+	else
+	{
+		// Search for the entity query response for the GlobalStateManager
+		Worker_Op* Op = nullptr;
+		FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE, &Op);
+
+		TArray<Worker_Op*> FoundOps;
+		if (Op != nullptr)
+		{
+			FoundOps.Add(Op);
+		}
+
+		SelectiveProcessOps(FoundOps);
+		return false;
+	}
+}
+
+void USpatialNetDriver::SelectiveProcessOps(TArray<Worker_Op*> FoundOps)
+{
 	// For each Op we've found, make a Worker_OpList that just contains that Op,
 	// and pass it to the dispatcher for processing. This allows us to avoid copying
 	// the Ops around and dealing with memory that is / should be managed by the Worker SDK.
@@ -1963,13 +2024,11 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		Dispatcher->ProcessOps(&SingleOpList);
 		Dispatcher->MarkOpToSkip(Op);
 	}
-
-	if (PackageMap->IsEntityPoolReady() &&
-		GlobalStateManager->IsReadyToCallBeginPlay())
-	{
-		// Return whether or not we are ready to start
-		return true;
-	}
-
-	return false;
 }
+
+#if WITH_EDITOR
+void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
+{
+	TombstonedEntities.Add(EntityId);
+}
+#endif

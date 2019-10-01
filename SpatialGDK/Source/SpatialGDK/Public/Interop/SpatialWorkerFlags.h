@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include <WorkerSDK/improbable/c_worker.h>
 #include "SpatialWorkerFlags.generated.h"
 
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnWorkerFlagsUpdatedBP, FString, FlagName, FString, FlagValue);
@@ -32,7 +33,7 @@ public:
 
 	static FOnWorkerFlagsUpdated OnWorkerFlagsUpdated;
 private:
-	static void ApplyWorkerFlagUpdate(const struct Worker_FlagUpdateOp& Op);
+	static void ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op);
 
 	static TMap<FString, FString> WorkerFlags;
 
