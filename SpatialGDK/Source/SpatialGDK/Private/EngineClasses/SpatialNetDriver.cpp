@@ -216,7 +216,19 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		// This allows connecting to remote deployment with a PIE session for easier testing,
 		// while still allowing travel to a local deployment after initially connecting to a remote one.
 		// (Vanilla Unreal always passes 127.0.0.1 to PIE clients as a command line argument.)
-		bool bPlayingInEditor = GetWorld() ? GetWorld()->WorldType == EWorldType::PIE : false;
+
+		// Figure out whether we this is a PIE game.
+		bool bPlayingInEditor = false;
+		if (bConnectAsClient)
+		{
+			bPlayingInEditor = (GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this)).WorldType == EWorldType::PIE;
+		}
+		else
+		{
+			bPlayingInEditor = GetWorld()->WorldType== EWorldType::PIE;
+		}
+
+		// Override default receptionist host ip if necessary.
 		if (!URL.Host.IsEmpty() && !(URL.Host == SpatialConstants::LOCAL_HOST && bPlayingInEditor))
 		{
 			Connection->ReceptionistConfig.ReceptionistHost = URL.Host;
