@@ -124,7 +124,6 @@ public:
 	bool TryResolveActor();
 
 	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
-	
 
 	TMap<UObject*, const FClassInfo*> GetHandoverSubobjects();
 
@@ -157,7 +156,6 @@ public:
 	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
 protected:
-
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
 	// End UChannel interface
