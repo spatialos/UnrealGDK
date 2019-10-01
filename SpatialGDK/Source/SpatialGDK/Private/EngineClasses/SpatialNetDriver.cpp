@@ -45,6 +45,17 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
+/**
+* MIDWINTER_ENGINE_CHANGE_BEGIN
+* (09/20/19) - Evan Kau - Adding cheat to dynamically disable the replication graph on Spatial
+* There may be side effect to triggering this multiple times, due to how the systems count their frames separately
+*/
+int32 CVar_Scav_RepGraphEnabledSpatial = 1;
+static FAutoConsoleVariableRef CVarScavRepGraphEnabledSpatial(TEXT("Sc.RepGraph.EnabledSpatial"), CVar_Scav_RepGraphEnabledSpatial, TEXT("Lets you dynamically disable or enable the replication graph on Spatial."), ECVF_Default);
+/**
+* MIDWINTER_ENGINE_CHANGE_END
+*/
+
 DECLARE_CYCLE_STAT(TEXT("ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ProcessPrioritizedActors"), STAT_SpatialProcessPrioritizedActors, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("PrioritizeActors"), STAT_SpatialPrioritizeActors, STATGROUP_SpatialNet);
@@ -72,8 +83,15 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	// This is a temporary measure until we can look into replication graph support, required due to UNR-832
-	checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
+	/**
+	* MIDWINTER_ENGINE_CHANGE_BEGIN
+	* (09/20/19) - Evan Kau - Enabling replication driver for Spatial OS by removing this check
+	*/
+	// // This is a temporary measure until we can look into replication graph support, required due to UNR-832
+	// checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
+	/**
+	* MIDWINTER_ENGINE_CHANGE_END
+	*/
 
 	bConnectAsClient = bInitAsClient;
 
@@ -1176,6 +1194,21 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 	// Bump the ReplicationFrame value to invalidate any properties marked as "unchanged" for this frame.
 	ReplicationFrame++;
+
+	/**
+	* MIDWINTER_ENGINE_CHANGE_BEGIN
+	* (09/20/19) - Evan Kau - Enabling replication driver for Spatial OS
+	*/
+	if (UReplicationDriver * repDriver = GetReplicationDriver())
+	{
+		if (CVar_Scav_RepGraphEnabledSpatial)
+		{
+			return repDriver->ServerReplicateActors(DeltaSeconds);
+		}
+	}
+	/**
+	* MIDWINTER_ENGINE_CHANGE_END
+	*/
 
 	const int32 NumClientsToTick = ServerReplicateActors_PrepConnections(DeltaSeconds);
 
