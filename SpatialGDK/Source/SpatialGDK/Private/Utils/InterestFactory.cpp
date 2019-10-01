@@ -35,7 +35,11 @@ void GatherClientInterestDistances()
 	TMap<UClass*, float> DiscoveredInterestDistancesSquared;
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		if (It->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly | SPATIALCLASS_NotSpatialType))
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+		{
+			continue;
+		}
+		if (!It->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 		{
 			continue;
 		}
@@ -147,11 +151,6 @@ Interest InterestFactory::CreateServerWorkerInterest()
 
 Interest InterestFactory::CreateInterest() const
 {
-	if (!GetDefault<USpatialGDKSettings>()->bUsingQBI)
-	{
-		return Interest{};
-	}
-
 	if (GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
 	{
 		if (Actor->GetNetConnection() != nullptr)

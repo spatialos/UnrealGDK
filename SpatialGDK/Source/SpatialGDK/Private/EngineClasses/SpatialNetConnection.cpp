@@ -50,17 +50,10 @@ void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSock
 	}
 }
 
-#if ENGINE_MINOR_VERSION <= 20
-void USpatialNetConnection::LowLevelSend(void * Data, int32 CountBytes, int32 CountBits)
-{
-	//Intentionally does not call Super::
-}
-#else
 void USpatialNetConnection::LowLevelSend(void* Data, int32 CountBits, FOutPacketTraits& Traits)
 {
 	//Intentionally does not call Super::
 }
-#endif
 
 bool USpatialNetConnection::ClientHasInitializedLevelFor(const AActor* TestActor) const
 {
@@ -114,7 +107,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 
 		Worker_ComponentUpdate Update = {};
 		Update.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
-		Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::HEARTBEAT_COMPONENT_ID);
+		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 		Schema_AddBool(ComponentObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID, true);
@@ -164,7 +157,7 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 			Worker_ComponentUpdate ComponentUpdate = {};
 
 			ComponentUpdate.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
-			ComponentUpdate.schema_type = Schema_CreateComponentUpdate(SpatialConstants::HEARTBEAT_COMPONENT_ID);
+			ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 			Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
 			Schema_AddObject(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
 

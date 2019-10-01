@@ -57,8 +57,18 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeIPToExpose]
 		{
+			// Stop existing spatial service to guarantee that any new existing spatial service would be running in the current project.
 			TryStopSpatialService();
-			TryStartSpatialService(RuntimeIPToExpose);
+      
+			// Start spatial service in the current project if spatial networking is enabled
+			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+			{
+				TryStartSpatialService(RuntimeIPToExpose);
+			}
+			else
+			{
+				UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("SpatialOS daemon not started because spatial networking is disabled."));
+			}
 
 			// Ensure we have an up to date state of the spatial service and local deployment.
 			RefreshServiceStatus();

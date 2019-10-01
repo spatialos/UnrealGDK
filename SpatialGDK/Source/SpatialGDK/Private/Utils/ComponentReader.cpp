@@ -90,11 +90,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 {
 	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(Object);
 
-#if ENGINE_MINOR_VERSION <= 20
-	TSharedPtr<FRepState>& RepState = Replicator.RepState;
-#else
 	TUniquePtr<FRepState>& RepState = Replicator.RepState;
-#endif
 	TArray<FRepLayoutCmd>& Cmds = Replicator.RepLayout->Cmds;
 	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator.RepLayout->BaseHandleToCmdIndex;
 	TArray<FRepParentCmd>& Parents = Replicator.RepLayout->Parents;
@@ -114,11 +110,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		int32 CmdIndex = BaseHandleToCmdIndex[FieldId - 1].CmdIndex;
 		const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
-#if ENGINE_MINOR_VERSION <= 20
-		int32 ShadowOffset = 0;
-#else 
 		int32 ShadowOffset = Cmd.ShadowOffset;
-#endif
+
 		if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
 		{
 			// This swaps Role/RemoteRole as we write it
@@ -177,11 +170,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 			// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
 			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-#if ENGINE_MINOR_VERSION <= 20
-				bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.Offset, Data);
-#else
 				bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
-#endif
 
 				// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
 				if (bIsInitialData)
