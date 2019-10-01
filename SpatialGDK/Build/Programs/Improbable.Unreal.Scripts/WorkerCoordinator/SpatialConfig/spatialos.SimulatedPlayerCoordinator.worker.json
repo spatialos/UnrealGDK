@@ -24,11 +24,6 @@
         "SimulatedPlayerCoordinator"
       ]
     },
-    "entity_interest": {
-      "range_entity_interest": {
-        "radius": 50
-      }
-    },
     "component_delivery": {
       "default": "RELIABLE_ORDERED",
       "checkout_all_initially": true

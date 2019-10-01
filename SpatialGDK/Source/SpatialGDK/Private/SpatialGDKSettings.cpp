@@ -24,7 +24,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableHandover(true)
 	, MaxNetCullDistanceSquared(900000000.0f) // Set to twice the default Actor NetCullDistanceSquared (300m)
 	, QueuedIncomingRPCWaitTime(1.0f)
-	, bUsingQBI(true)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
 	, bEnableMetrics(true)
@@ -34,7 +33,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bCheckRPCOrder(false)
 	, bBatchSpatialPositionUpdates(true)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
-	, bEnableServerQBI(bUsingQBI)
+	, bEnableServerQBI(true)
 	, bPackRPCs(true)
 	, bUseDevelopmentAuthenticationFlow(false)
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
@@ -58,15 +57,6 @@ void USpatialGDKSettings::PostInitProperties()
 	else
 	{
 		FParse::Bool(CommandLine, TEXT("OverrideSpatialOffloading="), bEnableOffloading);
-	}
-
-	if (FParse::Param(CommandLine, TEXT("useQBI")))
-	{
-		bUsingQBI = true;
-	}
-	else
-	{
-		FParse::Bool(CommandLine, TEXT("useQBI="), bUsingQBI);
 	}
 
 #if WITH_EDITOR
