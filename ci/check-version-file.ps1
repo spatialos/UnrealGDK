@@ -10,7 +10,7 @@ pushd "$($gdk_home)\ci"
 
         if ($unreal_version.StartsWith("HEAD ")) {
             $error_msg = "Using a HEAD engine version in unreal-engine.version! The branches $($pinned_branches -join ", ") are required to have a pinned engine version. (I.e. of the form UnrealEngine-<commit hash>)"
-            echo $error_msg | buildkite-agent annotate --context "engine-version-file" --style failure
+            echo $error_msg | buildkite-agent annotate --context "engine-version-file" --style error
             Throw $error_msg
         }
     }
