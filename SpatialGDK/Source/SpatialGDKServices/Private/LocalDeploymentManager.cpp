@@ -14,7 +14,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
-static const FString SpatialServiceVersion(TEXT("20190910.165122.cb2c30cb51"));
+static const FString SpatialServiceVersion(TEXT("20190924.093427.d1d4ab159e"));
 
 FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
