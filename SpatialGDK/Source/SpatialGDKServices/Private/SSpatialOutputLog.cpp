@@ -257,13 +257,6 @@ void SSpatialOutputLog::FormatRawLogLine(FString& LogLine)
 	// Log categories take the form "improbable.deployment.InternalGameLauncher", we filter to the last category to make it more human readable.
 	LogCategory.Split(TEXT("."), nullptr, &LogCategory, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
 
-	// Filter out java connection exceptions for the time being. Also remove SchemaFactory logs as these just print all known schema which is spam.
-	// TODO: UNR-???? Remove these when the runtime bug which causes these logs are fixed.
-	if (LogCategory.Equals(TEXT("connections ")) || LogCategory.Equals(TEXT("SchemaFactory ")))
-	{
-		return;
-	}
-
 	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
 
 	if (LogLevelText.Contains(TEXT("error")))
