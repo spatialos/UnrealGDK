@@ -224,14 +224,13 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 
 void SSpatialOutputLog::StartPollTimer(FString LogFilePath)
 {
-	// Start a timer to read the log file every 0.1s
+	// Start a timer to read the log file every 0.05s
 	// Timers must be started on the game thread.
 	AsyncTask(ENamedThreads::GameThread, [this, LogFilePath]
 	{
 		// It's possible that GEditor won't exist when shutting down.
 		if (GEditor != nullptr)
 		{
-			// Start checking for the service status.
 			GEditor->GetTimerManager()->SetTimer(PollTimer, [this, LogFilePath]()
 			{
 				PollLogFile(LogFilePath);
