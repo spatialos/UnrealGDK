@@ -639,6 +639,15 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 			// Remove it from any dormancy lists
 			ClientConnection->DormantReplicatorMap.Remove(ThisActor);
 		}
+
+		// Check if this is a dormant entity, and if so retire the entity
+		Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
+		if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
+		{
+			// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
+			check(StaticComponentView->GetAuthority(EntityId, SpatialGDK::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE);
+			Sender->RetireEntity(EntityId);
+		}
 	}
 
 	// Remove this actor from the network object list
@@ -678,7 +687,10 @@ void USpatialNetDriver::Shutdown()
 
 		for (const Worker_EntityId EntityId : TombstonedEntities)
 		{
-			Connection->SendDeleteEntityRequest(EntityId);
+			if (StaticComponentView->GetAuthority(EntityId, SpatialGDK::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE)
+			{
+				Connection->SendDeleteEntityRequest(EntityId);
+			}
 		}
 	}
 #endif //WITH_EDITOR
