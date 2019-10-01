@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- GetSpatialActorLocation now returns the last synced location of the player controller when it is spectating
 
 ## [`0.6.1`] - 2019-08-15
 
