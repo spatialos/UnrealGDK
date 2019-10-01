@@ -138,7 +138,8 @@ void UGlobalStateManager::SendShutdownMultiProcessRequest()
 	  */
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
-	CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID);
+	CommandRequest.command_index = SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID;
+	CommandRequest.schema_type = Schema_CreateCommandRequest();
 
 	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest, SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID);
 }
@@ -190,7 +191,7 @@ void UGlobalStateManager::SendShutdownAdditionalServersEvent()
 	Worker_ComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
-	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID);
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
 	Schema_AddObject(EventsObject, SpatialConstants::SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID);
 
@@ -257,11 +258,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	// We're now ready to start replicating this actor, create a channel
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
 
-#if ENGINE_MINOR_VERSION <= 20
-	Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
-#else
 	Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
-#endif
 
 	if (StaticComponentView->GetAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -326,11 +323,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	{
 		// We have control over the GSM, so can safely setup a new channel and let it allocate an entity id
 		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
-#if ENGINE_MINOR_VERSION <= 20
-		Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
-#else
 		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
-#endif
 
 		// If entity id already exists for this singleton, set the actor to it
 		// Otherwise SetChannelActor will issue a new entity id request
@@ -390,7 +383,7 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
+	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	AddStringToEntityMapToSchema(UpdateObject, 1, SingletonNameToEntityId);
@@ -418,7 +411,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
+	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	// Set the map URL on the GSM.
@@ -438,7 +431,7 @@ void UGlobalStateManager::SetCanBeginPlay(const bool bInCanBeginPlay)
 
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bInCanBeginPlay));
@@ -519,7 +512,7 @@ void UGlobalStateManager::BeginDestroy()
 			// Reset the Singleton map so Singletons are recreated.
 			Worker_ComponentUpdate Update = {};
 			Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
-			Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
+			Update.schema_type = Schema_CreateComponentUpdate();
 			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
 
 			NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
@@ -566,7 +559,7 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 
 	Worker_Constraint GSMConstraint{};
 	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
-	GSMConstraint.component_constraint = GSMComponentConstraint;
+	GSMConstraint.constraint.component_constraint = GSMComponentConstraint;
 
 	Worker_EntityQuery GSMQuery{};
 	GSMQuery.constraint = GSMConstraint;

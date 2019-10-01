@@ -11,11 +11,11 @@
 namespace SpatialGDK
 {
 
-struct AlwaysRelevant : Component
+struct Tombstone : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::TOMBSTONE_COMPONENT_ID;
 
-	AlwaysRelevant() = default;
+	Tombstone() = default;
 
 	FORCEINLINE Worker_ComponentData CreateData()
 	{

@@ -73,6 +73,13 @@ public:
 	uint32 EntityCreationRateLimit;
 
 	/**
+	 * When enabled, only entities which are in the net relevancy range of player controllers will be replicated to SpatialOS.
+	 * This should only be used in single server configurations. The state of the world in the inspector will no longer be up to date.
+	 */
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Only Replicate Net Relevant Actors"))
+	bool UseIsActorRelevantForConnection;
+
+	/**
 	* Specifies the rate, in number of times per second, at which server-worker instance updates are sent to and received from the SpatialOS Runtime.
 	* Default:1000/s
 	*/
@@ -90,10 +97,6 @@ public:
 	/** Seconds to wait before executing a received RPC substituting nullptr for unresolved UObjects*/
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Wait Time Before Processing Received RPC With Unresolved Refs"))
 	float QueuedIncomingRPCWaitTime;
-
-	/** Query Based Interest is required for level streaming and the AlwaysInterested UPROPERTY specifier to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
-	UPROPERTY(config, meta = (ConfigRestartRequired = false))
-	bool bUsingQBI;
 
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (ConfigRestartRequired = false))
@@ -165,7 +168,7 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
 	FWorkerType DefaultWorkerType;
 
-	/** Enable running different server worker types to split the simulation by Actor Groups. */
+	/** Enable running different server worker types to split the simulation by Actor Groups. Can be overridden with command line argument OverrideSpatialOffloading. */
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
 	bool bEnableOffloading;
 
