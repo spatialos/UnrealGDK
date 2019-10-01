@@ -37,7 +37,7 @@ public:
 
 	TUniquePtr<FArchiveLogFileReader> CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize);
 
-protected:
+private:
 	void OnCrash();
 
 	void ReadLatestLogFile();
