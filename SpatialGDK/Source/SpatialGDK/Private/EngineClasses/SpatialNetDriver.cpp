@@ -659,6 +659,10 @@ void USpatialNetDriver::Shutdown()
 		}
 	}
 
+	Super::Shutdown();
+
+	// This is done after Super::Shutdown so the NetDriver is given an opportunity to shutdown all open channels, and those
+	// startup actors that were tombstoned, will be cleaned up also.
 #if WITH_EDITOR
 	const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
 
@@ -678,8 +682,6 @@ void USpatialNetDriver::Shutdown()
 		}
 	}
 #endif //WITH_EDITOR
-
-	Super::Shutdown();
 }
 
 void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection)
