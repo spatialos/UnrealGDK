@@ -992,14 +992,9 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 	}
 	else if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
-		if (PlayerController->IsInState(NAME_Spectating))
-		{
-			Location = PlayerController->LastSpectatorSyncLocation;
-		}
-		else
-		{
+		Location = PlayerController->IsInState(NAME_Spectating) ? 
+			PlayerController->LastSpectatorSyncLocation :
 			Location = PlayerController->GetFocalLocation();
-		}
 	}
 	else if (InActor->GetOwner() != nullptr && InActor->GetIsReplicated())
 	{
