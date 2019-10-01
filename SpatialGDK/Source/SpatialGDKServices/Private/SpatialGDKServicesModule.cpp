@@ -29,41 +29,6 @@ const FString SpatialExe = TEXT("spatial.exe");
 const FString SpotExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe"));
 static const FName SpatialOutputLogTabName = FName(TEXT("SpatialOutputLog"));
 
-/** This class is to capture all log output even if the log window is closed */
-class FSpatialOutputLogHistory : public FOutputDevice
-{
-public:
-
-	FSpatialOutputLogHistory()
-	{
-	}
-
-	~FSpatialOutputLogHistory()
-	{
-	}
-
-	/** Gets all captured messages */
-	const TArray<TSharedPtr<FLogMessage>>& GetMessages() const
-	{
-		return Messages;
-	}
-
-protected:
-
-	virtual void Serialize(const TCHAR* V, ELogVerbosity::Type Verbosity, const class FName& Category) override
-	{
-		// Capture all incoming messages and store them in history
-		SSpatialOutputLog::CreateLogMessages(V, Verbosity, Category, Messages);
-	}
-
-private:
-
-	/** All log messages since this module has been started */
-	TArray<TSharedPtr<FLogMessage>> Messages;
-};
-
-/** Spatial output log app spawner */
-static TSharedPtr<FSpatialOutputLogHistory> SpatialOutputLogHistory;
 
 TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
 {
@@ -72,7 +37,7 @@ TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
 		.TabRole(ETabRole::NomadTab)
 		.Label(NSLOCTEXT("SpatialOutputLog", "TabTitle", "Spatial Output"))
 		[
-			SNew(SSpatialOutputLog).Messages(SpatialOutputLogHistory->GetMessages())
+			SNew(SSpatialOutputLog)
 		];
 }
 
@@ -83,8 +48,6 @@ void FSpatialGDKServicesModule::StartupModule()
 		.SetTooltipText(NSLOCTEXT("UnrealEditor", "SpatialOutputLogTooltipText", "Open the Spatial Output Log tab."))
 		.SetGroup(WorkspaceMenu::GetMenuStructure().GetDeveloperToolsLogCategory())
 		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "Log.TabIcon"));
-
-	SpatialOutputLogHistory = MakeShareable(new FSpatialOutputLogHistory());
 }
 
 void FSpatialGDKServicesModule::ShutdownModule()

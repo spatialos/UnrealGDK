@@ -42,9 +42,7 @@ TUniquePtr<FArchiveLogFileReader> SSpatialOutputLog::CreateLogFileReader(const T
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SSpatialOutputLog::Construct(const FArguments& InArgs)
 {
-	SOutputLog::FArguments MyArgs;
-	MyArgs._Messages = InArgs._Messages;
-	SOutputLog::Construct(MyArgs);
+	SOutputLog::Construct(SOutputLog::FArguments());
 
 	// Remove ourselves as the constructor of our parent (SOutputLog) added 'this' as a remote output device.
 	GLog->RemoveOutputDevice(this);
@@ -54,25 +52,35 @@ void SSpatialOutputLog::Construct(const FArguments& InArgs)
 	StartUpLogDirectoryWatcher(LocalDeploymentLogsDir);
 
 	// Set the LogReader to the latest launch.log if we can.
-	// ReadLatestLogFile
+	ReadLatestLogFile();
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-//void SSpatialOutputLog::ReadLatestLogFile()
-//{
-//	// Stat the log directory for the latest log sub directory.
-//
-//	typedef TFunctionRef<bool(const TCHAR*, const FFileStatData&)> FDirectoryStatVisitorFunc;
-//
-//	FString NewestLogDir;
-//	FDateTime NewestLogDirTime;
-//
-//	FFileStatData LogDirectoryStats = IFileManager::Get().IterateDirectoryStat(LocalDeploymentLogsDir, [](const TCHAR*, const FFileStatData&) -> bool{
-//
-//	});
-//
-//	StartPollingLogFile(NewestLogDir);
-//}
+void SSpatialOutputLog::ReadLatestLogFile()
+{
+	FString NewestLogDir;
+	FDateTime NewestLogDirTime;
+
+	// Go through all log directories in the spatial logs and find the most recently created (if one exists) and print the log file to the Spatial Output.
+	bool GetNewestLogDir = IFileManager::Get().IterateDirectoryStat(*LocalDeploymentLogsDir, [&NewestLogDir, &NewestLogDirTime](const TCHAR* FileName, const FFileStatData& FileStats) {
+
+		if (FileStats.bIsDirectory)
+		{
+			if (FileStats.CreationTime > NewestLogDirTime)
+			{
+				NewestLogDir = FString(FileName);
+				NewestLogDirTime = FileStats.CreationTime;
+			}
+		}
+
+		return true;
+	});
+
+	if (GetNewestLogDir)
+	{
+		StartPollingLogFile(FPaths::Combine(NewestLogDir, LaunchLogFilename));
+	}
+}
 
 SSpatialOutputLog::~SSpatialOutputLog()
 {

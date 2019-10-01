@@ -27,11 +27,7 @@ class SSpatialOutputLog
 
 public:
 	SLATE_BEGIN_ARGS( SSpatialOutputLog )
-	: _Messages()
 	{}
-		
-	/** All messages captured before this log window has been created */
-	SLATE_ARGUMENT( TArray< TSharedPtr<FLogMessage> >, Messages )
 
 	SLATE_END_ARGS()
 
@@ -39,12 +35,12 @@ public:
 
 	void Construct( const FArguments& InArgs );
 
-	//END_SLATE_FUNCTION_BUILD_OPTIMIZATION void ReadLatestLogFile();
 	TUniquePtr<FArchiveLogFileReader> CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize);
 
 protected:
 	void OnCrash();
 
+	void ReadLatestLogFile();
 	void StartPollingLogFile(FString LogFilePath);
 	void StartPollTimer(FString LogFilePath);
 	void PollLogFile(FString LogFilePath);
