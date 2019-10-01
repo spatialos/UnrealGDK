@@ -81,7 +81,9 @@ void USpatialPingComponent::EnablePing()
 	{
 		LastSentPingID = 0;
 		TimeoutCount = 0;
-		// Set looping timer to 'tick' this component with frequency matching minimum ping interval.
+		// Send a new ping, which will trigger a self-perpetuating sequence via timers.
+		SendNewPing();
+		// Set looping timer to 'tick' this component, it doesn't send any pings but matches the MinPingInterval for passing updates to the owning controller.
 		World->GetTimerManager().SetTimer(PingTickHandle, this, &USpatialPingComponent::TickPingComponent, MinPingInterval, true);
 		bIsPingEnabled = true;
 	}
@@ -103,7 +105,6 @@ void USpatialPingComponent::DisablePing()
 
 void USpatialPingComponent::TickPingComponent()
 {
-	SendNewPing();
 	// Pass latest measured ping to owning controller to be processed by PlayerState.
 	OwningController->UpdatePing(RoundTripPing);
 }
@@ -126,12 +127,6 @@ void USpatialPingComponent::SendNewPing()
 
 void USpatialPingComponent::OnPingTimeout()
 {
-	UWorld* World = GetWorld();
-	if (World != nullptr)
-	{
-		// Clear the timeout timer.
-		World->GetTimerManager().ClearTimer(PingTimerHandle);
-	}
 	// Update round trip ping to reflect timeout.
 	TimeoutCount++;
 	RoundTripPing = TimeoutLimit * TimeoutCount;
