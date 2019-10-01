@@ -12,12 +12,12 @@ pushd "$($gdk_home)"
         # Allow users to override the engine version if required
         if (Test-Path env:ENGINE_COMMIT_HASH)
         {
-            $unreal_version = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
-            Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($unreal_version)"
+            $version_file_contents = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
+            Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($version_file_contents)"
         } else {
             # Read Engine version from the file and trim any trailing white spaces and new lines.
-            $unreal_version = (Get-Content -Path "unreal-engine.version" -Raw).Trim()
-            Write-Log "Using engine version found in unreal-engine.version file: $($unreal_version)"
+            $version_file_contents = (Get-Content -Path "unreal-engine.version" -Raw).Trim()
+            Write-Log "Using engine version found in unreal-engine.version file: $($version_file_contents)"
         }
     popd
 
@@ -27,8 +27,8 @@ pushd "$($gdk_home)"
     pushd $engine_cache_directory
         Start-Event "download-unreal-engine" "get-unreal-engine"
 
-        if ($unreal_version.StartsWith("HEAD ")) {
-            $version_branch = $unreal_version.Remove(0, "HEAD ".Length)
+        if ($version_file_contents.StartsWith("HEAD ")) {
+            $version_branch = $version_file_contents.Remove(0, "HEAD ".Length)
             $version_branch = $version_branch.Replace("/", "_")
 
             $head_pointer_gcs_path = "gs://$($gcs_publish_bucket)/HEAD/$($version_branch).version"
@@ -44,20 +44,20 @@ pushd "$($gdk_home)"
                 Throw "Failed to download head pointer file."
             }
 
-            $version_name = Get-Content -Path "branch.version" -Raw
+            $unreal_version = Get-Content -Path "branch.version" -Raw
             Remove-Item "branch.version"
         } else {
-            $version_name = $unreal_version
+            $unreal_version = $version_file_contents
         }
 
-        $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($version_name).zip"
-        Write-Log "Downloading Unreal Engine artifacts version $version_name from $($engine_gcs_path)"
+        $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
+        Write-Log "Downloading Unreal Engine artifacts version $unreal_version from $($engine_gcs_path)"
 
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
             "cp", `
             "-n", ` # noclobber
             "$($engine_gcs_path)", `
-            "$($version_name).zip" `
+            "$($unreal_version).zip" `
         )
         Finish-Event "download-unreal-engine" "get-unreal-engine"
         if ($gsu_proc.ExitCode -ne 0) {
@@ -69,8 +69,8 @@ pushd "$($gdk_home)"
         Write-Log "Unzipping Unreal Engine"
         $zip_proc = Start-Process -Wait -PassThru -NoNewWindow "7z" -ArgumentList @(`
         "x", `
-        "$($version_name).zip", `
-        "-o$($version_name)", `
+        "$($unreal_version).zip", `
+        "-o$($unreal_version)", `
         "-aos" ` # skip existing files
         )
         Finish-Event "unzip-unreal-engine" "get-unreal-engine"
