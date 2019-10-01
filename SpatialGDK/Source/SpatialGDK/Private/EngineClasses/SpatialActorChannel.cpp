@@ -137,7 +137,8 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 
 		if (bDeleteDynamicEntities &&
 			NetDriver->IsServer() &&
-			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
+			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr &&
+			CloseReason != EChannelCloseReason::Dormancy)
 		{
 			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 			DeleteEntityIfAuthoritative();

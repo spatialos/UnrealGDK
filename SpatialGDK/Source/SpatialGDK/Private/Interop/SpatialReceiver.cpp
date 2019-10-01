@@ -782,7 +782,7 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	{
 		if (NetDriver->IsDormantEntity(EntityId))
 		{
-			NetDriver->PackageMap->RemoveEntityActor(EntityId);
+			PackageMap->RemoveEntityActor(EntityId);
 		}
 		else if (Actor == nullptr)
 		{
