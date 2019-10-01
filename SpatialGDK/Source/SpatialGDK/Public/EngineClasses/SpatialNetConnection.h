@@ -34,14 +34,14 @@ public:
 
 	virtual void FlushDormancy(class AActor* Actor) override;
 
+	virtual bool IsReplayConnection() const override { return false; }
+
 	// These functions don't make a lot of sense in a SpatialOS implementation.
 	virtual FString LowLevelGetRemoteAddress(bool bAppendPort = false) override { return TEXT(""); }
 	virtual FString LowLevelDescribe() override { return TEXT(""); }
 	virtual FString RemoteAddressToString() override { return TEXT(""); }
 	///////
 	// End NetConnection Interface
-
-	virtual bool IsReplayConnection() const override { return false; }
 
 	void InitHeartbeat(class FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity);
 	void SetHeartbeatTimeoutTimer();

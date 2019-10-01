@@ -1060,7 +1060,6 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 					}
 
 					Channel = GetOrCreateSpatialActorChannel(Actor);
-					check(Channel == nullptr || Channel->Actor != nullptr);
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
 					{
 						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
@@ -1534,7 +1533,7 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 
 void USpatialNetDriver::ProcessPendingDormancy()
 {
-	TArray<TWeakObjectPtr<USpatialActorChannel>> RemoveChannels;
+	TSet<TWeakObjectPtr<USpatialActorChannel>> RemainingChannels;
 	for (auto& PendingDormantChannel : PendingDormantChannels)
 	{
 		if (PendingDormantChannel.IsValid())
@@ -1544,7 +1543,7 @@ void USpatialNetDriver::ProcessPendingDormancy()
 			{
 				if (Receiver->IsPendingOpsOnChannel(Channel))
 				{
-					continue;
+					RemainingChannels.Emplace(PendingDormantChannel);
 				}
 			}
 
@@ -1552,13 +1551,8 @@ void USpatialNetDriver::ProcessPendingDormancy()
 			Channel->Dormant = 1;
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
 		}
-		RemoveChannels.Emplace(PendingDormantChannel);
 	}
-
-	for (auto& RemoveChannel : RemoveChannels)
-	{
-		PendingDormantChannels.Remove(RemoveChannel);
-	}
+	PendingDormantChannels = std::move(RemainingChannels);
 }
 
 void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName)
@@ -1757,7 +1751,6 @@ void USpatialPendingNetGame::SendJoin()
 
 void USpatialNetDriver::AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel)
 {
-	check(Channel != nullptr && Channel->Actor != nullptr);
 	EntityToActorChannel.Add(EntityId, Channel);
 }
 
@@ -1781,7 +1774,6 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 {
 	check(TargetObject);
 	USpatialActorChannel* Channel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetObject));
-	check(Channel == nullptr || Channel->Actor != nullptr);
 	if (Channel == nullptr)
 	{
 		AActor* TargetActor = Cast<AActor>(TargetObject);
@@ -1792,6 +1784,13 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 		check(TargetActor);
 		Channel = CreateSpatialActorChannel(TargetActor);
 	}
+#if !UE_BUILD_SHIPPING
+	if (Channel != nullptr && Channel->Actor == nullptr)
+	{
+		// This shouldn't occur, but can often crop up whilst we are refactoring entity/actor/channel lifecycles.
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to correct initialize SpatialActorChannel for [%s]"), *TargetObject->GetName());
+	}
+#endif // !UE_BUILD_SHIPPING
 	return Channel;
 }
 

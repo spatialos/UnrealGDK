@@ -33,6 +33,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
+DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel, STATGROUP_SpatialNet);
+
 using namespace SpatialGDK;
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
@@ -380,7 +382,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						}
 					}
 
-					if (bDormantActor == false)
+					if (!bDormantActor)
 					{
 						UpdateShadowData(Op.entity_id);
 					}
@@ -1670,6 +1672,8 @@ void USpatialReceiver::OnDisconnect(Worker_DisconnectOp& Op)
 
 bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel* Channel)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialPendingOpsOnChannel);
+
 	// Don't allow Actors to go dormant if they have any pending operations waiting on their channel
 	check(Channel);
 	check(Channel->Actor);
