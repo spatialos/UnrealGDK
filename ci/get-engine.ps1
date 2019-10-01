@@ -44,7 +44,7 @@ pushd "$($gdk_home)"
         }
 
         $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($version_name).zip"
-        Write-Log "Downloading Unreal Engine artifacts from $($engine_gcs_path)"
+        Write-Log "Downloading Unreal Engine artifacts version $version_name from $($engine_gcs_path)"
 
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
             "cp", `
