@@ -980,6 +980,7 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 	FVector Location = FVector::ZeroVector;
 
 	// If the Actor is a Controller, use its Pawn's position,
+	// If the Actor is a PlayerController, use the last sync location for spectating otherwise use the player controllers focal location
 	// Otherwise if the Actor has an Owner, use its position.
 	// Otherwise if the Actor has a well defined location then use that
 	// Otherwise use the origin
@@ -988,6 +989,17 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 	{
 		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();
 		Location = PawnRootComponent ? PawnRootComponent->GetComponentLocation() : FVector::ZeroVector;
+	}
+	else if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (PlayerController->IsInState(NAME_Spectating))
+		{
+			Location = PlayerController->LastSpectatorSyncLocation;
+		}
+		else
+		{
+			Location = PlayerController->GetFocalLocation();
+		}
 	}
 	else if (InActor->GetOwner() != nullptr && InActor->GetIsReplicated())
 	{
