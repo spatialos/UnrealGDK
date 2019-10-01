@@ -41,6 +41,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileModifier.cs" />
+    <Compile Include="IniFile.cs" />
+    <Compile Include="IniFileSection.cs" />
     <Compile Include="LinuxScripts.cs" />
     <Compile Include="Common.cs" />
   </ItemGroup>

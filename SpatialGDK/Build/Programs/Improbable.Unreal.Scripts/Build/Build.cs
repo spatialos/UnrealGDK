@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
+using Improbable.Unreal.Build.Common;
 using LinuxScripts = Improbable.Unreal.Build.Common.LinuxScripts;
 
 namespace Improbable
@@ -178,6 +179,10 @@ exit /b !ERRORLEVEL!";
 
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
 
+                // force spatial networking to be enabled
+                var defaultEngineIniPath = Path.Combine(windowsNoEditorPath, baseGameName, "Config", "DefaultEngine.ini");
+                FileModifier.SetSpatialNetworkingEnabled(defaultEngineIniPath, true);
+
                 // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher.
                 // TO-DO: Remove this once LAUNCH-341 has been completed, and the _ is no longer necessary.
                 var oldExe = Path.Combine(windowsNoEditorPath, $"{gameName}.exe");
@@ -234,6 +239,11 @@ exit /b !ERRORLEVEL!";
                 });
 
                 var linuxSimulatedPlayerPath = Path.Combine(stagingDir, "LinuxNoEditor");
+
+                // force spatial networking to be enabled
+                var defaultEngineIniPath = Path.Combine(linuxSimulatedPlayerPath, baseGameName, "Config", "DefaultEngine.ini");
+                FileModifier.SetSpatialNetworkingEnabled(defaultEngineIniPath, true);
+
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerWorkerShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartSimulatedClient.sh"));
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerCoordinatorShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartCoordinator.sh"));
 
@@ -298,6 +308,10 @@ exit /b !ERRORLEVEL!";
                 bool isLinux = platform == "Linux";
                 var assemblyPlatform = isLinux ? "Linux" : "Windows";
                 var serverPath = Path.Combine(stagingDir, assemblyPlatform + "Server");
+
+                // force spatial networking to be enabled
+                var defaultEngineIniPath = Path.Combine(serverPath, baseGameName, "Config", "DefaultEngine.ini");
+                FileModifier.SetSpatialNetworkingEnabled(defaultEngineIniPath, true);
 
                 if (isLinux)
                 {
