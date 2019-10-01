@@ -153,10 +153,8 @@ void SSpatialOutputLog::CloseLogReader()
 	}
 
 	// Clean up the the previous file reader if it existed.
-	// TODO: This is crashing when you close the SpatialOutputLog and thne open a new log file.
 	if (LogReader.IsValid())
 	{
-		// TODO: For some reason this is passing the IsValid check and then crashing on close.
 		LogReader->Close();
 		LogReader = nullptr;
 	}
