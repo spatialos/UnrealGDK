@@ -73,7 +73,7 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 			RefreshServiceStatus();
 		});
 	}
-#endif
+#endif // PLATFORM_WINDOWS
 }
 
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
