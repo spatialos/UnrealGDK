@@ -58,16 +58,7 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeIPToExpose]
 		{
 			TryStopSpatialService();
-
-			// Pass exposed runtime IP if one has been specified
-			if (RuntimeIPToExpose.IsEmpty())
-			{
-				TryStartSpatialService();
-			}
-			else
-			{
-				TryStartSpatialService(RuntimeIPToExpose);
-			}
+			TryStartSpatialService(RuntimeIPToExpose);
 
 			// Ensure we have an up to date state of the spatial service and local deployment.
 			RefreshServiceStatus();
@@ -180,14 +171,7 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	// If the service is not running then start it.
 	if (!bSpatialServiceRunning)
 	{
-		if (RuntimeIPToExpose.IsEmpty())
-		{
-			TryStartSpatialService();
-		}
-		else
-		{
-			TryStartSpatialService(RuntimeIPToExpose);
-		}
+		TryStartSpatialService(RuntimeIPToExpose);
 	}
 
 	SnapshotName.RemoveFromEnd(TEXT(".snapshot"));

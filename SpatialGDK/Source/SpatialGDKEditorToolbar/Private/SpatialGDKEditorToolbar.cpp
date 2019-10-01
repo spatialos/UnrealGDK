@@ -86,14 +86,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 		});
 	}
 
-	if (SpatialGDKEditorSettings->bExposeRuntimeIP)
-	{
-		LocalDeploymentManager->Init(SpatialGDKEditorSettings->ExposedRuntimeIP);
-	}
-	else
-	{
-		LocalDeploymentManager->Init();
-	}
+	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -538,16 +531,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 
 		// If the runtime IP is to be exposed, pass it to the spatial service on startup
 		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-		bool bSpatialServiceStarted = false;
-		if (SpatialGDKSettings->bExposeRuntimeIP)
-		{
-			bSpatialServiceStarted = LocalDeploymentManager->TryStartSpatialService(SpatialGDKSettings->ExposedRuntimeIP);
-		}
-		else
-		{
-			bSpatialServiceStarted = LocalDeploymentManager->TryStartSpatialService();
-		}
-
+		bool bSpatialServiceStarted = LocalDeploymentManager->TryStartSpatialService(GetOptionalExposedRuntimeIP());
 		if (!bSpatialServiceStarted)
 		{
 			OnShowFailedNotification(TEXT("Spatial service failed to start"));
@@ -639,10 +623,8 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 	const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
 	const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
-	const bool bExposeRuntimeIP = SpatialGDKSettings->bExposeRuntimeIP;
-	const FString ExposedRuntimeIP = SpatialGDKSettings->ExposedRuntimeIP;
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName, bExposeRuntimeIP, ExposedRuntimeIP]
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName]
 	{
 		// If the last local deployment is still stopping then wait until it's finished.
 		while (LocalDeploymentManager->IsDeploymentStopping())
@@ -664,15 +646,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
-		bool bLocalDeploymentStarted;
-		if (bExposeRuntimeIP)
-		{
-			bLocalDeploymentStarted = LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, ExposedRuntimeIP);
-		}
-		else
-		{
-			bLocalDeploymentStarted = LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName);
-		}
+		bool bLocalDeploymentStarted = LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, GetOptionalExposedRuntimeIP());
 
 		if (bLocalDeploymentStarted)
 		{
@@ -892,6 +866,19 @@ bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
 	FString DescriptorPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("build/assembly/schema/schema.descriptor"));
 	FString GdkFolderPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("schema/unreal/gdk"));
 	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && GeneratedSchemaDatabaseExists();
+}
+
+FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (SpatialGDKEditorSettings->bExposeRuntimeIP)
+	{
+		return SpatialGDKEditorSettings->ExposedRuntimeIP;
+	}
+	else
+	{
+		return TEXT("");
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

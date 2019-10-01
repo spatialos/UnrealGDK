@@ -101,6 +101,8 @@ private:
 	bool IsSnapshotGenerated() const;
 	bool IsSchemaGenerated() const;
 
+	FString GetOptionalExposedRuntimeIP() const;
+
 	static void ShowCompileLog();
 
 	TSharedPtr<FUICommandList> PluginCommands;
