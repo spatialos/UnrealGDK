@@ -178,4 +178,5 @@ bool USpatialPingComponent::SendServerWorkerPingID_Validate(uint16 PingID)
 void USpatialPingComponent::SendServerWorkerPingID_Implementation(uint16 PingID)
 {
 	ReplicatedPingID = PingID;
+	GetOwner()->ForceNetUpdate();
 }
