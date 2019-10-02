@@ -20,9 +20,7 @@ namespace Improbable.Unreal.Build.Common
             this.path = path;
             string rawIni = File.ReadAllText(path, Encoding.UTF8);
 
-            sections = rawIni.Split('[')
-                .Where(rawIniSection => rawIniSection.Contains(']'))
-                .Select(rawIniSection => ParseIniFileSection("[" + rawIniSection)).ToList();
+            sections = new List<IniFileSection>();
         }
 
         public static IniFile ParseIniFile(string path)
@@ -32,7 +30,7 @@ namespace Improbable.Unreal.Build.Common
 
             newIniFile.sections = rawIni.Split('[')
                 .Where(rawIniSection => rawIniSection.Contains(']'))
-                .Select(rawIniSection => new IniFileSection("[" + rawIniSection)).ToList();
+                .Select(rawIniSection => ParseIniFileSection("[" + rawIniSection)).ToList();
 
             return newIniFile;
         }

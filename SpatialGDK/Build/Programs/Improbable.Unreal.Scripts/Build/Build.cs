@@ -180,8 +180,8 @@ exit /b !ERRORLEVEL!";
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
 
                 // force spatial networking to be enabled
-                var defaultEngineIniPath = Path.Combine(windowsNoEditorPath, baseGameName, "Config", "DefaultEngine.ini");
-                FileModifier.SetSpatialNetworkingEnabled(defaultEngineIniPath, true);
+                var defaulGameIniPath = Path.Combine(windowsNoEditorPath, baseGameName, "Config", "DefaultGame.ini");
+                FileModifier.SetSpatialNetworkingEnabled(defaulGameIniPath, true);
 
                 // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher.
                 // TO-DO: Remove this once LAUNCH-341 has been completed, and the _ is no longer necessary.
@@ -241,8 +241,8 @@ exit /b !ERRORLEVEL!";
                 var linuxSimulatedPlayerPath = Path.Combine(stagingDir, "LinuxNoEditor");
 
                 // force spatial networking to be enabled
-                var defaultEngineIniPath = Path.Combine(linuxSimulatedPlayerPath, baseGameName, "Config", "DefaultEngine.ini");
-                FileModifier.SetSpatialNetworkingEnabled(defaultEngineIniPath, true);
+                var defaultGameIniPath = Path.Combine(linuxSimulatedPlayerPath, baseGameName, "Config", "DefaultGame.ini");
+                FileModifier.SetSpatialNetworkingEnabled(defaultGameIniPath, true);
 
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerWorkerShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartSimulatedClient.sh"));
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerCoordinatorShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartCoordinator.sh"));
@@ -310,8 +310,8 @@ exit /b !ERRORLEVEL!";
                 var serverPath = Path.Combine(stagingDir, assemblyPlatform + "Server");
 
                 // force spatial networking to be enabled
-                var defaultEngineIniPath = Path.Combine(serverPath, baseGameName, "Config", "DefaultEngine.ini");
-                FileModifier.SetSpatialNetworkingEnabled(defaultEngineIniPath, true);
+                var defaultGameIniPath = Path.Combine(serverPath, baseGameName, "Config", "DefaultGame.ini");
+                FileModifier.SetSpatialNetworkingEnabled(defaultGameIniPath, true);
 
                 if (isLinux)
                 {
