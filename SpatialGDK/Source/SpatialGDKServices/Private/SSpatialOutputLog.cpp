@@ -127,7 +127,7 @@ void SSpatialOutputLog::OnLogDirectoryChanged(const TArray<FFileChangeData>& Fil
 
 void SSpatialOutputLog::ShutdownLogDirectoryWatcher(const FString& LogDirectory)
 {
-	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
+	AsyncTask(ENamedThreads::GameThread, [LogDirectory, LogDirectoryChangedDelegateHandle = LogDirectoryChangedDelegateHandle]
 	{
 		FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
 		if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
