@@ -17,7 +17,7 @@ if [ $is_protected -eq 1 ]; then
     echo "Found engine version $engine_version"
 
     if [[ $engine_version == HEAD* ]]; then # version starts with HEAD
-        error_msg="The merge target branch does not allow a floating (HEAD) engine version. Use a pinned version. (Of the form UnrealEngine-{commit hash}"
+        error_msg="The merge target branch does not allow a floating (HEAD) engine version. Use a pinned version. (Of the form UnrealEngine-{commit hash})"
         
         echo $error_msg | buildkite-agent annotate --context "check-version-file" --style error
 
