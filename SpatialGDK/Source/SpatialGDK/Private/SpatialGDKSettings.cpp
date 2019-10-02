@@ -39,7 +39,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
 	, bEnableOffloading(false)
 	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
-	, WorkerLogLevel({ ESettingsWorkerLogVerbosity::Warning })
+	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
