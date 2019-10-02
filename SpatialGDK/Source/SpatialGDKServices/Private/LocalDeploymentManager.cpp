@@ -59,7 +59,6 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 		{
 			// Stop existing spatial service to guarantee that any new existing spatial service would be running in the current project.
 			TryStopSpatialService();
-      
 			// Start spatial service in the current project if spatial networking is enabled
 			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
 			{
