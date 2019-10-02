@@ -83,7 +83,7 @@ public:
 	void SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
-	void SendDeleteEntityRequest(Worker_EntityId EntityId);
+	void RetireEntity(const Worker_EntityId EntityId);
 
 	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
@@ -116,6 +116,8 @@ private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
 	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
+
+	void AddTombstoneToEntity(const Worker_EntityId EntityId);
 
 	// RPC Construction
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId) const;
@@ -153,8 +155,6 @@ private:
 
 	FRPCContainer OutgoingRPCs;
 	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
-
-	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 
 	TArray<TSharedRef<FReliableRPCForRetry>> RetryRPCs;
 

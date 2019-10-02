@@ -11,16 +11,13 @@
 namespace SpatialGDK
 {
 
-struct Singleton : Component
+struct Tombstone : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::SINGLETON_COMPONENT_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::TOMBSTONE_COMPONENT_ID;
 
-	Singleton() = default;
-	Singleton(const Worker_ComponentData& Data)
-	{
-	}
+	Tombstone() = default;
 
-	FORCEINLINE Worker_ComponentData CreateSingletonData()
+	FORCEINLINE Worker_ComponentData CreateData()
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

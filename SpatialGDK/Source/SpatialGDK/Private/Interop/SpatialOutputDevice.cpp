@@ -5,7 +5,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
 FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FName LoggerName, int32 InPIEIndex)
-	: FilterLevel(ELogVerbosity::Warning)
+	: FilterLevel(ELogVerbosity::Type(GetDefault<USpatialGDKSettings>()->WorkerLogLevel.GetValue()))
 	, Connection(InConnection)
 	, WorkerName(LoggerName)
 	, PIEIndex(InPIEIndex)

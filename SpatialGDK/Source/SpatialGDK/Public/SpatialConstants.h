@@ -114,6 +114,8 @@ namespace SpatialConstants
 	const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
 	const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
 	const Worker_ComponentId ALWAYS_RELEVANT_COMPONENT_ID					= 9983;
+	const Worker_ComponentId TOMBSTONE_COMPONENT_ID                         = 9982;
+	const Worker_ComponentId DORMANT_COMPONENT_ID							= 9981;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 

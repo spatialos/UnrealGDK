@@ -14,7 +14,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
-static const FString SpatialServiceVersion(TEXT("20190716.094149.1b6d448edd"));
+static const FString SpatialServiceVersion(TEXT("20190930.180414.3b04a59226"));
 
 FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
@@ -43,11 +43,20 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 		// Watch the worker config directory for changes.
 		StartUpWorkerConfigDirectoryWatcher();
 
-		// Restart the spatial service so it is guaranteed to be running in the current project.
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 		{
+			// Stop existing spatial service to guarantee that any new existing spatial service would be running in the current project.
 			TryStopSpatialService();
-			TryStartSpatialService();
+
+			// Start spatial service in the current project if spatial networking is enabled
+			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+			{
+				TryStartSpatialService();
+			}
+			else
+			{
+				UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("SpatialOS daemon not started because spatial networking is disabled."));
+			}
 
 			// Ensure we have an up to date state of the spatial service and local deployment.
 			RefreshServiceStatus();
@@ -294,6 +303,7 @@ bool FLocalDeploymentManager::TryStartSpatialService()
 	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s"), *SpatialServiceVersion);
 	FString ServiceStartResult;
 	int32 ExitCode;
+
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStartResult, ExitCode);
 
 	bStartingSpatialService = false;
@@ -326,6 +336,7 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 	FString SpatialServiceStartArgs = TEXT("service stop");
 	FString ServiceStopResult;
 	int32 ExitCode;
+
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStopResult, ExitCode);
 	bStoppingSpatialService = false;
 
