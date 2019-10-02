@@ -1,6 +1,6 @@
 param(
     [string] $ue_path,
-    [string] $gdk_home = (get-item "$($PSScriptRoot)").parent.FullName, ## The root of the UnrealGDK repo
+    # [string] $gdk_home = (get-item "$($PSScriptRoot)").parent.FullName, ## The root of the UnrealGDK repo
     [string] $uproject_path,
     [string] $output_dir,
     [string] $log_file_name

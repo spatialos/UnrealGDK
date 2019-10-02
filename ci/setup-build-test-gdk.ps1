@@ -22,18 +22,15 @@ Finish-Event "setup-gdk" "command"
 # &$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform)
 # Finish-Event "build-gdk" "command"
 
-# Write-Log "built plugin is at $($gdk_home)/SpatialGDK/Intermediate/BuildPackage/Win64"
-# Write-Log "built plugin folder contents: $(Get-ChildItem $gdk_home/SpatialGDK/Intermediate/BuildPackage/Win64)"
-
-# $unreal_path = "$($gdk_home)\UnrealEngine"
+$unreal_path = "$($pwd.drive.root)UnrealEngine"
 
 # Start-Event "setup-tests" "command"
 # &$PSScriptRoot"\setup-tests.ps1" -project_clone_path "$($unreal_path)\Samples"
 # Finish-Event "setup-tests" "command"
 
-# Start-Event "test-gdk" "command"
-# &$PSScriptRoot"\run-tests.ps1" -ue_path "$($unreal_path)\Engine\Binaries\Win64\UE4Editor.exe" -uproject_path "$($unreal_path)\Samples\UnrealGDKExampleProject\Game\GDKShooter.uproject" -output_dir "TestResults" -log_file_name "tests.log"
-# Finish-Event "test-gdk" "command"
+Start-Event "test-gdk" "command"
+&$PSScriptRoot"\run-tests.ps1" -ue_path "$($unreal_path)\Engine\Binaries\Win64\UE4Editor.exe" -uproject_path "$($unreal_path)\Samples\StarterContent\StarterContent.uproject" -output_dir "TestResults" -log_file_name "tests.log"
+Finish-Event "test-gdk" "command"
 
 Start-Event "cleanup" "command"
 &$PSScriptRoot"\cleanup.ps1"

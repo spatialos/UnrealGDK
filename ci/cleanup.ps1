@@ -1,10 +1,8 @@
 # expects $gdk_home to be defined
 param (
-    [string] $unreal_path = "$gdk_home\UnrealEngine"
+    [string] $unreal_path = "$($pwd.drive.root)UnrealEngine"
 )
 $gdk_in_engine = "$unreal_path\Engine\Plugins\UnrealGDK"
 
     # clean up the symlink 
 cmd /c rmdir $gdk_in_engine
-
-# TODO remove the `spatial` folder in UnrealEngine
