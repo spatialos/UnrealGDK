@@ -645,7 +645,10 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 		if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
 		{
 			// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
-			check(StaticComponentView->GetAuthority(EntityId, SpatialGDK::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE);
+			if (StaticComponentView->GetAuthority(EntityId, SpatialGDK::Position::ComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId, *ThisActor->GetName());
+			}
 			Sender->RetireEntity(EntityId);
 		}
 	}
@@ -1544,6 +1547,7 @@ void USpatialNetDriver::ProcessPendingDormancy()
 				if (Receiver->IsPendingOpsOnChannel(Channel))
 				{
 					RemainingChannels.Emplace(PendingDormantChannel);
+					continue;
 				}
 			}
 
@@ -1552,7 +1556,7 @@ void USpatialNetDriver::ProcessPendingDormancy()
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::Dormancy);
 		}
 	}
-	PendingDormantChannels = std::move(RemainingChannels);
+	PendingDormantChannels = MoveTemp(RemainingChannels);
 }
 
 void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName)
@@ -1788,7 +1792,7 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 	if (Channel != nullptr && Channel->Actor == nullptr)
 	{
 		// This shouldn't occur, but can often crop up whilst we are refactoring entity/actor/channel lifecycles.
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to correct initialize SpatialActorChannel for [%s]"), *TargetObject->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to correctly initialize SpatialActorChannel for [%s]"), *TargetObject->GetName());
 	}
 #endif // !UE_BUILD_SHIPPING
 	return Channel;
