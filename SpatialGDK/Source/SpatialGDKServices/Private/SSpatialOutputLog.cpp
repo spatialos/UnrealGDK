@@ -17,6 +17,7 @@ DEFINE_LOG_CATEGORY(LogSpatialOutputLog);
 
 static const FString LocalDeploymentLogsDir(FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("logs/localdeployment")));
 static const FString LaunchLogFilename(TEXT("launch.log"));
+static const float PollTimeInterval(0.05f);
 
 void FArchiveLogFileReader::UpdateFileSize()
 {
@@ -26,9 +27,9 @@ void FArchiveLogFileReader::UpdateFileSize()
 TUniquePtr<FArchiveLogFileReader> SSpatialOutputLog::CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize)
 {
 	IFileHandle* Handle = FPlatformFileManager::Get().GetPlatformFile().OpenRead(InFilename, !!(Flags & FILEREAD_AllowWrite));
-	if (!Handle)
+	if (Handle == nullptr)
 	{
-		if (Flags & FILEREAD_NoFail)
+		if (!(Flags & FILEREAD_NoFail))
 		{
 			UE_LOG(LogSpatialOutputLog, Error, TEXT("Failed to read file: %s"), InFilename);
 		}
@@ -36,7 +37,7 @@ TUniquePtr<FArchiveLogFileReader> SSpatialOutputLog::CreateLogFileReader(const T
 		return nullptr;
 	}
 
-	return TUniquePtr<FArchiveLogFileReader>(new FArchiveLogFileReader(Handle, InFilename, Handle->Size(), BufferSize));
+	return MakeUnique<FArchiveLogFileReader>(Handle, InFilename, Handle->Size(), BufferSize);
 }
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
@@ -47,7 +48,7 @@ void SSpatialOutputLog::Construct(const FArguments& InArgs)
 	// Remove ourselves as the constructor of our parent (SOutputLog) added 'this' as a remote output device.
 	GLog->RemoveOutputDevice(this);
 
-	LogReader = nullptr;
+	LogReader.Reset();
 
 	StartUpLogDirectoryWatcher(LocalDeploymentLogsDir);
 
@@ -58,27 +59,27 @@ END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 void SSpatialOutputLog::ReadLatestLogFile()
 {
-	FString NewestLogDir;
-	FDateTime NewestLogDirTime;
+	FString LatestLogDir;
+	FDateTime LatestLogDirTime;
 
 	// Go through all log directories in the spatial logs and find the most recently created (if one exists) and print the log file to the Spatial Output.
-	bool GetNewestLogDir = IFileManager::Get().IterateDirectoryStat(*LocalDeploymentLogsDir, [&NewestLogDir, &NewestLogDirTime](const TCHAR* FileName, const FFileStatData& FileStats) {
-
+	bool bGetLatestLogDir = IFileManager::Get().IterateDirectoryStat(*LocalDeploymentLogsDir, [&LatestLogDir, &LatestLogDirTime](const TCHAR* FileName, const FFileStatData& FileStats)
+	{
 		if (FileStats.bIsDirectory)
 		{
-			if (FileStats.CreationTime > NewestLogDirTime)
+			if (FileStats.CreationTime > LatestLogDirTime)
 			{
-				NewestLogDir = FString(FileName);
-				NewestLogDirTime = FileStats.CreationTime;
+				LatestLogDir = FString(FileName);
+				LatestLogDirTime = FileStats.CreationTime;
 			}
 		}
 
 		return true;
 	});
 
-	if (GetNewestLogDir)
+	if (bGetLatestLogDir)
 	{
-		StartPollingLogFile(FPaths::Combine(NewestLogDir, LaunchLogFilename));
+		ResetPollingLogFile(FPaths::Combine(LatestLogDir, LaunchLogFilename));
 	}
 }
 
@@ -87,34 +88,25 @@ SSpatialOutputLog::~SSpatialOutputLog()
 	CloseLogReader();
 
 	ShutdownLogDirectoryWatcher(LocalDeploymentLogsDir);
-
-	FCoreDelegates::OnHandleSystemError.RemoveAll(this);
 }
 
-void SSpatialOutputLog::OnCrash()
+void SSpatialOutputLog::StartUpLogDirectoryWatcher(const FString& LogDirectory)
 {
-	CloseLogReader();
-
-	ShutdownLogDirectoryWatcher(LocalDeploymentLogsDir);
-}
-
-void SSpatialOutputLog::StartUpLogDirectoryWatcher(FString LogDirectory)
-{
+	// This function will be called from the Slate thread and thus we must switch to the Game thread to create the Directory Watcher.
 	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
 	{
 		FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-		if (IDirectoryWatcher * DirectoryWatcher = DirectoryWatcherModule.Get())
+		if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
 		{
 			// Watch the log directory for changes.
-			if (FPaths::DirectoryExists(LogDirectory))
-			{
-				LogDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &SSpatialOutputLog::OnLogDirectoryChanged);
-				DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegate, LogDirectoryChangedDelegateHandle, IDirectoryWatcher::WatchOptions::IncludeDirectoryChanges | IDirectoryWatcher::WatchOptions::IgnoreChangesInSubtree);
-			}
-			else
+			if (!FPaths::DirectoryExists(LogDirectory))
 			{
 				UE_LOG(LogSpatialOutputLog, Error, TEXT("Local deployment log directory does not exist!"));
+				return;
 			}
+
+			LogDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &SSpatialOutputLog::OnLogDirectoryChanged);
+			DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegate, LogDirectoryChangedDelegateHandle, IDirectoryWatcher::WatchOptions::IncludeDirectoryChanges | IDirectoryWatcher::WatchOptions::IgnoreChangesInSubtree);
 		}
 	});
 }
@@ -122,22 +114,23 @@ void SSpatialOutputLog::StartUpLogDirectoryWatcher(FString LogDirectory)
 void SSpatialOutputLog::OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
 {
 	// If this is a new folder creation then switch to watching the log files in that new log folder.
-	for (FFileChangeData FileChange : FileChanges)
+	for (const FFileChangeData& FileChange : FileChanges)
 	{
 		if (FileChange.Action == FFileChangeData::FCA_Added)
 		{
 			// Now we can start reading the new log file in the new log folder.
-			StartPollingLogFile(FPaths::Combine(FileChange.Filename, LaunchLogFilename));
+			ResetPollingLogFile(FPaths::Combine(FileChange.Filename, LaunchLogFilename));
+			return;
 		}
 	}
 }
 
-void SSpatialOutputLog::ShutdownLogDirectoryWatcher(FString LogDirectory)
+void SSpatialOutputLog::ShutdownLogDirectoryWatcher(const FString& LogDirectory)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, LogDirectory]
 	{
 		FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-		if (IDirectoryWatcher * DirectoryWatcher = DirectoryWatcherModule.Get())
+		if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
 		{
 			DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(LogDirectory, LogDirectoryChangedDelegateHandle);
 		}
@@ -152,6 +145,8 @@ void SSpatialOutputLog::CloseLogReader()
 		GEditor->GetTimerManager()->ClearTimer(PollTimer);
 	}
 
+	FScopeLock CloseLock(&LogReaderMutex);
+
 	// Clean up the the previous file reader if it existed.
 	if (LogReader.IsValid())
 	{
@@ -160,9 +155,11 @@ void SSpatialOutputLog::CloseLogReader()
 	}
 }
 
-void SSpatialOutputLog::StartPollingLogFile(FString LogFilePath)
+void SSpatialOutputLog::ResetPollingLogFile(const FString& LogFilePath)
 {
 	CloseLogReader();
+
+	FScopeLock CreateLock(&LogReaderMutex);
 
 	// FILEREAD_AllowWrite is required as we must match the permissions of the other processes writing to our log file in order to read from it.
 	LogReader = CreateLogFileReader(*LogFilePath, FILEREAD_AllowWrite, PLATFORM_FILE_READER_BUFFER_SIZE);
@@ -177,11 +174,13 @@ void SSpatialOutputLog::StartPollingLogFile(FString LogFilePath)
 	}
 }
 
-void SSpatialOutputLog::PollLogFile(FString LogFilePath)
+void SSpatialOutputLog::PollLogFile(const FString& LogFilePath)
 {
 	// Poll log files in a background thread since we are doing a lot of string operations.
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LogFilePath]
 	{
+		FScopeLock PollLock(&LogReaderMutex);
+
 		if (!LogReader.IsValid())
 		{
 			UE_LOG(LogSpatialOutputLog, Error, TEXT("Attempted to read from log file but LogReader is not valid."));
@@ -193,12 +192,12 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 		// Find out the current size of the log file. This is a cheaper operation than opening a new file reader on every poll.
 		LogReader->UpdateFileSize();
 
-		int32 SizeDifference = LogReader->TotalSize() - LogReader->Tell();
+		const int32 SizeDifference = LogReader->TotalSize() - LogReader->Tell();
 
 		// New log lines have been added, serialize them.
 		if (SizeDifference > 0)
 		{
-			uint8* Ch = (uint8*)FMemory::Malloc(SizeDifference);
+			uint8* Ch = static_cast<uint8*>(FMemory::Malloc(SizeDifference));
 
 			LogReader->Serialize(Ch, SizeDifference);
 
@@ -210,9 +209,9 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 			// All log lines begin with 'time='. We use this as our log line delimiter.
 			ReadResult.ParseIntoArray(LogLines, TEXT("time="), true);
 
-			for (FString LogLine : LogLines)
+			for (const FString& LogLine : LogLines)
 			{
-				FormatRawLogLine(LogLine);
+				FormatAndPrintRawLogLine(LogLine);
 			}
 
 			FMemory::Free(Ch);
@@ -222,9 +221,9 @@ void SSpatialOutputLog::PollLogFile(FString LogFilePath)
 	});
 }
 
-void SSpatialOutputLog::StartPollTimer(FString LogFilePath)
+void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 {
-	// Start a timer to read the log file every 0.05s
+	// Start a timer to read the log file every PollTimeInterval seconds
 	// Timers must be started on the game thread.
 	AsyncTask(ENamedThreads::GameThread, [this, LogFilePath]
 	{
@@ -234,12 +233,12 @@ void SSpatialOutputLog::StartPollTimer(FString LogFilePath)
 			GEditor->GetTimerManager()->SetTimer(PollTimer, [this, LogFilePath]()
 			{
 				PollLogFile(LogFilePath);
-			}, 0.05f, false);
+			}, PollTimeInterval, false);
 		}
 	});
 }
 
-void SSpatialOutputLog::FormatRawLogLine(FString& LogLine)
+void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 {
 	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
 	FString LogTime;

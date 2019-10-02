@@ -22,6 +22,7 @@ public class SpatialGDKServices : ModuleRules
 				"Json",
 				"JsonUtilities",
 				"UnrealEd"
-            });
+			}
+		);
 	}
 }

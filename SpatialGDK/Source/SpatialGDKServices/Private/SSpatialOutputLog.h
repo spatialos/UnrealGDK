@@ -21,35 +21,30 @@ public:
 	void UpdateFileSize();
 };
 
-class SSpatialOutputLog
-	: public SOutputLog
+class SSpatialOutputLog : public SOutputLog
 {
-
 public:
-	SLATE_BEGIN_ARGS( SSpatialOutputLog )
-	{}
+	SLATE_BEGIN_ARGS(SSpatialOutputLog) {}
 
 	SLATE_END_ARGS()
 
 	~SSpatialOutputLog();
 
-	void Construct( const FArguments& InArgs );
+	void Construct(const FArguments& InArgs);
 
 	TUniquePtr<FArchiveLogFileReader> CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize);
 
 private:
-	void OnCrash();
-
 	void ReadLatestLogFile();
-	void StartPollingLogFile(FString LogFilePath);
-	void StartPollTimer(FString LogFilePath);
-	void PollLogFile(FString LogFilePath);
+	void ResetPollingLogFile(const FString& LogFilePath);
+	void StartPollTimer(const FString& LogFilePath);
+	void PollLogFile(const FString& LogFilePath);
 	void CloseLogReader();
 
-	void FormatRawLogLine(FString& LogLine);
+	void FormatAndPrintRawLogLine(const FString& LogLine);
 
-	void StartUpLogDirectoryWatcher(FString LogDirectory);
-	void ShutdownLogDirectoryWatcher(FString LogDirectory);
+	void StartUpLogDirectoryWatcher(const FString& LogDirectory);
+	void ShutdownLogDirectoryWatcher(const FString& LogDirectory);
 	void OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
 	FDelegateHandle LogDirectoryChangedDelegateHandle;
@@ -57,4 +52,5 @@ private:
 
 	FTimerHandle PollTimer;
 	TUniquePtr<FArchiveLogFileReader> LogReader;
+	FCriticalSection LogReaderMutex;
 };
