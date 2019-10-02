@@ -641,15 +641,18 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 		}
 
 		// Check if this is a dormant entity, and if so retire the entity
-		Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
-		if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
+		if (PackageMap != nullptr)
 		{
-			// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
-			if (StaticComponentView->GetAuthority(EntityId, SpatialGDK::Position::ComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
+			Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
+			if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
 			{
-				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId, *ThisActor->GetName());
+				// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
+				if (StaticComponentView->GetAuthority(EntityId, SpatialGDK::Position::ComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
+				{
+					UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId, *ThisActor->GetName());
+				}
+				Sender->RetireEntity(EntityId);
 			}
-			Sender->RetireEntity(EntityId);
 		}
 	}
 
