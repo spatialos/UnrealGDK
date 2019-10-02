@@ -41,11 +41,6 @@ markStartOfBlock "Setup the git hooks"
 markEndOfBlock "Setup the git hooks"
 
 markStartOfBlock "Check dependencies"
-    if [ -z "${UNREAL_HOME:-}" ]; then
-        echo "Error: Please set UNREAL_HOME environment variable in ~/.bashrc or ~/.zshrc to point to the Unreal Engine folder."
-        exit 1
-    fi
-
     which msbuild > /dev/null
     if [ $? -eq 1 ]; then
         echo "Error: Could not find the MSBuild executable. Please make sure you have Microsoft Visual Studio or Microsoft Build Tools installed."
@@ -67,13 +62,19 @@ markStartOfBlock "Setup variables"
     BINARIES_DIR="$(dirname "$0")/SpatialGDK/Binaries/ThirdParty/Improbable"
     SCHEMA_COPY_DIR="$(dirname "$0")/../../../spatial/schema/unreal/gdk"
     SCHEMA_STD_COPY_DIR="$(dirname "$0")/../../../spatial/build/dependencies/schema/standard_library"
+    SPATIAL_DIR="$(dirname "$0")/../../../spatial"
 markEndOfBlock "Setup variables"
 
 markStartOfBlock "Clean folders"
     rm -rf $CORE_SDK_DIR           2>/dev/null
     rm -rf $WORKER_SDK_DIR         2>/dev/null
     rm -rf $BINARIES_DIR           2>/dev/null
-    rm -rf $SCHEMA_STD_COPY_DIR    2>/dev/null
+
+    if [ ! -z "$SPATIAL_DIR" ]; then
+        rm -rf $SCHEMA_STD_COPY_DIR    2>/dev/null
+        rm -rf $SCHEMA_COPY_DIR    2>/dev/null
+    fi
+    
 markEndOfBlock "Clean folders"
 
 markStartOfBlock "Create folders"
@@ -82,50 +83,57 @@ markStartOfBlock "Create folders"
     mkdir -p $CORE_SDK_DIR/tools      >/dev/null 2>/dev/null
     mkdir -p $CORE_SDK_DIR/worker_sdk >/dev/null 2>/dev/null
     mkdir -p $BINARIES_DIR            >/dev/null 2>/dev/null
-    mkdir -p $SCHEMA_STD_COPY_DIR     >/dev/null 2>/dev/null
+    mkdir -p $BINARIES_DIR/Programs/worker_sdk >/dev/null 2>/dev/null
+    
+    if [ ! -z "$SPATIAL_DIR" ]; then
+        mkdir -p $SCHEMA_STD_COPY_DIR     >/dev/null 2>/dev/null
+        rm -rf $SCHEMA_COPY_DIR    2>/dev/null
+    fi
 markEndOfBlock "Create folders"
 
 markStartOfBlock "Retrieve dependencies"
     spatial package retrieve tools           schema_compiler-x86_64-win32               $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/tools/schema_compiler-x86_64-win32.zip
     spatial package retrieve schema          standard_library                           $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/schema/standard_library.zip
-    spatial package retrieve worker_sdk      c-dynamic-x86-msvc_md-win32                $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86-msvc_md-win32.zip
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32             $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-msvc_md-win32.zip
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux       $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc_libstdcpp-linux.zip
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-clang_libcpp-macos        $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang_libcpp-macos.zip
-    spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang_libcpp-ios  $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang_libcpp-ios.zip
-    spatial package retrieve worker_sdk      core-dynamic-x86_64-linux                  $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/core-dynamic-x86_64-linux.zip
+    spatial package retrieve worker_sdk      c_headers                                  $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c_headers.zip
+    spatial package retrieve worker_sdk      c-dynamic-x86-vc140_md-win32               $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86-vc140_md-win32.zip
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-vc140_md-win32            $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-vc140_md-win32.zip
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc510-linux              $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc510-linux.zip
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-clang-macos               $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang-macos.zip
+    spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang-ios         $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
     spatial package retrieve worker_sdk      csharp                                     $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/csharp.zip
 markEndOfBlock "Retrieve dependencies"
 
 markStartOfBlock "Unpack dependencies"
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86-msvc_md-win32.zip                 -d $BINARIES_DIR/Win32/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-msvc_md-win32.zip              -d $BINARIES_DIR/Win64/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc_libstdcpp-linux.zip        -d $BINARIES_DIR/Linux/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang_libcpp-macos.zip         -d $BINARIES_DIR/Mac/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang_libcpp-ios.zip   -d $BINARIES_DIR/IOS/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/core-dynamic-x86_64-linux.zip                   -d $BINARIES_DIR/Programs/worker_sdk/core/
+    unzip -oq $CORE_SDK_DIR/worker_sdk/c_headers.zip                                   -d $BINARIES_DIR/Headers/
+    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86-vc140_md-win32.zip                -d $BINARIES_DIR/Win32/
+    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-vc140_md-win32.zip             -d $BINARIES_DIR/Win64/
+    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc510-linux.zip               -d $BINARIES_DIR/Linux/
+    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang-macos.zip                -d $BINARIES_DIR/Mac/
+    unzip -oq $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang-ios.zip          -d $BINARIES_DIR/IOS/
     unzip -oq $CORE_SDK_DIR/worker_sdk/csharp.zip                                      -d $BINARIES_DIR/Programs/worker_sdk/csharp/
     unzip -oq $CORE_SDK_DIR/tools/schema_compiler-x86_64-win32.zip                     -d $BINARIES_DIR/Programs/
     unzip -oq $CORE_SDK_DIR/schema/standard_library.zip                                -d $BINARIES_DIR/Programs/schema/
 
-    cp -R $BINARIES_DIR/Mac/include/ $WORKER_SDK_DIR
+    cp -R $BINARIES_DIR/Headers/include/ $WORKER_SDK_DIR
 markEndOfBlock "Unpack dependencies"
 
-markStartOfBlock "Copy standard library schema"
-    echo "Copying standard library schemas to $SCHEMA_STD_COPY_DIR"
-    cp -R $BINARIES_DIR/Programs/schema/* $SCHEMA_STD_COPY_DIR
-markEndOfBlock "Copy standard library schema"
+if [ ! -z "$SPATIAL_DIR" ]; then
+    markStartOfBlock "Copy standard library schema"
+        echo "Copying standard library schemas to $SCHEMA_STD_COPY_DIR"
+        cp -R $BINARIES_DIR/Programs/schema/* $SCHEMA_STD_COPY_DIR
+    markEndOfBlock "Copy standard library schema"
 
-markStartOfBlock "Copy GDK schema"
-    rm -rf $SCHEMA_COPY_DIR   2>/dev/null
-    mkdir -p $SCHEMA_COPY_DIR >/dev/null 2>/dev/null
+    markStartOfBlock "Copy GDK schema"
+        rm -rf $SCHEMA_COPY_DIR   2>/dev/null
+        mkdir -p $SCHEMA_COPY_DIR >/dev/null 2>/dev/null
 
-    echo "Copying schemas to $SCHEMA_COPY_DIR."
-    cp -R $(dirname %0)/SpatialGDK/Extras/schema/* $SCHEMA_COPY_DIR
-markEndOfBlock "Copy GDK schema"
+        echo "Copying schemas to $SCHEMA_COPY_DIR."
+        cp -R $(dirname %0)/SpatialGDK/Extras/schema/* $SCHEMA_COPY_DIR
+    markEndOfBlock "Copy GDK schema"
+fi
 
 markStartOfBlock "Build C# utilities"
-    msbuild /nologo /verbosity:minimal ./SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
+    msbuild /nologo /verbosity:minimal ./SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
 markEndOfBlock "Build C# utilities"
 
 markEndOfBlock "$0"

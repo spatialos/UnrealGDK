@@ -1,26 +1,51 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "GenerateSchemaCommandlet.h"
-#include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditor.h"
+#include "SpatialGDKEditorCommandletPrivate.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
+
+using namespace SpatialGDKEditor::Schema;
 
 UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
 {
 	IsClient = false;
-	IsEditor = false;
+	IsEditor = true;
 	IsServer = false;
 	LogToConsole = true;
+}
+
+bool UGenerateSchemaCommandlet::HandleOptions(const TArray<FString>& Switches)
+{
+	if (Switches.Contains("delete-schema-db"))
+	{
+		if (DeleteSchemaDatabase())
+		{
+			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Deleted schema database"));
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed to delete schema database"));
+			return false;
+		}
+	}
+	return true;
 }
 
 int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Commandlet Started"));
 
-	//NOTE: For future use, if schema generation configuration at the command line is desired
-	//TArray<FString> Tokens;
-	//TArray<FString> Switches;
-	//TMap<FString, FString> Params;
-	//ParseCommandLine(*Args, Tokens, Switches, Params);
+	TArray<FString> Tokens;
+	TArray<FString> Switches;
+	TMap<FString, FString> Params;
+	ParseCommandLine(*Args, Tokens, Switches);
+
+	if (!HandleOptions(Switches))
+	{
+		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema generation aborted"));
+		return 1;
+	}
 
 	//Generate Schema!
 	bool bSchemaGenSuccess;

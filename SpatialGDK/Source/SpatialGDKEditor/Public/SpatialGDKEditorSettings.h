@@ -18,12 +18,10 @@ struct FWorldLaunchSection
 	FWorldLaunchSection()
 		: Dimensions(2000, 2000)
 		, ChunkEdgeLengthMeters(50)
-		, StreamingQueryIntervalSeconds(4)
 		, SnapshotWritePeriodSeconds(0)
 	{
 		LegacyFlags.Add(TEXT("bridge_qos_max_timeout"), TEXT("0"));
 		LegacyFlags.Add(TEXT("bridge_soft_handover_enabled"), TEXT("false"));
-		LegacyFlags.Add(TEXT("enable_chunk_interest"), TEXT("false"));
 	}
 
 	/** The size of the simulation, in meters, for the auto-generated launch configuration file. */
@@ -33,10 +31,6 @@ struct FWorldLaunchSection
 	/** The size of the grid squares that the world is divided into, in “world units” (an arbitrary unit that worker instances can interpret as they choose). */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Chunk edge length in meters"))
 	int32 ChunkEdgeLengthMeters;
-
-	/** The time in seconds between streaming query updates. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Streaming query interval in seconds"))
-	int32 StreamingQueryIntervalSeconds;
 
 	/** The frequency in seconds to write snapshots of the simulated world. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Snapshot write period in seconds"))
@@ -183,6 +177,19 @@ struct FSpatialLaunchConfigDescription
 		ServerWorkers.Add(UnrealWorkerDefaultSetting);
 	}
 
+	FSpatialLaunchConfigDescription(const FName& WorkerTypeName)
+		: Template(TEXT("w2_r0500_e5"))
+		, World()
+	{
+		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
+		UnrealWorkerDefaultSetting.WorkerTypeName = WorkerTypeName;
+		UnrealWorkerDefaultSetting.Rows = 1;
+		UnrealWorkerDefaultSetting.Columns = 1;
+		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
+
+		ServerWorkers.Add(UnrealWorkerDefaultSetting);
+	}
+
 	/** Deployment template. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
 	FString Template;
@@ -257,18 +264,19 @@ public:
 	bool bAutoStartLocalDeployment;
 
 private:
-	/** Name of your SpatialOS snapshot file. */
-	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
-	FString SpatialOSSnapshotFile;
+	/** Name of your SpatialOS snapshot file that will be generated. */
+	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot to save"))
+	FString SpatialOSSnapshotToSave;
+
+	/** Name of your SpatialOS snapshot file that will be loaded during deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot to load"))
+	FString SpatialOSSnapshotToLoad;
 
 	/** Add flags to the `spatial local launch` command; they alter the deployment’s behavior. Select the trash icon to remove all the flags.*/
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Command line flags for local launch"))
 	TArray<FString> SpatialOSCommandLineLaunchFlags;
 
 private:
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS project"))
-		FString ProjectName;
-
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (ConfigRestartRequired = false, DisplayName = "Assembly name"))
 		FString AssemblyName;
 
@@ -308,32 +316,35 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration file options"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
-	FORCEINLINE FString GetGDKPluginDirectory() const
-	{
-		// Get the correct plugin directory.
-		FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
-
-		if (!FPaths::DirectoryExists(PluginDir))
-		{
-			// If the Project Plugin doesn't exist then use the Engine Plugin.
-			PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
-		}
-
-		return PluginDir;
-	}
-
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
 		return SpatialOSLaunchConfig.FilePath.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/default_launch.json")))
+			? FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("default_launch.json"))
 			: SpatialOSLaunchConfig.FilePath;
 	}
 
-	FORCEINLINE FString GetSpatialOSSnapshotFile() const
+	FORCEINLINE FString GetSpatialOSSnapshotToSave() const
 	{
-		return SpatialOSSnapshotFile.IsEmpty()
+		return SpatialOSSnapshotToSave.IsEmpty()
 			? FString(TEXT("default.snapshot"))
-			: SpatialOSSnapshotFile;
+			: SpatialOSSnapshotToSave;
+	}
+
+	FORCEINLINE FString GetSpatialOSSnapshotToSavePath() const
+	{
+		return FPaths::Combine(GetSpatialOSSnapshotFolderPath(), GetSpatialOSSnapshotToSave());
+	}
+
+	FORCEINLINE FString GetSpatialOSSnapshotToLoad() const
+	{
+		return SpatialOSSnapshotToLoad.IsEmpty()
+			? FString(TEXT("default.snapshot"))
+			: SpatialOSSnapshotToLoad;
+	}
+
+	FORCEINLINE FString GetSpatialOSSnapshotToLoadPath() const
+	{
+		return FPaths::Combine(GetSpatialOSSnapshotFolderPath(), GetSpatialOSSnapshotToLoad());
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
@@ -343,7 +354,7 @@ public:
 
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))));
+		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/generated/")));
 	}
 
 	FORCEINLINE FString GetSpatialOSCommandLineLaunchFlags() const
@@ -359,8 +370,6 @@ public:
 		return CommandLineLaunchFlags;
 	}
 
-	FString GetProjectNameFromSpatial() const;
-
 	void SetPrimaryDeploymentName(const FString& Name);
 	FORCEINLINE FString GetPrimaryDeploymentName() const
 	{
@@ -371,12 +380,6 @@ public:
 	FORCEINLINE FString GetAssemblyName() const
 	{
 		return AssemblyName;
-	}
-
-	void SetProjectName(const FString& Name);
-	FORCEINLINE FString GetProjectName() const
-	{
-		return ProjectName;
 	}
 
 	void SetPrimaryLaunchConfigPath(const FString& Path);
@@ -393,7 +396,7 @@ public:
 	{
 		const USpatialGDKEditorSettings* SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 		return SnapshotPath.FilePath.IsEmpty()
-			? FPaths::Combine(SpatialEditorSettings->GetSpatialOSSnapshotFolderPath(), SpatialEditorSettings->GetSpatialOSSnapshotFile())
+			? SpatialEditorSettings->GetSpatialOSSnapshotToSavePath()
 			: SnapshotPath.FilePath;
 	}
 
@@ -448,7 +451,7 @@ public:
 
 	FORCEINLINE FString GetDeploymentLauncherPath() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(GetGDKPluginDirectory() / TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher")));
+		return FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher"));
 	}
 
 	bool IsDeploymentConfigurationValid() const;

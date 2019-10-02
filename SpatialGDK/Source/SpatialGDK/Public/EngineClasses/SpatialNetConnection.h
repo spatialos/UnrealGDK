@@ -25,16 +25,14 @@ public:
 	virtual void BeginDestroy() override;
 
 	virtual void InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket = 0, int32 InPacketOverhead = 0) override;
-#if ENGINE_MINOR_VERSION <= 20
-	virtual void LowLevelSend(void* Data, int32 CountBytes, int32 CountBits) override;
-#else
 	virtual void LowLevelSend(void* Data, int32 CountBits, FOutPacketTraits& Traits) override;
-#endif
 	virtual bool ClientHasInitializedLevelFor(const AActor* TestActor) const override;
 	virtual int32 IsNetReady(bool Saturate) override;
 
 	/** Called by PlayerController to tell connection about client level visibility change */
 	virtual void UpdateLevelVisibility(const FName& PackageName, bool bIsVisible) override;
+
+	virtual void FlushDormancy(class AActor* Actor) override;
 
 	virtual bool IsReplayConnection() const override { return false; }
 

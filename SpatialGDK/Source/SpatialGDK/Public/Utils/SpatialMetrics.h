@@ -11,7 +11,6 @@
 
 #include "SpatialMetrics.generated.h"
 
-struct Schema_Object;
 class USpatialNetDriver;
 class USpatialWorkerConnection;
 
@@ -45,6 +44,13 @@ public:
 	void OnModifySettingCommand(Schema_Object* CommandPayload);
 
 	void TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize);
+
+	void HandleWorkerMetrics(Worker_Op* Op);
+
+	// The user can bind their own delegate to handle worker metrics.
+	typedef TMap<FString, double> WorkerMetrics;
+	DECLARE_MULTICAST_DELEGATE_OneParam(WorkerMetricsDelegate, WorkerMetrics)
+	WorkerMetricsDelegate WorkerMetricsRecieved;
 
 private:
 	UPROPERTY()
