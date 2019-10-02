@@ -15,9 +15,9 @@ namespace Improbable.Unreal.Build.Common
             Name = name;
         }
 
-        public bool HasProperty(string key)
+        public bool HasProperty(string property)
         {
-            return pairs.ContainsKey(key) && pairs[key][0] != "";
+            return pairs.ContainsKey(property) && pairs[property][0] != "";
         }
 
         public List<string> GetPropertyValue(string property)
@@ -25,41 +25,41 @@ namespace Improbable.Unreal.Build.Common
             return pairs[property];
         }
 
-        public void AddPropertyValue(string key, string value)
+        public void AddPropertyValue(string property, string value)
         {
-            if (!pairs.ContainsKey(key))
+            if (!pairs.ContainsKey(property))
             {
-                pairs.Add(key, new List<string>());
+                pairs.Add(property, new List<string>());
             }
 
-            if (pairs[key].Count == 1 && pairs[key][0] == "")
+            if (pairs[property].Count == 1 && pairs[property][0] == "")
             {
-                pairs[key][0] = value;
+                pairs[property][0] = value;
             }
             else
             {
-                pairs[key].Add(value);
+                pairs[property].Add(value);
             }
         }
 
-        public void RemoveProperty(string key, string value)
+        public void RemoveProperty(string property, string value)
         {
-            pairs.Remove(key);
+            pairs.Remove(property);
         }
 
-        public void OverrideProperty(string key, string value)
+        public void OverrideProperty(string property, string value)
         {
             // does not use RemoveProperty to maintain setting order
-            if (!pairs.ContainsKey(key))
+            if (!pairs.ContainsKey(property))
             {
-                pairs.Add(key, new List<string>());
+                pairs.Add(property, new List<string>());
             }
             else
             {
-                pairs[key] = new List<string>();
+                pairs[property] = new List<string>();
             }
 
-            pairs[key].Add(value);
+            pairs[property].Add(value);
         }
 
         public override string ToString()

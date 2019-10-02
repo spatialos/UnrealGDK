@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Improbable.Unreal.Build.Common
 {
-    public static class FileModifier
+    public static class IniFileModifier
     {
         public static bool SetSpatialNetworkingEnabled(string iniPath, bool enabled)
         {

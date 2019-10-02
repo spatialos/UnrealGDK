@@ -13,14 +13,11 @@ namespace Improbable.Unreal.Build.Common
     class IniFile
     {
         private string path;
-        private List<IniFileSection> sections;
+        private List<IniFileSection> sections = new List<IniFileSection>();
 
         public IniFile(string path)
         {
             this.path = path;
-            string rawIni = File.ReadAllText(path, Encoding.UTF8);
-
-            sections = new List<IniFileSection>();
         }
 
         public static IniFile ParseIniFile(string path)
