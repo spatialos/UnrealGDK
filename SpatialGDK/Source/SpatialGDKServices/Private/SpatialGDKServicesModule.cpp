@@ -24,7 +24,6 @@ const FString SpatialExe = TEXT("spatial.exe");
 const FString SpotExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe"));
 static const FName SpatialOutputLogTabName = FName(TEXT("SpatialOutputLog"));
 
-
 TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
