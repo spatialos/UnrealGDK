@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Avoid generating schema for all UObject subclasses. Actor, ActorComponent, GameplayAbility subclasses are enabled by default, other classes can be enabled using SpatialType UCLASS specifier.
 - Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
 - Added OverrideSpatialOffloading command line flag that allows toggling of offloading at launch time.
+- Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
 
 ### Breaking Changes:
 - If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you need to enable generating schema for them using SpatialType UCLASS specifier or by checking Spatial Type if it's a blueprint.
