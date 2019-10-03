@@ -27,7 +27,7 @@ struct AuthorityIntent : Component
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		VirtualWorkerId = Schema_GetUint32(ComponentObject, 1);
+		VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID);
 	}
 
 	Worker_ComponentData CreateAuthorityIntentData()
@@ -37,7 +37,7 @@ struct AuthorityIntent : Component
 		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		Schema_AddUint32(ComponentObject, 1, VirtualWorkerId);
+		Schema_AddUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID, VirtualWorkerId);
 
 		return Data;
 	}
@@ -49,7 +49,7 @@ struct AuthorityIntent : Component
 		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-		Schema_AddUint32(ComponentObject, 1, VirtualWorkerId);
+		Schema_AddUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID, VirtualWorkerId);
 
 		return Update;
 	}
@@ -57,7 +57,7 @@ struct AuthorityIntent : Component
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
-		VirtualWorkerId = Schema_GetUint32(ComponentObject, 1);
+		VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID);
 	}
 
 	// Id of the Unreal server worker which should be authoritative for the entity.

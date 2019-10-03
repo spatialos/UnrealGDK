@@ -170,6 +170,10 @@ namespace SpatialConstants
 
 	const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
 
+	// AuthorityIntent codes and Field IDs.
+	const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
+	const uint32 INVALID_AUTHORITY_INTENT_ID                                = 0;
+
 	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
 
