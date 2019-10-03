@@ -156,3 +156,12 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
 	OnConnectionFailed.Broadcast(Reason);
 }
+
+bool USpatialGameInstance::SetFirstConnectionToSpatialOSAttempted(){
+	if (!bFirstConnectionToSpatialOSAttempted)
+	{
+		bFirstConnectionToSpatialOSAttempted = true;
+		return false;
+	}
+	return true;
+}

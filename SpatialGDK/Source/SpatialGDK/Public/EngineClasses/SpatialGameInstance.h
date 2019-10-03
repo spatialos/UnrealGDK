@@ -48,13 +48,17 @@ public:
 	// Invoked when this worker fails to initiate a connection to SpatialOS
 	FOnConnectionFailedEvent OnConnectionFailed;
 
+#if WITH_EDITOR
+	// Used to check whether receptionist host should be overridden when connecting. See USpatialNetDriver::ShouldOverrideReceptionistHost and UNR-1698.
+	bool SetFirstConnectionToSpatialOSAttempted();
+#endif // WITH_EDITOR 
+
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.
 	bool HasSpatialNetDriver() const;
 
 private:
-
 	// SpatialConnection is stored here for persistence between map travels.
 	UPROPERTY()
 	USpatialWorkerConnection* SpatialConnection;
@@ -62,4 +66,9 @@ private:
 	// If this flag is set to true standalone clients will not attempt to connect to a deployment automatically if a 'loginToken' exists in arguments.
 	UPROPERTY(Config)
 	bool bPreventAutoConnectWithLocator;
+
+#if WITH_EDITOR
+	// Used to check whether receptionist host should be overridden when connecting. See USpatialNetDriver::ShouldOverrideReceptionistHost and UNR-1698.
+	bool bFirstConnectionToSpatialOSAttempted = false;
+#endif // WITH_EDITOR
 };

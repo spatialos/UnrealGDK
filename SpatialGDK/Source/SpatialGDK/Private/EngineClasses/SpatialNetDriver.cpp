@@ -218,25 +218,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	{
 		Connection->ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
 
-		// Override the default receptionist with travel URL if it is supplied, but
-		// do not override if we are trying to connect to 127.0.0.1 in a PIE session.
-		// This allows connecting to remote deployment with a PIE session for easier testing,
-		// while still allowing travel to a local deployment after initially connecting to a remote one.
-		// (Vanilla Unreal always passes 127.0.0.1 to PIE clients as a command line argument.)
-
-		// Figure out whether we this is a PIE game.
-		bool bPlayingInEditor = false;
-		if (bConnectAsClient)
-		{
-			bPlayingInEditor = (GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this)).WorldType == EWorldType::PIE;
-		}
-		else
-		{
-			bPlayingInEditor = GetWorld()->WorldType== EWorldType::PIE;
-		}
-
-		// Override default receptionist host ip if necessary.
-		if (!URL.Host.IsEmpty() && !(URL.Host == SpatialConstants::LOCAL_HOST && bPlayingInEditor))
+		if (ShouldOverrideReceptionistHost(GameInstance, URL.Host))
 		{
 			Connection->ReceptionistConfig.ReceptionistHost = URL.Host;
 		}
@@ -258,6 +240,39 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	}
 
 	Connection->Connect(bConnectAsClient);
+}
+
+bool USpatialNetDriver::ShouldOverrideReceptionistHost(USpatialGameInstance* gameInstance, FString host)
+{
+	// check whether this is the first attempted connection after startup
+	bool bFirstAttemptedConnection = gameInstance->SetFirstConnectionToSpatialOSAttempted();
+
+	// use existing receptionist host if no host is specified
+	if (host.IsEmpty())
+	{
+		return false;
+	}
+
+#if WITH_EDITOR
+	// Vanilla Unreal always passes 127.0.0.1 to PIE clients upon their startup.
+	// To allow directly connecting to a host at a different IP from a PIE session (i.e. not overriding
+	// the receptionist with 127.0.0.1), check whether 127.0.0.1 has been specified and if this is a PIE session.
+	// This check is only applied on the first connection attempted, to allow subsequent client travel.
+	if (bFirstAttemptedConnection && host == SpatialConstants::LOCAL_HOST)
+	{
+		// Only cancel receptionist host override if this is a PIE session.
+		if (bConnectAsClient)
+		{
+			return !((GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this)).WorldType == EWorldType::PIE);
+		}
+		else
+		{
+			return !(GetWorld()->WorldType == EWorldType::PIE);
+		}
+	}
+#endif // WITH_EDITOR
+
+	return true;
 }
 
 void USpatialNetDriver::OnConnectedToSpatialOS()

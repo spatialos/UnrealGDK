@@ -9,6 +9,8 @@
 #include "TimerManager.h"
 #include "UObject/CoreOnline.h"
 
+#include "EngineClasses/SpatialGameInstance.h"
+
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "SpatialConstants.h"
@@ -200,6 +202,8 @@ private:
 	FString SnapshotToLoad;
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
+
+	bool ShouldOverrideReceptionistHost(USpatialGameInstance* gameInstance, FString host);
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
