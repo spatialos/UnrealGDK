@@ -187,6 +187,7 @@ exit /b !ERRORLEVEL!";
 
                 // force spatial networking to be enabled
                 var defaultGameIniPath = Path.Combine(windowsNoEditorPath, baseGameName, "Config", "DefaultGame.ini");
+                Console.WriteLine($"Overriding property values in {defaultGameIniPath}.");
                 File.AppendAllText(defaultGameIniPath, defaultGameIniOverrideText);
 
                 // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher.
@@ -248,6 +249,7 @@ exit /b !ERRORLEVEL!";
 
                 // force spatial networking to be enabled
                 var defaultGameIniPath = Path.Combine(linuxSimulatedPlayerPath, baseGameName, "Config", "DefaultGame.ini");
+                Console.WriteLine($"Overriding property values in {defaultGameIniPath}.");
                 File.AppendAllText(defaultGameIniPath, defaultGameIniOverrideText);
 
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerWorkerShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartSimulatedClient.sh"));
@@ -317,6 +319,7 @@ exit /b !ERRORLEVEL!";
 
                 // force spatial networking to be enabled
                 var defaultGameIniPath = Path.Combine(serverPath, baseGameName, "Config", "DefaultGame.ini");
+                Console.WriteLine($"Overriding property values in {defaultGameIniPath}.");
                 File.AppendAllText(defaultGameIniPath, defaultGameIniOverrideText);
 
                 if (isLinux)
