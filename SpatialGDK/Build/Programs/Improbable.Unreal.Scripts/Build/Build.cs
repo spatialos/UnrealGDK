@@ -345,7 +345,7 @@ exit /b !ERRORLEVEL!";
         private static void AppendProperyOverrideText(string workerPath, string gameName)
         {
             var defaultGameIniPath = Path.Combine(workerPath, gameName, "Config", "DefaultGame.ini");
-            Console.WriteLine($"Overriding property values in {defaultGameIniPath}.");
+            Console.WriteLine($"Overriding property values in {defaultGameIniPath}");
             string defaultGameIniOverrideText =
 @"
 ; Overridden by Spatial Build Tool:
