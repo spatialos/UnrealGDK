@@ -1,0 +1,9 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+component AuthorityIntent {
+     id = 9980;
+     // Id assigned to the Unreal server worker which should be authoritative for this entity.
+     // 0 is reserved as an invalid/unset value.
+     uint32 virtual_worker_id = 1;
+}

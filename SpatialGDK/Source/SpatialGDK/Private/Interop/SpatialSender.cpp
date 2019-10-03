@@ -14,6 +14,7 @@
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
 #include "Schema/AlwaysRelevant.h"
+#include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
@@ -125,6 +126,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 
 	if (Actor->IsNetStartupActor())
 	{
@@ -211,6 +213,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
+	// TODO(zoning): For now, setting AuthorityIntent to 0, which is an invalid virutal worker ID.
+	ComponentDatas.Add(AuthorityIntent(0).CreateAuthorityIntentData());
 
 	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
 	{
