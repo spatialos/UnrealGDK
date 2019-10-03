@@ -709,6 +709,17 @@ void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNet
 	GetNetworkObjectList().MarkDormant(Actor, NetConnection, NumConnections, this);
 
 	// Intentionally don't call Super::NotifyActorFullyDormantForConnection
+	/**
+	* MIDWINTER_ENGINE_CHANGE_BEGIN
+	* (10/03/19) - Evan Kau - If we have the replication graph, make sure dormancy information is sent over there, too
+	*/
+	if (GetReplicationDriver() != nullptr)
+	{
+		GetReplicationDriver()->NotifyActorFullyDormantForConnection(Actor, NetConnection);
+	}
+	/**
+	* MIDWINTER_ENGINE_CHANGE_END
+	*/
 }
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
