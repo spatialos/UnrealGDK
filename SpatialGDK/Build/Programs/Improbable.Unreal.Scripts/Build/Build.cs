@@ -102,13 +102,6 @@ namespace Improbable
             string runUATBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\RunUAT.bat");
             string buildBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\Build.bat");
 
-            string defaultGameIniOverrideText =
-@"
-; Overridden by Spatial Build Tool:
-[/Script/EngineSettings.GeneralProjectSettings]
-bSpatialNetworking=True
-";
-
             if (gameName == baseGameName + "Editor")
             {
                 if (noCompile)
@@ -186,9 +179,7 @@ exit /b !ERRORLEVEL!";
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
 
                 // force spatial networking to be enabled
-                var defaultGameIniPath = Path.Combine(windowsNoEditorPath, baseGameName, "Config", "DefaultGame.ini");
-                Console.WriteLine($"Overriding property values in {defaultGameIniPath}.");
-                File.AppendAllText(defaultGameIniPath, defaultGameIniOverrideText);
+                AppendProperyOverrideText(windowsNoEditorPath, baseGameName);
 
                 // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher.
                 // TO-DO: Remove this once LAUNCH-341 has been completed, and the _ is no longer necessary.
@@ -248,9 +239,7 @@ exit /b !ERRORLEVEL!";
                 var linuxSimulatedPlayerPath = Path.Combine(stagingDir, "LinuxNoEditor");
 
                 // force spatial networking to be enabled
-                var defaultGameIniPath = Path.Combine(linuxSimulatedPlayerPath, baseGameName, "Config", "DefaultGame.ini");
-                Console.WriteLine($"Overriding property values in {defaultGameIniPath}.");
-                File.AppendAllText(defaultGameIniPath, defaultGameIniOverrideText);
+                AppendProperyOverrideText(linuxSimulatedPlayerPath, baseGameName);
 
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerWorkerShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartSimulatedClient.sh"));
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerCoordinatorShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartCoordinator.sh"));
@@ -318,9 +307,7 @@ exit /b !ERRORLEVEL!";
                 var serverPath = Path.Combine(stagingDir, assemblyPlatform + "Server");
 
                 // force spatial networking to be enabled
-                var defaultGameIniPath = Path.Combine(serverPath, baseGameName, "Config", "DefaultGame.ini");
-                Console.WriteLine($"Overriding property values in {defaultGameIniPath}.");
-                File.AppendAllText(defaultGameIniPath, defaultGameIniOverrideText);
+                AppendProperyOverrideText(serverPath, baseGameName);
 
                 if (isLinux)
                 {
@@ -354,5 +341,19 @@ exit /b !ERRORLEVEL!";
         {
             return $"\"{toQuote}\"";
         }
+
+        private static void AppendProperyOverrideText(string workerPath, string gameName)
+        {
+            var defaultGameIniPath = Path.Combine(workerPath, gameName, "Config", "DefaultGame.ini");
+            Console.WriteLine($"Overriding property values in {defaultGameIniPath}.");
+            string defaultGameIniOverrideText =
+@"
+; Overridden by Spatial Build Tool:
+[/Script/EngineSettings.GeneralProjectSettings]
+bSpatialNetworking=True
+";
+            File.AppendAllText(defaultGameIniPath, defaultGameIniOverrideText);
+        }
+
     }
 }
