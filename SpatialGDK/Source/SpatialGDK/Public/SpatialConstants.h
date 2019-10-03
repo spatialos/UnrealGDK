@@ -3,12 +3,12 @@
 #pragma once
 
 #include "Improbable/SpatialEngineConstants.h"
-#include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"
 #include "UObject/Script.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+#include <limits>
 
 enum ESchemaComponentType : int32
 {
@@ -82,21 +82,31 @@ FORCEINLINE FString RPCSchemaTypeToString(ESchemaComponentType RPCType)
 
 namespace SpatialConstants
 {
-	enum EntityIds
-	{
-		INVALID_ENTITY_ID = 0,
-		INITIAL_SPAWNER_ENTITY_ID = 1,
-		INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
-		FIRST_AVAILABLE_ENTITY_ID = 3,
-	};
+	// Known entity IDs.
+	const Worker_EntityId INVALID_ENTITY_ID = 0;
+	const Worker_EntityId INITIAL_SPAWNER_ENTITY_ID = 1;
+	const Worker_EntityId INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2;
+	const Worker_EntityId FIRST_AVAILABLE_ENTITY_ID = 3;
 
+	// SpatialOS standard component IDs.
 	const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
+
+	const Worker_ComponentId MIN_SPATIAL_OS_STANDARD_COMPONENT_ID			= 1;
+	const Worker_ComponentId MAX_SPATIAL_OS_STANDARD_COMPONENT_ID			= 100;
 
 	const Worker_ComponentId ENTITY_ACL_COMPONENT_ID						= 50;
 	const Worker_ComponentId METADATA_COMPONENT_ID							= 53;
 	const Worker_ComponentId POSITION_COMPONENT_ID							= 54;
 	const Worker_ComponentId PERSISTENCE_COMPONENT_ID						= 55;
 	const Worker_ComponentId INTEREST_COMPONENT_ID							= 58;
+
+	// External schema IDs.
+	const Worker_ComponentId MIN_EXTERNAL_SCHEMA_ID							= 1000;
+	const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID							= 2000;
+
+	// GDK standard component IDs.
+	const Worker_ComponentId MIN_GDK_STANDARD_COMPONENT_ID					= 2001;
+	const Worker_ComponentId MAX_GDK_STANDARD_COMPONENT_ID					= 9999;
 
 	const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 9999;
 	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 9998;
@@ -117,8 +127,11 @@ namespace SpatialConstants
 	const Worker_ComponentId TOMBSTONE_COMPONENT_ID                         = 9982;
 	const Worker_ComponentId DORMANT_COMPONENT_ID							= 9981;
 
-	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
+	// GDK generated component IDs.
+	const Worker_ComponentId MIN_GENERATED_COMPONENT_ID						= 10000;
+	const Worker_ComponentId MAX_GENERATED_COMPONENT_ID						= std::numeric_limits<Worker_ComponentId>::max();
 
+	// GDK standard component field IDs.
 	const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
 
 	const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
@@ -203,9 +216,6 @@ namespace SpatialConstants
 
 	const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
-	const Worker_ComponentId MIN_EXTERNAL_SCHEMA_ID = 1000;
-	const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
-
 	const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 
 	const FString LOCATOR_HOST = TEXT("locator.improbable.io");
@@ -215,7 +225,7 @@ namespace SpatialConstants
 
 	const FString SCHEMA_DATABASE_FILE_PATH = TEXT("Spatial/SchemaDatabase");
 	const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
-}
+}  // namespace SpatialConstants
 
 FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)
 {
