@@ -2,12 +2,17 @@
 
 #include "SpatialGDKServicesModule.h"
 
-#include "HAL/PlatformFilemanager.h"
+#include "Editor/WorkspaceMenuStructure/Public/WorkspaceMenuStructure.h"
+#include "Editor/WorkspaceMenuStructure/Public/WorkspaceMenuStructureModule.h"
+#include "EditorStyleSet.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Framework/Docking/TabManager.h"
 #include "Misc/FileHelper.h"
-#include "Misc/PackageName.h"
+#include "SSpatialOutputLog.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesPrivate.h"
+#include "Widgets/Docking/SDockTab.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKServicesModule"
 
@@ -17,13 +22,34 @@ IMPLEMENT_MODULE(FSpatialGDKServicesModule, SpatialGDKServices);
 
 const FString SpatialExe = TEXT("spatial.exe");
 const FString SpotExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe"));
+static const FName SpatialOutputLogTabName = FName(TEXT("SpatialOutputLog"));
+
+TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
+{
+	return SNew(SDockTab)
+		.Icon(FEditorStyle::GetBrush("Log.TabIcon"))
+		.TabRole(ETabRole::NomadTab)
+		.Label(NSLOCTEXT("SpatialOutputLog", "TabTitle", "Spatial Output"))
+		[
+			SNew(SSpatialOutputLog)
+		];
+}
 
 void FSpatialGDKServicesModule::StartupModule()
 {
+	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(SpatialOutputLogTabName, FOnSpawnTab::CreateStatic(&SpawnSpatialOutputLog))
+		.SetDisplayName(NSLOCTEXT("UnrealEditor", "SpatialOutputLogTab", "Spatial Output Log"))
+		.SetTooltipText(NSLOCTEXT("UnrealEditor", "SpatialOutputLogTooltipText", "Open the Spatial Output Log tab."))
+		.SetGroup(WorkspaceMenu::GetMenuStructure().GetDeveloperToolsLogCategory())
+		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "Log.TabIcon"));
 }
 
 void FSpatialGDKServicesModule::ShutdownModule()
 {
+	if (FSlateApplication::IsInitialized())
+	{
+		FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(SpatialOutputLogTabName);
+	}
 }
 
 FString FSpatialGDKServicesModule::ProjectName = FSpatialGDKServicesModule::ParseProjectName();
