@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`0.7.0`] - 2019-10-04
 
 ### Breaking Changes:
-- If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you need to enable generating schema for them using SpatialType UCLASS specifier or by checking Spatial Type if it's a blueprint.
+- If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you now need to enable generating schema for them using SpatialType UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
 - Chunk based interest is no longer supported. All interest is resolved through QBI. You should remove streaming query and chunk based interest options from worker and launch config files to avoid unnecessary streaming queries being generated.
 - If you already have a project that you are upgrading to this version of the GDK, it is encouraged to follow the upgrade process to SpatialOS `14.1.0`:
 1. Open the `spatialos.json` file in the `spatial/` directory of your project.
