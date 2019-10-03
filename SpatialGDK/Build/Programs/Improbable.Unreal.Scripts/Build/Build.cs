@@ -348,7 +348,7 @@ exit /b !ERRORLEVEL!";
             var defaultGameIniPath = Path.Combine(workerPath, gameName, "Config", "DefaultGame.ini");
 
             // Make sure we are adding the override to the correct file, and that the setting hasn't moved.
-            Debug.Assert(File.ReadAllText(defaultGameIniPath).Contains("bSpatialNetworking="));
+            Trace.Assert(File.ReadAllText(defaultGameIniPath).Contains("bSpatialNetworking="));
 
             Console.WriteLine($"Forcing bSpatialNetworking to True in {defaultGameIniPath}");
             string defaultGameIniOverrideText =
