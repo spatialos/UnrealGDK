@@ -25,7 +25,7 @@ Finish-Event "build-gdk" "command"
 $unreal_path = "$($pwd.drive.root)UnrealEngine"
 
 Start-Event "setup-tests" "command"
-&$PSScriptRoot"\setup-tests.ps1" -build_output_dir "C:\SpatialGDKBuild" # See build-gdk, TODO
+&$PSScriptRoot"\setup-tests.ps1" -build_output_dir "C:\SpatialGDKBuild" -project_path "$unreal_path\Samples\StarterContent" -unreal_path $unreal_path # For build_output_dir, see build-gdk, TODO
 Finish-Event "setup-tests" "command"
 
 Start-Event "test-gdk" "command"
