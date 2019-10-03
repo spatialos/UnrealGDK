@@ -1,0 +1,8 @@
+node_modules
+*.DS_Store
+.grunt
+index.html
+tmp
+examples/*/views/**/*.js
+examples/*/lib/*
+!examples/*/lib/main.js

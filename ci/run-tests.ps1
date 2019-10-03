@@ -55,6 +55,7 @@ Stop-Process -Name "java" -ErrorAction SilentlyContinue # if no process exists, 
 Write-Output "Exited with code: $($run_tests_proc.ExitCode)" # can't find an indication of what the exit codes actually mean, so not relying on them
 
 $results_path = Join-Path -Path $output_dir_absolute -ChildPath "index.json"
+Write-Output "$(Get-ChildItem $output_dir_absolute)"
 $results_json = Get-Content $results_path -Raw
 
 $results_obj = ConvertFrom-Json $results_json

@@ -1,0 +1,15 @@
+{
+  "name": "dustjs-example-streaming-incremental",
+  "version": "1.0.0",
+  "description": "Explicitly show how Dust streams a page incrementally",
+  "main": "app.js",
+  "dependencies": {
+    "dustjs-linkedin": "^2.6.1",
+    "express": "^4.12.3",
+    "q": "^1.2.0"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
