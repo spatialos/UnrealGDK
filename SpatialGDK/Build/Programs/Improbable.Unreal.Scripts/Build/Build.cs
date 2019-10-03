@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -343,9 +342,6 @@ exit /b !ERRORLEVEL!";
         private static void ForceSpatialNetworkingInConfig(string workerPath, string gameName)
         {
             var defaultGameIniPath = Path.Combine(workerPath, gameName, "Config", "DefaultGame.ini");
-
-            // Make sure we are adding the override to the correct file, and that the setting hasn't moved.
-            Trace.Assert(File.ReadAllText(defaultGameIniPath).Contains("bSpatialNetworking="));
 
             Console.WriteLine($"Forcing bSpatialNetworking to True in {defaultGameIniPath}");
             string defaultGameIniOverrideText =
