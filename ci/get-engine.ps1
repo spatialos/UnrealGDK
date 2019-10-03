@@ -19,36 +19,28 @@ pushd "$($gdk_home)"
             $version_file_contents = (Get-Content -Path "unreal-engine.version" -Raw).Trim()
             Write-Log "Using engine version found in unreal-engine.version file: $($version_file_contents)"
         }
-    popd
 
+            # Check if we are using a 'floating' engine version, meaning that we want to get the latest built version of the engine on some branch
+            # This is specified by putting "HEAD name/of-a-branch" in the unreal-engine.version file
+            # If so, retrieve the version of the latest build from GCS, and use that going forward.
+        $head_version_prefix = "HEAD " 
+        if ($version_file_contents.StartsWith($head_version_prefix)) {
+            $version_branch = $version_file_contents.Remove(0, $head_version_prefix.Length) # Remove the prefix to just get the branch name
+            $version_branch = $version_branch.Replace("/", "_") # Replace / with _ since / is treated as the folder seperator in GCS
+
+                # Download the head pointer file for the given branch, which contains the latest built version of the engine from that branch
+            $head_pointer_gcs_path = "gs://$($gcs_publish_bucket)/HEAD/$($version_branch).version"
+            $unreal_version = $(gsutil cp $head_pointer_gcs_path -) # the '-' at the end instructs gsutil to download the file and output the contents to stdout
+        } else {
+            $unreal_version = $version_file_contents
+        }
+    popd
+    
     ## Create an UnrealEngine-Cache directory if it doesn't already exist.
     New-Item -ItemType Directory -Path $engine_cache_directory -Force
 
     pushd $engine_cache_directory
         Start-Event "download-unreal-engine" "get-unreal-engine"
-
-        if ($version_file_contents.StartsWith("HEAD ")) {
-            $version_branch = $version_file_contents.Remove(0, "HEAD ".Length)
-            $version_branch = $version_branch.Replace("/", "_")
-
-            $head_pointer_gcs_path = "gs://$($gcs_publish_bucket)/HEAD/$($version_branch).version"
-
-            $pointer_dl_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(` # download pointer file
-                "cp", `
-                "-n", ` # noclobber
-                $head_pointer_gcs_path, `
-                "branch.version"
-            )
-            if ($pointer_dl_proc.ExitCode -ne 0) {
-                Write-Log "Failed to download head pointer file. Error: $($pointer_dl_proc.ExitCode)"
-                Throw "Failed to download head pointer file."
-            }
-
-            $unreal_version = Get-Content -Path "branch.version" -Raw
-            Remove-Item "branch.version"
-        } else {
-            $unreal_version = $version_file_contents
-        }
 
         $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
         Write-Log "Downloading Unreal Engine artifacts version $unreal_version from $($engine_gcs_path)"
