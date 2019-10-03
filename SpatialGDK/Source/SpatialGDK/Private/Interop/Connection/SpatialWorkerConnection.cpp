@@ -267,6 +267,10 @@ void USpatialWorkerConnection::ConnectToLocator()
 	ConnectionParams.network.use_external_ip = LocatorConfig.UseExternalIp;
 	ConnectionParams.network.tcp.multiplex_level = LocatorConfig.TcpMultiplexLevel;
 
+	Worker_Alpha_CompressionParameters DownstreamCompressionParams{};
+	ConnectionParams.network.modular_udp.downstream_compression = &DownstreamCompressionParams;
+	ConnectionParams.network.modular_udp.upstream_compression = nullptr;
+
 	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
 	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
 
