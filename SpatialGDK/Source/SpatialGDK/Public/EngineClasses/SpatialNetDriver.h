@@ -5,9 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "IpNetDriver.h"
-#include "OnlineSubsystemNames.h"
 #include "TimerManager.h"
-#include "UObject/CoreOnline.h"
 
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
@@ -210,11 +208,6 @@ private:
 	void QueryGSMToLoadMap();
 
 	void HandleOngoingServerTravel();
-
-	void HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists);
-	bool FindAndDispatchStartupOpsServer(const TArray<Worker_OpList*>& InOpLists);
-	bool FindAndDispatchStartupOpsClient(const TArray<Worker_OpList*>& InOpLists);
-	void SelectiveProcessOps(TArray<Worker_Op*> FoundOps);
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);

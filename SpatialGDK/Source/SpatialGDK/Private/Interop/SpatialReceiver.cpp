@@ -491,7 +491,7 @@ bool USpatialReceiver::IsReceivedEntityTornOff(Worker_EntityId EntityId)
 			continue;
 		}
 
-		Worker_ComponentData* ComponentData = PendingAddComponent.Data->ComponentData;
+		Worker_ComponentData* ComponentData = PendingAddComponent.Data->ComponentData.get();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData->schema_type);
 		return GetBoolFromSchema(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID);
 	}

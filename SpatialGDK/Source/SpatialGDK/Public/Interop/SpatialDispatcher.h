@@ -4,16 +4,15 @@
 
 #include "CoreMinimal.h"
 
-#include "Schema/Component.h"
-#include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
-#include "SpatialCommonTypes.h"
-#include "SpatialConstants.h"
 
-#include <WorkerSDK/improbable/c_schema.h>
-#include <WorkerSDK/improbable/c_worker.h>
+#include <gdk/worker_sdk.h>
 
 #include "SpatialDispatcher.generated.h"
+
+namespace gdk {
+	class SpatialOsWorker;
+}   // namespace gdk
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
 
@@ -30,12 +29,7 @@ public:
 	using FCallbackId = uint32;
 
 	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics);
-	void ProcessOps(Worker_OpList* OpList);
-
-	// The following 2 methods should *only* be used by the Startup OpList Queueing flow
-	// from the SpatialNetDriver, and should be temporary since an alternative solution will be available via the Worker SDK soon.
-	void MarkOpToSkip(const Worker_Op* Op);
-	int GetNumOpsToSkip() const;
+	void ProcessOps(const gdk::SpatialOsWorker& Worker);
 
 	// Each callback method returns a callback ID which is incremented for each registration.
 	// ComponentId must be in the range 1000 - 2000.
@@ -63,7 +57,13 @@ private:
 
 	using OpTypeToCallbacksMap = TMap<Worker_OpType, TArray<UserOpCallbackData>>;
 
-	bool IsExternalSchemaOp(Worker_Op* Op) const;
+	void ProcessWorkerMessages(const gdk::SpatialOsWorker& Worker);
+	void ProcessNewEntities(const gdk::SpatialOsWorker& Worker);
+	void ProcessEntityComponentMessages(const gdk::SpatialOsWorker& Worker, gdk::ComponentId RangeId);
+	void ProcessGdkCommands(const gdk::SpatialOsWorker& Worker, gdk::ComponentId RangeId);
+	void ProcessUserMessages(const gdk::SpatialOsWorker& Worker, gdk::ComponentId RangeId);
+	void ProcessWorldCommandResponses(const gdk::SpatialOsWorker& Worker);
+
 	void ProcessExternalSchemaOp(Worker_Op* Op);
 	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
@@ -84,5 +84,4 @@ private:
 	FCallbackId NextCallbackId;
 	TMap<Worker_ComponentId, OpTypeToCallbacksMap> ComponentOpTypeToCallbacksMap;
 	TMap<FCallbackId, CallbackIdData> CallbackIdToDataMap;
-	TArray<const Worker_Op*> OpsToSkip;
 };
