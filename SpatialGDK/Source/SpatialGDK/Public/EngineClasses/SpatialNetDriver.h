@@ -71,6 +71,7 @@ public:
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
 	virtual void Shutdown() override;
+	virtual void NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection) override;
 	// End UNetDriver interface.
 
 	virtual void OnOwnerUpdated(AActor* Actor);
@@ -101,6 +102,13 @@ public:
 
 	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject);
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
+
+	void RefreshActorDormancy(AActor* Actor, bool bMakeDormant);
+
+	void AddPendingDormantChannel(USpatialActorChannel* Channel);
+	void RegisterDormantEntityId(Worker_EntityId EntityId);
+	void UnregisterDormantEntityId(Worker_EntityId EntityId);
+	bool IsDormantEntity(Worker_EntityId EntityId) const;
 
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
@@ -168,6 +176,8 @@ public:
 #if WITH_EDITOR
 	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.
 	int32 PlayInEditorID;
+
+	void TrackTombstone(const Worker_EntityId EntityId);
 #endif
 
 private:
@@ -175,6 +185,8 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TArray<Worker_OpList*> QueuedStartupOpLists;
+	TSet<Worker_EntityId_Key> DormantEntities;
+	TSet<TWeakObjectPtr<USpatialActorChannel>> PendingDormantChannels;
 
 	FTimerManager TimerManager;
 
@@ -183,6 +195,7 @@ private:
 	bool bPersistSpatialConnection;
 	bool bWaitingForAcceptingPlayersToSpawn;
 	bool bIsReadyToStart;
+	bool bMapLoaded;
 
 	FString SnapshotToLoad;
 
@@ -199,7 +212,9 @@ private:
 	void HandleOngoingServerTravel();
 
 	void HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists);
-	bool FindAndDispatchStartupOps(const TArray<Worker_OpList*>& InOpLists);
+	bool FindAndDispatchStartupOpsServer(const TArray<Worker_OpList*>& InOpLists);
+	bool FindAndDispatchStartupOpsClient(const TArray<Worker_OpList*>& InOpLists);
+	void SelectiveProcessOps(TArray<Worker_Op*> FoundOps);
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
@@ -220,6 +235,8 @@ private:
 	void ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters);
 	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn);
 
+	void ProcessPendingDormancy();
+
 	friend USpatialNetConnection;
 	friend USpatialWorkerConnection;
 
@@ -239,5 +256,10 @@ private:
 
 #if !UE_BUILD_SHIPPING
 	int32 ConsiderListSize = 0;
+#endif
+
+#if WITH_EDITOR
+	static const int32 EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT = 256;
+	TArray<Worker_EntityId> TombstonedEntities;
 #endif
 };

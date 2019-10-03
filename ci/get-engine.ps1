@@ -1,3 +1,10 @@
+param(
+    # Note: this directory is outside the build directory and will not get automatically cleaned up from agents unless agents are restarted.
+    [string] $engine_cache_directory = "$($pwd.drive.root)UnrealEngine-Cache",
+    # Unreal path is a symlink to a specific Engine version located in Engine cache directory.
+    [string] $unreal_path = "$($gdk_home)\UnrealEngine"
+)
+
 pushd "$($gdk_home)"
 
     # Fetch the version of Unreal Engine we need
@@ -8,16 +15,16 @@ pushd "$($gdk_home)"
             $unreal_version = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
             Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($unreal_version)"
         } else {
-            $unreal_version = Get-Content -Path "unreal-engine.version" -Raw
+            # Read Engine version from the file and trim any trailing white spaces and new lines.
+            $unreal_version = (Get-Content -Path "unreal-engine.version" -Raw).Trim()
             Write-Log "Using engine version found in unreal-engine.version file: $($unreal_version)"
         }
     popd
 
+    ## Create an UnrealEngine-Cache directory if it doesn't already exist.
+    New-Item -ItemType Directory -Path $engine_cache_directory -Force
 
-    ## Create an UnrealEngine-Cache directory if it doesn't already exist
-    New-Item -Name "UnrealEngine-Cache" -ItemType Directory -Force
-
-    pushd "UnrealEngine-Cache"
+    pushd $engine_cache_directory
         Start-Event "download-unreal-engine" "get-unreal-engine"
 
         $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
@@ -50,13 +57,11 @@ pushd "$($gdk_home)"
         }
     popd
 
-    $unreal_path = "$($gdk_home)\UnrealEngine"
-
     ## Create an UnrealEngine symlink to the correct directory
     Remove-Item $unreal_path -ErrorAction ignore -Recurse -Force
-    cmd /c mklink /J $unreal_path "UnrealEngine-Cache\$($unreal_version)"
+    cmd /c mklink /J $unreal_path "$engine_cache_directory\$($unreal_version)"
 
-    $clang_path = "$($gdk_home)\UnrealEngine\ClangToolchain"
+    $clang_path = "$unreal_path\ClangToolchain"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
     [Environment]::SetEnvironmentVariable("LINUX_MULTIARCH_ROOT", "$($clang_path)", "Machine")
     $Env:LINUX_MULTIARCH_ROOT = "$($clang_path)"
@@ -64,6 +69,7 @@ pushd "$($gdk_home)"
     Start-Event "installing-unreal-engine-prerequisites" "get-unreal-engine"
         # This runs an opaque exe downloaded in the previous step that does *some stuff* that UE needs to occur.
         # Trapping error codes on this is tricky, because it doesn't always return 0 on success, and frankly, we just don't know what it _will_ return.
+        # Note: this fails to install .NET framework, but it's probably fine, as it's set up on Unreal build agents already (check gdk-for-unreal.build-capability/roles/gdk_for_unreal_choco/tasks/Windows.yml)
         Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($unreal_path)/Engine/Extras/Redist/en-us/UE4PrereqSetup_x64.exe" -ArgumentList @(`
             "/quiet" `
         )

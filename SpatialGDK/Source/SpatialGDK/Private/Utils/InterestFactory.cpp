@@ -151,11 +151,6 @@ Interest InterestFactory::CreateServerWorkerInterest()
 
 Interest InterestFactory::CreateInterest() const
 {
-	if (!GetDefault<USpatialGDKSettings>()->bUsingQBI)
-	{
-		return Interest{};
-	}
-
 	if (GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
 	{
 		if (Actor->GetNetConnection() != nullptr)

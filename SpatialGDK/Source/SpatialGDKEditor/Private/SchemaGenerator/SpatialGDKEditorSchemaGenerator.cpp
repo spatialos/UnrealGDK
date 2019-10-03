@@ -426,8 +426,29 @@ bool IsSupportedClass(const UClass* SupportedClass)
 
 	if (!SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] No SpatialType flag, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
-		return false;
+		if (SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Has NotSpatialType flag, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
+			return false;
+		}
+
+		// Need to check if super class is supported here because some blueprints don't appear to inherit SpatialFlags correctly until
+		// recompiled and saved. See [UNR-2172].
+		UClass* Class = SupportedClass->GetSuperClass();
+		while (Class != nullptr)
+		{
+			if (Class->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType | SPATIALCLASS_NotSpatialType))
+			{
+				break;
+			}
+			Class = Class->GetSuperClass();
+		}
+
+		if (Class == nullptr || !Class->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] No SpatialType flag, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
+			return false;
+		}
 	}
 
 	if (SupportedClass->HasAnyClassFlags(CLASS_LayoutChanging))
@@ -717,6 +738,8 @@ bool RunSchemaCompiler()
 
 bool SpatialGDKGenerateSchema()
 {
+	SchemaGeneratedClasses.Empty();
+
 	// Generate Schema for classes loaded in memory.
 
 	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses()))

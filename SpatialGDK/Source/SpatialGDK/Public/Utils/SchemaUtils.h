@@ -239,22 +239,6 @@ inline FVector GetVectorFromSchema(Schema_Object* Object, Schema_FieldId Id)
 	return Vector;
 }
 
-inline void DeepCopySchemaObject(Schema_Object* Source, Schema_Object* Target)
-{
-	uint32_t Length = Schema_GetWriteBufferLength(Source);
-	uint8_t* Buffer = Schema_AllocateBuffer(Target, Length);
-	Schema_WriteToBuffer(Source, Buffer);
-	Schema_Clear(Target);
-	Schema_MergeFromBuffer(Target, Buffer, Length);
-}
-
-inline Schema_ComponentData* DeepCopyComponentData(Schema_ComponentData* Source)
-{
-	Schema_ComponentData* Copy = Schema_CreateComponentData(Schema_GetComponentDataComponentId(Source));
-	DeepCopySchemaObject(Schema_GetComponentDataFields(Source), Schema_GetComponentDataFields(Copy));
-	return Copy;
-}
-
 // Generates the full path from an ObjectRef, if it has paths. Writes the result to OutPath.
 // Does not clear OutPath first.
 void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath);

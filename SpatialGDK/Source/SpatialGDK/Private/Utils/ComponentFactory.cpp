@@ -275,7 +275,7 @@ Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId Co
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
-	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
+	ComponentData.schema_type = Schema_CreateComponentData();
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
 	// We're currently ignoring ClearedId fields, which is problematic if the initial replicated state
@@ -289,7 +289,7 @@ Worker_ComponentData ComponentFactory::CreateEmptyComponentData(Worker_Component
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
-	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
+	ComponentData.schema_type = Schema_CreateComponentData();
 
 	return ComponentData;
 }
@@ -359,7 +359,7 @@ Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	Worker_ComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = ComponentId;
-	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 	TArray<Schema_FieldId> ClearedIds;
@@ -384,7 +384,7 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	Worker_ComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = ComponentId;
-	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 	TArray<Schema_FieldId> ClearedIds;

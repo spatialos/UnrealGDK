@@ -22,7 +22,7 @@ public:
 #else
 		Path = Path / TEXT("Win32");
 #endif
-		Path = Path / TEXT("worker.dll");
+		Path = Path / TEXT("improbable_worker.dll");
 		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(*Path);
 		if (WorkerLibraryHandle == nullptr)
 		{

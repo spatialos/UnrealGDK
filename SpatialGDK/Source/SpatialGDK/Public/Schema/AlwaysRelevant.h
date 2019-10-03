@@ -21,7 +21,23 @@ struct AlwaysRelevant : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
+
+		return Data;
+	}
+};
+
+struct Dormant : Component
+{
+	static const Worker_ComponentId ComponentId = SpatialConstants::DORMANT_COMPONENT_ID;
+
+	Dormant() = default;
+
+	FORCEINLINE Worker_ComponentData CreateData()
+	{
+		Worker_ComponentData Data = {};
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData();
 
 		return Data;
 	}

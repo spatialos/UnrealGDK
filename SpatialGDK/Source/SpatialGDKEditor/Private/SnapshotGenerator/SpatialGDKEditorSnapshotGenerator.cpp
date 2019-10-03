@@ -39,7 +39,7 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 
 	Worker_ComponentData PlayerSpawnerData = {};
 	PlayerSpawnerData.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
-	PlayerSpawnerData.schema_type = Schema_CreateComponentData(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID);
+	PlayerSpawnerData.schema_type = Schema_CreateComponentData();
 
 	TArray<Worker_ComponentData> Components;
 
@@ -59,7 +59,8 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	SpawnerEntity.component_count = Components.Num();
 	SpawnerEntity.components = Components.GetData();
 
-	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &SpawnerEntity) != 0;
+	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &SpawnerEntity);
+	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
 }
 
 Worker_ComponentData CreateSingletonManagerData()
@@ -68,7 +69,7 @@ Worker_ComponentData CreateSingletonManagerData()
 
 	Worker_ComponentData Data{};
 	Data.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
-	Data.schema_type = Schema_CreateComponentData(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
+	Data.schema_type = Schema_CreateComponentData();
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 	AddStringToEntityMapToSchema(ComponentObject, 1, SingletonNameToEntityId);
@@ -80,7 +81,7 @@ Worker_ComponentData CreateDeploymentData()
 {
 	Worker_ComponentData DeploymentData{};
 	DeploymentData.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
-	DeploymentData.schema_type = Schema_CreateComponentData(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
+	DeploymentData.schema_type = Schema_CreateComponentData();
 	Schema_Object* DeploymentDataObject = Schema_GetComponentDataFields(DeploymentData.schema_type);
 
 	Schema_Object* MapURLObject = Schema_AddObject(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID);
@@ -95,7 +96,7 @@ Worker_ComponentData CreateGSMShutdownData()
 {
 	Worker_ComponentData GSMShutdownData;
 	GSMShutdownData.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
-	GSMShutdownData.schema_type = Schema_CreateComponentData(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID);
+	GSMShutdownData.schema_type = Schema_CreateComponentData();
 	return GSMShutdownData;
 }
 
@@ -103,7 +104,7 @@ Worker_ComponentData CreateStartupActorManagerData()
 {
 	Worker_ComponentData StartupActorManagerData{};
 	StartupActorManagerData.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
-	StartupActorManagerData.schema_type = Schema_CreateComponentData(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	StartupActorManagerData.schema_type = Schema_CreateComponentData();
 	Schema_Object* StartupActorManagerObject = Schema_GetComponentDataFields(StartupActorManagerData.schema_type);
 
 	Schema_AddBool(StartupActorManagerObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, false);
@@ -150,7 +151,8 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();
 
-	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &GSM) != 0;
+	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &GSM);
+	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
 }
 
 bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
@@ -196,20 +198,20 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 {
 	if (!CreateSpawnerEntity(OutputStream))
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Spawner in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Spawner in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}
 
 	if (!CreateGlobalStateManager(OutputStream))
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating GlobalStateManager in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating GlobalStateManager in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}
 
 	Worker_EntityId NextAvailableEntityID = SpatialConstants::FIRST_AVAILABLE_ENTITY_ID;
 	if (!RunUserSnapshotGenerationOverrides(OutputStream, NextAvailableEntityID))
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error running user defined snapshot generation overrides in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error running user defined snapshot generation overrides in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}
 
@@ -233,7 +235,7 @@ bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotFilename)
 
 	bool bSuccess = true;
 	Worker_SnapshotOutputStream* OutputStream = Worker_SnapshotOutputStream_Create(TCHAR_TO_UTF8(*SavePath), &Parameters);
-	if (const char* SchemaError = Worker_SnapshotOutputStream_GetError(OutputStream))
+	if (const char* SchemaError = Worker_SnapshotOutputStream_GetState(OutputStream).error_message)
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error creating SnapshotOutputStream: %s"), UTF8_TO_TCHAR(SchemaError));
 		bSuccess = false;
