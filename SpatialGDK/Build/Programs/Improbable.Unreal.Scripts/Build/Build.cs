@@ -106,7 +106,8 @@ namespace Improbable
 @"
 ; Overridden by Spatial Build Tool:
 [/Script/EngineSettings.GeneralProjectSettings]
-bSpatialNetworking=True";
+bSpatialNetworking=True
+";
 
             if (gameName == baseGameName + "Editor")
             {
