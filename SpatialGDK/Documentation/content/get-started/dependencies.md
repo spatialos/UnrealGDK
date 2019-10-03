@@ -32,7 +32,7 @@ To build the GDK for Unreal you need the following software installed on your ma
 - The [**DirectX End-User Runtimes (June 2010)**](https://www.microsoft.com/en-us/download/details.aspx?id=8109)
 
   - You need the DirectX End-User Runtime to run Unreal Engine 4 clients.
-- <a href="https://visualstudio.microsoft.com/vs/older-downloads/" data-track-link="Clicked VS 2017|product=Docs|platform=Win|label=Win">**Visual Studio 2017**</a>.
+- <a href="https://visualstudio.microsoft.com/vs/" data-track-link="Clicked VS 2019|product=Docs|platform=Win|label=Win">**Visual Studio 2019**</a><a href="https://visualstudio.microsoft.com/vs/older-downloads/"" data-track-link="Clicked VS 2017|product=Docs|platform=Win|label=Win"> (or 2017)</a>.
     
     During the installation of Visual Studio, select the following items in the Workloads tab:
     - **Universal Windows Platform development**<br>
@@ -40,8 +40,6 @@ To build the GDK for Unreal you need the following software installed on your ma
       - You must also select the **.NET Framework 4.6.2 development tools**
     - **Desktop development with C++**<br>
     - **Game development with C++**, including the optional **Unreal Engine installer** component.
-
-<%(Callout type="warn" message="Make sure you install Visual Studio 2017. The GDK does not currently support any other version.")%>
 
 - [**Linux Cross-Compilation toolchain**](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html)
     - You need to download and install Unreal's Linux Cross-Compilation toolchain in order to build Linux server-workers using your Windows machine. Use the Unreal documentation link above to install `-v13 clang-7.0.1-based`, the appropriate toolchain for Unreal Engine 4.22.
