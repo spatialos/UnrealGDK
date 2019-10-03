@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features:
 - Visual Studio 2019 is now supported.
 - You can now delete your schema database using options in the GDK toolbar and the commandlet.
-- Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
+- The GDK now checks that schema and a snapshot are present before attempting to start a local deployment. If either are missing then an error message is displayed.
 - Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
 - It is now possible to specify in Unreal which actors should not persist as entities in the Snapshot.
 - Deleted startup actors are now tracked
