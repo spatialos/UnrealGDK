@@ -5,6 +5,7 @@
 #include "Schema/Component.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
+#include <memory>
 
 namespace SpatialGDK
 {
@@ -15,16 +16,20 @@ struct DynamicComponent : Component
 	DynamicComponent() = default;
 
 	DynamicComponent(const Worker_ComponentData& InComponentData)
-		: ComponentData(Worker_AcquireComponentData(&InComponentData))
+		: ComponentData(new Worker_ComponentData{ InComponentData })
 	{
+		ComponentData->schema_type = Schema_CopyComponentData(InComponentData.schema_type);
 	}
 
-	~DynamicComponent()
+	struct Deleter
 	{
-		Worker_ReleaseComponentData(ComponentData);
-	}
+		void operator()(Worker_ComponentData* Data) const noexcept
+		{
+			Schema_DestroyComponentData(Data->schema_type);
+		}
+	};
 
-	Worker_ComponentData* ComponentData;
+	std::unique_ptr<Worker_ComponentData, Deleter> ComponentData;
 };
 
 } // namespace SpatialGDK
