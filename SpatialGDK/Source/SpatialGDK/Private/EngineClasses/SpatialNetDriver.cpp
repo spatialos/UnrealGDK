@@ -168,6 +168,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 {
+
 	USpatialGameInstance* GameInstance = nullptr;
 
 	// A client does not have a world at this point, so we use the WorldContext
@@ -198,6 +199,9 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	}
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
+
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("!!! InitiateConnectionToSpatialOS entry URL.Host: %s"), *URL.Host);
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("!!! InitiateConnectionToSpatialOS entry Connection->ReceptionistConfig.ReceptionistHost: %s"), *(Connection->ReceptionistConfig.ReceptionistHost));
 
 	if (URL.HasOption(TEXT("locator")))
 	{
