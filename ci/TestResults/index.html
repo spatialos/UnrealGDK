@@ -1,0 +1,593 @@
+﻿<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.5">
+    <title>Automation Test Results</title>
+    <link rel="stylesheet" href="/bower_components/font-awesome/css/font-awesome.min.css" type="text/css" />
+    <link rel="stylesheet" href="/bower_components/twentytwenty/css/twentytwenty.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="/bower_components/featherlight/release/featherlight.min.css" type="text/css" />
+    <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.min.css" type="text/css" />
+    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="/bower_components/jquery.event.move/js/jquery.event.move.js"></script>
+    <script src="/bower_components/jquery_lazyload/jquery.lazyload.js"></script>
+    <script src="/bower_components/twentytwenty/js/jquery.twentytwenty.js"></script>
+    <script src="/bower_components/clipboard/dist/clipboard.min.js"></script>
+    <script src="/bower_components/anchor-js/anchor.min.js"></script>
+    <script src="/bower_components/featherlight/release/featherlight.min.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="/bower_components/dustjs-linkedin/dist/dust-full.min.js"></script>
+    <script src="/bower_components/numeral/min/numeral.min.js"></script>
+    <style>
+        body {
+            font-family: font-family: Monaco, "Lucida Console", monospace;
+            background-color: #fff;
+        }
+
+        .background-success {
+            background-image: linear-gradient(to bottom,#24C031 0,#3dd94a 100%);
+        }
+
+        .background-warning {
+            background-image: linear-gradient(to bottom,#FF9900 0,#FF9900 100%);
+        }
+
+        .background-error {
+            background-image: linear-gradient(to bottom,#CE3323 0,#e74c3c 100%);
+        }
+
+        .success-color {
+            color: #3dd94a;
+        }
+
+        .warning-color {
+            color: #FF9900;
+        }
+
+        .error-color {
+            color: #e74c3c;
+        }
+
+        .symbol-summary {
+            overflow: hidden;
+            *zoom: 1;
+            -webkit-padding-start: 25px;
+            margin-top: 15px;
+            margin-right: 15px;
+            margin-bottom: 0px;
+            line-height: 0.9;
+        }
+
+        .duration {
+            float: right;
+            padding-right: 10px;
+        }
+
+        .bar {
+            padding-top: 10px;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .summary {
+            font-size: 14px;
+            line-height: 14px;
+            color: #333;
+            -webkit-padding-start: 25px;
+            list-style-type: none;
+        }
+
+            .summary ul {
+                list-style-type: none;
+                margin-left: 14px;
+                padding-top: 0;
+                padding-left: 0;
+            }
+
+        .detailed-summary {
+            margin: 15px;
+        }
+
+            .detailed-summary pre {
+                display: block;
+                margin: 0 0 0px;
+                border: 0px solid #ccc;
+            }
+
+        .spec {
+            margin-top: 5px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+            .spec a {
+                font-weight: normal;
+            }
+
+        .suite {
+            margin-top: 15px;
+        }
+
+        .result {
+            margin-top: 0px;
+        }
+
+        .compare-artifact {
+            margin-top: 0px;
+            margin-bottom: 1px;
+            white-space: pre-wrap;
+        }
+
+        .image-artifact {
+            margin-top: 0px;
+            margin-bottom: 1px;
+            white-space: pre-wrap;
+        }
+
+        .log {
+            margin-top: 0px;
+            margin-bottom: 1px;
+            white-space: pre-wrap;
+        }
+
+        .log-level-Info {
+            color: #222;
+        }
+
+        .log-level-Warning {
+            color: #8a6d3b;
+            background-color: #fcf8e3;
+            border-color: #faebcc;
+            border-radius: 4px;
+        }
+
+        .log-level-Error {
+            color: #a94442;
+            background-color: #f2dede;
+            border-color: #ebccd1;
+            border-radius: 4px;
+        }
+
+        .shadow-border {
+            box-shadow: 0px 0px 5px #AAA;
+            margin: 5px;
+        }
+
+        .code {
+            font-size: 9pt;
+            margin-top: 0px;
+            margin-bottom: 1px;
+            white-space: pre-wrap;
+        }
+
+        footer {
+            width: 100%;
+            margin: 0 auto;
+            margin-top: 20px;
+            padding: 0 30px;
+            overflow-y: hidden;
+            height: 40px;
+            background-color: #313233;
+            color: #fff;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            line-height: 34px;
+            position: relative;
+        }
+		
+		.excluded-from-view
+		{
+			display:none;
+		}
+    </style>
+</head>
+<body>
+
+    <!-- Root -->
+    <script type="text/dust" id="root">
+        <!-- Hero Block -->
+        <div class="jumbotron background-{@reportState /}" style="padding-left: 20px; margin: 0px">
+            <h1 style="font-size:3em; color:#fff"><i class="fa fa-{@reportIcon /}" aria-hidden="true"></i> Automation Results</h1>
+        </div>
+
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs" role="tablist" style="margin-top: 10px">
+            <li role="presentation" class="active"><a href="#summary" aria-controls="summary" role="tab" data-toggle="tab">Summary <span class="badge">{totalTests}</span></a></li>
+            <li role="presentation"><a href="#warnings" aria-controls="warnings" role="tab" data-toggle="tab">Warnings <span class="badge">{succeededWithWarnings}</span></a></li>
+            <li role="presentation"><a href="#errors" aria-controls="errors" role="tab" data-toggle="tab">Errors <span class="badge">{failed}</span></a></li>
+			<div class="btn-group">
+				<button type="button" class="btn btn-light" id="ShowLogButton" data-toggle="button" aria-pressed="true" onclick="ShowHideLog('log-level-Info');">Log</button>
+				<button type="button" class="btn btn-warning" id="ShowWarningButton" data-toggle="button" aria-pressed="true" onclick="ShowHideLog('log-level-Warning');">Warning</button>
+				<button type="button" class="btn btn-danger" id="ShowErrorButton" data-toggle="button" aria-pressed="true" onclick="ShowHideLog('log-level-Error');">Error</button>
+			</div>
+            <span class="bar duration">Ran {totalRanTests} of {totalTests} tests in <strong>{totalDurationFormatted}</strong></span>
+        </ul>
+
+        <!-- Tab panes -->
+        <div class="tab-content">
+            {?hasArtifactComparisonIssues}
+            <div id="details{uniqueId}" class="detailed-summary panel panel-default" style="display: inline-block">
+                <div class="panel-heading">
+                    <span class="glyphicon glyphicon-gift" aria-hidden="true"></span><span> How To Resolve Screenshot Differences</span>
+                </div>
+                <div class="panel-body">
+                    Open the <strong>Screenshot Comparison Tool</strong> (Window &gt; Automation Frontend &gt; Screenshot Comparison) in the editor and point it at,<br />{comparisonExportDirectory}
+                    <br />
+                    <br />
+                    <div style="position: relative;">
+                        <img src="/img/ScreenshotBrowser.png" draggable="false" />
+                        <span style="position: absolute; left: 10px; top: 33px; width: 700px;">{comparisonExportDirectory}</span>
+                    </div>
+                </div>
+            </div>
+            {/hasArtifactComparisonIssues}
+            <div role="tabpanel" class="tab-pane active" id="summary">
+                <ul class="symbol-summary">
+                    {#specs}
+                    {>"symbol-summary"/}
+                    {/specs}
+                </ul>
+                <ul class="summary">
+                    {#specs}
+                    {>"spec"/}
+                    {/specs}
+                </ul>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="errors">
+                {#failures}
+                {>"detailed-summary"/}
+                {/failures}
+            </div>
+            <div role="tabpanel" class="tab-pane" id="warnings">
+                {#warnings}
+                {>"detailed-summary"/}
+                {/warnings}
+            </div>
+        </div>
+        <br />
+        <br />
+        <br />
+    </script>
+
+    <!-- Symbol-Summary -->
+    <script type="text/dust" id="symbol-summary">
+        {?symbol}
+        <span class="glyphicon glyphicon-stop {symbol}" style="cursor: pointer;" title="{details.testDisplayName}" data-toggle="collapse" data-target="#{details.uniqueId}" href="#{details.uniqueId}" onclick="setTimeout(function () { document.getElementById('details{details.uniqueId}').scrollIntoView() }, 100)" aria-hidden="true"></span>
+        {/symbol}
+        {?specs}
+        {/specs}
+        {#specs}
+        {>"symbol-summary"/}
+        {/specs}
+        {?specs}
+        {/specs}
+    </script>
+
+    <!-- Spec -->
+    <script type="text/dust" id="spec">
+        {?hasDetails}
+        <li class="{style}" style="cursor: pointer;" data-toggle="collapse" data-target="#{details.uniqueId}">{title|s}</li>
+        <br />
+        <div id="{details.uniqueId}" class="collapse">
+            {#details}
+            {>"detailed-summary"/}
+            {/details}
+        </div>
+        {:else}
+        <li class="{style}">
+            <p>{title|s}</p>
+        </li>
+        {/hasDetails}
+        {?specs}
+        <ul>
+            {#specs}
+            {>"spec"/}
+            {/specs}
+        </ul>
+        {/specs}
+    </script>
+
+    <!-- detailed-summary -->
+    <script type="text/dust" id="detailed-summary">
+        <div id="details{uniqueId}" class="detailed-summary panel {panelType}">
+            <div class="btn-group" style="float: right" role="group" aria-label="...">
+                <button type="button" class="btn btn-default copy" data-clipboard-text="-ExecCmds=&quot;Automation RunTests {fullTestPath}; Quit&quot;" title="Copy run commandline to clipboard">
+                    <span class="glyphicon glyphicon-copy" aria-hidden="true"></span>
+                </button>
+            </div>
+            <div class="panel-heading">
+                <h3 class="panel-title" style="line-height: 1.5;">{fullTestPath}</h3>
+            </div>
+            <div class="panel-body">
+                <pre>
+                    {?entries}
+						{#entries artifacts=artifacts}
+							{>"entry" artifacts=artifacts /}
+						{/entries}
+                    {:else}
+						no events
+                    {/entries}
+                </pre>
+            </div>
+        </div>
+    </script>
+	
+	<!-- Artifact -->
+    <script type="text/dust" id="Artifact">
+		{>"Artifact-{type}"/}
+    </script>
+
+    <!-- Artifact-Image -->
+    <script type="text/dust" id="Artifact-Image">
+        <p class="image-artifact">
+            <span style="display: table-row;">{name}</span>
+            <img style="height: 400px" class="lazy lightbox shadow-border" data-original="{files.image}" />
+        </p>
+    </script>
+
+    <!-- Artifact-Comparison -->
+    <script type="text/dust" id="Artifact-Comparison">
+        <p class="compare-artifact">
+			<span style="display: table-row;">{name}</span>
+            <div>
+                <img style="height: 100px" class="lazy lightbox shadow-border" data-original="{files.approved}" data-featherlight="{files.approved}" />
+                <img style="height: 100px" class="lazy lightbox shadow-border" data-original="{files.difference}" data-featherlight="{files.difference}" />
+                <img style="height: 100px" class="lazy lightbox shadow-border" data-original="{files.unapproved}" data-featherlight="{files.unapproved}" />
+            </div>
+            <div style="width: 885px; height: 500px;" class="shadow-border">
+                <div class="twentytwenty-container">
+                    <!-- The before image is first -->
+                    <img style="width: 885px; height: 500px;" class="lazy" data-original="{files.approved}" />
+                    <!-- The after image is last -->
+                    <img style="width: 885px; height: 500px;" class="lazy" data-original="{files.unapproved}" />
+                </div>
+            </div>
+        </p>
+    </script>
+
+    <!-- entry -->
+    <script type="text/dust" id="entry">
+		<span class="logline log-level-{event.type}">
+        {?filename}
+        <span class="log log-level-{event.type}" style="display: inline-block">
+            &nbsp;
+            <i class="fa fa-{@eventIcon /}" aria-hidden="true"> </i>
+            <a class="log log-level-{event.type}" href="file://{filename}">{@getCleanFilename value=filename /}({lineNumber})</a>&nbsp;
+        </span>: {event.message}
+        {:else}
+        <p class="log log-level-{event.type}">
+            &nbsp;
+            <i class="fa fa-{@eventIcon /}" aria-hidden="true"> </i>
+            {event.message}
+        </p>
+        {/filename}
+        <br />
+		{@resolveArtifact event=event}
+			<div class="log log-level-{event.type}">
+				{>"Artifact" /}
+			</div>
+		{/resolveArtifact}
+		</span>
+    </script>
+
+    <div id="output">
+    </div>
+</body>
+
+<script type="text/javascript">
+
+	function ShowHideLog(e)
+	{
+		const LogsOfClass = document.querySelectorAll('.logline.' + e);
+		LogsOfClass.forEach(i => i.classList.toggle('excluded-from-view'));
+	}
+
+    dust.helpers.reportState = function (chunk, context, bodies, params) {
+        var testState = context.get("failed") > 0 ? "error" : context.get("succeededWithWarnings") > 0 ? "warning" : "success";
+        return chunk.write(testState);
+    };
+
+    dust.helpers.reportIcon = function (chunk, context, bodies, params) {
+        var testState = context.get("failed") > 0 ? "bomb" : context.get("succeededWithWarnings") > 0 ? "exclamation-triangle" : "heartbeat";
+        return chunk.write(testState);
+    };
+
+    dust.helpers.eventIcon = function (chunk, context, bodies, params) {
+        let type = context.get("event.type");
+
+        if (type == "Error") {
+            return chunk.write("bomb");
+        } else if (type == "Warning") {
+            return chunk.write("exclamation-triangle");
+        }
+    };
+
+    dust.helpers.getCleanFilename = function (chunk, context, bodies, params) {
+        var filename = params.value.substring(params.value.lastIndexOf('\\') + 1);
+        return chunk.write(filename);
+    };
+
+    dust.helpers.testState = function (chunk, context, bodies, params) {
+        var testState = context.get("errors") > 0 ? "error" : context.get("warnings") > 0 ? "warning" : "success";
+        return chunk.write(testState);
+    };
+	
+	dust.helpers.resolveArtifact = function (chunk, context, bodies, params) {
+        var artifacts = context.get("artifacts");
+		var artifactId = context.get("event.artifact");
+		var artifact = artifacts.find(function(artifact) {
+			return artifact.id == artifactId;
+		});
+		
+		if (artifact) {
+			return chunk.render(bodies.block, context.push(artifact));
+		}
+		
+        return chunk.write("");
+    };
+
+    function compileTemplate(templateName) {
+        var src = document.getElementById(templateName).textContent;
+        var compiled = dust.compile(src, templateName);
+        return dust.loadSource(compiled);
+    }
+
+	compileTemplate("Artifact");
+    compileTemplate("Artifact-Comparison");
+    compileTemplate("Artifact-Image");
+    compileTemplate("entry");
+    compileTemplate("detailed-summary");
+    compileTemplate("spec");
+    compileTemplate("symbol-summary");
+    var rootTemplate = compileTemplate("root");
+
+    function getMatches(string, regex, index) {
+        index || (index = 1); // default to the first capturing group
+        var matches = [];
+        var match;
+        while (match = regex.exec(string)) {
+            matches.push(match[index]);
+        }
+        return matches;
+    }
+
+    $.getJSON("index.json", function (json) {
+
+        json.totalTests = json.succeeded + json.succeededWithWarnings + json.failed + json.notRun;
+        json.totalRanTests = json.succeeded + json.succeededWithWarnings + json.failed;
+
+        let date = new Date(null);
+        date.setSeconds(json.totalDuration);
+        json.totalDurationFormatted = date.toISOString().substr(11, 8);
+
+        let uniqueId = 0;
+        json.specs = [];
+        json.failures = [];
+        json.warnings = [];
+        json.style = 'suite';
+        json.hasArtifactComparisonIssues = false;
+        for (let step = 0; step < json.tests.length; step++) {
+			let test = json.tests[step];
+		
+            if (test.state == 'Success') {
+                test.symbol = 'passed success-color';
+                test.panelType = 'panel-success';
+            }
+
+            if (test.warnings > 0) {
+                test.symbol = 'passed warning-color';
+                test.panelType = 'panel-warning';
+                json.warnings.push(json.tests[step]);
+            }
+
+            if (test.state == 'Failure' || json.tests[step].state == 'Fail') {
+                test.symbol = 'failed error-color';
+                test.panelType = 'panel-danger';
+                json.failures.push(json.tests[step]);
+            }
+			
+			//TODO Artifact Resolution
+
+            test.uniqueId = uniqueId;
+            uniqueId++;
+
+            if (json.tests[step].artifacts != null && json.tests[step].artifacts.length > 0 && (json.tests[step].warnings > 0 || json.tests[step].errors > 0)) {
+                json.hasArtifactComparisonIssues = true;
+            }
+
+            let testPartsAll = json.tests[step].fullTestPath.split('.');
+
+            var testParts = new Array();
+            for (var i = 0; i < testPartsAll.length; i++) {
+                if (testPartsAll[i]) {
+                    testParts.push(testPartsAll[i]);
+                }
+            }
+
+            let lastSpec = json;
+            for (let index = 0; index < testParts.length; index++) {
+                let name = testParts[index];
+
+                let linkRegex = /(?:^|\s)(\[.*?\])(?:\s|$)/g;
+                let matches = getMatches(name, linkRegex, 1);
+
+                for (let matchIndex = 0; matchIndex < matches.length; matchIndex++) {
+                    name = name.replace(matches[0], "<a href='https://jira.it.epicgames.net/browse/" + matches[0].slice(1, -1) + "'>" + matches[0] + '</a>');
+                }
+
+                let foundSpec = null;
+                for (let specIndex = 0; specIndex < lastSpec.specs.length; specIndex++) {
+                    if (lastSpec.specs[specIndex].title == name) {
+                        foundSpec = lastSpec.specs[specIndex];
+                        break;
+                    }
+                }
+
+                if (foundSpec == null) {
+                    foundSpec = { title: name, specs: [] };
+                    lastSpec.specs.push(foundSpec);
+                }
+
+                lastSpec = foundSpec;
+
+                if (index == testParts.length - 1) {
+                    lastSpec.details = json.tests[step];
+                    lastSpec.style = json.tests[step].symbol + " spec";
+                    lastSpec.symbol = json.tests[step].symbol;
+                    lastSpec.hasDetails = function (chunk, context, bodies, params) {
+                        console.log("testing");
+                        return context.details != null && ((context.details.events != null && context.details.events.length > 0) || (context.details.artifacts != null && context.details.artifacts.length > 0));
+                    };
+                } else {
+                    lastSpec.style = 'suite';
+                }
+            }
+        }
+
+        let keepCollapsing = true;
+        while (keepCollapsing) {
+            if (json.specs.length == 1) {
+                if (json.title != null) {
+                    json.specs[0].title = json.title + ' ' + json.specs[0].title;
+                }
+                json.title = json.specs[0].title;
+                json.style = json.specs[0].style;
+                json.symbol = json.specs[0].symbol;
+                json.hasDetails = json.specs[0].hasDetails;
+                json.specs = json.specs[0].specs;
+            } else {
+                keepCollapsing = false;
+            }
+        }
+
+        //console.log(json);
+
+        $(function () {
+
+            dust.render(rootTemplate, json, function (err, out) {
+                document.getElementById('output').innerHTML = out;
+
+                $(".twentytwenty-container").twentytwenty({
+                    default_offset_pct: 0.5,
+                    orientation: 'horizontal'
+                });
+                $("img.lazy").lazyload({
+                    threshold: 1000
+                });
+                $('.lightbox').featherlight({ type: 'image' });
+                var clipboard = new Clipboard('.copy');
+            });
+
+        });
+    })
+    .fail(function (jqxhr, textStatus, error) {
+        var err = textStatus + ", " + error;
+        console.log("Request Failed: " + err);
+    });
+</script>
+
+</html>

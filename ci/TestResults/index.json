@@ -1,0 +1,137 @@
+﻿{
+	"reportCreatedOn": "2019.10.02-13.21.31",
+	"succeeded": 10,
+	"succeededWithWarnings": 0,
+	"failed": 1,
+	"notRun": 0,
+	"totalDuration": 26.256450653076172,
+	"comparisonExported": true,
+	"comparisonExportDirectory": "C:/dev/UnrealEngine/Engine/Plugins/UnrealGDK/ci/TestResults/0",
+	"tests": [
+		{
+			"testDisplayName": "GIVEN_no_deployment_running_WHEN_deployment_started_THEN_deployment_running",
+			"fullTestPath": "SpatialGDK.Services.LocalDeployment.GIVEN_no_deployment_running_WHEN_deployment_started_THEN_deployment_running",
+			"state": "Fail",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Error",
+						"message": "Expected 'Deployment is running' to be true.",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "c:\\dev\\unrealengine\\engine\\plugins\\unrealgdk\\spatialgdk\\source\\spatialgdktests\\private\\localdeploymentmanager\\localdeploymentmanagertest.cpp",
+					"lineNumber": 153,
+					"timestamp": "2019.10.02-12.21.31"
+				}
+			],
+			"warnings": 0,
+			"errors": 1,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_nothing_is_queued",
+			"fullTestPath": "SpatialGDK.Core.FRPCContainer.GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_nothing_is_queued",
+			"state": "Success",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_values_have_been_processed_in_order",
+			"fullTestPath": "SpatialGDK.Core.FRPCContainer.GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_values_have_been_processed_in_order",
+			"state": "Success",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GIVEN_a_container_storing_multiple_values_of_same_type_WHEN_processed_once_THEN_nothing_is_queued",
+			"fullTestPath": "SpatialGDK.Core.FRPCContainer.GIVEN_a_container_storing_multiple_values_of_same_type_WHEN_processed_once_THEN_nothing_is_queued",
+			"state": "Success",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_nothing_is_queued",
+			"fullTestPath": "SpatialGDK.Core.FRPCContainer.GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_nothing_is_queued",
+			"state": "Success",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_THEN_they_are_queued",
+			"fullTestPath": "SpatialGDK.Core.FRPCContainer.GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_THEN_they_are_queued",
+			"state": "Success",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_added_THEN_they_are_queued",
+			"fullTestPath": "SpatialGDK.Core.FRPCContainer.GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_added_THEN_they_are_queued",
+			"state": "Success",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_queued",
+			"fullTestPath": "SpatialGDK.Core.FRPCContainer.GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_queued",
+			"state": "Success",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_queued",
+			"fullTestPath": "SpatialGDK.Core.FRPCContainer.GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_queued",
+			"state": "Success",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GIVEN_a_container_with_one_value_WHEN_processing_after_2_seconds_THEN_warning_is_logged",
+			"fullTestPath": "SpatialGDK.Core.FRPCContainer.GIVEN_a_container_with_one_value_WHEN_processing_after_2_seconds_THEN_warning_is_logged",
+			"state": "Success",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "<-- Suspend Log Parsing -->",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "c:\\dev\\unrealengine\\engine\\plugins\\unrealgdk\\spatialgdk\\source\\spatialgdktests\\private\\rpccontainer\\rpccontainertest.cpp",
+					"lineNumber": 209,
+					"timestamp": "2019.10.02-12.21.07"
+				}
+			],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GIVEN_deployment_running_WHEN_deployment_stopped_THEN_deployment_not_running",
+			"fullTestPath": "SpatialGDK.Services.LocalDeployment.GIVEN_deployment_running_WHEN_deployment_stopped_THEN_deployment_not_running",
+			"state": "Success",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		}
+	]
+}

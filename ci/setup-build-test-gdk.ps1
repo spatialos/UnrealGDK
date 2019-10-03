@@ -17,19 +17,19 @@ Start-Event "setup-gdk" "command"
 &$PSScriptRoot"\setup-gdk.ps1"
 Finish-Event "setup-gdk" "command"
 
-# # Build the GDK plugin
-# Start-Event "build-gdk" "command"
-# &$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform)
-# Finish-Event "build-gdk" "command"
+# Build the GDK plugin
+Start-Event "build-gdk" "command"
+&$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform)
+Finish-Event "build-gdk" "command"
 
 $unreal_path = "$($pwd.drive.root)UnrealEngine"
 
-# Start-Event "setup-tests" "command"
-# &$PSScriptRoot"\setup-tests.ps1" -project_clone_path "$($unreal_path)\Samples"
-# Finish-Event "setup-tests" "command"
+Start-Event "setup-tests" "command"
+&$PSScriptRoot"\setup-tests.ps1" -build_output_dir "C:\SpatialGDKBuild" # See build-gdk, TODO
+Finish-Event "setup-tests" "command"
 
 Start-Event "test-gdk" "command"
-&$PSScriptRoot"\run-tests.ps1" -ue_path "$($unreal_path)\Engine\Binaries\Win64\UE4Editor.exe" -uproject_path "$($unreal_path)\Samples\StarterContent\StarterContent.uproject" -output_dir "TestResults" -log_file_name "tests.log"
+&$PSScriptRoot"\run-tests.ps1" -ue_path "$($unreal_path)\Engine\Binaries\Win64\UE4Editor.exe" -uproject_path "$($unreal_path)\Samples\StarterContent\StarterContent.uproject" -output_dir "$PSScriptRoot\TestResults" -log_file_name "tests.log"
 Finish-Event "test-gdk" "command"
 
 Start-Event "cleanup" "command"
