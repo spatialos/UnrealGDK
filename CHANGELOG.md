@@ -19,7 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 1. Replace all other instances of the version number in the file.
 
 ### Features:
-- Spatial networking is now always enabled in built assemblies.
 - Visual Studio 2019 is now supported.
 - Added toolbar and commandlet options to delete the schema database.
 - Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
@@ -29,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The GDK now uses SpatialOS `14.1.0`.
 
 ### Bug fixes:
+- Spatial networking is now always enabled in built assemblies.
 - Fixed a bug where the spatial daemon started even with spatial networking disabled.
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
