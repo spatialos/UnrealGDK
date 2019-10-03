@@ -30,16 +30,16 @@ steps:
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
-      - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
-      - "UnrealEngine/Samples/UnrealGDKExampleProject/Game/Saved/Logs/*"
-      - "*.txt"
+      - "C:/UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "C:/UnrealEngine/Samples/UnrealGDKExampleProject/Game/Saved/Logs/*"
+      - "ci/ExampleOutput/**/*" # The entire example output folder with all subfolders etc
 
   - label: "build-GDK-:linux:"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
-      - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
-      - "UnrealEngine/Samples/UnrealGDKExampleProject/Game/Saved/Logs/*"
+      - "C:/UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "C:/UnrealEngine/Samples/UnrealGDKExampleProject/Game/Saved/Logs/*"
 
   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
   - trigger: "unrealgdkexampleproject-nightly"
