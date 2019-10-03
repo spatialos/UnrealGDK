@@ -179,7 +179,6 @@ exit /b !ERRORLEVEL!";
 
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
 
-                // force spatial networking to be enabled
                 ForceSpatialNetworkingInConfig(windowsNoEditorPath, baseGameName);
 
                 // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher.
@@ -239,7 +238,6 @@ exit /b !ERRORLEVEL!";
 
                 var linuxSimulatedPlayerPath = Path.Combine(stagingDir, "LinuxNoEditor");
 
-                // force spatial networking to be enabled
                 ForceSpatialNetworkingInConfig(linuxSimulatedPlayerPath, baseGameName);
 
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerWorkerShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartSimulatedClient.sh"));
@@ -307,7 +305,6 @@ exit /b !ERRORLEVEL!";
                 var assemblyPlatform = isLinux ? "Linux" : "Windows";
                 var serverPath = Path.Combine(stagingDir, assemblyPlatform + "Server");
 
-                // force spatial networking to be enabled
                 ForceSpatialNetworkingInConfig(serverPath, baseGameName);
 
                 if (isLinux)
