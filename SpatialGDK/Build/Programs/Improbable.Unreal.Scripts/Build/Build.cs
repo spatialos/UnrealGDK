@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Text;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
-using Improbable.Unreal.Build.Common;
 using LinuxScripts = Improbable.Unreal.Build.Common.LinuxScripts;
 
 namespace Improbable
@@ -103,6 +102,12 @@ namespace Improbable
             string runUATBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\RunUAT.bat");
             string buildBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\Build.bat");
 
+            string defaultGameIniOverrideText =
+@"
+; Overridden by Spatial Build Tool:
+[/Script/EngineSettings.GeneralProjectSettings]
+bSpatialNetworking=True";
+
             if (gameName == baseGameName + "Editor")
             {
                 if (noCompile)
@@ -180,8 +185,8 @@ exit /b !ERRORLEVEL!";
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
 
                 // force spatial networking to be enabled
-                var defaulGameIniPath = Path.Combine(windowsNoEditorPath, baseGameName, "Config", "DefaultGame.ini");
-                IniFileModifier.SetSpatialNetworkingEnabled(defaulGameIniPath, true);
+                var defaultGameIniPath = Path.Combine(windowsNoEditorPath, baseGameName, "Config", "DefaultGame.ini");
+                File.AppendAllText(defaultGameIniPath, defaultGameIniOverrideText);
 
                 // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher.
                 // TO-DO: Remove this once LAUNCH-341 has been completed, and the _ is no longer necessary.
@@ -242,7 +247,7 @@ exit /b !ERRORLEVEL!";
 
                 // force spatial networking to be enabled
                 var defaultGameIniPath = Path.Combine(linuxSimulatedPlayerPath, baseGameName, "Config", "DefaultGame.ini");
-                IniFileModifier.SetSpatialNetworkingEnabled(defaultGameIniPath, true);
+                File.AppendAllText(defaultGameIniPath, defaultGameIniOverrideText);
 
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerWorkerShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartSimulatedClient.sh"));
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerCoordinatorShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartCoordinator.sh"));
@@ -311,7 +316,7 @@ exit /b !ERRORLEVEL!";
 
                 // force spatial networking to be enabled
                 var defaultGameIniPath = Path.Combine(serverPath, baseGameName, "Config", "DefaultGame.ini");
-                IniFileModifier.SetSpatialNetworkingEnabled(defaultGameIniPath, true);
+                File.AppendAllText(defaultGameIniPath, defaultGameIniOverrideText);
 
                 if (isLinux)
                 {
