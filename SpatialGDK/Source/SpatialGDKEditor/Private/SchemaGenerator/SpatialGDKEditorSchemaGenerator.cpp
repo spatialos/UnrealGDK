@@ -564,7 +564,7 @@ void ClearGeneratedSchema()
 	SubobjectClassPathToSchema.Empty();
 	LevelComponentIds.Empty();
 	LevelPathToComponentId.Empty();
-	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
+	NextAvailableComponentId = SpatialConstants::MIN_GENERATED_COMPONENT_ID;
 
 	// As a safety precaution, if the SchemaDatabase.uasset doesn't exist then make sure the schema generated folder is cleared as well.
 	DeleteGeneratedSchemaFiles();
@@ -597,7 +597,7 @@ bool TryLoadExistingSchemaDatabase()
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 
 		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
-		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
+		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::MIN_GENERATED_COMPONENT_ID)
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
 			ClearGeneratedSchema();

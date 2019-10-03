@@ -79,7 +79,7 @@ class SPATIALGDK_API USchemaDatabase : public UDataAsset
 
 public:
 
-	USchemaDatabase() : NextAvailableComponentId(SpatialConstants::STARTING_GENERATED_COMPONENT_ID) {}
+	USchemaDatabase() : NextAvailableComponentId(SpatialConstants::MIN_GENERATED_COMPONENT_ID) {}
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<FString, FActorSchemaData> ActorClassPathToSchema;
