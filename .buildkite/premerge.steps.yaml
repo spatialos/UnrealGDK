@@ -32,6 +32,7 @@ steps:
     artifact_paths:
       - "C:/UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
       - "C:/UnrealEngine/Samples/StarterContent/Saved/Logs/*"
+      - "ci/TestResults/*"
       # - "ci/ExampleOutput/**/*" # The entire example output folder with all subfolders etc
 
   - label: "build-GDK-:linux:"
@@ -40,6 +41,7 @@ steps:
     artifact_paths:
       - "C:/UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
       - "C:/UnrealEngine/Samples/StarterContent/Saved/Logs/*"
+      - "ci/TestResults/*"
 
   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
   - trigger: "unrealgdkexampleproject-nightly"
