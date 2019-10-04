@@ -1470,7 +1470,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
 	if (GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCWaitTime < TimeDiff)
 	{
-		if ((Function->FunctionFlags & FUNC_RpcAllowUnresolved) == 0)
+		if ((Function->FunctionFlags & FUNC_AllowUnresolvedArguments) == 0)
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing RPC %s::%s with unresolved references after %f seconds of queueing"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), TimeDiff);
 		}
