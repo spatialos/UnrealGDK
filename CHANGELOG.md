@@ -5,7 +5,6 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
-- Multicast RPCs are now processed after the EntityCreation request is satisfied.
 
 ## [`0.7.0`] - 2019-10-04
 
@@ -47,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Streaming levels with query-based interest (QBI) enabled no longer produces errors if the player connection owns unreplicated actors.
 - Fixed an issue that would prevent player movement in a zoned deployment.
 - Fixed an issue that could cause queued incoming RPCs with unresolved references to never be processed.
+- Multicast RPCs are now processed after the EntityCreation request is satisfied.
 
 ## [`0.6.1`] - 2019-08-15
 
