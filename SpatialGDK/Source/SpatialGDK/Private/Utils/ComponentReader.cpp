@@ -122,6 +122,11 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 			{
 				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
+				if (ArrayProperty == nullptr)
+				{
+					UE_LOG(LogSpatialComponentReader, Error, TEXT("Failed to apply Schema Object %s. One of it's properties is null"), *Object->GetName());
+					continue;
+				}
 
 				// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
 				if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
