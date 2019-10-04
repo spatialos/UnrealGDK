@@ -232,7 +232,6 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 		if (Op.component_id == SpatialConstants::DORMANT_COMPONENT_ID)
 		{
 			RecreateDormantSpatialChannel(Actor, Op.entity_id);
-			
 		}
 		else if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Op.component_id)).Get())
 		{
