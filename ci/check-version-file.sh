@@ -10,14 +10,14 @@ protected_branches=(release preview)
 is_protected=0
 for item in ${protected_branches[@]}
 do
-        # If this commit is part of a PR merging into one of the protected branches, make sure we are on a pinned engine version.
-        # IMPORTANT: For this to work, make sure that a new build is triggered in buildkite when a PR is opened. (This is a pipeline setting in the buildkite web UI)
-        # If not, buildkite may re-use a build of this branch before the PR was created, in which case the merge target was not known, and this check will have passed.
+    # If this commit is part of a PR merging into one of the protected branches, make sure we are on a pinned engine version.
+    # IMPORTANT: For this to work, make sure that a new build is triggered in buildkite when a PR is opened. (This is a pipeline setting in the buildkite web UI)
+    # If not, buildkite may re-use a build of this branch before the PR was created, in which case the merge target was not known, and this check will have passed.
     if [ "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" == "$item" ]; then
         is_protected=1
     fi
 
-        # Also check when we're on a protected branch itself, in case a non-pinned engine version somehow got into the branch.
+    # Also check when we're on a protected branch itself, in case a non-pinned engine version somehow got into the branch.
     if [ "$BUILDKITE_BRANCH" == "$item" ]; then
         is_protected=1
     fi
