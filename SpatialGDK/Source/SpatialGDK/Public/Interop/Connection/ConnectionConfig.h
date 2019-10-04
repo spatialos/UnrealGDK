@@ -78,7 +78,6 @@ struct FReceptionistConfig : public FConnectionConfig
 			{
 				// If an IP is not specified then use default.
 				FString DefaultReceptionistHost = GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost;
-				UE_LOG(LogTemp, Log, TEXT("!!! No or invalid IP address specified in command line arguments. Using default receptionist host: %s"), *DefaultReceptionistHost);
 				ReceptionistHost = GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost;
 				if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
 				{
@@ -86,8 +85,6 @@ struct FReceptionistConfig : public FConnectionConfig
 				}
 			}
 		}
-
-		UE_LOG(LogTemp, Log, TEXT("!!! FReceptionistConfig receptionistHost: %s"), *ReceptionistHost);
 
 		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
 	}
