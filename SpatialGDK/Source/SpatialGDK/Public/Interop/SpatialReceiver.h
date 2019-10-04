@@ -164,7 +164,7 @@ private:
 	AActor* CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
 
 	// Receive would normally create channel in ReceiveActor - this function is used to recreate the channel after waking up a dormant actor
-	void RecreateDormantSpatialChannel(AActor* Actor, Worker_EntityId EntityID);
+	USpatialActorChannel* RecreateDormantSpatialChannel(AActor* Actor, Worker_EntityId EntityID);
 	void ProcessRemoveComponent(const Worker_RemoveComponentOp& Op);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);

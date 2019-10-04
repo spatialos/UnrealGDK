@@ -210,13 +210,15 @@ void USpatialReceiver::RemoveComponentOpsForEntity(Worker_EntityId EntityId)
 	}
 }
 
-void USpatialReceiver::RecreateDormantSpatialChannel(AActor* Actor, Worker_EntityId EntityID)
+USpatialActorChannel* USpatialReceiver::RecreateDormantSpatialChannel(AActor* Actor, Worker_EntityId EntityID)
 {
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
 	check(!Channel->bCreatingNewEntity);
 	check(Channel->GetEntityId() == EntityID);
 
 	NetDriver->UnregisterDormantEntityId(EntityID);
+
+	return Channel;
 }
 
 void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op)
@@ -1134,11 +1136,12 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		{
 			if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id)))
 			{
-				RecreateDormantSpatialChannel(Actor, Op.entity_id);
+				Channel = RecreateDormantSpatialChannel(Actor, Op.entity_id);
 			}
 			else
 			{
 				UE_LOG(LogSpatialReceiver, Warning, TEXT("Worker: %s Dormant actor (entity: %d) has been deleted on this worker but we have received a component update (id: %d) from the server."), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
+				return;
 			}
 		}
 		else
