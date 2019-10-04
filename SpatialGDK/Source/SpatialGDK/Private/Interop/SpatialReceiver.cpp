@@ -18,6 +18,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
+#include "Schema/AlwaysRelevant.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/RPCPayload.h"
@@ -209,6 +210,16 @@ void USpatialReceiver::RemoveComponentOpsForEntity(Worker_EntityId EntityId)
 	}
 }
 
+void USpatialReceiver::RecreateDormantSpatialChannel(AActor* Actor, Worker_EntityId EntityID)
+{
+	// Receive would normally create channel in ReceiveActor - this function is used to recreate the channel after waking up a dormant actor
+	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
+	check(!Channel->bCreatingNewEntity);
+	check(Channel->GetEntityId() == EntityID);
+
+	NetDriver->UnregisterDormantEntityId(EntityID);
+}
+
 void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
 	if (!StaticComponentView->HasComponent(Op.entity_id, Op.component_id))
@@ -220,12 +231,7 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 	{
 		if (Op.component_id == SpatialConstants::DORMANT_COMPONENT_ID)
 		{
-			// Receive would normally create channel in ReceiveActor - we need to recreate it here
-			USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
-			check(!Channel->bCreatingNewEntity);
-			check(Channel->GetEntityId() == Op.entity_id);
-
-			NetDriver->UnregisterDormantEntityId(Op.entity_id);
+			RecreateDormantSpatialChannel(Actor, Op.entity_id);
 		}
 		else if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Op.component_id)).Get())
 		{
@@ -1123,8 +1129,23 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
 	if (Channel == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker: %s Entity: %d Component: %d - No actor channel for update. This most likely occured due to the component updates that are sent when authority is lost during entity deletion."), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
-		return;
+		// If there is no actor channel as a result of the actor being dormant, then assume the actor is about to become active.
+		if (const Dormant* DormantComponent = StaticComponentView->GetComponentData<Dormant>(Op.entity_id))
+		{
+			if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id)))
+			{
+				RecreateDormantSpatialChannel(Actor, Op.entity_id);
+			}
+			else
+			{
+				UE_LOG(LogSpatialReceiver, Warning, TEXT("Worker: %s Dormant actor (entity: %lld) has been deleted on this worker but we have received a component update (id: %d) from the server."), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
+			}
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Log, TEXT("Worker: %s Entity: %lld Component: %d - No actor channel for update. This most likely occured due to the component updates that are sent when authority is lost during entity deletion."), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
+			return;
+		}
 	}
 
 	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(Op.update.component_id);
