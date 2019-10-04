@@ -33,6 +33,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
+DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel, STATGROUP_SpatialNet);
+
 using namespace SpatialGDK;
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
@@ -126,6 +128,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -140,6 +143,17 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::TOMBSTONE_COMPONENT_ID:
 		RemoveActor(Op.entity_id);
+		return;
+	case SpatialConstants::DORMANT_COMPONENT_ID:
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+		{
+			NetDriver->AddPendingDormantChannel(Channel);
+		}
+		else
+		{
+			// This would normally get registered through the channel cleanup, but we don't have one for this entity
+			NetDriver->RegisterDormantEntityId(Op.entity_id);
+		}
 		return;
 	}
 
@@ -205,7 +219,16 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 
 	if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id).Get()))
 	{
-		if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Op.component_id)).Get())
+		if (Op.component_id == SpatialConstants::DORMANT_COMPONENT_ID)
+		{
+			// Receive would normally create channel in ReceiveActor - we need to recreate it here
+			USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
+			check(!Channel->bCreatingNewEntity);
+			check(Channel->GetEntityId() == Op.entity_id);
+
+			NetDriver->UnregisterDormantEntityId(Op.entity_id);
+		}
+		else if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Op.component_id)).Get())
 		{
 			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 			{
@@ -328,7 +351,9 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				if (IsValid(NetDriver->GetActorChannelByEntityId(Op.entity_id)))
+				const bool bDormantActor = (Actor->NetDormancy >= DORM_DormantAll);
+
+				if (IsValid(NetDriver->GetActorChannelByEntityId(Op.entity_id)) || bDormantActor)
 				{
 					Actor->Role = ROLE_Authority;
 					Actor->RemoteRole = ROLE_SimulatedProxy;
@@ -358,7 +383,10 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						}
 					}
 
-					UpdateShadowData(Op.entity_id);
+					if (!bDormantActor)
+					{
+						UpdateShadowData(Op.entity_id);
+					}
 
 					Actor->OnAuthorityGained();
 				}
@@ -634,6 +662,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		EntityActor->UpdateOverlaps();
+
+		if (StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
+		{
+			NetDriver->AddPendingDormantChannel(Channel);
+		}
 	}
 }
 
@@ -750,7 +783,11 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	}
 	else
 	{
-		if (Actor == nullptr)
+		if (NetDriver->IsDormantEntity(EntityId))
+		{
+			PackageMap->RemoveEntityActor(EntityId);
+		}
+		else if (Actor == nullptr)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. EntityId: %lld"), EntityId);
 		}
@@ -768,12 +805,6 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	NetDriver->StopIgnoringAuthoritativeDestruction();
 
 	check(PackageMap->GetObjectFromEntityId(EntityId) == nullptr);
-}
-
-void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
-{
-	PackageMap->RemoveEntityActor(EntityId);
-	NetDriver->RemoveActorChannel(EntityId);
 }
 
 AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp)
@@ -1076,6 +1107,9 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 		HandleRPC(Op);
 		return;
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		check(false); // TODO(zoning): Handle updates to the entity's authority intent.
+		break;
 	}
 
 	// If this entity has a Tombstone component, abort all component processing
@@ -1386,7 +1420,6 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 		if (GetBoolFromSchema(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
-			CleanupDeletedEntity(Channel->GetEntityId());
 		}
 	}
 
@@ -1490,7 +1523,7 @@ void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsR
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved ReserveEntityIdsResponse but with no delegate set, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Received ReserveEntityIdsResponse but with no delegate set, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
 		}
 	}
 	else
@@ -1542,7 +1575,7 @@ void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp&
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved EntityQueryResponse but with no delegate set, request id: %d, number of entities: %d, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received EntityQueryResponse but with no delegate set, request id: %d, number of entities: %d, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
 	}
 }
 
@@ -1639,6 +1672,33 @@ void USpatialReceiver::OnDisconnect(Worker_DisconnectOp& Op)
 	{
 		GEngine->BroadcastNetworkFailure(NetDriver->GetWorld(), NetDriver, ENetworkFailure::FromDisconnectOpStatusCode(Op.connection_status_code), UTF8_TO_TCHAR(Op.reason));
 	}
+}
+
+bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel* Channel)
+{
+	SCOPE_CYCLE_COUNTER(STAT_SpatialPendingOpsOnChannel);
+
+	// Don't allow Actors to go dormant if they have any pending operations waiting on their channel
+	check(Channel);
+	check(Channel->Actor);
+
+	for (const auto& UnresolvedRef : UnresolvedRefsMap)
+	{
+		if (UnresolvedRef.Key.Key == Channel)
+		{
+			return true;
+		}
+	}
+
+	for (const auto& ActorRequest : PendingActorRequests)
+	{
+		if (ActorRequest.Value == Channel)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs)

@@ -109,17 +109,21 @@ public:
 		return FindOrCreateReplicator(Object)->RepState->StaticBuffer;
 	}
 
-	// UChannel interface
+	// Begin UChannel interface
 	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, EChannelCreateFlags CreateFlag) override;
 	virtual int64 Close(EChannelCloseReason Reason) override;
+	// End UChannel interface
 
+	// Begin UActorChannel inteface
 	virtual int64 ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
+	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
+	virtual bool ReadyForDormancy(bool suppressLogs = false) override;
+	// End UActorChannel interface
 
 	bool TryResolveActor();
 
 	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
-	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 
 	TMap<UObject*, const FClassInfo*> GetHandoverSubobjects();
 
@@ -152,8 +156,9 @@ public:
 	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
 protected:
-	// UChannel Interface
+	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
+	// End UChannel interface
 
 private:
 	void DynamicallyAttachSubobject(UObject* Object);
@@ -197,6 +202,8 @@ private:
 
 	FVector LastPositionSinceUpdate;
 	float TimeWhenPositionLastUpdated;
+
+	uint8 FramesTillDormancyAllowed = 0;
 
 	// Shadow data for Handover properties.
 	// For each object with handover properties, we store a blob of memory which contains

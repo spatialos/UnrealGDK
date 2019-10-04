@@ -145,14 +145,13 @@ public:
 
 	void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
-	void CleanupDeletedEntity(Worker_EntityId EntityId);
-
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();
 
 	void OnDisconnect(Worker_DisconnectOp& Op);
 
 	void RemoveActor(Worker_EntityId EntityId);
+	bool IsPendingOpsOnChannel(USpatialActorChannel* Channel);
 
 private:
 	void EnterCriticalSection();
