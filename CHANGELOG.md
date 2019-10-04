@@ -5,14 +5,12 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
-- Added logging for queued RPCs.
-- Added several new STAT annotations into the ServerReplicateActors call chain.
-- Avoid generating schema for all UObject subclasses. Actor, ActorComponent, GameplayAbility subclasses are enabled by default, other classes can be enabled using SpatialType UCLASS specifier.
-- Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
-- Added OverrideSpatialOffloading command line flag that allows toggling of offloading at launch time.
+
+## [`0.7.0`] - 2019-10-04
 
 ### Breaking Changes:
-- If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you need to enable generating schema for them using SpatialType UCLASS specifier or by checking Spatial Type if it's a blueprint.
+- If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you now need to enable generating schema for them using SpatialType UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
+- Chunk based interest is no longer supported. All interest is resolved using query-based interest (QBI). You should remove streaming query and chunk based interest options from worker and launch config files to avoid unnecessary streaming queries being generated.
 - If you already have a project that you are upgrading to this version of the GDK, it is encouraged to follow the upgrade process to SpatialOS `14.1.0`:
 1. Open the `spatialos.json` file in the `spatial/` directory of your project.
 1. Replace the `sdk_version` value and the version value of all dependencies with `14.1.0`.
@@ -20,8 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - Visual Studio 2019 is now supported.
-- Added toolbar and commandlet options to delete the schema database.
-- Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
+- You can now delete your schema database using options in the GDK toolbar and the commandlet.
+- The GDK now checks that schema and a snapshot are present before attempting to start a local deployment. If either are missing then an error message is displayed.
 - Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
 - It is now possible to specify in Unreal which actors should not persist as entities in the Snapshot.
 - Deleted startup actors are now tracked
@@ -30,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local deployments now create a new log file known as 'launch.log' which will contain logs relating to starting and running a deployment. Additionally it will contain worker logs which are forwarded to the SpatialOS runtime.
 - Added a new setting to SpatialOS Runtime Settings 'Worker Log Level' which allows configuration of which verbosity of worker logs gets forwarded to the SpatialOS runtime.
 - Added a new developer tool called 'Spatial Output Log' which will show local deployment logs from the 'launch.log' file.
+- Added logging for queued RPCs.
+- Added several new STAT annotations into the ServerReplicateActors call chain.
+- Avoid generating schema for all UObject subclasses. Actor, ActorComponent, GameplayAbility subclasses are enabled by default, other classes can be enabled using SpatialType UCLASS specifier.
+- Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
+- Added OverrideSpatialOffloading command line flag that allows toggling of offloading at launch time.
 
 ### Bug fixes:
 - Fixed a bug where the spatial daemon started even with spatial networking disabled.
@@ -40,12 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - When schema compiler fails, schema generation correctly shows an error.
 - Fixed crash during initialization when running GenerateSchemaCommandlet.
 - Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
-- Streaming levels with QBI enabled no longer produces errors if the player connection owns unreplicated actors.
+- Streaming levels with query-based interest (QBI) enabled no longer produces errors if the player connection owns unreplicated actors.
 - Fixed an issue that would prevent player movement in a zoned deployment.
 - Fixed an issue that could cause queued incoming RPCs with unresolved references to never be processed.
-
-### Breaking Changes:
-- Chunk based interest is no longer supported. All interest is resolved through QBI. You should remove streaming query and chunk based interest options from worker and launch config files to avoid unnecessary streaming queries being generated.
+- Muticast RPCs, that are sent shortly after an actor is created, are now correctly processed by all clients.
+- When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
 
 ## [`0.6.1`] - 2019-08-15
 
@@ -141,7 +143,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Retrying reliable RPCs with `UObject` arguments that were destroyed before the RPC was retried no longer causes a crash.
 - Fixed path naming issues in setup.sh
 - Fixed an assert/crash in `SpatialMetricsDisplay` that occurred when reloading a snapshot.
-- Added Singleton and SingletonManager to QBI constraints to fix issue preventing Test configuration builds from functioning correctly.
+- Added Singleton and SingletonManager to query-based interest (QBI) constraints to fix issue preventing Test configuration builds from functioning correctly.
 - Failing to `NetSerialize` a struct in spatial no longer causes a crash, it now prints a warning. This matches native Unreal behavior.
 - Query response delegates now execute even if response status shows failure. This allows handlers to implement custom retry logic such as clients querying for the GSM.
 - Fixed a crash where processing unreliable RPCs made assumption that the worker had authority over all entities in the SpatialOS op

@@ -87,6 +87,23 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 {
 	Super::Init(InConnection, ChannelIndex, CreateFlag);
 
+	// Actor Channels are pooled, so we must initialize internal state here.
+	bCreatedEntity = false;
+	bCreatingNewEntity = false;
+	EntityId = SpatialConstants::INVALID_ENTITY_ID;
+	bInterestDirty = false;
+	bNetOwned = false;
+	LastPositionSinceUpdate = FVector::ZeroVector;
+	TimeWhenPositionLastUpdated = 0.0f;
+
+	PendingDynamicSubobjects.Empty();
+	SavedOwnerWorkerAttribute.Empty();
+
+	FramesTillDormancyAllowed = 0;
+
+	ActorHandoverShadowData = nullptr;
+	HandoverShadowDataMap.Empty();
+
 	NetDriver = Cast<USpatialNetDriver>(Connection->Driver);
 	check(NetDriver);
 	Sender = NetDriver->Sender;
@@ -1012,7 +1029,7 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();
 		Location = PawnRootComponent ? PawnRootComponent->GetComponentLocation() : FVector::ZeroVector;
 	}
-	else if (InActor->GetOwner() != nullptr && InActor->GetIsReplicated())
+	else if (InActor->GetOwner() != nullptr && InActor->GetOwner()->GetIsReplicated())
 	{
 		return GetActorSpatialPosition(InActor->GetOwner());
 	}

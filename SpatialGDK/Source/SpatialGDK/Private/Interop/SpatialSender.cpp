@@ -689,28 +689,19 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 	}
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	if (Channel->bCreatingNewEntity)
-	{
-		if (Function->HasAnyFunctionFlags(FUNC_NetClient | FUNC_NetMulticast))
-		{
-			if (Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-			{
-				// TODO: UNR-1437 - Add Support for Multicast RPCs on Entity Creation
-				UE_LOG(LogSpatialSender, Warning, TEXT("NetMulticast RPC %s triggered on Object %s too close to initial creation."), *Function->GetName(), *TargetObject->GetName());
-			}
-			check(NetDriver->IsServer());
+ 	if (Channel->bCreatingNewEntity)
+ 	{
+ 		if (Function->HasAnyFunctionFlags(FUNC_NetClient))
+ 		{
+ 			check(NetDriver->IsServer());
 
-			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Payload);
-#if !UE_BUILD_SHIPPING
-			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
-#endif // !UE_BUILD_SHIPPING
-			return ERPCResult::Success;
-		}
-		else
-		{
-			UE_LOG(LogSpatialSender, Warning, TEXT("CrossServer RPC %s triggered on Object %s too close to initial creation."), *Function->GetName(), *TargetObject->GetName());
-		}
-	}
+ 			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Payload);
+ #if !UE_BUILD_SHIPPING
+ 			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
+ #endif // !UE_BUILD_SHIPPING
+ 			return ERPCResult::Success;
+ 		}
+ 	}
 
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
 
