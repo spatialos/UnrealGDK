@@ -314,14 +314,15 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 
 SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 {
-	if (!LocatorConfig.PlayerIdentityToken.IsEmpty())
-	{
-		return SpatialConnectionType::Locator;
-	}
-	else
-	{
-		return SpatialConnectionType::Receptionist;
-	}
+	return ConnectionType;
+}
+
+void USpatialWorkerConnection::SetConnectionType(SpatialConnectionType newType)
+{
+	// The locator config may not have been initialized
+	check(!(newType == SpatialConnectionType::Locator && LocatorConfig.LocatorHost.IsEmpty()))
+
+	ConnectionType = newType;
 }
 
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()

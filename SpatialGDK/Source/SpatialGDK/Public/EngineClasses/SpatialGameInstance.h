@@ -51,7 +51,7 @@ public:
 #if WITH_EDITOR
 	// Used to check whether receptionist host should be overridden when connecting. See USpatialNetDriver::ShouldOverrideReceptionistHost and UNR-1698.
 	bool SetFirstConnectionToSpatialOSAttempted();
-#endif // WITH_EDITOR 
+#endif // WITH_EDITOR
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.

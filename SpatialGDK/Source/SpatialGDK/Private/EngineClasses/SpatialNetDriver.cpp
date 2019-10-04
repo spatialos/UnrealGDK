@@ -203,12 +203,19 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
 
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("!!! InitiateConnectionToSpatialOS entry URL.Host: %s"), *URL.Host);
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("!!! InitiateConnectionToSpatialOS entry Connection->ReceptionistConfig.ReceptionistHost: %s"), *(Connection->ReceptionistConfig.ReceptionistHost));
+	if (URL.Host == TEXT("locator.improbable.io"))
+	{
+		// use existing locator connection parameters
+		Connection->SetConnectionType(SpatialConnectionType::Locator);
 
-	if (URL.HasOption(TEXT("locator")))
+		// ensure that locator data was parsed from command line or that previous locator data exists
+		check(!Connection->LocatorConfig.LocatorHost.IsEmpty());
+
+	}
+	else if (URL.HasOption(TEXT("locator")))
 	{
 		// Obtain PIT and LT.
+		Connection->SetConnectionType(SpatialConnectionType::Locator);
 		Connection->LocatorConfig.PlayerIdentityToken = URL.GetOption(TEXT("playeridentity="), TEXT(""));
 		Connection->LocatorConfig.LoginToken = URL.GetOption(TEXT("login="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
@@ -216,6 +223,11 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	}
 	else // Using Receptionist
 	{
+		Connection->SetConnectionType(SpatialConnectionType::Receptionist);
+
+		// clear locator PID to signal that receptionist should be used
+		Connection->LocatorConfig.PlayerIdentityToken = TEXT("");
+
 		Connection->ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
 
 		if (ShouldOverrideReceptionistHost(GameInstance, URL.Host))
@@ -244,8 +256,10 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 bool USpatialNetDriver::ShouldOverrideReceptionistHost(USpatialGameInstance* gameInstance, FString host)
 {
+#if WITH_EDITOR
 	// check whether this is the first attempted connection after startup
 	bool bFirstAttemptedConnection = gameInstance->SetFirstConnectionToSpatialOSAttempted();
+#endif // WITH_EDITOR
 
 	// use existing receptionist host if no host is specified
 	if (host.IsEmpty())

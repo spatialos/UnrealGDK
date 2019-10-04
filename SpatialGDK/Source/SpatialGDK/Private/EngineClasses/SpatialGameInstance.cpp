@@ -157,6 +157,7 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 	OnConnectionFailed.Broadcast(Reason);
 }
 
+#if WITH_EDITOR
 bool USpatialGameInstance::SetFirstConnectionToSpatialOSAttempted(){
 	if (!bFirstConnectionToSpatialOSAttempted)
 	{
@@ -165,3 +166,4 @@ bool USpatialGameInstance::SetFirstConnectionToSpatialOSAttempted(){
 	}
 	return true;
 }
+#endif // WITH_EDITOR

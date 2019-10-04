@@ -61,6 +61,8 @@ public:
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
+	void SetConnectionType(SpatialConnectionType newType);
+
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
@@ -98,7 +100,7 @@ private:
 
 private:
 	Worker_Connection* WorkerConnection;
-	Worker_Locator* WorkerLocator;
+	Worker_Alpha_Locator* WorkerLocator;
 
 	TWeakObjectPtr<USpatialGameInstance> GameInstance;
 
@@ -115,4 +117,6 @@ private:
 
 	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
 	Worker_RequestId NextRequestId = 0;
+
+	SpatialConnectionType ConnectionType = SpatialConnectionType::Receptionist;
 };
