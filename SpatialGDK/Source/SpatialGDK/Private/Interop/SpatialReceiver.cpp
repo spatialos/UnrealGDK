@@ -18,6 +18,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
+#include "Schema/AlwaysRelevant.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/RPCPayload.h"
@@ -1123,8 +1124,22 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
 	if (Channel == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker: %s Entity: %d Component: %d - No actor channel for update. This most likely occured due to the component updates that are sent when authority is lost during entity deletion."), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
-		return;
+		// If this is a dormant actor and its channel has not been created yet, assume the remove dormant component op comes down later
+		if (const Dormant* DormantComponent = StaticComponentView->GetComponentData<Dormant>(Op.entity_id))
+		{
+			AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id));
+			check(Actor);
+			Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
+			check(!Channel->bCreatingNewEntity);
+			check(Channel->GetEntityId() == Op.entity_id);
+
+			NetDriver->UnregisterDormantEntityId(Op.entity_id);
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Log, TEXT("Worker: %s Entity: %d Component: %d - No actor channel for update. This most likely occured due to the component updates that are sent when authority is lost during entity deletion."), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
+			return;
+		}
 	}
 
 	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(Op.update.component_id);
