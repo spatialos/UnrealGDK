@@ -87,6 +87,11 @@ struct UnrealMetadata : Component
 		}
 		else
 		{
+			TSoftObjectPtr<UClass> ClassPtr = TSoftObjectPtr<UClass>(ClassPath);
+			if (!ClassPtr.IsValid())
+			{
+				UE_LOG(LogSpatialClassInfoManager, Log, TEXT("Class %s not loaded, will be synchronously loaded now."), *ClassPath);
+			}
 			Class = LoadObject<UClass>(nullptr, *ClassPath);
 		}
 
