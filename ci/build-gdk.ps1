@@ -13,7 +13,8 @@ pushd "$($gdk_home)"
             "-TargetPlatforms=$($target_platform)", `
                 # Since we symlink the gdk into the engine, we have to put the build output outside of the GDK, 
                 # otherwise Unreal will find two instances of the plugin during the build process (It copies the .uplugin to the target folder at the start of the build process)
-            "-Package=`"C:\SpatialGDKBuild`"" ` # TODO
+                # Additionally, I ad some cases where BuildPlugin will fail when targeting a folder within UnrealEngine for output
+            "-Package=`"C:\SpatialGDKBuild`"" ` # TODO make this configurable
         )
         $gdk_build_handle = $gdk_build_proc.Handle
         Wait-Process -Id (Get-Process -InputObject $gdk_build_proc).id
