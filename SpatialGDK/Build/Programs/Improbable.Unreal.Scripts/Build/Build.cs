@@ -352,6 +352,5 @@ bSpatialNetworking=True
 ";
             File.AppendAllText(defaultGameIniPath, defaultGameIniOverrideText);
         }
-
     }
 }
