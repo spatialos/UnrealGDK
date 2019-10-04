@@ -163,6 +163,7 @@ private:
 	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
 	AActor* CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
 
+	void RecreateDormantSpatialChannel(AActor* Actor, Worker_EntityId EntityID);
 	void ProcessRemoveComponent(const Worker_RemoveComponentOp& Op);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
