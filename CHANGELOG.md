@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Streaming levels with query-based interest (QBI) enabled no longer produces errors if the player connection owns unreplicated actors.
 - Fixed an issue that would prevent player movement in a zoned deployment.
 - Fixed an issue that could cause queued incoming RPCs with unresolved references to never be processed.
+- Muticast RPCs, that are sent shortly after an actor is created, are now correctly processed by all clients.
 
 ## [`0.6.1`] - 2019-08-15
 
