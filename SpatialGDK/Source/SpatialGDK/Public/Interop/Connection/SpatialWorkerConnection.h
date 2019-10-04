@@ -100,7 +100,7 @@ private:
 
 private:
 	Worker_Connection* WorkerConnection;
-	Worker_Alpha_Locator* WorkerLocator;
+	Worker_Locator* WorkerLocator;
 
 	TWeakObjectPtr<USpatialGameInstance> GameInstance;
 
