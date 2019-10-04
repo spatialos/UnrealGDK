@@ -7,6 +7,8 @@
 
 #include "SpatialPingComponent.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPingComponent, Log, All);
+
 /*
  Offers a configurable means of measuring round-trip latency in SpatialOS deployments.
  This component should be attached to a player controller.
@@ -20,9 +22,11 @@ public:
 	// Determines whether the component starts with ping behavior enabled.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SpatialPing)
 	bool bStartWithPingEnabled = true;
+
 	// The minimum time, in seconds, between pings.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SpatialPing)
 	float MinPingInterval = 0.5f;
+
 	// The maximum time, in seconds, to wait for a reply before sending another ping.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SpatialPing)
 	float TimeoutLimit = 4.0f;

@@ -7,6 +7,8 @@
 #include "TimerManager.h"
 #include "Engine/World.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialPingComponent);
+
 USpatialPingComponent::USpatialPingComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -14,8 +16,6 @@ USpatialPingComponent::USpatialPingComponent(const FObjectInitializer& ObjectIni
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 
 	bReplicates = true;
-
-	bStartWithPingEnabled = true;
 }
 
 void USpatialPingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -31,6 +31,11 @@ void USpatialPingComponent::BeginPlay()
 	// Attempt to cast the owner of this component to the PlayerController class.
 	// Component will do nothing if cast fails.
 	OwningController = Cast<APlayerController>(GetOwner());
+	if (OwningController == nullptr)
+	{
+		UE_LOG(LogSpatialPingComponent, Warning, TEXT("SpatialPingComponent did not find a valid owning PlayerController and will not function correctly. Ensure this component is only attached to a PlayerController."));
+	}
+
 	if (bStartWithPingEnabled)
 	{
 		SetPingEnabled(true);
@@ -146,6 +151,7 @@ void USpatialPingComponent::OnRep_ReplicatedPingID()
 			World->GetTimerManager().ClearTimer(PingTimerHandle);
 			TimeoutCount = 0;
 		}
+
 		// Calculate the round trip ping
 		RoundTripPing = static_cast<float>(FPlatformTime::Seconds() - LastSentPingTimestamp);
 		if (RoundTripPing >= MinPingInterval)
