@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue that would prevent player movement in a zoned deployment.
 - Fixed an issue that could cause queued incoming RPCs with unresolved references to never be processed.
 - Muticast RPCs, that are sent shortly after an actor is created, are now correctly processed by all clients.
+- Fixed an issue where the owner's Spatial position was used even if it wasn't replicated.
 
 ## [`0.6.1`] - 2019-08-15
 
