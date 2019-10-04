@@ -230,7 +230,6 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 	{
 		if (Op.component_id == SpatialConstants::DORMANT_COMPONENT_ID)
 		{
-			// Receive would normally create channel in ReceiveActor - we need to recreate it here
 			RecreateDormantSpatialChannel(Actor, Op.entity_id);
 			
 		}
@@ -1133,14 +1132,13 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		// If there is no actor channel as a result of the actor being dormant, then assume the actor is about to become active.
 		if (const Dormant* DormantComponent = StaticComponentView->GetComponentData<Dormant>(Op.entity_id))
 		{
-			AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id));
-			if (Actor != nullptr)
+			if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id)))
 			{
 				RecreateDormantSpatialChannel(Actor, Op.entity_id);
 			}
 			else
 			{
-				UE_LOG(LogSpatialReceiver, Warning, TEXT("Worker: %s Dormant actor (entity: %d) has been deleted on the client but we have received a component update (id: %d) from the server."), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
+				UE_LOG(LogSpatialReceiver, Warning, TEXT("Worker: %s Dormant actor (entity: %d) has been deleted on this worker but we have received a component update (id: %d) from the server."), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
 			}
 		}
 		else
