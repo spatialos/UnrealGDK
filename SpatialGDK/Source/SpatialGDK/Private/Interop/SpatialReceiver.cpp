@@ -212,6 +212,7 @@ void USpatialReceiver::RemoveComponentOpsForEntity(Worker_EntityId EntityId)
 
 void USpatialReceiver::RecreateDormantSpatialChannel(AActor* Actor, Worker_EntityId EntityID)
 {
+	// Receive would normally create channel in ReceiveActor - this function is used to recreate the channel after waking up a dormant actor
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
 	check(!Channel->bCreatingNewEntity);
 	check(Channel->GetEntityId() == EntityID);
