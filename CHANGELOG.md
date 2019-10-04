@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- Multicast RPCs are now processed after the EntityCreation request is satisfied.
 
 ## [`0.7.0`] - 2019-10-04
 
