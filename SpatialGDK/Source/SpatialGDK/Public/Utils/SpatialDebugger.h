@@ -84,6 +84,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Locked Icon"))
 	UTexture2D *LockedTexture;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
+	FVector WorldSpaceActorTagOffset;
+
 private:
 
 	void LoadIcons();

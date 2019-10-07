@@ -29,6 +29,7 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	, bShowEntityId(true)
 	, bShowActorName(true)
 	, bAutoStart(false)
+	, WorldSpaceActorTagOffset(FVector(0.0f, 0.0f, 200.0f))
 	, NetDriver(nullptr)
 	, RenderFont(nullptr)
 	, bActorSortRequired(false)
@@ -211,7 +212,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		// TODO: color code by worker id using WorkerColors array once that field is available
 		const int WorkerId = 0;
 		Canvas->SetDrawColor(FColor::White);
-		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y - 32.0f, 1.0f);
+		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
 		HorizontalOffset += 16.0f;
 	}
 
@@ -223,7 +224,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		{
 			SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
 			Canvas->SetDrawColor(WorkerColors[VirtualWorkerId]);
-			Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y - 32.0f, 1.0f);
+			Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
 			HorizontalOffset += 16.0f;
 		}
 	}
@@ -236,7 +237,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		const EIcon LockIcon = bIsLocked ? ICON_LOCKED : ICON_UNLOCKED;
 
 		Canvas->SetDrawColor(FColor::White);
-		Canvas->DrawIcon(Icons[LockIcon], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y - 32.0f, 1.0f);
+		Canvas->DrawIcon(Icons[LockIcon], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
 		HorizontalOffset += 16.0f;
 	}
 
@@ -257,7 +258,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DrawText);
 		Canvas->SetDrawColor(FColor::Green);
-		Canvas->DrawText(RenderFont, Label, ScreenLocation.X + HorizontalOffset, ScreenLocation.Y - 32.0f, 1.0f, 1.0f, FontRenderInfo);
+		Canvas->DrawText(RenderFont, Label, ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f, 1.0f, FontRenderInfo);
 	}
 }
 
@@ -299,7 +300,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 			if (LocalPlayerController.IsValid())
 			{
 				SCOPE_CYCLE_COUNTER(STAT_Projection);
-				UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + FVector(0.0f, 0.0f, 200.0f), ScreenLocation, false);
+				UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + WorldSpaceActorTagOffset, ScreenLocation, false);
 			}
 
 			DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName());
