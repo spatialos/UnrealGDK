@@ -303,7 +303,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
 		}
 
-		SpatialDebugger = GetWorld()->SpawnActor<ASpatialDebugger>();
+		const TSubclassOf<ASpatialDebugger> SpatialDebuggerClass = SpatialSettings->SpatialDebuggerClass;
+		if (SpatialDebuggerClass != nullptr)
+		{
+			SpatialDebugger = GetWorld()->SpawnActor<ASpatialDebugger>(SpatialDebuggerClass);
+		}
 	}
 #endif
 

@@ -6,6 +6,7 @@
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
 #include "Utils/ActorGroupManager.h"
+#include "Utils/SpatialDebugger.h"
 
 #include "SpatialGDKSettings.generated.h"
 
@@ -201,4 +202,7 @@ public:
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (ConfigRestartRequired = false, DisplayName = "Worker Log Level"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
+
+	UPROPERTY(EditAnywhere, config, Category = "Debug")
+	TSubclassOf<ASpatialDebugger> SpatialDebuggerClass;
 };
