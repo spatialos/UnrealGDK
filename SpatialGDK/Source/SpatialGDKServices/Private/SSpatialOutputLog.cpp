@@ -288,10 +288,8 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 		// Shorten the hash at the end of the WorkerName for Unreal workers.
 		if (WorkerType.Contains("Unreal"))
 		{
-			// Keep 5 characters of the hash. e.g. UnrealWorkerF6DD366E460D1080061C2D88FFA08C1F = UnrealWorkerF6DD3.
-			WorkerName = WorkerName.Reverse();
-			WorkerName.RemoveAt(0, 27); // 32 chars in hash so remove 27 from the end.
-			WorkerName = WorkerName.Reverse();
+			// Keep 5 characters of the hash. e.g. UnrealWorkerF6DD366E460D1080061C2D88FFA08C1F = UnrealWorkerF6DD3. 32 chars in hash so remove 27 from the end.
+			WorkerName = WorkerName.LeftChop(27);
 		}
 
 		LogCategory = WorkerName;

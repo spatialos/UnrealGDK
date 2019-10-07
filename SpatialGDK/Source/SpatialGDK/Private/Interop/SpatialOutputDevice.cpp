@@ -23,7 +23,8 @@ FSpatialOutputDevice::~FSpatialOutputDevice()
 
 void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const class FName& Category)
 {
-	if (Verbosity > FilterLevel)
+	// Log category LogSpatial ignores the verbosity check.
+	if (Verbosity > FilterLevel && Category != FName(TEXT("LogSpatial")))
 	{
 		return;
 	}
