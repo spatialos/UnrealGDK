@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local deployments now create a new log file known as 'launch.log' which will contain logs relating to starting and running a deployment. Additionally it will contain worker logs which are forwarded to the SpatialOS runtime.
 - Added a new setting to SpatialOS Runtime Settings 'Worker Log Level' which allows configuration of which verbosity of worker logs gets forwarded to the SpatialOS runtime.
 - Added a new developer tool called 'Spatial Output Log' which will show local deployment logs from the 'launch.log' file.
+- Enabled compression in modular-udp networking stack
+- Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
 
 ### Bug fixes:
 - Fixed a bug where the spatial daemon started even with spatial networking disabled.
