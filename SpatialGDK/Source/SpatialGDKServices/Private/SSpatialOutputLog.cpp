@@ -130,8 +130,10 @@ void SSpatialOutputLog::OnClearLog()
 	// SOutputLog will clear the messages and the SelectedLogCategories.
 	SOutputLog::OnClearLog();
 
-	// Also clear the AvailableLogCategories as we generate many worker categories which are hard to parse.
+	// Clear the AvailableLogCategories and SelectedLogCategories as we generate many worker categories which are hard to parse.
+	// No need to churn memory each time the categories are cleared
 	Filter.AvailableLogCategories.Reset(Filter.AvailableLogCategories.GetAllocatedSize());
+	Filter.SelectedLogCategories.Reset(Filter.SelectedLogCategories.GetAllocatedSize());
 }
 
 void SSpatialOutputLog::ShutdownLogDirectoryWatcher(const FString& LogDirectory)

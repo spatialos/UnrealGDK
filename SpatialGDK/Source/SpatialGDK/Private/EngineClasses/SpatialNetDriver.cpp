@@ -37,6 +37,7 @@
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
+#include "Utils/SpatialLogMacros.h"
 
 #if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"
@@ -444,7 +445,7 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 		else
 		{
 			// Load the correct map based on the GSM URL
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Welcomed by SpatialOS (Level: %s)"), *GlobalStateManager->DeploymentMapURL);
+			UE_LOG(LogSpatial, Log, TEXT("Welcomed by SpatialOS (Level: %s)"), *GlobalStateManager->DeploymentMapURL);
 
 			// Extract map name and options
 			FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
