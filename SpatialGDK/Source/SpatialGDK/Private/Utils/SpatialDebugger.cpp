@@ -202,13 +202,17 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 {
 	SCOPE_CYCLE_COUNTER(STAT_DrawTag);
 
+	// TODO: Smarter positioning of elements so they're centered no matter how many are enabled
+	int32 HorizontalOffset = -32.0f;
+
 	if (bShowAuth)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
 		// TODO: color code by worker id using WorkerColors array once that field is available
 		const int WorkerId = 0;
 		Canvas->SetDrawColor(FColor::White);
-		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X - 32.0f, ScreenLocation.Y - 32.0f, 1.0f);
+		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y - 32.0f, 1.0f);
+		HorizontalOffset += 16.0f;
 	}
 
 	if (bShowAuthIntent)
@@ -219,7 +223,8 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		{
 			SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
 			Canvas->SetDrawColor(WorkerColors[VirtualWorkerId]);
-			Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X - 16.0f, ScreenLocation.Y - 32.0f, 1.0f);
+			Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y - 32.0f, 1.0f);
+			HorizontalOffset += 16.0f;
 		}
 	}
 
@@ -231,7 +236,8 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		const EIcon LockIcon = bIsLocked ? ICON_LOCKED : ICON_UNLOCKED;
 
 		Canvas->SetDrawColor(FColor::White);
-		Canvas->DrawIcon(Icons[LockIcon], ScreenLocation.X, ScreenLocation.Y - 32.0f, 1.0f);
+		Canvas->DrawIcon(Icons[LockIcon], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y - 32.0f, 1.0f);
+		HorizontalOffset += 16.0f;
 	}
 
 	FString Label;
@@ -251,7 +257,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DrawText);
 		Canvas->SetDrawColor(FColor::Green);
-		Canvas->DrawText(RenderFont, Label, ScreenLocation.X + 20.0f, ScreenLocation.Y - 32.0f, 1.0f, 1.0f, FontRenderInfo);
+		Canvas->DrawText(RenderFont, Label, ScreenLocation.X + HorizontalOffset, ScreenLocation.Y - 32.0f, 1.0f, 1.0f, FontRenderInfo);
 	}
 }
 
