@@ -20,8 +20,9 @@ ASpatialMetricsDisplay::ASpatialMetricsDisplay(const FObjectInitializer& ObjectI
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
-	bReplicates = true;
 	bAlwaysRelevant = true;
+	bNetLoadOnClient = false;
+	bReplicates = true;
 
 	NetUpdateFrequency = 1.f;
 
