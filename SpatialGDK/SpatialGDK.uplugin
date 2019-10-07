@@ -11,7 +11,7 @@
   "MarketplaceURL": "",
   "SupportURL": "https://forums.improbable.io/",
   "EnabledByDefault": true,
-  "CanContainContent": false,
+  "CanContainContent": true,
   "IsBetaVersion": false,
   "Installed": true,
   "Modules": [
