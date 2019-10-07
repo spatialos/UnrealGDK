@@ -125,6 +125,15 @@ void SSpatialOutputLog::OnLogDirectoryChanged(const TArray<FFileChangeData>& Fil
 	}
 }
 
+void SSpatialOutputLog::OnClearLog()
+{
+	// SOutputLog will clear the messages and the SelectedLogCategories.
+	SOutputLog::OnClearLog();
+
+	// Also clear the AvailableLogCategories as we generate many worker categories which are hard to parse.
+	Filter.AvailableLogCategories.Reset(Filter.AvailableLogCategories.GetAllocatedSize());
+}
+
 void SSpatialOutputLog::ShutdownLogDirectoryWatcher(const FString& LogDirectory)
 {
 	AsyncTask(ENamedThreads::GameThread, [LogDirectory, LogDirectoryChangedDelegateHandle = LogDirectoryChangedDelegateHandle]
@@ -254,6 +263,40 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 
 	// Log categories take the form "improbable.deployment.InternalGameLauncher", we filter to the last category to make it more human readable.
 	LogCategory.Split(TEXT("."), nullptr, &LogCategory, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+
+	// Remove trailing whitespace.
+	LogCategory = LogCategory.TrimEnd();
+
+	// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
+	// msg=[WORKER_NAME:TYPE] ... e.g. msg=[UnrealWorkerF6DD366E460D1080061C2D88FFA08C1F:Unreal]
+	if (LogCategory == TEXT("WorkerLogMessageHandler"))
+	{
+		FString WorkerNameAndType;
+		FString NewLogMessage;
+
+		// We split at the closing square brace of the log message.
+		LogMessage.Split(TEXT("]"), &WorkerNameAndType, &NewLogMessage);
+
+		// Now remove the ':Unreal' tag
+		FString WorkerName;
+		FString WorkerType;
+		WorkerNameAndType.Split(TEXT(":"), &WorkerName, &WorkerType);
+
+		// Remove the remaining '[' at the start of the WORKER_NAME.
+		WorkerName.RemoveAt(0);
+
+		// Shorten the hash at the end of the WorkerName for Unreal workers.
+		if (WorkerType.Contains("Unreal"))
+		{
+			// Keep 5 characters of the hash. e.g. UnrealWorkerF6DD366E460D1080061C2D88FFA08C1F = UnrealWorkerF6DD3.
+			WorkerName = WorkerName.Reverse();
+			WorkerName.RemoveAt(0, 27); // 32 chars in hash so remove 27 from the end.
+			WorkerName = WorkerName.Reverse();
+		}
+
+		LogCategory = WorkerName;
+		LogMessage = NewLogMessage.TrimStart();
+	}
 
 	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
 
