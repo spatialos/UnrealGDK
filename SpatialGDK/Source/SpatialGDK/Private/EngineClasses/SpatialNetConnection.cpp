@@ -79,6 +79,19 @@ void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool
 	UpdateActorInterest(Cast<AActor>(PlayerController->GetPawn()));
 }
 
+void USpatialNetConnection::FlushDormancy(AActor* Actor)
+{
+	Super::FlushDormancy(Actor);
+
+	// This gets called from UNetDriver::FlushActorDormancyInternal for each connection. We inject our refresh
+	// of dormancy component here. This is slightly backwards, but means we don't have to make an engine change.
+	if (bReliableSpatialConnection)
+	{
+		const bool bMakeDormant = false;
+		Cast<USpatialNetDriver>(Driver)->RefreshActorDormancy(Actor, bMakeDormant);
+	}
+}
+
 void USpatialNetConnection::UpdateActorInterest(AActor* Actor)
 {
 	if (Actor == nullptr)
