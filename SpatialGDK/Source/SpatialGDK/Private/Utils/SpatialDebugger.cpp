@@ -28,7 +28,6 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	, bShowLock(true)
 	, bShowEntityId(true)
 	, bShowActorName(true)
-	, bStackTags(false)
 	, bAutoStart(false)
 	, NetDriver(nullptr)
 	, RenderFont(nullptr)
@@ -99,7 +98,6 @@ void ASpatialDebugger::BeginPlay()
 	if (NetDriver->IsServer() == false)
 	{
 		EntityActorMapping.Reserve(ENTITY_ACTOR_MAP_RESERVATION_COUNT);
-		ActorLocationCountMapping.Reserve(POSITION_HASH_BUCKET_RESERVATION_COUNT);
 
 		LoadIcons();
 
@@ -230,7 +228,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
 		// TODO: retrieve lock status once API is available
 		const bool bIsLocked = false;
-		const EIcon LockIcon = bIsLocked ? ICON_UNLOCKED : ICON_LOCKED;
+		const EIcon LockIcon = bIsLocked ? ICON_LOCKED : ICON_UNLOCKED;
 
 		Canvas->SetDrawColor(FColor::White);
 		Canvas->DrawIcon(Icons[LockIcon], ScreenLocation.X, ScreenLocation.Y - 32.0f, 1.0f);
@@ -272,8 +270,6 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 		PlayerLocation = LocalPawn->GetActorLocation();
 	}
 
-	ActorLocationCountMapping.Reset();
-
 	for (TPair<int64, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
 	{
 		const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
@@ -293,28 +289,14 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 				continue;
 			}
 
-			// If actors are very close together in world space, stack their tags vertically
-			// TODO: maybe we want to do this in screen space instead...
-			// TODO: fix the general jumpiness of tags with this turned on.
-			const int32 Bucket = HashPosition(ActorLocation) % POSITION_HASH_BUCKET_RESERVATION_COUNT;
-			int32& ActorCountAtLocation = ActorLocationCountMapping.FindOrAdd(Bucket);
-
-			if (ActorCountAtLocation == 0)
+			FVector2D ScreenLocation = FVector2D::ZeroVector;
+			if (LocalPlayerController.IsValid())
 			{
-				FVector2D ScreenLocation = FVector2D::ZeroVector;
-				if (LocalPlayerController.IsValid())
-				{
-					SCOPE_CYCLE_COUNTER(STAT_Projection);
-					UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + FVector(0.0f, 0.0f, 200.0f), ScreenLocation, false);
-				}
-
-				DrawTag(Canvas, ScreenLocation - ActorCountAtLocation * FVector2D(0, STACKED_TAG_VERTICAL_OFFSET), EntityId, Actor->GetName());
+				SCOPE_CYCLE_COUNTER(STAT_Projection);
+				UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + FVector(0.0f, 0.0f, 200.0f), ScreenLocation, false);
 			}
 
-			if (bStackTags)
-			{
-				ActorCountAtLocation++;
-			}
+			DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName());
 		}
 	}
 }
@@ -357,18 +339,6 @@ int32 ASpatialDebugger::GetVirtualWorkerId(const Worker_EntityId EntityId) const
 
 	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
 	return (AuthorityIntentComponent != nullptr) ? AuthorityIntentComponent->VirtualWorkerId : SpatialConstants::INVALID_AUTHORITY_INTENT_ID;
-}
-
-// Hashing Positions with hash algorithm from the following paper
-// http://www.beosil.com/download/CollisionDetectionHashing_VMV03.pdf
-// The FVector hash in Unreal is deprecated
-int32 ASpatialDebugger::HashPosition(const FVector& P)
-{
-	const int32 p1 = 73856093;
-	const int32 p2 = 19349663;
-	const int32 p3 = 83492791;
-
-	return ((int32)P.X * p1 ^ (int32)P.Y * p2 ^ (int32)P.Z * p3);
 }
 
 void ASpatialDebugger::SpatialToggleDebugger()

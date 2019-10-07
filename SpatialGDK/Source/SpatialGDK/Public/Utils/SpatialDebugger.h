@@ -46,46 +46,43 @@ public:
 
 	// TODO: These should all be exposed through a runtime UI
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "X location of player data panel"))
-		int PlayerPanelStartX = 64;
+	int PlayerPanelStartX = 64;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "Y location of player data panel"))
-		int PlayerPanelStartY = 128;
+	int PlayerPanelStartY = 128;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General, meta = (ToolTip = "Maximum range from local player that tags will be drawn out to"))
-		float MaxRange;
+	float MaxRange;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show server authority for every entity in range"))
-		bool bShowAuth;
+	bool bShowAuth;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show authority intent for every entity in range"))
-		bool bShowAuthIntent;
+	bool bShowAuthIntent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show lock status for every entity in range"))
-		bool bShowLock;
+	bool bShowLock;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show EntityId for every entity in range"))
-		bool bShowEntityId;
+	bool bShowEntityId;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show Actor Name for every entity in range"))
-		bool bShowActorName;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Experimental, meta = (ToolTip = "Stack tags that are co-located in world space"))
-		bool bStackTags;
+	bool bShowActorName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
-		bool bAutoStart;
+	bool bAutoStart;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Icon"))
-		UTexture2D *AuthTexture;
+	UTexture2D *AuthTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Intent Icon"))
-		UTexture2D *AuthIntentTexture;
+	UTexture2D *AuthIntentTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Unlocked Icon"))
-		UTexture2D *UnlockedTexture;
+	UTexture2D *UnlockedTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Locked Icon"))
-		UTexture2D *LockedTexture;
+	UTexture2D *LockedTexture;
 
 private:
 
@@ -103,7 +100,6 @@ private:
 	static int32 HashPosition(const FVector& Position);
 
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
-	static const int POSITION_HASH_BUCKET_RESERVATION_COUNT = 1024;
 	static const int STACKED_TAG_VERTICAL_OFFSET = 18;
 	static const int VIRTUAL_WORKER_MAX_COUNT = 4;
 
@@ -121,8 +117,6 @@ private:
 	// These mappings are maintained independently on each client
 	// Mapping of the entities a client has checked out
 	TMap<int64, TWeakObjectPtr<AActor>> EntityActorMapping;
-	// Mapping of quantized position -> # actors at that position (1cm grid resolution) to allow us to stack info vertically for co-located actors
-	TMap<int, int32> ActorLocationCountMapping;
 
 	FDelegateHandle DrawDebugDelegateHandle;
 	FDelegateHandle OnEntityAddedHandle;
