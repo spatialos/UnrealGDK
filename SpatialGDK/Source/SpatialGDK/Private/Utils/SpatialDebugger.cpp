@@ -32,6 +32,7 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	, bAutoStart(false)
 	, NetDriver(nullptr)
 	, RenderFont(nullptr)
+	, bActorSortRequired(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
@@ -73,7 +74,7 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 			LocalPlayerState = LocalPawn->GetPlayerState();
 		}
 
-		if (LocalPawn.IsValid())
+		if (LocalPawn.IsValid() && bActorSortRequired)
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SortingActors);
 
@@ -81,8 +82,10 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 
 			EntityActorMapping.ValueSort([PlayerLocation](const TWeakObjectPtr<AActor>& A, const TWeakObjectPtr<AActor>& B) {
 
-				return FVector::Dist(PlayerLocation, A->GetActorLocation()) < FVector::Dist(PlayerLocation, B->GetActorLocation());
+				return FVector::Dist(PlayerLocation, A->GetActorLocation()) > FVector::Dist(PlayerLocation, B->GetActorLocation());
 			});
+
+			bActorSortRequired = false;
 		}
 	}
 }
@@ -184,6 +187,8 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 		{
 			LocalPlayerController = Cast<APlayerController>(Actor);
 		}
+
+		bActorSortRequired = true;
 	}
 }
 
@@ -192,6 +197,7 @@ void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 	check(NetDriver != nullptr && NetDriver->IsServer() == false);
 
 	EntityActorMapping.Remove(EntityId);
+	bActorSortRequired = true;
 }
 
 void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName)

@@ -136,6 +136,8 @@ private:
 	FFontRenderInfo FontRenderInfo;
 	FCanvasIcon Icons[ICON_MAX];
 
+	bool bActorSortRequired;
+
 	const FColor WorkerColors[VIRTUAL_WORKER_MAX_COUNT] =
 	{
 		FColor::Blue,
