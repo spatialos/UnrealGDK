@@ -11,8 +11,16 @@
 #include "Interop/Connection/EditorWorkerController.h"
 #include "Json/Public/Dom/JsonObject.h"
 #include "SpatialGDKServicesModule.h"
+#include "Misc/MessageDialog.h"
+#include "Internationalization/Internationalization.h"
+#include "SocketSubsystem.h"
+#include "IPAddress.h"
+#include "UObject/CoreNet.h"
+#include "Sockets.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
+
+#define LOCTEXT_NAMESPACE "FLocalDeploymentManager"
 
 static const FString SpatialServiceVersion(TEXT("20190930.180414.3b04a59226"));
 
@@ -136,6 +144,79 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 	});
 }
 
+FSocket* ListenSocket;
+
+bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
+{
+	ISocketSubsystem* SocketSubsystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
+	bool bSuccess = false;
+	// Set our broadcast address
+	TSharedRef<FInternetAddr> BroadcastAddr = SocketSubsystem->CreateInternetAddr();
+	BroadcastAddr->SetBroadcastAddress();
+	BroadcastAddr->SetPort(Port);
+	// Now the listen address
+	TSharedRef<FInternetAddr> ListenAddr = SocketSubsystem->GetLocalBindAddr(*GLog);
+	ListenAddr->SetPort(Port);
+	// A temporary "received from" address
+	TSharedRef<FInternetAddr> SockAddr = SocketSubsystem->CreateInternetAddr();
+	// Now create and set up our sockets (no VDP)
+	ListenSocket = SocketSubsystem->CreateSocket(NAME_Stream, TEXT("LAN beacon"), true);
+	if (ListenSocket != NULL)
+	{
+		//ListenSocket->SetReuseAddr();
+		//ListenSocket->SetNonBlocking();
+		ListenSocket->SetRecvErr();
+		// Bind to our listen port
+		if (ListenSocket->Bind(*ListenAddr))
+		{
+			// Set it to broadcast mode, so we can send on it
+			// NOTE: You must set this to broadcast mode on Xbox 360 or the
+			// secure layer will eat any packets sent
+			bSuccess = ListenSocket->SetBroadcast();
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to bind listen socket to addr (%s) for LAN beacon"), *ListenAddr->ToString(true));
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to create listen socket for LAN beacon"));
+	}
+
+	return bSuccess && ListenSocket;
+}
+
+bool FLocalDeploymentManager::PreStartCheck()
+{
+	// Check for the known runtime port (5301) which could be blocked.
+	if (CheckIfPortIsBound(5301))
+	{
+		// Kill the blocking thing we just opened.
+		ListenSocket->Close();
+	}
+	else
+	{
+		// If it exists offer the user the ability to kill it.
+		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess", "A required port is blocked by another process (potentially old deployment). Would you like to kill this process?")) == EAppReturnType::Yes)
+		{
+			const FString CmdExecutable = TEXT("netstat");
+			FString Args = TEXT("-n -o");
+			FString Result;
+			int32 ExitCode;
+			FString StdErr;
+			FPlatformProcess::ExecProcess(*CmdExecutable, *Args, &ExitCode, &Result, &StdErr);
+			//FSpatialGDKServicesModule::ExecuteAndReadOutput("cmd.exe", Args, FString(""), Result, ExitCode);
+
+			// taskkill /F /PID 15776
+
+			return true;
+		}
+	}
+
+	return true;
+}
+
 bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName)
 {
 	bRedeployRequired = false;
@@ -152,6 +233,14 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	if (bLocalDeploymentRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start a local deployment but one is already running."));
+		return false;
+	}
+
+	bool bPassChecks = PreStartCheck();
+
+	if (!bPassChecks)
+	{
+		// Log
 		return false;
 	}
 
