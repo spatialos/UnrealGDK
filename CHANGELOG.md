@@ -6,7 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 
-## [`0.7.0`] - 2019-10-04
+## [`0.7.0`] - 2019-10-07
+
+### New Known Issue:
+- MSVC v14.23 removes `typeinfo.h` and replaces it with `typeinfo`. This change causes errors when building the Unreal Engine. This issue affects Visual Studio 2019 users. Until [this proposed fix](https://github.com/EpicGames/UnrealEngine/pull/6226) is accepted by Epic Games, you can work around the issue by:
+1. Open Visual Studio Installer.
+1. Select "Modify" on your Visual Studio 2019 installation.
+1. Select the "Individual components" tab.
+1. Uncheck "MSVC v142 - VS 2019 C++ x64/x86 build tools (**v14.22**)".
+1. Check "MSVC v142 - VS 2019 C++ x64/x86 build tools (**v14.23**)".
+1. Select "Modify" to confirm your changes.
 
 ### Breaking Changes:
 - If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you now need to enable generating schema for them using SpatialType UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
