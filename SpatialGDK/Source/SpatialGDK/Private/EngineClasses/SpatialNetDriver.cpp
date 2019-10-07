@@ -35,6 +35,7 @@
 #include "Utils/EntityPool.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
+#include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 
@@ -292,11 +293,17 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SnapshotManager = NewObject<USnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
 
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 #if !UE_BUILD_SHIPPING
 	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client
-	if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
+	if (IsServer())
 	{
-		SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
+		if (SpatialSettings->bEnableMetricsDisplay)
+		{
+			SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
+		}
+
+		SpatialDebugger = GetWorld()->SpawnActor<ASpatialDebugger>();
 	}
 #endif
 
@@ -2174,3 +2181,9 @@ void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 	TombstonedEntities.Add(EntityId);
 }
 #endif
+
+void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
+{
+	check(SpatialDebugger == nullptr);
+	SpatialDebugger = InSpatialDebugger;
+}
