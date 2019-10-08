@@ -16,7 +16,7 @@ namespace SpatialGDKEditor
 		
 		SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchema();
 		
-		SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes);
+		SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
 		
 		SPATIALGDKEDITOR_API bool TryLoadExistingSchemaDatabase();
 		
@@ -30,7 +30,7 @@ namespace SpatialGDKEditor
 		
 		SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists();
 		
-		SPATIALGDKEDITOR_API void DeleteGeneratedSchemaFiles();
+		SPATIALGDKEDITOR_API void DeleteGeneratedSchemaFiles(FString SchemaOutputPath = "");
 		
 		SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles();
 		
