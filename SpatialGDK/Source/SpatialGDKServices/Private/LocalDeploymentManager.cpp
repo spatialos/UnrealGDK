@@ -50,7 +50,7 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 {
 #if PLATFORM_WINDOWS
 	// Don't kick off background processes when running commandlets
-	if (IsRunningCommandlet() == false)
+	if (!IsRunningCommandlet())
 	{
 		// If a service was running, restart to guarantee that the service is running in this project with the correct settings.
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("(Re)starting Spatial service in this project."));

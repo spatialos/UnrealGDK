@@ -509,7 +509,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 
 		// If the runtime IP is to be exposed, pass it to the spatial service on startup
 		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-		bool bSpatialServiceStarted = LocalDeploymentManager->TryStartSpatialService(GetOptionalExposedRuntimeIP());
+		const bool bSpatialServiceStarted = LocalDeploymentManager->TryStartSpatialService(GetOptionalExposedRuntimeIP());
 		if (!bSpatialServiceStarted)
 		{
 			OnShowFailedNotification(TEXT("Spatial service failed to start"));
@@ -624,7 +624,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
-		bool bLocalDeploymentStarted = LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, GetOptionalExposedRuntimeIP());
+		const bool bLocalDeploymentStarted = LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, GetOptionalExposedRuntimeIP());
 
 		if (bLocalDeploymentStarted)
 		{
