@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - You can now delete your schema database using options in the GDK toolbar and the commandlet.
 - The GDK now checks that schema and a snapshot are present before attempting to start a local deployment. If either are missing then an error message is displayed.
 - Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
-- It is now possible to specify in Unreal which actors should not persist as entities in the Snapshot.
+- You can now specify which actors should not persist as entities in your Snapshot. You do this by adding the flag `SPATIALCLASS_NotPersistent` to a class or by entering `NotPersistent` in the `Class Defaults` > `Spatial Description` field on bluepritns.
 - Deleted startup actors are now tracked
 - The GDK now uses SpatialOS `14.1.0`.
 - Added a user bindable delegate to SpatialMetrics which triggers when worker metrics have been received.
@@ -169,7 +169,7 @@ In addition to all of the updates from Improbable, this release includes x impro
 ### New Known Issues:
 - `BeginPlay()` is not called on all `WorldSettings` actors [#937](https://github.com/spatialos/UnrealGDK/issues/937)
 - Replicated properties within `DEBUG` or `WITH_EDITORONLY_DATA` macros are not supported [#939](https://github.com/spatialos/UnrealGDK/issues/939)
-- Client connections will be closed by the `ServerWorker` when using Blueprint or C++ breakpoints during play-in-editor sessions [#940](https://github.com/spatialos/UnrealGDK/issues/940)
+- Client connections will be closed by the `ServerWorker` when using blueprint or C++ breakpoints during play-in-editor sessions [#940](https://github.com/spatialos/UnrealGDK/issues/940)
 - Clients that connect after a Startup Actor (with `bNetLoadOnClient = true`) will not delete the Actor [#941](https://github.com/spatialos/UnrealGDK/issues/941)
 - Generating schema while asset manager is asynchronously loading causes editor to crash [#944](https://github.com/spatialos/UnrealGDK/issues/944)
 
@@ -204,7 +204,7 @@ In addition to all of the updates from Improbable, this release includes x impro
 - Ensure that components added in blueprints are replicated.
 - Fixed potential loading issue when attempting to load the SchemaDatabase asset.
 - Add pragma once directive to header file.
-- Schema files are now generated correctly for subobjects of the Blueprint classes.
+- Schema files are now generated correctly for subobjects of the blueprint classes.
 - Fixed being unable to launch SpatialOS if project path had spaces in it.
 - Editor no longer crashes when setting LogSpatialSender to Verbose.
 - Server-workers quickly restarted in the editor will connect to runtime correctly.
