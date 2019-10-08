@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/SpatialOutputDevice.h"
+#include "Utils/SpatialStatics.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
@@ -24,7 +25,7 @@ FSpatialOutputDevice::~FSpatialOutputDevice()
 void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const class FName& Category)
 {
 	// Log category LogSpatial ignores the verbosity check.
-	if (Verbosity > FilterLevel && Category != FName(TEXT("LogSpatial")))
+	if (Verbosity > FilterLevel && Category != LogSpatial.GetCategoryName())
 	{
 		return;
 	}

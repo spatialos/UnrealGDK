@@ -48,7 +48,7 @@ struct EditorWorkerController
 		{
 			for (int i = 0; i < WorkerType.Value; ++i)
 			{
-				const FString NewWorkerId = WorkerType.Key.ToString() + FGuid::NewGuid().ToString();
+				const FString NewWorkerId = WorkerType.Key.ToString() + FGuid::NewGuid().ToString().Left(5);
 
 				if (!WorkerIds[WorkerIdIndex].IsEmpty() && SecondsSinceLastSession < WorkerReplaceThresholdSeconds)
 				{

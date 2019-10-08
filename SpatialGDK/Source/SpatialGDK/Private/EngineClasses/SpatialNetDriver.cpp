@@ -35,13 +35,12 @@
 #include "Utils/EntityPool.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
-#include "Utils/SpatialLogMacros.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
+#include "Utils/SpatialStatics.h"
 
 #if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"
-#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #endif
 
@@ -277,11 +276,9 @@ void USpatialNetDriver::InitializeSpatialOutputDevice()
 	{
 		PIEIndex = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this).PIEInstance;
 	}
-
-	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, *SpatialGDKServicesConstants::UNREAL_EDITOR_WORKER_LOGGER_NAME, PIEIndex);
-#else
-	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, *SpatialConstants::UNREAL_WORKER_LOGGER_NAME, PIEIndex);
 #endif //WITH_EDITOR
+
+	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, *SpatialConstants::UNREAL_WORKER_LOGGER_NAME, PIEIndex);
 }
 
 void USpatialNetDriver::CreateAndInitializeCoreClasses()

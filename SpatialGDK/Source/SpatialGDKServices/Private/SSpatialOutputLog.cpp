@@ -9,8 +9,8 @@
 #include "Misc/FileHelper.h"
 #include "Modules/ModuleManager.h"
 #include "SlateOptMacros.h"
-#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
+#include "Internationalization/Regex.h"
 
 #define LOCTEXT_NAMESPACE "SSpatialOutputLog"
 
@@ -252,50 +252,31 @@ void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 {
 	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
-	FString LogTime;
-	FString LogLevelAndRest;
-	FString LogLevelText;
-	FString LogCategoryAndRest;
-	FString LogCategory;
-	FString LogMessage;
+	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) logger=.*\\.(.*) msg=(.*)"));
+	FRegexMatcher LogMatcher(LogPattern, LogLine);
 
-	LogLine.Split(TEXT("level="), &LogTime, &LogLevelAndRest);
-	LogLevelAndRest.Split(TEXT("logger="), &LogLevelText, &LogCategoryAndRest);
-	LogCategoryAndRest.Split(TEXT("msg="), &LogCategory, &LogMessage);
+	if (!LogMatcher.FindNext())
+	{
+		UE_LOG(LogSpatialOutputLog, Error, TEXT("Failed to parse log line: %s"), *LogLine);
+		return;
+	}
 
-	// Log categories take the form "improbable.deployment.InternalGameLauncher", we filter to the last category to make it more human readable.
-	LogCategory.Split(TEXT("."), nullptr, &LogCategory, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
-
-	// Remove trailing whitespace.
-	LogCategory.TrimEndInline();
+	FString LogLevelText = LogMatcher.GetCaptureGroup(1);
+	FString LogCategory = LogMatcher.GetCaptureGroup(2);
+	FString LogMessage = LogMatcher.GetCaptureGroup(3);
 
 	// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
-	// msg=[WORKER_NAME:TYPE] ... e.g. msg=[UnrealWorkerF6DD366E460D1080061C2D88FFA08C1F:Unreal]
+	// msg=[WORKER_NAME:LOGGER_NAME] ... e.g. msg=[UnrealWorkerF6DD3:Unreal]
 	if (LogCategory == TEXT("WorkerLogMessageHandler"))
 	{
-		FString WorkerNameAndType;
-		FString NewLogMessage;
+		const FRegexPattern WorkerLogPattern = FRegexPattern(TEXT("\\[([^:]*):[^\\]]*\\] (.*)"));
+		FRegexMatcher WorkerLogMatcher(WorkerLogPattern, LogMessage);
 
-		// We split at the closing square brace of the log message.
-		LogMessage.Split(TEXT("]"), &WorkerNameAndType, &NewLogMessage);
-
-		// Now remove the ':Unreal' tag
-		FString WorkerName;
-		FString WorkerType;
-		WorkerNameAndType.Split(TEXT(":"), &WorkerName, &WorkerType);
-
-		// Remove the remaining '[' at the start of the WORKER_NAME.
-		WorkerName.RemoveAt(0);
-
-		// Shorten the hash at the end of the WorkerName for Unreal editor workers.
-		if (WorkerType == SpatialGDKServicesConstants::UNREAL_EDITOR_WORKER_LOGGER_NAME && WorkerName.Len() > 32)
+		if (WorkerLogMatcher.FindNext())
 		{
-			// Keep 5 characters of the hash. e.g. UnrealWorkerF6DD366E460D1080061C2D88FFA08C1F = UnrealWorkerF6DD3. 32 chars in hash so remove 27 from the end.
-			WorkerName = WorkerName.LeftChop(27);
+			LogCategory = WorkerLogMatcher.GetCaptureGroup(1);
+			LogMessage = WorkerLogMatcher.GetCaptureGroup(2);
 		}
-
-		LogCategory = WorkerName;
-		LogMessage = NewLogMessage.TrimStart();
 	}
 
 	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
