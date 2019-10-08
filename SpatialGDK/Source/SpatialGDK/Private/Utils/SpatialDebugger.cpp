@@ -46,6 +46,8 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 
 void ASpatialDebugger::Tick(float DeltaSeconds)
 {
+	Super::Tick(DeltaSeconds);
+
 	check(NetDriver != nullptr);
 
 	if (NetDriver->IsServer() == false)
