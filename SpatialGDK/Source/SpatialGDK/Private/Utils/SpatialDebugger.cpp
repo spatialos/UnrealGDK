@@ -120,14 +120,17 @@ void ASpatialDebugger::BeginPlay()
 
 void ASpatialDebugger::Destroyed()
 {
-	if (OnEntityAddedHandle.IsValid())
+	if (NetDriver && NetDriver->Receiver)
 	{
-		NetDriver->Receiver->OnEntityAdded.Remove(OnEntityAddedHandle);
-	}
+		if (OnEntityAddedHandle.IsValid())
+		{
+			NetDriver->Receiver->OnEntityAdded.Remove(OnEntityAddedHandle);
+		}
 
-	if (OnEntityRemovedHandle.IsValid())
-	{
-		NetDriver->Receiver->OnEntityRemoved.Remove(OnEntityRemovedHandle);
+		if (OnEntityRemovedHandle.IsValid())
+		{
+			NetDriver->Receiver->OnEntityRemoved.Remove(OnEntityRemovedHandle);
+		}
 	}
 
 	if (DrawDebugDelegateHandle.IsValid())
@@ -201,30 +204,28 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
 		// TODO: color code by worker id using WorkerColors array once that field is available
-		const int WorkerId = 0;
-		Canvas->SetDrawColor(FColor::White);
+		FColor ServerWorkerColor;
+		GetServerWorkerColor(EntityId, ServerWorkerColor);
+		Canvas->SetDrawColor(ServerWorkerColor);
 		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
 		HorizontalOffset += 16.0f;
 	}
 
 	if (bShowAuthIntent)
 	{
-		const int32 VirtualWorkerId = GetVirtualWorkerId(EntityId);
-
-		if (VirtualWorkerId != -1)
-		{
-			SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
-			Canvas->SetDrawColor(WorkerColors[VirtualWorkerId]);
-			Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
-			HorizontalOffset += 16.0f;
-		}
+		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
+		FColor VirtualWorkerColor;
+		GetVirtualWorkerColor(EntityId, VirtualWorkerColor);
+		Canvas->SetDrawColor(VirtualWorkerColor);
+		Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
+		HorizontalOffset += 16.0f;
 	}
 
 	if (bShowLock)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
 		// TODO: retrieve lock status once API is available
-		const bool bIsLocked = false;
+		const bool bIsLocked = GetLockStatus(EntityId);
 		const EIcon LockIcon = bIsLocked ? ICON_LOCKED : ICON_UNLOCKED;
 
 		Canvas->SetDrawColor(FColor::White);
@@ -330,18 +331,40 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 	}
 }
 
-// TODO: this should move to a shared location
-int32 ASpatialDebugger::GetVirtualWorkerId(const Worker_EntityId EntityId) const
+void ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId, FColor& Color) const
 {
 	check(NetDriver != nullptr && NetDriver->IsServer() == false);
 
 	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
-	return (AuthorityIntentComponent != nullptr) ? AuthorityIntentComponent->VirtualWorkerId : SpatialConstants::INVALID_AUTHORITY_INTENT_ID;
+	int32 VirtualWorkerId = (AuthorityIntentComponent != nullptr) ? AuthorityIntentComponent->VirtualWorkerId : SpatialConstants::INVALID_AUTHORITY_INTENT_ID;
+
+	if (VirtualWorkerId != SpatialConstants::INVALID_AUTHORITY_INTENT_ID &&
+		VirtualWorkerId < ServerTintColors.Num())
+	{
+		Color = ServerTintColors[VirtualWorkerId];
+	}
+	else
+	{
+		Color = InvalidServerTintColor;
+	}
+}
+
+// TODO: Implement once this functionality is available (basically we need the ServerWorkerId -> VirtualWorkerId mapping)
+void ASpatialDebugger::GetServerWorkerColor(const Worker_EntityId EntityId, FColor& Color) const
+{
+	check(NetDriver != nullptr && NetDriver->IsServer() == false);
+	Color = InvalidServerTintColor;
+}
+
+// TODO: Implement once this functionality is available
+bool ASpatialDebugger::GetLockStatus(const Worker_EntityId Entityid)
+{
+	check(NetDriver != nullptr && NetDriver->IsServer() == false);
+	return false;
 }
 
 void ASpatialDebugger::SpatialToggleDebugger()
 {
-#if !UE_BUILD_SHIPPING
 	check(NetDriver != nullptr && NetDriver->IsServer() == false);
 
 	if (DrawDebugDelegateHandle.IsValid())
@@ -353,6 +376,4 @@ void ASpatialDebugger::SpatialToggleDebugger()
 	{
 		DrawDebugDelegateHandle = UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialDebugger::DrawDebug));
 	}
-#endif // !UE_BUILD_SHIPPING
 }
-

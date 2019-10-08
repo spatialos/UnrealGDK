@@ -29,7 +29,7 @@ DECLARE_CYCLE_STAT(TEXT("DrawText"), STAT_DrawText, STATGROUP_SpatialDebugger);
 DECLARE_CYCLE_STAT(TEXT("BuildText"), STAT_BuildText, STATGROUP_SpatialDebugger);
 DECLARE_CYCLE_STAT(TEXT("SortingActors"), STAT_SortingActors, STATGROUP_SpatialDebugger);
 
-UCLASS(SpatialType=Singleton, Blueprintable)
+UCLASS(SpatialType=Singleton, Blueprintable, NotPlaceable)
 class SPATIALGDK_API ASpatialDebugger :
 	public AInfo
 {
@@ -69,7 +69,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show Actor Name for every entity in range"))
 	bool bShowActorName = true;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
 	bool bAutoStart;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Icon"))
@@ -84,27 +84,42 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Locked Icon"))
 	UTexture2D *LockedTexture;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
 	FVector WorldSpaceActorTagOffset = FVector(0.0f, 0.0f, 200.0f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Array of tint colors used to color code tag elements by server"))
+	TArray<FColor> ServerTintColors =
+	{
+		FColor::Blue,
+		FColor::Green,
+		FColor::Yellow,
+		FColor::Orange
+	};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Color used for any server id / virtual worker id that doesn't map into the ServerColors array"))
+	FColor InvalidServerTintColor = FColor::Magenta;
 
 private:
 
 	void LoadIcons();
 
+	// FOnEntityAdded/FOnEntityRemoved Delegates
 	void OnEntityAdded(const Worker_EntityId EntityId);
 	void OnEntityRemoved(const Worker_EntityId EntityId);
 
+	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
+
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
-	int32 GetVirtualWorkerId(const Worker_EntityId EntityId) const;
+	void GetServerWorkerColor(const Worker_EntityId EntityId, FColor& Color) const;
+	void GetVirtualWorkerColor(const Worker_EntityId EntityId, FColor& Color) const;
 
-	static int32 HashPosition(const FVector& Position);
+	bool GetLockStatus(const Worker_EntityId EntityId);
 
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;
-	static const int VIRTUAL_WORKER_MAX_COUNT = 4;
 
 	enum EIcon
 	{
@@ -134,12 +149,4 @@ private:
 	FCanvasIcon Icons[ICON_MAX];
 
 	bool bActorSortRequired;
-
-	const FColor WorkerColors[VIRTUAL_WORKER_MAX_COUNT] =
-	{
-		FColor::Blue,
-		FColor::Green,
-		FColor::Yellow,
-		FColor::Orange
-	};
 };
