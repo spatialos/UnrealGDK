@@ -103,7 +103,7 @@ private:
 	static int32 HashPosition(const FVector& Position);
 
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
-	static const int STACKED_TAG_VERTICAL_OFFSET = 18;
+	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;
 	static const int VIRTUAL_WORKER_MAX_COUNT = 4;
 
 	enum EIcon

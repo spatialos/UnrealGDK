@@ -334,7 +334,7 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 
 			DrawTag(Canvas, ScreenLocation, EntityId, LocalPlayerActors[i]->GetName());
 
-			ScreenLocation.Y -= STACKED_TAG_VERTICAL_OFFSET;
+			ScreenLocation.Y -= PLAYER_TAG_VERTICAL_OFFSET;
 		}
 	}
 }
