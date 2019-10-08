@@ -544,9 +544,12 @@ void CopyWellKnownSchemaFiles()
 	}
 }
 
-void DeleteGeneratedSchemaFiles()
+void DeleteGeneratedSchemaFiles(FString SchemaOutputPath /*= ""*/)
 {
-	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	if (SchemaOutputPath.IsEmpty())
+	{
+		SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	}
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (PlatformFile.DirectoryExists(*SchemaOutputPath))
 	{
@@ -755,7 +758,7 @@ bool SpatialGDKGenerateSchema()
 	return RunSchemaCompiler();
 }
 
-bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes)
+bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath /*= ""*/)
 {
 	ResetUsedNames();
 	Classes.Sort([](const UClass& A, const UClass& B)
@@ -796,7 +799,10 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes)
 		return false;
 	}
 
-	FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	if (SchemaOutputPath.IsEmpty())
+	{
+		SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	}
 
 	UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
 
