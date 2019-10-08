@@ -19,7 +19,7 @@ cmd /c mklink /J "$project_path\Plugins\UnrealGDK" "$gdk_home"
 # This disables showing the editor startup tutorial, which we need to do since running it crashes the editor
 # The tutorial logic is in UnrealEngine/Engine/Source/Editor/IntorTutorials/Private/IntorTutorials.cpp, function MaybeopenWelcomeTutorial
 # The check for this file is in unrealEngine/Engine/Source/Runtime/Core/Private/Misc/EngineBuildSettings.cpp, function IsInternalBuild
-New-Item -Path "$unreal_path\Engine\Build" -Name "NotForLicensees" -ItemType "directory"
+#New-Item -Path "$unreal_path\Engine\Build" -Name "NotForLicensees" -ItemType "directory"
 New-Item -Path "$unreal_path\Engine\Build\NotForLicensees" -Name "EpicInternal.txt" -ItemType "file"
 
     # copy the built plugin into the engine

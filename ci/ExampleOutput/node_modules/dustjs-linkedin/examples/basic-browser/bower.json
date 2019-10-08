@@ -1,7 +1,0 @@
-{
-  "name": "dustjs-example-simple",
-  "dependencies": {
-    "dustjs-linkedin": "*",
-    "dustjs-helpers": "*"
-  }
-}
