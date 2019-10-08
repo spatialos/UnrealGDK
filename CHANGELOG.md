@@ -47,15 +47,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where the spatial daemon started even with spatial networking disabled.
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
-- Attempting to replicate unsupported types (such as TMap) produce a log error rather than crashing the game.
+- Attempting to replicate unsupported types (such as TMap) results in an error rather than crashing the game.
 - Generating schema when the schema database is locked by another process will no longer crash the editor.
-- When schema compiler fails, schema generation correctly shows an error.
+- When the schema compiler fails, schema generation now displays an error.
 - Fixed crash during initialization when running GenerateSchemaCommandlet.
-- Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
+- Generating schema after deleting the schema database now correctly triggers an initial schema generation.
 - Streaming levels with query-based interest (QBI) enabled no longer produces errors if the player connection owns unreplicated actors.
-- Fixed an issue that would prevent player movement in a zoned deployment.
-- Fixed an issue that could cause queued incoming RPCs with unresolved references to never be processed.
-- Muticast RPCs, that are sent shortly after an actor is created, are now correctly processed by all clients.
+- Fixed an issue that prevented player movement in a zoned deployment.
+- Fixed an issue that caused queued incoming RPCs with unresolved references to never be processed.
+- Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
 - When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
 
 ## [`0.6.1`] - 2019-08-15
