@@ -516,6 +516,7 @@ bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
 			UE_LOG(LogSpatialDeploymentManager, Error,
 				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
 
+			ExposedRuntimeIP = TEXT("");
 			bSpatialServiceInProjectDirectory = false;
 			bSpatialServiceRunning = false;
 			bLocalDeploymentRunning = false;
