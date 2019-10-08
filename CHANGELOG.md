@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 1. Select "Modify" to confirm your changes.
 
 ### Breaking Changes:
-- If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you now need to enable generating schema for them using SpatialType UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
+- If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you now need to enable generating schema for them using `SpatialType` UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
 - Chunk based interest is no longer supported. All interest is resolved using query-based interest (QBI). You should remove streaming query and chunk based interest options from worker and launch config files to avoid unnecessary streaming queries being generated.
 - If you already have a project that you are upgrading to this version of the GDK, it is encouraged to follow the upgrade process to SpatialOS `14.1.0`:
 1. Open the `spatialos.json` file in the `spatial/` directory of your project.
@@ -26,22 +26,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 1. Replace all other instances of the version number in the file.
 
 ### Features:
+- The GDK now uses SpatialOS `14.1.0`.
 - Visual Studio 2019 is now supported.
 - You can now delete your schema database using options in the GDK toolbar and the commandlet.
 - The GDK now checks that schema and a snapshot are present before attempting to start a local deployment. If either are missing then an error message is displayed.
 - Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
 - You can now specify which actors should not persist as entities in your Snapshot. You do this by adding the flag `SPATIALCLASS_NotPersistent` to a class or by entering `NotPersistent` in the `Class Defaults` > `Spatial Description` field on blueprints.
 - Deleted startup actors are now tracked
-- The GDK now uses SpatialOS `14.1.0`.
-- Added a user bindable delegate to SpatialMetrics which triggers when worker metrics have been received.
-- Local deployments now create a new log file known as 'launch.log' which will contain logs relating to starting and running a deployment. Additionally it will contain worker logs which are forwarded to the SpatialOS runtime.
-- Added a new setting to SpatialOS Runtime Settings 'Worker Log Level' which allows configuration of which verbosity of worker logs gets forwarded to the SpatialOS runtime.
-- Added a new developer tool called 'Spatial Output Log' which will show local deployment logs from the 'launch.log' file.
+- Added a user bindable delegate to `SpatialMetrics` which triggers when worker metrics have been received.
+- Local deployments now create a new log file known as `launch.log` which will contain logs relating to starting and running a deployment. Additionally it will contain worker logs which are forwarded to the SpatialOS runtime.
+- Added a new setting to SpatialOS Runtime Settings `Worker Log Level` which allows configuration of which verbosity of worker logs gets forwarded to the SpatialOS runtime.
+- Added a new developer tool called 'Spatial Output Log' which will show local deployment logs from the `launch.log` file.
 - Added logging for queued RPCs.
 - Added several new STAT annotations into the ServerReplicateActors call chain.
-- Avoid generating schema for all UObject subclasses. Actor, ActorComponent, GameplayAbility subclasses are enabled by default, other classes can be enabled using SpatialType UCLASS specifier.
+- The GDK no longer generates schema for all UObject subclasses. Schema generation for Actor, ActorComponent and GameplayAbility subclasses is enabled by default, other classes can be enabled using `SpatialType` UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
 - Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
-- Added OverrideSpatialOffloading command line flag that allows toggling of offloading at launch time.
+- Added the `OverrideSpatialOffloading` command line flag. This allows you to toggle offloading at launch time.
 
 ### Bug fixes:
 - Fixed a bug where the spatial daemon started even with spatial networking disabled.
