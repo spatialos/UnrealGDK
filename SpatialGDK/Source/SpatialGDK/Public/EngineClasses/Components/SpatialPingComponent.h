@@ -62,6 +62,7 @@ private:
 	FTimerHandle PingTickHandle;
 	FTimerHandle PingTimerHandle;
 
+	UPROPERTY()
 	APlayerController* OwningController;
 
 	void EnablePing();

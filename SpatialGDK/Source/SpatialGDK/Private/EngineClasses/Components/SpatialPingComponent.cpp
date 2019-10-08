@@ -22,7 +22,7 @@ void USpatialPingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(USpatialPingComponent, ReplicatedPingID);
+	DOREPLIFETIME(USpatialPingComponent, ReplicatedPingID, COND_OwnerOnly);
 }
 
 void USpatialPingComponent::BeginPlay()
