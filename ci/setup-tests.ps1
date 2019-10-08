@@ -11,8 +11,8 @@ Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recu
 
 # For some reason, the gdk plugin doesn't get loaded by the engine as an engine plugin, so also symlink it into the project we run the tests in
 # TODO debug why it doesn't get loaded as an engine plugin
-New-Item -Path "$project_path" -Name "Plugins" -ItemType "directory"
-cmd /c mklink /J "$project_path\Plugins\UnrealGDK" "$gdk_home"
+New-Item -Path "$project_path" -Name "Plugins" -ItemType "directory" -ErrorAction SilentlyContinue
+New-Item -ItemType Junction -Path "$project_path\Plugins\UnrealGDK" -Target "$gdk_home" -ErrorAction SilentlyContinue
 
 # Pretend we're doing an internal build by creating the file UnrealEngine\Engine\Build\NotForLicensees\EpicInternal.txt
 # This is a file checked by unreal to determine whether it's running an internal build
