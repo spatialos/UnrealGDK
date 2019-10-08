@@ -2,6 +2,7 @@
 param(
     [string] $build_output_dir,
     [string] $project_path,
+    [string] $output_dir,
     [string] $unreal_path
 )
 
@@ -9,10 +10,13 @@ param(
 # The trailing \ on the destination path is important!
 Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recurse -Container -ErrorAction SilentlyContinue
 
-# For some reason, the gdk plugin doesn't get loaded by the engine as an engine plugin, so also symlink it into the project we run the tests in
-# TODO debug why it doesn't get loaded as an engine plugin
+# The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
+# copying the plugin into the project's folder bypasses the issue
 New-Item -Path "$project_path" -Name "Plugins" -ItemType "directory" -ErrorAction SilentlyContinue
 New-Item -ItemType Junction -Path "$project_path\Plugins\UnrealGDK" -Target "$gdk_home" -ErrorAction SilentlyContinue
+
+# Create the TestResults directory if it does not exist, for storing results
+New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorAction SilentlyContinue
 
 # Pretend we're doing an internal build by creating the file UnrealEngine\Engine\Build\NotForLicensees\EpicInternal.txt
 # This is a file checked by unreal to determine whether it's running an internal build
