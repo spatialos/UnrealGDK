@@ -374,10 +374,10 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 	if (ExitCode == ExitCodeSuccess)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service stopped!"));
+		ExposedRuntimeIP = TEXT("");
 		bSpatialServiceRunning = false;
 		bSpatialServiceInProjectDirectory = true;
 		bLocalDeploymentRunning = false;
-		ExposedRuntimeIP = TEXT("");
 		return true;
 	}
 	else
