@@ -52,22 +52,22 @@ public:
 	int PlayerPanelStartY = 128;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General, meta = (ToolTip = "Maximum range from local player that tags will be drawn out to"))
-	float MaxRange;
+	float MaxRange = 100.0f * 100.0f; // 100m
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show server authority for every entity in range"))
-	bool bShowAuth;
+	bool bShowAuth = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show authority intent for every entity in range"))
-	bool bShowAuthIntent;
+	bool bShowAuthIntent = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show lock status for every entity in range"))
-	bool bShowLock;
+	bool bShowLock = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show EntityId for every entity in range"))
-	bool bShowEntityId;
+	bool bShowEntityId = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show Actor Name for every entity in range"))
-	bool bShowActorName;
+	bool bShowActorName = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
 	bool bAutoStart;
@@ -85,7 +85,7 @@ public:
 	UTexture2D *LockedTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
-	FVector WorldSpaceActorTagOffset;
+	FVector WorldSpaceActorTagOffset = FVector(0.0f, 0.0f, 200.0f);
 
 private:
 

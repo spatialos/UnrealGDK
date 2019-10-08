@@ -22,17 +22,6 @@ DEFINE_LOG_CATEGORY(LogSpatialDebugger);
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, MaxRange(100.0f * 100.0f)
-	, bShowAuth(true)
-	, bShowAuthIntent(true)
-	, bShowLock(true)
-	, bShowEntityId(true)
-	, bShowActorName(true)
-	, bAutoStart(false)
-	, WorldSpaceActorTagOffset(FVector(0.0f, 0.0f, 200.0f))
-	, NetDriver(nullptr)
-	, RenderFont(nullptr)
-	, bActorSortRequired(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
