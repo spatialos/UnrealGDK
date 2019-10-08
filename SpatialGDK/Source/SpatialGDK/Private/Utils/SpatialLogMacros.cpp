@@ -14,3 +14,8 @@ void USpatialLogMacros::PrintStringSpatial(UObject* WorldContextObject, const FS
 	// By logging to LogSpatial we will print to the spatial os runtime.
 	UE_LOG(LogSpatial, Log, TEXT("%s"), *InString);
 }
+
+void USpatialLogMacros::PrintTextSpatial(UObject* WorldContextObject, const FText InText /*= INVTEXT("Hello")*/, bool bPrintToScreen /*= true*/, FLinearColor TextColor /*= FLinearColor(0.0, 0.66, 1.0)*/, float Duration /*= 2.f*/)
+{
+	PrintStringSpatial(WorldContextObject, InText.ToString(), bPrintToScreen, TextColor, Duration);
+}
