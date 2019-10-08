@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`0.7.0-preview`] - 2019-10-08
 
+### New Known Issue:
+- MSVC v14.23 removes `typeinfo.h` and replaces it with `typeinfo`. This change causes errors when building the Unreal Engine. This issue affects Visual Studio 2019 users. Until [this proposed fix](https://github.com/EpicGames/UnrealEngine/pull/6226) is accepted by Epic Games, you can work around the issue by:
+1. Open Visual Studio Installer.
+1. Select "Modify" on your Visual Studio 2019 installation.
+1. Select the "Individual components" tab.
+1. Uncheck "MSVC v142 - VS 2019 C++ x64/x86 build tools (**v14.22**)".
+1. Check "MSVC v142 - VS 2019 C++ x64/x86 build tools (**v14.23**)".
+1. Select "Modify" to confirm your changes.
+
 ### Breaking Changes:
 - If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you now need to enable generating schema for them using SpatialType UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
 - Chunk based interest is no longer supported. All interest is resolved using query-based interest (QBI). You should remove streaming query and chunk based interest options from worker and launch config files to avoid unnecessary streaming queries being generated.
@@ -35,7 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added OverrideSpatialOffloading command line flag that allows toggling of offloading at launch time.
 
 ### Bug fixes:
-- MSVC v14.23, the version included in Visual Studio 2019, removes `typeinfo.h` and replaces it with `typeinfo`. This change causes errors when building the Unreal Engine. We've fixed these errors in our Unreal Engine fork. The [same fix](https://github.com/EpicGames/UnrealEngine/pull/6226) has also been proposed for adoption by Epic Games.
 - Fixed a bug where the spatial daemon started even with spatial networking disabled.
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
