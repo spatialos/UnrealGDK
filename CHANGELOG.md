@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Streaming levels with QBI enabled no longer produces errors if the player connection owns unreplicated actors.
 - Fixed an issue that would prevent player movement in a zoned deployment.
 - Fixed an issue that could cause queued incoming RPCs with unresolved references to never be processed.
+- Fixed an issue where launching a cloud deployment with an invalid assembly name or deployment name wouldn't show a helpful error message 
 
 ### Breaking Changes:
 - Chunk based interest is no longer supported. All interest is resolved through QBI. You should remove streaming query and chunk based interest options from worker and launch config files to avoid unnecessary streaming queries being generated.
