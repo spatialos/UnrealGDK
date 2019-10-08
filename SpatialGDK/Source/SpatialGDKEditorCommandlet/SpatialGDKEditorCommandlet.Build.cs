@@ -14,8 +14,8 @@ public class SpatialGDKEditorCommandlet : ModuleRules
 				"Core",
 				"CoreUObject",
 				"Engine",
-                "EngineSettings",
-                "SpatialGDK",
+				"EngineSettings",
+				"SpatialGDK",
 				"SpatialGDKEditor",
 				"UnrealEd",
 			});
