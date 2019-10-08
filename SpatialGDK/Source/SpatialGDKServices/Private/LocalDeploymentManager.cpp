@@ -338,13 +338,7 @@ bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
 
 	bStartingSpatialService = false;
 
-	if (ExitCode != ExitCodeSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service failed to start! %s"), *ServiceStartResult);
-		return false;
-	}
-
-	if (ServiceStartResult.Contains(TEXT("RUNNING")))
+	if (ExitCode == ExitCodeSuccess && ServiceStartResult.Contains(TEXT("RUNNING")))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service started!"));
 		ExposedRuntimeIP = RuntimeIPToExpose;
@@ -354,6 +348,7 @@ bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
 	else
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service failed to start! %s"), *ServiceStartResult);
+		ExposedRuntimeIP = TEXT("");
 		bSpatialServiceRunning = false;
 		bLocalDeploymentRunning = false;
 		return false;
@@ -382,6 +377,7 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 		bSpatialServiceRunning = false;
 		bSpatialServiceInProjectDirectory = true;
 		bLocalDeploymentRunning = false;
+		ExposedRuntimeIP = TEXT("");
 		return true;
 	}
 	else
