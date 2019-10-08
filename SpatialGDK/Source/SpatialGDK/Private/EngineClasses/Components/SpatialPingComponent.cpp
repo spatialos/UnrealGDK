@@ -81,8 +81,7 @@ float USpatialPingComponent::GetPing() const
 
 void USpatialPingComponent::EnablePing()
 {
-	UWorld* World = GetWorld();
-	if (World != nullptr)
+	if (UWorld* World = GetWorld())
 	{
 		LastSentPingID = 0;
 		TimeoutCount = 0;
@@ -96,8 +95,7 @@ void USpatialPingComponent::EnablePing()
 
 void USpatialPingComponent::DisablePing()
 {
-	UWorld* World = GetWorld();
-	if (World != nullptr)
+	if (UWorld* World = GetWorld())
 	{
 		bIsPingEnabled = false;
 		// Clear the timers.
