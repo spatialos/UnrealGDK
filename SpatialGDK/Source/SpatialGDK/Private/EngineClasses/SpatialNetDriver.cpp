@@ -35,9 +35,9 @@
 #include "Utils/EntityPool.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
+#include "Utils/SpatialLogMacros.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
-#include "Utils/SpatialLogMacros.h"
 
 #if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"

@@ -221,7 +221,7 @@ namespace SpatialConstants
 	const FString SCHEMA_DATABASE_FILE_PATH  = TEXT("Spatial/SchemaDatabase");
 	const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 
-	const FString UNREAL_WORKER_LOGGER_NAME        = TEXT("Unreal");
+	const FString UNREAL_WORKER_LOGGER_NAME = TEXT("Unreal");
 }
 
 FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)

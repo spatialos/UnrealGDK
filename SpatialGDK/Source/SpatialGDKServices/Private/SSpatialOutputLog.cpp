@@ -267,7 +267,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	LogCategory.Split(TEXT("."), nullptr, &LogCategory, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
 
 	// Remove trailing whitespace.
-	LogCategory = LogCategory.TrimEnd();
+	LogCategory.TrimEndInline();
 
 	// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
 	// msg=[WORKER_NAME:TYPE] ... e.g. msg=[UnrealWorkerF6DD366E460D1080061C2D88FFA08C1F:Unreal]
