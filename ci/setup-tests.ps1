@@ -20,7 +20,7 @@ cmd /c mklink /J "$project_path\Plugins\UnrealGDK" "$gdk_home"
 # The tutorial logic is in UnrealEngine/Engine/Source/Editor/IntorTutorials/Private/IntorTutorials.cpp, function MaybeopenWelcomeTutorial
 # The check for this file is in unrealEngine/Engine/Source/Runtime/Core/Private/Misc/EngineBuildSettings.cpp, function IsInternalBuild
 #New-Item -Path "$unreal_path\Engine\Build" -Name "NotForLicensees" -ItemType "directory"
-New-Item -Path "$unreal_path\Engine\Build\NotForLicensees" -Name "EpicInternal.txt" -ItemType "file"
+#New-Item -Path "$unreal_path\Engine\Build\NotForLicensees" -Name "EpicInternal.txt" -ItemType "file"
 
     # copy the built plugin into the engine
 # Copy-Item $gdk_build_path "$($unreal_path)\Engine\Plugins\SpatialGDK" -Recurse
