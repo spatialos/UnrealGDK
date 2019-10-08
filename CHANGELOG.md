@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 
-## [`0.7.0`] - 2019-10-07
+## [`0.7.0-preview`] - 2019-10-08
 
 ### Breaking Changes:
 - If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you now need to enable generating schema for them using SpatialType UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
