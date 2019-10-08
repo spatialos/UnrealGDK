@@ -1700,7 +1700,6 @@ bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel* Channel)
 
 	// Don't allow Actors to go dormant if they have any pending operations waiting on their channel
 	check(Channel);
-	check(Channel->Actor);
 
 	for (const auto& UnresolvedRef : UnresolvedRefsMap)
 	{
