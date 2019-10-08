@@ -4,7 +4,6 @@
 
 #include "Kismet/KismetSystemLibrary.h"
 
-
 DEFINE_LOG_CATEGORY(LogSpatial);
 
 void USpatialLogMacros::PrintStringSpatial(UObject* WorldContextObject, const FString& InString /*= FString(TEXT("Hello"))*/, bool bPrintToScreen /*= true*/, FLinearColor TextColor /*= FLinearColor(0.0, 0.66, 1.0)*/, float Duration /*= 2.f*/)

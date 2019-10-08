@@ -9,6 +9,7 @@
 #include "Misc/FileHelper.h"
 #include "Modules/ModuleManager.h"
 #include "SlateOptMacros.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 
 #define LOCTEXT_NAMESPACE "SSpatialOutputLog"
@@ -131,9 +132,8 @@ void SSpatialOutputLog::OnClearLog()
 	SOutputLog::OnClearLog();
 
 	// Clear the AvailableLogCategories and SelectedLogCategories as we generate many worker categories which are hard to parse.
-	// No need to churn memory each time the categories are cleared
-	Filter.AvailableLogCategories.Reset(Filter.AvailableLogCategories.GetAllocatedSize());
-	Filter.SelectedLogCategories.Reset(Filter.SelectedLogCategories.GetAllocatedSize());
+	Filter.AvailableLogCategories.Reset();
+	Filter.SelectedLogCategories.Reset();
 }
 
 void SSpatialOutputLog::ShutdownLogDirectoryWatcher(const FString& LogDirectory)
@@ -287,8 +287,8 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 		// Remove the remaining '[' at the start of the WORKER_NAME.
 		WorkerName.RemoveAt(0);
 
-		// Shorten the hash at the end of the WorkerName for Unreal workers.
-		if (WorkerType.Contains("Unreal"))
+		// Shorten the hash at the end of the WorkerName for Unreal editor workers.
+		if (WorkerType == SpatialGDKServicesConstants::UNREAL_EDITOR_WORKER_LOGGER_NAME && WorkerName.Len() > 32)
 		{
 			// Keep 5 characters of the hash. e.g. UnrealWorkerF6DD366E460D1080061C2D88FFA08C1F = UnrealWorkerF6DD3. 32 chars in hash so remove 27 from the end.
 			WorkerName = WorkerName.LeftChop(27);
