@@ -4,6 +4,11 @@ agent_transients: &agent_transients
   # connection. Agent exits with -1 in this case.
   exit_status: -1
   limit: 3
+  
+agent_git_retry: &agent_git_retry
+  # Retry on git timeout (flake fix TODO: ENG-2091)
+  exit_status: 128
+  limit: 3  
 
 common: &common
   agents:
@@ -18,6 +23,7 @@ common: &common
   retry:
     automatic:
       - <<: *agent_transients
+      - <<: *agent_git_retry
   timeout_in_minutes: 60
   plugins:
     - ca-johnson/taskkill#v4.1: ~
