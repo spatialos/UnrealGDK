@@ -10,6 +10,8 @@
 
 #include "SpatialGDKEditorSettings.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEditorSettings, Log, All);
+
 USTRUCT()
 struct FWorldLaunchSection
 {

@@ -11,6 +11,7 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -100,31 +101,43 @@ bool USpatialGDKEditorSettings::IsAssemblyNameValid(const FString& Name)
 {
 	const FRegexPattern AssemblyPatternRegex(SpatialConstants::AssemblyPattern);
 	FRegexMatcher RegMatcher(AssemblyPatternRegex, Name);
-
-	return RegMatcher.FindNext();
+	bool valid = RegMatcher.FindNext();
+	if (!valid) {
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. It should match the regex: %s"), *SpatialConstants::AssemblyPattern);
+	}
+	return valid;
 }
 
 bool USpatialGDKEditorSettings::IsProjectNameValid(const FString& Name)
 {
 	const FRegexPattern ProjectPatternRegex(SpatialConstants::ProjectPattern);
 	FRegexMatcher RegMatcher(ProjectPatternRegex, Name);
-
-	return RegMatcher.FindNext();
+	bool valid = RegMatcher.FindNext();
+	if (!valid) {
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Project name is invalid. It should match the regex: %s"), *SpatialConstants::ProjectPattern);
+	}
+	return valid;
 }
 
 bool USpatialGDKEditorSettings::IsDeploymentNameValid(const FString& Name)
 {
 	const FRegexPattern DeploymentPatternRegex(SpatialConstants::DeploymentPattern);
 	FRegexMatcher RegMatcher(DeploymentPatternRegex, Name);
-
-	return RegMatcher.FindNext();
+	bool valid = RegMatcher.FindNext();
+	if (!valid) {
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. It should match the regex: %s"), *SpatialConstants::DeploymentPattern);
+	}
+	return valid;
 }
 
 bool USpatialGDKEditorSettings::IsRegionCodeValid(const ERegionCode::Type RegionCode)
 {
 	UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
-
-	return pEnum != nullptr && pEnum->IsValidEnumValue(RegionCode);
+	bool valid = pEnum != nullptr && pEnum->IsValidEnumValue(RegionCode);
+	if (!valid) {
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Region is invalid"));
+	}
+	return valid;
 }
 
 void USpatialGDKEditorSettings::SetPrimaryDeploymentName(const FString& Name)
