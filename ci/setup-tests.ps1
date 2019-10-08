@@ -18,13 +18,9 @@ New-Item -ItemType Junction -Path "$project_path\Plugins\UnrealGDK" -Target "$gd
 # Create the TestResults directory if it does not exist, for storing results
 New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorAction SilentlyContinue
 
-# Pretend we're doing an internal build by creating the file UnrealEngine\Engine\Build\NotForLicensees\EpicInternal.txt
-# This is a file checked by unreal to determine whether it's running an internal build
-# This disables showing the editor startup tutorial, which we need to do since running it crashes the editor
-# The tutorial logic is in UnrealEngine/Engine/Source/Editor/IntorTutorials/Private/IntorTutorials.cpp, function MaybeopenWelcomeTutorial
-# The check for this file is in unrealEngine/Engine/Source/Runtime/Core/Private/Misc/EngineBuildSettings.cpp, function IsInternalBuild
-#New-Item -Path "$unreal_path\Engine\Build" -Name "NotForLicensees" -ItemType "directory"
-#New-Item -Path "$unreal_path\Engine\Build\NotForLicensees" -Name "EpicInternal.txt" -ItemType "file"
+# Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
+# the last added setting will overwrite all previous if there are any
+Add-Content -Path "$unreal_path\Engine\Config\BaseEditorSettings.ini" -Value "[/Script/IntroTutorials.EditorTutorialSettings]`r`nbDismissAllTutorials=True"
 
     # copy the built plugin into the engine
 # Copy-Item $gdk_build_path "$($unreal_path)\Engine\Plugins\SpatialGDK" -Recurse
