@@ -22,9 +22,9 @@ namespace SpatialGDKEditor
 		
 		SPATIALGDKEDITOR_API bool GeneratedSchemaDatabaseExists();
 		
-		SPATIALGDKEDITOR_API bool SaveSchemaDatabase();
+		SPATIALGDKEDITOR_API bool SaveSchemaDatabase(FString PackagePath = "");
 		
-		SPATIALGDKEDITOR_API bool DeleteSchemaDatabase();
+		SPATIALGDKEDITOR_API bool DeleteSchemaDatabase(FString PackagePath = "");
 		
 		SPATIALGDKEDITOR_API void ClearGeneratedSchema();
 		
