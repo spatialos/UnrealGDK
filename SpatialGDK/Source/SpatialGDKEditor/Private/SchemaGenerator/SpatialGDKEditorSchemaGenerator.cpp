@@ -375,9 +375,13 @@ TMap<uint32, FString> CreateComponentIdToClassPathMap()
 	return ComponentIdToClassPath;
 }
 
-bool SaveSchemaDatabase()
+bool SaveSchemaDatabase(FString PackagePath /*= ""*/)
 {
-	FString PackagePath = SpatialConstants::SCHEMA_DATABASE_ASSET_PATH;
+	if (PackagePath.IsEmpty())
+	{
+		PackagePath = SpatialConstants::SCHEMA_DATABASE_ASSET_PATH;
+	}
+
 	UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
@@ -622,30 +626,42 @@ bool GeneratedSchemaFolderExists()
 	return PlatformFile.DirectoryExists(*SchemaOutputPath);
 }
 
-bool DeleteSchemaDatabase()
+bool DeleteSchemaDatabase(FString PackagePath /*= ""*/)
 {
-	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*SchemaDatabaseFileName);
+	FString LocalSchemaDatabaseFileName = "";
+
+	if (PackagePath.IsEmpty())
+	{
+		LocalSchemaDatabaseFileName = SchemaDatabaseFileName;
+	}
+	else
+	{
+		const FString LocalSchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), PackagePath);
+		LocalSchemaDatabaseFileName = FPaths::SetExtension(LocalSchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	}
+
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*LocalSchemaDatabaseFileName);
 
 	if (StatData.bIsValid)
 	{
 		if (!StatData.bIsReadOnly)
 		{
-			if (!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*SchemaDatabaseFileName))
+			if (!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*LocalSchemaDatabaseFileName))
 			{
 				// This should never run, since DeleteFile should only return false if the file does not exist which we have already checked for.
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s"), *SchemaDatabaseFileName);
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s"), *LocalSchemaDatabaseFileName);
 				return false;
 			}
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s because it is read-only."), *SchemaDatabaseFileName);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s because it is read-only."), *LocalSchemaDatabaseFileName);
 			return false;
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Attempted to delete schema database at %s when it did not exist."), *SchemaDatabaseFileName);
+		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Attempted to delete schema database at %s when it did not exist."), *LocalSchemaDatabaseFileName);
 		// Don't return false since the schema database was already deleted
 	}
 
