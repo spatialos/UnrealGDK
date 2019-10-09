@@ -5,6 +5,7 @@
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/World.h"
 #include "UObject/TextProperty.h"
+#include "Net/NetworkProfiler.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
@@ -47,7 +48,9 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				const uint8* Data = (uint8*)Object + Cmd.Offset;
 
 				bool bProcessedFastArrayProperty = false;
-
+#if USE_NETWORK_PROFILER
+				const uint32 NumBitsStart = Schema_GetWriteBufferLength(ComponentObject);
+#endif
 				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 				{
 					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
@@ -72,6 +75,10 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				}
 
 				bWroteSomething = true;
+	#if USE_NETWORK_PROFILER
+				const uint32 NumBitsEnd = Schema_GetWriteBufferLength(ComponentObject);
+				NETWORK_PROFILER(GNetworkProfiler.TrackReplicateProperty(Cmd.Property, (NumBitsEnd - NumBitsStart) * CHAR_BIT, nullptr));
+#endif
 			}
 
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
