@@ -7,6 +7,8 @@
 #include "Modules/ModuleManager.h"
 #include "Templates/SharedPointer.h"
 #include "TimerManager.h"
+#include "Internationalization/Regex.h"
+
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialDeploymentManager, Log, All);
 

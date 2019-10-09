@@ -160,11 +160,11 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 	// A temporary "received from" address
 	TSharedRef<FInternetAddr> SockAddr = SocketSubsystem->CreateInternetAddr();
 	// Now create and set up our sockets (no VDP)
-	ListenSocket = SocketSubsystem->CreateSocket(NAME_Stream, TEXT("LAN beacon"), true);
+	ListenSocket = SocketSubsystem->CreateSocket(NAME_Stream, TEXT("LAN beacon"), false);
 	if (ListenSocket != NULL)
 	{
-		//ListenSocket->SetReuseAddr();
-		//ListenSocket->SetNonBlocking();
+		ListenSocket->SetReuseAddr();
+		ListenSocket->SetNonBlocking();
 		ListenSocket->SetRecvErr();
 		// Bind to our listen port
 		if (ListenSocket->Bind(*ListenAddr))
@@ -172,7 +172,8 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 			// Set it to broadcast mode, so we can send on it
 			// NOTE: You must set this to broadcast mode on Xbox 360 or the
 			// secure layer will eat any packets sent
-			bSuccess = ListenSocket->SetBroadcast();
+			bSuccess = ListenSocket->Listen(30);
+			//bSuccess = ListenSocket->SetBroadcast();
 		}
 		else
 		{
@@ -189,8 +190,9 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 
 bool FLocalDeploymentManager::PreStartCheck()
 {
+	const int runtimePort = 5301;
 	// Check for the known runtime port (5301) which could be blocked.
-	if (CheckIfPortIsBound(5301))
+	if (CheckIfPortIsBound(runtimePort))
 	{
 		// Kill the blocking thing we just opened.
 		ListenSocket->Close();
@@ -200,15 +202,44 @@ bool FLocalDeploymentManager::PreStartCheck()
 		// If it exists offer the user the ability to kill it.
 		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess", "A required port is blocked by another process (potentially old deployment). Would you like to kill this process?")) == EAppReturnType::Yes)
 		{
-			const FString CmdExecutable = TEXT("netstat");
-			FString Args = TEXT("-n -o");
-			FString Result;
+			const FString NetStatCmd = FString::Printf(TEXT("netstat"));
+			UE_LOG(LogTemp, Error, TEXT("TEST: Command is %s"), *NetStatCmd);
+			FString Args = TEXT("-n -o -a");
+			FString StdOut;
 			int32 ExitCode;
 			FString StdErr;
-			FPlatformProcess::ExecProcess(*CmdExecutable, *Args, &ExitCode, &Result, &StdErr);
-			//FSpatialGDKServicesModule::ExecuteAndReadOutput("cmd.exe", Args, FString(""), Result, ExitCode);
+			bool success = FPlatformProcess::ExecProcess(*NetStatCmd, *Args, &ExitCode, &StdOut, &StdErr);
 
-			// taskkill /F /PID 15776
+			if (ExitCode == ExitCodeSuccess && success)
+			{
+				int portIndex = StdOut.Find(FString::Printf(TEXT(":%i"), runtimePort));
+				FString portLine = StdOut.Mid(portIndex);
+				int portLineEnd = portLine.Find("\r\n");
+				portLine = portLine.Mid(0, portLineEnd);
+
+				UE_LOG(LogTemp, Error, TEXT("TEST: Result is %s"), *portLine);
+
+				const FRegexPattern pidMatch(" +[0-9]+$");
+				FRegexMatcher RegMatcher(pidMatch, portLine);
+				if (RegMatcher.FindNext())
+				{
+
+					int32 pidIndex = RegMatcher.GetMatchBeginning();
+					if (pidIndex >= 0)
+					{
+
+						FString pid = portLine.RightChop(pidIndex);
+						pid = pid.Trim();
+						const FString TaskkillCmd = FString::Printf(TEXT("taskkill /F /PID %s"), *pid);
+						UE_LOG(LogTemp, Error, TEXT("TEST: kill: %s"), *TaskkillCmd);
+						Args = "";
+						bool success = FPlatformProcess::ExecProcess(*TaskkillCmd, *Args, &ExitCode, &StdOut, &StdErr);
+						UE_LOG(LogTemp, Error, TEXT("TEST: killresult: %i %i %s %s"), success, ExitCode, *StdOut, *StdErr);
+
+					}
+				}
+
+			}
 
 			return true;
 		}
