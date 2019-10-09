@@ -44,9 +44,9 @@ void USpatialPingComponent::BeginPlay()
 
 void USpatialPingComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Super::EndPlay(EndPlayReason);
 	// Clear up the timer before the component is disabled or destroyed.
 	SetPingEnabled(false);
+	Super::EndPlay(EndPlayReason);
 }
 
 bool USpatialPingComponent::GetIsPingEnabled() const
