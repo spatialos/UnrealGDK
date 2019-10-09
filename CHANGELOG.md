@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 
+## [`0.6.2`] - 2019-xx-xx
+### Bug fixes:
+- UnrealGDK no longer crashes with the latest Runtime.
+
 ## [`0.6.1`] - 2019-08-15
 
 ### Features:
