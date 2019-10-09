@@ -293,6 +293,11 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 				UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + WorldSpaceActorTagOffset, ScreenLocation, false);
 			}
 
+			if (ScreenLocation.IsZero())
+			{
+				continue;
+			}
+
 			DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName());
 		}
 	}
