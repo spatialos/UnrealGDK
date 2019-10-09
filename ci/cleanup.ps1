@@ -1,4 +1,3 @@
-# expects $gdk_home to be defined
 param (
     [string] $unreal_path = "$($pwd.drive.root)UnrealEngine"
 )

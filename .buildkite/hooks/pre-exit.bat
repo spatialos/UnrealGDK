@@ -1,0 +1,1 @@
+powershell "..\..\ci\cleanup.ps1"

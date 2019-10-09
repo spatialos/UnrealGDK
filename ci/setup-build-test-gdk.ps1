@@ -32,10 +32,6 @@ Start-Event "test-gdk" "command"
 &$PSScriptRoot"\run-tests.ps1" -ue_path "$($unreal_path)\Engine\Binaries\Win64\UE4Editor.exe" -uproject_path "$($unreal_path)\Samples\StarterContent\StarterContent.uproject" -output_dir "$PSScriptRoot\TestResults" -log_file_name "tests.log"
 Finish-Event "test-gdk" "command"
 
-Start-Event "cleanup" "command"
-&$PSScriptRoot"\cleanup.ps1"
-Finish-Event "cleanup" "command"
-
 # steps:
 # get engine
 # set up gdk
@@ -45,5 +41,3 @@ Finish-Event "cleanup" "command"
 #   Using UAT, into a folder outside the engine
 #   copy built plugin into SpatialGDK
 # Run tests
-# clean up symlink in UnrealEngine 
-# clean up git hooks? or don't create in the first place
