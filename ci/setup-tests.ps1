@@ -20,11 +20,11 @@ New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorA
 
 # Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
 # the last added setting will overwrite all previous if there are any
-New-Item -Path "$unreal_path\Engine" -Name "Saved" -ItemType "directory" -ErrorAction SilentlyContinue
-New-Item -Path "$unreal_path\Engine\Saved" -Name "Config" -ItemType "directory" -ErrorAction SilentlyContinue
-New-Item -Path "$unreal_path\Engine\Saved\Config" -Name "Windows" -ItemType "directory" -ErrorAction SilentlyContinue
-New-Item -Path "$unreal_path\Engine\Saved\Config\Windows" -Name "EditorSettings.ini" -ItemType "file" -ErrorAction SilentlyContinue
-Add-Content -Path "$unreal_path\Engine\Saved\Config\Windows\EditorSettings.ini" -Value "`r`n[/Script/IntroTutorials.TutorialStateSettings]`r`nbDismissedAllTutorials=True`r`nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorOverview.LevelEditorOverview_C,CurrentStage=1,bUserDismissed=True)`r`nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)`r`n"
+#New-Item -Path "$unreal_path\Engine" -Name "Saved" -ItemType "directory" -ErrorAction SilentlyContinue
+#New-Item -Path "$unreal_path\Engine\Saved" -Name "Config" -ItemType "directory" -ErrorAction SilentlyContinue
+#New-Item -Path "$unreal_path\Engine\Saved\Config" -Name "Windows" -ItemType "directory" -ErrorAction SilentlyContinue
+#New-Item -Path "$unreal_path\Engine\Saved\Config\Windows" -Name "EditorSettings.ini" -ItemType "file" -ErrorAction SilentlyContinue
+Add-Content -Path "$unreal_path\Engine\Config\BaseEditorSettings.ini" -Value "`r`n[/Script/IntroTutorials.TutorialStateSettings]`r`nbDismissedAllTutorials=True`r`nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorOverview.LevelEditorOverview_C,CurrentStage=1,bUserDismissed=True)`r`nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)`r`n"
 
     # copy the built plugin into the engine
 # Copy-Item $gdk_build_path "$($unreal_path)\Engine\Plugins\SpatialGDK" -Recurse
