@@ -55,13 +55,13 @@ public:
 	float MaxRange = 100.0f * 100.0f; // 100m
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show server authority for every entity in range"))
-	bool bShowAuth = true;
+	bool bShowAuth;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show authority intent for every entity in range"))
-	bool bShowAuthIntent = true;
+	bool bShowAuthIntent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show lock status for every entity in range"))
-	bool bShowLock = true;
+	bool bShowLock;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show EntityId for every entity in range"))
 	bool bShowEntityId = true;
