@@ -144,8 +144,6 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 	});
 }
 
-FSocket* ListenSocket;
-
 bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 {
 	ISocketSubsystem* SocketSubsystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
@@ -157,10 +155,8 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 	// Now the listen address
 	TSharedRef<FInternetAddr> ListenAddr = SocketSubsystem->GetLocalBindAddr(*GLog);
 	ListenAddr->SetPort(Port);
-	// A temporary "received from" address
-	TSharedRef<FInternetAddr> SockAddr = SocketSubsystem->CreateInternetAddr();
-	// Now create and set up our sockets (no VDP)
-	ListenSocket = SocketSubsystem->CreateSocket(NAME_Stream, TEXT("LAN beacon"), false);
+	// Now create and set up our sockets
+	FSocket* ListenSocket = SocketSubsystem->CreateSocket(NAME_Stream, TEXT("LAN beacon"), false);
 	if (ListenSocket != NULL)
 	{
 		ListenSocket->SetReuseAddr();
@@ -169,11 +165,7 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 		// Bind to our listen port
 		if (ListenSocket->Bind(*ListenAddr))
 		{
-			// Set it to broadcast mode, so we can send on it
-			// NOTE: You must set this to broadcast mode on Xbox 360 or the
-			// secure layer will eat any packets sent
 			bSuccess = ListenSocket->Listen(30);
-			//bSuccess = ListenSocket->SetBroadcast();
 		}
 		else
 		{
@@ -184,8 +176,13 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to create listen socket for LAN beacon"));
 	}
-
-	return bSuccess && ListenSocket;
+	bool bSuccessfullyBoundPort = bSuccess && ListenSocket;
+	if (ListenSocket != NULL) {
+		// Kill the blocking thing we just opened.
+		ListenSocket->Close();
+	}
+	/* Either we couldn't create the socket or couldn't listen on it so the port is probably not bound */
+	return !bSuccessfullyBoundPort;
 }
 
 bool FLocalDeploymentManager::PreStartCheck()
@@ -194,55 +191,50 @@ bool FLocalDeploymentManager::PreStartCheck()
 	// Check for the known runtime port (5301) which could be blocked.
 	if (CheckIfPortIsBound(runtimePort))
 	{
-		// Kill the blocking thing we just opened.
-		ListenSocket->Close();
-	}
-	else
-	{
 		// If it exists offer the user the ability to kill it.
-		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess", "A required port is blocked by another process (potentially old deployment). Would you like to kill this process?")) == EAppReturnType::Yes)
+		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess", "A required port is blocked by another process (potentially by an old deployment). Would you like to kill this process?")) == EAppReturnType::Yes)
 		{
 			const FString NetStatCmd = FString::Printf(TEXT("netstat"));
-			UE_LOG(LogTemp, Error, TEXT("TEST: Command is %s"), *NetStatCmd);
 			FString Args = TEXT("-n -o -a");
 			FString StdOut;
 			int32 ExitCode;
 			FString StdErr;
-			bool success = FPlatformProcess::ExecProcess(*NetStatCmd, *Args, &ExitCode, &StdOut, &StdErr);
+			bool bSuccess = FPlatformProcess::ExecProcess(*NetStatCmd, *Args, &ExitCode, &StdOut, &StdErr);
 
-			if (ExitCode == ExitCodeSuccess && success)
+			if (ExitCode == ExitCodeSuccess && bSuccess)
 			{
+				// Find which line of the output contains the port we're looking for
 				int portIndex = StdOut.Find(FString::Printf(TEXT(":%i"), runtimePort));
+				// Throw away all lines before
 				FString portLine = StdOut.Mid(portIndex);
 				int portLineEnd = portLine.Find("\r\n");
+				// Throw away all lines after
 				portLine = portLine.Mid(0, portLineEnd);
 
-				UE_LOG(LogTemp, Error, TEXT("TEST: Result is %s"), *portLine);
-
+				// Match the PID
 				const FRegexPattern pidMatch(" +[0-9]+$");
 				FRegexMatcher RegMatcher(pidMatch, portLine);
 				if (RegMatcher.FindNext())
 				{
-
 					int32 pidIndex = RegMatcher.GetMatchBeginning();
 					if (pidIndex >= 0)
 					{
-
+						// Throw away everything except the PID
 						FString pid = portLine.RightChop(pidIndex);
 						pid = pid.Trim();
 						const FString TaskkillCmd = FString::Printf(TEXT("taskkill /F /PID %s"), *pid);
-						UE_LOG(LogTemp, Error, TEXT("TEST: kill: %s"), *TaskkillCmd);
 						Args = "";
-						bool success = FPlatformProcess::ExecProcess(*TaskkillCmd, *Args, &ExitCode, &StdOut, &StdErr);
-						UE_LOG(LogTemp, Error, TEXT("TEST: killresult: %i %i %s %s"), success, ExitCode, *StdOut, *StdErr);
-
+						bSuccess = FPlatformProcess::ExecProcess(*TaskkillCmd, *Args, &ExitCode, &StdOut, &StdErr);
+						if (bSuccess && ExitCode == ExitCodeSuccess)
+						{
+							return true;
+						}
+						UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Failed to kill process blocking required port"));
 					}
 				}
-
 			}
-
-			return true;
 		}
+		return false;
 	}
 
 	return true;
@@ -271,7 +263,7 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	if (!bPassChecks)
 	{
-		// Log
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to start a local deployment but a required port is already bound by another process."));
 		return false;
 	}
 
