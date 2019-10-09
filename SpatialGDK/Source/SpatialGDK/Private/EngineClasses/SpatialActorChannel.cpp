@@ -891,7 +891,10 @@ bool USpatialActorChannel::TryResolveActor()
 FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
 {
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
-	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid());
+	if (ObjectNetGUID.IsDefault() || !ObjectNetGUID.IsValid())
+	{
+		UE_LOG(LogSpatialActorChannel, Warning, TEXT("PreReceiveSpatialUpdate: NetGUID is invalid! Object: %s"), *TargetObject->GetPathName());
+	}
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PreNetReceive();
@@ -902,9 +905,6 @@ FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 
 void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies)
 {
-	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
-	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
-
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
 
