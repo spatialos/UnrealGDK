@@ -25,7 +25,7 @@ public:
 
 	// The minimum time, in seconds, between pings.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SpatialPing)
-	float MinPingInterval = 0.5f;
+	float MinPingInterval = 1.0f;
 
 	// The maximum time, in seconds, to wait for a reply before sending another ping.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SpatialPing)
