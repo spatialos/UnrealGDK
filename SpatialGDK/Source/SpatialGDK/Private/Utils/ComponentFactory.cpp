@@ -49,7 +49,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 
 				bool bProcessedFastArrayProperty = false;
 #if USE_NETWORK_PROFILER
-				const uint32 NumBitsStart = Schema_GetWriteBufferLength(ComponentObject);
+				const uint32 NumBytesStart = Schema_GetWriteBufferLength(ComponentObject);
 #endif
 				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 				{
@@ -75,9 +75,9 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				}
 
 				bWroteSomething = true;
-	#if USE_NETWORK_PROFILER
-				const uint32 NumBitsEnd = Schema_GetWriteBufferLength(ComponentObject);
-				NETWORK_PROFILER(GNetworkProfiler.TrackReplicateProperty(Cmd.Property, (NumBitsEnd - NumBitsStart) * CHAR_BIT, nullptr));
+#if USE_NETWORK_PROFILER
+				const uint32 NumBytesEnd = Schema_GetWriteBufferLength(ComponentObject);
+				NETWORK_PROFILER(GNetworkProfiler.TrackReplicateProperty(Cmd.Property, (NumBytesEnd - NumBytesStart) * CHAR_BIT, nullptr));
 #endif
 			}
 
