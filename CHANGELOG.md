@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
 - Added OverrideSpatialOffloading command line flag that allows toggling of offloading at launch time.
 - Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
+- Added support for RPC tracking and for actor property tracking via UE4s Network Profiler. This is a good proxy; Reasons for why it might not be fully accurate:
+	• the serialized size of a message is just the body contents. Typically something will send the message with the length prefixed, which might be varint encoded, and you pushing the size over some size can cause the encoding of the length be bigger
+	• similarly, if you push the message over some size it can cause fragmentation which means you now have to pay for the headers again
+	• if there is any compression or anything else going on, the number of bytes actually transferred because of this data can differ
+	• lastly somewhat philosophical question of who pays for the overhead of a packet and whether you attribute a part of it to each field or attribute it to the update itself, but I assume you care a bit less about this
 
 ### Breaking Changes:
 - If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you need to enable generating schema for them using SpatialType UCLASS specifier or by checking Spatial Type if it's a blueprint.
