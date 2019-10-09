@@ -706,7 +706,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			check(NetDriver->IsServer());
 
 			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Payload);
-			NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Channel->Actor, Function, 0, Params.Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
+			NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Channel->Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
 #if !UE_BUILD_SHIPPING
 			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
@@ -731,7 +731,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 		Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 		
-		NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Channel->Actor, Function, 0, Params.Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
+		NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Channel->Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
 #if !UE_BUILD_SHIPPING
 		NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
@@ -806,7 +806,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		if (bCanPackRPC)
 		{
 			ERPCResult Result = AddPendingRPC(TargetObject, Function, Payload, ComponentId, RPCInfo.Index);
-			NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Channel->Actor, Function, 0, Params.Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
+			NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Channel->Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
 #if !UE_BUILD_SHIPPING
 			if (Result == ERPCResult::Success)
 			{
@@ -825,7 +825,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
 
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
-			NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Channel->Actor, Function, 0, Params.Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
+			NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Channel->Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
 #if !UE_BUILD_SHIPPING
 			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
