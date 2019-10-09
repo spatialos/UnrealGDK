@@ -4,34 +4,109 @@
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKServicesModule.h"
 
-#include "SchemaGenObjectStub.h"
-
 #include "CoreMinimal.h"
 
 #define SCHEMA_GENERATOR_TEST(TestName) \
 	TEST(SpatialGDKEditor, SchemaGenerator, TestName)
 
-SCHEMA_GENERATOR_TEST(SOME_TEST)
+SCHEMA_GENERATOR_TEST(GIVEN_supported_class_WHEN_checked_if_supported_THEN_is_supported)
 {
-	UClass* ObjectStubClass = USchemaGenObjectStub::StaticClass();
-	TSet<UClass*> Classes;
-	Classes.Add(ObjectStubClass);
-	//TSet<UClass*> Classes = SpatialGDKEditor::Schema::GetAllSupportedClasses();
+	//SPATIALGDKEDITOR_API bool IsSupportedClass(const UClass* SupportedClass);
+	return true;
+}
 
-	FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
-	FString DatabaseAssetPath = TEXT("/Game/Spatial/Tests/SchemaDatabase");
+SCHEMA_GENERATOR_TEST(GIVEN_unsupported_class_WHEN_checked_if_supported_THEN_is_not_supported)
+{
+	//SPATIALGDKEDITOR_API bool IsSupportedClass(const UClass* SupportedClass);
+	return true;
+}
 
-	// TODO(Alex): try load schemadatabase, SpatialGDKGenerateSchemaForClasses should take a ptr to database
-	bool bResult = SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
-	bResult &= SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseAssetPath);
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_generated_schema_for_these_classes_THEN_corresponding_schema_files_exist)
+{
+	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
+	return true;
+}
 
-	FString OtherDatabaseAssetPath = TEXT("Spatial/Tests/SchemaDatabase");
-	bResult &= SpatialGDKEditor::Schema::DeleteSchemaDatabase(OtherDatabaseAssetPath);
-	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_valid_schema_exists)
+{
+	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
+	return true;
+}
 
-	TestTrue("Run SchemaGeneration", bResult);
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_class_WHEN_generated_schema_for_this_class_THEN_files_with_valid_schema_exist)
+{
+	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
+	return true;
+}
 
-	SpatialGDKEditor::Schema::RunSchemaCompiler();
+SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_component_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_valid_schema_exists)
+{
+	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
+	return true;
+}
 
+SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_an_actor_component_WHEN_generated_schema_for_this_class_THEN_a_file_with_valid_schema_exists)
+{
+	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_actor_components_WHEN_generated_schema_for_this_class_THEN_files_with_valid_schema_exist)
+{
+	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_object_components_WHEN_generated_schema_for_this_class_THEN_files_with_valid_schema_exist)
+{
+	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist)
+{
+	//SPATIALGDKEDITOR_API void DeleteGeneratedSchemaFiles(FString SchemaOutputPath = "");
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_no_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist)
+{
+	//SPATIALGDKEDITOR_API void DeleteGeneratedSchemaFiles(FString SchemaOutputPath = "");
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_schema_database_exists)
+{
+	//SPATIALGDKEDITOR_API bool SaveSchemaDatabase(FString PackagePath = "");
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_saved_THEN_valid_schema_database_exists)
+{
+	//SPATIALGDKEDITOR_API bool SaveSchemaDatabase(FString PackagePath = "");
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_valid_schema_database_exists)
+{
+	//SPATIALGDKEDITOR_API bool SaveSchemaDatabase(FString PackagePath = "");
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_schema_database_deleted_THEN_no_schema_database_exists)
+{
+	//SPATIALGDKEDITOR_API bool DeleteSchemaDatabase(FString PackagePath = "");
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loaded)
+{
+	//SPATIALGDKEDITOR_API bool TryLoadExistingSchemaDatabase();
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_THEN_not_loaded)
+{
+	//SPATIALGDKEDITOR_API bool TryLoadExistingSchemaDatabase();
 	return true;
 }
