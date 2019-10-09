@@ -309,7 +309,7 @@ void GenerateSchemaForSublevels(const FString& SchemaPath, FComponentIdGenerator
 					LevelPathToComponentId.Add(LevelPaths[i].ToString(), ComponentId);
 					LevelComponentIds.Add(ComponentId);
 				}
-				WriteLevelComponent(Writer, FString::Printf(TEXT("%sCopy%d"), *LevelNameString, i), ComponentId, LevelPaths[i].ToString());
+				WriteLevelComponent(Writer, FString::Printf(TEXT("%sInd%d"), *LevelNameString, i), ComponentId, LevelPaths[i].ToString());
 				
 			}
 		}
