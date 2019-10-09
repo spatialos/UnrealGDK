@@ -78,7 +78,7 @@ void USpatialReceiver::LeaveCriticalSection()
 	for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
 	{
 		ReceiveActor(PendingAddEntity);
-		OnEntityAdded.Broadcast(PendingAddEntity);
+		OnEntityAddedDelegate.Broadcast(PendingAddEntity);
 	}
 
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
@@ -176,7 +176,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
 	RemoveActor(Op.entity_id);
-	OnEntityRemoved.Broadcast(Op.entity_id);
+	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
 }
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)

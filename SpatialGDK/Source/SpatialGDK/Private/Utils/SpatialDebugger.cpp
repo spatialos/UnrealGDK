@@ -96,8 +96,8 @@ void ASpatialDebugger::BeginPlay()
 		}
 
 		// Register callbacks to get notified of all future entity arrivals / deletes
-		OnEntityAddedHandle = NetDriver->Receiver->OnEntityAdded.AddUObject(this, &ASpatialDebugger::OnEntityAdded);
-		OnEntityRemovedHandle = NetDriver->Receiver->OnEntityRemoved.AddUObject(this, &ASpatialDebugger::OnEntityRemoved);
+		OnEntityAddedHandle = NetDriver->Receiver->OnEntityAddedDelegate.AddUObject(this, &ASpatialDebugger::OnEntityAdded);
+		OnEntityRemovedHandle = NetDriver->Receiver->OnEntityRemovedDelegate.AddUObject(this, &ASpatialDebugger::OnEntityRemoved);
 
 		FontRenderInfo.bClipText = true;
 		FontRenderInfo.bEnableShadow = true;
@@ -117,12 +117,12 @@ void ASpatialDebugger::Destroyed()
 	{
 		if (OnEntityAddedHandle.IsValid())
 		{
-			NetDriver->Receiver->OnEntityAdded.Remove(OnEntityAddedHandle);
+			NetDriver->Receiver->OnEntityAddedDelegate.Remove(OnEntityAddedHandle);
 		}
 
 		if (OnEntityRemovedHandle.IsValid())
 		{
-			NetDriver->Receiver->OnEntityRemoved.Remove(OnEntityRemovedHandle);
+			NetDriver->Receiver->OnEntityRemovedDelegate.Remove(OnEntityRemovedHandle);
 		}
 	}
 
