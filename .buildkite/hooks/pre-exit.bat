@@ -1,1 +1,1 @@
-powershell "..\..\ci\cleanup.ps1"
+powershell ".\ci\cleanup.ps1"
