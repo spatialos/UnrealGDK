@@ -257,7 +257,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 		PlayerLocation = LocalPawn->GetActorLocation();
 	}
 
-	for (TPair<Worker_EntityId, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
+	for (TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
 	{
 		const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
 		const Worker_EntityId EntityId = EntityActorPair.Key;

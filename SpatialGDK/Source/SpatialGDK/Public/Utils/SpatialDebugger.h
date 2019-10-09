@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/Canvas.h"
 #include "GameFramework/Info.h"
+#include "SpatialCommonTypes.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -134,7 +135,7 @@ private:
 
 	// These mappings are maintained independently on each client
 	// Mapping of the entities a client has checked out
-	TMap<Worker_EntityId, TWeakObjectPtr<AActor>> EntityActorMapping;
+	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> EntityActorMapping;
 
 	FDelegateHandle DrawDebugDelegateHandle;
 	FDelegateHandle OnEntityAddedHandle;
