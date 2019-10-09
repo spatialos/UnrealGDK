@@ -221,7 +221,7 @@ bool FLocalDeploymentManager::PreStartCheck()
 					{
 						// Throw away everything except the PID
 						FString pid = portLine.RightChop(pidIndex);
-						pid = pid.Trim();
+						pid = pid.TrimStart();
 						const FString TaskkillCmd = FString::Printf(TEXT("taskkill /F /PID %s"), *pid);
 						Args = "";
 						bSuccess = FPlatformProcess::ExecProcess(*TaskkillCmd, *Args, &ExitCode, &StdOut, &StdErr);
