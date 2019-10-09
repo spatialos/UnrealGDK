@@ -203,6 +203,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (ConfigRestartRequired = false, DisplayName = "Worker Log Level"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
 
-	UPROPERTY(EditAnywhere, config, Category = "Debug")
-	TSubclassOf<ASpatialDebugger> SpatialDebuggerClass;
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta=(MetaClass="SpatialDebugger"))
+	FSoftClassPath SpatialDebuggerClassPath;
 };

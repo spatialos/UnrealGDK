@@ -18,8 +18,6 @@ using namespace SpatialGDK;
 
 DEFINE_LOG_CATEGORY(LogSpatialDebugger);
 
-#pragma optimize("", off)
-
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
