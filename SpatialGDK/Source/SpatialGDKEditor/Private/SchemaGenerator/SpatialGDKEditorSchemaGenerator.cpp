@@ -226,7 +226,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	{
 		if (Collision.Value.Num() > 1)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for classes [%s]"),
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for classes [%s]"),
 				*Collision.Key, *FString::Join(Collision.Value, TEXT(", ")));
 		}
 	}
@@ -251,9 +251,10 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 	}
 }
 
-void WriteLevelComponent(FCodeWriter& Writer, FString LevelName, uint32 ComponentId)
+void WriteLevelComponent(FCodeWriter& Writer, FString LevelName, uint32 ComponentId, FString ClassPath)
 {
 	Writer.PrintNewLine();
+	Writer.Printf("// {0}", *ClassPath);
 	Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(LevelName));
 	Writer.Indent();
 	Writer.Printf("id = {0};", ComponentId);
@@ -313,7 +314,7 @@ void GenerateSchemaForSublevels(const TMultiMap<FName, FName>& LevelNamesToPaths
 					LevelPathToComponentId.Add(LevelPaths[i].ToString(), ComponentId);
 					LevelComponentIds.Add(ComponentId);
 				}
-				WriteLevelComponent(Writer, FString::Printf(TEXT("%s%d"), *LevelNameString, i), ComponentId);
+				WriteLevelComponent(Writer, FString::Printf(TEXT("%sCopy%d"), *LevelNameString, i), ComponentId, LevelPaths[i].ToString());
 				
 			}
 		}
@@ -328,7 +329,7 @@ void GenerateSchemaForSublevels(const TMultiMap<FName, FName>& LevelNamesToPaths
 				LevelPathToComponentId.Add(LevelPath, ComponentId);
 				LevelComponentIds.Add(ComponentId);
 			}
-			WriteLevelComponent(Writer, LevelName.ToString(), ComponentId);
+			WriteLevelComponent(Writer, LevelName.ToString(), ComponentId, LevelPath);
 		}
 	}
 
