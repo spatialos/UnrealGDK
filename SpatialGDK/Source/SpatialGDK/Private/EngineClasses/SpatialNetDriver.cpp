@@ -2195,6 +2195,8 @@ void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 }
 #endif
 
+// This should only be called once on each client, in the SpatialMetricsDisplay constructor after the class is replicated to each client.
+// This is enforced by the fact that the class is a Singleton spawned on servers by the SpatialNetDriver.
 void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
 {
 	check(SpatialDebugger == nullptr);
