@@ -11,7 +11,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Kismet/GameplayStatics.h"
-#include "Net/UnrealNetwork.h"
 #include "Schema/AuthorityIntent.h"
 
 using namespace SpatialGDK;
@@ -63,18 +62,14 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 			LocalPlayerState = LocalPawn->GetPlayerState();
 		}
 
-		if (LocalPawn.IsValid() && bActorSortRequired)
+		if (LocalPawn.IsValid())
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SortingActors);
-
 			const FVector PlayerLocation = LocalPawn->GetActorLocation();
 
 			EntityActorMapping.ValueSort([PlayerLocation](const TWeakObjectPtr<AActor>& A, const TWeakObjectPtr<AActor>& B) {
-
 				return FVector::Dist(PlayerLocation, A->GetActorLocation()) > FVector::Dist(PlayerLocation, B->GetActorLocation());
 			});
-
-			bActorSortRequired = false;
 		}
 	}
 }
@@ -178,8 +173,6 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 		{
 			LocalPlayerController = Cast<APlayerController>(Actor);
 		}
-
-		bActorSortRequired = true;
 	}
 }
 
@@ -188,7 +181,6 @@ void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 	check(NetDriver != nullptr && NetDriver->IsServer() == false);
 
 	EntityActorMapping.Remove(EntityId);
-	bActorSortRequired = true;
 }
 
 void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName)
@@ -201,7 +193,6 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	if (bShowAuth)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
-		// TODO: color code by worker id using WorkerColors array once that field is available
 		FColor ServerWorkerColor;
 		GetServerWorkerColor(EntityId, ServerWorkerColor);
 		Canvas->SetDrawColor(ServerWorkerColor);
@@ -222,7 +213,6 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	if (bShowLock)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
-		// TODO: retrieve lock status once API is available
 		const bool bIsLocked = GetLockStatus(EntityId);
 		const EIcon LockIcon = bIsLocked ? ICON_LOCKED : ICON_UNLOCKED;
 
@@ -267,10 +257,10 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 		PlayerLocation = LocalPawn->GetActorLocation();
 	}
 
-	for (TPair<int64, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
+	for (TPair<Worker_EntityId, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
 	{
 		const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
-		const Worker_EntityId EntityId = (Worker_EntityId)EntityActorPair.Key;
+		const Worker_EntityId EntityId = EntityActorPair.Key;
 
 		if (Actor != nullptr)
 		{
@@ -312,7 +302,7 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 		return;
 	}
 
-	TWeakObjectPtr<AActor> LocalPlayerActors[] =
+	const TArray<TWeakObjectPtr<AActor>> LocalPlayerActors =
 	{
 		LocalPawn,
 		LocalPlayerController,
@@ -321,14 +311,12 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 
 	FVector2D ScreenLocation(PlayerPanelStartX, PlayerPanelStartY);
 
-	for (int i = 0; i < sizeof(LocalPlayerActors)/sizeof(TWeakObjectPtr<AActor>); ++i)
+	for (int32 i = 0; i < LocalPlayerActors.Num(); ++i)
 	{
 		if (LocalPlayerActors[i].IsValid())
 		{
 			const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(LocalPlayerActors[i].Get());
-
 			DrawTag(Canvas, ScreenLocation, EntityId, LocalPlayerActors[i]->GetName());
-
 			ScreenLocation.Y -= PLAYER_TAG_VERTICAL_OFFSET;
 		}
 	}

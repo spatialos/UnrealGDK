@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Engine/Canvas.h"
-#include "Engine/Texture2D.h"
 #include "GameFramework/Info.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
@@ -16,6 +15,7 @@ class APlayerController;
 class APlayerState;
 class USpatialNetDriver;
 class UFont;
+class UTexture2D;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialDebugger, Log, All);
 
@@ -134,7 +134,7 @@ private:
 
 	// These mappings are maintained independently on each client
 	// Mapping of the entities a client has checked out
-	TMap<int64, TWeakObjectPtr<AActor>> EntityActorMapping;
+	TMap<Worker_EntityId, TWeakObjectPtr<AActor>> EntityActorMapping;
 
 	FDelegateHandle DrawDebugDelegateHandle;
 	FDelegateHandle OnEntityAddedHandle;
@@ -147,6 +147,4 @@ private:
 
 	FFontRenderInfo FontRenderInfo;
 	FCanvasIcon Icons[ICON_MAX];
-
-	bool bActorSortRequired;
 };
