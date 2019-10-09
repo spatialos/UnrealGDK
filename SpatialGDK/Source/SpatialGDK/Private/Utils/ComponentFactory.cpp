@@ -76,6 +76,13 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 
 				bWroteSomething = true;
 #if USE_NETWORK_PROFILER
+				/**
+				 *  a good proxy. Reasons for why it might not be fully accurate:
+						• the serialized size of a message is just the body contents. Typically something will send the message with the length prefixed, which might be varint encoded, and you pushing the size over some size can cause the encoding of the length be bigger
+						• similarly, if you push the message over some size it can cause fragmentation which means you now have to pay for the headers again
+						• if there is any compression or anything else going on, the number of bytes actually transferred because of this data can differ
+						• lastly somewhat philosophical question of who pays for the overhead of a packet and whether you attribute a part of it to each field or attribute it to the update itself, but I assume you care a bit less about this
+				 */
 				const uint32 NumBytesEnd = Schema_GetWriteBufferLength(ComponentObject);
 				NETWORK_PROFILER(GNetworkProfiler.TrackReplicateProperty(Cmd.Property, (NumBytesEnd - NumBytesStart) * CHAR_BIT, nullptr));
 #endif
