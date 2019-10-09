@@ -187,7 +187,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
 	{
-		ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString().Left(5);
+		ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
 	}
 
 	// TODO UNR-1271: Move creation of connection parameters into a function somehow

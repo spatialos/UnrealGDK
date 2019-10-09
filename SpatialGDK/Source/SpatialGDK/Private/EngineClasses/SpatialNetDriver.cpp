@@ -170,7 +170,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	return true;
 }
 
-void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
+USpatialGameInstance* USpatialNetDriver::GetGameInstance() const
 {
 	USpatialGameInstance* GameInstance = nullptr;
 
@@ -185,6 +185,13 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	{
 		GameInstance = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance());
 	}
+
+	return GameInstance;
+}
+
+void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
+{
+	USpatialGameInstance* GameInstance = GetGameInstance();
 
 	if (GameInstance == nullptr)
 	{
@@ -278,7 +285,14 @@ void USpatialNetDriver::InitializeSpatialOutputDevice()
 	}
 #endif //WITH_EDITOR
 
-	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, *SpatialConstants::UNREAL_WORKER_LOGGER_NAME, PIEIndex);
+	FName LoggerName = FName(TEXT("Unreal"));
+
+	if (const USpatialGameInstance * GameInstance = GetGameInstance())
+	{
+		LoggerName = GameInstance->GetSpatialWorkerType();
+	}
+
+	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, LoggerName, PIEIndex);
 }
 
 void USpatialNetDriver::CreateAndInitializeCoreClasses()

@@ -266,16 +266,24 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	FString LogMessage = LogMatcher.GetCaptureGroup(3);
 
 	// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
-	// msg=[WORKER_NAME:LOGGER_NAME] ... e.g. msg=[UnrealWorkerF6DD3:Unreal]
+	// msg=[WORKER_NAME:WORKER_TYPE] ... e.g. msg=[UnrealWorkerF5C56488482FEDC37B10E382770067E3:UnrealWorker]
 	if (LogCategory == TEXT("WorkerLogMessageHandler"))
 	{
-		const FRegexPattern WorkerLogPattern = FRegexPattern(TEXT("\\[([^:]*):[^\\]]*\\] (.*)"));
+		const FRegexPattern WorkerLogPattern = FRegexPattern(TEXT("\\[([^:]*):([^\\]]*)\\] (.*)"));
 		FRegexMatcher WorkerLogMatcher(WorkerLogPattern, LogMessage);
 
 		if (WorkerLogMatcher.FindNext())
 		{
-			LogCategory = WorkerLogMatcher.GetCaptureGroup(1);
-			LogMessage = WorkerLogMatcher.GetCaptureGroup(2);
+			LogCategory = WorkerLogMatcher.GetCaptureGroup(1); // Worker Name
+			FString WorkerType = WorkerLogMatcher.GetCaptureGroup(2); // Worker Type
+
+			if (LogCategory.StartsWith(WorkerType))
+			{
+				// We shorten the category name to make it more human readable. e.g. UnrealWorkerF5C56
+				LogCategory = LogCategory.Left(WorkerType.Len() + 5);
+			}
+
+			LogMessage = WorkerLogMatcher.GetCaptureGroup(3);
 		}
 	}
 
