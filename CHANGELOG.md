@@ -32,8 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a new setting to SpatialOS Runtime Settings 'Worker Log Level' which allows configuration of which verbosity of worker logs gets forwarded to the SpatialOS runtime.
 - Added a new developer tool called 'Spatial Output Log' which will show local deployment logs from the 'launch.log' file.
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
+- Enabled compression in modular-udp networking stack
+- Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
+- Add SpatialToggleMetricsDisplay console command.  bEnableMetricsDisplay must be enabled in order for the display to be available.  You must then must call SpatialToggleMetricsDisplay on each client that wants to view the metrics display.
 
 ### Bug fixes:
+- Spatial networking is now always enabled in built assemblies.
 - Fixed a bug where the spatial daemon started even with spatial networking disabled.
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
