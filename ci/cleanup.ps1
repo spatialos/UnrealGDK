@@ -3,6 +3,10 @@ param (
 )
 $gdk_in_engine = "$unreal_path\Engine\Plugins\UnrealGDK"
 
-    # clean up the symlink 
-cmd /c rmdir "$gdk_in_engine"
-cmd /c rmdir "$unreal_path\Samples\StarterContent\Plugins\UnrealGDK" # TODO needs to stay in sync with setup-tests
+    # clean up the symlink
+if (Test-Path "$gdk_in_engine") {
+    (Get-Item "$gdk_in_engine").Delete()
+}
+if (Test-Path "$unreal_path\Samples\StarterContent\Plugins\UnrealGDK") {
+    (Get-Item "$unreal_path\Samples\StarterContent\Plugins\UnrealGDK").Delete() # TODO needs to stay in sync with setup-tests
+}

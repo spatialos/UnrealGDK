@@ -19,7 +19,7 @@ namespace
 
 	// TODO: UNR-1964 - Move EDeploymentState enum to LocalDeploymentManager
 	enum class EDeploymentState { IsRunning, IsNotRunning };
-	
+
 	const FName AutomationWorkerType = TEXT("AutomationWorker");
 	const FString AutomationLaunchConfig = TEXT("Improbable/AutomationLaunchConfig.json");
 
@@ -152,7 +152,7 @@ DEFINE_LATENT_COMMAND_TWO_PARAMETERS(CheckDeploymentState, FAutomationTestBase*,
 	return true;
 }
 
-// UNR-1975 after fixing the flakiness of these tests, re-enable them
+// UNR-1975 after fixing the flakiness of these tests, and investigating how they can be run in CI (UNR-1969), re-enable them
 /*LOCALDEPLOYMENT_TEST(GIVEN_no_deployment_running_WHEN_deployment_started_THEN_deployment_running)
 {
 	// GIVEN
