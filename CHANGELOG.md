@@ -57,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue that caused queued incoming RPCs with unresolved references to never be processed.
 - Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
 - When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
+- Fixed a crash upon checking out an actor with a deleted static subobject.
 
 ## [`0.6.1`] - 2019-08-15
 
