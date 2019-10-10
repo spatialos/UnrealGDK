@@ -75,16 +75,42 @@ SCHEMA_GENERATOR_TEST(GIVEN_class_derived_from_non_spatial_type_class_WHEN_check
 	return true;
 }
 
-// TODO(Alex): missing GetClasses tests
-// layout changing
-// is editor only
-// transient classes
-// non-cook directories
-
-SCHEMA_GENERATOR_TEST(GIVEN_unsupported_class_WHEN_checked_if_supported_THEN_is_not_supported)
+SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_not_spatial_tag_WHEN_checked_if_supported_THEN_is_not_supported)
 {
-	//SPATIALGDKEDITOR_API bool IsSupportedClass(const UClass* SupportedClass);
-	TestTrue("", false);
+	// GIVEN
+	const UClass* SupportedClass = UNotSpatialTypeObjectStub::StaticClass();
+
+	// WHEN
+	bool bIsSupported = SpatialGDKEditor::Schema::IsSupportedClass(SupportedClass);
+
+	// THEN
+	TestFalse("Class with Not Spatial flag is not supported", bIsSupported);
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_a_class_without_any_spatial_tags_WHEN_checked_if_supported_THEN_is_not_supported)
+{
+	// GIVEN
+	const UClass* SupportedClass = UNoSpatialFlagsObjectStub ::StaticClass();
+
+	// WHEN
+	bool bIsSupported = SpatialGDKEditor::Schema::IsSupportedClass(SupportedClass);
+
+	// THEN
+	TestFalse("Class without Spatial flags is not supported", bIsSupported);
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_child_of_a_class_without_any_spatial_tags_WHEN_checked_if_supported_THEN_is_not_supported)
+{
+	// GIVEN
+	const UClass* SupportedClass = UChildOfNoSpatialFlagsObjectStub::StaticClass();
+
+	// WHEN
+	bool bIsSupported = SpatialGDKEditor::Schema::IsSupportedClass(SupportedClass);
+
+	// THEN
+	TestFalse("Child class of class without Spatial flags is not supported", bIsSupported);
 	return true;
 }
 
