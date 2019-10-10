@@ -1,7 +1,8 @@
 # Expects gdk_home, which is not the GDK location in the engine
 param(
   [string] $ue_home = "$($pwd.drive.root)UnrealEngine",
-  [string] $target_platform = "Win64"
+  [string] $target_platform = "Win64",
+  [string] $build_output_dir
 )
 
 pushd "$($gdk_home)"
@@ -14,7 +15,7 @@ pushd "$($gdk_home)"
                 # Since we symlink the gdk into the engine, we have to put the build output outside of the GDK, 
                 # otherwise Unreal will find two instances of the plugin during the build process (It copies the .uplugin to the target folder at the start of the build process)
                 # Additionally, I ad some cases where BuildPlugin will fail when targeting a folder within UnrealEngine for output
-            "-Package=`"C:\SpatialGDKBuild`"" ` # TODO make this configurable
+            "-Package=`"$build_output_dir`"" `
         )
         $gdk_build_handle = $gdk_build_proc.Handle
         Wait-Process -Id (Get-Process -InputObject $gdk_build_proc).id

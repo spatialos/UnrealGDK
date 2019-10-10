@@ -1,3 +1,4 @@
+# Expects gdk_home, which is not the GDK location in the engine
 param (
     [string] $unreal_path = "$($pwd.drive.root)UnrealEngine"
 )
