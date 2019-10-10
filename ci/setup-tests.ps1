@@ -1,3 +1,5 @@
+Set-StrictMode -Version Latest
+
 # Expects gdk_home
 param(
     [string] $build_output_dir,

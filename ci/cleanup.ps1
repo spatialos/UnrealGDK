@@ -1,3 +1,5 @@
+Set-StrictMode -Version Latest
+
 param (
     [string] $unreal_path = "$($pwd.drive.root)UnrealEngine"
 )

@@ -1,3 +1,5 @@
+Set-StrictMode -Version Latest
+
 param(
     # Note: this directory is outside the build directory and will not get automatically cleaned up from agents unless agents are restarted.
     [string] $engine_cache_directory = "$($pwd.drive.root)UnrealEngine-Cache",

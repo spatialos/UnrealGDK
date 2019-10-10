@@ -1,3 +1,5 @@
+Set-StrictMode -Version Latest
+
 # Expects gdk_home, which is not the GDK location in the engine
 param(
   [string] $ue_home = "$($pwd.drive.root)UnrealEngine",

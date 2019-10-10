@@ -1,3 +1,5 @@
+Set-StrictMode -Version Latest
+
 function Write-Log() {
   param(
     [string] $msg,
