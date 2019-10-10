@@ -197,6 +197,8 @@ bool FLocalDeploymentManager::PreStartCheck()
 		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess", "A required port is blocked by another process (potentially by an old deployment). Would you like to kill this process?")) == EAppReturnType::Yes)
 		{
 			const FString NetStatCmd = FString::Printf(TEXT("netstat"));
+
+			// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
 			FString Args = TEXT("-n -o -a");
 			FString StdOut;
 			int32 ExitCode;
