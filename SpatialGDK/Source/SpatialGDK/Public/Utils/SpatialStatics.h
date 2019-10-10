@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Internationalization/Text.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Logging/LogMacros.h"
 #include "Templates/SubclassOf.h"
