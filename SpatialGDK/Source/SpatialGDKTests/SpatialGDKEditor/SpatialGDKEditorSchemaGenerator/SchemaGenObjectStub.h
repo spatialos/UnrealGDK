@@ -27,8 +27,20 @@ class USpatialTypeObjectStub : public UObject
 	GENERATED_BODY()
 };
 
+UCLASS()
+class UChildOfSpatialTypeObjectStub : public USpatialTypeObjectStub
+{
+	GENERATED_BODY()
+};
+
 UCLASS(NotSpatialType)
 class UNotSpatialTypeObjectStub : public UObject
+{
+	GENERATED_BODY()
+};
+
+UCLASS()
+class UChildOfNotSpatialTypeObjectStub : public UNotSpatialTypeObjectStub
 {
 	GENERATED_BODY()
 };
