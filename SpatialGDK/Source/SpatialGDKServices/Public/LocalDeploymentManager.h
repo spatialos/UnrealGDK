@@ -7,7 +7,6 @@
 #include "Modules/ModuleManager.h"
 #include "Templates/SharedPointer.h"
 #include "TimerManager.h"
-#include "Internationalization/Regex.h"
 
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialDeploymentManager, Log, All);
@@ -64,6 +63,8 @@ private:
 
 	static const int32 ExitCodeSuccess = 0;
 	static const int32 ExitCodeNotRunning = 4;
+	static const int32 RequiredRuntimePort = 5301;
+
 
 	// This is the frequency at which check the 'spatial service status' to ensure we have the correct state as the user can change spatial service outside of the editor.
 	static const int32 RefreshFrequency = 3;

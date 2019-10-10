@@ -17,6 +17,7 @@
 #include "IPAddress.h"
 #include "UObject/CoreNet.h"
 #include "Sockets.h"
+#include "Internationalization/Regex.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
@@ -188,10 +189,8 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 
 bool FLocalDeploymentManager::PreStartCheck()
 {
-	const int RuntimePort = 5301;
-	
 	// Check for the known runtime port (5301) which could be blocked.
-	if (CheckIfPortIsBound(RuntimePort))
+	if (CheckIfPortIsBound(RequiredRuntimePort))
 	{
 	
 		// If it exists offer the user the ability to kill it.
@@ -208,7 +207,7 @@ bool FLocalDeploymentManager::PreStartCheck()
 			{
 				
 				// Find which line of the output contains the port we're looking for
-				int PortIndex = StdOut.Find(FString::Printf(TEXT(":%i"), RuntimePort));
+				int PortIndex = StdOut.Find(FString::Printf(TEXT(":%i"), RequiredRuntimePort));
 				
 				// Throw away all lines before
 				FString PortLine = StdOut.Mid(PortIndex);
@@ -236,7 +235,7 @@ bool FLocalDeploymentManager::PreStartCheck()
 						{
 							return true;
 						}
-						UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to kill process blocking required port"));
+						UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to kill process blocking required port. Error: %s", StdErr));
 					}
 				}
 			}
