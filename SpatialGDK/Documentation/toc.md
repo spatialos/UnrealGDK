@@ -21,7 +21,7 @@
         - Multiserver offloading
             - [Introduction]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-intro)
             - [1. Set up]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-setup)
-            - [2. Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
+            - [2. Gameplay Changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
         - Multiple deployments for session-based games
             - [Introduction]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro)
             - [1: Clone the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone)
