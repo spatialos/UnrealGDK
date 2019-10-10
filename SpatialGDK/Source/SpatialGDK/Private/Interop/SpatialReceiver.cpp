@@ -553,7 +553,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		// Make sure ClassInfo exists
-		ClassInfoManager->GetOrCreateClassInfoByClass(Class);
+		const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 		// If the received actor is torn off, don't bother spawning it.
 		// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
@@ -627,7 +627,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 			if (PendingAddComponent.EntityId == EntityId)
 			{
-				ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponent.Data->ComponentData, Channel);
+				ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponent.Data->ComponentData, Channel, ActorClassInfo);
 			}
 		}
 
@@ -907,23 +907,32 @@ FTransform USpatialReceiver::GetRelativeSpawnTransform(UClass* ActorClass, FTran
 	return NewTransform;
 }
 
-void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel* Channel)
+void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel* Channel, const FClassInfo& ActorClassInfo)
 {
+	AActor* Actor = Channel->GetActor();
+
 	uint32 Offset = 0;
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Data.component_id, Offset);
 	if (!bFoundOffset)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("EntityId %lld, ComponentId %d - Could not find offset for component id when applying component data to Actor %s!"), EntityId, Data.component_id, *Channel->GetActor()->GetName());
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("EntityId %lld, ComponentId %d - Could not find offset for component id when applying component data to Actor %s!"), EntityId, Data.component_id, *Actor->GetPathName());
 		return;
 	}
 
 	TWeakObjectPtr<UObject> TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Offset));
 	if (!TargetObject.IsValid())
 	{
-		// If we can't find this subobject, it's a dynamically attached object. Create it now.
-		TargetObject = NewObject<UObject>(Channel->GetActor(), ClassInfoManager->GetClassByComponentId(Data.component_id));
+		bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(Offset);
+		if (!bIsDynamicSubobject)
+		{
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Tried to apply component data on actor creation for a static subobject that's been deleted, will skip. Entity: %lld, Component: %d, Actor: %s"), EntityId, Data.component_id, *Actor->GetPathName());
+			return;
+		}
 
-		Channel->GetActor()->OnSubobjectCreatedFromReplication(TargetObject.Get());
+		// If we can't find this subobject, it's a dynamically attached object. Create it now.
+		TargetObject = NewObject<UObject>(Actor, ClassInfoManager->GetClassByComponentId(Data.component_id));
+
+		Actor->OnSubobjectCreatedFromReplication(TargetObject.Get());
 
 		PackageMap->ResolveSubobject(TargetObject.Get(), FUnrealObjectRef(EntityId, Offset));
 

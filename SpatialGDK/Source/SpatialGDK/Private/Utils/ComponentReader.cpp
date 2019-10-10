@@ -88,12 +88,17 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 
 void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds)
 {
-	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(Object);
+	FObjectReplicator* Replicator = Channel->PreReceiveSpatialUpdate(Object);
+	if (Replicator == nullptr)
+	{
+		// Can't apply this schema object. Error printed from PreReceiveSpatialUpdate.
+		return;
+	}
 
-	TUniquePtr<FRepState>& RepState = Replicator.RepState;
-	TArray<FRepLayoutCmd>& Cmds = Replicator.RepLayout->Cmds;
-	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator.RepLayout->BaseHandleToCmdIndex;
-	TArray<FRepParentCmd>& Parents = Replicator.RepLayout->Parents;
+	TUniquePtr<FRepState>& RepState = Replicator->RepState;
+	TArray<FRepLayoutCmd>& Cmds = Replicator->RepLayout->Cmds;
+	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator->RepLayout->BaseHandleToCmdIndex;
+	TArray<FRepParentCmd>& Parents = Replicator->RepLayout->Parents;
 
 	bool bIsAuthServer = Channel->IsAuthoritativeServer();
 	bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
@@ -197,16 +202,21 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		}
 	}
 
-	Channel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator.RepLayout, RootObjectReferencesMap, Object);
+	Channel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator->RepLayout, RootObjectReferencesMap, Object);
 
 	Channel->PostReceiveSpatialUpdate(Object, RepNotifies);
 }
 
 void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds)
 {
-	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
+	FObjectReplicator* Replicator = Channel->PreReceiveSpatialUpdate(Object);
+	if (Replicator == nullptr)
+	{
+		// Can't apply this schema object. Error printed from PreReceiveSpatialUpdate.
+		return;
+	}
 
-	Channel->PreReceiveSpatialUpdate(Object);
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
 	for (uint32 FieldId : UpdatedIds)
 	{

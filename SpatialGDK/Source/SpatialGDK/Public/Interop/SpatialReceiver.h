@@ -171,7 +171,7 @@ private:
 	void HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
 	void HandleActorAuthority(const Worker_AuthorityChangeOp& Op);
 
-	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel* Channel);
+	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel* Channel, const FClassInfo& ActorClassInfo);
 	void ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, const Worker_ComponentData& Data);
 	// This is called for AddComponentOps not in a critical section, which means they are not a part of the initial entity creation.
 	void HandleIndividualAddComponent(const Worker_AddComponentOp& Op);
