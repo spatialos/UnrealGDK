@@ -23,6 +23,19 @@ SCHEMA_GENERATOR_TEST(GIVEN_spatial_type_class_WHEN_checked_if_supported_THEN_is
 	return true;
 }
 
+SCHEMA_GENERATOR_TEST(GIVEN_class_derived_from_spatial_type_class_WHEN_checked_if_supported_THEN_is_supported)
+{
+	// GIVEN
+	const UClass* SupportedClass = UChildOfSpatialTypeObjectStub::StaticClass();
+
+	// WHEN
+	bool bIsSupported = SpatialGDKEditor::Schema::IsSupportedClass(SupportedClass);
+
+	// THEN
+	TestTrue("Child of a Spatial type class is supported", bIsSupported);
+	return true;
+}
+
 SCHEMA_GENERATOR_TEST(GIVEN_null_pointer_WHEN_checked_if_supported_THEN_is_not_supported)
 {
 	// GIVEN
@@ -48,6 +61,25 @@ SCHEMA_GENERATOR_TEST(GIVEN_non_spatial_type_class_WHEN_checked_if_supported_THE
 	TestFalse("Non spatial type class is not supported", bIsSupported);
 	return true;
 }
+
+SCHEMA_GENERATOR_TEST(GIVEN_class_derived_from_non_spatial_type_class_WHEN_checked_if_supported_THEN_is_not_supported)
+{
+	// GIVEN
+	const UClass* SupportedClass = UChildOfNotSpatialTypeObjectStub::StaticClass();
+
+	// WHEN
+	bool bIsSupported = SpatialGDKEditor::Schema::IsSupportedClass(SupportedClass);
+
+	// THEN
+	TestFalse("Child of Non-Spatial type class is not supported", bIsSupported);
+	return true;
+}
+
+// TODO(Alex): missing GetClasses tests
+// layout changing
+// is editor only
+// transient classes
+// non-cook directories
 
 SCHEMA_GENERATOR_TEST(GIVEN_unsupported_class_WHEN_checked_if_supported_THEN_is_not_supported)
 {
