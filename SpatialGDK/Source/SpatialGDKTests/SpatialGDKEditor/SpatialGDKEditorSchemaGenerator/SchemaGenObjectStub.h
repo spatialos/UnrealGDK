@@ -13,11 +13,22 @@ class USchemaGenObjectStub : public UObject
 {
 	GENERATED_BODY()
 public:
-	FRPCErrorInfo ProcessRPC(const FPendingRPCParams& Params);
 
 	UPROPERTY(Replicated)
 	int IntValue;
 
 	UPROPERTY(Replicated)
 	bool BoolValue;
+};
+
+UCLASS(SpatialType)
+class USpatialTypeObjectStub : public UObject
+{
+	GENERATED_BODY()
+};
+
+UCLASS(NotSpatialType)
+class UNotSpatialTypeObjectStub : public UObject
+{
+	GENERATED_BODY()
 };
