@@ -44,3 +44,16 @@ class UChildOfNotSpatialTypeObjectStub : public UNotSpatialTypeObjectStub
 {
 	GENERATED_BODY()
 };
+
+UCLASS()
+class UNoSpatialFlagsObjectStub : public UObject
+{
+	GENERATED_BODY()
+};
+
+UCLASS()
+class UChildOfNoSpatialFlagsObjectStub : public UNoSpatialFlagsObjectStub
+{
+	GENERATED_BODY()
+};
+
