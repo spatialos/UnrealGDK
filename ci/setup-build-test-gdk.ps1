@@ -22,7 +22,7 @@ Finish-Event "setup-gdk" "command"
 
 # Build the GDK plugin
 Start-Event "build-gdk" "command"
-&$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform)
+&$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform) -build_output_dir "$build_home\SpatialGDKBuild"
 Finish-Event "build-gdk" "command"
 
 Start-Event "setup-tests" "command"
