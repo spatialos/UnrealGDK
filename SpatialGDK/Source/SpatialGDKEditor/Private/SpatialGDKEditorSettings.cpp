@@ -101,43 +101,31 @@ bool USpatialGDKEditorSettings::IsAssemblyNameValid(const FString& Name)
 {
 	const FRegexPattern AssemblyPatternRegex(SpatialConstants::AssemblyPattern);
 	FRegexMatcher RegMatcher(AssemblyPatternRegex, Name);
-	bool valid = RegMatcher.FindNext();
-	if (!valid) {
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. It should match the regex: %s"), *SpatialConstants::AssemblyPattern);
-	}
-	return valid;
+
+	return RegMatcher.FindNext();
 }
 
 bool USpatialGDKEditorSettings::IsProjectNameValid(const FString& Name)
 {
 	const FRegexPattern ProjectPatternRegex(SpatialConstants::ProjectPattern);
 	FRegexMatcher RegMatcher(ProjectPatternRegex, Name);
-	bool valid = RegMatcher.FindNext();
-	if (!valid) {
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Project name is invalid. It should match the regex: %s"), *SpatialConstants::ProjectPattern);
-	}
-	return valid;
+
+	return RegMatcher.FindNext();
 }
 
 bool USpatialGDKEditorSettings::IsDeploymentNameValid(const FString& Name)
 {
 	const FRegexPattern DeploymentPatternRegex(SpatialConstants::DeploymentPattern);
 	FRegexMatcher RegMatcher(DeploymentPatternRegex, Name);
-	bool valid = RegMatcher.FindNext();
-	if (!valid) {
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. It should match the regex: %s"), *SpatialConstants::DeploymentPattern);
-	}
-	return valid;
+
+	return RegMatcher.FindNext();
 }
 
 bool USpatialGDKEditorSettings::IsRegionCodeValid(const ERegionCode::Type RegionCode)
 {
 	UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
-	bool valid = pEnum != nullptr && pEnum->IsValidEnumValue(RegionCode);
-	if (!valid) {
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Region is invalid"));
-	}
-	return valid;
+
+	return pEnum != nullptr && pEnum->IsValidEnumValue(RegionCode);
 }
 
 void USpatialGDKEditorSettings::SetPrimaryDeploymentName(const FString& Name)
@@ -194,19 +182,50 @@ void USpatialGDKEditorSettings::SetNumberOfSimulatedPlayers(uint32 Number)
 
 bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 {
-	bool result = IsAssemblyNameValid(AssemblyName) &&
-		IsDeploymentNameValid(PrimaryDeploymentName) &&
-		!GetSnapshotPath().IsEmpty() &&
-		!GetPrimaryLanchConfigPath().IsEmpty() &&
-		IsRegionCodeValid(PrimaryDeploymentRegionCode);
+	bool bValid = true;
+	if (!IsAssemblyNameValid(AssemblyName))
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. It should match the regex: %s"), *SpatialConstants::AssemblyPattern);
+		bValid = false;
+	}
+	if (!IsDeploymentNameValid(PrimaryDeploymentName))
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. It should match the regex: %s"), *SpatialConstants::DeploymentPattern);
+		bValid = false;
+	}
+	if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Region code is invalid."));
+		bValid = false;
+	}
+	if (GetSnapshotPath().IsEmpty()) {
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Snapshot path cannot be empty."));
+		bValid = false;
+	}
+	if (GetPrimaryLanchConfigPath().IsEmpty())
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Launch config path cannot be empty."));
+		bValid = false;
+	}
 
 	if (IsSimulatedPlayersEnabled())
 	{
-		result = result &&
-			IsDeploymentNameValid(SimulatedPlayerDeploymentName) &&
-			!SimulatedPlayerLaunchConfigPath.IsEmpty() &&
-			IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode);
+		if (!IsDeploymentNameValid(SimulatedPlayerDeploymentName))
+		{
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. It should match the regex: %s"), *SpatialConstants::DeploymentPattern);
+			bValid = false;
+		}
+		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
+		{
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player region code is invalid."));
+			bValid = false;
+		}
+		if (GetSimulatedPlayerLaunchConfigPath().IsEmpty())
+		{
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player launch config path cannot be empty."));
+			bValid = false;
+		}
 	}
 
-	return result;
+	return bValid;
 }
