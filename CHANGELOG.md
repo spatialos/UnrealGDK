@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
 - Added OverrideSpatialOffloading command line flag that allows toggling of offloading at launch time.
 - GetSpatialActorLocation now returns the last synced location of the player controller when it is spectating
+- Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
 
 ### Breaking Changes:
 - If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you need to enable generating schema for them using SpatialType UCLASS specifier or by checking Spatial Type if it's a blueprint.
@@ -31,8 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local deployments now create a new log file known as 'launch.log' which will contain logs relating to starting and running a deployment. Additionally it will contain worker logs which are forwarded to the SpatialOS runtime.
 - Added a new setting to SpatialOS Runtime Settings 'Worker Log Level' which allows configuration of which verbosity of worker logs gets forwarded to the SpatialOS runtime.
 - Added a new developer tool called 'Spatial Output Log' which will show local deployment logs from the 'launch.log' file.
+- Enabled compression in modular-udp networking stack
+- Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
+- Add SpatialToggleMetricsDisplay console command.  bEnableMetricsDisplay must be enabled in order for the display to be available.  You must then must call SpatialToggleMetricsDisplay on each client that wants to view the metrics display.
 
 ### Bug fixes:
+- Spatial networking is now always enabled in built assemblies.
 - Fixed a bug where the spatial daemon started even with spatial networking disabled.
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
