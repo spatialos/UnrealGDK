@@ -3,16 +3,49 @@
 #include "TestDefinitions.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKServicesModule.h"
+#include "SchemaGenObjectStub.h"
 
 #include "CoreMinimal.h"
 
 #define SCHEMA_GENERATOR_TEST(TestName) \
 	TEST(SpatialGDKEditor, SchemaGenerator, TestName)
 
-SCHEMA_GENERATOR_TEST(GIVEN_supported_class_WHEN_checked_if_supported_THEN_is_supported)
+SCHEMA_GENERATOR_TEST(GIVEN_spatial_type_class_WHEN_checked_if_supported_THEN_is_supported)
 {
-	//SPATIALGDKEDITOR_API bool IsSupportedClass(const UClass* SupportedClass);
-	TestTrue("", false);
+	// GIVEN
+	const UClass* SupportedClass = USpatialTypeObjectStub::StaticClass();
+
+	// WHEN
+	bool bIsSupported = SpatialGDKEditor::Schema::IsSupportedClass(SupportedClass);
+
+	// THEN
+	TestTrue("Spatial type class is supported", bIsSupported);
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_null_pointer_WHEN_checked_if_supported_THEN_is_not_supported)
+{
+	// GIVEN
+	const UClass* SupportedClass = nullptr;
+
+	// WHEN
+	bool bIsSupported = SpatialGDKEditor::Schema::IsSupportedClass(SupportedClass);
+
+	// THEN
+	TestFalse("Null pointer is not a valid argument", bIsSupported);
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_non_spatial_type_class_WHEN_checked_if_supported_THEN_is_not_supported)
+{
+	// GIVEN
+	const UClass* SupportedClass = UNotSpatialTypeObjectStub::StaticClass();
+
+	// WHEN
+	bool bIsSupported = SpatialGDKEditor::Schema::IsSupportedClass(SupportedClass);
+
+	// THEN
+	TestFalse("Non spatial type class is not supported", bIsSupported);
 	return true;
 }
 
