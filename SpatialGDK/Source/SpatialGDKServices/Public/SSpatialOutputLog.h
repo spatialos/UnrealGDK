@@ -47,6 +47,8 @@ private:
 	void ShutdownLogDirectoryWatcher(const FString& LogDirectory);
 	void OnLogDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
+	void OnClearLog() override;
+
 	FDelegateHandle LogDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged LogDirectoryChangedDelegate;
 

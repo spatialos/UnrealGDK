@@ -203,7 +203,7 @@ namespace SpatialConstants
 		return FIRST_COMMAND_RETRY_WAIT_SECONDS * WaitTimeExponentialFactor;
 	}
 
-	const FString LOCAL_HOST = TEXT("127.0.0.1");
+	const FString LOCAL_HOST  = TEXT("127.0.0.1");
 	const uint16 DEFAULT_PORT = 7777;
 
 	const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
@@ -214,13 +214,14 @@ namespace SpatialConstants
 	const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 
 	const FString LOCATOR_HOST = TEXT("locator.improbable.io");
-	const uint16 LOCATOR_PORT = 444;
+	const uint16 LOCATOR_PORT  = 444;
 
 	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
-	const FString SCHEMA_DATABASE_FILE_PATH = TEXT("Spatial/SchemaDatabase");
+	const FString SCHEMA_DATABASE_FILE_PATH  = TEXT("Spatial/SchemaDatabase");
 	const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
-}
+
+} // ::SpatialConstants
 
 FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)
 {
