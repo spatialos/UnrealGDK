@@ -894,7 +894,8 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
 	if (ObjectNetGUID.IsDefault() || !ObjectNetGUID.IsValid())
 	{
-		// Something went wrong when resolving this object in the PackageMap.
+		// SpatialReceiver tried to resolve this object in the PackageMap, but it didn't propagate to GuidCache.
+		// This could happen if the UnrealObjectRef was already mapped to a different object that's been destroyed.
 		UE_LOG(LogSpatialActorChannel, Error, TEXT("PreReceiveSpatialUpdate: NetGUID is invalid! Object: %s"), *TargetObject->GetPathName());
 		return nullptr;
 	}
