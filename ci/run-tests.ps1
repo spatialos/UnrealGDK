@@ -1,5 +1,3 @@
-Set-StrictMode -Version Latest
-
 param(
     [string] $ue_path,
     [string] $uproject_path,
