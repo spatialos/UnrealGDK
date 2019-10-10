@@ -210,9 +210,11 @@ public:
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
-private:
+
 	UPROPERTY()
-	USpatialNetDriver* NetDriver;
+		USpatialNetDriver* NetDriver;
+private:
+	
 
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;

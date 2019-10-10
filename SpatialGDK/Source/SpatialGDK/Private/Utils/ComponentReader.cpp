@@ -112,7 +112,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 		int32 ShadowOffset = Cmd.ShadowOffset;
 
-		if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
+		bool is_server = NetDriver->IsServer();
+		if (is_server || ConditionMap.IsRelevant(Parent.Condition))
 		{
 			// This swaps Role/RemoteRole as we write it
 			const FRepLayoutCmd& SwappedCmd = (!bIsAuthServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;

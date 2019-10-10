@@ -65,20 +65,34 @@ void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
 
 void USpatialReceiver::EnterCriticalSection()
 {
-	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entering critical section."));
 	check(!bInCriticalSection);
 	bInCriticalSection = true;
 }
 
 void USpatialReceiver::LeaveCriticalSection()
 {
-	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Leaving critical section."));
 	check(bInCriticalSection);
 
-	for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
+	if (PendingAddEntities.Num() > 0)
 	{
-		ReceiveActor(PendingAddEntity);
+		for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
+		{
+			ReceiveActor(PendingAddEntity);
+		}
 	}
+	else
+	{
+		for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+		{
+			// hmmmmmmmm
+			Worker_AddComponentOp AddComponentOp;
+			AddComponentOp.entity_id = PendingAddComponent.EntityId;
+			AddComponentOp.data = *PendingAddComponent.Data->ComponentData;
+			HandleIndividualAddComponent(AddComponentOp);
+		}
+	}
+
+	
 
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
