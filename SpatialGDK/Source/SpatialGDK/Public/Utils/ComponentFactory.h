@@ -9,6 +9,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+DECLARE_LOG_CATEGORY_EXTERN(LogComponentFactory, Log, All);
+
 class USpatialNetDriver;
 class USpatialPackageMap;
 class USpatialClassInfoManager;
@@ -19,16 +21,13 @@ class UProperty;
 
 enum EReplicatedPropertyGroup : uint32;
 
-using FUnresolvedObjectsSet = TSet<TWeakObjectPtr<const UObject>>;
-using FUnresolvedObjectsMap = TMap<Schema_FieldId, FUnresolvedObjectsSet>;
-
 namespace SpatialGDK
 {
 
 class SPATIALGDK_API ComponentFactory
 {
 public:
-	ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, bool bInterestDirty, USpatialNetDriver* InNetDriver);
+	ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver);
 
 	TArray<Worker_ComponentData> CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState);
 	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState);
@@ -47,19 +46,11 @@ private:
 
 	bool FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
-	Worker_ComponentData CreateInterestComponentData(UObject* Object, const FClassInfo& Info);
-	Worker_ComponentUpdate CreateInterestComponentUpdate(UObject* Object, const FClassInfo& Info);
-	Interest CreateInterestComponent(UObject* Object, const FClassInfo& Info);
-	void AddObjectToComponentInterest(UObject* Object, UObjectPropertyBase* Property, uint8* Data, ComponentInterest& ComponentInterest);
-
-	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, FUnresolvedObjectsSet& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds);
+	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TArray<Schema_FieldId>* ClearedIds);
 
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;
 	USpatialClassInfoManager* ClassInfoManager;
-
-	FUnresolvedObjectsMap& PendingRepUnresolvedObjectsMap;
-	FUnresolvedObjectsMap& PendingHandoverUnresolvedObjectsMap;
 
 	bool bInterestHasChanged;
 };

@@ -114,6 +114,8 @@ namespace SpatialConstants
 	const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
 	const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
 	const Worker_ComponentId ALWAYS_RELEVANT_COMPONENT_ID					= 9983;
+	const Worker_ComponentId TOMBSTONE_COMPONENT_ID                         = 9982;
+	const Worker_ComponentId DORMANT_COMPONENT_ID							= 9981;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -143,6 +145,14 @@ namespace SpatialConstants
 	// ModifySettingPayload Field IDs
 	const Schema_FieldId MODIFY_SETTING_PAYLOAD_NAME_ID						= 1;
 	const Schema_FieldId MODIFY_SETTING_PAYLOAD_VALUE_ID					= 2;
+
+	// UnrealObjectRef Field IDs
+	const Schema_FieldId UNREAL_OBJECT_REF_ENTITY_ID						= 1;
+	const Schema_FieldId UNREAL_OBJECT_REF_OFFSET_ID						= 2;
+	const Schema_FieldId UNREAL_OBJECT_REF_PATH_ID							= 3;
+	const Schema_FieldId UNREAL_OBJECT_REF_NO_LOAD_ON_CLIENT_ID				= 4;
+	const Schema_FieldId UNREAL_OBJECT_REF_OUTER_ID							= 5;
+	const Schema_FieldId UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID		= 6;
 
 	// UnrealRPCPayload Field IDs
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID						= 1;
@@ -202,6 +212,9 @@ namespace SpatialConstants
 	const uint16 LOCATOR_PORT = 444;
 
 	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
+
+	const FString SCHEMA_DATABASE_FILE_PATH = TEXT("Spatial/SchemaDatabase");
+	const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 }
 
 FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)

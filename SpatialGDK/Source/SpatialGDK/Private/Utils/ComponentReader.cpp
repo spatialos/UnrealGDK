@@ -88,16 +88,17 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 
 void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds)
 {
-	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(Object);
+	FObjectReplicator* Replicator = Channel->PreReceiveSpatialUpdate(Object);
+	if (Replicator == nullptr)
+	{
+		// Can't apply this schema object. Error printed from PreReceiveSpatialUpdate.
+		return;
+	}
 
-#if ENGINE_MINOR_VERSION <= 20
-	TSharedPtr<FRepState>& RepState = Replicator.RepState;
-#else
-	TUniquePtr<FRepState>& RepState = Replicator.RepState;
-#endif
-	TArray<FRepLayoutCmd>& Cmds = Replicator.RepLayout->Cmds;
-	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator.RepLayout->BaseHandleToCmdIndex;
-	TArray<FRepParentCmd>& Parents = Replicator.RepLayout->Parents;
+	TUniquePtr<FRepState>& RepState = Replicator->RepState;
+	TArray<FRepLayoutCmd>& Cmds = Replicator->RepLayout->Cmds;
+	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator->RepLayout->BaseHandleToCmdIndex;
+	TArray<FRepParentCmd>& Parents = Replicator->RepLayout->Parents;
 
 	bool bIsAuthServer = Channel->IsAuthoritativeServer();
 	bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
@@ -114,11 +115,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		int32 CmdIndex = BaseHandleToCmdIndex[FieldId - 1].CmdIndex;
 		const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
-#if ENGINE_MINOR_VERSION <= 20
-		int32 ShadowOffset = 0;
-#else 
 		int32 ShadowOffset = Cmd.ShadowOffset;
-#endif
+
 		if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
 		{
 			// This swaps Role/RemoteRole as we write it
@@ -129,6 +127,11 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 			{
 				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
+				if (ArrayProperty == nullptr)
+				{
+					UE_LOG(LogSpatialComponentReader, Error, TEXT("Failed to apply Schema Object %s. One of it's properties is null"), *Object->GetName());
+					continue;
+				}
 
 				// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
 				if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
@@ -177,11 +180,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 			// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
 			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-#if ENGINE_MINOR_VERSION <= 20
-				bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.Offset, Data);
-#else
 				bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
-#endif
 
 				// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
 				if (bIsInitialData)
@@ -203,16 +202,21 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		}
 	}
 
-	Channel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator.RepLayout, RootObjectReferencesMap, Object);
+	Channel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator->RepLayout, RootObjectReferencesMap, Object);
 
 	Channel->PostReceiveSpatialUpdate(Object, RepNotifies);
 }
 
 void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds)
 {
-	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
+	FObjectReplicator* Replicator = Channel->PreReceiveSpatialUpdate(Object);
+	if (Replicator == nullptr)
+	{
+		// Can't apply this schema object. Error printed from PreReceiveSpatialUpdate.
+		return;
+	}
 
-	Channel->PreReceiveSpatialUpdate(Object);
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
 	for (uint32 FieldId : UpdatedIds)
 	{
@@ -308,38 +312,19 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 
-		if (ObjectRef == FUnrealObjectRef::NULL_OBJECT_REF)
+		UObject* ObjectValue = FUnrealObjectRef::ToObjectPtr(ObjectRef, PackageMap, bUnresolved);
+
+		if (bUnresolved)
 		{
-			ObjectProperty->SetObjectPropertyValue(Data, nullptr);
+			InObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, ShadowOffset, ParentIndex, Property));
+			UnresolvedRefs.Add(ObjectRef);
 		}
 		else
 		{
-			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-			if (NetGUID.IsValid())
+			ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
+			if (ObjectValue != nullptr)
 			{
-				UObject* ObjectValue = PackageMap->GetObjectFromNetGUID(NetGUID, true);
-				if (ObjectValue == nullptr)
-				{
-					// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
-					// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
-					// So we do the same.
-					FString FullPath;
-					GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
-					UE_LOG(LogSpatialComponentReader, Verbose, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),
-						*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
-
-					ObjectProperty->SetObjectPropertyValue(Data, nullptr);
-					return;
-				}
-
 				checkf(ObjectValue->IsA(ObjectProperty->PropertyClass), TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRef.ToString(), *ObjectValue->GetFullName());
-				ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
-			}
-			else
-			{
-				InObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, ShadowOffset, ParentIndex, Property));
-				UnresolvedRefs.Add(ObjectRef);
-				bUnresolved = true;
 			}
 		}
 

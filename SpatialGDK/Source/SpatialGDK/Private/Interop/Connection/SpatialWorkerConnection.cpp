@@ -57,7 +57,7 @@ void USpatialWorkerConnection::DestroyConnection()
 	{
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerLocator = WorkerLocator]
 		{
-			Worker_Alpha_Locator_Destroy(WorkerLocator);
+			Worker_Locator_Destroy(WorkerLocator);
 		});
 
 		WorkerLocator = nullptr;
@@ -242,12 +242,16 @@ void USpatialWorkerConnection::ConnectToLocator()
 	FTCHARToUTF8 PlayerIdentityTokenCStr(*LocatorConfig.PlayerIdentityToken);
 	FTCHARToUTF8 LoginTokenCStr(*LocatorConfig.LoginToken);
 
-	Worker_Alpha_LocatorParameters LocatorParams = {};
+	Worker_LocatorParameters LocatorParams = {};
+	FString ProjectName;
+	FParse::Value(FCommandLine::Get(), TEXT("projectName"), ProjectName);
+	LocatorParams.project_name = TCHAR_TO_UTF8(*ProjectName);
+	LocatorParams.credentials_type = Worker_LocatorCredentialsTypes::WORKER_LOCATOR_PLAYER_IDENTITY_CREDENTIALS;
 	LocatorParams.player_identity.player_identity_token = PlayerIdentityTokenCStr.Get();
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 
 	// Connect to the locator on the default port(0 will choose the default)
-	WorkerLocator = Worker_Alpha_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), 0, &LocatorParams);
+	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), 0, &LocatorParams);
 
 	// TODO UNR-1271: Move creation of connection parameters into a function somehow
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
@@ -263,13 +267,19 @@ void USpatialWorkerConnection::ConnectToLocator()
 	ConnectionParams.network.use_external_ip = LocatorConfig.UseExternalIp;
 	ConnectionParams.network.tcp.multiplex_level = LocatorConfig.TcpMultiplexLevel;
 
+	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
+	// Worker SDK 14.1.0 has a bug where upstream and downstream compression are swapped so we set the upstream settings to use compression.
+	Worker_Alpha_CompressionParameters EnableCompressionParams{};
+	ConnectionParams.network.modular_udp.upstream_compression = &EnableCompressionParams;
+	ConnectionParams.network.modular_udp.downstream_compression  = nullptr;
+
 	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
 	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
 
 	ConnectionParams.enable_dynamic_components = true;
 	// end TODO
 
-	Worker_ConnectionFuture* ConnectionFuture = Worker_Alpha_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);
+	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);
 
 	FinishConnecting(ConnectionFuture);
 }
@@ -532,6 +542,8 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		TUniquePtr<FOutgoingMessage> OutgoingMessage;
 		OutgoingMessagesQueue.Dequeue(OutgoingMessage);
 
+		static const Worker_UpdateParameters DisableLoopback{ /*loopback*/ WORKER_COMPONENT_UPDATE_LOOPBACK_NONE };
+
 		switch (OutgoingMessage->Type)
 		{
 		case EOutgoingMessageType::ReserveEntityIdsRequest:
@@ -567,7 +579,6 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FAddComponent* Message = static_cast<FAddComponent*>(OutgoingMessage.Get());
 
-			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
 			Worker_Connection_SendAddComponent(WorkerConnection,
 				Message->EntityId,
 				&Message->Data,
@@ -578,7 +589,6 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FRemoveComponent* Message = static_cast<FRemoveComponent*>(OutgoingMessage.Get());
 
-			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
 			Worker_Connection_SendRemoveComponent(WorkerConnection,
 				Message->EntityId,
 				Message->ComponentId,
@@ -589,8 +599,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
 
-			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
-			Worker_Alpha_Connection_SendComponentUpdate(WorkerConnection,
+			Worker_Connection_SendComponentUpdate(WorkerConnection,
 				Message->EntityId,
 				&Message->Update,
 				&DisableLoopback);
@@ -604,7 +613,6 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			Worker_Connection_SendCommandRequest(WorkerConnection,
 				Message->EntityId,
 				&Message->Request,
-				Message->CommandId,
 				nullptr,
 				&DefaultCommandParams);
 			break;

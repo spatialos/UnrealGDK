@@ -122,7 +122,7 @@ struct EntityAcl : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		AddWorkerRequirementSetToSchema(ComponentObject, 1, ReadAcl);
@@ -141,7 +141,7 @@ struct EntityAcl : Component
 	{
 		Worker_ComponentUpdate ComponentUpdate = {};
 		ComponentUpdate.component_id = ComponentId;
-		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+		ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 		AddWorkerRequirementSetToSchema(ComponentObject, 1, ReadAcl);
@@ -180,7 +180,7 @@ struct Metadata : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		AddStringToSchema(ComponentObject, 1, EntityType);
@@ -211,7 +211,7 @@ struct Position : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		AddCoordinateToSchema(ComponentObject, 1, Coords);
@@ -223,7 +223,7 @@ struct Position : Component
 	{
 		Worker_ComponentUpdate ComponentUpdate = {};
 		ComponentUpdate.component_id = ComponentId;
-		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+		ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 		AddCoordinateToSchema(ComponentObject, 1, Coords);
@@ -256,7 +256,7 @@ struct Persistence : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
 
 		return Data;
 	}

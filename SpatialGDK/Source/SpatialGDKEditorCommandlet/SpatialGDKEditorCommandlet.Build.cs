@@ -14,9 +14,10 @@ public class SpatialGDKEditorCommandlet : ModuleRules
 				"Core",
 				"CoreUObject",
 				"Engine",
+				"EngineSettings",
 				"SpatialGDK",
 				"SpatialGDKEditor",
-				"UnrealEd"
+				"UnrealEd",
 			});
 
 		PrivateIncludePaths.AddRange(

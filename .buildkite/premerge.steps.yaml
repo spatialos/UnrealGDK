@@ -14,14 +14,12 @@ common: &common
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1562267374-ab36457a07f081fe-------z}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1569490589-f9345a43b21a6cec-------z}"
   retry:
     automatic:
       - <<: *agent_transients
   timeout_in_minutes: 60
   plugins:
-    - git-clean#v0.0.1:
-        flags: "-ffdx --exclude=UnrealEngine --exclude=UnrealEngine-Cache"
     - ca-johnson/taskkill#v4.1: ~
 
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
@@ -39,3 +37,12 @@ steps:
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+
+  # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
+  - trigger: "unrealgdkexampleproject-nightly"
+    label: "Post merge Example Project build"
+    branches: "master preview release"
+    async: true
+    build:
+      env:
+        GDK_BRANCH="${BUILDKITE_BRANCH}"

@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include "Commandlets/Commandlet.h"
+#include "GenerateSchemaCommandlet.h"
 
 #include "GenerateSchemaAndSnapshotsCommandlet.generated.h"
 
 class FSpatialGDKEditor;
 
 UCLASS()
-class UGenerateSchemaAndSnapshotsCommandlet : public UCommandlet
+class UGenerateSchemaAndSnapshotsCommandlet : public UGenerateSchemaCommandlet
 {
 	GENERATED_BODY()
 

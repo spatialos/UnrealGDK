@@ -41,6 +41,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
 DECLARE_STATS_GROUP(TEXT("SpatialNet"), STATGROUP_SpatialNet, STATCAT_Advanced);
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNet,);
+DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Relevant Actors"), STAT_SpatialActorsRelevant, STATGROUP_SpatialNet,);
+DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Changed Relevant Actors"), STAT_SpatialActorsChanged, STATGROUP_SpatialNet,);
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
@@ -69,6 +71,7 @@ public:
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
 	virtual void Shutdown() override;
+	virtual void NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection) override;
 	// End UNetDriver interface.
 
 	virtual void OnOwnerUpdated(AActor* Actor);
@@ -90,7 +93,8 @@ public:
 	void OnAcceptingPlayersChanged(bool bAcceptingPlayers);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
-	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, FUniqueNetIdRepl UniqueId, FName OnlinePlatformName, bool bExistingPlayer);
+	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName);
+	void PostSpawnPlayerController(APlayerController* PlayerController, const FString& WorkerAttribute);
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId);
@@ -98,7 +102,13 @@ public:
 
 	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject);
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
-	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection);
+
+	void RefreshActorDormancy(AActor* Actor, bool bMakeDormant);
+
+	void AddPendingDormantChannel(USpatialActorChannel* Channel);
+	void RegisterDormantEntityId(Worker_EntityId EntityId);
+	void UnregisterDormantEntityId(Worker_EntityId EntityId);
+	bool IsDormantEntity(Worker_EntityId EntityId) const;
 
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
@@ -126,8 +136,6 @@ public:
 	USpatialStaticComponentView* StaticComponentView;
 	UPROPERTY()
 	USnapshotManager* SnapshotManager;
-	UPROPERTY()
-	UEntityPool* EntityPool;
 	UPROPERTY()
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
@@ -168,6 +176,8 @@ public:
 #if WITH_EDITOR
 	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.
 	int32 PlayInEditorID;
+
+	void TrackTombstone(const Worker_EntityId EntityId);
 #endif
 
 private:
@@ -175,6 +185,8 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TArray<Worker_OpList*> QueuedStartupOpLists;
+	TSet<Worker_EntityId_Key> DormantEntities;
+	TSet<TWeakObjectPtr<USpatialActorChannel>> PendingDormantChannels;
 
 	FTimerManager TimerManager;
 
@@ -183,6 +195,7 @@ private:
 	bool bPersistSpatialConnection;
 	bool bWaitingForAcceptingPlayersToSpawn;
 	bool bIsReadyToStart;
+	bool bMapLoaded;
 
 	FString SnapshotToLoad;
 
@@ -192,13 +205,16 @@ private:
 	void CreateAndInitializeCoreClasses();
 
 	void CreateServerSpatialOSNetConnection();
+	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor);
 
 	void QueryGSMToLoadMap();
 
 	void HandleOngoingServerTravel();
 
 	void HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists);
-	bool FindAndDispatchStartupOps(const TArray<Worker_OpList*>& InOpLists);
+	bool FindAndDispatchStartupOpsServer(const TArray<Worker_OpList*>& InOpLists);
+	bool FindAndDispatchStartupOpsClient(const TArray<Worker_OpList*>& InOpLists);
+	void SelectiveProcessOps(TArray<Worker_Op*> FoundOps);
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
@@ -217,6 +233,9 @@ private:
 #endif
 
 	void ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters);
+	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn);
+
+	void ProcessPendingDormancy();
 
 	friend USpatialNetConnection;
 	friend USpatialWorkerConnection;
@@ -237,5 +256,10 @@ private:
 
 #if !UE_BUILD_SHIPPING
 	int32 ConsiderListSize = 0;
+#endif
+
+#if WITH_EDITOR
+	static const int32 EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT = 256;
+	TArray<Worker_EntityId> TombstonedEntities;
 #endif
 };
