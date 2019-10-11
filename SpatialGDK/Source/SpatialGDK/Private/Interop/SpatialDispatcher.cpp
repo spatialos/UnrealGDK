@@ -79,11 +79,11 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList, bool bIsServer)
 
 		if (!bIsServer)
 		{
-			UE_LOG(LogSpatialDispatcher, Warning, TEXT("Client: processing Op: %s"), *OpToString(Op->op_type));
+			UE_LOG(LogSpatialDispatcher, Verbose, TEXT("Client: processing Op: %s"), *OpToString(Op->op_type));
 		}
 		else
 		{
-			UE_LOG(LogSpatialDispatcher, Warning, TEXT("Server: processing Op: %s"), *OpToString(Op->op_type));
+			UE_LOG(LogSpatialDispatcher, Verbose, TEXT("Server: processing Op: %s"), *OpToString(Op->op_type));
 		}
 
 		if (IsExternalSchemaOp(Op))
