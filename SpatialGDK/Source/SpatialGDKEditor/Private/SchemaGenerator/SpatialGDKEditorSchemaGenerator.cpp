@@ -274,6 +274,7 @@ TMultiMap<FName, FName> GetLevelNamesToPaths()
 	});
 
 	TMultiMap<FName, FName> LevelNamesToPaths;
+	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
 	for (FAssetData World : WorldAssets)
 	{
@@ -333,7 +334,10 @@ void GenerateSchemaForSublevels(const TMultiMap<FName, FName>& LevelNamesToPaths
 		}
 	}
 
-	Writer.WriteToFile(FString::Printf(TEXT("%sSublevels/sublevels.schema"), *SchemaPath));
+	NextAvailableComponentId = IdGenerator.Peek();
+
+	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	Writer.WriteToFile(FString::Printf(TEXT("%sSublevels/sublevels.schema"), *SchemaOutputPath));
 }
 
 FString GenerateIntermediateDirectory()
@@ -778,6 +782,8 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
+	GenerateSchemaForSublevels();
+
 	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
 	{
 		return false;
@@ -847,6 +853,7 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath, IdGenerator);
 	GenerateSchemaForSublevels(GetLevelNamesToPaths(), SchemaOutputPath);
+
 	NextAvailableComponentId = IdGenerator.Peek();
 
 	return true;
