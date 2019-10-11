@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 
-## [`0.7.0-preview`] - 2019-10-08
+## [`0.7.0-preview`] - 2019-10-11
 
 ### New Known Issue:
 - MSVC v14.23 removes `typeinfo.h` and replaces it with `typeinfo`. This change causes errors when building the Unreal Engine. This issue affects Visual Studio 2019 users. Until [this proposed fix](https://github.com/EpicGames/UnrealEngine/pull/6226) is accepted by Epic Games, you can work around the issue by:
@@ -58,6 +58,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
 - When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
 - Fixed a crash upon checking out an actor with a deleted static subobject.
+
+## [`0.6.2`] - 2019-10-10
+
+- The GDK no longer relies on an ordering of entity and interest queries that is not guaranteed by the SpatialOS runtime.
+- The multiserver offloading tutorial has been simplified and re-factored.
 
 ## [`0.6.1`] - 2019-08-15
 
