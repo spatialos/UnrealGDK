@@ -11,7 +11,7 @@
 
 #include "WorkerSDK/improbable/c_worker.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialView);
+DEFINE_LOG_CATEGORY(LogSpatialDispatcher);
 
 void USpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics)
 {
@@ -20,7 +20,51 @@ void USpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticCompon
 	SpatialMetrics = InSpatialMetrics;
 }
 
-void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
+FString OpToString(uint8_t  OpType)
+{
+	switch (OpType)
+	{
+	case WORKER_OP_TYPE_DISCONNECT:
+		return TEXT("WORKER_OP_TYPE_DISCONNECT");
+	case WORKER_OP_TYPE_FLAG_UPDATE:
+		return TEXT("WORKER_OP_TYPE_FLAG_UPDATE");
+	case WORKER_OP_TYPE_LOG_MESSAGE:
+		return TEXT("WORKER_OP_TYPE_LOG_MESSAGE");
+	case WORKER_OP_TYPE_METRICS:
+		return TEXT("WORKER_OP_TYPE_METRICS");
+	case WORKER_OP_TYPE_CRITICAL_SECTION:
+		return TEXT("WORKER_OP_TYPE_CRITICAL_SECTION");
+	case WORKER_OP_TYPE_ADD_ENTITY:
+		return TEXT("WORKER_OP_TYPE_ADD_ENTITY");
+	case WORKER_OP_TYPE_REMOVE_ENTITY:
+		return TEXT("WORKER_OP_TYPE_REMOVE_ENTITY");
+	case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
+		return TEXT("WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE");
+	case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
+		return TEXT("WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE");
+	case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
+		return TEXT("WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE");
+	case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
+		return TEXT("WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE");
+	case WORKER_OP_TYPE_ADD_COMPONENT:
+		return TEXT("WORKER_OP_TYPE_ADD_COMPONENT");
+	case WORKER_OP_TYPE_REMOVE_COMPONENT:
+		return TEXT("WORKER_OP_TYPE_REMOVE_COMPONENT");
+	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+		return TEXT("WORKER_OP_TYPE_AUTHORITY_CHANGE");
+	case WORKER_OP_TYPE_COMPONENT_UPDATE:
+		return TEXT("WORKER_OP_TYPE_COMPONENT_UPDATE");
+	case WORKER_OP_TYPE_COMMAND_REQUEST:
+		return TEXT("WORKER_OP_TYPE_COMMAND_REQUEST");
+	case WORKER_OP_TYPE_COMMAND_RESPONSE:
+		return TEXT("WORKER_OP_TYPE_COMMAND_RESPONSE");
+	default:
+		return TEXT("UNKNOWN");
+	}
+}
+
+
+void USpatialDispatcher::ProcessOps(Worker_OpList* OpList, bool bIsServer)
 {
 	for (size_t i = 0; i < OpList->op_count; ++i)
 	{
@@ -31,6 +75,15 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 		{
 			OpsToSkip.Remove(Op);
 			continue;
+		}
+
+		if (!bIsServer)
+		{
+			UE_LOG(LogSpatialDispatcher, Warning, TEXT("Client: processing Op: %s"), *OpToString(Op->op_type));
+		}
+		else
+		{
+			UE_LOG(LogSpatialDispatcher, Warning, TEXT("Server: processing Op: %s"), *OpToString(Op->op_type));
 		}
 
 		if (IsExternalSchemaOp(Op))
@@ -99,7 +152,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			USpatialWorkerFlags::ApplyWorkerFlagUpdate(Op->op.flag_update);
 			break;
 		case WORKER_OP_TYPE_LOG_MESSAGE:
-			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->op.log_message.message));
+			UE_LOG(LogSpatialDispatcher, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->op.log_message.message));
 			break;
 		case WORKER_OP_TYPE_METRICS:
 #if !UE_BUILD_SHIPPING
