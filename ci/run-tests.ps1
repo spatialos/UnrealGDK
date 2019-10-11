@@ -1,5 +1,5 @@
 param(
-    [string] $ue_path,
+    [string] $unreal_editor_path,
     [string] $uproject_path,
     [string] $output_dir,
     [string] $log_file_name
@@ -16,7 +16,7 @@ function Force-ResolvePath {
 
 # We want absolute paths since paths given to the unreal editor are interpreted as relative to the UE4Editor binary
 # Absolute paths are more reliable
-$ue_path_absolute = Force-ResolvePath $ue_path
+$ue_path_absolute = Force-ResolvePath $unreal_editor_path
 $uproject_path_absolute = Force-ResolvePath $uproject_path
 $output_dir_absolute = Force-ResolvePath $output_dir
 

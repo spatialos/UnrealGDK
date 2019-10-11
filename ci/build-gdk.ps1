@@ -1,6 +1,6 @@
 # Expects gdk_home, which is not the GDK location in the engine
 param(
-  [string] $ue_home = "$($pwd.drive.root)UnrealEngine",
+  [string] $unreal_path = "$((get-item "$($PSScriptRoot)").parent.parent.FullName)\UnrealEngine",
   [string] $target_platform = "Win64",
   [string] $build_output_dir
 )
@@ -8,7 +8,7 @@ param(
 pushd "$($gdk_home)"
     Start-Event "build-unreal-gdk-$($target_platform)" "build-gdk"
     pushd "SpatialGDK"
-        $gdk_build_proc = Start-Process -PassThru -NoNewWindow -FilePath "$ue_home\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
+        $gdk_build_proc = Start-Process -PassThru -NoNewWindow -FilePath "$unreal_path\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
             "BuildPlugin", `
             "-Plugin=`"$($gdk_home)/SpatialGDK/SpatialGDK.uplugin`"", `
             "-TargetPlatforms=$($target_platform)", `

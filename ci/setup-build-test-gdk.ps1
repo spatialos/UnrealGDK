@@ -12,17 +12,17 @@ param(
 
 # Download Unreal Engine
 Start-Event "get-unreal-engine" "command"
-&$PSScriptRoot"\get-engine.ps1"
+&$PSScriptRoot"\get-engine.ps1" -unreal_path $unreal_path
 Finish-Event "get-unreal-engine" "command"
 
 # Run the required setup steps
 Start-Event "setup-gdk" "command"
-&$PSScriptRoot"\setup-gdk.ps1"
+&$PSScriptRoot"\setup-gdk.ps1" -unreal_path $unreal_path
 Finish-Event "setup-gdk" "command"
 
 # Build the GDK plugin
 Start-Event "build-gdk" "command"
-&$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform) -build_output_dir "$build_home\SpatialGDKBuild"
+&$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform) -build_output_dir "$build_home\SpatialGDKBuild" -unreal_path $unreal_path
 Finish-Event "build-gdk" "command"
 
 Start-Event "setup-tests" "command"
@@ -30,7 +30,7 @@ Start-Event "setup-tests" "command"
 Finish-Event "setup-tests" "command"
 
 Start-Event "test-gdk" "command"
-&$PSScriptRoot"\run-tests.ps1" -ue_path "$unreal_path\Engine\Binaries\$target_platform\UE4Editor.exe" -uproject_path "$unreal_path\Samples\$testing_project_name\$testing_project_name.uproject" -output_dir "$PSScriptRoot\TestResults" -log_file_name "tests.log"
+&$PSScriptRoot"\run-tests.ps1" -unreal_editor_path "$unreal_path\Engine\Binaries\$target_platform\UE4Editor.exe" -uproject_path "$unreal_path\Samples\$testing_project_name\$testing_project_name.uproject" -output_dir "$PSScriptRoot\TestResults" -log_file_name "tests.log"
 Finish-Event "test-gdk" "command"
 
 # steps:
