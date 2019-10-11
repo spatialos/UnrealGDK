@@ -3,9 +3,9 @@ param(
 )
 
 $test_array = @()
-((Get-Content -Path "$test_result_dir\index.html" -Raw) -Replace "<style>", "<script>var scripts = document.getElementsByTagName('script'); for(var i=0;i<scripts.length;i++) {scripts[i].src='ht'+'tps:'+'//'+'cdnjs.cloud'+'flare.com'+scripts[i].src;} </script><style>") | Set-Content -Path "$test_result_dir\index.html"
-$test_array += @('/bower_components/font-awesome/css/font-awesome.min.css', '/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css')
-# $test_array += @('/bower_components/twentytwenty/css/twentytwenty.css', 'https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/css/twentytwenty.min.css')
+# ((Get-Content -Path "$test_result_dir\index.html" -Raw) -Replace "<style>", "<script>var scripts = document.getElementsByTagName('script'); for(var i=0;i<scripts.length;i++) {scripts[i].src='ht'+'tps:'+'//'+'cdnjs.cloud'+'flare.com'+scripts[i].src;}</script><style>") | Set-Content -Path "$test_result_dir\index.html"
+$test_array += @('/bower_components/font-awesome/css/font-awesome.min.css', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css')
+$test_array += @('/bower_components/twentytwenty/css/twentytwenty.css', 'https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/css/twentytwenty.min.css')
 # $test_array += @('/bower_components/featherlight/release/featherlight.min.css', 'https://cdnjs.cloudflare.com/ajax/libs/featherlight/1.7.13/featherlight.min.css')
 # $test_array += @('/bower_components/bootstrap/dist/css/bootstrap.min.css', 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css')
 # $test_array += @('/bower_components/jquery/dist/jquery.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js')
@@ -19,9 +19,11 @@ $test_array += @('/bower_components/font-awesome/css/font-awesome.min.css', '/aj
 # $test_array += @('/bower_components/dustjs-linkedin/dist/dust-full.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/dustjs-linkedin/2.7.5/dust-full.min.js')
 # $test_array += @('/bower_components/numeral/min/numeral.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.4/numeral.min.js')
 
-for ($i = 0; $i -lt $test_array.length; $i++) {
-    $first = $test_array[$i][0]
-    $second = $test_array[$i][1]
+for ($i = 0; $i -lt $test_array.length; $i = $i + 2) {
+    $first = $test_array[$i]
+    $second = $test_array[$i+1]
+    $first
+    $second
     ((Get-Content -Path "$test_result_dir\index.html" -Raw) -Replace $first, $second) | Set-Content -Path "$test_result_dir\index.html"
 }
 
