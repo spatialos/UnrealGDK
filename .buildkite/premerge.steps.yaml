@@ -42,8 +42,8 @@ steps:
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
-      - "C:/UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
-      - "C:/UnrealEngine/Samples/StarterContent/Saved/Logs/*"
+      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
       - "ci/TestResults/*"
       # - "ci/ExampleOutput/**/*" # The entire example output folder with all subfolders etc
 
@@ -51,8 +51,8 @@ steps:
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
-      - "C:/UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
-      - "C:/UnrealEngine/Samples/StarterContent/Saved/Logs/*"
+      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
       - "ci/TestResults/*"
 
   - label: "enforce version restrictions"
