@@ -25,13 +25,16 @@ Start-Event "build-gdk" "command"
 &$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform) -build_output_dir "$build_home\SpatialGDKBuild" -unreal_path $unreal_path
 Finish-Event "build-gdk" "command"
 
-Start-Event "setup-tests" "command"
-&$PSScriptRoot"\setup-tests.ps1" -build_output_dir "$build_home\SpatialGDKBuild" -project_path "$unreal_path\Samples\$testing_project_name" -unreal_path $unreal_path
-Finish-Event "setup-tests" "command"
+# Only run tests on Windows, as we do not have a linux agent - should not matter
+if ($target_platform -eq "Win64") {
+  Start-Event "setup-tests" "command"
+  &$PSScriptRoot"\setup-tests.ps1" -build_output_dir "$build_home\SpatialGDKBuild" -project_path "$unreal_path\Samples\$testing_project_name" -unreal_path $unreal_path
+  Finish-Event "setup-tests" "command"
 
-Start-Event "test-gdk" "command"
-&$PSScriptRoot"\run-tests.ps1" -unreal_editor_path "$unreal_path\Engine\Binaries\$target_platform\UE4Editor.exe" -uproject_path "$unreal_path\Samples\$testing_project_name\$testing_project_name.uproject" -output_dir "$PSScriptRoot\TestResults" -log_file_name "tests.log"
-Finish-Event "test-gdk" "command"
+  Start-Event "test-gdk" "command"
+  &$PSScriptRoot"\run-tests.ps1" -unreal_editor_path "$unreal_path\Engine\Binaries\$target_platform\UE4Editor.exe" -uproject_path "$unreal_path\Samples\$testing_project_name\$testing_project_name.uproject" -output_dir "$PSScriptRoot\TestResults" -log_file_name "tests.log"
+  Finish-Event "test-gdk" "command"
+}
 
 # steps:
 # get engine
