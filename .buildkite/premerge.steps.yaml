@@ -45,7 +45,6 @@ steps:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
       - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
       - "ci/TestResults/*"
-      # - "ci/ExampleOutput/**/*" # The entire example output folder with all subfolders etc
 
   - label: "build-GDK-:linux:"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
