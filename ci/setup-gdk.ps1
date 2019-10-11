@@ -9,7 +9,7 @@ $gdk_in_engine = "$unreal_path\Engine\Plugins\UnrealGDK"
 New-Item -ItemType Junction -Path "$gdk_in_engine" -Target "$gdk_home" -ErrorAction SilentlyContinue
 
 pushd $gdk_in_engine
-    if (-Not Get-Variable -Name NO_PAUSE -ErrorAction SilentlyContinue) { # seems like this is set somewhere previously in CI, but just to make sure
+    if (-Not (Get-Variable -Name NO_PAUSE -ErrorAction SilentlyContinue)) { # seems like this is set somewhere previously in CI, but just to make sure
         Set-Variable -Name NO_PAUSE -Value 1
     }
     cmd /c Setup.bat
