@@ -1,5 +1,5 @@
 param (
-    [string] $unreal_path = "$($pwd.drive.root)UnrealEngine"
+    [string] $unreal_path = "$((get-item "$($PSScriptRoot)").parent.parent.FullName)\UnrealEngine",
 )
 $gdk_in_engine = "$unreal_path\Engine\Plugins\UnrealGDK"
 
