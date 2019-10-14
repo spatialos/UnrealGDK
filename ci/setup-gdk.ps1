@@ -10,9 +10,9 @@ $gdk_in_engine = "$unreal_path\Engine\Plugins\UnrealGDK"
 New-Item -ItemType Junction -Path "$gdk_in_engine" -Target "$gdk_home" -ErrorAction SilentlyContinue
 
 pushd $gdk_in_engine
-    if (-Not (Get-Variable -Name NO_PAUSE -ErrorAction SilentlyContinue)) { # seems like this is set somewhere previously in CI, but just to make sure
-        Set-Variable -Name NO_PAUSE -Value 1
+    if (-Not (Test-Path env:NO_PAUSE)) { # seems like this is set somewhere previously in CI, but just to make sure
+        $env:NO_PAUSE = 1
     }
-    Set-Variable -Name MSBUILD_EXE -Value $msbuild_path
+    $env:MSBUILD_EXE = $msbuild_path
     cmd /c Setup.bat
 popd
