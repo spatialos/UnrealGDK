@@ -13,6 +13,6 @@ pushd $gdk_in_engine
     if (-Not (Test-Path env:NO_PAUSE)) { # seems like this is set somewhere previously in CI, but just to make sure
         $env:NO_PAUSE = 1
     }
-    # $env:MSBUILD_EXE = "$msbuild_path"
+    $env:MSBUILD_EXE = "$msbuild_path"
     cmd /c Setup.bat
 popd
