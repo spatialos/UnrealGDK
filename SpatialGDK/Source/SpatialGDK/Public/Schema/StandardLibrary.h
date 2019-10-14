@@ -262,4 +262,43 @@ struct Persistence : Component
 	}
 };
 
+struct Connection
+{
+	// TODO: Enum for connection status
+	uint32 DataLatencyMS;
+	uint64 ConnectedSinceUTC;
+
+};
+
+
+inline Connection GetConnectionFromSchema(Schema_Object* Object)
+{
+	Schema_Object* ConnectionObject = Schema_GetObject(Object, 3);
+	Connection Conn;
+	Conn.DataLatencyMS = Schema_GetUint32(Object, 2);
+	Conn.ConnectedSinceUTC = Schema_GetUint64(Object, 3);
+	return Conn;
+}
+
+
+struct WorkerSystemEntity : Component
+{
+	static const Worker_ComponentId ComponentId = SpatialConstants::WORKER_COMPONENT_ID;
+
+	WorkerSystemEntity() = default;
+
+	WorkerSystemEntity(const Worker_ComponentData& Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		WorkerId = GetStringFromSchema(ComponentObject, 1);
+		WorkerType = GetStringFromSchema(ComponentObject, 2);
+		Connection = GetConnectionFromSchema(ComponentObject);
+	}
+
+	FString WorkerId;
+	FString WorkerType;
+	Connection Connection;
+
+};
+
 } // namespace SpatialGDK
