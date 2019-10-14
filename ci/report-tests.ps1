@@ -21,8 +21,6 @@ $test_array += @('/bower_components/numeral/min/numeral.min.js', 'https://cdnjs.
 for ($i = 0; $i -lt $test_array.length; $i = $i + 2) {
     $first = $test_array[$i]
     $second = $test_array[$i+1]
-    $first
-    $second
     ((Get-Content -Path "$test_result_dir\index.html" -Raw) -Replace $first, $second) | Set-Content -Path "$test_result_dir\index.html"
 }
 

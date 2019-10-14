@@ -30,9 +30,6 @@ call :MarkStartOfBlock "Check dependencies"
 
     call "%~dp0SpatialGDK\Build\Scripts\FindMSBuild.bat"
 
-    rem TODO remove this hardcoded path
-    set MSBUILD_EXE="%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MSBuild.exe"
-
     if not defined MSBUILD_EXE (
         echo Error: Could not find the MSBuild executable. Please make sure you have Microsoft Visual Studio or Microsoft Build Tools installed.
         pause
