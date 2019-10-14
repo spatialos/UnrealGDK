@@ -3,7 +3,7 @@ param (
 )
 $gdk_in_engine = "$unreal_path\Engine\Plugins\UnrealGDK"
 
-# clean up the symlinks
+# Clean up the symlinks
 if (Test-Path "$gdk_in_engine") {
     (Get-Item "$gdk_in_engine").Delete()
 }

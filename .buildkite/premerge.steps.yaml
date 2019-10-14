@@ -14,7 +14,7 @@ common: &common
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1569836151-240be2c75652aa46-------z}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1569490589-f9345a43b21a6cec-------z}"
   retry:
     automatic:
       - <<: *agent_transients
@@ -38,7 +38,7 @@ script_runner: &script_runner
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
 
 steps:
-  - label: "build-GDK-:windows:"
+  - label: "build-and-test-GDK-:windows:"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
@@ -51,8 +51,6 @@ steps:
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
-      - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
-      - "ci/TestResults/*"
 
   - label: "enforce version restrictions"
     command: "ci/check-version-file.sh"
