@@ -39,13 +39,3 @@ if ($target_platform -eq "Win64") {
   &$PSScriptRoot"\report-tests.ps1" -test_result_dir "$PSScriptRoot\TestResults"
   Finish-Event "report-tests" "command"
 }
-
-# steps:
-# get engine
-# set up gdk
-#   symlink gdk into engine plugins folder for expected folder structure
-#   run setup.bat
-# build plugin 
-#   Using UAT, into a folder outside the engine
-#   copy built plugin into SpatialGDK
-# Run tests
