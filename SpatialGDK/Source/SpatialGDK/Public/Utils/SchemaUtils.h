@@ -12,6 +12,7 @@
 #include <WorkerSDK/improbable/c_worker.h>
 
 using StringToEntityMap = TMap<FString, Worker_EntityId>;
+using UInt32ToStringMap = TMap<uint32, FString>;
 
 namespace SpatialGDK
 {

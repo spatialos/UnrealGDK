@@ -175,6 +175,11 @@ namespace SpatialConstants
 	const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
 	const uint32 INVALID_AUTHORITY_INTENT_ID                                = 0;
 
+	// VirtualWorkerTranslation Field IDs.
+	const Schema_FieldId TRANSLATION_VIRTUAL_WORKER_MAPPING_ID				= 1;
+	const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID							= 1;
+	const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME						= 2;
+
 	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
 

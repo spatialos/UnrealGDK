@@ -31,6 +31,7 @@ class USpatialClassInfoManager;
 class UGlobalStateManager;
 class USpatialPlayerSpawner;
 class USpatialStaticComponentView;
+class USpatialVirtualWorkerTranslator;
 class USnapshotManager;
 class USpatialMetrics;
 class ASpatialMetricsDisplay;
@@ -130,6 +131,8 @@ public:
 	USpatialClassInfoManager* ClassInfoManager;
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
+	UPROPERTY()
+	USpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 	UPROPERTY()
 	USpatialPlayerSpawner* PlayerSpawner;
 	UPROPERTY()
