@@ -20,18 +20,9 @@ $ue_path_absolute = Force-ResolvePath $unreal_editor_path
 $uproject_path_absolute = Force-ResolvePath $uproject_path
 $output_dir_absolute = Force-ResolvePath $output_dir
 
-Write-Log $ue_path_absolute
-Write-Log "$(Test-Path $ue_path_absolute)"
-
-Write-Log $uproject_path_absolute
-Write-Log "$(Test-Path $uproject_path_absolute)"
-
-Write-Log $output_dir_absolute
-Write-Log "$(Test-Path $output_dir_absolute)"
-
 $cmd_list = @( `
     "`"$uproject_path_absolute`"", ` # We need some project to run tests in, but for unit tests the exact project shouldn't matter
-    "-ExecCmds=`"Automation runtests SpatialGDK; quit`"", ` # Run all tests in the SpatialGDK group. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
+    "-ExecCmds=`"Automation RunTests SpatialGDK; quit`"", ` # Run all tests in the SpatialGDK group. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
     "-TestExit=`"Automation Test Queue Empty`"", ` # When to close the editor
     "-ReportOutputPath=`"$($output_dir_absolute)`"", ` # Output folder for test results. If it doesn't exist, gets created. If it does, all contents get deleted before new results get placed there.
     "Log=`"$($log_file_name)`"", ` # Sets the name of the log file produced during this run. This file is saved in in <Project folder>/Saved/Logs/. The lack of "-" is correct, -Log is a flag and doesn't set the file name
