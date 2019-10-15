@@ -57,3 +57,8 @@ class UChildOfNoSpatialFlagsObjectStub : public UNoSpatialFlagsObjectStub
 	GENERATED_BODY()
 };
 
+UCLASS(SpatialType)
+class ASpatialTypeActor : public AActor
+{
+	GENERATED_BODY()
+};

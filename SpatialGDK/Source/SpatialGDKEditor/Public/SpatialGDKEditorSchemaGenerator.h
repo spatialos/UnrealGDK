@@ -26,7 +26,7 @@ namespace SpatialGDKEditor
 		
 		SPATIALGDKEDITOR_API bool DeleteSchemaDatabase(FString PackagePath = "");
 		
-		SPATIALGDKEDITOR_API void ClearGeneratedSchema();
+		SPATIALGDKEDITOR_API void ResetSchemaGeneratorState();
 		
 		SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists();
 		

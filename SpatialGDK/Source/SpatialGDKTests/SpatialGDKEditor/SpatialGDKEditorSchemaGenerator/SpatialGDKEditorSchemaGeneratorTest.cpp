@@ -6,6 +6,7 @@
 #include "SchemaGenObjectStub.h"
 
 #include "CoreMinimal.h"
+#include "HAL/PlatformFilemanager.h"
 
 #define SCHEMA_GENERATOR_TEST(TestName) \
 	TEST(SpatialGDKEditor, SchemaGenerator, TestName)
@@ -116,8 +117,55 @@ SCHEMA_GENERATOR_TEST(GIVEN_child_of_a_class_without_any_spatial_tags_WHEN_check
 
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_generated_schema_for_these_classes_THEN_corresponding_schema_files_exist)
 {
-	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
-	TestTrue("", false);
+	// GIVEN
+	TSet<UClass*> Classes;
+	// TODO(Alex): Don't have that many classes?
+	Classes.Add(USchemaGenObjectStub::StaticClass());
+	Classes.Add(USpatialTypeObjectStub::StaticClass());
+	Classes.Add(UChildOfSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UNotSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UChildOfNotSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UNoSpatialFlagsObjectStub::StaticClass());
+	Classes.Add(UChildOfNoSpatialFlagsObjectStub::StaticClass());
+	Classes.Add(ASpatialTypeActor::StaticClass());
+	
+	FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+
+	// WHEN
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+
+	// THEN
+	bool bExpectedFilesExist = true;
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	if (PlatformFile.DirectoryExists(*SchemaOutputFolder))
+	{
+		for (const auto& CurrentClass : Classes)
+		{
+			FString SchemaFileFolder = TEXT("");
+
+			if (!CurrentClass->IsChildOf<AActor>())
+			{
+				SchemaFileFolder = TEXT("Subobjects");
+			}
+
+			if (!PlatformFile.FileExists(*FPaths::SetExtension(FPaths::Combine(FPaths::Combine(SchemaOutputFolder, SchemaFileFolder), CurrentClass->GetName()),TEXT(".schema"))))
+			{
+				bExpectedFilesExist = false;
+				break;
+			}
+		}
+	}
+	else
+	{
+		bExpectedFilesExist = false;
+	}
+
+	TestTrue("All expected schema files have been generated", bExpectedFilesExist);
+
+	// CLEANUP
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+
 	return true;
 }
 

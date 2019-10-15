@@ -495,7 +495,7 @@ bool IsSupportedClass(const UClass* SupportedClass)
 TSet<UClass*> GetAllSupportedClasses()
 {
 	TSet<UClass*> Classes;
-	
+
 	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
 		UClass* SupportedClass = *ClassIt;
@@ -562,19 +562,18 @@ void DeleteGeneratedSchemaFiles(FString SchemaOutputPath /*= ""*/)
 			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not clean the generated schema directory '%s'! Please make sure the directory and the files inside are writeable."), *SchemaOutputPath);
 		}
 	}
-	PlatformFile.CreateDirectory(*SchemaOutputPath);
+	// TODO(Alex): check it's safe to do so
+	//PlatformFile.CreateDirectory(*SchemaOutputPath);
 }
 
-void ClearGeneratedSchema()
+void ResetSchemaGeneratorState()
 {
 	ActorClassPathToSchema.Empty();
 	SubobjectClassPathToSchema.Empty();
 	LevelComponentIds.Empty();
 	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
-
-	// As a safety precaution, if the SchemaDatabase.uasset doesn't exist then make sure the schema generated folder is cleared as well.
-	DeleteGeneratedSchemaFiles();
+	SchemaGeneratedClasses.Empty();
 }
 
 bool TryLoadExistingSchemaDatabase()
@@ -607,13 +606,15 @@ bool TryLoadExistingSchemaDatabase()
 		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
-			ClearGeneratedSchema();
+			ResetSchemaGeneratorState();
+			DeleteGeneratedSchemaFiles();
 		}
 	}
 	else
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("SchemaDatabase not found so the generated schema directory will be cleared out if it exists."));
-		ClearGeneratedSchema();
+		ResetSchemaGeneratorState();
+		DeleteGeneratedSchemaFiles();
 	}
 
 	return true;
