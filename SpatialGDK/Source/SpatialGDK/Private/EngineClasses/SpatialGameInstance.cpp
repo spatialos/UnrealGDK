@@ -162,8 +162,8 @@ bool USpatialGameInstance::SetFirstConnectionToSpatialOSAttempted(){
 	if (!bFirstConnectionToSpatialOSAttempted)
 	{
 		bFirstConnectionToSpatialOSAttempted = true;
-		return false;
+		return true;
 	}
-	return true;
+	return false;
 }
 #endif // WITH_EDITOR

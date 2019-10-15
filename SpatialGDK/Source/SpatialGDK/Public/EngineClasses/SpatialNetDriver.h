@@ -9,8 +9,6 @@
 #include "TimerManager.h"
 #include "UObject/CoreOnline.h"
 
-#include "EngineClasses/SpatialGameInstance.h"
-
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "SpatialConstants.h"
@@ -24,6 +22,7 @@ class USpatialActorChannel;
 class USpatialNetConnection;
 class USpatialPackageMapClient;
 
+class USpatialGameInstance;
 class USpatialWorkerConnection;
 class USpatialDispatcher;
 class USpatialSender;

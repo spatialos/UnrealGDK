@@ -171,7 +171,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 {
-
 	USpatialGameInstance* GameInstance = nullptr;
 
 	// A client does not have a world at this point, so we use the WorldContext
@@ -194,10 +193,8 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	if (!bPersistSpatialConnection)
 	{
-		// Destroy the old connection
+		//Do we like these kinds of comments? The code seemed explanatory enough. (WILL BE REMOVED)
 		GameInstance->DestroySpatialWorkerConnection();
-
-		// Create a new SpatialWorkerConnection in the SpatialGameInstance.
 		GameInstance->CreateNewSpatialWorkerConnection();
 	}
 
@@ -223,10 +220,8 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	}
 	else // Using Receptionist
 	{
+		// Should SpatialConnectionType be ESpatialConnectionType? (WILL BE REMOVED)
 		Connection->SetConnectionType(SpatialConnectionType::Receptionist);
-
-		// clear locator PID to signal that receptionist should be used
-		Connection->LocatorConfig.PlayerIdentityToken = TEXT("");
 
 		Connection->ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
 
@@ -235,19 +230,11 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 			Connection->ReceptionistConfig.ReceptionistHost = URL.Host;
 		}
 
-		bool bHasUseExternalIpOption = URL.HasOption(TEXT("useExternalIpForBridge"));
-
-		if (bHasUseExternalIpOption)
+		const TCHAR* UseExternalIpForBridge = TEXT("useExternalIpForBridge");
+		if (URL.HasOption(UseExternalIpForBridge))
 		{
-			FString UseExternalIpOption = URL.GetOption(TEXT("useExternalIpForBridge"), TEXT(""));
-			if (UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase))
-			{
-				Connection->ReceptionistConfig.UseExternalIp = false;
-			}
-			else
-			{
-				Connection->ReceptionistConfig.UseExternalIp = true;
-			}
+			FString UseExternalIpOption = URL.GetOption(UseExternalIpForBridge, TEXT(""));
+			Connection->ReceptionistConfig.UseExternalIp = !UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase);
 		}
 	}
 
@@ -277,11 +264,11 @@ bool USpatialNetDriver::ShouldOverrideReceptionistHost(USpatialGameInstance* gam
 		// Only cancel receptionist host override if this is a PIE session.
 		if (bConnectAsClient)
 		{
-			return !((GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this)).WorldType == EWorldType::PIE);
+			return GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this).WorldType != EWorldType::PIE;
 		}
 		else
 		{
-			return !(GetWorld()->WorldType == EWorldType::PIE);
+			return GetWorld()->WorldType != EWorldType::PIE;
 		}
 	}
 #endif // WITH_EDITOR
