@@ -12,9 +12,10 @@ pushd "$($gdk_home)"
             "BuildPlugin", `
             "-Plugin=`"$($gdk_home)/SpatialGDK/SpatialGDK.uplugin`"", `
             "-TargetPlatforms=$($target_platform)", `
-                # Since we symlink the gdk into the engine, we have to put the build output outside of the GDK, 
-                # otherwise Unreal will find two instances of the plugin during the build process (It copies the .uplugin to the target folder at the start of the build process)
-                # Additionally, I had some cases where BuildPlugin will fail when targeting a folder within UnrealEngine for output
+                # The build output directory here is intentionally meant to be outside both the GDK and the Engine,
+                # as apparently there were issues where BuildPlugin would fail when targeting a folder within UnrealEngine
+                # (and the gdk is symlinked inside the UnrealEngine) for output.
+                # Unreal would find two instances of the plugin during the build process (as it copies the .uplugin to the target folder at the start of the build process)
             "-Package=`"$build_output_dir`"" `
         )
         $gdk_build_handle = $gdk_build_proc.Handle
