@@ -19,10 +19,8 @@ $replacement_strings += @('/bower_components/dustjs-linkedin/dist/dust-full.min.
 $replacement_strings += @('/bower_components/numeral/min/numeral.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.4/numeral.min.js')
 
 for ($i = 0; $i -lt $replacement_strings.length; $i = $i + 2) {
-    $first = $replacement_strings
-[$i]
-    $second = $replacement_strings
-[$i+1]
+    $first = $replacement_strings[$i]
+    $second = $replacement_strings[$i+1]
     ((Get-Content -Path "$test_result_dir\index.html" -Raw) -Replace $first, $second) | Set-Content -Path "$test_result_dir\index.html"
 }
 
