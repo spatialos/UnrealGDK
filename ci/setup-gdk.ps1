@@ -7,7 +7,7 @@ param (
 $gdk_in_engine = "$unreal_path\Engine\Plugins\UnrealGDK"
 
 # link the gdk into its expected place in the engine
-New-Item -ItemType Junction -Path "$gdk_in_engine" -Target "$gdk_home" -ErrorAction SilentlyContinue
+New-Item -ItemType Junction -Path "$gdk_in_engine" -Target "$gdk_home"
 
 pushd $gdk_in_engine
     if (-Not (Test-Path env:NO_PAUSE)) { # seems like this is set somewhere previously in CI, but just to make sure
