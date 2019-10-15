@@ -205,6 +205,8 @@ private:
 
 	FString SnapshotToLoad;
 
+	class USpatialGameInstance* GetGameInstance() const;
+
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 
 	void InitializeSpatialOutputDevice();
