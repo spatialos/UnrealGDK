@@ -15,9 +15,14 @@ Start-Event "get-unreal-engine" "command"
 &$PSScriptRoot"\get-engine.ps1" -unreal_path $unreal_path
 Finish-Event "get-unreal-engine" "command"
 
+Start-Event "symlink-gdk" "command"
+$gdk_in_engine = "$unreal_path\Engine\Plugins\UnrealGDK"
+New-Item -ItemType Junction -Name "UnrealGDK" -Path "$unreal_path\Engine\Plugins" -Target "$gdk_home"
+Finish-Event "symlink-gdk" "command"
+
 # Run the required setup steps
 Start-Event "setup-gdk" "command"
-&$PSScriptRoot"\setup-gdk.ps1" -unreal_path $unreal_path
+&$PSScriptRoot"\setup-gdk.ps1" -unreal_path $unreal_path -gdk_path "$gdk_in_engine"
 Finish-Event "setup-gdk" "command"
 
 # Build the GDK plugin
