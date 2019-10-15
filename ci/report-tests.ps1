@@ -27,7 +27,7 @@ for ($i = 0; $i -lt $replacement_strings.length; $i = $i + 2) {
 # %5C is the escape code for a backslash \, needed to successfully reach the artifact from the serving site
 ((Get-Content -Path "$test_result_dir\index.html" -Raw) -Replace "index.json", "ci%5CTestResults%5Cindex.json") | Set-Content -Path "$test_result_dir\index.html"
 
-echo "Test results in a nicer format can be found <a href='artifact://ci\TestResults\index.html'>here</a>.`n" | Out-File "$gdk_home/annotation.md"
+echo "Test results in a nicer format can be found <a href='artifact://ci\\TestResults\\index.html'>here</a>.`n" | Out-File "$gdk_home/annotation.md"
 
 Get-Content "$gdk_home/annotation.md" | buildkite-agent annotate `
     --context "unreal-gdk-test-artifact-location"  `
