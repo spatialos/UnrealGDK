@@ -115,6 +115,8 @@ public:
 
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
+	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
+
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
 	UPROPERTY()
@@ -199,6 +201,8 @@ private:
 	bool bMapLoaded;
 
 	FString SnapshotToLoad;
+
+	class USpatialGameInstance* GetGameInstance() const;
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 

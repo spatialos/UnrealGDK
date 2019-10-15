@@ -1,0 +1,17 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+// The VirtualWorkerMapping tells the system which physical worker should currently be simulating
+// an area assigned to a given virtual worker ID. The virtual worker ID is assigned by the
+// authoritative VirtualWorkerTranslator and that is responsible for keeping the Translation records
+// up to date.
+
+type VirtualWorkerMapping {
+     uint32 virtual_worker_id = 1;
+     string physical_worker_name = 2;
+}
+
+component VirtualWorkerTranslation {
+     id = 9979;
+     list<VirtualWorkerMapping> virtual_worker_mapping = 1;
+}
