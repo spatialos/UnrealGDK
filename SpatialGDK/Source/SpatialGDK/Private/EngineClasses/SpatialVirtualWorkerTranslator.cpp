@@ -8,11 +8,12 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
-namespace {
+namespace
+{
 	// The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID. 
 	inline void GetMappingFromSchema(Schema_Object* Object, Schema_FieldId Id, VirtualToPhysicalWorkerMap& Mapping)
 	{
-		int32 TranslationCount = (int32)Schema_GetObjectCount(Object, 1);
+		int32 TranslationCount = static_cast<int32>(Schema_GetObjectCount(Object, 1));
 		Mapping.Reserve(TranslationCount);
 
 		for (int32 i = 0; i < TranslationCount; i++)
@@ -35,7 +36,7 @@ namespace {
 			SpatialGDK::AddStringToSchema(EntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, Entry.Value);
 		}
 	}
-}
+}  // anonymous namesapce
 
 USpatialVirtualWorkerTranslator::USpatialVirtualWorkerTranslator(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
