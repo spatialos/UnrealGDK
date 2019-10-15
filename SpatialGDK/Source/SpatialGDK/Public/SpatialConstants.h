@@ -98,6 +98,8 @@ namespace SpatialConstants
 	const Worker_ComponentId PERSISTENCE_COMPONENT_ID						= 55;
 	const Worker_ComponentId INTEREST_COMPONENT_ID							= 58;
 
+	const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID		= 100;
+
 	const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 9999;
 	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 9998;
 	const Worker_ComponentId SINGLETON_COMPONENT_ID							= 9997;
