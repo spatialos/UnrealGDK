@@ -113,7 +113,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		// FieldId is the same as rep handle
 		if (FieldId == 0 || (int)FieldId - 1 >= BaseHandleToCmdIndex.Num())
 		{
-			UE_LOG(LogSpatialComponentReader, Error, TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema! Object: %s, Field: %d, Entity: %lld, Component: %d"), *Object->GetPathName(), FieldId, Channel->GetEntityId(), ComponentId);
+			UE_LOG(LogSpatialComponentReader, Error, TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: %lld, Component: %d"), *Object->GetPathName(), FieldId, Channel->GetEntityId(), ComponentId);
 			continue;
 		}
 
