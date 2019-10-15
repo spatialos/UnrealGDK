@@ -584,7 +584,7 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			Connection->SendDeleteEntityRequest(WorkerEntityId);
 		}
-		
+
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
 		if (!bPersistSpatialConnection)
 		{
@@ -1522,6 +1522,10 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	check(WorkerAttributeOption);
 	SpatialConnection->WorkerAttribute = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
 
+	// This makes the assumption that the worker ID is the only attribute provided
+	SpatialConnection->WorkerID = SpatialConnection->WorkerAttribute.Mid(9);
+	check(SpatialConnection->WorkerID != "");
+
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
 	// Note that in the initial implementation, we carry over no data about the user here (such as a unique player id, or the real IP)
 	// In the future it would make sense to add metadata to the Spawn request and pass it here.
@@ -2070,7 +2074,7 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 
 	if (!bIsReadyToStart)
 	{
-	    return;
+		return;
 	}
 
 	for (Worker_OpList* OpList : QueuedStartupOpLists)

@@ -151,19 +151,19 @@ void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_
 
 void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 {
-	TimerManager->SetTimer(HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]()
-	{
-		if (USpatialNetConnection* Connection = WeakThis.Get())
-		{
-			// This client timed out. Disconnect it and trigger OnDisconnected logic.
-			Connection->CleanUp();
-		}
-	}, GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds, false);
+	//TimerManager->SetTimer(HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]()
+	//{
+	//	if (USpatialNetConnection* Connection = WeakThis.Get())
+	//	{
+	//		// This client timed out. Disconnect it and trigger OnDisconnected logic.
+	//		Connection->CleanUp();
+	//	}
+	//}, GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds, false);
 }
 
 void USpatialNetConnection::SetHeartbeatEventTimer()
 {
-	TimerManager->SetTimer(HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]()
+	/*TimerManager->SetTimer(HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]()
 	{
 		if (USpatialNetConnection* Connection = WeakThis.Get())
 		{
@@ -180,20 +180,20 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 				WorkerConnection->SendComponentUpdate(Connection->PlayerControllerEntity, &ComponentUpdate);
 			}
 		}
-	}, GetDefault<USpatialGDKSettings>()->HeartbeatIntervalSeconds, true, 0.0f);
+	}, GetDefault<USpatialGDKSettings>()->HeartbeatIntervalSeconds, true, 0.0f); */
 }
 
 void USpatialNetConnection::DisableHeartbeat()
 {
-	// Remove the heartbeat callback
-	if (TimerManager != nullptr && HeartbeatTimer.IsValid())
-	{
-		TimerManager->ClearTimer(HeartbeatTimer);
-	}
-	PlayerControllerEntity = SpatialConstants::INVALID_ENTITY_ID;
+	//// Remove the heartbeat callback
+	//if (TimerManager != nullptr && HeartbeatTimer.IsValid())
+	//{
+	//	TimerManager->ClearTimer(HeartbeatTimer);
+	//}
+	//PlayerControllerEntity = SpatialConstants::INVALID_ENTITY_ID;
 }
 
 void USpatialNetConnection::OnHeartbeat()
 {
-	SetHeartbeatTimeoutTimer();
+	//SetHeartbeatTimeoutTimer();
 }

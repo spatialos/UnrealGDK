@@ -60,6 +60,8 @@ public:
 	UPROPERTY()
 	FString WorkerAttribute;
 
+	FString WorkerID;
+
 	class FTimerManager* TimerManager;
 
 	// Player lifecycle

@@ -156,9 +156,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		}
 		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Added Component Worker"));
-		WorkerSystemEntity se(Op.data);
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Added Component Worker Id %s    type: %s"), *se.WorkerId, *se.WorkerType);
+		WorkerSystemEntity WorkerEntity(Op.data);
+		WorkerEntityIDToWorkerIDMap.Add(Op.entity_id, WorkerEntity.WorkerId);
 		return;
 	}
 
@@ -185,26 +184,40 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
 	if (Op.component_id == SpatialConstants::WORKER_COMPONENT_ID) {
-		TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = AuthorityPlayerControllerConnectionMap.Find(Op.entity_id);
+		if (!NetDriver->IsServer())
+		{
+			return;
+		}
+		FString* WorkerID = WorkerEntityIDToWorkerIDMap.Find(Op.entity_id);
+
+		if (WorkerID == nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Error, TEXT("Could not find worker ID for entity: %lld"), Op.entity_id);
+			return;
+		}
+
+		TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = AuthorityPlayerControllerConnectionMap.Find(**WorkerID);
 		if (ConnectionPtr == nullptr)
 		{
-			// Heartbeat component update on a PlayerController that this server does not have authority over.
 			return;
 		}
 
 		if (!ConnectionPtr->IsValid())
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("OnRemoveComponent for WorkerEntity after NetConnection has been cleaned up. PlayerController entity: %lld"), Op.entity_id);
-			AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
+			AuthorityPlayerControllerConnectionMap.Remove(*WorkerID);
+			WorkerEntityIDToWorkerIDMap.Remove(Op.entity_id);
 			return;
 		}
 
 		USpatialNetConnection* NetConnection = ConnectionPtr->Get();
 		// Client has disconnected, let's clean up their connection.
 		NetConnection->CleanUp();
-		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
-
+		AuthorityPlayerControllerConnectionMap.Remove(*WorkerID);
+		WorkerEntityIDToWorkerIDMap.Remove(Op.entity_id);
+		return;
 	}
+
 	// We are queuing here because if an Actor is removed from your view, remove component ops will be
 	// generated and sent first, and then the RemoveEntityOp will be sent. In this case, we only want
 	// to delete the Actor and not delete the subobjects that the RemoveComponent relate to.
@@ -303,7 +316,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 			{
 				if (NetDriver->IsServer())
 				{
-					AuthorityPlayerControllerConnectionMap.Add(Op.entity_id, Connection);
+					AuthorityPlayerControllerConnectionMap.Add(Connection->WorkerID, Connection);
 				}
 				Connection->InitHeartbeat(TimerManager, Op.entity_id);
 			}
@@ -312,7 +325,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 		{
 			if (NetDriver->IsServer())
 			{
-				AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
+				//AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 			}
 			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
 			{
@@ -1994,49 +2007,49 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
-	if (!NetDriver->IsServer())
-	{
-		// Clients can ignore Heartbeat component updates.
-		return;
-	}
+	//if (!NetDriver->IsServer())
+	//{
+	//	// Clients can ignore Heartbeat component updates.
+	//	return;
+	//}
 
-	TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = AuthorityPlayerControllerConnectionMap.Find(Op.entity_id);
-	if (ConnectionPtr == nullptr)
-	{
-		// Heartbeat component update on a PlayerController that this server does not have authority over.
-		// TODO: Disable component interest for Heartbeat components this server doesn't care about - UNR-986
-		return;
-	}
+	//TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = AuthorityPlayerControllerConnectionMap.Find(Op.entity_id);
+	//if (ConnectionPtr == nullptr)
+	//{
+	//	// Heartbeat component update on a PlayerController that this server does not have authority over.
+	//	// TODO: Disable component interest for Heartbeat components this server doesn't care about - UNR-986
+	//	return;
+	//}
 
-	if (!ConnectionPtr->IsValid())
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received heartbeat component update after NetConnection has been cleaned up. PlayerController entity: %lld"), Op.entity_id);
-		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
-		return;
-	}
+	//if (!ConnectionPtr->IsValid())
+	//{
+	//	UE_LOG(LogSpatialReceiver, Warning, TEXT("Received heartbeat component update after NetConnection has been cleaned up. PlayerController entity: %lld"), Op.entity_id);
+	//	AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
+	//	return;
+	//}
 
-	USpatialNetConnection* NetConnection = ConnectionPtr->Get();
+	//USpatialNetConnection* NetConnection = ConnectionPtr->Get();
 
-	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
-	uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
-	if (EventCount > 0)
-	{
-		if (EventCount > 1)
-		{
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received multiple heartbeat events in a single component update, entity %lld."), Op.entity_id);
-		}
+	//Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
+	//uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
+	//if (EventCount > 0)
+	//{
+	//	if (EventCount > 1)
+	//	{
+	//		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received multiple heartbeat events in a single component update, entity %lld."), Op.entity_id);
+	//	}
 
-		NetConnection->OnHeartbeat();
-	}
+	//	NetConnection->OnHeartbeat();
+	//}
 
-	Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
-	if (Schema_GetBoolCount(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID) > 0 &&
-		GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
-	{
-		// Client has disconnected, let's clean up their connection.
-		NetConnection->CleanUp();
-		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
-	}
+	//Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
+	//if (Schema_GetBoolCount(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID) > 0 &&
+	//	GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
+	//{
+	//	// Client has disconnected, let's clean up their connection.
+	//	NetConnection->CleanUp();
+	//	//AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
+	//}
 }
 
 void USpatialReceiver::PeriodicallyProcessIncomingRPCs()
