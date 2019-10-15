@@ -3,7 +3,7 @@ param(
   [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production/UnrealEngine",
   [string] $msbuild_exe = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MSBuild.exe",
   [string] $target_platform = "Win64",
-  [string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build
+  [string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build. Should ultimately resolve to "C:\b\<number>\".
   [string] $unreal_path = "$build_home\UnrealEngine",
   [string] $testing_project_name = "StarterContent" ## For now, has to be inside the Engine's Samples folder
 )

@@ -1,8 +1,10 @@
 param(
     # Note: this directory is outside the build directory and will not get automatically cleaned up from agents unless agents are restarted.
     [string] $engine_cache_directory = "$($pwd.drive.root)UnrealEngine-Cache",
-    # Unreal path is a symlink to a specific Engine version located in Engine cache directory.
+
+    # Unreal path is a symlink to a specific Engine version located in Engine cache directory. This should ultimately resolve to "C:\b\<number>\UnrealEngine".
     [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine",
+    
     [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production/UnrealEngine"
 )
 

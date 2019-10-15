@@ -1,7 +1,7 @@
 # Expects gdk_home, which is not the GDK location in the engine
 param (
     [string] $gdk_path = "$gdk_home",
-    [string] $msbuild_path = "$((Get-Item 'Env:programfiles(x86)').Value)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MSBuild.exe"
+    [string] $msbuild_path = "$((Get-Item 'Env:programfiles(x86)').Value)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MSBuild.exe" ## Location of MSBuild.exe on the build agent, as it only has the build tools, not the full visual studio
 )
 
 pushd $gdk_path

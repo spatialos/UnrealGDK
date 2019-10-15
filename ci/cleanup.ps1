@@ -1,5 +1,5 @@
 param (
-    [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine"
+    [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine" ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
 )
 $gdk_in_engine = "$unreal_path\Engine\Plugins\UnrealGDK"
 

@@ -1,6 +1,6 @@
 # Expects gdk_home, which is not the GDK location in the engine
 param(
-  [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine",
+  [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine", ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
   [string] $target_platform = "Win64",
   [string] $build_output_dir
 )

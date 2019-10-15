@@ -2,6 +2,10 @@ param(
     [string] $test_result_dir
 )
 
+# The Unreal Engine produces a mostly undocumented index.html/index.json as the result of running a test suite, for now seems mostly
+# for internal use - but it's an okay visualisation for test results, so we fix it up here to display as a build artifact in CI
+# (replacing local dependencies in the html by CDNs or correcting paths)
+
 $replacement_strings = @()
 $replacement_strings += @('/bower_components/font-awesome/css/font-awesome.min.css', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css')
 $replacement_strings += @('/bower_components/twentytwenty/css/twentytwenty.css', 'https://cdnjs.cloudflare.com/ajax/libs/mhayes-twentytwenty/1.0.0/css/twentytwenty.min.css')
