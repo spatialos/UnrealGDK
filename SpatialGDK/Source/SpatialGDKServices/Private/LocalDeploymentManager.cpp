@@ -237,7 +237,7 @@ bool FLocalDeploymentManager::PreStartCheck()
 						{
 							return true;
 						}
-						UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to kill process blocking required port. Error: %s", StdErr));
+						UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
 					}
 				}
 			}
