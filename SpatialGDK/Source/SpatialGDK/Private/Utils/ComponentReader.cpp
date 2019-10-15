@@ -156,9 +156,9 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 						RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, ShadowOffset, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
 						UnresolvedRefs.Append(NewUnresolvedRefs);
 					}
-					else if (RootObjectReferencesMap.Find(FieldId))
+					else if (RootObjectReferencesMap.Find(SwappedCmd.Offset))
 					{
-						RootObjectReferencesMap.Remove(FieldId);
+						RootObjectReferencesMap.Remove(SwappedCmd.Offset);
 					}
 				}
 				else
