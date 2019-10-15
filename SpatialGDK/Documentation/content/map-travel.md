@@ -48,7 +48,7 @@ PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false /*bS
 
 ## Default connection flows
 #### Play In Editor Clients
-Launching a [PIE](https://docs.unrealengine.com/en-us/GettingStarted/HowTo/PIE#playineditor) client from the editor will automatically attempt to connect to a local SpatialOS deployment on your machine by using the receptionist flow. It uses the URL `127.0.0.1` This is for quick editing and debugging purposes.
+Launching a [PIE](https://docs.unrealengine.com/en-us/GettingStarted/HowTo/PIE#playineditor) client from the editor will automatically attempt to connect to a local SpatialOS deployment on your machine by using the receptionist flow. It uses the URL `127.0.0.1` This is for quick editing and debugging purposes. The start up PIE client URI can be changed using the command line argument "receptionistHost <URL>". This allows the developer to connect to a non local server.
 
 By default in the editor and when [Spatial Networking]({{urlRoot}}/content/unreal-editor-interface/toolbars#switching-between-native-unreal-networking-and-spatialos-networking) is enabled clients and servers will automatically wait for a local SpatialOS deployment to be started by the editor before attempting to connect. If you wish to disable this functionality (e.g. if you want to start a deployment outside of the editor) you can change the "Auto-start local deployment" option in the [SpatialOS Editor Settings]({{urlRoot}}/content/unreal-editor-interface/editor-settings).
 
