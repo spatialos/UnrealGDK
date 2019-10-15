@@ -228,7 +228,7 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 		// FieldId is the same as handover handle
 		if (FieldId == 0 || (int)FieldId - 1 >= ClassInfo.HandoverProperties.Num())
 		{
-			UE_LOG(LogSpatialComponentReader, Error, TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema! Object: %s, Field: %d, Entity: %lld, Component: %d"), *Object->GetPathName(), FieldId, Channel->GetEntityId(), ComponentId);
+			UE_LOG(LogSpatialComponentReader, Error, TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: %lld, Component: %d"), *Object->GetPathName(), FieldId, Channel->GetEntityId(), ComponentId);
 			continue;
 		}
 		const FHandoverPropertyInfo& PropertyInfo = ClassInfo.HandoverProperties[FieldId - 1];
