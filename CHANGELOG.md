@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- "receptionistHost <URL>" can now be used as a command line arg to change the initial connection URL for a PIE client.
 - Added logging for queued RPCs.
 - Added several new STAT annotations into the ServerReplicateActors call chain.
 - Avoid generating schema for all UObject subclasses. Actor, ActorComponent, GameplayAbility subclasses are enabled by default, other classes can be enabled using SpatialType UCLASS specifier.
