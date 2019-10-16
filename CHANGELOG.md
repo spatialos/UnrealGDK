@@ -5,53 +5,74 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
-- Added logging for queued RPCs.
-- Added several new STAT annotations into the ServerReplicateActors call chain.
-- Avoid generating schema for all UObject subclasses. Actor, ActorComponent, GameplayAbility subclasses are enabled by default, other classes can be enabled using SpatialType UCLASS specifier.
-- Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
-- Added OverrideSpatialOffloading command line flag that allows toggling of offloading at launch time.
+
+### Features:
 - Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
 - Added support for the UE4 Network Profile to measure relative size of RPC and Actor replication data.
+- Added a VirtualWorkerTranslation component to be used in future UnrealGDK loadbalancing.
+- Add SpatialToggleMetricsDisplay console command.  bEnableMetricsDisplay must be enabled in order for the display to be available.  You must then must call SpatialToggleMetricsDisplay on each client that wants to view the metrics display.
+- Enabled compression in modular-udp networking stack
+- Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
+- A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
+
+## [`0.7.0-preview`] - 2019-10-11
+
+### New Known Issues:
+- MSVC v14.23 removes `typeinfo.h` and replaces it with `typeinfo`. This change causes errors when building the Unreal Engine. This issue affects Visual Studio 2019 users. Until [this proposed fix](https://github.com/EpicGames/UnrealEngine/pull/6226) is accepted by Epic Games, you can work around the issue by:
+1. Open Visual Studio Installer.
+1. Select "Modify" on your Visual Studio 2019 installation.
+1. Select the "Individual components" tab.
+1. Uncheck "MSVC v142 - VS 2019 C++ x64/x86 build tools (**v14.22**)".
+1. Check "MSVC v142 - VS 2019 C++ x64/x86 build tools (**v14.23**)".
+1. Select "Modify" to confirm your changes.
 
 ### Breaking Changes:
-- If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you need to enable generating schema for them using SpatialType UCLASS specifier or by checking Spatial Type if it's a blueprint.
+- If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you now need to enable generating schema for them using `SpatialType` UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
+- Chunk based interest is no longer supported. All interest is resolved using query-based interest (QBI). You should remove streaming query and chunk based interest options from worker and launch config files to avoid unnecessary streaming queries being generated.
 - If you already have a project that you are upgrading to this version of the GDK, it is encouraged to follow the upgrade process to SpatialOS `14.1.0`:
 1. Open the `spatialos.json` file in the `spatial/` directory of your project.
 1. Replace the `sdk_version` value and the version value of all dependencies with `14.1.0`.
 1. Replace all other instances of the version number in the file.
 
 ### Features:
-- Visual Studio 2019 is now supported.
-- Added toolbar and commandlet options to delete the schema database.
-- Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
-- Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
-- It is now possible to specify in Unreal which actors should not persist as entities in the Snapshot.
-- Deleted startup actors are now tracked
 - The GDK now uses SpatialOS `14.1.0`.
-- Added a user bindable delegate to SpatialMetrics which triggers when worker metrics have been received.
-- Local deployments now create a new log file known as 'launch.log' which will contain logs relating to starting and running a deployment. Additionally it will contain worker logs which are forwarded to the SpatialOS runtime.
-- Added a new setting to SpatialOS Runtime Settings 'Worker Log Level' which allows configuration of which verbosity of worker logs gets forwarded to the SpatialOS runtime.
-- Added a new developer tool called 'Spatial Output Log' which will show local deployment logs from the 'launch.log' file.
-- Enabled compression in modular-udp networking stack
-- Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
-- Add SpatialToggleMetricsDisplay console command.  bEnableMetricsDisplay must be enabled in order for the display to be available.  You must then must call SpatialToggleMetricsDisplay on each client that wants to view the metrics display.
+- Visual Studio 2019 is now supported.
+- You can now delete your schema database using options in the GDK toolbar and the commandlet.
+- The GDK now checks that schema and a snapshot are present before attempting to start a local deployment. If either are missing then an error message is displayed.
+- Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
+- You can now specify which actors should not persist as entities in your Snapshot. You do this by adding the flag `SPATIALCLASS_NotPersistent` to a class or by entering `NotPersistent` in the `Class Defaults` > `Spatial Description` field on blueprints.
+- Deleted startup actors are now tracked.
+- Added a user bindable delegate to `SpatialMetrics` which triggers when worker metrics have been received.
+- Local deployments now create a new log file known as `launch.log` which will contain logs relating to starting and running a deployment. Additionally it will contain worker logs which are forwarded to the SpatialOS runtime.
+- Added a new setting to SpatialOS Runtime Settings `Worker Log Level` which allows configuration of which verbosity of worker logs gets forwarded to the SpatialOS runtime.
+- Added a new developer tool called 'Spatial Output Log' which will show local deployment logs from the `launch.log` file.
+- Added logging for queued RPCs.
+- Added several new STAT annotations into the ServerReplicateActors call chain.
+- The GDK no longer generates schema for all UObject subclasses. Schema generation for Actor, ActorComponent and GameplayAbility subclasses is enabled by default, other classes can be enabled using `SpatialType` UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
+- Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
+- Added the `OverrideSpatialOffloading` command line flag. This allows you to toggle offloading at launch time.
 
 ### Bug fixes:
 - Spatial networking is now always enabled in built assemblies.
 - Fixed a bug where the spatial daemon started even with spatial networking disabled.
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
-- Attempting to replicate unsupported types (such as TMap) produce a log error rather than crashing the game.
+- Attempting to replicate unsupported types (such as TMap) results in an error rather than crashing the game.
 - Generating schema when the schema database is locked by another process will no longer crash the editor.
-- When schema compiler fails, schema generation correctly shows an error.
+- When the schema compiler fails, schema generation now displays an error.
 - Fixed crash during initialization when running GenerateSchemaCommandlet.
-- Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
-- Streaming levels with QBI enabled no longer produces errors if the player connection owns unreplicated actors.
-- Fixed an issue that would prevent player movement in a zoned deployment.
-- Fixed an issue that could cause queued incoming RPCs with unresolved references to never be processed.
+- Generating schema after deleting the schema database now correctly triggers an initial schema generation.
+- Streaming levels with query-based interest (QBI) enabled no longer produces errors if the player connection owns unreplicated actors.
+- Fixed an issue that prevented player movement in a zoned deployment.
+- Fixed an issue that caused queued incoming RPCs with unresolved references to never be processed.
+- Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
+- When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
+- Fixed a crash upon checking out an actor with a deleted static subobject.
 
-### Breaking Changes:
-- Chunk based interest is no longer supported. All interest is resolved through QBI. You should remove streaming query and chunk based interest options from worker and launch config files to avoid unnecessary streaming queries being generated.
+## [`0.6.2`] - 2019-10-10
+
+- The GDK no longer relies on an ordering of entity and interest queries that is not guaranteed by the SpatialOS runtime.
+- The multiserver offloading tutorial has been simplified and re-factored.
 
 ## [`0.6.1`] - 2019-08-15
 
@@ -147,7 +168,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Retrying reliable RPCs with `UObject` arguments that were destroyed before the RPC was retried no longer causes a crash.
 - Fixed path naming issues in setup.sh
 - Fixed an assert/crash in `SpatialMetricsDisplay` that occurred when reloading a snapshot.
-- Added Singleton and SingletonManager to QBI constraints to fix issue preventing Test configuration builds from functioning correctly.
+- Added Singleton and SingletonManager to query-based interest (QBI) constraints to fix issue preventing Test configuration builds from functioning correctly.
 - Failing to `NetSerialize` a struct in spatial no longer causes a crash, it now prints a warning. This matches native Unreal behavior.
 - Query response delegates now execute even if response status shows failure. This allows handlers to implement custom retry logic such as clients querying for the GSM.
 - Fixed a crash where processing unreliable RPCs made assumption that the worker had authority over all entities in the SpatialOS op
@@ -164,7 +185,7 @@ In addition to all of the updates from Improbable, this release includes x impro
 ### New Known Issues:
 - `BeginPlay()` is not called on all `WorldSettings` actors [#937](https://github.com/spatialos/UnrealGDK/issues/937)
 - Replicated properties within `DEBUG` or `WITH_EDITORONLY_DATA` macros are not supported [#939](https://github.com/spatialos/UnrealGDK/issues/939)
-- Client connections will be closed by the `ServerWorker` when using Blueprint or C++ breakpoints during play-in-editor sessions [#940](https://github.com/spatialos/UnrealGDK/issues/940)
+- Client connections will be closed by the `ServerWorker` when using blueprint or C++ breakpoints during play-in-editor sessions [#940](https://github.com/spatialos/UnrealGDK/issues/940)
 - Clients that connect after a Startup Actor (with `bNetLoadOnClient = true`) will not delete the Actor [#941](https://github.com/spatialos/UnrealGDK/issues/941)
 - Generating schema while asset manager is asynchronously loading causes editor to crash [#944](https://github.com/spatialos/UnrealGDK/issues/944)
 
@@ -199,7 +220,7 @@ In addition to all of the updates from Improbable, this release includes x impro
 - Ensure that components added in blueprints are replicated.
 - Fixed potential loading issue when attempting to load the SchemaDatabase asset.
 - Add pragma once directive to header file.
-- Schema files are now generated correctly for subobjects of the Blueprint classes.
+- Schema files are now generated correctly for subobjects of the blueprint classes.
 - Fixed being unable to launch SpatialOS if project path had spaces in it.
 - Editor no longer crashes when setting LogSpatialSender to Verbose.
 - Server-workers quickly restarted in the editor will connect to runtime correctly.
