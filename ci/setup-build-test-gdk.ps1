@@ -41,10 +41,17 @@ if ($target_platform -eq "Win64") {
   Finish-Event "setup-tests" "command"
 
   Start-Event "test-gdk" "command"
-  &$PSScriptRoot"\run-tests.ps1" -unreal_editor_path "$unreal_path\Engine\Binaries\$target_platform\UE4Editor.exe" -uproject_path "$unreal_path\Samples\$testing_project_name\$testing_project_name.uproject" -output_dir "$PSScriptRoot\TestResults" -log_file_name "tests.log"
-  Finish-Event "test-gdk" "command"
+  Try{
+    &$PSScriptRoot"\run-tests.ps1" -unreal_editor_path "$unreal_path\Engine\Binaries\$target_platform\UE4Editor.exe" -uproject_path "$unreal_path\Samples\$testing_project_name\$testing_project_name.uproject" -output_dir "$PSScriptRoot\TestResults" -log_file_name "tests.log"
+  }
+  Catch {
+    Throw $_
+  }
+  Finally {
+    Finish-Event "test-gdk" "command"
 
-  Start-Event "report-tests" "command"
-  &$PSScriptRoot"\report-tests.ps1" -test_result_dir "$PSScriptRoot\TestResults"
-  Finish-Event "report-tests" "command"
+    Start-Event "report-tests" "command"
+    &$PSScriptRoot"\report-tests.ps1" -test_result_dir "$PSScriptRoot\TestResults"
+    Finish-Event "report-tests" "command"
+  }
 }
