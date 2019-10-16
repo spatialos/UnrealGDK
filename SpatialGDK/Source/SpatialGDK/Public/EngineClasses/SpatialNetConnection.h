@@ -43,13 +43,6 @@ public:
 	///////
 	// End NetConnection Interface
 
-	void InitHeartbeat(class FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity);
-	void SetHeartbeatTimeoutTimer();
-	void SetHeartbeatEventTimer();
-
-	void DisableHeartbeat();
-
-	void OnHeartbeat();
 	void UpdateActorInterest(AActor* Actor);
 
 	void ClientNotifyClientHasQuit();
@@ -66,5 +59,4 @@ public:
 
 	// Player lifecycle
 	Worker_EntityId PlayerControllerEntity;
-	FTimerHandle HeartbeatTimer;
 };

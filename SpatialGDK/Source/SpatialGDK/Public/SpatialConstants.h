@@ -107,7 +107,6 @@ namespace SpatialConstants
 	const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 9994;
 	const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID			    = 9993;
 	const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 9992;
-	const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 9991;
 	const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID				= 9990;
 	const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID				= 9989;
 	const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID					= 9987;

@@ -681,15 +681,6 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 void USpatialNetDriver::Shutdown()
 {
-	if (!IsServer())
-	{
-		// Notify the server that we're disconnecting so it can clean up our actors.
-		if (USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(ServerConnection))
-		{
-			SpatialNetConnection->ClientNotifyClientHasQuit();
-		}
-	}
-
 	Super::Shutdown();
 
 	// This is done after Super::Shutdown so the NetDriver is given an opportunity to shutdown all open channels, and those

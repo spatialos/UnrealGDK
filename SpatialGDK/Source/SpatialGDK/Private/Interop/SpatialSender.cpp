@@ -16,7 +16,6 @@
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpoint.h"
-#include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerRPCEndpoint.h"
@@ -139,15 +138,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ComponentWriteAcl.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, AuthoritativeWorkerRequirementSet);
 	}
 
-	// If Actor is a PlayerController, add the heartbeat component.
-	if (Actor->IsA<APlayerController>())
-	{
-#if !UE_BUILD_SHIPPING
-		ComponentWriteAcl.Add(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-#endif // !UE_BUILD_SHIPPING
-		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnlyRequirementSet);
-	}
-
 	ComponentWriteAcl.Add(SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
@@ -247,14 +237,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Actor));
-
-	if (Actor->IsA<APlayerController>())
-	{
-#if !UE_BUILD_SHIPPING
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DEBUG_METRICS_COMPONENT_ID));
-#endif // !UE_BUILD_SHIPPING
-		ComponentDatas.Add(Heartbeat().CreateHeartbeatData());
-	}
 
 	ComponentFactory DataFactory(false, NetDriver);
 

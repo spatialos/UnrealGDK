@@ -5,7 +5,6 @@
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/Component.h"
-#include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerRPCEndpoint.h"
@@ -69,9 +68,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		break;
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Interest>>(Op.data);
-		break;
-	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Heartbeat>>(Op.data);
 		break;
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::RPCsOnEntityCreation>>(Op.data);
