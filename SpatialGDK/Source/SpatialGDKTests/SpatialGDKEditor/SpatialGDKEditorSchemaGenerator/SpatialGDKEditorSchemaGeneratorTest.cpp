@@ -211,6 +211,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_generated_schema_for_these_cla
 
 	FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
 
 	// WHEN
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
@@ -394,43 +395,173 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_object_components_WHEN_
 
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist)
 {
-	//SPATIALGDKEDITOR_API void DeleteGeneratedSchemaFiles(FString SchemaOutputPath = "");
-	TestTrue("", false);
+	// GIVEN
+	TSet<UClass*> Classes;
+	// TODO(Alex): Don't have that many classes?
+	Classes.Add(USchemaGenObjectStub::StaticClass());
+	Classes.Add(USpatialTypeObjectStub::StaticClass());
+	Classes.Add(UChildOfSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UNotSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UChildOfNotSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UNoSpatialFlagsObjectStub::StaticClass());
+	Classes.Add(UChildOfNoSpatialFlagsObjectStub::StaticClass());
+	Classes.Add(ASpatialTypeActor::StaticClass());
+
+	FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+
+	// WHEN
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+
+	// THEN
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	TestFalse("Schema directory does not exist", PlatformFile.DirectoryExists(*SchemaOutputFolder));
+
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_no_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist)
 {
-	//SPATIALGDKEDITOR_API void DeleteGeneratedSchemaFiles(FString SchemaOutputPath = "");
-	TestTrue("", false);
+	// GIVEN
+	FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+
+	// WHEN
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+
+	// THEN
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	TestFalse("Schema directory does not exist", PlatformFile.DirectoryExists(*SchemaOutputFolder));
+
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_schema_database_exists)
 {
-	//SPATIALGDKEDITOR_API bool SaveSchemaDatabase(FString PackagePath = "");
-	TestTrue("", false);
+	// GIVEN
+	TSet<UClass*> Classes;
+	// TODO(Alex): Don't have that many classes?
+	Classes.Add(USchemaGenObjectStub::StaticClass());
+	Classes.Add(USpatialTypeObjectStub::StaticClass());
+	Classes.Add(UChildOfSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UNotSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UChildOfNotSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UNoSpatialFlagsObjectStub::StaticClass());
+	Classes.Add(UChildOfNoSpatialFlagsObjectStub::StaticClass());
+	Classes.Add(ASpatialTypeActor::StaticClass());
+
+	const FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	const FString DatabaseOutputFile = TEXT("/Game/Spatial/Tests/SchemaDatabase");
+	const FString SchemaDatabaseFileName = TEXT("Spatial/Tests/SchemaDatabase");
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+
+	// WHEN
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
+
+	// THEN
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName);
+	const FString ExpectedSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	TestTrue("Generated schema database exists", PlatformFile.FileExists(*ExpectedSchemaDatabaseFileName));
+
+	// CLEANUP
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
+
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_saved_THEN_valid_schema_database_exists)
 {
-	//SPATIALGDKEDITOR_API bool SaveSchemaDatabase(FString PackagePath = "");
-	TestTrue("", false);
+	// GIVEN
+	UClass* CurrentClass = ASpatialTypeActor::StaticClass();
+	TSet<UClass*> Classes;
+	Classes.Add(CurrentClass);
+
+	const FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	const FString DatabaseOutputFile = TEXT("/Game/Spatial/Tests/SchemaDatabase");
+	const FString SchemaDatabaseFileName = TEXT("Spatial/Tests/SchemaDatabase");
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+
+	// WHEN
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
+
+	// THEN
+	TestTrue("Generated schema database is valid", false);
+
+	// CLEANUP
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
+
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_valid_schema_database_exists)
 {
-	//SPATIALGDKEDITOR_API bool SaveSchemaDatabase(FString PackagePath = "");
-	TestTrue("", false);
+	// GIVEN
+	TSet<UClass*> Classes;
+	// TODO(Alex): Don't have that many classes?
+	Classes.Add(USchemaGenObjectStub::StaticClass());
+	Classes.Add(USpatialTypeObjectStub::StaticClass());
+	Classes.Add(UChildOfSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UNotSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UChildOfNotSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UNoSpatialFlagsObjectStub::StaticClass());
+	Classes.Add(UChildOfNoSpatialFlagsObjectStub::StaticClass());
+	Classes.Add(ASpatialTypeActor::StaticClass());
+
+	const FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	const FString DatabaseOutputFile = TEXT("/Game/Spatial/Tests/SchemaDatabase");
+	const FString SchemaDatabaseFileName = TEXT("Spatial/Tests/SchemaDatabase");
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+
+	// WHEN
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
+
+	// THEN
+	TestTrue("Generated schema database is valid", false);
+
+	// CLEANUP
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
+
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_schema_database_deleted_THEN_no_schema_database_exists)
 {
-	//SPATIALGDKEDITOR_API bool DeleteSchemaDatabase(FString PackagePath = "");
-	TestTrue("", false);
+	// GIVEN
+	UClass* CurrentClass = ASpatialTypeActor::StaticClass();
+	TSet<UClass*> Classes;
+	Classes.Add(CurrentClass);
+
+	const FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	const FString DatabaseOutputFile = TEXT("/Game/Spatial/Tests/SchemaDatabase");
+	const FString SchemaDatabaseFileName = TEXT("Spatial/Tests/SchemaDatabase");
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
+
+	// WHEN
+	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
+
+	// THEN
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName);
+	const FString ExpectedSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	TestFalse("Generated schema database does not exists", PlatformFile.FileExists(*ExpectedSchemaDatabaseFileName));
+
+	// CLEANUP
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+
 	return true;
 }
 
