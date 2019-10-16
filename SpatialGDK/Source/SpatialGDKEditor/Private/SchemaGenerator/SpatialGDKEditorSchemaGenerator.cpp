@@ -57,11 +57,56 @@ const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContent
 const FString SchemaDatabaseAssetPath = FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase"));
 const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 
+enum class CompiledSchemaFormat : uint8
+{
+	Descriptor,
+	Bundle,
+	BundleJson,
+	AST,
+	ASTJson
+};
+
+const TMap<FString, CompiledSchemaFormat> SwitchesToFormats{
+	{ FString{ TEXT("compileschemadescriptor") }, CompiledSchemaFormat::Descriptor },
+	{ FString{ TEXT("compileschemabundle") }, CompiledSchemaFormat::Bundle },
+	{ FString{ TEXT("compileschemabundlejson") }, CompiledSchemaFormat::BundleJson },
+	{ FString{ TEXT("compileschemaast") }, CompiledSchemaFormat::AST },
+	{ FString{ TEXT("compileschemaastjson") }, CompiledSchemaFormat::ASTJson }
+};
+
+TSet<CompiledSchemaFormat> GetCompiledSchemaFormats()
+{
+	TArray<FString> Tokens;
+	TArray<FString> Switches;
+	FCommandLine::Parse(FCommandLine::Get(), Tokens, Switches);
+
+	TArray<FString> CompileSchemaSwitches = Switches.FilterByPredicate([](const FString& Switch) {
+		return Switch.StartsWith(FString{ TEXT("CompileSchema") });
+	});
+
+	if (CompileSchemaSwitches.Num() == 0)
+	{
+		// Fall back to just the descriptor format if no specific schema compiler switches are provided
+		return TSet<CompiledSchemaFormat>{ CompiledSchemaFormat::Descriptor };
+	}
+
+	TSet<CompiledSchemaFormat> OutFormats;
+
+	for (const FString& CompileSchemaSwitch : CompileSchemaSwitches)
+	{
+		if (const CompiledSchemaFormat* FormatPtr = SwitchesToFormats.Find(CompileSchemaSwitch.ToLower()))
+		{
+			OutFormats.Add(*FormatPtr);
+		}
+	}
+
+	return OutFormats;
+}
+
 namespace SpatialGDKEditor
 {
 namespace Schema
 {
-
 void AddPotentialNameCollision(const FString& DesiredSchemaName, const FString& ClassPath, const FString& GeneratedSchemaName)
 {
 	PotentialSchemaNameCollisions.FindOrAdd(DesiredSchemaName).Add(FString::Printf(TEXT("%s(%s)"), *ClassPath, *GeneratedSchemaName));
@@ -701,21 +746,67 @@ bool RunSchemaCompiler()
 
 	FString SchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema"));
 	FString CoreSDKSchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
-	FString SchemaDescriptorDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
-	FString SchemaDescriptorOutput = FPaths::Combine(SchemaDescriptorDir, TEXT("schema.descriptor"));
+	FString CompiledSchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
+	FString CompiledSchemaASTDir = FPaths::Combine(CompiledSchemaDir, TEXT("ast"));
 
-	// The schema_compiler cannot create folders.
-	if (!FPaths::DirectoryExists(SchemaDescriptorDir))
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	FString SchemaCompilerBaseArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *CoreSDKSchemaDir);
+	TArray<FString> SchemaCompilerFormatArgs;
+
+	TSet<CompiledSchemaFormat> CompiledSchemaFormats = GetCompiledSchemaFormats();
+	for (const CompiledSchemaFormat& Format : CompiledSchemaFormats)
 	{
-		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-		if (!PlatformFile.CreateDirectoryTree(*SchemaDescriptorDir))
+		switch (Format)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create schema descriptor directory '%s'! Please make sure the parent directory is writeable."), *SchemaDescriptorDir);
+		case CompiledSchemaFormat::Descriptor:
+			SchemaCompilerFormatArgs.Add(FString::Printf(TEXT("--descriptor_set_out=\"%s\""), *FPaths::Combine(CompiledSchemaDir, TEXT("schema.descriptor"))));
+			break;
+		case CompiledSchemaFormat::Bundle:
+			SchemaCompilerFormatArgs.Add(FString::Printf(TEXT("--bundle_out=\"%s\""), *FPaths::Combine(CompiledSchemaDir, TEXT("schema.sb"))));
+			break;
+		case CompiledSchemaFormat::BundleJson:
+			SchemaCompilerFormatArgs.Add(FString::Printf(TEXT("--bundle_json_out=\"%s\""), *FPaths::Combine(CompiledSchemaDir, TEXT("schema.sb.json"))));
+			break;
+		case CompiledSchemaFormat::AST:
+			SchemaCompilerFormatArgs.Add(FString::Printf(TEXT("--ast_proto_out=\"%s\""), *CompiledSchemaASTDir));
+			break;
+		case CompiledSchemaFormat::ASTJson:
+			SchemaCompilerFormatArgs.Add(FString::Printf(TEXT("--ast_json_out=\"%s\""), *CompiledSchemaASTDir));
+			break;
+		default:
+			checkNoEntry();
 			return false;
 		}
 	}
 
-	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
+	// If there's already a compiled schema dir, blow it away so we don't have lingering artifacts from previous generation runs.
+	if (FPaths::DirectoryExists(CompiledSchemaDir))
+	{
+		if (!PlatformFile.DeleteDirectoryRecursively(*CompiledSchemaDir))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not delete pre-existing compiled schema directory '%s'! Please make sure the directory is writeable."), *CompiledSchemaDir);
+		}
+	}
+
+	// schema_compiler cannot create folders, so we need to set them up beforehand.
+	if (!PlatformFile.CreateDirectoryTree(*CompiledSchemaDir))
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create compiled schema directory '%s'! Please make sure the parent directory is writeable."), *CompiledSchemaDir);
+		return false;
+	}
+
+	// Because ASTs are output per .schema file, we'll place them in their own subfolder to keep things tidy.
+	if (CompiledSchemaFormats.Contains(CompiledSchemaFormat::AST) || CompiledSchemaFormats.Contains(CompiledSchemaFormat::ASTJson))
+	{
+		if (!PlatformFile.CreateDirectoryTree(*CompiledSchemaASTDir))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create compiled schema AST directory '%s'! Please make sure the parent directory is writeable."), *CompiledSchemaASTDir);
+			return false;
+		}
+	}
+
+	FString SchemaCompilerArgs = FString::Printf(TEXT("%s %s"), *SchemaCompilerBaseArgs, *FString::Join(SchemaCompilerFormatArgs, TEXT(" ")));
 
 	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Starting '%s' with `%s` arguments."), *SchemaCompilerExe, *SchemaCompilerArgs);
 
@@ -726,12 +817,12 @@ bool RunSchemaCompiler()
 
 	if (ExitCode == 0)
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("schema_compiler successfully generated schema descriptor: %s"), *SchemaCompilerOut);
+		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("schema_compiler successfully generated compiled schema with arguments `%s`: %s"), *SchemaCompilerArgs, *SchemaCompilerOut);
 		return true;
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("schema_compiler failed to generate schema descriptor: %s"), *SchemaCompilerErr);
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("schema_compiler failed to generate compiled schema for arguments `%s`: %s"), *SchemaCompilerArgs, *SchemaCompilerErr);
 		return false;
 	}
 }
