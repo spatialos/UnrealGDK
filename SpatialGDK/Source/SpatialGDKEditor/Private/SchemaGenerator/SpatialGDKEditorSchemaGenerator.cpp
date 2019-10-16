@@ -576,15 +576,20 @@ void ResetSchemaGeneratorState()
 	SchemaGeneratedClasses.Empty();
 }
 
-bool TryLoadExistingSchemaDatabase()
+bool TryLoadExistingSchemaDatabase(FString FileName /*= ""*/)
 {
-	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*SchemaDatabaseFileName);
+	if (FileName.IsEmpty())
+	{
+		FileName = SchemaDatabaseFileName;
+	}
+
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*FileName);
 
 	if (StatData.bIsValid)
 	{
 		if (StatData.bIsReadOnly)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"), *SchemaDatabaseFileName);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"), *FileName);
 			return false;
 		}
 
@@ -608,6 +613,7 @@ bool TryLoadExistingSchemaDatabase()
 			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
 			ResetSchemaGeneratorState();
 			DeleteGeneratedSchemaFiles();
+			return false;
 		}
 	}
 	else
@@ -615,6 +621,7 @@ bool TryLoadExistingSchemaDatabase()
 		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("SchemaDatabase not found so the generated schema directory will be cleared out if it exists."));
 		ResetSchemaGeneratorState();
 		DeleteGeneratedSchemaFiles();
+		return false;
 	}
 
 	return true;

@@ -567,15 +567,50 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_schema_database_deleted_
 
 SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loaded)
 {
-	//SPATIALGDKEDITOR_API bool TryLoadExistingSchemaDatabase();
-	TestTrue("", false);
+	// GIVEN
+	UClass* CurrentClass = ASpatialTypeActor::StaticClass();
+	TSet<UClass*> Classes;
+	Classes.Add(CurrentClass);
+
+	const FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	const FString DatabaseOutputFile = TEXT("/Game/Spatial/Tests/SchemaDatabase");
+	const FString SchemaDatabaseFileName = TEXT("Spatial/Tests/SchemaDatabase");
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
+
+	// WHEN
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName);
+	const FString ExpectedSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	bool bSuccess = SpatialGDKEditor::Schema::TryLoadExistingSchemaDatabase(ExpectedSchemaDatabaseFileName);
+
+	// THEN
+	TestTrue("Schema database loaded", bSuccess);
+
+	// CLEANUP
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
+
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_THEN_not_loaded)
 {
-	//SPATIALGDKEDITOR_API bool TryLoadExistingSchemaDatabase();
-	TestTrue("", false);
+	// GIVEN
+	const FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	const FString SchemaDatabaseFileName = TEXT("Spatial/Tests/SchemaDatabase");
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
+
+	// WHEN
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName);
+	const FString ExpectedSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	bool bSuccess = SpatialGDKEditor::Schema::TryLoadExistingSchemaDatabase(ExpectedSchemaDatabaseFileName);
+
+	// THEN
+	TestFalse("Schema database not loaded", bSuccess);
+
 	return true;
 }
 
