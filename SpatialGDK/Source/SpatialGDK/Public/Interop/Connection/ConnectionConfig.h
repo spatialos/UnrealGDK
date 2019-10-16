@@ -77,7 +77,6 @@ struct FReceptionistConfig : public FConnectionConfig
 			if (!IpV4RegexMatcher.FindNext())
 			{
 				// If an IP is not specified then use default.
-				FString DefaultReceptionistHost = GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost;
 				ReceptionistHost = GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost;
 				if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
 				{

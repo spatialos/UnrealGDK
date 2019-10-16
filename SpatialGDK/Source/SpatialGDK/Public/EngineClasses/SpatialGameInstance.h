@@ -50,7 +50,7 @@ public:
 
 #if WITH_EDITOR
 	// Used to check whether receptionist host should be overridden when connecting. See USpatialNetDriver::ShouldOverrideReceptionistHost and UNR-1698.
-	bool SetFirstConnectionToSpatialOSAttempted();
+	bool bFirstConnectionToSpatialOSAttempted = false;
 #endif // WITH_EDITOR
 
 protected:
@@ -66,9 +66,4 @@ private:
 	// If this flag is set to true standalone clients will not attempt to connect to a deployment automatically if a 'loginToken' exists in arguments.
 	UPROPERTY(Config)
 	bool bPreventAutoConnectWithLocator;
-
-#if WITH_EDITOR
-	// Used to check whether receptionist host should be overridden when connecting. See USpatialNetDriver::ShouldOverrideReceptionistHost and UNR-1698.
-	bool bFirstConnectionToSpatialOSAttempted = false;
-#endif // WITH_EDITOR
 };

@@ -90,7 +90,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialWorkerConnection();
 	}
-
+	FCommandLine::Set(TEXT("+receptionistHost 12227.0.0.1"));
 	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 }
 #endif
@@ -163,14 +163,3 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
 	OnConnectionFailed.Broadcast(Reason);
 }
-
-#if WITH_EDITOR
-bool USpatialGameInstance::SetFirstConnectionToSpatialOSAttempted(){
-	if (!bFirstConnectionToSpatialOSAttempted)
-	{
-		bFirstConnectionToSpatialOSAttempted = true;
-		return true;
-	}
-	return false;
-}
-#endif // WITH_EDITOR

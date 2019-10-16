@@ -87,10 +87,10 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 
 	switch (GetConnectionType())
 	{
-	case SpatialConnectionType::Receptionist:
+	case ESpatialConnectionType::Receptionist:
 		ConnectToReceptionist(bInitAsClient);
 		break;
-	case SpatialConnectionType::Locator:
+	case ESpatialConnectionType::Locator:
 		ConnectToLocator();
 		break;
 	}
@@ -324,17 +324,17 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 	});
 }
 
-SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
+ESpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 {
 	return ConnectionType;
 }
 
-void USpatialWorkerConnection::SetConnectionType(SpatialConnectionType newType)
+void USpatialWorkerConnection::SetConnectionType(ESpatialConnectionType NewType)
 {
 	// The locator config may not have been initialized
-	check(!(newType == SpatialConnectionType::Locator && LocatorConfig.LocatorHost.IsEmpty()))
+	check(!(NewType == ESpatialConnectionType::Locator && LocatorConfig.LocatorHost.IsEmpty()))
 
-	ConnectionType = newType;
+	ConnectionType = NewType;
 }
 
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()

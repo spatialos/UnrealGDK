@@ -201,7 +201,6 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	if (!bPersistSpatialConnection)
 	{
-		//Do we like these kinds of comments? The code seemed explanatory enough. (WILL BE REMOVED)
 		GameInstance->DestroySpatialWorkerConnection();
 		GameInstance->CreateNewSpatialWorkerConnection();
 	}
@@ -210,17 +209,13 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	if (URL.Host == TEXT("locator.improbable.io"))
 	{
-		// use existing locator connection parameters
-		Connection->SetConnectionType(SpatialConnectionType::Locator);
-
-		// ensure that locator data was parsed from command line or that previous locator data exists
-		check(!Connection->LocatorConfig.LocatorHost.IsEmpty());
-
+		// Use existing locator connection parameters
+		Connection->SetConnectionType(ESpatialConnectionType::Locator);
 	}
 	else if (URL.HasOption(TEXT("locator")))
 	{
 		// Obtain PIT and LT.
-		Connection->SetConnectionType(SpatialConnectionType::Locator);
+		Connection->SetConnectionType(ESpatialConnectionType::Locator);
 		Connection->LocatorConfig.PlayerIdentityToken = URL.GetOption(TEXT("playeridentity="), TEXT(""));
 		Connection->LocatorConfig.LoginToken = URL.GetOption(TEXT("login="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
@@ -228,8 +223,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	}
 	else // Using Receptionist
 	{
-		// Should SpatialConnectionType be ESpatialConnectionType? (WILL BE REMOVED)
-		Connection->SetConnectionType(SpatialConnectionType::Receptionist);
+		Connection->SetConnectionType(ESpatialConnectionType::Receptionist);
 
 		Connection->ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
 
@@ -249,15 +243,10 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	Connection->Connect(bConnectAsClient);
 }
 
-bool USpatialNetDriver::ShouldOverrideReceptionistHost(USpatialGameInstance* gameInstance, FString host)
+bool USpatialNetDriver::ShouldOverrideReceptionistHost(USpatialGameInstance* GameInstance, FString Host)
 {
-#if WITH_EDITOR
-	// check whether this is the first attempted connection after startup
-	bool bFirstAttemptedConnection = gameInstance->SetFirstConnectionToSpatialOSAttempted();
-#endif // WITH_EDITOR
-
-	// use existing receptionist host if no host is specified
-	if (host.IsEmpty())
+	// Use existing receptionist host if no host is specified
+	if (Host.IsEmpty())
 	{
 		return false;
 	}
@@ -267,8 +256,9 @@ bool USpatialNetDriver::ShouldOverrideReceptionistHost(USpatialGameInstance* gam
 	// To allow directly connecting to a host at a different IP from a PIE session (i.e. not overriding
 	// the receptionist with 127.0.0.1), check whether 127.0.0.1 has been specified and if this is a PIE session.
 	// This check is only applied on the first connection attempted, to allow subsequent client travel.
-	if (bFirstAttemptedConnection && host == SpatialConstants::LOCAL_HOST)
+	if (!GameInstance->bFirstConnectionToSpatialOSAttempted && Host == SpatialConstants::LOCAL_HOST)
 	{
+		GameInstance->bFirstConnectionToSpatialOSAttempted = true;
 		// Only cancel receptionist host override if this is a PIE session.
 		if (bConnectAsClient)
 		{
