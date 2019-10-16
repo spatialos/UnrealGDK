@@ -40,11 +40,11 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the
 	// The mapping only has the following entries:
 	// 	VirtualToPhysicalWorkerMapping.Add(2, "VW_E");
 	// 	VirtualToPhysicalWorkerMapping.Add(3, "VW_F");
-	Schema_Object* FirstEntryObject = Schema_AddObject(DataObject, SpatialConstants::TRANSLATION_VIRTUAL_WORKER_MAPPING_ID);
+	Schema_Object* FirstEntryObject = Schema_AddObject(DataObject, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 	Schema_AddUint32(FirstEntryObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, 2);
 	SpatialGDK::AddStringToSchema(FirstEntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, "VW_E");
 
-	Schema_Object* SecondEntryObject = Schema_AddObject(DataObject, SpatialConstants::TRANSLATION_VIRTUAL_WORKER_MAPPING_ID);
+	Schema_Object* SecondEntryObject = Schema_AddObject(DataObject, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 	Schema_AddUint32(SecondEntryObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, 3);
 	SpatialGDK::AddStringToSchema(SecondEntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, "VW_F");
 
