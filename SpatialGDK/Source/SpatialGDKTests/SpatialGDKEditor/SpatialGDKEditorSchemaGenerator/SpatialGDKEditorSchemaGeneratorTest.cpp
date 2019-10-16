@@ -616,8 +616,66 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_TH
 
 SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WHEN_copied_THEN_valid_files_exist)
 {
-	//SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles();
-	TestTrue("", false);
+	// GIVEN
+	FString GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("/Tests/schema/unreal/gdk"));
+	FString CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("/Tests/build/dependencies/schema/standard_library"));
+	TArray<FString> GDKSchemaFilePaths =
+	{
+		"authority_intent.schema",
+		"core_types.schema",
+		"debug_metrics.schema",
+		"global_state_manager.schema",
+		"heartbeat.schema",
+		"not_streamed.schema",
+		"relevant.schema",
+		"rpc_components.schema",
+		"singleton.schema",
+		"spawndata.schema",
+		"spawner.schema",
+		"tombstone.schema",
+		"unreal_metadata.schema",
+		"virtual_worker_translation.schema"
+	};
+	TArray<FString> CoreSDKFilePaths =
+	{
+		"improbable\\restricted\\system_components.schema",
+		"improbable\\standard_library.schema"
+	};
+
+	// WHEN
+	SpatialGDKEditor::Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
+
+	// THEN
+	bool bExpectedFilesCopied = true;
+
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	for(const auto& FilePath : GDKSchemaFilePaths)
+	{
+		if (!PlatformFile.FileExists(*FPaths::Combine(GDKSchemaCopyDir, FilePath)))
+		{
+			bExpectedFilesCopied = false;
+			break;
+		}
+	}
+
+	for(const auto& FilePath : CoreSDKFilePaths)
+	{
+		if (!PlatformFile.FileExists(*FPaths::Combine(CoreSDKSchemaCopyDir, FilePath)))
+		{
+			bExpectedFilesCopied = false;
+			break;
+		}
+	}
+
+	TestTrue("Expected files have been copied", bExpectedFilesCopied);
+
+	// CLEANUP
+	FString TestDirectory = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("/Tests"));
+	if (PlatformFile.DirectoryExists(*TestDirectory))
+	{
+		PlatformFile.DeleteDirectoryRecursively(*TestDirectory);
+	}
+
 	return true;
 }
 
