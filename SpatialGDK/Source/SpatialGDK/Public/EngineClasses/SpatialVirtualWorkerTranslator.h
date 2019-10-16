@@ -3,12 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-// #include "UObject/NoExportTypes.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
-
-// #include "SpatialVirtualWorkerTranslator.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslator, Log, All)
 
@@ -19,7 +16,6 @@ typedef FString PhysicalWorkerName;
 
 class SPATIALGDK_API SpatialVirtualWorkerTranslator
 {
-// 	GENERATED_BODY()
 public:
 	SpatialVirtualWorkerTranslator();
 
