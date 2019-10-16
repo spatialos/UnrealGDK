@@ -2,10 +2,11 @@
 
 #include "EngineClasses/Components/SpatialPingComponent.h"
 
+#include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
-#include "Engine/World.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPingComponent);
 
@@ -57,19 +58,21 @@ bool USpatialPingComponent::GetIsPingEnabled() const
 void USpatialPingComponent::SetPingEnabled(bool bSetEnabled)
 {
 	// Only execute if this component is attached to a player controller.
-	if (OwningController != nullptr)
+	if (OwningController == nullptr)
 	{
-		// Only execute on owning local client.
-		if (OwningController->GetLocalRole() == ENetRole::ROLE_AutonomousProxy)
+		return;
+	}
+
+	// Only execute on owning local client.
+	if (!OwningController->HasAuthority())
+	{
+		if (bSetEnabled && !bIsPingEnabled)
 		{
-			if (bSetEnabled && !bIsPingEnabled)
-			{
-				EnablePing();
-			}
-			else if (!bSetEnabled && bIsPingEnabled)
-			{
-				DisablePing();
-			}
+			EnablePing();
+		}
+		else if (!bSetEnabled && bIsPingEnabled)
+		{
+			DisablePing();
 		}
 	}
 }
@@ -83,6 +86,11 @@ void USpatialPingComponent::EnablePing()
 {
 	if (UWorld* World = GetWorld())
 	{
+		if (UGameplayStatics::GetGlobalTimeDilation(World) != 1.f)
+		{
+			UE_LOG(LogSpatialPingComponent, Warning, TEXT("Global time dilation is not 1. This will affect the rate at which SpatialPingComponent sends ping requests."));
+		}
+
 		LastSentPingID = 0;
 		TimeoutCount = 0;
 		// Send a new ping, which will trigger a self-perpetuating sequence via timers.
@@ -116,12 +124,13 @@ void USpatialPingComponent::SendNewPing()
 {
 	// Generate a new ping ID.
 	uint16 NewPingID = LastSentPingID + 1;
+	double NewPingTimestamp = FPlatformTime::Seconds();
 	// Send and record new ping ID.
 	SendServerWorkerPingID(NewPingID);
 	LastSentPingID = NewPingID;
-	LastSentPingTimestamp = FPlatformTime::Seconds();
+	LastSentPingTimestamp = NewPingTimestamp;
 	UWorld* World = GetWorld();
-	if (World != nullptr)
+	if (UWorld* World = GetWorld())
 	{
 		// Set a timeout timer to await a reply.
 		World->GetTimerManager().SetTimer(PingTimerHandle, this, &USpatialPingComponent::OnPingTimeout, TimeoutLimit, false);

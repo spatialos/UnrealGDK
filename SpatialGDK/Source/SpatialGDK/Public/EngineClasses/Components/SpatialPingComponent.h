@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "CoreMinimal.h"
 
 #include "SpatialPingComponent.generated.h"
 
@@ -66,7 +66,6 @@ private:
 	APlayerController* OwningController;
 
 	void EnablePing();
-
 	void DisablePing();
 
 	UFUNCTION()
