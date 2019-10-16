@@ -4,12 +4,92 @@
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKServicesModule.h"
 #include "SchemaGenObjectStub.h"
+#include "ExpectedGeneratedSchemaFileContents.h"
 
 #include "CoreMinimal.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Misc/FileHelper.h"
 
 #define SCHEMA_GENERATOR_TEST(TestName) \
 	TEST(SpatialGDKEditor, SchemaGenerator, TestName)
+
+namespace
+{
+FString LoadSchemaFileForClass(const FString& SchemaOutputFolder, const UClass* CurrentClass)
+{
+	FString SchemaFileFolder = TEXT("");
+
+	if (!CurrentClass->IsChildOf<AActor>())
+	{
+		SchemaFileFolder = TEXT("Subobjects");
+	}
+
+	FString FileContent;
+	FFileHelper::LoadFileToString(FileContent, *FPaths::SetExtension(FPaths::Combine(FPaths::Combine(SchemaOutputFolder, SchemaFileFolder), CurrentClass->GetName()), TEXT(".schema")));
+
+	return FileContent;
+}
+
+int id = 0;
+
+void ResetID()
+{
+	id = 10000;
+}
+
+int GetID()
+{
+	return id++;
+}
+
+TMap<FString, FString> ExpectedContents =
+{
+	TPair<FString, FString>
+		{
+			"SpatialTypeActor",
+			ExpectedFileContent::ASpatialTypeActor
+		},
+	TPair<FString, FString>
+		{
+			"NonSpatialTypeActor",
+			ExpectedFileContent::ANonSpatialTypeActor
+		},
+	TPair<FString, FString>
+		{
+			"SpatialTypeActorComponent",
+			ExpectedFileContent::ASpatialTypeActorComponent
+		},
+	TPair<FString, FString>
+		{
+			"SpatialTypeActorWithActorComponent",
+			ExpectedFileContent::ASpatialTypeActorWithActorComponent
+		},
+	TPair<FString, FString>
+		{
+			"SpatialTypeActorWithMultipleActorComponents",
+			ExpectedFileContent::ASpatialTypeActorWithMultipleActorComponents
+		},
+	TPair<FString, FString>
+		{
+			"SpatialTypeActorWithMultipleObjectComponents",
+			ExpectedFileContent::ASpatialTypeActorWithMultipleObjectComponents
+		}
+};
+
+bool ValidateGeneratedSchemaForClass(const FString& FileContent, const UClass* CurrentClass)
+{
+	if (FString* ExpectedContentPtr = ExpectedContents.Find(CurrentClass->GetName()))
+	{
+		FString ExpectedContent = *ExpectedContentPtr;
+		ExpectedContent.ReplaceInline(TEXT("{{id}}"), *FString::FromInt(GetID()));
+		return (FileContent.Compare(ExpectedContent) == 0);
+	}
+	else
+	{
+		return false;
+	}
+}
+}
 
 SCHEMA_GENERATOR_TEST(GIVEN_spatial_type_class_WHEN_checked_if_supported_THEN_is_supported)
 {
@@ -128,7 +208,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_generated_schema_for_these_cla
 	Classes.Add(UNoSpatialFlagsObjectStub::StaticClass());
 	Classes.Add(UChildOfNoSpatialFlagsObjectStub::StaticClass());
 	Classes.Add(ASpatialTypeActor::StaticClass());
-	
+
 	FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
@@ -137,28 +217,13 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_generated_schema_for_these_cla
 
 	// THEN
 	bool bExpectedFilesExist = true;
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if (PlatformFile.DirectoryExists(*SchemaOutputFolder))
+	for (const auto& CurrentClass : Classes)
 	{
-		for (const auto& CurrentClass : Classes)
+		if (LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass).IsEmpty())
 		{
-			FString SchemaFileFolder = TEXT("");
-
-			if (!CurrentClass->IsChildOf<AActor>())
-			{
-				SchemaFileFolder = TEXT("Subobjects");
-			}
-
-			if (!PlatformFile.FileExists(*FPaths::SetExtension(FPaths::Combine(FPaths::Combine(SchemaOutputFolder, SchemaFileFolder), CurrentClass->GetName()),TEXT(".schema"))))
-			{
-				bExpectedFilesExist = false;
-				break;
-			}
+			bExpectedFilesExist = false;
+			break;
 		}
-	}
-	else
-	{
-		bExpectedFilesExist = false;
 	}
 
 	TestTrue("All expected schema files have been generated", bExpectedFilesExist);
@@ -171,43 +236,159 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_generated_schema_for_these_cla
 
 SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_valid_schema_exists)
 {
-	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
-	TestTrue("", false);
+	// GIVEN
+	UClass* CurrentClass = ASpatialTypeActor::StaticClass();
+	TSet<UClass*> Classes;
+	Classes.Add(CurrentClass);
+
+	FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
+
+	// WHEN
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+
+	// THEN
+	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
+	TestTrue("Generated Actor schema is valid", ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
+
+	// CLEANUP
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_class_WHEN_generated_schema_for_this_class_THEN_files_with_valid_schema_exist)
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_these_classes_THEN_files_with_valid_schema_exist)
 {
-	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
-	TestTrue("", false);
+	// GIVEN
+	TSet<UClass*> Classes;
+	Classes.Add(ASpatialTypeActor::StaticClass());
+	Classes.Add(ANonSpatialTypeActor::StaticClass());
+	Classes.Sort([](const UClass& A, const UClass& B)
+	{
+		return A.GetPathName() < B.GetPathName();
+	});
+
+	FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
+
+	// WHEN
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+
+	// THEN
+	bool bValidSchemaExists = true;
+	for (const auto& CurrentClass : Classes)
+	{
+		FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
+		if(!ValidateGeneratedSchemaForClass(FileContent, CurrentClass))
+		{
+			bValidSchemaExists = false;
+			break;
+		}
+	}
+
+	TestTrue("Generated Actor schema is valid", bValidSchemaExists);
+
+	// CLEANUP
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_component_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_valid_schema_exists)
 {
-	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
-	TestTrue("", false);
+	// GIVEN
+	UClass* CurrentClass = USpatialTypeActorComponent::StaticClass();
+	TSet<UClass*> Classes;
+	Classes.Add(CurrentClass);
+
+	FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
+
+	// WHEN
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+
+	// THEN
+	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
+	TestTrue("Generated Actor schema is valid", ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
+
+	// CLEANUP
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_an_actor_component_WHEN_generated_schema_for_this_class_THEN_a_file_with_valid_schema_exists)
 {
-	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
-	TestTrue("", false);
+	// GIVEN
+	UClass* CurrentClass = ASpatialTypeActorWithActorComponent::StaticClass();
+	TSet<UClass*> Classes;
+	Classes.Add(CurrentClass);
+
+	FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
+
+	// WHEN
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+
+	// THEN
+	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
+	TestTrue("Generated Actor schema is valid", ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
+
+	// CLEANUP
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_actor_components_WHEN_generated_schema_for_this_class_THEN_files_with_valid_schema_exist)
 {
-	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
-	TestTrue("", false);
+	// GIVEN
+	UClass* CurrentClass = ASpatialTypeActorWithMultipleActorComponents::StaticClass();
+	TSet<UClass*> Classes;
+	Classes.Add(CurrentClass);
+
+	FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
+
+	// WHEN
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+
+	// THEN
+	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
+	TestTrue("Generated Actor schema is valid", ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
+
+	// CLEANUP
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_object_components_WHEN_generated_schema_for_this_class_THEN_files_with_valid_schema_exist)
 {
-	//SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
-	TestTrue("", false);
+	// GIVEN
+	UClass* CurrentClass = ASpatialTypeActorWithMultipleObjectComponents::StaticClass();
+	TSet<UClass*> Classes;
+	Classes.Add(CurrentClass);
+
+	FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+	ResetID();
+
+	// WHEN
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+
+	// THEN
+	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
+	TestTrue("Generated Actor schema is valid", ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
+
+	// CLEANUP
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+
 	return true;
 }
 

@@ -62,3 +62,48 @@ class ASpatialTypeActor : public AActor
 {
 	GENERATED_BODY()
 };
+
+UCLASS()
+class ANonSpatialTypeActor : public AActor
+{
+	GENERATED_BODY()
+};
+
+UCLASS(SpatialType)
+class USpatialTypeActorComponent : public UActorComponent
+{
+	GENERATED_BODY()
+};
+
+UCLASS(SpatialType)
+class ASpatialTypeActorWithActorComponent : public AActor
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Replicated)
+	USpatialTypeActorComponent* SpatialActorComponent;
+};
+
+UCLASS(SpatialType)
+class ASpatialTypeActorWithMultipleActorComponents : public AActor
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Replicated)
+	USpatialTypeActorComponent* FirstSpatialActorComponent;
+
+	UPROPERTY(Replicated)
+	USpatialTypeActorComponent* SecondSpatialActorComponent;
+};
+
+UCLASS(SpatialType)
+class ASpatialTypeActorWithMultipleObjectComponents : public AActor
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Replicated)
+	USpatialTypeObjectStub* FirstSpatialObjectComponent;
+
+	UPROPERTY(Replicated)
+	USpatialTypeObjectStub* SecondSpatialObjectComponent;
+};
