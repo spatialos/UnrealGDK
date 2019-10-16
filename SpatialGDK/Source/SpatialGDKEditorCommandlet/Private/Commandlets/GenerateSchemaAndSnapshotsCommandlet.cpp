@@ -41,10 +41,17 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 		return 1;
 	}
 
-	// Do full schema generation
-	if (!GenerateSchema(SpatialGDKEditor))
+	if (Switches.Contains("SkipSchema"))
 	{
-		return 1;
+		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Skipping schema generation"));
+	}
+	else
+	{
+		// Do full schema generation
+		if (!GenerateSchema(SpatialGDKEditor))
+		{
+			return 1;
+		}
 	}
 
 	if (Params.Contains(MapPathsParamName))
