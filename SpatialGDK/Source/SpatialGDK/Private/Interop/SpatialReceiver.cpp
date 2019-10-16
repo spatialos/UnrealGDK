@@ -188,6 +188,8 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 		{
 			return;
 		}
+		UE_LOG(LogSpatialReceiver, Error, TEXT("On Remove component for worker"));
+
 		FString* WorkerID = WorkerEntityIDToWorkerIDMap.Find(Op.entity_id);
 
 		if (WorkerID == nullptr)
@@ -199,6 +201,7 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 		TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = AuthorityPlayerControllerConnectionMap.Find(**WorkerID);
 		if (ConnectionPtr == nullptr)
 		{
+			UE_LOG(LogSpatialReceiver, Error, TEXT("Could not find connection that maps from worker id: %s"), **WorkerID);
 			return;
 		}
 
@@ -212,7 +215,9 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 
 		USpatialNetConnection* NetConnection = ConnectionPtr->Get();
 		// Client has disconnected, let's clean up their connection.
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Cleaning up Worker: %s  connection"), **WorkerID);
 		NetConnection->CleanUp();
+
 		AuthorityPlayerControllerConnectionMap.Remove(*WorkerID);
 		WorkerEntityIDToWorkerIDMap.Remove(Op.entity_id);
 		return;
@@ -307,29 +312,19 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 {
 	// Server initializes heartbeat logic based on its authority over the position component,
 	// client does the same for heartbeat component
-	if ((NetDriver->IsServer() && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID) ||
-		(!NetDriver->IsServer() && Op.component_id == SpatialConstants::HEARTBEAT_COMPONENT_ID))
+	if ((NetDriver->IsServer() && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID))
 	{
-		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
 		{
-			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
+			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				if (NetDriver->IsServer())
-				{
-					AuthorityPlayerControllerConnectionMap.Add(Connection->WorkerID, Connection);
-				}
-				Connection->InitHeartbeat(TimerManager, Op.entity_id);
+				UE_LOG(LogSpatialReceiver, Error, TEXT("Gained authority on Player controller adding Worker: %s  to map"), *Connection->WorkerID);
+				AuthorityPlayerControllerConnectionMap.Add(Connection->WorkerID, Connection);
 			}
-		}
-		else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
-		{
-			if (NetDriver->IsServer())
+			else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 			{
-				//AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
-			}
-			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
-			{
-				Connection->DisableHeartbeat();
+				UE_LOG(LogSpatialReceiver, Error, TEXT("Lost authority on Player controller removing Worker: %s  to map"), *Connection->WorkerID);
+				AuthorityPlayerControllerConnectionMap.Remove(Connection->WorkerID);
 			}
 		}
 	}
