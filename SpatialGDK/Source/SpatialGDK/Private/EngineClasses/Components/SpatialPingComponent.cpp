@@ -122,14 +122,13 @@ void USpatialPingComponent::TickPingComponent()
 
 void USpatialPingComponent::SendNewPing()
 {
-	// Generate a new ping ID.
+	// Generate new ping ID.
 	uint16 NewPingID = LastSentPingID + 1;
-	double NewPingTimestamp = FPlatformTime::Seconds();
-	// Send and record new ping ID.
-	SendServerWorkerPingID(NewPingID);
+	// Record new ping ID and timestamp
 	LastSentPingID = NewPingID;
-	LastSentPingTimestamp = NewPingTimestamp;
-	UWorld* World = GetWorld();
+	LastSentPingTimestamp = FPlatformTime::Seconds();
+	// Send new ping ID.
+	SendServerWorkerPingID(NewPingID);
 	if (UWorld* World = GetWorld())
 	{
 		// Set a timeout timer to await a reply.
