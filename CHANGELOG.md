@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a check for schema and snapshot before attempting to start a local deployment. If either are missing then an error message will be displayed.
 - Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
 - It is now possible to specify in Unreal which actors should not persist as entities in the Snapshot.
-- An actor component is now available for player controllers to measure round-trip ping to their current authoritative server worker.
+- A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
 - Deleted startup actors are now tracked
 - The GDK now uses SpatialOS `14.1.0`.
 - Added a user bindable delegate to SpatialMetrics which triggers when worker metrics have been received.
