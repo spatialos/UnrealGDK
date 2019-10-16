@@ -3,26 +3,26 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
+// #include "UObject/NoExportTypes.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
 
-#include "SpatialVirtualWorkerTranslator.generated.h"
+// #include "SpatialVirtualWorkerTranslator.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslator, Log, All)
 
 class USpatialNetDriver;
 
-typedef uint32 ZoneId;
 typedef uint32 VirtualWorkerId;
 typedef FString PhysicalWorkerName;
-// typedef TMap<ZoneId, VirtualWorkerId> ZoneToVirtualWorkerMap;
-typedef TMap<VirtualWorkerId, PhysicalWorkerName> VirtualToPhysicalWorkerMap;
 
-UCLASS(SpatialType = (Singleton, ServerOnly))
-class SPATIALGDK_API USpatialVirtualWorkerTranslator : public UObject {
-	GENERATED_UCLASS_BODY()
+class SPATIALGDK_API SpatialVirtualWorkerTranslator
+{
+// 	GENERATED_BODY()
 public:
+	SpatialVirtualWorkerTranslator();
+
 	void Init(USpatialNetDriver* InNetDriver);
 
 	// Returns the name of the worker currently assigned to VirtualWorkerId id or nullptr if there is
@@ -39,5 +39,8 @@ public:
 private:
 	USpatialNetDriver* NetDriver;
 
-	VirtualToPhysicalWorkerMap VirtualToPhysicalWorkerMapping;
+	TMap<VirtualWorkerId, PhysicalWorkerName>  VirtualToPhysicalWorkerMapping;
+
+	void ApplyMappingFromSchema(Schema_Object* Object);
+	void WriteMappingToSchema(Schema_Object* Object);
 }; 

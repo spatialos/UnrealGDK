@@ -31,10 +31,10 @@ class USpatialClassInfoManager;
 class UGlobalStateManager;
 class USpatialPlayerSpawner;
 class USpatialStaticComponentView;
-class USpatialVirtualWorkerTranslator;
 class USnapshotManager;
 class USpatialMetrics;
 class ASpatialMetricsDisplay;
+class SpatialVirtualWorkerTranslator;
 
 class UEntityPool;
 
@@ -132,8 +132,6 @@ public:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 	UPROPERTY()
-	USpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
-	UPROPERTY()
 	USpatialPlayerSpawner* PlayerSpawner;
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
@@ -146,6 +144,7 @@ public:
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 
+	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;

@@ -304,11 +304,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
 	GlobalStateManager = NewObject<UGlobalStateManager>();
-	VirtualWorkerTranslator = NewObject<USpatialVirtualWorkerTranslator>();
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
 	SnapshotManager = NewObject<USnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
+	VirtualWorkerTranslator = new SpatialVirtualWorkerTranslator();
 
 #if !UE_BUILD_SHIPPING
 	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client

@@ -13,39 +13,31 @@
 #define VIRTUALWORKERTRANSLATOR_TEST(TestName) \
 	TEST(Core, UVirtualWorkerTranslator, TestName)
 
-VIRTUALWORKERTRANSLATOR_TEST(Given_the_default_mapping_WHEN_nothing_has_changed_THEN_return_the_mapping)
+VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings)
 {
-	// Currently the class is initialized with the following dummy data.
-	// 	VirtualToPhysicalWorkerMapping.Add(1, "VW_A");
-	// 	VirtualToPhysicalWorkerMapping.Add(2, "VW_B");
-	// 	VirtualToPhysicalWorkerMapping.Add(3, "VW_C");
-	// 	VirtualToPhysicalWorkerMapping.Add(4, "VW_D");
-	USpatialVirtualWorkerTranslator* translator = NewObject<USpatialVirtualWorkerTranslator>();
+	// The class is initialized with no data.
+	SpatialVirtualWorkerTranslator* translator = new SpatialVirtualWorkerTranslator();
 	translator->Init(nullptr);
 
-	TestTrue("There is a mapping for virtual worker 1", translator->GetPhysicalWorkerForVirtualWorker(1) != nullptr);
-	TestTrue("VW_A returned", translator->GetPhysicalWorkerForVirtualWorker(1)->Equals("VW_A"));
-	TestTrue("Worker 5 doesn't exist", translator->GetPhysicalWorkerForVirtualWorker(5) == nullptr);
+	TestTrue("Worker 1 doesn't exist", translator->GetPhysicalWorkerForVirtualWorker(1) == nullptr);
+
+	delete translator;
 	return true;
 }
 
-VIRTUALWORKERTRANSLATOR_TEST(Given_the_default_mapping_WHEN_it_is_updated_THEN_return_the_updated_mapping)
+VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the_updated_mapping)
 {
-	// Currently the class is initialized with the following dummy data.
-	// 	VirtualToPhysicalWorkerMapping.Add(1, "VW_A");
-	// 	VirtualToPhysicalWorkerMapping.Add(2, "VW_B");
-	// 	VirtualToPhysicalWorkerMapping.Add(3, "VW_C");
-	// 	VirtualToPhysicalWorkerMapping.Add(4, "VW_D");
-	USpatialVirtualWorkerTranslator* translator = NewObject<USpatialVirtualWorkerTranslator>();
+	// The class is initialized with no data.
+	SpatialVirtualWorkerTranslator* translator = new SpatialVirtualWorkerTranslator();
 	translator->Init(nullptr);
 
-	// Replace the mapping with a new map from "the network".
+	// Create a base mapping.
 	Worker_ComponentData Data = {};
 	Data.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
 	Data.schema_type = Schema_CreateComponentData();
 	Schema_Object* DataObject = Schema_GetComponentDataFields(Data.schema_type);
 
-	// The new mapping only has the following entry:
+	// The mapping only has the following entries:
 	// 	VirtualToPhysicalWorkerMapping.Add(2, "VW_E");
 	// 	VirtualToPhysicalWorkerMapping.Add(3, "VW_F");
 	Schema_Object* FirstEntryObject = Schema_AddObject(DataObject, SpatialConstants::TRANSLATION_VIRTUAL_WORKER_MAPPING_ID);
@@ -65,6 +57,8 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_the_default_mapping_WHEN_it_is_updated_THEN_r
 	TestTrue("There is a mapping for virtual worker 3", translator->GetPhysicalWorkerForVirtualWorker(3) != nullptr);
 	TestTrue("VW_B overwritten with VW_F", translator->GetPhysicalWorkerForVirtualWorker(3)->Equals("VW_F"));
 
-	TestTrue("Worker for 1 no longer exists", translator->GetPhysicalWorkerForVirtualWorker(1) == nullptr);
+	TestTrue("There is no mapping for virtual worker 1", translator->GetPhysicalWorkerForVirtualWorker(1) == nullptr);
+
+	delete translator;
 	return true;
 }
