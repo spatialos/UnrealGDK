@@ -445,7 +445,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			PendingEntitySubobjectDelegations.Remove(EntityComponentPair);
 		}
 
-		//If the server gains authority over a client RPC component we need to give authority to the cached client worker on the entities associated ActorChannel.
+		// If the server gains authority over a client RPC component we need to give authority to the cached client worker on the entities associated ActorChannel.
 		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
 			USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
@@ -1237,7 +1237,7 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 {
 	Worker_EntityId EntityId = Op.entity_id;
 
-	// If the update is to the client rpc endpoint, then the handler should have authority over the server rpc endpoint component and vice versa
+	// If the update is to the client RPC endpoint, then the handler should have authority over the server rpc endpoint component and vice versa
 	// Ideally these events are never delivered to workers which are not able to handle them with clever interest management
 	const Worker_ComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
 		? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
@@ -1285,14 +1285,14 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
 
 
-				// In a zoned multiworker scenario we might not have gained authority over the current entity in this bundle in time
+				// In a zoned multi-worker scenario we might not have gained authority over the current entity in this bundle in time
 				// before processing so don't ApplyRPCs to an entity that we don't have authority over.
 				if (StaticComponentView->GetAuthority(ObjectRef.Entity, RPCEndpointComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
 				{
 					continue;
 				}
 
-				//If the parent and child actors do not have the same connection the rpc should not be processed
+				// If the parent and child actors do not have the same connection the RPC should not be processed
 				const AActor* ParentActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
 				const AActor* ChildActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(ObjectRef.Entity));
 				if (ParentActor && ChildActor && ParentActor->GetNetConnection() != ChildActor->GetNetConnection())
