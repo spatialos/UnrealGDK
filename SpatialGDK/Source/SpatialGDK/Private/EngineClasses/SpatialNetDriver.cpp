@@ -1999,7 +1999,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 	SelectiveProcessOps(FoundOps);
 
-	if (EntityPool->IsReady() && GlobalStateManager->IsReadyToCallBeginPlay())
+	if (PackageMap->IsEntityPoolReady() && GlobalStateManager->IsReadyToCallBeginPlay())
 	{
 		// Return whether or not we are ready to start
 		return true;
