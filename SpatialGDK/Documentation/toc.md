@@ -21,15 +21,7 @@
         - Multiserver offloading
             - [Introduction]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-intro)
             - [1. Set up]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-setup)
-            - [2. Gameplay Changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
-        - Multiple deployments for session-based games
-            - [Introduction]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro)
-            - [1: Clone the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone)
-            - [2: Generate an authentication token]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication)
-            - [3: Build and upload workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers)
-            - [4: Configure the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure)
-            - [5: Launch multiple session-based deployments]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch)
-            - [6: Play your game]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-play)
+            - [2. Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
         - Multiserver zoning
             - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
             - [1: Set up replication]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
