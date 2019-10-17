@@ -150,16 +150,16 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 	ISocketSubsystem* SocketSubsystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
 	bool bSuccess = false;
 
-	// Set our broadcast address
+	// Set our broadcast address.
 	TSharedRef<FInternetAddr> BroadcastAddr = SocketSubsystem->CreateInternetAddr();
 	BroadcastAddr->SetBroadcastAddress();
 	BroadcastAddr->SetPort(Port);
 	
-	// Now the listen address
+	// Now the listen address.
 	TSharedRef<FInternetAddr> ListenAddr = SocketSubsystem->GetLocalBindAddr(*GLog);
 	ListenAddr->SetPort(Port);
 	
-	// Now create and set up our sockets
+	// Now create and set up our sockets.
 	FSocket* ListenSocket = SocketSubsystem->CreateSocket(NAME_Stream, TEXT("Runtime Port Test"), false /* bForceUDP */);
 	if (ListenSocket != nullptr)
 	{
@@ -167,10 +167,10 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 		ListenSocket->SetNonBlocking();
 		ListenSocket->SetRecvErr();
 	
-		// Bind to our listen port
+		// Bind to our listen port.
 		if (ListenSocket->Bind(*ListenAddr))
 		{
-			bSuccess = ListenSocket->Listen(0 /* MaxBacklog*/ );
+			bCanBindToPort = ListenSocket->Listen(0 /* MaxBacklog*/ );
 			ListenSocket->Close();
 		}
 		else
@@ -184,7 +184,7 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 	}
 
 	// Either we couldn't create the socket or couldn't listen on it so the port is probably bound.
-	return !bSuccess;
+	return !bCanBindToPort;
 }
 
 bool FLocalDeploymentManager::PreStartCheck()
@@ -208,10 +208,10 @@ bool FLocalDeploymentManager::PreStartCheck()
 			if (ExitCode == ExitCodeSuccess && bSuccess)
 			{
 				
-				// Find which line of the output contains the port we're looking for
+				// Find which line of the output contains the port we're looking for.
 				int PortIndex = StdOut.Find(FString::Printf(TEXT(":%i"), RequiredRuntimePort));
 				
-				// Throw away all lines before
+				// Throw away all lines before.
 				FString PortLine = StdOut.Mid(PortIndex);
 				int PortLineEnd = PortLine.Find("\r\n");
 				

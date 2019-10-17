@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
 - A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
 
-
 ## [`0.7.0-preview`] - 2019-10-11
 
 ### New Known Issues:
