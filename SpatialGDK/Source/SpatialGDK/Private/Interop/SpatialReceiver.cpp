@@ -321,9 +321,8 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	}
 
 	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
-		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && !NetDriver->IsServer())
 	{
-		check(!NetDriver->IsServer());
 		if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(Op.entity_id))
 		{
 			if (QueuedRPCs->HasRPCPayloadData())
@@ -439,6 +438,15 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			}
 
 			PendingEntitySubobjectDelegations.Remove(EntityComponentPair);
+		}
+
+		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+		{
+			USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
+			if (ActorChannel && ActorChannel->IsProcessingOwnershipChange())
+			{
+				ActorChannel->FinishServerProcessOwnershipChange();
+			}
 		}
 	}
 	else
@@ -1271,7 +1279,21 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 				{
 					continue;
 				}
+
+				//If the parent and child actors do not have the same connection the rpc should not be processed
+				const AActor* ParentActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
+				const AActor* ChildActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(ObjectRef.Entity));
+				if (ParentActor && ChildActor && ParentActor->GetNetConnection() != ChildActor->GetNetConnection())
+				{
+					continue;
+				}
 			}
+		}
+
+		const USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(ObjectRef.Entity);
+		if (ActorChannel && ActorChannel->IsProcessingOwnershipChange())
+		{
+			return;
 		}
 
 		if (UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())

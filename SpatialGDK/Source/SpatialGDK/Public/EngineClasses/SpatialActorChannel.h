@@ -146,7 +146,13 @@ public:
 	void UpdateSpatialPositionWithFrequencyCheck();
 	void UpdateSpatialPosition();
 
-	void ServerProcessOwnershipChange();
+private:
+	FString CachedOwnerWorkerAttribute;
+
+public:
+	bool IsProcessingOwnershipChange() const { return !CachedOwnerWorkerAttribute.IsEmpty(); }
+	void StartServerProcessOwnershipChange();
+	void FinishServerProcessOwnershipChange();
 	void ClientProcessOwnershipChange(bool bNewNetOwned);
 
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
@@ -171,7 +177,7 @@ private:
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
 	
-	void UpdateEntityACLToNewOwner();
+	void UpdateEntityACLToNewOwner(const FString& NewOwnerWorkerAttribute);
 
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.

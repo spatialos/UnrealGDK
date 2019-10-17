@@ -1072,14 +1072,20 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 	});
 }
 
-void USpatialActorChannel::ServerProcessOwnershipChange()
+void USpatialActorChannel::StartServerProcessOwnershipChange()
 {
 	if (!IsAuthoritativeServer())
 	{
 		return;
 	}
 
-	UpdateEntityACLToNewOwner();
+	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
+	if (!NewOwnerWorkerAttribute.IsEmpty())
+	{
+		CachedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
+		NewOwnerWorkerAttribute = SpatialConstants::DefaultServerWorkerType.ToString();
+	}
+	UpdateEntityACLToNewOwner(NewOwnerWorkerAttribute);
 
 	for (AActor* Child : Actor->Children)
 	{
@@ -1087,15 +1093,38 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(ChildEntityId))
 		{
-			Channel->ServerProcessOwnershipChange();
+			Channel->StartServerProcessOwnershipChange();
 		}
 	}
 }
 
-void USpatialActorChannel::UpdateEntityACLToNewOwner()
-{
-	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 
+void USpatialActorChannel::FinishServerProcessOwnershipChange()
+{
+	if (!IsAuthoritativeServer())
+	{
+		return;
+	}
+
+	if (!CachedOwnerWorkerAttribute.IsEmpty())
+	{
+		UpdateEntityACLToNewOwner(CachedOwnerWorkerAttribute);
+		CachedOwnerWorkerAttribute.Empty();
+	}
+
+	for (AActor* Child : Actor->Children)
+	{
+		Worker_EntityId ChildEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Child);
+
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(ChildEntityId))
+		{
+			Channel->FinishServerProcessOwnershipChange();
+		}
+	}
+}
+
+void USpatialActorChannel::UpdateEntityACLToNewOwner(const FString& NewOwnerWorkerAttribute)
+{
 	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
 	{
 		bool bSuccess = Sender->UpdateEntityACLs(EntityId, NewOwnerWorkerAttribute);
