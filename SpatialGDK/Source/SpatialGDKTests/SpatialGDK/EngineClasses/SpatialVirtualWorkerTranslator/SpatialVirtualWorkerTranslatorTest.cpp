@@ -11,13 +11,12 @@
 #include <WorkerSDK/improbable/c_schema.h>
 
 #define VIRTUALWORKERTRANSLATOR_TEST(TestName) \
-	TEST(Core, UVirtualWorkerTranslator, TestName)
+	TEST(Core, SpatialVirtualWorkerTranslator, TestName)
 
 VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings)
 {
 	// The class is initialized with no data.
 	SpatialVirtualWorkerTranslator* translator = new SpatialVirtualWorkerTranslator();
-	translator->Init(nullptr);
 
 	TestTrue("Worker 1 doesn't exist", translator->GetPhysicalWorkerForVirtualWorker(1) == nullptr);
 
@@ -29,7 +28,6 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the
 {
 	// The class is initialized with no data.
 	SpatialVirtualWorkerTranslator* translator = new SpatialVirtualWorkerTranslator();
-	translator->Init(nullptr);
 
 	// Create a base mapping.
 	Worker_ComponentData Data = {};

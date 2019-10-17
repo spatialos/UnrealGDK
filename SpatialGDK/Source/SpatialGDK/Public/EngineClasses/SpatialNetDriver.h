@@ -9,6 +9,7 @@
 #include "TimerManager.h"
 #include "UObject/CoreOnline.h"
 
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "SpatialConstants.h"
@@ -34,7 +35,6 @@ class USpatialStaticComponentView;
 class USnapshotManager;
 class USpatialMetrics;
 class ASpatialMetricsDisplay;
-class SpatialVirtualWorkerTranslator;
 
 class UEntityPool;
 
@@ -144,7 +144,6 @@ public:
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 
-	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
@@ -185,6 +184,7 @@ public:
 #endif
 
 private:
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
