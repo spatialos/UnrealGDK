@@ -509,15 +509,21 @@ TSet<UClass*> GetAllSupportedClasses()
 	return Classes;
 }
 
-void CopyWellKnownSchemaFiles()
+void CopyWellKnownSchemaFiles(FString GDKSchemaCopyDir /*= ""*/, FString CoreSDKSchemaCopyDir /*= ""*/)
 {
 	FString PluginDir = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory();
 
 	FString GDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
-	FString GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
+	if (GDKSchemaCopyDir.IsEmpty())
+	{
+		GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
+	}
 
 	FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema"));
-	FString CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
+	if (CoreSDKSchemaCopyDir.IsEmpty())
+	{
+		CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
+	}
 	
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 

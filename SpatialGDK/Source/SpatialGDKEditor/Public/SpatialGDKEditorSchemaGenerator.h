@@ -32,7 +32,7 @@ namespace SpatialGDKEditor
 		
 		SPATIALGDKEDITOR_API void DeleteGeneratedSchemaFiles(FString SchemaOutputPath = "");
 		
-		SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles();
+		SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles(FString GDKSchemaCopyDir = "", FString CoreSDKSchemaCopyDir = "");
 		
 		SPATIALGDKEDITOR_API bool RunSchemaCompiler();
 	}
