@@ -1079,9 +1079,14 @@ void USpatialActorChannel::StartServerProcessOwnershipChange()
 		return;
 	}
 
+	//If you attempt to take possessing of an actor first the server will take authority over the client rpc component.
+	//It will later give authority to the requested client worker.
+	//If the actor is being unpossessed we simply set the client workers authority and do not mess about with the server.
+
 	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 	if (!NewOwnerWorkerAttribute.IsEmpty())
 	{
+		//Setting CachedOwnerWorkerAttribute will trigger FinishServerProcessOwnershipChange from HandleAuthority once authority has been confirmed.
 		CachedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
 		NewOwnerWorkerAttribute = SpatialConstants::DefaultServerWorkerType.ToString();
 	}
@@ -1106,6 +1111,8 @@ void USpatialActorChannel::FinishServerProcessOwnershipChange()
 		return;
 	}
 
+	//Connected to the requested client worker from StartServerProcessOwnershipChange.
+	//Reset CachedOwnerWorkerAttribute so that the Actor channel can be recognized as not processing and ownership change.
 	if (!CachedOwnerWorkerAttribute.IsEmpty())
 	{
 		UpdateEntityACLToNewOwner(CachedOwnerWorkerAttribute);
