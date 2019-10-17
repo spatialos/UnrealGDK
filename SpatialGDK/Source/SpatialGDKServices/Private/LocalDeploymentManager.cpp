@@ -175,12 +175,12 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to bind listen socket to addr (%s) for %s"), *ListenAddr->ToString(true), *SocketName);
+			UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Failed to bind listen socket to addr (%s) for %s, the port is likely in use"), *ListenAddr->ToString(true), *SocketName);
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to create listen socket for %s"), *SocketName);
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Failed to create listen socket for %s, the port is likely in use"), *SocketName);
 	}
 
 	// Either we couldn't create the socket or couldn't listen on it so the port is probably bound.
@@ -208,29 +208,20 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 
 			if (ExitCode == ExitCodeSuccess && bSuccess)
 			{
-				
-				// Find which line of the output contains the port we're looking for.
-				int PortIndex = NetStatResult.Find(FString::Printf(TEXT(":%i"), RequiredRuntimePort));
-				
-				// Throw away all lines before.
-				FString PortLine = NetStatResult.Mid(PortIndex);
-				int PortLineEnd = PortLine.Find("\r\n");
-				
-				// Throw away all lines after
-				PortLine = PortLine.Mid(0, PortLineEnd);
-
-				// Match the PID
-				const FRegexPattern PidMatch(" +[0-9]+$");
-				FRegexMatcher RegMatcher(PidMatch, PortLine);
-				if (RegMatcher.FindNext())
+				// Get the line of the netstat output that contains the port we're looking for.
+				FRegexPattern LineMatchPattern(FString::Printf(TEXT(".*?:%i.*"), RequiredRuntimePort));
+				FRegexMatcher LineMatcher(LineMatchPattern, NetStatResult);
+				if (LineMatcher.FindNext())
 				{
-					int32 PidIndex = RegMatcher.GetMatchBeginning();
-					if (PidIndex >= 0)
+					FString PortLine = LineMatcher.GetCaptureGroup(0 /* Get the first match */);
+
+					// Match the PID
+					const FRegexPattern PidMatchPattern(" +[0-9]+$");
+					FRegexMatcher PidMatcher(PidMatchPattern, PortLine);
+					if (PidMatcher.FindNext())
 					{
-						
-						// Throw away everything except the PID
-						FString Pid = PortLine.RightChop(PidIndex);
-						Pid = Pid.TrimStart();
+						FString Pid = PidMatcher.GetCaptureGroup(0 /* Get the first match */);
+
 						const FString TaskKillCmd = TEXT("taskkill");
 						const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *Pid);
 						FString TaskKillResult;
@@ -241,10 +232,23 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 							UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
 						}
 					}
+					else
+					{
+						bSuccess = false;
+						UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find PID of the process that is blocking the runtime port"));
+
+					}
+				}
+				else
+				{
+					bSuccess = false;
+					UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find the blocked port in netstat"));
+
 				}
 			}
 			else
 			{
+				bSuccess = false;
 				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
 			}
 		}
