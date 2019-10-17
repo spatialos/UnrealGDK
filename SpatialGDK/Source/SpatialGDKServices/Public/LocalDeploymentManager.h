@@ -21,7 +21,7 @@ public:
 	void SPATIALGDKSERVICES_API RefreshServiceStatus();
 
 	bool CheckIfPortIsBound(int32 Port);
-	bool PreStartCheck();
+	bool LocalDeploymentPreRunChecks();
 
 	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName);
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
