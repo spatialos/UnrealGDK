@@ -492,13 +492,13 @@ bool IsSupportedClass(const UClass* SupportedClass)
 }
 
 
-TSet<UClass*> GetAllSupportedClasses()
+TSet<UClass*> GetAllSupportedClasses(TArray<UObject*> AllClasses)
 {
 	TSet<UClass*> Classes;
 
-	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
+	for(const auto& ClassIt : AllClasses)
 	{
-		UClass* SupportedClass = *ClassIt;
+		UClass* SupportedClass = Cast<UClass>(ClassIt);
 
 		if (IsSupportedClass(SupportedClass))
 		{
@@ -775,7 +775,9 @@ bool SpatialGDKGenerateSchema()
 
 	// Generate Schema for classes loaded in memory.
 
-	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses()))
+	TArray<UObject*> AllClasses;
+	GetObjectsOfClass(UClass::StaticClass(), AllClasses);
+	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses(AllClasses)))
 	{
 		return false;
 	}

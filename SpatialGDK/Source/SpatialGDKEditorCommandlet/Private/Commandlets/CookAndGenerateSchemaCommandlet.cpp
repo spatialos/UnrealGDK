@@ -75,7 +75,10 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	}
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Finding supported C++ and in-memory Classes."));
-	for (const auto& SupportedClass : GetAllSupportedClasses())
+
+	TArray<UObject*> AllClasses;
+	GetObjectsOfClass(UClass::StaticClass(), AllClasses);
+	for (const auto& SupportedClass : GetAllSupportedClasses(AllClasses))
 	{
 		ReferencedClasses.Add(FSoftClassPath(SupportedClass));
 	}

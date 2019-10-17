@@ -681,7 +681,54 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_THEN_all_unsupported_classes_are_filtered)
 {
-	//SPATIALGDKEDITOR_API TSet<UClass*> GetAllSupportedClasses();
-	TestTrue("", false);
+	// GIVEN
+	TArray<UObject*> Classes;
+	Classes.Add(USchemaGenObjectStub::StaticClass());
+	Classes.Add(USpatialTypeObjectStub::StaticClass());
+	Classes.Add(UChildOfSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UNotSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UChildOfNotSpatialTypeObjectStub::StaticClass());
+	Classes.Add(UNoSpatialFlagsObjectStub::StaticClass());
+	Classes.Add(UChildOfNoSpatialFlagsObjectStub::StaticClass());
+	Classes.Add(ASpatialTypeActor::StaticClass());
+	Classes.Add(ANonSpatialTypeActor::StaticClass());
+	Classes.Add(USpatialTypeActorComponent::StaticClass());
+	Classes.Add(ASpatialTypeActorWithActorComponent::StaticClass());
+	Classes.Add(ASpatialTypeActorWithMultipleActorComponents::StaticClass());
+	Classes.Add(ASpatialTypeActorWithMultipleObjectComponents::StaticClass());
+
+	// WHEN
+	TSet<UClass*> FilteredClasses = SpatialGDKEditor::Schema::GetAllSupportedClasses(Classes);
+
+	// THEN
+	TSet<UClass*> ExpectedClasses;
+	ExpectedClasses.Add(USpatialTypeObjectStub::StaticClass());
+	ExpectedClasses.Add(UChildOfSpatialTypeObjectStub::StaticClass());
+	ExpectedClasses.Add(ASpatialTypeActor::StaticClass());
+	ExpectedClasses.Add(ANonSpatialTypeActor::StaticClass());
+	ExpectedClasses.Add(USpatialTypeActorComponent::StaticClass());
+	ExpectedClasses.Add(ASpatialTypeActorWithActorComponent::StaticClass());
+	ExpectedClasses.Add(ASpatialTypeActorWithMultipleActorComponents::StaticClass());
+	ExpectedClasses.Add(ASpatialTypeActorWithMultipleObjectComponents::StaticClass());
+
+	bool bClassesFilteredCorrectly = true;
+	if (FilteredClasses.Num() == ExpectedClasses.Num())
+	{
+		for (const auto& ExpectedClass : ExpectedClasses)
+		{
+			if (!FilteredClasses.Contains(ExpectedClass))
+			{
+				bClassesFilteredCorrectly = false;
+				break;
+			}
+		}
+	}
+	else
+	{
+		bClassesFilteredCorrectly = false;
+	}
+
+	TestTrue("Supported classes have been filtered correctly", bClassesFilteredCorrectly);
+
 	return true;
 }
