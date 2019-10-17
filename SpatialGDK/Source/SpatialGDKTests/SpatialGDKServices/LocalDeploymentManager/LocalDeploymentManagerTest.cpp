@@ -90,7 +90,7 @@ DEFINE_LATENT_COMMAND(StartDeployment)
 				return;
 			}
 
-			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName);
+			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, TEXT(""));
 		});
 	}
 
