@@ -6,6 +6,8 @@
 #include "SchemaGenObjectStub.h"
 #include "ExpectedGeneratedSchemaFileContents.h"
 
+#include "Utils/SchemaDatabase.h"
+
 #include "CoreMinimal.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/FileHelper.h"
@@ -15,6 +17,47 @@
 
 namespace
 {
+// TODO(Alex): when deleting schema database - also delete Tests folder
+
+TArray<FString> LoadSchemaFileForClassToStringArray(const FString& SchemaOutputFolder, const UClass* CurrentClass)
+{
+	FString SchemaFileFolder = TEXT("");
+
+	if (!CurrentClass->IsChildOf<AActor>())
+	{
+		SchemaFileFolder = TEXT("Subobjects");
+	}
+
+	TArray<FString> FileContent;
+	FFileHelper::LoadFileToStringArray(FileContent, *FPaths::SetExtension(FPaths::Combine(FPaths::Combine(SchemaOutputFolder, SchemaFileFolder), CurrentClass->GetName()), TEXT(".schema")));
+
+	return FileContent;
+}
+
+TArray<int32> ParseAvailableIdsFromSchemaFile(const FString& SchemaOutputFolder, const UClass* CurrentClass)
+{
+	const TArray<FString> LoadedSchema = LoadSchemaFileForClassToStringArray(SchemaOutputFolder, CurrentClass);
+
+	TArray<int32> ParsedIds;
+
+	for (const auto& SchemaLine : LoadedSchema)
+	{
+		if (SchemaLine.Contains(TEXT("\tid =")))
+		{
+			TArray<FString> OutArray;
+			SchemaLine.ParseIntoArrayWS(OutArray);
+			FString ParsedId = OutArray.Last().LeftChop(1);
+
+			if (ParsedId.IsNumeric())
+			{
+				ParsedIds.Push(FCString::Atoi(*ParsedId));
+			}
+		}
+	}
+
+	return ParsedIds;
+}
+
 FString LoadSchemaFileForClass(const FString& SchemaOutputFolder, const UClass* CurrentClass)
 {
 	FString SchemaFileFolder = TEXT("");
@@ -41,6 +84,22 @@ int GetID()
 {
 	return id++;
 }
+TArray<UObject*> AllTestClasses =
+{
+	USchemaGenObjectStub::StaticClass(),
+	USpatialTypeObjectStub::StaticClass(),
+	UChildOfSpatialTypeObjectStub::StaticClass(),
+	UNotSpatialTypeObjectStub::StaticClass(),
+	UChildOfNotSpatialTypeObjectStub::StaticClass(),
+	UNoSpatialFlagsObjectStub::StaticClass(),
+	UChildOfNoSpatialFlagsObjectStub::StaticClass(),
+	ASpatialTypeActor::StaticClass(),
+	ANonSpatialTypeActor::StaticClass(),
+	USpatialTypeActorComponent::StaticClass(),
+	ASpatialTypeActorWithActorComponent::StaticClass(),
+	ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
+	ASpatialTypeActorWithMultipleObjectComponents::StaticClass()
+};
 
 TMap<FString, FString> ExpectedContents =
 {
@@ -492,7 +551,20 @@ SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_s
 	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
 
 	// THEN
-	TestTrue("Generated schema database is valid", false);
+	bool bDatabaseIsValid = false;
+	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(DatabaseOutputFile, TEXT(".SchemaDatabase")));
+	USchemaDatabase* SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
+	if (SchemaDatabase)
+	{
+		const FActorSchemaData* ActorData = SchemaDatabase->ActorClassPathToSchema.Find(CurrentClass->GetPathName());
+		if (ActorData != nullptr)
+		{
+			// TODO(Alex): Check ID here
+			bDatabaseIsValid = true;
+		}
+	}
+
+	TestTrue("Generated schema database is valid", bDatabaseIsValid);
 
 	// CLEANUP
 	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
@@ -526,11 +598,82 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
 
 	// THEN
-	TestTrue("Generated schema database is valid", false);
+	bool bDatabaseIsValid = true;
+	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(DatabaseOutputFile, TEXT(".SchemaDatabase")));
+	USchemaDatabase* SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
+	if (SchemaDatabase)
+	{
+		for (const auto& CurrentClass : Classes)
+		{
+			TArray<int32> ParsedIds = ParseAvailableIdsFromSchemaFile(SchemaOutputFolder, CurrentClass);
+
+			if (CurrentClass->IsChildOf<AActor>())
+			{
+				// TODO(Alex): check against schema content, not CurrentClass name
+				const FActorSchemaData* ActorData = SchemaDatabase->ActorClassPathToSchema.Find(CurrentClass->GetPathName());
+				if (ActorData != nullptr)
+				{
+					if (ActorData->GeneratedSchemaName.Compare(CurrentClass->GetName()) != 0)
+					{
+						bDatabaseIsValid = false;
+					}
+
+					// TODO(Alex): how to test this?
+					//ActorData->SubobjectData;
+
+					for (int i = 0; i < ParsedIds.Num(); ++i)
+					{
+						// TODO(Alex): why Schema_COUNT == 3?
+						if (ActorData->SchemaComponents[i] != ParsedIds[i])
+						{
+							bDatabaseIsValid = false;
+						}
+					}
+				}
+				else
+				{
+					bDatabaseIsValid = false;
+					break;
+				}
+			}
+			else
+			{
+				const FSubobjectSchemaData* SubobjectSchemaData = SchemaDatabase->SubobjectClassPathToSchema.Find(CurrentClass->GetPathName());
+				if (SubobjectSchemaData != nullptr)
+				{
+					// TODO(Alex): check against schema content, not CurrentClass name
+					if (SubobjectSchemaData->GeneratedSchemaName.Compare(CurrentClass->GetName()) != 0)
+					{
+						bDatabaseIsValid = false;
+					}
+
+					for (int i = 0; i < ParsedIds.Num(); ++i)
+					{
+						if (SubobjectSchemaData->DynamicSubobjectComponents[i].SchemaComponents[0] != ParsedIds[i])
+						{
+							bDatabaseIsValid = false;
+						}
+					}
+				}
+				else
+				{
+					bDatabaseIsValid = false;
+					break;
+				}
+			}
+
+		}
+	}
+	else
+	{
+		bDatabaseIsValid = false;
+	}
+
+	TestTrue("Generated schema database is valid", bDatabaseIsValid);
 
 	// CLEANUP
 	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
-	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
+	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName);
 
 	return true;
 }
@@ -598,9 +741,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loade
 SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_THEN_not_loaded)
 {
 	// GIVEN
-	const FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
 	const FString SchemaDatabaseFileName = TEXT("Spatial/Tests/SchemaDatabase");
-	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+	AddExpectedError(TEXT("Attempted to delete schema database"), EAutomationExpectedErrorFlags::Contains, 1);
 	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
 
 	// WHEN
@@ -682,20 +824,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_THEN_all_unsupported_classes_are_filtered)
 {
 	// GIVEN
-	TArray<UObject*> Classes;
-	Classes.Add(USchemaGenObjectStub::StaticClass());
-	Classes.Add(USpatialTypeObjectStub::StaticClass());
-	Classes.Add(UChildOfSpatialTypeObjectStub::StaticClass());
-	Classes.Add(UNotSpatialTypeObjectStub::StaticClass());
-	Classes.Add(UChildOfNotSpatialTypeObjectStub::StaticClass());
-	Classes.Add(UNoSpatialFlagsObjectStub::StaticClass());
-	Classes.Add(UChildOfNoSpatialFlagsObjectStub::StaticClass());
-	Classes.Add(ASpatialTypeActor::StaticClass());
-	Classes.Add(ANonSpatialTypeActor::StaticClass());
-	Classes.Add(USpatialTypeActorComponent::StaticClass());
-	Classes.Add(ASpatialTypeActorWithActorComponent::StaticClass());
-	Classes.Add(ASpatialTypeActorWithMultipleActorComponents::StaticClass());
-	Classes.Add(ASpatialTypeActorWithMultipleObjectComponents::StaticClass());
+	TArray<UObject*> Classes = AllTestClasses;
 
 	// WHEN
 	TSet<UClass*> FilteredClasses = SpatialGDKEditor::Schema::GetAllSupportedClasses(Classes);

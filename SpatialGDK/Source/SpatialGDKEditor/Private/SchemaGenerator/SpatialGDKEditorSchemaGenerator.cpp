@@ -492,7 +492,7 @@ bool IsSupportedClass(const UClass* SupportedClass)
 }
 
 
-TSet<UClass*> GetAllSupportedClasses(TArray<UObject*> AllClasses)
+TSet<UClass*> GetAllSupportedClasses(const TArray<UObject*>& AllClasses)
 {
 	TSet<UClass*> Classes;
 
@@ -599,7 +599,13 @@ bool TryLoadExistingSchemaDatabase(FString FileName /*= ""*/)
 			return false;
 		}
 
-		const USchemaDatabase* const SchemaDatabase = Cast<USchemaDatabase>(FSoftObjectPath(SchemaDatabaseAssetPath).TryLoad());
+		// TODO(Alex): use correct Filename for tests
+		//const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
+		//const FString SchemaDatabaseAssetPath = FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase"));
+		const FString DatabaseAssetPath = FPaths::SetExtension("/Game/Spatial/SchemaDatabase", TEXT(".SchemaDatabase"));
+		//const FString DatabaseAssetPath = FPaths::SetExtension("/Game/Spatial/SchemaDatabase", FPackageName::GetAssetPackageExtension());
+
+		const USchemaDatabase* const SchemaDatabase = Cast<USchemaDatabase>(FSoftObjectPath(DatabaseAssetPath).TryLoad());
 
 		if (SchemaDatabase == nullptr)
 		{

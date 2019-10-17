@@ -12,7 +12,7 @@ namespace SpatialGDKEditor
 	{
 		SPATIALGDKEDITOR_API bool IsSupportedClass(const UClass* SupportedClass);
 
-		SPATIALGDKEDITOR_API TSet<UClass*> GetAllSupportedClasses(TArray<UObject*> AllClasses);
+		SPATIALGDKEDITOR_API TSet<UClass*> GetAllSupportedClasses(const TArray<UObject*>& AllClasses);
 		
 		SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchema();
 		
