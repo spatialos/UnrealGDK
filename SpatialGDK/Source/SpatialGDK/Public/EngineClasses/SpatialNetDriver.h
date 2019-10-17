@@ -71,6 +71,7 @@ public:
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
 	virtual void Shutdown() override;
+	virtual void NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection) override;
 	// End UNetDriver interface.
 
 	virtual void OnOwnerUpdated(AActor* Actor);
@@ -102,9 +103,18 @@ public:
 	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject);
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
 
+	void RefreshActorDormancy(AActor* Actor, bool bMakeDormant);
+
+	void AddPendingDormantChannel(USpatialActorChannel* Channel);
+	void RegisterDormantEntityId(Worker_EntityId EntityId);
+	void UnregisterDormantEntityId(Worker_EntityId EntityId);
+	bool IsDormantEntity(Worker_EntityId EntityId) const;
+
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
+
+	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
@@ -177,6 +187,8 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TArray<Worker_OpList*> QueuedStartupOpLists;
+	TSet<Worker_EntityId_Key> DormantEntities;
+	TSet<TWeakObjectPtr<USpatialActorChannel>> PendingDormantChannels;
 
 	FTimerManager TimerManager;
 
@@ -188,6 +200,8 @@ private:
 	bool bMapLoaded;
 
 	FString SnapshotToLoad;
+
+	class USpatialGameInstance* GetGameInstance() const;
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 
@@ -224,6 +238,8 @@ private:
 
 	void ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters);
 	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn);
+
+	void ProcessPendingDormancy();
 
 	friend USpatialNetConnection;
 	friend USpatialWorkerConnection;

@@ -48,6 +48,10 @@
     <Reference Include="Improbable.Worker.dll">
       <HintPath>..\..\..\..\Binaries\ThirdParty\Improbable\Programs\worker_sdk\csharp\Improbable.Worker.dll</HintPath>
     </Reference>
+    <Content Include="..\..\..\..\Binaries\ThirdParty\Improbable\Linux\libimprobable_worker.so">	
+      <Link>libimprobable_worker.so</Link>	
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>	
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Authentication.cs" />

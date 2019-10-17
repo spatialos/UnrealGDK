@@ -9,6 +9,24 @@
 
 #include "SpatialGDKSettings.generated.h"
 
+/**
+ * Enum that maps Unreal's log verbosity to allow use in settings.
+**/
+UENUM()
+namespace ESettingsWorkerLogVerbosity
+{
+	enum Type
+	{
+		Fatal = 1,
+		Error,
+		Warning,
+		Display,
+		Log,
+		Verbose,
+		VeryVerbose,
+	};
+}
+
 UCLASS(config = SpatialGDKSettings, defaultconfig)
 class SPATIALGDK_API USpatialGDKSettings : public UObject
 {
@@ -179,4 +197,8 @@ public:
 	/** Available server worker types. */
 	UPROPERTY(Config)
 	TSet<FName> ServerWorkerTypes;
+
+	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
+	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (ConfigRestartRequired = false, DisplayName = "Worker Log Level"))
+	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
 };

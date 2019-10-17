@@ -6,8 +6,8 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Gameframework/PlayerController.h"
-#include "Gameframework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/Pawn.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -77,6 +77,19 @@ void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool
 	// So we send an Interest update immediately.
 	UpdateActorInterest(Cast<AActor>(PlayerController));
 	UpdateActorInterest(Cast<AActor>(PlayerController->GetPawn()));
+}
+
+void USpatialNetConnection::FlushDormancy(AActor* Actor)
+{
+	Super::FlushDormancy(Actor);
+
+	// This gets called from UNetDriver::FlushActorDormancyInternal for each connection. We inject our refresh
+	// of dormancy component here. This is slightly backwards, but means we don't have to make an engine change.
+	if (bReliableSpatialConnection)
+	{
+		const bool bMakeDormant = false;
+		Cast<USpatialNetDriver>(Driver)->RefreshActorDormancy(Actor, bMakeDormant);
+	}
 }
 
 void USpatialNetConnection::UpdateActorInterest(AActor* Actor)

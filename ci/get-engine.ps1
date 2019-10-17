@@ -2,7 +2,8 @@ param(
     # Note: this directory is outside the build directory and will not get automatically cleaned up from agents unless agents are restarted.
     [string] $engine_cache_directory = "$($pwd.drive.root)UnrealEngine-Cache",
     # Unreal path is a symlink to a specific Engine version located in Engine cache directory.
-    [string] $unreal_path = "$($gdk_home)\UnrealEngine"
+    [string] $unreal_path = "$($gdk_home)\UnrealEngine",
+    [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production/UnrealEngine"
 )
 
 pushd "$($gdk_home)"
@@ -12,15 +13,30 @@ pushd "$($gdk_home)"
         # Allow users to override the engine version if required
         if (Test-Path env:ENGINE_COMMIT_HASH)
         {
-            $unreal_version = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
-            Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($unreal_version)"
+            $version_file_contents = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
+            Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($version_file_contents)"
         } else {
             # Read Engine version from the file and trim any trailing white spaces and new lines.
-            $unreal_version = (Get-Content -Path "unreal-engine.version" -Raw).Trim()
-            Write-Log "Using engine version found in unreal-engine.version file: $($unreal_version)"
+            $version_file_contents = (Get-Content -Path "unreal-engine.version" -Raw).Trim()
+            Write-Log "Using engine version found in unreal-engine.version file: $($version_file_contents)"
+        }
+
+        # Check if we are using a 'floating' engine version, meaning that we want to get the latest built version of the engine on some branch
+        # This is specified by putting "HEAD name/of-a-branch" in the unreal-engine.version file
+        # If so, retrieve the version of the latest build from GCS, and use that going forward.
+        $head_version_prefix = "HEAD " 
+        if ($version_file_contents.StartsWith($head_version_prefix)) {
+            $version_branch = $version_file_contents.Remove(0, $head_version_prefix.Length) # Remove the prefix to just get the branch name
+            $version_branch = $version_branch.Replace("/", "_") # Replace / with _ since / is treated as the folder seperator in GCS
+
+            # Download the head pointer file for the given branch, which contains the latest built version of the engine from that branch
+            $head_pointer_gcs_path = "gs://$($gcs_publish_bucket)/HEAD/$($version_branch).version"
+            $unreal_version = $(gsutil cp $head_pointer_gcs_path -) # the '-' at the end instructs gsutil to download the file and output the contents to stdout
+        } else {
+            $unreal_version = $version_file_contents
         }
     popd
-
+    
     ## Create an UnrealEngine-Cache directory if it doesn't already exist.
     New-Item -ItemType Directory -Path $engine_cache_directory -Force
 
@@ -28,7 +44,7 @@ pushd "$($gdk_home)"
         Start-Event "download-unreal-engine" "get-unreal-engine"
 
         $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
-        Write-Log "Downloading Unreal Engine artifacts from $($engine_gcs_path)"
+        Write-Log "Downloading Unreal Engine artifacts version $unreal_version from $($engine_gcs_path)"
 
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
             "cp", `
