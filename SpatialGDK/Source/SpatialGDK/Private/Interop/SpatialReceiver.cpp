@@ -158,6 +158,11 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	}
 
+	if (Op.data.component_id < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
+	{
+		return;
+	}
+
 	if (ClassInfoManager->IsSublevelComponent(Op.data.component_id))
 	{
 		return;
@@ -1136,6 +1141,12 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		check(false); // TODO(zoning): Handle updates to the entity's authority intent.
 		break;
+	}
+
+	if (Op.update.component_id < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
+	{
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is a reserved spatial system component"), Op.entity_id, Op.update.component_id);
+		return;
 	}
 
 	// If this entity has a Tombstone component, abort all component processing
