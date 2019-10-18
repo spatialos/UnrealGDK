@@ -58,6 +58,65 @@ TArray<int32> ParseAvailableIdsFromSchemaFile(const FString& SchemaOutputFolder,
 	return ParsedIds;
 }
 
+bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FString& SchemaOutputFolder, const USchemaDatabase* SchemaDatabase)
+{
+	TArray<int32> ParsedIds = ParseAvailableIdsFromSchemaFile(SchemaOutputFolder, CurrentClass);
+
+	if (CurrentClass->IsChildOf<AActor>())
+	{
+		// TODO(Alex): check against schema content, not CurrentClass name
+		const FActorSchemaData* ActorData = SchemaDatabase->ActorClassPathToSchema.Find(CurrentClass->GetPathName());
+		if (ActorData == nullptr)
+		{
+			return false;
+		}
+		else
+		{
+			if (ActorData->GeneratedSchemaName.Compare(CurrentClass->GetName()) != 0)
+			{
+				return false;
+			}
+
+			// TODO(Alex): how to test this?
+			//ActorData->SubobjectData;
+
+			for (int i = 0; i < ParsedIds.Num(); ++i)
+			{
+				if (ActorData->SchemaComponents[i] != ParsedIds[i])
+				{
+					return false;
+				}
+			}
+		}
+	}
+	else
+	{
+		const FSubobjectSchemaData* SubobjectSchemaData = SchemaDatabase->SubobjectClassPathToSchema.Find(CurrentClass->GetPathName());
+		if (SubobjectSchemaData == nullptr)
+		{
+			return false;
+		}
+		else
+		{
+			// TODO(Alex): check against schema content, not CurrentClass name
+			if (SubobjectSchemaData->GeneratedSchemaName.Compare(CurrentClass->GetName()) != 0)
+			{
+				return false;
+			}
+
+			for (int i = 0; i < ParsedIds.Num(); ++i)
+			{
+				if (SubobjectSchemaData->DynamicSubobjectComponents[i].SchemaComponents[0] != ParsedIds[i])
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
 FString LoadSchemaFileForClass(const FString& SchemaOutputFolder, const UClass* CurrentClass)
 {
 	FString SchemaFileFolder = TEXT("");
@@ -558,31 +617,9 @@ SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_s
 	}
 	else
 	{
-		const FActorSchemaData* ActorData = SchemaDatabase->ActorClassPathToSchema.Find(CurrentClass->GetPathName());
-		if (ActorData == nullptr)
+		if (!TestEqualDatabaseEntryAndSchemaFile(CurrentClass, SchemaOutputFolder, SchemaDatabase))
 		{
 			bDatabaseIsValid = false;
-		}
-		else
-		{
-			// TODO(Alex): Check ID here
-			TArray<int32> ParsedIds = ParseAvailableIdsFromSchemaFile(SchemaOutputFolder, CurrentClass);
-			if (ActorData->GeneratedSchemaName.Compare(CurrentClass->GetName()) != 0)
-			{
-				bDatabaseIsValid = false;
-			}
-
-			// TODO(Alex): how to test this?
-			//ActorData->SubobjectData;
-
-			for (int i = 0; i < ParsedIds.Num(); ++i)
-			{
-				// TODO(Alex): why Schema_COUNT == 3?
-				if (ActorData->SchemaComponents[i] != ParsedIds[i])
-				{
-					bDatabaseIsValid = false;
-				}
-			}
 		}
 	}
 
@@ -614,72 +651,20 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 	bool bDatabaseIsValid = true;
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(DatabaseOutputFile, TEXT(".SchemaDatabase")));
 	USchemaDatabase* SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
-	if (SchemaDatabase != nullptr)
+	if (SchemaDatabase == nullptr)
 	{
-		for (const auto& CurrentClass : Classes)
-		{
-			TArray<int32> ParsedIds = ParseAvailableIdsFromSchemaFile(SchemaOutputFolder, CurrentClass);
-
-			if (CurrentClass->IsChildOf<AActor>())
-			{
-				// TODO(Alex): check against schema content, not CurrentClass name
-				const FActorSchemaData* ActorData = SchemaDatabase->ActorClassPathToSchema.Find(CurrentClass->GetPathName());
-				if (ActorData != nullptr)
-				{
-					if (ActorData->GeneratedSchemaName.Compare(CurrentClass->GetName()) != 0)
-					{
-						bDatabaseIsValid = false;
-					}
-
-					// TODO(Alex): how to test this?
-					//ActorData->SubobjectData;
-
-					for (int i = 0; i < ParsedIds.Num(); ++i)
-					{
-						// TODO(Alex): why Schema_COUNT == 3?
-						if (ActorData->SchemaComponents[i] != ParsedIds[i])
-						{
-							bDatabaseIsValid = false;
-						}
-					}
-				}
-				else
-				{
-					bDatabaseIsValid = false;
-					break;
-				}
-			}
-			else
-			{
-				const FSubobjectSchemaData* SubobjectSchemaData = SchemaDatabase->SubobjectClassPathToSchema.Find(CurrentClass->GetPathName());
-				if (SubobjectSchemaData != nullptr)
-				{
-					// TODO(Alex): check against schema content, not CurrentClass name
-					if (SubobjectSchemaData->GeneratedSchemaName.Compare(CurrentClass->GetName()) != 0)
-					{
-						bDatabaseIsValid = false;
-					}
-
-					for (int i = 0; i < ParsedIds.Num(); ++i)
-					{
-						if (SubobjectSchemaData->DynamicSubobjectComponents[i].SchemaComponents[0] != ParsedIds[i])
-						{
-							bDatabaseIsValid = false;
-						}
-					}
-				}
-				else
-				{
-					bDatabaseIsValid = false;
-					break;
-				}
-			}
-
-		}
+		bDatabaseIsValid = false;
 	}
 	else
 	{
-		bDatabaseIsValid = false;
+		for (const auto& CurrentClass : Classes)
+		{
+			if (!TestEqualDatabaseEntryAndSchemaFile(CurrentClass, SchemaOutputFolder, SchemaDatabase))
+			{
+				bDatabaseIsValid = false;
+				break;
+			}
+		}
 	}
 
 	TestTrue("Generated schema database is valid", bDatabaseIsValid);
