@@ -46,8 +46,7 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the
 	SpatialGDK::AddStringToSchema(SecondEntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, "VW_F");
 
 	// Now apply the mapping to the translator and test the result.
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-	translator->ApplyVirtualWorkerManagerData(ComponentObject);
+	translator->ApplyVirtualWorkerManagerData(Data);
 	
 	TestTrue("There is a mapping for virtual worker 2", translator->GetPhysicalWorkerForVirtualWorker(2) != nullptr);
 	TestTrue("VW_B overwritten with VW_E", translator->GetPhysicalWorkerForVirtualWorker(2)->Equals("VW_E"));
