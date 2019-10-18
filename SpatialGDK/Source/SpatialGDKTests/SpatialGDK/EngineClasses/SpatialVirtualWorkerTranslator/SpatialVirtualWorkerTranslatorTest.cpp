@@ -16,18 +16,17 @@
 VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings)
 {
 	// The class is initialized with no data.
-	SpatialVirtualWorkerTranslator* translator = new SpatialVirtualWorkerTranslator();
+	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>();
 
 	TestTrue("Worker 1 doesn't exist", translator->GetPhysicalWorkerForVirtualWorker(1) == nullptr);
 
-	delete translator;
 	return true;
 }
 
 VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the_updated_mapping)
 {
 	// The class is initialized with no data.
-	SpatialVirtualWorkerTranslator* translator = new SpatialVirtualWorkerTranslator();
+	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>();
 
 	// Create a base mapping.
 	Worker_ComponentData Data = {};
@@ -47,7 +46,8 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the
 	SpatialGDK::AddStringToSchema(SecondEntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, "VW_F");
 
 	// Now apply the mapping to the translator and test the result.
-	translator->ApplyVirtualWorkerManagerData(Data);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	translator->ApplyVirtualWorkerManagerData(ComponentObject);
 	
 	TestTrue("There is a mapping for virtual worker 2", translator->GetPhysicalWorkerForVirtualWorker(2) != nullptr);
 	TestTrue("VW_B overwritten with VW_E", translator->GetPhysicalWorkerForVirtualWorker(2)->Equals("VW_E"));
@@ -57,6 +57,5 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the
 
 	TestTrue("There is no mapping for virtual worker 1", translator->GetPhysicalWorkerForVirtualWorker(1) == nullptr);
 
-	delete translator;
 	return true;
 }
