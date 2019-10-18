@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
 - A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
 - The `GenerateSchema`, `GenerateSchemaAndSnapshots`, and `CookAndGenerateSchema` commandlets can be invoked with command line switches to output additional compiled schema formats. If no such switch is provided, only the schema descriptor will be produced. Recognized switches and resulting output formats are:
-    - `-CompileSchemaDescriptor`: Outputs `schema.descriptor`
+	- `-CompileSchemaDescriptor`: Outputs `schema.descriptor`
 	- `-CompileSchemaBundle`: Outputs `schema.sb`
 	- `-CompileSchemaBundleJson`: Outputs `schema.sb.json`
 	- `-CompileSchemaAST`: Outputs `*.pb` files (one per `.schema` file found)
