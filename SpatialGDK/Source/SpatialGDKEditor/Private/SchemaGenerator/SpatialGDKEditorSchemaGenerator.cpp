@@ -53,9 +53,8 @@ TMap<FString, FString> ClassPathToSchemaName;
 TMap<FString, FString> SchemaNameToClassPath;
 TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 
-const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH);
-const FString SchemaDatabaseAssetPath = FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase"));
-const FString SchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+const FString SchemaDatabaseFileName = TEXT("Spatial/SchemaDatabase");
+const FString RelativeSchemaDatabaseFileName = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName), FPackageName::GetAssetPackageExtension());
 
 namespace SpatialGDKEditor
 {
@@ -589,22 +588,20 @@ bool TryLoadExistingSchemaDatabase(FString FileName /*= ""*/)
 		FileName = SchemaDatabaseFileName;
 	}
 
-	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*FileName);
+	FString RelativeFileName = FPaths::Combine(FPaths::ProjectContentDir(), FileName);
+	RelativeFileName = FPaths::SetExtension(RelativeFileName, FPackageName::GetAssetPackageExtension());
+
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*RelativeFileName);
 
 	if (StatData.bIsValid)
 	{
 		if (StatData.bIsReadOnly)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"), *FileName);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"), *RelativeFileName);
 			return false;
 		}
 
-		// TODO(Alex): use correct Filename for tests
-		//const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
-		//const FString SchemaDatabaseAssetPath = FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase"));
-		const FString DatabaseAssetPath = FPaths::SetExtension("/Game/Spatial/SchemaDatabase", TEXT(".SchemaDatabase"));
-		//const FString DatabaseAssetPath = FPaths::SetExtension("/Game/Spatial/SchemaDatabase", FPackageName::GetAssetPackageExtension());
-
+		const FString DatabaseAssetPath = FPaths::SetExtension(FPaths::Combine(TEXT("/Game/"), FileName), TEXT(".SchemaDatabase"));
 		const USchemaDatabase* const SchemaDatabase = Cast<USchemaDatabase>(FSoftObjectPath(DatabaseAssetPath).TryLoad());
 
 		if (SchemaDatabase == nullptr)
@@ -648,40 +645,39 @@ bool GeneratedSchemaFolderExists()
 
 bool DeleteSchemaDatabase(FString PackagePath /*= ""*/)
 {
-	FString LocalSchemaDatabaseFileName = "";
+	FString DatabaseAssetPath = "";
 
 	if (PackagePath.IsEmpty())
 	{
-		LocalSchemaDatabaseFileName = SchemaDatabaseFileName;
+		DatabaseAssetPath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName), FPackageName::GetAssetPackageExtension());
 	}
 	else
 	{
-		const FString LocalSchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), PackagePath);
-		LocalSchemaDatabaseFileName = FPaths::SetExtension(LocalSchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+		DatabaseAssetPath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), PackagePath), FPackageName::GetAssetPackageExtension());
 	}
 
-	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*LocalSchemaDatabaseFileName);
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*DatabaseAssetPath);
 
 	if (StatData.bIsValid)
 	{
 		if (!StatData.bIsReadOnly)
 		{
-			if (!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*LocalSchemaDatabaseFileName))
+			if (!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*DatabaseAssetPath))
 			{
 				// This should never run, since DeleteFile should only return false if the file does not exist which we have already checked for.
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s"), *LocalSchemaDatabaseFileName);
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s"), *DatabaseAssetPath);
 				return false;
 			}
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s because it is read-only."), *LocalSchemaDatabaseFileName);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s because it is read-only."), *DatabaseAssetPath);
 			return false;
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Attempted to delete schema database at %s when it did not exist."), *LocalSchemaDatabaseFileName);
+		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Attempted to delete schema database at %s when it did not exist."), *DatabaseAssetPath);
 		// Don't return false since the schema database was already deleted
 	}
 
@@ -691,8 +687,8 @@ bool DeleteSchemaDatabase(FString PackagePath /*= ""*/)
 bool GeneratedSchemaDatabaseExists()
 {
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-
-	return PlatformFile.FileExists(*SchemaDatabaseFileName);
+	
+	return PlatformFile.FileExists(*RelativeSchemaDatabaseFileName);
 }
 
 void ResolveClassPathToSchemaName(const FString& ClassPath, const FString& SchemaName)

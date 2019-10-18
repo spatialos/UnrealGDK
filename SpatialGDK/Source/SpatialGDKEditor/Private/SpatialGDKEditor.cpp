@@ -61,7 +61,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	RemoveEditorAssetLoadedCallback();
 
-	if (!Schema::TryLoadExistingSchemaDatabase())
+	if (!bFullScan && !Schema::TryLoadExistingSchemaDatabase())
 	{
 		bSchemaGeneratorRunning = false;
 		return false;

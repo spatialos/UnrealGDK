@@ -700,9 +700,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loade
 	SpatialGDKEditor::Schema::SaveSchemaDatabase(gDatabaseOutputFile);
 
 	// WHEN
-	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), gSchemaDatabaseFileName);
-	const FString ExpectedgSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
-	bool bSuccess = SpatialGDKEditor::Schema::TryLoadExistingSchemaDatabase(ExpectedgSchemaDatabaseFileName);
+	bool bSuccess = SpatialGDKEditor::Schema::TryLoadExistingSchemaDatabase(gSchemaDatabaseFileName);
 
 	// THEN
 	TestTrue("Schema database loaded", bSuccess);
@@ -723,7 +721,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_TH
 	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), gSchemaDatabaseFileName);
 	const FString ExpectedgSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 	// TODO(Alex): it deleted schema folder :(
-	//bool bSuccess = SpatialGDKEditor::Schema::TryLoadExistingSchemaDatabase(ExpectedgSchemaDatabaseFileName);
+	//bool bSuccess = SpatialGDKEditor::Schema::TryLoadExistingSchemaDatabase(ExpectedgSchemaDatabaseFileName); - broken
+	//bool bSuccess = SpatialGDKEditor::Schema::TryLoadExistingSchemaDatabase(gSchemaDatabaseFileName);
 	bool bSuccess = false;
 
 	// THEN
