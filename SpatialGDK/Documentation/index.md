@@ -52,7 +52,7 @@ Project, you can learn more about the GDK’s functionality with tutorials and g
 #### **> Next:** [Get started]({{urlRoot}}/content/get-started/introduction.md)
 
 </br>------</br>
-_2019-10-16 Removed mention of the deprecated "Multiple deployments for session-based games" tutorial_</br>
+_2019-10-16 Updated with editorial review: removed mention of the deprecated tutorial -  multiple deployments for session-based games_</br>
 _2019-08-09 Updated with editorial review_</br>
 _2019-08-08 Updated with editorial review: renamed "multiserver shooter tutorial" to "multiserver zoning tutorial"_ </br>
 _2019-07-31 Updated with limited editorial review_

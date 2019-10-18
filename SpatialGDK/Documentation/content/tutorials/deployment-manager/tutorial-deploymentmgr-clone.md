@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Multiple deployments for session-based games
+# [Deprecated] Multiple deployments for session-based games
 ## 1: Clone the Deployment Manager
 
 First, clone the Deployment Manager repository. 
