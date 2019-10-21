@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generating schema after deleting the schema database but not the generated schema folder will now correctly trigger an initial schema generation.
 - Fixed an issue that would prevent player movement in a zoned deployment.
 
+## [`0.6.2`] - 2019-10-10
+
+- The GDK no longer relies on an ordering of entity and interest queries that is not guaranteed by the SpatialOS runtime.
+- The multiserver offloading tutorial has been simplified and re-factored.
+
 ## [`0.6.1`] - 2019-08-15
 
 ### Features:
