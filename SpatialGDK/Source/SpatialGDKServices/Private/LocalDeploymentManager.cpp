@@ -220,40 +220,26 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 			if (ExitCode == ExitCodeSuccess && bSuccess)
 			{
 				// Get the line of the netstat output that contains the port we're looking for.
-				FRegexPattern LineMatchPattern(FString::Printf(TEXT(".*?:%i.*"), RequiredRuntimePort));
-				FRegexMatcher LineMatcher(LineMatchPattern, NetStatResult);
-				if (LineMatcher.FindNext())
+				FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), RequiredRuntimePort));
+				FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
+				if (PidMatcher.FindNext())
 				{
-					FString PortLine = LineMatcher.GetCaptureGroup(0 /* Get the first match */);
+					FString Pid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group */);
 
-					// Match the PID
-					const FRegexPattern PidMatchPattern(" +[0-9]+$");
-					FRegexMatcher PidMatcher(PidMatchPattern, PortLine);
-					if (PidMatcher.FindNext())
+					const FString TaskKillCmd = TEXT("taskkill");
+					const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *Pid);
+					FString TaskKillResult;
+					bSuccess = FPlatformProcess::ExecProcess(*TaskKillCmd, *TaskKillArgs, &ExitCode, &TaskKillResult, &StdErr);
+					bSuccess = bSuccess && ExitCode == ExitCodeSuccess;
+					if (!bSuccess)
 					{
-						FString Pid = PidMatcher.GetCaptureGroup(0 /* Get the first match */);
-
-						const FString TaskKillCmd = TEXT("taskkill");
-						const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *Pid);
-						FString TaskKillResult;
-						bSuccess = FPlatformProcess::ExecProcess(*TaskKillCmd, *TaskKillArgs, &ExitCode, &TaskKillResult, &StdErr);
-						bSuccess = bSuccess && ExitCode == ExitCodeSuccess;
-						if (!bSuccess)
-						{
-							UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
-						}
-					}
-					else
-					{
-						bSuccess = false;
-						UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find PID of the process that is blocking the runtime port"));
-
+						UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
 					}
 				}
 				else
 				{
 					bSuccess = false;
-					UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find the blocked port in netstat"));
+					UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find PID of the process that is blocking the runtime port"));
 
 				}
 			}
