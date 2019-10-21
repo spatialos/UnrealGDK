@@ -36,11 +36,16 @@ TArray<FString> LoadSchemaFileForClassToStringArray(const FString& SchemaOutputF
 	return FileContent;
 }
 
-TArray<int32> ParseAvailableIdsFromSchemaFile(const FString& SchemaOutputFolder, const UClass* CurrentClass)
+struct NamesAndIds
+{
+	TArray<FString> Names;
+	TArray<int32> Ids;
+};
+
+NamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const FString& SchemaOutputFolder, const UClass* CurrentClass)
 {
 	const TArray<FString> LoadedSchema = LoadSchemaFileForClassToStringArray(SchemaOutputFolder, CurrentClass);
-
-	TArray<int32> ParsedIds;
+	NamesAndIds ParsedNamesAndIds;
 
 	for (const auto& SchemaLine : LoadedSchema)
 	{
@@ -52,21 +57,29 @@ TArray<int32> ParseAvailableIdsFromSchemaFile(const FString& SchemaOutputFolder,
 
 			if (ParsedId.IsNumeric())
 			{
-				ParsedIds.Push(FCString::Atoi(*ParsedId));
+				ParsedNamesAndIds.Ids.Push(FCString::Atoi(*ParsedId));
+			}
+		}
+		else if (SchemaLine.Contains(TEXT("component ")))
+		{
+			TArray<FString> OutArray;
+			SchemaLine.ParseIntoArrayWS(OutArray);
+			if ((OutArray.Num() > 1) && (OutArray[0].Compare(TEXT("component")) == 0))
+			{
+				ParsedNamesAndIds.Names.Push(OutArray[1]);
 			}
 		}
 	}
 
-	return ParsedIds;
+	return ParsedNamesAndIds;
 }
 
 bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FString& SchemaOutputFolder, const USchemaDatabase* SchemaDatabase)
 {
-	TArray<int32> ParsedIds = ParseAvailableIdsFromSchemaFile(SchemaOutputFolder, CurrentClass);
+	NamesAndIds ParsedNamesAndIds = ParseAvailableNamesAndIdsFromSchemaFile(SchemaOutputFolder, CurrentClass);
 
 	if (CurrentClass->IsChildOf<AActor>())
 	{
-		// TODO(Alex): check against schema content, not CurrentClass name
 		const FActorSchemaData* ActorData = SchemaDatabase->ActorClassPathToSchema.Find(CurrentClass->GetPathName());
 		if (ActorData == nullptr)
 		{
@@ -74,7 +87,12 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 		}
 		else
 		{
-			if (ActorData->GeneratedSchemaName.Compare(CurrentClass->GetName()) != 0)
+			if (ParsedNamesAndIds.Names.Num() != 1)
+			{
+				return false;
+			}
+
+			if (ActorData->GeneratedSchemaName.Compare(ParsedNamesAndIds.Names[0]) != 0)
 			{
 				return false;
 			}
@@ -82,9 +100,9 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 			// TODO(Alex): how to test this?
 			//ActorData->SubobjectData;
 
-			for (int i = 0; i < ParsedIds.Num(); ++i)
+			for (int i = 0; i < ParsedNamesAndIds.Ids.Num(); ++i)
 			{
-				if (ActorData->SchemaComponents[i] != ParsedIds[i])
+				if (ActorData->SchemaComponents[i] != ParsedNamesAndIds.Ids[i])
 				{
 					return false;
 				}
@@ -100,15 +118,22 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 		}
 		else
 		{
-			// TODO(Alex): check against schema content, not CurrentClass name
-			if (SubobjectSchemaData->GeneratedSchemaName.Compare(CurrentClass->GetName()) != 0)
+			if (ParsedNamesAndIds.Names.Num() != ParsedNamesAndIds.Ids.Num())
 			{
 				return false;
 			}
 
-			for (int i = 0; i < ParsedIds.Num(); ++i)
+			for (int i = 0; i < ParsedNamesAndIds.Ids.Num(); ++i)
 			{
-				if (SubobjectSchemaData->DynamicSubobjectComponents[i].SchemaComponents[0] != ParsedIds[i])
+				if (SubobjectSchemaData->DynamicSubobjectComponents[i].SchemaComponents[0] != ParsedNamesAndIds.Ids[i])
+				{
+					return false;
+				}
+
+				FString ExpectedComponentName = SubobjectSchemaData->GeneratedSchemaName;
+				ExpectedComponentName += TEXT("Dynamic");
+				ExpectedComponentName.AppendInt(i + 1);
+				if (ParsedNamesAndIds.Names[i].Compare(ExpectedComponentName) != 0)
 				{
 					return false;
 				}
@@ -627,7 +652,6 @@ SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_s
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_valid_schema_database_exists)
 {
 	// GIVEN
-	// TODO(Alex): Don't have that many classes?
 	TSet<UClass*> Classes = AllTestClassesSet;
 
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
@@ -721,7 +745,6 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_TH
 	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), gSchemaDatabaseFileName);
 	const FString ExpectedgSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 	// TODO(Alex): it deleted schema folder :(
-	//bool bSuccess = SpatialGDKEditor::Schema::TryLoadExistingSchemaDatabase(ExpectedgSchemaDatabaseFileName); - broken
 	//bool bSuccess = SpatialGDKEditor::Schema::TryLoadExistingSchemaDatabase(gSchemaDatabaseFileName);
 	bool bSuccess = false;
 
