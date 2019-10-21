@@ -567,8 +567,13 @@ void DeleteGeneratedSchemaFiles(FString SchemaOutputPath /*= ""*/)
 			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not clean the generated schema directory '%s'! Please make sure the directory and the files inside are writeable."), *SchemaOutputPath);
 		}
 	}
-	// TODO(Alex): check it's safe to do so
-	//PlatformFile.CreateDirectory(*SchemaOutputPath);
+}
+
+void CreateSchemaFolder()
+{
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	PlatformFile.CreateDirectory(*SchemaOutputPath);
 }
 
 void ResetSchemaGeneratorState()
@@ -622,6 +627,7 @@ bool TryLoadExistingSchemaDatabase(FString FileName /*= ""*/)
 			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
 			ResetSchemaGeneratorState();
 			DeleteGeneratedSchemaFiles();
+			CreateSchemaFolder();
 			return false;
 		}
 	}
@@ -630,6 +636,7 @@ bool TryLoadExistingSchemaDatabase(FString FileName /*= ""*/)
 		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("SchemaDatabase not found so the generated schema directory will be cleared out if it exists."));
 		ResetSchemaGeneratorState();
 		DeleteGeneratedSchemaFiles();
+		CreateSchemaFolder();
 		return false;
 	}
 
