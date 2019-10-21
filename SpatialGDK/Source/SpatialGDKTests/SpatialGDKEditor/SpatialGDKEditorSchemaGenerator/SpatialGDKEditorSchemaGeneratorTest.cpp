@@ -336,7 +336,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_not_spatial_tag_WHEN_checked_if_support
 	bool bIsSupported = SpatialGDKEditor::Schema::IsSupportedClass(SupportedClass);
 
 	// THEN
-	TestFalse("Class with Not Spatial flag is not supported", bIsSupported);
+	TestFalse("Class with Not Spatial Type flag is not supported", bIsSupported);
 	return true;
 }
 
