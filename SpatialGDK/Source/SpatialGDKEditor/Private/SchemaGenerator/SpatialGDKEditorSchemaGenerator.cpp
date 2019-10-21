@@ -42,7 +42,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 TArray<UClass*> SchemaGeneratedClasses;
 TMap<FString, FActorSchemaData> ActorClassPathToSchema;
 TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
-uint32 NextAvailableComponentId;
+uint32 NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 
 // LevelStreaming
 TMap<FString, uint32> LevelPathToComponentId;
