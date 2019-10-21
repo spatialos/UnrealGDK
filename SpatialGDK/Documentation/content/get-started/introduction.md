@@ -22,7 +22,6 @@ After you set up the GDK and the Example Project, you can check out the followin
 <img src="{{assetRoot}}assets/screen-grabs/homepage-template-project.png" style=" float: right; margin: 10px; display: block; width: 60%; padding: 20px 20x"/>
 
 * **Multiserver offloading**: Learn how to offload groups of Actors so Unreal server functionality is split between multiple servers using the Example Project.
-* **Multiple deployments for session-based games**: Upload a session-based FPS example game to the cloud using the Example Project.
 * **Multiserver zoning**: Implement shooting across the boundaries of different servers computing one game world using the Example Project. (**Note:** Zoning is in preview.)
 * **Database sync worker**: Learn how to integrate server database synchronization into your project using the Example Project.
 
@@ -47,5 +46,6 @@ Visit the **feedback** section in our [forums](https://forums.improbable.io/) an
 Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issues).
 
 <br/>------</br>
+_2019-10-18 Page updated with editorial review: removed depricated tutorial - multiple deployments for session-based games_ </br>
 _2019-08-09 Page updated with editorial review: added new tutorials_ </br>
 _2019-05-23 Page updated with editorial review_

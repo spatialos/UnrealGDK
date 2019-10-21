@@ -23,10 +23,10 @@ You can change:
 **Next steps:** </br>
 
 If you haven't already, check out:
-
-- The tutorial on [multiple deployments for session-based games]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro).
 - The multiserver zoning tutorial to learn how to implement [cross-server interactions]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro).  
 
 Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/actor-handover) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
-<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>
+<br/>------------<br/>
+_2019-10-18 Page updated with editorial review: removed link to deprecated tutorial - multiple deployments for session-based games_<br/>
+_2019-07-16 Page updated with editorial review_<br/>
