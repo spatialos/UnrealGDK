@@ -53,7 +53,7 @@ TMap<FString, FString> ClassPathToSchemaName;
 TMap<FString, FString> SchemaNameToClassPath;
 TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 
-const FString SchemaDatabaseFileName = SCHEMA_DATABASE_FILE_PATH;
+const FString SchemaDatabaseFileName = SpatialConstants::SCHEMA_DATABASE_FILE_PATH;
 const FString RelativeSchemaDatabaseFileName = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName), FPackageName::GetAssetPackageExtension());
 
 namespace SpatialGDKEditor
