@@ -82,6 +82,6 @@ You've sucessfully set up and launched the Example Project using the Deployment 
 
 
 <br/>------<br/>
-_2019-08-14 Page updated with editorial review: removed link to deprecated tutorial - multiple deployments for session-based games_</br>
+_2019-10-18 Page updated with editorial review: removed link to deprecated tutorial - multiple deployments for session-based games_</br>
 _2019-08-14 Page updated with editorial review: new Console screens_</br>
 _2019-05-23 Page added with editorial review_
