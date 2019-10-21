@@ -141,7 +141,7 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 			return true;
 		}
 	}
-	return true;
+	return false;
 }
 
 void USpatialGameInstance::HandleOnConnected()
