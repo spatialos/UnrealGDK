@@ -136,10 +136,7 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 			return true;
 		}
 
-		if (NetDriver->SpatialDebugger && NetDriver->SpatialDebugger->ProcessConsoleExec(Cmd, Ar, Executor))
-		{
-			return true;
-		}
+		return NetDriver->SpatialDebugger && NetDriver->SpatialDebugger->ProcessConsoleExec(Cmd, Ar, Executor);
 	}
 	return true;
 }
