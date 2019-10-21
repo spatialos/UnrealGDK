@@ -1,11 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
-
-#include "Utils/RPCContainer.h"
-
 #include "CoreMinimal.h"
-
 #include "SchemaGenObjectStub.generated.h"
 
 UCLASS()
