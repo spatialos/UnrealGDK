@@ -28,5 +28,5 @@ If you haven't already, check out:
 Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/actor-handover) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 <br/>------------<br/>
-_2019-10-18 Page updated with editorial review: removed link to deprecated multiple deployments for session-based games_<br/>
+_2019-10-18 Page updated with editorial review: removed link to deprecated tutorial - multiple deployments for session-based games_<br/>
 _2019-07-16 Page updated with editorial review_<br/>
