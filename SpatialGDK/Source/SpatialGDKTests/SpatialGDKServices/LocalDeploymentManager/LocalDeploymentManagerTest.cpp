@@ -152,8 +152,7 @@ DEFINE_LATENT_COMMAND_TWO_PARAMETERS(CheckDeploymentState, FAutomationTestBase*,
 	return true;
 }
 
-// UNR-1975 after fixing the flakiness of these tests, and investigating how they can be run in CI (UNR-1969), re-enable them
-/*LOCALDEPLOYMENT_TEST(GIVEN_no_deployment_running_WHEN_deployment_started_THEN_deployment_running)
+LOCALDEPLOYMENT_TEST(GIVEN_no_deployment_running_WHEN_deployment_started_THEN_deployment_running)
 {
 	// GIVEN
 	ADD_LATENT_AUTOMATION_COMMAND(StopDeployment());
@@ -187,4 +186,4 @@ LOCALDEPLOYMENT_TEST(GIVEN_deployment_running_WHEN_deployment_stopped_THEN_deplo
 	// THEN
 	ADD_LATENT_AUTOMATION_COMMAND(CheckDeploymentState(this, EDeploymentState::IsNotRunning));
     return true;
-}*/
+}
