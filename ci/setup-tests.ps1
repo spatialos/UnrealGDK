@@ -19,4 +19,5 @@ New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorA
 
 # Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
 Add-Content -Path "$unreal_path\Engine\Config\BaseEditorSettings.ini" -Value "`r`n[/Script/IntroTutorials.TutorialStateSettings]`r`nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)`r`n"
+# TODO: To be fixed with a dedicated testing project instead of StarterContent - maybe UNR-2047
 Add-Content -Path "$project_path\Game\Config\DefaultGame.ini" -Value "`r`n[/Script/EngineSettings.GeneralProjectSettings]`r`nbSpatialNetworking=True`r`n"
