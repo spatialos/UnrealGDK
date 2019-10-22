@@ -160,7 +160,7 @@ FString FSpatialGDKServicesModule::ParseProjectName()
 	FString SpatialFileName = TEXT("spatialos.json");
 	FString SpatialFileResult;
 
-	if (FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialDirectory, SpatialFileName));)
+	if (FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialDirectory, SpatialFileName)))
 	{
 		TSharedPtr<FJsonObject> JsonParsedSpatialFile;
 		if (ParseJson(SpatialFileResult, JsonParsedSpatialFile))
