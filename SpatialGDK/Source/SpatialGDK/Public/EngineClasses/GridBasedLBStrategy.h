@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable)
 class SPATIALGDK_API UGridBasedLBStrategy : public UAbstractLBStrategy
 {
 	GENERATED_BODY()
@@ -29,19 +29,19 @@ public:
 	static UGridBasedLBStrategy* Create(uint32 Rows, uint32 Cols, float WorldWidth, float WorldHeight);
 
 protected:
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin="1"))
 	uint32 Rows;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"))
 	uint32 Cols;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"))
 	float WorldWidth;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"))
 	float WorldHeight;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0"))
 	float EdgeFuzziness;
 
 private:

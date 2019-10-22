@@ -9,6 +9,7 @@ UGridBasedLBStrategy::UGridBasedLBStrategy()
 	, Cols(1)
 	, WorldWidth(10000.f)
 	, WorldHeight(10000.f)
+	, EdgeFuzziness(1.f)
 {
 }
 
@@ -43,7 +44,7 @@ void UGridBasedLBStrategy::Init(const class USpatialNetDriver* InNetDriver)
 			// the actor leaves its cell, including the fuzzy boundary. When we then ask
 			// which worker should get authority, a different worker will always be
 			// selected (assuming we have complete coverage over the world.)
-			Cell = Cell.ExpandBy(1.0f);
+			Cell = Cell.ExpandBy(EdgeFuzziness);
 
 			WorkerCells.Add(MoveTemp(Cell));
 		}
