@@ -10,6 +10,10 @@ param(
 
 . "$PSScriptRoot\common.ps1"
 
+Start-Event "cleanup-symlinks" "command"
+&$PSScriptRoot"\cleanup.ps1" -unreal_path "$unreal_path"
+Finish-Event "cleanup-symlinks" "command"
+
 # Download Unreal Engine
 Start-Event "get-unreal-engine" "command"
 &$PSScriptRoot"\get-engine.ps1" -unreal_path "$unreal_path"
