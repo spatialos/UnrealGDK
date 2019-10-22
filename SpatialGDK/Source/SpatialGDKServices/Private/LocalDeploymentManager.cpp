@@ -198,6 +198,53 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 	return !bCanBindToPort;
 }
 
+bool FLocalDeploymentManager::TryUnbindPort(int32 Port)
+{
+	bool bSuccess = true;
+
+	const FString NetStatCmd = FString::Printf(TEXT("netstat"));
+
+	// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
+	const FString NetStatArgs = TEXT("-n -o -a");
+	FString NetStatResult;
+	int32 ExitCode;
+	FString StdErr;
+	bSuccess = FPlatformProcess::ExecProcess(*NetStatCmd, *NetStatArgs, &ExitCode, &NetStatResult, &StdErr);
+
+	if (ExitCode == ExitCodeSuccess && bSuccess)
+	{
+		// Get the line of the netstat output that contains the port we're looking for.
+		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), RequiredRuntimePort));
+		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
+		if (PidMatcher.FindNext())
+		{
+			FString Pid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group */);
+
+			const FString TaskKillCmd = TEXT("taskkill");
+			const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *Pid);
+			FString TaskKillResult;
+			bSuccess = FPlatformProcess::ExecProcess(*TaskKillCmd, *TaskKillArgs, &ExitCode, &TaskKillResult, &StdErr);
+			bSuccess = bSuccess && ExitCode == ExitCodeSuccess;
+			if (!bSuccess)
+			{
+				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
+			}
+		}
+		else
+		{
+			bSuccess = false;
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find PID of the process that is blocking the runtime port"));
+
+		}
+	}
+	else
+	{
+		bSuccess = false;
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
+	}
+	return bSuccess;
+}
+
 bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 {
 	bool bSuccess = true;
@@ -208,46 +255,11 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 		// If it exists offer the user the ability to kill it.
 		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess", "A required port is blocked by another process (potentially by an old deployment). Would you like to kill this process?")) == EAppReturnType::Yes)
 		{
-			const FString NetStatCmd = FString::Printf(TEXT("netstat"));
-
-			// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
-			const FString NetStatArgs = TEXT("-n -o -a");
-			FString NetStatResult;
-			int32 ExitCode;
-			FString StdErr;
-			bSuccess = FPlatformProcess::ExecProcess(*NetStatCmd, *NetStatArgs, &ExitCode, &NetStatResult, &StdErr);
-
-			if (ExitCode == ExitCodeSuccess && bSuccess)
-			{
-				// Get the line of the netstat output that contains the port we're looking for.
-				FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), RequiredRuntimePort));
-				FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
-				if (PidMatcher.FindNext())
-				{
-					FString Pid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group */);
-
-					const FString TaskKillCmd = TEXT("taskkill");
-					const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *Pid);
-					FString TaskKillResult;
-					bSuccess = FPlatformProcess::ExecProcess(*TaskKillCmd, *TaskKillArgs, &ExitCode, &TaskKillResult, &StdErr);
-					bSuccess = bSuccess && ExitCode == ExitCodeSuccess;
-					if (!bSuccess)
-					{
-						UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
-					}
-				}
-				else
-				{
-					bSuccess = false;
-					UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find PID of the process that is blocking the runtime port"));
-
-				}
-			}
-			else
-			{
-				bSuccess = false;
-				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
-			}
+			bSuccess = TryUnbindPort(RequiredRuntimePort);
+		}
+		else
+		{
+			bSuccess = false;
 		}
 	}
 	return bSuccess;

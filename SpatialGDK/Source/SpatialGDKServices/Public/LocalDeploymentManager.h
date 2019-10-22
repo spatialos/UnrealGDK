@@ -24,6 +24,7 @@ public:
 
 
 	bool CheckIfPortIsBound(int32 Port);
+	bool TryUnbindPort(int32 Port);
 	bool LocalDeploymentPreRunChecks();
 
 	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose);
