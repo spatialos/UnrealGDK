@@ -499,10 +499,13 @@ TSet<UClass*> GetAllSupportedClasses(const TArray<UObject*>& AllClasses)
 	{
 		UClass* SupportedClass = Cast<UClass>(ClassIt);
 
+		if (SupportedClass != nullptr)
+		{
 		if (IsSupportedClass(SupportedClass))
 		{
 			Classes.Add(SupportedClass);
 		}
+	}
 	}
 
 	return Classes;
@@ -854,7 +857,8 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 		return false;
 	}
 
-	check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
+	// TODO(Alex): why is this check here?
+	//check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
 
 	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
