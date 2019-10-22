@@ -12,10 +12,32 @@ pushd "$($gdk_home)"
 
     # Fetch the version of Unreal Engine we need
     pushd "ci"
+<<<<<<< HEAD
         # Allow overriding the engine version if required
         if (Test-Path env:ENGINE_COMMIT_HASH) {
             $version_description = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
             Echo "Using engine version defined by ENGINE_COMMIT_HASH: $($version_description)"
+=======
+<<<<<<< HEAD
+        # Allow users to override the engine version if required
+        if (Test-Path env:ENGINE_COMMIT_HASH) {
+            $version_file_contents = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
+            Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($version_file_contents)"
+=======
+        # Allow overriding the engine version if required
+        if (Test-Path env:ENGINE_COMMIT_HASH) {
+            $version_description = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
+<<<<<<< HEAD
+<<<<<<< HEAD
+            Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($version_description)"
+>>>>>>> 2b9212f5... Feature/GV-98 Unreal GDK multiple engine version CI (#1480)
+=======
+            Echo "Using engine version defined by ENGINE_COMMIT_HASH: $($version_description)"
+>>>>>>> 54b995f8... clean up logging
+=======
+            Echo "Using engine version defined by ENGINE_COMMIT_HASH: $($version_description)"
+>>>>>>> 4f7b743d... Feature/unr 2302 unreal gdk ci testing with spatial (#1463)
+>>>>>>> test GIVEN conditions
         } else {
             # Read Engine version from the file and trim any trailing white spaces and new lines.
             $version_description = Get-Content -Path "unreal-engine.version" -First 1

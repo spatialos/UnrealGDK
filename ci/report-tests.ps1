@@ -42,18 +42,67 @@ if (Test-Path "$test_result_dir\index.html" -PathType Leaf) {
         --style info
 }
 
-## Read the test results, and pass/fail the build accordingly 
+# Read the test results
 $results_path = Join-Path -Path $test_result_dir -ChildPath "index.json"
 $results_json = Get-Content $results_path -Raw
+$test_results_obj = ConvertFrom-Json $results_json
+$tests_passed = $test_results_obj.failed -eq 0
 
-$results_obj = ConvertFrom-Json $results_json
+# Upload artifacts to Buildkite, merge all output streams to extract artifact ID in the Slack message generation
+$ErrorActionPreference = "Continue" # For some reason every piece of output being piped is considered an error
+$upload_output = buildkite-agent "artifact" "upload" "$test_result_dir\*" *>&1 | %{ "$_" } | Out-String
+$ErrorActionPreference = "Stop" # Restore preference
 
-Write-Log "Test results are displayed in a nicer form in the artifacts (index.html / index.json)"
+# Artifacts are assigned an ID upon upload, so grab IDs from upload process output to build the artifact URLs
+Try {
+    $test_results_id = (Select-String -Pattern "[^ ]* $($formatted_test_result_dir.Replace("\","\\"))\\index.html" -InputObject $upload_output -CaseSensitive).Matches[0].Value.Split(" ")[0]
+    $test_log_id = (Select-String -Pattern "[^ ]* $($formatted_test_result_dir.Replace("\","\\"))\\tests.log" -InputObject $upload_output -CaseSensitive).Matches[0].Value.Split(" ")[0]
+}
+Catch {
+    Write-Error "Failed to parse artifact ID from the buildkite uploading output: $upload_output"
+    Throw $_
+}
+$test_results_url = "https://buildkite.com/organizations/$env:BUILDKITE_ORGANIZATION_SLUG/pipelines/$env:BUILDKITE_PIPELINE_SLUG/builds/$env:BUILDKITE_BUILD_ID/jobs/$env:BUILDKITE_JOB_ID/artifacts/$test_results_id"
+$test_log_url = "https://buildkite.com/organizations/$env:BUILDKITE_ORGANIZATION_SLUG/pipelines/$env:BUILDKITE_PIPELINE_SLUG/builds/$env:BUILDKITE_BUILD_ID/jobs/$env:BUILDKITE_JOB_ID/artifacts/$test_log_id"
 
-if ($results_obj.failed -ne 0) {
-    $fail_msg = "$($results_obj.failed) tests failed. Logs for these tests are contained in the tests.log artifact."
+# Build Slack attachment
+$slack_attachment = [ordered]@{
+    fallback = "Find the test results at $test_results_url"
+    color = $(if ($tests_passed) {"good"} else {"danger"})
+    fields = @(
+             @{
+                value = "*$env:ENGINE_COMMIT_HASH*"
+                short = $true
+            }
+            @{
+                value = "Passed $($test_results_obj.succeeded) / $($test_results_obj.succeeded + $test_results_obj.failed) tests."
+                short = $true
+            }
+        )
+    actions = @(
+            @{
+                type = "button"
+                text = ":bar_chart: Test results"
+                url = "$test_results_url"
+                style = "primary"
+            }
+            @{
+                type = "button"
+                text = ":page_with_curl: Test log"
+                url = "$test_log_url"
+                style = "primary"
+            }
+        )
+}
+
+$slack_attachment | ConvertTo-Json | Set-Content -Path "$test_result_dir\slack_attachment_$env:BUILDKITE_STEP_ID.json"
+
+buildkite-agent "artifact" "upload" "$test_result_dir\slack_attachment_$env:BUILDKITE_STEP_ID.json"
+
+# Fail this build if any tests failed
+if (-Not $tests_passed) {
+    $fail_msg = "$($test_results_obj.failed) tests failed. Logs for these tests are contained in the tests.log artifact."
     Write-Log $fail_msg
     Throw $fail_msg
 }
-
 Write-Log "All tests passed!"
