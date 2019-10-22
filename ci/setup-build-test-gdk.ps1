@@ -5,7 +5,7 @@ param(
   [string] $target_platform = "Win64",
   [string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build. Should ultimately resolve to "C:\b\<number>\".
   [string] $unreal_path = "$build_home\UnrealEngine",
-  [string] $testing_project_name = "StarterContent" ## For now, has to be inside the Engine's Samples folder
+  [string] $testing_project_name = "UnrealGDKShooterGame" ## For now, has to be inside the Engine's Samples folder
 )
 
 . "$PSScriptRoot\common.ps1"
@@ -42,7 +42,7 @@ if ($target_platform -eq "Win64") {
 
   Start-Event "test-gdk" "command"
   Try{
-    &$PSScriptRoot"\run-tests.ps1" -unreal_editor_path "$unreal_path\Engine\Binaries\$target_platform\UE4Editor.exe" -uproject_path "$unreal_path\Samples\$testing_project_name\$testing_project_name.uproject" -output_dir "$PSScriptRoot\TestResults" -log_file_name "$PSScriptRoot\TestResults\tests.log"
+    &$PSScriptRoot"\run-tests.ps1" -unreal_editor_path "$unreal_path\Engine\Binaries\$target_platform\UE4Editor.exe" -uproject_path "$unreal_path\Samples\$testing_project_name\$testing_project_name.uproject" -output_dir "$PSScriptRoot\TestResults" -log_file_path "$PSScriptRoot\TestResults\tests.log"
   }
   Catch {
     Throw $_

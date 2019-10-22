@@ -182,8 +182,6 @@ FString FSpatialGDKServicesModule::ParseProjectName()
 	else
 	{
 		UE_LOG(LogSpatialGDKServices, Error, TEXT("Loading spatialos.json failed. Can't get project name."));
-		UE_LOG(LogSpatialGDKServices, Error, TEXT("%s - %s"), *SpatialDirectory, *SpatialFileName);
-		UE_LOG(LogSpatialGDKServices, Error, TEXT("%s"), *FPaths::Combine(SpatialDirectory, SpatialFileName));
 	}
 
 	ProjectNameParsed.Empty();
