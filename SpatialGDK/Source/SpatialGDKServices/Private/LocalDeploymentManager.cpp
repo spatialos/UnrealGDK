@@ -234,7 +234,6 @@ bool FLocalDeploymentManager::TryUnbindPort(int32 Port)
 		{
 			bSuccess = false;
 			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find PID of the process that is blocking the runtime port"));
-
 		}
 	}
 	else
@@ -242,6 +241,7 @@ bool FLocalDeploymentManager::TryUnbindPort(int32 Port)
 		bSuccess = false;
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
 	}
+
 	return bSuccess;
 }
 
@@ -262,6 +262,7 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 			bSuccess = false;
 		}
 	}
+
 	return bSuccess;
 }
 
