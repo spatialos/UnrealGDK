@@ -211,7 +211,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.BrowseButtonToolTip(FText::FromString(FString(TEXT("Path to the launch configuration file."))))
 									.BrowseDirectory(FSpatialGDKServicesModule::GetSpatialOSDirectory())
 									.BrowseTitle(FText::FromString(FString(TEXT("File picker..."))))
-									.FilePath_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryLanchConfigPath)
+									.FilePath_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryLaunchConfigPath)
 									.FileTypeFilter(TEXT("Launch configuration files (*.json)|*.json"))
 									.OnPathPicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked)
 								]

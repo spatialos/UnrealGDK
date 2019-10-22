@@ -391,11 +391,11 @@ public:
 	}
 
 	void SetPrimaryLaunchConfigPath(const FString& Path);
-	FORCEINLINE FString GetPrimaryLanchConfigPath() const
+	FORCEINLINE FString GetPrimaryLaunchConfigPath() const
 	{
 		const USpatialGDKEditorSettings* SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 		return PrimaryLaunchConfigPath.FilePath.IsEmpty()
-			? SpatialEditorSettings->GetSpatialOSLaunchConfig()
+			? FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("one_worker_test.json"))
 			: PrimaryLaunchConfigPath.FilePath;
 	}
 
