@@ -12,6 +12,22 @@
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/FileHelper.h"
 
+#define LOCTEXT_NAMESPACE "SpatialGDKEDitorSchemaGeneratorTest"
+
+/*
+// TODO(Alex): 
++1. GetAllSupportedClasses add if
+2. move IsEmpty logic outside eventually
+?3. Package to filepath
+4. TryLoadExistingSchemaDatabase:
+	- Check Readonly schemadatabase
+	- Read data from schemadatabase
+
+5. reuse readonly func in DeleteSchemaDatabase
+?6. GetStatData should use filepath
++7. add constructor in Stub.cpp (defaultpawn.cpp)
+*/
+
 #define SCHEMA_GENERATOR_TEST(TestName) \
 	TEST(SpatialGDKEditor, SchemaGenerator, TestName)
 
@@ -39,6 +55,7 @@ TArray<FString> LoadSchemaFileForClassToStringArray(const FString& SchemaOutputF
 struct NamesAndIds
 {
 	TArray<FString> Names;
+	TArray<FString> SubobjectNames;
 	TArray<int32> Ids;
 };
 
@@ -49,24 +66,40 @@ NamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const FString& SchemaOutputF
 
 	for (const auto& SchemaLine : LoadedSchema)
 	{
-		if (SchemaLine.Contains(TEXT("\tid =")))
+		FRegexPattern IdPattern = TEXT("(\tid = )([0-9]+)(;)");
+		FRegexMatcher IdRegMatcher(IdPattern, SchemaLine);
+
+		FRegexPattern NamePattern = TEXT("(component )(.+)( \\{)");
+		FRegexMatcher NameRegMatcher(NamePattern, SchemaLine);
+
+		FRegexPattern SubobjectNamePattern = TEXT("(\tUnrealObjectRef )(.+)( = )([0-9]+)(;)");
+		FRegexMatcher SubobjectNameRegMatcher(SubobjectNamePattern, SchemaLine);
+
+		if (IdRegMatcher.FindNext())
 		{
-			TArray<FString> OutArray;
-			SchemaLine.ParseIntoArrayWS(OutArray);
-			FString ParsedId = OutArray.Last().LeftChop(1);
+			FString ParsedId = IdRegMatcher.GetCaptureGroup(2);
 
 			if (ParsedId.IsNumeric())
 			{
 				ParsedNamesAndIds.Ids.Push(FCString::Atoi(*ParsedId));
 			}
 		}
-		else if (SchemaLine.Contains(TEXT("component ")))
+		else if (NameRegMatcher.FindNext())
 		{
-			TArray<FString> OutArray;
-			SchemaLine.ParseIntoArrayWS(OutArray);
-			if ((OutArray.Num() > 1) && (OutArray[0].Compare(TEXT("component")) == 0))
+			FString ComponentName = NameRegMatcher.GetCaptureGroup(2);
+			ParsedNamesAndIds.Names.Push(ComponentName);
+		}
+		else if (SubobjectNameRegMatcher.FindNext())
+		{
+			FString ParsedSubobjectName = SubobjectNameRegMatcher.GetCaptureGroup(2);
+
+			if (!ParsedSubobjectName.IsEmpty() &&
+				ParsedSubobjectName.Compare(TEXT("attachmentreplication_attachparent")) != 0 &&
+				ParsedSubobjectName.Compare(TEXT("attachmentreplication_attachcomponent")) != 0 &&
+				ParsedSubobjectName.Compare(TEXT("owner")) != 0 &&
+				ParsedSubobjectName.Compare(TEXT("instigator")) != 0)
 			{
-				ParsedNamesAndIds.Names.Push(OutArray[1]);
+				ParsedNamesAndIds.SubobjectNames.Push(ParsedSubobjectName);
 			}
 		}
 	}
@@ -97,8 +130,26 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 				return false;
 			}
 
-			// TODO(Alex): how to test this?
-			//ActorData->SubobjectData;
+			TArray<FActorSpecificSubobjectSchemaData> SubobjectNames;
+			ActorData->SubobjectData.GenerateValueArray(SubobjectNames);
+			if (SubobjectNames.Num() != ParsedNamesAndIds.SubobjectNames.Num())
+			{
+				return false;
+			}
+
+			// TODO: Fix it in the next PR
+			//for (int i = 0; i < ParsedNamesAndIds.SubobjectNames.Num(); ++i)
+			//{
+			//	const auto& Predicate = [&SchemaName = ParsedNamesAndIds.SubobjectNames[i]](const FActorSpecificSubobjectSchemaData& Data)
+			//	{
+			//		return (Data.Name.ToString().Compare(SchemaName) == 0);
+			//	};
+
+			//	if (!SubobjectNames.ContainsByPredicate(Predicate))
+			//	{
+			//		return false;
+			//	}
+			//}
 
 			for (int i = 0; i < ParsedNamesAndIds.Ids.Num(); ++i)
 			{
@@ -173,7 +224,8 @@ TArray<UObject*> AllTestClassesArray =
 	USpatialTypeActorComponent::StaticClass(),
 	ASpatialTypeActorWithActorComponent::StaticClass(),
 	ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
-	ASpatialTypeActorWithMultipleObjectComponents::StaticClass()
+	ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
+	ASpatialTypeActorWithSubobject::StaticClass()
 };
 
 TSet<UClass*> AllTestClassesSet =
@@ -190,7 +242,8 @@ TSet<UClass*> AllTestClassesSet =
 	USpatialTypeActorComponent::StaticClass(),
 	ASpatialTypeActorWithActorComponent::StaticClass(),
 	ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
-	ASpatialTypeActorWithMultipleObjectComponents::StaticClass()
+	ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
+	ASpatialTypeActorWithSubobject::StaticClass()
 };
 
 TMap<FString, FString> ExpectedContents =
@@ -260,7 +313,7 @@ void DeleteTestFolders()
 	PlatformFile.DeleteDirectoryRecursively(*gSchemaOutputFolder);
 }
 
-}
+} // anonymous namespace
 
 SCHEMA_GENERATOR_TEST(GIVEN_spatial_type_class_WHEN_checked_if_supported_THEN_is_supported)
 {
@@ -425,6 +478,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_the
 {
 	// GIVEN
 	SchemaValidator Validator;
+	// TODO(Alex): should we have more? 
 	TSet<UClass*> Classes =
 	{
 		ASpatialTypeActor::StaticClass(),
@@ -616,7 +670,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_saved_THEN_valid_schema_database_exists)
 {
 	// GIVEN
-	UClass* CurrentClass = ASpatialTypeActor::StaticClass();
+	UClass* CurrentClass = ASpatialTypeActorWithSubobject::StaticClass();
 	TSet<UClass*> Classes = { CurrentClass };
 
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
@@ -833,7 +887,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_
 		USpatialTypeActorComponent::StaticClass(),
 		ASpatialTypeActorWithActorComponent::StaticClass(),
 		ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
-		ASpatialTypeActorWithMultipleObjectComponents::StaticClass()
+		ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
+		ASpatialTypeActorWithSubobject::StaticClass()
 	};
 
 	bool bClassesFilteredCorrectly = true;
