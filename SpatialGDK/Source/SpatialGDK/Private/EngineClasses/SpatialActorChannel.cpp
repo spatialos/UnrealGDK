@@ -20,6 +20,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Schema/AlwaysRelevant.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/ServerRPCEndpoint.h"
 #include "SpatialConstants.h"
@@ -38,11 +39,7 @@ namespace
 // This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
 // We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
 // In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
-#if ENGINE_MINOR_VERSION <= 20
-void UpdateChangelistHistory(TSharedPtr<FRepState>& RepState)
-#else
 void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
-#endif
 {
 	check(RepState->GetSendingRepState()->HistoryEnd >= RepState->GetSendingRepState()->HistoryStart);
 
@@ -86,27 +83,32 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 {
 }
 
-#if ENGINE_MINOR_VERSION <= 20
-void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex, bool bOpenedLocally)
-{
-	Super::Init(InConnection, ChannelIndex, bOpenedLocally);
-
-	NetDriver = Cast<USpatialNetDriver>(Connection->Driver);
-	check(NetDriver);
-	Sender = NetDriver->Sender;
-	Receiver = NetDriver->Receiver;
-}
-#else
 void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex, EChannelCreateFlags CreateFlag)
 {
 	Super::Init(InConnection, ChannelIndex, CreateFlag);
 
+	// Actor Channels are pooled, so we must initialize internal state here.
+	bCreatedEntity = false;
+	bCreatingNewEntity = false;
+	EntityId = SpatialConstants::INVALID_ENTITY_ID;
+	bInterestDirty = false;
+	bNetOwned = false;
+	LastPositionSinceUpdate = FVector::ZeroVector;
+	TimeWhenPositionLastUpdated = 0.0f;
+
+	PendingDynamicSubobjects.Empty();
+	SavedOwnerWorkerAttribute.Empty();
+
+	FramesTillDormancyAllowed = 0;
+
+	ActorHandoverShadowData = nullptr;
+	HandoverShadowDataMap.Empty();
+
 	NetDriver = Cast<USpatialNetDriver>(Connection->Driver);
 	check(NetDriver);
 	Sender = NetDriver->Sender;
 	Receiver = NetDriver->Receiver;
 }
-#endif
 
 void USpatialActorChannel::DeleteEntityIfAuthoritative()
 {
@@ -123,7 +125,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	{
 		// Workaround to delay the delete entity request if tearing off.
 		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
-		if (Actor->GetTearOff())
+		if (Actor != nullptr && Actor->GetTearOff())
 		{
 			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
 			// Since the entity deletion is delayed, this creates a situation,
@@ -133,11 +135,9 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		}
 		else
 		{
-			Sender->SendDeleteEntityRequest(EntityId);
+			Sender->RetireEntity(EntityId);
 		}
 	}
-
-	Receiver->CleanupDeletedEntity(EntityId);
 }
 
 bool USpatialActorChannel::IsSingletonEntity()
@@ -145,11 +145,7 @@ bool USpatialActorChannel::IsSingletonEntity()
 	return NetDriver->GlobalStateManager->IsSingletonEntity(EntityId);
 }
 
-#if ENGINE_MINOR_VERSION <= 20
-bool USpatialActorChannel::CleanUp(const bool bForDestroy)
-#else
 bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason)
-#endif
 {
 #if WITH_EDITOR
 	if (NetDriver != nullptr)
@@ -158,7 +154,8 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 
 		if (bDeleteDynamicEntities &&
 			NetDriver->IsServer() &&
-			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
+			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr &&
+			CloseReason != EChannelCloseReason::Dormancy)
 		{
 			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 			DeleteEntityIfAuthoritative();
@@ -166,29 +163,40 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 	}
 #endif
 
-	// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects
-	Receiver->CleanupDeletedEntity(EntityId);
+	if (CloseReason != EChannelCloseReason::Dormancy)
+	{
+		// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects.
+		NetDriver->PackageMap->RemoveEntityActor(EntityId);
+	}
+	else
+	{
+		NetDriver->RegisterDormantEntityId(EntityId);
+	}
 
-#if ENGINE_MINOR_VERSION <= 20
-	return UActorChannel::CleanUp(bForDestroy);
-#else
+	NetDriver->RemoveActorChannel(EntityId);
+
 	return UActorChannel::CleanUp(bForDestroy, CloseReason);
-#endif
 }
 
-#if ENGINE_MINOR_VERSION <= 20
-int64 USpatialActorChannel::Close()
-{
-	DeleteEntityIfAuthoritative();
-	return Super::Close();
-}
-#else
 int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 {
-	DeleteEntityIfAuthoritative();
+	if (Reason != EChannelCloseReason::Dormancy)
+	{
+		DeleteEntityIfAuthoritative();
+		NetDriver->PackageMap->RemoveEntityActor(EntityId);
+	}
+	else
+	{
+		// Closed for dormancy reasons, ensure we update the component state of this entity.
+		const bool bMakeDormant = true;
+		NetDriver->RefreshActorDormancy(Actor, bMakeDormant);
+		NetDriver->RegisterDormantEntityId(EntityId);
+	}
+
+	NetDriver->RemoveActorChannel(EntityId);
+
 	return Super::Close(Reason);
 }
-#endif
 
 bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 {
@@ -239,11 +247,7 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
 	checkf(!Object->IsPendingKill(), TEXT("Attempted to create initial rep change state on an object which is pending kill. This will fail to create a RepLayout: "), *Object->GetName());
 
-#if ENGINE_MINOR_VERSION <= 20
-	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
-#else
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object.Get()).Get();
-#endif
 
 	TArray<uint16> InitialRepChanged;
 
@@ -380,8 +384,9 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
-#if ENGINE_MINOR_VERSION <= 20
-	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
+
+#if ENGINE_MINOR_VERSION <= 22
+	ActorReplicator->ChangelistMgr->Update(ActorReplicator->RepState.Get(), Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 #else
 	ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr, Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 #endif
@@ -442,6 +447,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 
 		bWroteSomethingImportant = true;
+
 		if (RepChanged.Num() > 0)
 		{
 			ActorReplicator->RepState->GetSendingRepState()->HistoryEnd++;
@@ -450,7 +456,22 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	UpdateChangelistHistory(ActorReplicator->RepState);
 
+	// This would indicate we need to flush our state before we could consider going dormant. In Spatial, this
+	// dormancy can occur immediately (because we don't require acking), which means that dormancy can be thrashed
+	// on and off if AActor::FlushNetDormancy is being called (possibly because replicated properties are being updated
+	// within blueprints which invokes this call). Give a few frames before allowing channel to go dormant.
+	if (ActorReplicator->bLastUpdateEmpty == 0)
+	{
+		FramesTillDormancyAllowed = 2;
+	}
+	else if (FramesTillDormancyAllowed > 0)
+	{
+		--FramesTillDormancyAllowed;
+	}
+
 	ActorReplicator->RepState->GetSendingRepState()->LastChangelistIndex = ChangelistState->HistoryEnd;
+	ActorReplicator->RepState->OpenAckedCalled = true;
+	ActorReplicator->bLastUpdateEmpty = 1;
 
 	if (bCreatingNewEntity)
 	{
@@ -490,11 +511,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		// Look for deleted subobjects
 		for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
 		{
-#if ENGINE_MINOR_VERSION <= 20
-			if (!RepComp.Key().IsValid())
-#else
 			if (!RepComp.Value()->GetWeakObjectPtr().IsValid())
-#endif
 			{
 				FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromNetGUID(RepComp.Value().Get().ObjectNetGUID);
 				if (ObjectRef.IsValid())
@@ -623,12 +640,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 
 	bool bCreatedReplicator = false;
 
-#if ENGINE_MINOR_VERSION <= 20
-	bCreatedReplicator = !ReplicationMap.Contains(Object);
-	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
-#else
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
-#endif
 
 	// If we're creating an entity, don't try replicating 
 	if (bCreatingNewEntity)
@@ -651,8 +663,9 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	}
 
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
-#if ENGINE_MINOR_VERSION <= 20
-	Replicator.ChangelistMgr->Update(Object, Replicator.Connection->Driver->ReplicationFrame, Replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
+
+#if ENGINE_MINOR_VERSION <= 22
+	Replicator.ChangelistMgr->Update(Replicator.RepState.Get(), Object, Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 #else
 	Replicator.RepLayout->UpdateChangelistMgr(Replicator.RepState->GetSendingRepState(), *Replicator.ChangelistMgr, Object, Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 #endif
@@ -698,7 +711,14 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	}
 
 	UpdateChangelistHistory(Replicator.RepState);
+
+#if ENGINE_MINOR_VERSION <= 22
+	Replicator.RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+#else
 	Replicator.RepState->GetSendingRepState()->LastChangelistIndex = ChangelistState->HistoryEnd;
+#endif
+	Replicator.RepState->OpenAckedCalled = true;
+	Replicator.bLastUpdateEmpty = 1;
 
 	return RepChanged.Num() > 0;
 }
@@ -707,6 +727,23 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 {
 	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
 	return ReplicateSubobject(Obj, RepFlags);
+}
+
+bool USpatialActorChannel::ReadyForDormancy(bool bSuppressLogs /*= false*/)
+{
+ 	// Check Receiver doesn't have any pending operations for this channel
+ 	if (Receiver->IsPendingOpsOnChannel(this))
+ 	{
+ 		return false;
+ 	}
+
+	// Hasn't been waiting for dormancy long enough allow dormancy, soft attempt to prevent dormancy thrashing
+	if (FramesTillDormancyAllowed > 0)
+	{
+		return false;
+	}
+
+	return Super::ReadyForDormancy(bSuppressLogs);
 }
 
 TMap<UObject*, const FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
@@ -822,6 +859,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 			PackageMap->RemovePendingCreationEntityId(EntityId);
 		}
 		NetDriver->AddActorChannel(EntityId, this);
+		NetDriver->UnregisterDormantEntityId(EntityId);
 	}
 
 	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
@@ -867,29 +905,33 @@ bool USpatialActorChannel::TryResolveActor()
 	return true;
 }
 
-FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
+FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
 {
+	// If there is no NetGUID for this object, we will crash in FObjectReplicator::StartReplicating, so we verify this here.
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
-	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid());
+	if (ObjectNetGUID.IsDefault() || !ObjectNetGUID.IsValid())
+	{
+		// SpatialReceiver tried to resolve this object in the PackageMap, but it didn't propagate to GuidCache.
+		// This could happen if the UnrealObjectRef was already mapped to a different object that's been destroyed.
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("PreReceiveSpatialUpdate: NetGUID is invalid! Object: %s"), *TargetObject->GetPathName());
+		return nullptr;
+	}
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PreNetReceive();
 	//TODO: Needs a replacement for InitShadowData
 	//Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
 
-	return Replicator;
+	return &Replicator;
 }
 
 void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies)
 {
-	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
-	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
-
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
 
-#if ENGINE_MINOR_VERSION <= 20
-	Replicator.RepNotifies = RepNotifies;
+#if ENGINE_MINOR_VERSION <= 22
+	Replicator.RepState->RepNotifies = RepNotifies;
 #else
 	Replicator.RepState->GetReceivingRepState()->RepNotifies = RepNotifies;
 #endif
@@ -1013,7 +1055,7 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();
 		Location = PawnRootComponent ? PawnRootComponent->GetComponentLocation() : FVector::ZeroVector;
 	}
-	else if (InActor->GetOwner() != nullptr && InActor->GetIsReplicated())
+	else if (InActor->GetOwner() != nullptr && InActor->GetOwner()->GetIsReplicated())
 	{
 		return GetActorSpatialPosition(InActor->GetOwner());
 	}

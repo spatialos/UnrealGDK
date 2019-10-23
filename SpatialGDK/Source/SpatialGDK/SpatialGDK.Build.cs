@@ -43,7 +43,7 @@ public class SpatialGDK : ModuleRules
 
         var WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
 
-        string LibPrefix = "";
+        string LibPrefix = "improbable_";
         string ImportLibSuffix = "";
         string SharedLibSuffix = "";
         bool bAddDelayLoad = false;
@@ -81,7 +81,7 @@ public class SpatialGDK : ModuleRules
         else if (Target.Platform == UnrealTargetPlatform.IOS)
         {
             LibPrefix = "lib";
-            ImportLibSuffix = SharedLibSuffix = "_static_fullylinked.a";
+            ImportLibSuffix = SharedLibSuffix = "_static.a";
         }
         else
         {

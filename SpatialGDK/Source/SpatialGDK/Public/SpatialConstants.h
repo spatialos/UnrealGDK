@@ -98,6 +98,8 @@ namespace SpatialConstants
 	const Worker_ComponentId PERSISTENCE_COMPONENT_ID						= 55;
 	const Worker_ComponentId INTEREST_COMPONENT_ID							= 58;
 
+	const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID		= 100;
+
 	const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 9999;
 	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 9998;
 	const Worker_ComponentId SINGLETON_COMPONENT_ID							= 9997;
@@ -114,6 +116,10 @@ namespace SpatialConstants
 	const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
 	const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
 	const Worker_ComponentId ALWAYS_RELEVANT_COMPONENT_ID					= 9983;
+	const Worker_ComponentId TOMBSTONE_COMPONENT_ID                         = 9982;
+	const Worker_ComponentId DORMANT_COMPONENT_ID							= 9981;
+	const Worker_ComponentId AUTHORITY_INTENT_COMPONENT_ID                  = 9980;
+	const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID        = 9979;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -167,6 +173,15 @@ namespace SpatialConstants
 
 	const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
 
+	// AuthorityIntent codes and Field IDs.
+	const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
+	const uint32 INVALID_AUTHORITY_INTENT_ID                                = 0;
+
+	// VirtualWorkerTranslation Field IDs.
+	const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
+	const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID							= 1;
+	const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME						= 2;
+
 	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
 
@@ -196,7 +211,7 @@ namespace SpatialConstants
 		return FIRST_COMMAND_RETRY_WAIT_SECONDS * WaitTimeExponentialFactor;
 	}
 
-	const FString LOCAL_HOST = TEXT("127.0.0.1");
+	const FString LOCAL_HOST  = TEXT("127.0.0.1");
 	const uint16 DEFAULT_PORT = 7777;
 
 	const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
@@ -207,13 +222,14 @@ namespace SpatialConstants
 	const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 
 	const FString LOCATOR_HOST = TEXT("locator.improbable.io");
-	const uint16 LOCATOR_PORT = 444;
+	const uint16 LOCATOR_PORT  = 444;
 
 	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
-	const FString SCHEMA_DATABASE_FILE_PATH = TEXT("Spatial/SchemaDatabase");
+	const FString SCHEMA_DATABASE_FILE_PATH  = TEXT("Spatial/SchemaDatabase");
 	const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
-}
+
+} // ::SpatialConstants
 
 FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)
 {

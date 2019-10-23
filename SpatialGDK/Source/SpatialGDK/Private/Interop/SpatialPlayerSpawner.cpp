@@ -61,7 +61,8 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 	// Send a successful response if the player has been accepted, either from this request or one in the past.
 	Worker_CommandResponse CommandResponse = {};
 	CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
-	CommandResponse.schema_type = Schema_CreateCommandResponse(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
+	CommandResponse.command_index = 1;
+	CommandResponse.schema_type = Schema_CreateCommandResponse();
 	Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
 
 	NetDriver->Connection->SendCommandResponse(RequestId, &CommandResponse);
@@ -72,7 +73,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	// Send an entity query for the SpatialSpawner and bind a delegate so that once it's found, we send a spawn command.
 	Worker_Constraint SpatialSpawnerConstraint;
 	SpatialSpawnerConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
-	SpatialSpawnerConstraint.component_constraint.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
+	SpatialSpawnerConstraint.constraint.component_constraint.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 
 	Worker_EntityQuery SpatialSpawnerQuery{};
 	SpatialSpawnerQuery.constraint = SpatialSpawnerConstraint;
@@ -104,7 +105,8 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 
 			Worker_CommandRequest CommandRequest = {};
 			CommandRequest.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
-			CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
+			CommandRequest.command_index = 1;
+			CommandRequest.schema_type = Schema_CreateCommandRequest();
 			Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 			AddStringToSchema(RequestObject, 1, LoginURL.ToString(true));
 

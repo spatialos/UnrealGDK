@@ -9,6 +9,8 @@
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialMetrics.h"
 
+#include "WorkerSDK/improbable/c_worker.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
 void USpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics)
@@ -41,63 +43,63 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 		{
 		// Critical Section
 		case WORKER_OP_TYPE_CRITICAL_SECTION:
-			Receiver->OnCriticalSection(Op->critical_section.in_critical_section != 0);
+			Receiver->OnCriticalSection(Op->op.critical_section.in_critical_section != 0);
 			break;
 
 		// Entity Lifetime
 		case WORKER_OP_TYPE_ADD_ENTITY:
-			Receiver->OnAddEntity(Op->add_entity);
+			Receiver->OnAddEntity(Op->op.add_entity);
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			Receiver->OnRemoveEntity(Op->remove_entity);
-			StaticComponentView->OnRemoveEntity(Op->remove_entity.entity_id);
-			Receiver->RemoveComponentOpsForEntity(Op->remove_entity.entity_id);
+			Receiver->OnRemoveEntity(Op->op.remove_entity);
+			StaticComponentView->OnRemoveEntity(Op->op.remove_entity.entity_id);
+			Receiver->RemoveComponentOpsForEntity(Op->op.remove_entity.entity_id);
 			break;
 
 		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
-			StaticComponentView->OnAddComponent(Op->add_component);
-			Receiver->OnAddComponent(Op->add_component);
+			StaticComponentView->OnAddComponent(Op->op.add_component);
+			Receiver->OnAddComponent(Op->op.add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			Receiver->OnRemoveComponent(Op->remove_component);
+			Receiver->OnRemoveComponent(Op->op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			StaticComponentView->OnComponentUpdate(Op->component_update);
-			Receiver->OnComponentUpdate(Op->component_update);
+			StaticComponentView->OnComponentUpdate(Op->op.component_update);
+			Receiver->OnComponentUpdate(Op->op.component_update);
 			break;
 
 		// Commands
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			Receiver->OnCommandRequest(Op->command_request);
+			Receiver->OnCommandRequest(Op->op.command_request);
 			break;
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			Receiver->OnCommandResponse(Op->command_response);
+			Receiver->OnCommandResponse(Op->op.command_response);
 			break;
 
 		// Authority Change
 		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			Receiver->OnAuthorityChange(Op->authority_change);
+			Receiver->OnAuthorityChange(Op->op.authority_change);
 			break;
 
 		// World Command Responses
 		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-			Receiver->OnReserveEntityIdsResponse(Op->reserve_entity_ids_response);
+			Receiver->OnReserveEntityIdsResponse(Op->op.reserve_entity_ids_response);
 			break;
 		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			Receiver->OnCreateEntityResponse(Op->create_entity_response);
+			Receiver->OnCreateEntityResponse(Op->op.create_entity_response);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 			break;
 		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
-			Receiver->OnEntityQueryResponse(Op->entity_query_response);
+			Receiver->OnEntityQueryResponse(Op->op.entity_query_response);
 			break;
 
 		case WORKER_OP_TYPE_FLAG_UPDATE:
-			USpatialWorkerFlags::ApplyWorkerFlagUpdate(Op->flag_update);
+			USpatialWorkerFlags::ApplyWorkerFlagUpdate(Op->op.flag_update);
 			break;
 		case WORKER_OP_TYPE_LOG_MESSAGE:
-			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
+			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->op.log_message.message));
 			break;
 		case WORKER_OP_TYPE_METRICS:
 #if !UE_BUILD_SHIPPING
@@ -105,7 +107,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 #endif
 			break;
 		case WORKER_OP_TYPE_DISCONNECT:
-			Receiver->OnDisconnect(Op->disconnect);
+			Receiver->OnDisconnect(Op->op.disconnect);
 			break;
 
 		default:
@@ -131,7 +133,7 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 	switch (Op->op_type)
 	{
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		StaticComponentView->OnAuthorityChange(Op->authority_change);
+		StaticComponentView->OnAuthorityChange(Op->op.authority_change);
 		// Intentional fall-through
 	case WORKER_OP_TYPE_ADD_COMPONENT:
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
@@ -152,7 +154,7 @@ USpatialDispatcher::FCallbackId USpatialDispatcher::OnAddComponent(Worker_Compon
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_ADD_COMPONENT, [Callback](const Worker_Op* Op)
 	{
-		Callback(Op->add_component);
+		Callback(Op->op.add_component);
 	});
 }
 
@@ -160,7 +162,7 @@ USpatialDispatcher::FCallbackId USpatialDispatcher::OnRemoveComponent(Worker_Com
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_REMOVE_COMPONENT, [Callback](const Worker_Op* Op)
 	{
-		Callback(Op->remove_component);
+		Callback(Op->op.remove_component);
 	});
 }
 
@@ -168,14 +170,14 @@ USpatialDispatcher::FCallbackId USpatialDispatcher::OnAuthorityChange(Worker_Com
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_AUTHORITY_CHANGE, [Callback](const Worker_Op* Op)
 	{
-		Callback(Op->authority_change);
+		Callback(Op->op.authority_change);
 	});
 }
 USpatialDispatcher::FCallbackId USpatialDispatcher::OnComponentUpdate(Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMPONENT_UPDATE, [Callback](const Worker_Op* Op)
 	{
-		Callback(Op->component_update);
+		Callback(Op->op.component_update);
 	});
 }
 
@@ -183,7 +185,7 @@ USpatialDispatcher::FCallbackId USpatialDispatcher::OnCommandRequest(Worker_Comp
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMMAND_REQUEST, [Callback](const Worker_Op* Op)
 	{
-		Callback(Op->command_request);
+		Callback(Op->op.command_request);
 	});
 }
 
@@ -191,7 +193,7 @@ USpatialDispatcher::FCallbackId USpatialDispatcher::OnCommandResponse(Worker_Com
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMMAND_RESPONSE, [Callback](const Worker_Op* Op)
 	{
-		Callback(Op->command_response);
+		Callback(Op->op.command_response);
 	});
 }
 

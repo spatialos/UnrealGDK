@@ -145,34 +145,33 @@ public:
 
 	void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
-	void CleanupDeletedEntity(Worker_EntityId EntityId);
-
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();
 
 	void OnDisconnect(Worker_DisconnectOp& Op);
+
+	void RemoveActor(Worker_EntityId EntityId);
+	bool IsPendingOpsOnChannel(USpatialActorChannel* Channel);
 
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
 
 	void ReceiveActor(Worker_EntityId EntityId);
-	void RemoveActor(Worker_EntityId EntityId);
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 
 	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
 	AActor* CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
 
+	USpatialActorChannel* RecreateDormantSpatialChannel(AActor* Actor, Worker_EntityId EntityID);
 	void ProcessRemoveComponent(const Worker_RemoveComponentOp& Op);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
-	void QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId);
-
 	void HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
 	void HandleActorAuthority(const Worker_AuthorityChangeOp& Op);
 
-	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel* Channel);
+	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel* Channel, const FClassInfo& ActorClassInfo);
 	void ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, const Worker_ComponentData& Data);
 	// This is called for AddComponentOps not in a critical section, which means they are not a part of the initial entity creation.
 	void HandleIndividualAddComponent(const Worker_AddComponentOp& Op);
@@ -204,6 +203,8 @@ private:
 	AActor* FindSingletonActor(UClass* SingletonClass);
 
 	void OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp& Op);
+
+	void PeriodicallyProcessIncomingRPCs();
 
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
@@ -244,12 +245,12 @@ private:
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_RemoveComponentOp> QueuedRemoveComponentOps;
 
-	TMap<Worker_RequestId, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
+	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;
 
-	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
-	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
-	TMap<Worker_RequestId, CreateEntityDelegate> CreateEntityDelegates;
+	TMap<Worker_RequestId_Key, EntityQueryDelegate> EntityQueryDelegates;
+	TMap<Worker_RequestId_Key, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
+	TMap<Worker_RequestId_Key, CreateEntityDelegate> CreateEntityDelegates;
 
 	// This will map PlayerController entities to the corresponding SpatialNetConnection
 	// for PlayerControllers that this server has authority over. This is used for player

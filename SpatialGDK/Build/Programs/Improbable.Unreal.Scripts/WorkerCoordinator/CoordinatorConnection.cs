@@ -47,32 +47,20 @@ namespace Improbable.WorkerCoordinator
         {
             var thread = new Thread(() =>
             {
-                using (var dispatcher = new Dispatcher())
+                Dispatcher dispatcher = new Dispatcher();
+                var isConnected = true;
+
+                dispatcher.OnDisconnect(op =>
                 {
-                    var isConnected = true;
+                    logger.WriteError("[disconnect] " + op.Reason, logToConnectionIfExists: false);
+                    isConnected = false;
+                });
 
-                    dispatcher.OnDisconnect(op =>
+                while (isConnected)
+                {
+                    using (var opList = connection.GetOpList(GetOpListTimeoutInMilliseconds))
                     {
-                        logger.WriteError("[disconnect] " + op.Reason, logToConnectionIfExists: false);
-                        isConnected = false;
-                    });
-
-                    dispatcher.OnLogMessage(op =>
-                    {
-                        connection.SendLogMessage(op.Level, LoggerName, op.Message);
-                        if (op.Level == LogLevel.Fatal)
-                        {
-                            logger.WriteError("Fatal error: " + op.Message, logToConnectionIfExists: false);
-                            Environment.Exit(1);
-                        }
-                    });
-
-                    while (isConnected)
-                    {
-                        using (var opList = connection.GetOpList(GetOpListTimeoutInMilliseconds))
-                        {
-                            dispatcher.Process(opList);
-                        }
+                        dispatcher.Process(opList);
                     }
                 }
             });

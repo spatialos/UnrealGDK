@@ -78,6 +78,7 @@ call :MarkStartOfBlock "Create folders"
     md "%CORE_SDK_DIR%\tools"        >nul 2>nul
     md "%CORE_SDK_DIR%\worker_sdk"   >nul 2>nul
     md "%BINARIES_DIR%"              >nul 2>nul
+    md "%BINARIES_DIR%\Programs"     >nul 2>nul
 
     if exist "%SPATIAL_DIR%" (
         md "%SCHEMA_STD_COPY_DIR%"    >nul 2>nul
@@ -88,25 +89,25 @@ call :MarkEndOfBlock "Create folders"
 call :MarkStartOfBlock "Retrieve dependencies"
     spatial package retrieve tools           schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
     spatial package retrieve schema          standard_library                           %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\schema\standard_library.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86-msvc_md-win32                %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32             %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux       %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip"
-    spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang_libcpp-ios  %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang_libcpp-ios.zip"
-    spatial package retrieve worker_sdk      core-dynamic-x86_64-linux                  %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip"
+    spatial package retrieve worker_sdk      c_headers                                  %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c_headers.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86-vc140_md-win32               %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-vc140_md-win32.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-vc140_md-win32            %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc140_md-win32.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc510-linux              %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc510-linux.zip"
+    spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang-ios         %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip"
     spatial package retrieve worker_sdk      csharp                                     %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\csharp.zip"
     spatial package retrieve spot            spot-win64                                 %PINNED_SPOT_VERSION%       "%BINARIES_DIR%\Programs\spot.exe"
 call :MarkEndOfBlock "Retrieve dependencies"
 
 call :MarkStartOfBlock "Unpack dependencies"
-    powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip\"                -DestinationPath \"%BINARIES_DIR%\Win32\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip\"             -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip\"       -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip\"                  -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\core\" -Force; "^
+    powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c_headers.zip\"                                  -DestinationPath \"%BINARIES_DIR%\Headers\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-vc140_md-win32.zip\"               -DestinationPath \"%BINARIES_DIR%\Win32\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc140_md-win32.zip\"            -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc510-linux.zip\"              -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\csharp.zip\"                                     -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\csharp\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang_libcpp-ios.zip\"  -DestinationPath \"%BINARIES_DIR%\IOS\" -Force;"^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip\"         -DestinationPath \"%BINARIES_DIR%\IOS\" -Force;"^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"                    -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                               -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
-    xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%"
+    xcopy /s /i /q "%BINARIES_DIR%\Headers\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
 
 if exist "%SPATIAL_DIR%" (

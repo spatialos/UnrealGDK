@@ -16,7 +16,7 @@ struct FConnectionConfig
 	FConnectionConfig()
 		: UseExternalIp(false)
 		, EnableProtocolLoggingAtStartup(false)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_KCP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_UDP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
@@ -39,7 +39,7 @@ struct FConnectionConfig
 		}
 		else if (LinkProtocolString == TEXT("Kcp"))
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_KCP;
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_UDP;
 		}
 		else if (!LinkProtocolString.IsEmpty())
 		{

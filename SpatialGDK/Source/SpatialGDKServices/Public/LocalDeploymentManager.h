@@ -17,12 +17,14 @@ class FLocalDeploymentManager
 public:
 	FLocalDeploymentManager();
 
+	void SPATIALGDKSERVICES_API Init(FString RuntimeIPToExpose);
+
 	void SPATIALGDKSERVICES_API RefreshServiceStatus();
 
-	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName);
+	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose);
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 
-	bool SPATIALGDKSERVICES_API TryStartSpatialService();
+	bool SPATIALGDKSERVICES_API TryStartSpatialService(FString RuntimeIPToExpose);
 	bool SPATIALGDKSERVICES_API TryStopSpatialService();
 
 	bool SPATIALGDKSERVICES_API GetLocalDeploymentStatus();
@@ -72,6 +74,8 @@ private:
 
 	bool bStartingSpatialService;
 	bool bStoppingSpatialService;
+
+	FString ExposedRuntimeIP;
 
 	FString LocalRunningDeploymentID;
 

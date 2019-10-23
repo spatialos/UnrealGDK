@@ -7,11 +7,7 @@
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "Utils/RepLayoutUtils.h"
 
-namespace Errors
-{
-	FString DuplicateComponentError = TEXT("WARNING: Unreal GDK does not currently support multiple static components of the same type.\n"
-		"Make sure {0} has only one instance of {1} or don't generate type bindings for {2}");
-}
+using namespace SpatialGDKEditor::Schema;
 
 TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 {
@@ -22,6 +18,19 @@ TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 {
 	return Group == REP_SingleClient ? TEXT("OwnerOnly") : TEXT("");
+}
+
+void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor)
+{
+	bool bShouldRecurseFurther = Visitor(TypeNode);
+	for (auto& PropertyPair : TypeNode->Properties)
+	{
+		if (bShouldRecurseFurther && PropertyPair.Value->Type.IsValid())
+		{
+			// Recurse into subobjects.
+			VisitAllObjects(PropertyPair.Value->Type, Visitor);
+		}
+	}
 }
 
 void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor)
@@ -466,7 +475,7 @@ FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
 		{
 			UObject* Value = PropertyTypeInfo->Object;
 
-			if (Value != nullptr && !Value->IsEditorOnly())
+			if (Value != nullptr && IsSupportedClass(Value->GetClass()))
 			{
 				if (!SeenComponents.Contains(Value))
 				{

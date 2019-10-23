@@ -5,6 +5,8 @@
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 
+using namespace SpatialGDKEditor::Schema;
+
 UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
 {
 	IsClient = false;

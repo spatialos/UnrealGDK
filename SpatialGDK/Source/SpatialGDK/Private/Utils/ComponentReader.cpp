@@ -43,11 +43,11 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 
 	if (bIsHandover)
 	{
-		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, UpdatedIds);
+		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentData.component_id);
 	}
 	else
 	{
-		ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds);
+		ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentData.component_id);
 	}
 }
 
@@ -77,27 +77,28 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 	{
 		if (bIsHandover)
 		{
-			ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, UpdatedIds);
+			ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentUpdate.component_id);
 		}
 		else
 		{
-			ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds);
+			ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentUpdate.component_id);
 		}
 	}
 }
 
-void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds)
+void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId)
 {
-	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(Object);
+	FObjectReplicator* Replicator = Channel->PreReceiveSpatialUpdate(Object);
+	if (Replicator == nullptr)
+	{
+		// Can't apply this schema object. Error printed from PreReceiveSpatialUpdate.
+		return;
+	}
 
-#if ENGINE_MINOR_VERSION <= 20
-	TSharedPtr<FRepState>& RepState = Replicator.RepState;
-#else
-	TUniquePtr<FRepState>& RepState = Replicator.RepState;
-#endif
-	TArray<FRepLayoutCmd>& Cmds = Replicator.RepLayout->Cmds;
-	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator.RepLayout->BaseHandleToCmdIndex;
-	TArray<FRepParentCmd>& Parents = Replicator.RepLayout->Parents;
+	TUniquePtr<FRepState>& RepState = Replicator->RepState;
+	TArray<FRepLayoutCmd>& Cmds = Replicator->RepLayout->Cmds;
+	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator->RepLayout->BaseHandleToCmdIndex;
+	TArray<FRepParentCmd>& Parents = Replicator->RepLayout->Parents;
 
 	bool bIsAuthServer = Channel->IsAuthoritativeServer();
 	bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
@@ -110,15 +111,17 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	for (uint32 FieldId : UpdatedIds)
 	{
 		// FieldId is the same as rep handle
-		check(FieldId > 0 && (int)FieldId - 1 < BaseHandleToCmdIndex.Num());
+		if (FieldId == 0 || (int)FieldId - 1 >= BaseHandleToCmdIndex.Num())
+		{
+			UE_LOG(LogSpatialComponentReader, Error, TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: %lld, Component: %d"), *Object->GetPathName(), FieldId, Channel->GetEntityId(), ComponentId);
+			continue;
+		}
+
 		int32 CmdIndex = BaseHandleToCmdIndex[FieldId - 1].CmdIndex;
 		const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
-#if ENGINE_MINOR_VERSION <= 20
-		int32 ShadowOffset = 0;
-#else 
 		int32 ShadowOffset = Cmd.ShadowOffset;
-#endif
+
 		if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
 		{
 			// This swaps Role/RemoteRole as we write it
@@ -129,6 +132,11 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 			{
 				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
+				if (ArrayProperty == nullptr)
+				{
+					UE_LOG(LogSpatialComponentReader, Error, TEXT("Failed to apply Schema Object %s. One of it's properties is null"), *Object->GetName());
+					continue;
+				}
 
 				// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
 				if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
@@ -148,9 +156,9 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 						RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, ShadowOffset, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
 						UnresolvedRefs.Append(NewUnresolvedRefs);
 					}
-					else if (RootObjectReferencesMap.Find(FieldId))
+					else if (RootObjectReferencesMap.Find(SwappedCmd.Offset))
 					{
-						RootObjectReferencesMap.Remove(FieldId);
+						RootObjectReferencesMap.Remove(SwappedCmd.Offset);
 					}
 				}
 				else
@@ -177,8 +185,9 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 			// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
 			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-#if ENGINE_MINOR_VERSION <= 20
-				bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.Offset, Data);
+
+#if ENGINE_MINOR_VERSION <= 22
+				bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
 #else
 				bool bIsIdentical = Cmd.Property->Identical(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
 #endif
@@ -203,21 +212,30 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		}
 	}
 
-	Channel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator.RepLayout, RootObjectReferencesMap, Object);
+	Channel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator->RepLayout, RootObjectReferencesMap, Object);
 
 	Channel->PostReceiveSpatialUpdate(Object, RepNotifies);
 }
 
-void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds)
+void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId)
 {
-	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
+	FObjectReplicator* Replicator = Channel->PreReceiveSpatialUpdate(Object);
+	if (Replicator == nullptr)
+	{
+		// Can't apply this schema object. Error printed from PreReceiveSpatialUpdate.
+		return;
+	}
 
-	Channel->PreReceiveSpatialUpdate(Object);
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
 	for (uint32 FieldId : UpdatedIds)
 	{
 		// FieldId is the same as handover handle
-		check(FieldId > 0 && (int)FieldId - 1 < ClassInfo.HandoverProperties.Num());
+		if (FieldId == 0 || (int)FieldId - 1 >= ClassInfo.HandoverProperties.Num())
+		{
+			UE_LOG(LogSpatialComponentReader, Error, TEXT("ApplyHandoverSchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: %lld, Component: %d"), *Object->GetPathName(), FieldId, Channel->GetEntityId(), ComponentId);
+			continue;
+		}
 		const FHandoverPropertyInfo& PropertyInfo = ClassInfo.HandoverProperties[FieldId - 1];
 
 		uint8* Data = (uint8*)Object + PropertyInfo.Offset;

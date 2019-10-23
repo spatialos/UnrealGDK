@@ -123,6 +123,11 @@ TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups();
 // Convert a replicated property group to a string. Used to generate component names.
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group);
 
+// Given an AST, this applies the function 'Visitor' to all FUnrealType's contained transitively within the properties. bRecurseIntoObjects will control	
+// whether this function will recurse into a UObject's properties, which may not always be desirable. However, it will always recurse into substructs.	
+// If the Visitor function returns false, it will not recurse any further into that part of the tree.
+void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor);
+
 // Given an AST, this applies the function 'Visitor' to all properties contained transitively within the type. This will recurse into substructs.
 // If the Visitor function returns false, it will not recurse any further into that part of the tree.
 void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealProperty>)> Visitor);

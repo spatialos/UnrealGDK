@@ -20,8 +20,9 @@ ASpatialMetricsDisplay::ASpatialMetricsDisplay(const FObjectInitializer& ObjectI
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
-	bReplicates = true;
 	bAlwaysRelevant = true;
+	bNetLoadOnClient = false;
+	bReplicates = true;
 
 	NetUpdateFrequency = 1.f;
 
@@ -32,6 +33,17 @@ ASpatialMetricsDisplay::ASpatialMetricsDisplay(const FObjectInitializer& ObjectI
 		PerformanceModule.CreatePerformanceCounters();
 	}
 #endif
+
+	// For GDK design reasons, this is the approach chosen to get a pointer
+	// on the net driver to the client SpatialMetricsDisplay.  Various alternatives
+	// were considered and this is the best of a bad bunch.
+	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver()))
+	{
+		if (GetNetMode() == NM_Client)
+		{
+			SpatialNetDriver->SetSpatialMetricsDisplay(this);
+		}
+	}
 }
 
 void ASpatialMetricsDisplay::BeginPlay()
@@ -40,11 +52,6 @@ void ASpatialMetricsDisplay::BeginPlay()
 
 	WorkerStats.Reserve(PreallocatedWorkerCount);
 	WorkerStatsLastUpdateTime.Reserve(PreallocatedWorkerCount);
-
-	if (!GetWorld()->IsServer() && GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
-	{
-		ToggleStatDisplay();
-	}
 }
 
 void ASpatialMetricsDisplay::Destroyed()
@@ -147,8 +154,12 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 	}
 }
 
-void ASpatialMetricsDisplay::ToggleStatDisplay()
+
+void ASpatialMetricsDisplay::SpatialToggleStatDisplay()
 {
+#if !UE_BUILD_SHIPPING
+	check(GetNetMode() == NM_Client);
+
 	if (DrawDebugDelegateHandle.IsValid())
 	{
 		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
@@ -158,6 +169,7 @@ void ASpatialMetricsDisplay::ToggleStatDisplay()
 	{
 		DrawDebugDelegateHandle = UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialMetricsDisplay::DrawDebug));
 	}
+#endif // !UE_BUILD_SHIPPING
 }
 
 void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
