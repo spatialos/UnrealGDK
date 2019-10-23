@@ -53,8 +53,7 @@ TMap<FString, FString> ClassPathToSchemaName;
 TMap<FString, FString> SchemaNameToClassPath;
 TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 
-const FString SchemaDatabaseFileName = SpatialConstants::SCHEMA_DATABASE_FILE_PATH;
-const FString RelativeSchemaDatabaseFilePath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName), FPackageName::GetAssetPackageExtension());
+const FString RelativeSchemaDatabaseFilePath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH), FPackageName::GetAssetPackageExtension());
 
 namespace SpatialGDKEditor
 {
@@ -586,17 +585,24 @@ void ResetSchemaGeneratorState()
 	SchemaGeneratedClasses.Empty();
 }
 
-bool TryLoadExistingSchemaDatabase(FString FileName /*= ""*/)
+ void ResetSchemaGeneratorStateAndCleanupFolders()
+{
+	ResetSchemaGeneratorState();
+	DeleteGeneratedSchemaFiles();
+	CreateGeneratedSchemaFolder();
+}
+
+bool LoadGeneratorStateFromSchemaDatabase(FString FileName /*= ""*/)
 {
 	if (FileName.IsEmpty())
 	{
-		FileName = SchemaDatabaseFileName;
+		FileName = SpatialConstants::SCHEMA_DATABASE_FILE_PATH;
 	}
 
 	FString RelativeFileName = FPaths::Combine(FPaths::ProjectContentDir(), FileName);
 	RelativeFileName = FPaths::SetExtension(RelativeFileName, FPackageName::GetAssetPackageExtension());
 
-	if (IsFileReadOnly(FileName))
+	if (IsAssetReadOnly(FileName))
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"), *RelativeFileName);
 		return false;
@@ -626,26 +632,19 @@ bool TryLoadExistingSchemaDatabase(FString FileName /*= ""*/)
 		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
-			bResetSchema = true;
+			return false;
 		}
 	}
 	else
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("SchemaDatabase not found so the generated schema directory will be cleared out if it exists."));
-		bResetSchema = true;
-	}
-
-	if (bResetSchema)
-	{
-		ResetSchemaGeneratorState();
-		DeleteGeneratedSchemaFiles();
-		CreateGeneratedSchemaFolder();
+		return false;
 	}
 
 	return true;
 }
 
-bool IsFileReadOnly(FString FileName)
+bool IsAssetReadOnly(FString FileName)
 {
 	FString RelativeFileName = FPaths::Combine(FPaths::ProjectContentDir(), FileName);
 	RelativeFileName = FPaths::SetExtension(RelativeFileName, FPackageName::GetAssetPackageExtension());
@@ -673,7 +672,7 @@ bool DeleteSchemaDatabase(FString PackagePath /*= ""*/)
 
 	if (PackagePath.IsEmpty())
 	{
-		DatabaseAssetPath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName), FPackageName::GetAssetPackageExtension());
+		DatabaseAssetPath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH), FPackageName::GetAssetPackageExtension());
 	}
 	else
 	{
@@ -682,6 +681,7 @@ bool DeleteSchemaDatabase(FString PackagePath /*= ""*/)
 
 	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*DatabaseAssetPath);
 
+	// TODO(Alex): use IsReadOnly
 	if (StatData.bIsValid)
 	{
 		if (!StatData.bIsReadOnly)

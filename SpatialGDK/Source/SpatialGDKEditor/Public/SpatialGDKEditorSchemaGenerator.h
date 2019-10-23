@@ -18,9 +18,9 @@ namespace SpatialGDKEditor
 		
 		SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
 		
-		SPATIALGDKEDITOR_API bool TryLoadExistingSchemaDatabase(FString FileName = "");
+		SPATIALGDKEDITOR_API bool LoadGeneratorStateFromSchemaDatabase(FString FileName = "");
 
-		SPATIALGDKEDITOR_API bool IsFileReadOnly(FString FileName);
+		SPATIALGDKEDITOR_API bool IsAssetReadOnly(FString FileName);
 		
 		SPATIALGDKEDITOR_API bool GeneratedSchemaDatabaseExists();
 		
@@ -29,6 +29,8 @@ namespace SpatialGDKEditor
 		SPATIALGDKEDITOR_API bool DeleteSchemaDatabase(FString PackagePath = "");
 		
 		SPATIALGDKEDITOR_API void ResetSchemaGeneratorState();
+
+		SPATIALGDKEDITOR_API void ResetSchemaGeneratorStateAndCleanupFolders();
 		
 		SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists();
 		

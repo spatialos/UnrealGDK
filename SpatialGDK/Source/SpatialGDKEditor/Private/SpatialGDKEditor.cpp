@@ -61,10 +61,15 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	RemoveEditorAssetLoadedCallback();
 
-	if (!bFullScan && !Schema::TryLoadExistingSchemaDatabase())
+	if (Schema::IsAssetReadOnly(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
 		bSchemaGeneratorRunning = false;
 		return false;
+	}
+
+	if (!Schema::LoadGeneratorStateFromSchemaDatabase())
+	{
+		Schema::ResetSchemaGeneratorStateAndCleanupFolders();
 	}
 
 	TArray<TStrongObjectPtr<UObject>> LoadedAssets;

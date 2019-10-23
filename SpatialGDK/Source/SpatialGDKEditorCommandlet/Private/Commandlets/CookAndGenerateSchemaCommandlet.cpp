@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "CookAndGenerateSchemaCommandlet.h"
+#include "SpatialConstants.h"
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 
@@ -68,10 +69,15 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	ObjectListener.StartListening(&ReferencedClasses);
 	
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Try Load Schema Database."));
-	if (!TryLoadExistingSchemaDatabase())
+	if (IsAssetReadOnly(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to load Schema Database."));
 		return 0;
+	}
+
+	if (!LoadGeneratorStateFromSchemaDatabase())
+	{
+		ResetSchemaGeneratorStateAndCleanupFolders();
 	}
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Finding supported C++ and in-memory Classes."));
