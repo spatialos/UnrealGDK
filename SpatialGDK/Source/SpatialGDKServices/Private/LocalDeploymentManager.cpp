@@ -170,6 +170,7 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 	TSharedRef<FInternetAddr> ListenAddr = SocketSubsystem->GetLocalBindAddr(*GLog);
 	ListenAddr->SetPort(Port);
 	const FString SocketName = TEXT("Runtime Port Test");
+
 	// Now create and set up our sockets.
 	FSocket* ListenSocket = SocketSubsystem->CreateSocket(NAME_Stream, SocketName, false /* bForceUDP */);
 	if (ListenSocket != nullptr)
@@ -198,7 +199,7 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 	return !bCanBindToPort;
 }
 
-bool FLocalDeploymentManager::TryUnbindPort(int32 Port)
+bool FLocalDeploymentManager::KillProcessBlockingPort(int32 Port)
 {
 	bool bSuccess = true;
 
@@ -218,7 +219,7 @@ bool FLocalDeploymentManager::TryUnbindPort(int32 Port)
 		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
 		if (PidMatcher.FindNext())
 		{
-			FString Pid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group */);
+			FString Pid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
 
 			const FString TaskKillCmd = TEXT("taskkill");
 			const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *Pid);
@@ -233,7 +234,7 @@ bool FLocalDeploymentManager::TryUnbindPort(int32 Port)
 		else
 		{
 			bSuccess = false;
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find PID of the process that is blocking the runtime port"));
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find PID of the process that is blocking the runtime port."));
 		}
 	}
 	else
@@ -255,7 +256,7 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 		// If it exists offer the user the ability to kill it.
 		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess", "A required port is blocked by another process (potentially by an old deployment). Would you like to kill this process?")) == EAppReturnType::Yes)
 		{
-			bSuccess = TryUnbindPort(RequiredRuntimePort);
+			bSuccess = KillProcessBlockingPort(RequiredRuntimePort);
 		}
 		else
 		{
