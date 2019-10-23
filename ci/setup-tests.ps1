@@ -32,7 +32,7 @@ Try {
         }
     } else {
         Write-Log "Downloading the $($testing_repo_name) project from $($project_git_source)."
-        Git clone -b $testing_repo_branch $testing_repo_url $testing_repo_branch $unreal_path\Samples
+        Git clone -b $testing_repo_branch $testing_repo_url $unreal_path\Samples
         if(-Not $?) {
             Throw "Failed to clone $($testing_repo_name) project from $($testing_repo_url)."
         }
