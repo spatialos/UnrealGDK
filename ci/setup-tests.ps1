@@ -2,7 +2,6 @@
 param(
     [string] $build_output_dir,
     [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine", ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
-    [string] $testing_repo_name,
     [string] $testing_repo_branch,
     [string] $testing_repo_url,
     [string] $testing_repo_relative_uproject_path
@@ -14,7 +13,7 @@ Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recu
 
 # Clone the testing project, or pull any changes if it has already been cloned
 Start-Event "setup-project" "setup-tests"
-$project_path = "$unreal_path\Samples\$testing_repo_name"
+$project_path = "$unreal_path\Samples\UnrealGDKCITestProject"
 Try {
     if (Test-Path $project_path) {
         Write-Log "Project already exists, checking out $($testing_repo_branch) and pulling any changes"
@@ -32,7 +31,7 @@ Try {
         }
     } else {
         Write-Log "Downloading the $($testing_repo_name) project from $($project_git_source)."
-        Git clone -b $testing_repo_branch $testing_repo_url $unreal_path\Samples
+        Git clone -b $testing_repo_branch $testing_repo_url $unreal_path\Samples\UnrealGDKCITestProject
         if(-Not $?) {
             Throw "Failed to clone $($testing_repo_name) project from $($testing_repo_url)."
         }

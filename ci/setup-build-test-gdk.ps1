@@ -5,7 +5,6 @@ param(
   [string] $target_platform = "Win64",
   [string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build. Should ultimately resolve to "C:\b\<number>\".
   [string] $unreal_path = "$build_home\UnrealEngine",
-  [string] $testing_repo_name = "UnrealGDKExampleProject", ## Same as repo's root directory name 
   [string] $testing_repo_branch = "master",
   [string] $testing_repo_url = "https://github.com/spatialos/UnrealGDKExampleProject.git", ## For now, has to be inside the Engine's Samples folder
   [string] $testing_repo_relative_uproject_path = "Game\GDKShooter.uproject" ## For now, has to be inside the Engine's Samples folder
@@ -43,7 +42,6 @@ if ($target_platform -eq "Win64") {
   &$PSScriptRoot"\setup-tests.ps1" `
     -build_output_dir "$build_home\SpatialGDKBuild" `
     -unreal_path $unreal_path `
-    -testing_repo_name $testing_repo_name `
     -testing_repo_branch $testing_repo_branch `
     -testing_repo_url $testing_repo_url `
     -testing_repo_relative_uproject_path $testing_repo_relative_uproject_path
@@ -53,7 +51,7 @@ if ($target_platform -eq "Win64") {
   Try{
     &$PSScriptRoot"\run-tests.ps1" `
       -unreal_editor_path "$unreal_path\Engine\Binaries\$target_platform\UE4Editor.exe" `
-      -uproject_path "$unreal_path\Samples\$testing_repo_name\$testing_repo_relative_uproject_path" `
+      -uproject_path "$unreal_path\Samples\UnrealGDKCITestProject\$testing_repo_relative_uproject_path" `
       -output_dir "$PSScriptRoot\TestResults" -log_file_path "$PSScriptRoot\TestResults\tests.log"
   }
   Catch {
