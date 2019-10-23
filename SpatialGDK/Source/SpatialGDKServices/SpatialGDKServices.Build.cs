@@ -21,7 +21,8 @@ public class SpatialGDKServices : ModuleRules
 				"EngineSettings",
 				"Json",
 				"JsonUtilities",
-				"UnrealEd"
+				"UnrealEd",
+				"Sockets"
 			}
 		);
 	}
