@@ -14,20 +14,6 @@
 
 #define LOCTEXT_NAMESPACE "SpatialGDKEDitorSchemaGeneratorTest"
 
-/*
-// TODO(Alex): 
-+1. GetAllSupportedClasses add if
-2. move IsEmpty logic outside eventually
-?3. Package to filepath
-4. TryLoadExistingSchemaDatabase:
-	- Check Readonly schemadatabase
-	- Read data from schemadatabase
-
-5. reuse readonly func in DeleteSchemaDatabase
-?6. GetStatData should use filepath
-+7. add constructor in Stub.cpp (defaultpawn.cpp)
-*/
-
 #define SCHEMA_GENERATOR_TEST(TestName) \
 	TEST(SpatialGDKEditor, SchemaGenerator, TestName)
 
@@ -478,7 +464,6 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_the
 {
 	// GIVEN
 	SchemaValidator Validator;
-	// TODO(Alex): should we have more? 
 	TSet<UClass*> Classes =
 	{
 		ASpatialTypeActor::StaticClass(),
@@ -792,7 +777,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loade
 SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_THEN_not_loaded)
 {
 	// GIVEN
-	AddExpectedError(TEXT("Attempted to delete schema database"), EAutomationExpectedErrorFlags::Contains, 1);
+	//AddExpectedError(TEXT("Attempted to delete schema database"), EAutomationExpectedErrorFlags::Contains, 1);
 	SpatialGDKEditor::Schema::DeleteSchemaDatabase(gSchemaDatabaseFileName );
 
 	// WHEN

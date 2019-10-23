@@ -631,13 +631,11 @@ bool LoadGeneratorStateFromSchemaDatabase(FString FileName /*= ""*/)
 		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
 		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
 			return false;
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("SchemaDatabase not found so the generated schema directory will be cleared out if it exists."));
 		return false;
 	}
 
@@ -672,37 +670,26 @@ bool DeleteSchemaDatabase(FString PackagePath /*= ""*/)
 
 	if (PackagePath.IsEmpty())
 	{
-		DatabaseAssetPath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH), FPackageName::GetAssetPackageExtension());
-	}
-	else
-	{
-		DatabaseAssetPath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), PackagePath), FPackageName::GetAssetPackageExtension());
+		PackagePath = SpatialConstants::SCHEMA_DATABASE_FILE_PATH;
 	}
 
+	DatabaseAssetPath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), PackagePath), FPackageName::GetAssetPackageExtension());
 	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*DatabaseAssetPath);
 
-	// TODO(Alex): use IsReadOnly
 	if (StatData.bIsValid)
 	{
-		if (!StatData.bIsReadOnly)
-		{
-			if (!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*DatabaseAssetPath))
-			{
-				// This should never run, since DeleteFile should only return false if the file does not exist which we have already checked for.
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s"), *DatabaseAssetPath);
-				return false;
-			}
-		}
-		else
+		if (IsAssetReadOnly(PackagePath))
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s because it is read-only."), *DatabaseAssetPath);
 			return false;
 		}
-	}
-	else
-	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Attempted to delete schema database at %s when it did not exist."), *DatabaseAssetPath);
-		// Don't return false since the schema database was already deleted
+
+		if (!FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*DatabaseAssetPath))
+		{
+			// This should never run, since DeleteFile should only return false if the file does not exist which we have already checked for.
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s"), *DatabaseAssetPath);
+			return false;
+		}
 	}
 
 	return true;
