@@ -30,7 +30,7 @@ Try {
             Throw "Failed to pull changes to the existing $($testing_repo_name) project."
         }
     } else {
-        Write-Log "Downloading the $($testing_repo_name) project from $($project_git_source)."
+        Write-Log "Downloading the $($testing_repo_name) project from $($project_repo_url)."
         Git clone -b $testing_repo_branch $testing_repo_url $unreal_path\Samples\UnrealGDKCITestProject
         if(-Not $?) {
             Throw "Failed to clone $($testing_repo_name) project from $($testing_repo_url)."

@@ -43,7 +43,7 @@ steps:
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
-      - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
+      - "../UnrealEngine/Samples/UnrealGDKCITestProject/Saved/Logs/*"
       - "ci/TestResults/*"
 
   - label: "build-GDK-:linux:"
