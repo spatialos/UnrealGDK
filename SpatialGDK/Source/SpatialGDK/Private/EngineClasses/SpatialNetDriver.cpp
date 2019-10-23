@@ -1918,7 +1918,11 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 		}
 		else
 		{
+#if ENGINE_MINOR_VERSION <= 22
+			Channel->SetChannelActor(Actor);
+#else
 			Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
+#endif
 		}
 	}
 
@@ -2201,6 +2205,7 @@ void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 }
 #endif
 
+#if ENGINE_MINOR_VERSION >= 23
 TSharedPtr<FRepLayout> USpatialNetDriver::GetObjectClassRepLayout(UClass * InClass)
 {
 	UNetConnection* ServerConnectionHack = ServerConnection;
@@ -2209,3 +2214,4 @@ TSharedPtr<FRepLayout> USpatialNetDriver::GetObjectClassRepLayout(UClass * InCla
 	ServerConnection = ServerConnectionHack;
 	return Result;
 }
+#endif

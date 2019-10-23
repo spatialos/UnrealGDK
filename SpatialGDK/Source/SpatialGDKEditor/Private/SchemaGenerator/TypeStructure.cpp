@@ -255,12 +255,16 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	// Based on inspection in InitFromObjectClass, the RepLayout will always replicate object properties using NetGUIDs, regardless of
 	// ownership. However, the rep layout will recurse into structs and allocate rep handles for their properties, unless the condition
 	// "Struct->StructFlags & STRUCT_NetSerializeNative" is true. In this case, the entire struct is replicated as a whole.
-
-	//TODO: CreateFromClass now requires a Connection to the server. I am pretty sure we have no connection, and this may need a large rewrite.
-	TSharedPtr<FRepLayout> RepLayout = FRepLayout::CreateFromClass(Class, nullptr, ECreateRepLayoutFlags::None);
-	for (int CmdIndex = 0; CmdIndex < RepLayout->Cmds.Num(); ++CmdIndex)
+#if ENGINE_MINOR_VERSION <= 22
+	FRepLayout RepLayout;
+	RepLayout.InitFromClass(Class);
+	TSharedPtr<FRepLayout> RepLayoutPtr = RepLayout;
+#else
+	TSharedPtr<FRepLayout> RepLayoutPtr = FRepLayout::CreateFromClass(Class, nullptr/*ServerConnection*/, ECreateRepLayoutFlags::None);
+#endif
+	for (int CmdIndex = 0; CmdIndex < RepLayoutPtr->Cmds.Num(); ++CmdIndex)
 	{
-		FRepLayoutCmd& Cmd = RepLayout->Cmds[CmdIndex];
+		FRepLayoutCmd& Cmd = RepLayoutPtr->Cmds[CmdIndex];
 		if (Cmd.Type == ERepLayoutCmdType::Return || Cmd.Property == nullptr)
 		{
 			continue;
@@ -272,7 +276,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			continue;
 		}
 
-		FRepParentCmd& Parent = RepLayout->Parents[Cmd.ParentIndex];
+		FRepParentCmd& Parent = RepLayoutPtr->Parents[Cmd.ParentIndex];
 
 		// In a FRepLayout, all the root level replicated properties in a class are stored in the Parents array.
 		// The Cmds array is an expanded version of the Parents array. This usually maps 1:1 with the Parents array (as most properties
@@ -340,8 +344,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		RepDataNode->ArrayIndex = PropertyNode->StaticArrayIndex;
 		if (Parent.RoleSwapIndex != -1)
 		{
-			const int32 SwappedCmdIndex = RepLayout->Parents[Parent.RoleSwapIndex].CmdStart;
-			RepDataNode->RoleSwapHandle = static_cast<int32>(RepLayout->Cmds[SwappedCmdIndex].RelativeHandle);
+			const int32 SwappedCmdIndex = RepLayoutPtr->Parents[Parent.RoleSwapIndex].CmdStart;
+			RepDataNode->RoleSwapHandle = static_cast<int32>(RepLayoutPtr->Cmds[SwappedCmdIndex].RelativeHandle);
 		}
 		else
 		{

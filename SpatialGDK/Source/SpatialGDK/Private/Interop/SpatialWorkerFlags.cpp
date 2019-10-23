@@ -19,7 +19,7 @@ bool USpatialWorkerFlags::GetWorkerFlag(const FString& Name, FString& OutValue)
 void USpatialWorkerFlags::ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op)
 {
 	FString NewName = FString(UTF8_TO_TCHAR(Op.name));
-	
+
 	if (Op.value != nullptr)
 	{
 		FString NewValue = FString(UTF8_TO_TCHAR(Op.value));
