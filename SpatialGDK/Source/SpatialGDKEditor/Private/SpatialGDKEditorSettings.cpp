@@ -143,7 +143,7 @@ void USpatialGDKEditorSettings::SetAssemblyName(const FString& Name)
 
 void USpatialGDKEditorSettings::SetPrimaryLaunchConfigPath(const FString& Path)
 {
-	// If the path is empty don't include the base filepath 
+	// If the path is empty don't try to convert it to a full path
 	if (Path.IsEmpty())
 	{
 		PrimaryLaunchConfigPath.FilePath = Path;

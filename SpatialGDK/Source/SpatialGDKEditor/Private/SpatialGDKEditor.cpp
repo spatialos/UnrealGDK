@@ -12,11 +12,15 @@
 
 #include "AssetRegistryModule.h"
 #include "AssetDataTagMap.h"
+#include "Framework/Notifications/NotificationManager.h"
 #include "GeneralProjectSettings.h"
+#include "Internationalization/Regex.h"
+#include "Misc/FileHelper.h"
 #include "Misc/ScopedSlowTask.h"
 #include "SpatialGDKEditorSettings.h"
 #include "UObject/StrongObjectPtr.h"
 #include "Settings/ProjectPackagingSettings.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 using namespace SpatialGDKEditor;
 
@@ -212,8 +216,33 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	}
 }
 
+void FSpatialGDKEditor::WarnIfManualWorkerConnectionSet(FString LaunchConfigPath)
+{
+	FString FileContents;
+	FFileHelper::LoadFileToString(FileContents, LaunchConfigPath.GetCharArray().GetData());
+
+	const FRegexPattern ManualWorkerFlagPattern("\"manual_worker_connection_only\" *: *true");
+	FRegexMatcher ManualWorkerFlagMatcher(ManualWorkerFlagPattern, FileContents);
+
+	if (ManualWorkerFlagMatcher.FindNext())
+	{
+
+		FNotificationInfo Info(FText::FromString(TEXT("Manual worker connection only set for cloud build")));
+		UE_LOG(LogSpatialGDKEditor, Warning, TEXT("A cloud deployment with \"manual_worker_connection_only\" set to true was launched. This means the server worker will need to be connected manually."));
+
+		Info.bUseSuccessFailIcons = false;
+		Info.bFireAndForget = false;
+
+		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+	}
+
+}
+
 void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	WarnIfManualWorkerConnectionSet(SpatialGDKSettings->GetPrimaryLaunchConfigPath());
+
 	LaunchCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
 		[this, SuccessCallback, FailureCallback]
 		{
