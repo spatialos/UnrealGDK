@@ -93,7 +93,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
 		Schema::CopyWellKnownSchemaFiles();
 		Schema::DeleteGeneratedSchemaFiles();
-		Schema::CreateSchemaFolder();
+		Schema::CreateGeneratedSchemaFolder();
 	}
 
 	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);

@@ -54,7 +54,7 @@ TMap<FString, FString> SchemaNameToClassPath;
 TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 
 const FString SchemaDatabaseFileName = SpatialConstants::SCHEMA_DATABASE_FILE_PATH;
-const FString RelativeSchemaDatabaseFileName = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName), FPackageName::GetAssetPackageExtension());
+const FString RelativeSchemaDatabaseFilePath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName), FPackageName::GetAssetPackageExtension());
 
 namespace SpatialGDKEditor
 {
@@ -495,17 +495,14 @@ TSet<UClass*> GetAllSupportedClasses(const TArray<UObject*>& AllClasses)
 {
 	TSet<UClass*> Classes;
 
-	for(const auto& ClassIt : AllClasses)
+	for (const auto& ClassIt : AllClasses)
 	{
 		UClass* SupportedClass = Cast<UClass>(ClassIt);
 
-		if (SupportedClass != nullptr)
-		{
 		if (IsSupportedClass(SupportedClass))
 		{
 			Classes.Add(SupportedClass);
 		}
-	}
 	}
 
 	return Classes;
@@ -572,11 +569,11 @@ void DeleteGeneratedSchemaFiles(FString SchemaOutputPath /*= ""*/)
 	}
 }
 
-void CreateSchemaFolder()
+void CreateGeneratedSchemaFolder()
 {
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
-	PlatformFile.CreateDirectory(*SchemaOutputPath);
+	PlatformFile.CreateDirectoryTree(*SchemaOutputPath);
 }
 
 void ResetSchemaGeneratorState()
@@ -599,16 +596,17 @@ bool TryLoadExistingSchemaDatabase(FString FileName /*= ""*/)
 	FString RelativeFileName = FPaths::Combine(FPaths::ProjectContentDir(), FileName);
 	RelativeFileName = FPaths::SetExtension(RelativeFileName, FPackageName::GetAssetPackageExtension());
 
-	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*RelativeFileName);
+	if (IsFileReadOnly(FileName))
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"), *RelativeFileName);
+		return false;
+	}
 
+	bool bResetSchema = false;
+
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*RelativeFileName);
 	if (StatData.bIsValid)
 	{
-		if (StatData.bIsReadOnly)
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"), *RelativeFileName);
-			return false;
-		}
-
 		const FString DatabaseAssetPath = FPaths::SetExtension(FPaths::Combine(TEXT("/Game/"), FileName), TEXT(".SchemaDatabase"));
 		const USchemaDatabase* const SchemaDatabase = Cast<USchemaDatabase>(FSoftObjectPath(DatabaseAssetPath).TryLoad());
 
@@ -628,22 +626,38 @@ bool TryLoadExistingSchemaDatabase(FString FileName /*= ""*/)
 		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
-			ResetSchemaGeneratorState();
-			DeleteGeneratedSchemaFiles();
-			CreateSchemaFolder();
-			return false;
+			bResetSchema = true;
 		}
 	}
 	else
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("SchemaDatabase not found so the generated schema directory will be cleared out if it exists."));
+		bResetSchema = true;
+	}
+
+	if (bResetSchema)
+	{
 		ResetSchemaGeneratorState();
 		DeleteGeneratedSchemaFiles();
-		CreateSchemaFolder();
-		return false;
+		CreateGeneratedSchemaFolder();
 	}
 
 	return true;
+}
+
+bool IsFileReadOnly(FString FileName)
+{
+	FString RelativeFileName = FPaths::Combine(FPaths::ProjectContentDir(), FileName);
+	RelativeFileName = FPaths::SetExtension(RelativeFileName, FPackageName::GetAssetPackageExtension());
+
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*RelativeFileName);
+
+	if (StatData.bIsValid && StatData.bIsReadOnly)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 bool GeneratedSchemaFolderExists()
@@ -698,7 +712,7 @@ bool GeneratedSchemaDatabaseExists()
 {
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	
-	return PlatformFile.FileExists(*RelativeSchemaDatabaseFileName);
+	return PlatformFile.FileExists(*RelativeSchemaDatabaseFilePath);
 }
 
 void ResolveClassPathToSchemaName(const FString& ClassPath, const FString& SchemaName)
