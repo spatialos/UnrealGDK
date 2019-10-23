@@ -1,6 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "AbstractLBStrategy.h"
 #include "SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
