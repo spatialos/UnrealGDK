@@ -1,7 +1,7 @@
 # Expects gdk_home
 param(
     [string] $build_output_dir,
-    [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine" ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
+    [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine", ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
     [string] $testing_repo_name,
     [string] $testing_repo_branch,
     [string] $testing_repo_url,
