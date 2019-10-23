@@ -3,7 +3,7 @@ param(
     [string] $build_output_dir,
     [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine", ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
     [string] $testing_repo_branch,
-    [string] $testing_repo_url,
+    [string] $testing_repo_url
 )
 
 # Copy the built files back into the SpatialGDK folder, to have a complete plugin
