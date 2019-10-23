@@ -98,6 +98,8 @@ namespace SpatialConstants
 	const Worker_ComponentId PERSISTENCE_COMPONENT_ID						= 55;
 	const Worker_ComponentId INTEREST_COMPONENT_ID							= 58;
 
+	const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID		= 100;
+
 	const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 9999;
 	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 9998;
 	const Worker_ComponentId SINGLETON_COMPONENT_ID							= 9997;
@@ -174,6 +176,11 @@ namespace SpatialConstants
 	// AuthorityIntent codes and Field IDs.
 	const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
 	const uint32 INVALID_AUTHORITY_INTENT_ID                                = 0;
+
+	// VirtualWorkerTranslation Field IDs.
+	const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
+	const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID							= 1;
+	const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME						= 2;
 
 	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
