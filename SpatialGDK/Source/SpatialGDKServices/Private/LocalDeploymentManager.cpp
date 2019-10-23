@@ -9,10 +9,19 @@
 #include "FileCache.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/Connection/EditorWorkerController.h"
+#include "Internationalization/Regex.h"
+#include "Internationalization/Internationalization.h"
+#include "IPAddress.h"
 #include "Json/Public/Dom/JsonObject.h"
+#include "Misc/MessageDialog.h"
 #include "SpatialGDKServicesModule.h"
+#include "SocketSubsystem.h"
+#include "Sockets.h"
+#include "UObject/CoreNet.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
+
+#define LOCTEXT_NAMESPACE "FLocalDeploymentManager"
 
 static const FString SpatialServiceVersion(TEXT("20190930.180414.3b04a59226"));
 
@@ -147,6 +156,117 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 	});
 }
 
+bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
+{
+	ISocketSubsystem* SocketSubsystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
+	bool bCanBindToPort = false;
+
+	// Set our broadcast address.
+	TSharedRef<FInternetAddr> BroadcastAddr = SocketSubsystem->CreateInternetAddr();
+	BroadcastAddr->SetBroadcastAddress();
+	BroadcastAddr->SetPort(Port);
+	
+	// Now the listen address.
+	TSharedRef<FInternetAddr> ListenAddr = SocketSubsystem->GetLocalBindAddr(*GLog);
+	ListenAddr->SetPort(Port);
+	const FString SocketName = TEXT("Runtime Port Test");
+
+	// Now create and set up our sockets.
+	FSocket* ListenSocket = SocketSubsystem->CreateSocket(NAME_Stream, SocketName, false /* bForceUDP */);
+	if (ListenSocket != nullptr)
+	{
+		ListenSocket->SetReuseAddr();
+		ListenSocket->SetNonBlocking();
+		ListenSocket->SetRecvErr();
+	
+		// Bind to our listen port.
+		if (ListenSocket->Bind(*ListenAddr))
+		{
+			bCanBindToPort = ListenSocket->Listen(0 /* MaxBacklog*/ );
+			ListenSocket->Close();
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Failed to bind listen socket to addr (%s) for %s, the port is likely in use"), *ListenAddr->ToString(true), *SocketName);
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Failed to create listen socket for %s, the port is likely in use"), *SocketName);
+	}
+
+	// Either we couldn't create the socket or couldn't listen on it so the port is probably bound.
+	return !bCanBindToPort;
+}
+
+bool FLocalDeploymentManager::KillProcessBlockingPort(int32 Port)
+{
+	bool bSuccess = true;
+
+	const FString NetStatCmd = FString::Printf(TEXT("netstat"));
+
+	// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
+	const FString NetStatArgs = TEXT("-n -o -a");
+	FString NetStatResult;
+	int32 ExitCode;
+	FString StdErr;
+	bSuccess = FPlatformProcess::ExecProcess(*NetStatCmd, *NetStatArgs, &ExitCode, &NetStatResult, &StdErr);
+
+	if (ExitCode == ExitCodeSuccess && bSuccess)
+	{
+		// Get the line of the netstat output that contains the port we're looking for.
+		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), RequiredRuntimePort));
+		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
+		if (PidMatcher.FindNext())
+		{
+			FString Pid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
+
+			const FString TaskKillCmd = TEXT("taskkill");
+			const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *Pid);
+			FString TaskKillResult;
+			bSuccess = FPlatformProcess::ExecProcess(*TaskKillCmd, *TaskKillArgs, &ExitCode, &TaskKillResult, &StdErr);
+			bSuccess = bSuccess && ExitCode == ExitCodeSuccess;
+			if (!bSuccess)
+			{
+				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
+			}
+		}
+		else
+		{
+			bSuccess = false;
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find PID of the process that is blocking the runtime port."));
+		}
+	}
+	else
+	{
+		bSuccess = false;
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
+	}
+
+	return bSuccess;
+}
+
+bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
+{
+	bool bSuccess = true;
+
+	// Check for the known runtime port (5301) which could be blocked.
+	if (CheckIfPortIsBound(RequiredRuntimePort))
+	{
+		// If it exists offer the user the ability to kill it.
+		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess", "A required port is blocked by another process (potentially by an old deployment). Would you like to kill this process?")) == EAppReturnType::Yes)
+		{
+			bSuccess = KillProcessBlockingPort(RequiredRuntimePort);
+		}
+		else
+		{
+			bSuccess = false;
+		}
+	}
+
+	return bSuccess;
+}
+
 bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose)
 {
 	bRedeployRequired = false;
@@ -163,6 +283,12 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	if (bLocalDeploymentRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start a local deployment but one is already running."));
+		return false;
+	}
+
+	if (!LocalDeploymentPreRunChecks())
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to start a local deployment but a required port is already bound by another process."));
 		return false;
 	}
 
