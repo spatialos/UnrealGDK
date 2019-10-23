@@ -180,6 +180,8 @@ public:
 	void TrackTombstone(const Worker_EntityId EntityId);
 #endif
 
+	TSharedPtr<FRepLayout> GetObjectClassRepLayout(UClass * InClass) override;
+
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 

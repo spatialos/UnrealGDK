@@ -465,7 +465,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	ActorReplicator->RepState->GetSendingRepState()->LastChangelistIndex = ChangelistState->HistoryEnd;
-	ActorReplicator->RepState->OpenAckedCalled = true;
+	ActorReplicator->RepState->GetSendingRepState()->bOpenAckedCalled = true;
 	ActorReplicator->bLastUpdateEmpty = 1;
 
 	if (bCreatingNewEntity)
@@ -702,7 +702,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 
 	UpdateChangelistHistory(Replicator.RepState);
 	Replicator.RepState->GetSendingRepState()->LastChangelistIndex = ChangelistState->HistoryEnd;
-	Replicator.RepState->OpenAckedCalled = true;
+	Replicator.RepState->GetSendingRepState()->bOpenAckedCalled = true;
 	Replicator.bLastUpdateEmpty = 1;
 
 	return RepChanged.Num() > 0;

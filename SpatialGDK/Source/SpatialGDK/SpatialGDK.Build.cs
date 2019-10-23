@@ -56,17 +56,17 @@ public class SpatialGDK : ModuleRules
         }
         else if (Target.Platform == UnrealTargetPlatform.Mac)
         {
-            LibPrefix = "lib";
+            LibPrefix = "libimprobable_";
             ImportLibSuffix = SharedLibSuffix = ".dylib";
         }
         else if (Target.Platform == UnrealTargetPlatform.Linux)
         {
-            LibPrefix = "lib";
+            LibPrefix = "libimprobable_";
             ImportLibSuffix = SharedLibSuffix = ".so";
         }
         else if (Target.Platform == UnrealTargetPlatform.PS4)
         {
-            LibPrefix = "lib";
+            LibPrefix = "libimprobable_";
             ImportLibSuffix = "_stub.a";
             SharedLibSuffix = ".prx";
             bAddDelayLoad = true;
@@ -80,8 +80,8 @@ public class SpatialGDK : ModuleRules
         }
         else if (Target.Platform == UnrealTargetPlatform.IOS)
         {
-            LibPrefix = "lib";
-            ImportLibSuffix = SharedLibSuffix = "_static_fullylinked.a";
+            LibPrefix = "libimprobable_";
+            ImportLibSuffix = SharedLibSuffix = "_static.a";
         }
         else
         {

@@ -2174,3 +2174,12 @@ void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 	TombstonedEntities.Add(EntityId);
 }
 #endif
+
+TSharedPtr<FRepLayout> USpatialNetDriver::GetObjectClassRepLayout(UClass * InClass)
+{
+	UNetConnection* ServerConnectionHack = ServerConnection;
+	ServerConnection = nullptr;
+	TSharedPtr<FRepLayout> Result = Super::GetObjectClassRepLayout(InClass);
+	ServerConnection = ServerConnectionHack;
+	return Result;
+}
