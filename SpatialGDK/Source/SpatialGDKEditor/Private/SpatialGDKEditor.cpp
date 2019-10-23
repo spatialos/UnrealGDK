@@ -214,7 +214,11 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 
 void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
+#if ENGINE_MINOR_VERSION <= 22
+	LaunchCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
+#else
 	LaunchCloudResult = Async(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
+#endif
 		[this, SuccessCallback, FailureCallback]
 		{
 			if (!LaunchCloudResult.IsReady() || LaunchCloudResult.Get() != true)
@@ -230,7 +234,11 @@ void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, F
 
 void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
+#if ENGINE_MINOR_VERSION <= 22
+	StopCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudStop,
+#else
 	StopCloudResult = Async(EAsyncExecution::Thread, SpatialGDKCloudStop,
+#endif
 		[this, SuccessCallback, FailureCallback]
 		{
 			if (!StopCloudResult.IsReady() || StopCloudResult.Get() != true)

@@ -50,6 +50,34 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDr
 	return CppStructOps->NetDeltaSerialize(NetDeltaInfo, Source);
 }
 
+#if ENGINE_MINOR_VERSION <= 22
+void SpatialFastArrayNetSerializeCB::NetSerializeStruct(UScriptStruct* Struct, FBitArchive& Ar, UPackageMap* PackageMap, void* Data, bool& bHasUnmapped)
+{
+	// Check if struct has custom NetSerialize function, otherwise call standard struct replication
+	if (Struct->StructFlags & STRUCT_NetSerializeNative)
+	{
+		UScriptStruct::ICppStructOps* CppStructOps = Struct->GetCppStructOps();
+		check(CppStructOps); // else should not have STRUCT_NetSerializeNative
+		bool bSuccess = true;
+		if (!CppStructOps->NetSerialize(Ar, PackageMap, bSuccess, reinterpret_cast<uint8*>(Data)))
+		{
+			bHasUnmapped = true;
+		}
+
+		// Check the success of the serialization and print a warning if it failed. This is how native handles failed serialization.
+		if (!bSuccess)
+		{
+			UE_LOG(LogSpatialNetSerialize, Warning, TEXT("SpatialFastArrayNetSerialize: NetSerialize %s failed."), *Struct->GetFullName());
+		}
+	}
+	else
+	{
+		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetStructRepLayout(Struct);
+
+		RepLayout_SerializePropertiesForStruct(*RepLayout, Ar, PackageMap, reinterpret_cast<uint8*>(Data), bHasUnmapped);
+	}
+}
+#else
 //TODO: Probably copy more from FNetSerializeCB::NetSerializeStruct
 void SpatialFastArrayNetSerializeCB::NetSerializeStruct(FNetDeltaSerializeInfo& Params)
 {
@@ -80,5 +108,6 @@ void SpatialFastArrayNetSerializeCB::NetSerializeStruct(FNetDeltaSerializeInfo& 
 		RepLayout_SerializePropertiesForStruct(*RepLayout, Ar, Params.Map, reinterpret_cast<uint8*>(Params.Data), Params.bOutHasMoreUnmapped);
 	}
 }
+#endif
 
 } // namespace SpatialGDK

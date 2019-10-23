@@ -613,7 +613,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId);
 
+#if ENGINE_MINOR_VERSION <= 22
+		Channel->SetChannelActor(EntityActor);
+#else
 		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
+#endif
 
 		// Apply initial replicated properties.
 		// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete

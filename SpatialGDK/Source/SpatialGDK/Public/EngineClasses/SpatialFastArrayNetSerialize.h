@@ -13,20 +13,21 @@ class USpatialNetDriver;
 namespace SpatialGDK
 {
 
-	class SpatialFastArrayNetSerializeCB : public INetSerializeCB
-	{
-	public:
-		SpatialFastArrayNetSerializeCB(USpatialNetDriver* InNetDriver)
-			: NetDriver(InNetDriver)
-		{ }
+class SpatialFastArrayNetSerializeCB : public INetSerializeCB
+{
+public:
+	SpatialFastArrayNetSerializeCB(USpatialNetDriver* InNetDriver)
+		: NetDriver(InNetDriver)
+	{ }
 
-		virtual void NetSerializeStruct(FNetDeltaSerializeInfo& Params);
-
-		//TODO: Look at whether we need to implement these
-		virtual void GatherGuidReferencesForFastArray(struct FFastArrayDeltaSerializeParams& Params) {};
-		virtual bool MoveGuidToUnmappedForFastArray(struct FFastArrayDeltaSerializeParams& Params) { return false; };
-		virtual void UpdateUnmappedGuidsForFastArray(struct FFastArrayDeltaSerializeParams& Params) {};
-		virtual bool NetDeltaSerializeForFastArray(struct FFastArrayDeltaSerializeParams& Params) { return false; };
+	virtual void NetSerializeStruct(FNetDeltaSerializeInfo& Params);
+#if ENGINE_MINOR_VERSION >= 23
+	//TODO: Look at whether we need to implement these
+	virtual void GatherGuidReferencesForFastArray(struct FFastArrayDeltaSerializeParams& Params) {};
+	virtual bool MoveGuidToUnmappedForFastArray(struct FFastArrayDeltaSerializeParams& Params) { return false; };
+	virtual void UpdateUnmappedGuidsForFastArray(struct FFastArrayDeltaSerializeParams& Params) {};
+	virtual bool NetDeltaSerializeForFastArray(struct FFastArrayDeltaSerializeParams& Params) { return false; };
+#endif
 
 private:
 	USpatialNetDriver* NetDriver;

@@ -44,10 +44,12 @@ public:
 		}
 	}
 
+#if ENGINE_MINOR_VERSION >= 23
 	virtual void OnUObjectArrayShutdown() override
 	{
 		GUObjectArray.RemoveUObjectCreateListener(this);
 	}
+#endif
 
 private:
 	TSet<FSoftClassPath>* VisitedClasses;
