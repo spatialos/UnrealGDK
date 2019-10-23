@@ -8,6 +8,7 @@ param(
   [string] $testing_repo_branch = "master",
   [string] $testing_repo_url = "https://github.com/spatialos/UnrealGDKExampleProject.git",
   [string] $testing_repo_relative_uproject_path = "Game\GDKShooter.uproject"
+)
 
 . "$PSScriptRoot\common.ps1"
 
