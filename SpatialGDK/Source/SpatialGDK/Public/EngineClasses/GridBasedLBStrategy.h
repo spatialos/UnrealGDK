@@ -26,8 +26,6 @@ public:
 	virtual uint32 WhoShouldHaveAuthority(const AActor& Actor) const override;
 /* End UAbstractLBStrategy Interface */
 
-	static UGridBasedLBStrategy* Create(uint32 Rows, uint32 Cols, float WorldWidth, float WorldHeight);
-
 protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin="1"))
 	uint32 Rows;

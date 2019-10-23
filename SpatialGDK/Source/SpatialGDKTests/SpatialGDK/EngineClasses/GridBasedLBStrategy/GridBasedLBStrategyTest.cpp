@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "TestDefinitions.h"
 #include "GridBasedLBStrategy.h"
+#include "TestGridBasedLBStrategy.h"
 #include "CoreMinimal.h"
 #include "AutomationEditorCommon.h"
 #include "Engine/World.h"
@@ -44,7 +46,7 @@ bool FCleanup::Update()
 DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FCreateStrategy, uint32, Rows, uint32, Cols, float, WorldWidth, float, WorldHeight, uint32, LocalWorkerIdIndex);
 bool FCreateStrategy::Update()
 {
-	Strat = UGridBasedLBStrategy::Create(Rows, Cols, WorldWidth, WorldHeight);
+	Strat = UTestGridBasedLBStrategy::Create(Rows, Cols, WorldWidth, WorldHeight);
 	Strat->Init(nullptr);
 
 	TArray<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
@@ -156,7 +158,7 @@ bool FCheckVirtualWorkersMatch::Update()
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_called_THEN_it_returns_6_ids)
 {
-	Strat = UGridBasedLBStrategy::Create(2, 3, 10000.f, 10000.f);
+	Strat = UTestGridBasedLBStrategy::Create(2, 3, 10000.f, 10000.f);
 	Strat->Init(nullptr);
 
 	TArray<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
@@ -167,7 +169,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_call
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worker_ids_are_valid)
 {
-	Strat = UGridBasedLBStrategy::Create(5, 10, 10000.f, 10000.f);
+	Strat = UTestGridBasedLBStrategy::Create(5, 10, 10000.f, 10000.f);
 	Strat->Init(nullptr);
 
 	TArray<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
@@ -181,7 +183,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worke
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready)
 {
-	Strat = UGridBasedLBStrategy::Create(1, 1, 10000.f, 10000.f);
+	Strat = UTestGridBasedLBStrategy::Create(1, 1, 10000.f, 10000.f);
 	Strat->Init(nullptr);
 
 	TestFalse("IsReady Before LocalVirtualWorkerId Set", Strat->IsReady());

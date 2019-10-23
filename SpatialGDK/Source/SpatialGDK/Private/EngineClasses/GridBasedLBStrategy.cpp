@@ -86,16 +86,3 @@ uint32 UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
 
 	return 0;
 }
-
-UGridBasedLBStrategy* UGridBasedLBStrategy::Create(uint32 InRows, uint32 InCols, float WorldWidth, float WorldHeight)
-{
-	UGridBasedLBStrategy* Strat = NewObject<UGridBasedLBStrategy>();
-
-	Strat->Rows = InRows;
-	Strat->Cols = InCols;
-
-	Strat->WorldWidth = WorldWidth;
-	Strat->WorldHeight = WorldHeight;
-
-	return Strat;
-}
