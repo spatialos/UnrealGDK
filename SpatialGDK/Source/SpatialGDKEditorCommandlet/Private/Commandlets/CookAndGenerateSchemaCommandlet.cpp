@@ -44,6 +44,11 @@ public:
 		}
 	}
 
+	virtual void OnUObjectArrayShutdown() override
+	{
+		GUObjectArray.RemoveUObjectCreateListener(this);
+	}
+
 private:
 	TSet<FSoftClassPath>* VisitedClasses;
 	TSet<FSoftClassPath> UnsupportedClasses;
