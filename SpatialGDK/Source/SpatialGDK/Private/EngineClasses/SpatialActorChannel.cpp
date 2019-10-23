@@ -488,7 +488,11 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	SendingRepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+#if ENGINE_MINOR_VERSION <= 22
+	SendingRepState->OpenAckedCalled = true;
+#else
 	SendingRepState->bOpenAckedCalled = true;
+#endif
 	ActorReplicator->bLastUpdateEmpty = 1;
 
 	if (bCreatingNewEntity)
