@@ -841,6 +841,13 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 	bool bExpectedFilesCopied = true;
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	TArray<FString> FoundSchemaFiles;
+	PlatformFile.FindFilesRecursively(FoundSchemaFiles, *GDKSchemaCopyDir, TEXT(""));
+	if (FoundSchemaFiles.Num() != GDKSchemaFilePaths.Num())
+	{
+		bExpectedFilesCopied = false;
+	}
 	for(const auto& FilePath : GDKSchemaFilePaths)
 	{
 		if (!PlatformFile.FileExists(*FPaths::Combine(GDKSchemaCopyDir, FilePath)))
@@ -850,6 +857,12 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 		}
 	}
 
+	TArray<FString> FoundCoreSDKFiles;
+	PlatformFile.FindFilesRecursively(FoundCoreSDKFiles, *CoreSDKSchemaCopyDir, TEXT(""));
+	if (FoundCoreSDKFiles.Num() != CoreSDKFilePaths.Num())
+	{
+		bExpectedFilesCopied = false;
+	}
 	for(const auto& FilePath : CoreSDKFilePaths)
 	{
 		if (!PlatformFile.FileExists(*FPaths::Combine(CoreSDKSchemaCopyDir, FilePath)))
