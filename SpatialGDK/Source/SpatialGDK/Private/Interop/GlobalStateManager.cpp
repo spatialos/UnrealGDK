@@ -496,6 +496,23 @@ bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId)
 	}
 }
 
+void UGlobalStateManager::ResetGSM()
+{
+	SingletonNameToEntityId.Empty();
+	SetAcceptingPlayers(false);
+
+	// Reset the BeginPlay flag so Startup Actors are properly managed.
+	SetCanBeginPlay(false);
+
+	// Reset the Singleton map so Singletons are recreated.
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate();
+	Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
+
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+}
+
 void UGlobalStateManager::BeginDestroy()
 {
 	Super::BeginDestroy();

@@ -54,6 +54,8 @@ public:
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 	bool HandlesComponent(const Worker_ComponentId ComponentId) const;
 
+	void ResetGSM();
+
 	void BeginDestroy() override;
 
 	bool HasAuthority();
