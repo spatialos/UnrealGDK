@@ -48,10 +48,7 @@ public:
 	// Invoked when this worker fails to initiate a connection to SpatialOS
 	FOnConnectionFailedEvent OnConnectionFailed;
 
-#if WITH_EDITOR
-	// Used to check whether receptionist host should be overridden when connecting. See USpatialNetDriver::ShouldOverrideReceptionistHost and UNR-1698.
 	bool bFirstConnectionToSpatialOSAttempted = false;
-#endif // WITH_EDITOR
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.

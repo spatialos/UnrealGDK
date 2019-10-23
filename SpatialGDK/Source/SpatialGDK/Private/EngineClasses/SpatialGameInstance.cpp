@@ -90,7 +90,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialWorkerConnection();
 	}
-	FCommandLine::Set(TEXT("+receptionistHost 12227.0.0.1"));
+
 	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 }
 #endif
@@ -109,7 +109,7 @@ void USpatialGameInstance::StartGameInstance()
 		{
 			// Initialize a locator configuration which will parse command line arguments.
 			FLocatorConfig LocatorConfig;
-			if (!LocatorConfig.LoginToken.IsEmpty())
+			if (LocatorConfig.TryLoadCommandLineArgs())
 			{
 				// Modify the commandline args to have a Host IP to force a NetDriver to be used.
 				const TCHAR* CommandLineArgs = FCommandLine::Get();
@@ -140,6 +140,7 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 			{
 				return true;
 			}
+
 
 			if (NetDriver->SpatialMetricsDisplay && NetDriver->SpatialMetricsDisplay->ProcessConsoleExec(Cmd, Ar, Executor))
 			{

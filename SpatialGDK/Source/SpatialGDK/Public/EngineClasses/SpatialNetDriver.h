@@ -206,8 +206,6 @@ private:
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 
-	bool ShouldOverrideReceptionistHost(USpatialGameInstance* GameInstance, FString Host);
-
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
 
