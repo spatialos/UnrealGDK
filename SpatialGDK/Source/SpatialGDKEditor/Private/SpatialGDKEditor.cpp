@@ -226,16 +226,13 @@ void FSpatialGDKEditor::WarnIfManualWorkerConnectionSet(FString LaunchConfigPath
 
 	if (ManualWorkerFlagMatcher.FindNext())
 	{
-
-		FNotificationInfo Info(FText::FromString(TEXT("Manual worker connection only set for cloud build")));
 		UE_LOG(LogSpatialGDKEditor, Warning, TEXT("A cloud deployment with \"manual_worker_connection_only\" set to true was launched. This means the server worker will need to be connected manually."));
-
+		
+		FNotificationInfo Info(FText::FromString(TEXT("Manual worker connection only set for cloud build")));
 		Info.bUseSuccessFailIcons = false;
 		Info.bFireAndForget = false;
-
 		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
 	}
-
 }
 
 void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
