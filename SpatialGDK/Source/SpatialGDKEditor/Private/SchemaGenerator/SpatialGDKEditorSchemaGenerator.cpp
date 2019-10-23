@@ -857,8 +857,7 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 		return false;
 	}
 
-	// TODO(Alex): why is this check here?
-	//check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
+	check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
 
 	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
