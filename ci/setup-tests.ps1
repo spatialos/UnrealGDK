@@ -4,7 +4,6 @@ param(
     [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine", ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
     [string] $testing_repo_branch,
     [string] $testing_repo_url,
-    [string] $testing_repo_relative_uproject_path
 )
 
 # Copy the built files back into the SpatialGDK folder, to have a complete plugin
@@ -23,17 +22,17 @@ Try {
         }
         Git -C $project_path clean -df
         if(-Not $?) {
-            Throw "Failed to clean the existing $($testing_repo_name) project."
+            Throw "Failed to clean the existing testing project."
         }
         Git -C $project_path pull $testing_repo_url $testing_repo_branch
         if(-Not $?) {
-            Throw "Failed to pull changes to the existing $($testing_repo_name) project."
+            Throw "Failed to pull changes to the existing testing project."
         }
     } else {
-        Write-Log "Downloading the $($testing_repo_name) project from $($project_repo_url)."
+        Write-Log "Downloading the testing project from $($testing_repo_url)."
         Git clone -b $testing_repo_branch $testing_repo_url $unreal_path\Samples\UnrealGDKCITestProject
         if(-Not $?) {
-            Throw "Failed to clone $($testing_repo_name) project from $($testing_repo_url)."
+            Throw "Failed to clone testing project from $($testing_repo_url)."
         }
     }
 }

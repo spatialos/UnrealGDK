@@ -43,8 +43,7 @@ if ($target_platform -eq "Win64") {
     -build_output_dir "$build_home\SpatialGDKBuild" `
     -unreal_path $unreal_path `
     -testing_repo_branch $testing_repo_branch `
-    -testing_repo_url $testing_repo_url `
-    -testing_repo_relative_uproject_path $testing_repo_relative_uproject_path
+    -testing_repo_url $testing_repo_url
   Finish-Event "setup-tests" "command"
 
   Start-Event "test-gdk" "command"
