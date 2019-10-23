@@ -1,11 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "TestDefinitions.h"
+
+#include "ExpectedGeneratedSchemaFileContents.h"
+#include "SchemaGenObjectStub.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKServicesModule.h"
-#include "SchemaGenObjectStub.h"
-#include "ExpectedGeneratedSchemaFileContents.h"
-
 #include "Utils/SchemaDatabase.h"
 
 #include "CoreMinimal.h"
