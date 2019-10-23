@@ -53,7 +53,7 @@ $results_obj = ConvertFrom-Json $results_json
 Write-Log "Test results are displayed in a nicer form in the atrifacts (index.html / index.json)"
 
 if ($results_obj.failed -ne 0) {
-    $fail_msg = "$($results_obj.failed) tests failed."
+    $fail_msg = "$($results_obj.failed) tests failed. See tests.log"
     Write-Log $fail_msg
     Throw $fail_msg
 }
