@@ -88,7 +88,7 @@ package unreal.generated.spatialtypeactorwithactorcomponent;\r\n\
 import \"unreal/gdk/core_types.schema\";\r\n\
 \r\n\
 component SpatialTypeActorWithActorComponent {\r\n\
-	id = 10000;\r\n\
+	id = {{id}};\r\n\
 	bool bhidden = 1;\r\n\
 	bool breplicatemovement = 2;\r\n\
 	bool btearoff = 3;\r\n\
@@ -115,7 +115,7 @@ package unreal.generated.spatialtypeactorwithmultipleactorcomponents;\r\n\
 import \"unreal/gdk/core_types.schema\";\r\n\
 \r\n\
 component SpatialTypeActorWithMultipleActorComponents {\r\n\
-	id = 10000;\r\n\
+	id = {{id}};\r\n\
 	bool bhidden = 1;\r\n\
 	bool breplicatemovement = 2;\r\n\
 	bool btearoff = 3;\r\n\
@@ -143,7 +143,7 @@ package unreal.generated.spatialtypeactorwithmultipleobjectcomponents;\r\n\
 import \"unreal/gdk/core_types.schema\";\r\n\
 \r\n\
 component SpatialTypeActorWithMultipleObjectComponents {\r\n\
-	id = 10000;\r\n\
+	id = {{id}};\r\n\
 	bool bhidden = 1;\r\n\
 	bool breplicatemovement = 2;\r\n\
 	bool btearoff = 3;\r\n\
