@@ -304,7 +304,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Receiver = NewObject<USpatialReceiver>();
 	GlobalStateManager = NewObject<UGlobalStateManager>();
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
-	StaticComponentView = NewObject<USpatialStaticComponentView>();
+	StaticComponentView = Connection->StaticComponentView;
 	SnapshotManager = NewObject<USnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
