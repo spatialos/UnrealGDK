@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "GridBasedLBStrategy.h"
+#include "Utils/SpatialActorUtils.h"
 
 UGridBasedLBStrategy::UGridBasedLBStrategy()
 	: Super()
@@ -62,7 +63,7 @@ bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const
 		return false;
 	}
 
-	const FVector2D Actor2DLocation = FVector2D(Actor.GetActorLocation());
+	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 	return !WorkerCells[LocalVirtualWorkerId - 1].IsInside(Actor2DLocation);
 }
 
@@ -73,7 +74,7 @@ uint32 UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
 		return 0;
 	}
 
-	const FVector2D Actor2DLocation = FVector2D(Actor.GetActorLocation());
+	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 
 	for (int i = 0; i < WorkerCells.Num(); i++)
 	{
