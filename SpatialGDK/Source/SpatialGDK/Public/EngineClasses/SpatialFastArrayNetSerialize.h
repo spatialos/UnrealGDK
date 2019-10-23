@@ -20,8 +20,11 @@ public:
 		: NetDriver(InNetDriver)
 	{ }
 
+#if ENGINE_MINOR_VERSION <= 22
+	virtual void NetSerializeStruct(UScriptStruct* Struct, FBitArchive& Ar, UPackageMap* PackageMap, void* Data, bool& bHasUnmapped);
+#else
 	virtual void NetSerializeStruct(FNetDeltaSerializeInfo& Params);
-#if ENGINE_MINOR_VERSION >= 23
+
 	//TODO: Look at whether we need to implement these
 	virtual void GatherGuidReferencesForFastArray(struct FFastArrayDeltaSerializeParams& Params) {};
 	virtual bool MoveGuidToUnmappedForFastArray(struct FFastArrayDeltaSerializeParams& Params) { return false; };
