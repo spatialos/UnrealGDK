@@ -5,7 +5,7 @@ param(
     [string] $testing_repo_name,
     [string] $testing_repo_branch,
     [string] $testing_repo_url,
-    [string] $testing_repo_relative_uproject_path,
+    [string] $testing_repo_relative_uproject_path
 )
 
 # Copy the built files back into the SpatialGDK folder, to have a complete plugin
@@ -13,66 +13,36 @@ param(
 Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recurse -Container -ErrorAction SilentlyContinue
 
 # Clone the testing project, or pull any changes if it has already been cloned
-Start-Event "clone-project" "setup-tests"
+Start-Event "setup-project" "setup-tests"
 $project_path = "$unreal_path\Samples\$testing_repo_name"
-if (Test-Path $project_path) {
-    Write-Log "Project already exists, checking out $($testing_repo_branch) and pulling any changes"
-    Git -C $project_path checkout -f $testing_repo_branch
-    if(-Not $?) {
-        Write-Log "Failed to check out $($testing_repo_name) project from $($testing_repo_url). Error: $($clone_proc.ExitCode)"
-        Throw "Failed to clone $($testing_repo_name) project from $($testing_repo_url)"
+Try {
+    if (Test-Path $project_path) {
+        Write-Log "Project already exists, checking out $($testing_repo_branch) and pulling any changes"
+        Git -C $project_path checkout -f $testing_repo_branch
+        if(-Not $?) {
+            Throw "Failed to checkout $($testing_repo_branch) branch of the testing project."
+        }
+        Git -C $project_path clean -df
+        if(-Not $?) {
+            Throw "Failed to clean the existing $($testing_repo_name) project."
+        }
+        Git -C $project_path pull $testing_repo_url $testing_repo_branch
+        if(-Not $?) {
+            Throw "Failed to pull changes to the existing $($testing_repo_name) project."
+        }
+    } else {
+        Write-Log "Downloading the $($testing_repo_name) project from $($project_git_source)."
+        Git clone -b $testing_repo_branch $testing_repo_url $testing_repo_branch $unreal_path\Samples
+        if(-Not $?) {
+            Throw "Failed to clone $($testing_repo_name) project from $($testing_repo_url)."
+        }
     }
-    Git -C $project_path reset --hard
-    if(-Not $?) {
-        Write-Log "Failed to check out $($testing_repo_name) project from $($testing_repo_url). Error: $($clone_proc.ExitCode)"
-        Throw "Failed to clone $($testing_repo_name) project from $($testing_repo_url)"
-    }
-    Git -C $project_path pull $testing_repo_url $testing_repo_branch
-    if(-Not $?) {
-        Write-Log "Failed to check out $($testing_repo_name) project from $($testing_repo_url). Error: $($clone_proc.ExitCode)"
-        Throw "Failed to clone $($testing_repo_name) project from $($testing_repo_url)"
-    }
-  <#  
-    $clone_proc = Start-Process -Wait -PassThru -NoNewWindow "git" -ArgumentList @(`
-        "-C", `
-        "$($project_path)", `
-        "checkout", `
-        "--force", `
-        "$($testing_repo_branch)" `
-    )
-    $clone_proc = Start-Process -Wait -PassThru -NoNewWindow "git" -ArgumentList @(`
-        "-C", `
-        "$($project_path)", `
-        "reset", `
-        "--hard", `
-    )
-    $clone_proc = Start-Process -Wait -PassThru -NoNewWindow "git" -ArgumentList @(`
-        "-C", `
-        "$($project_path)", `
-        "pull", `
-        "$($testing_repo_url)" `
-        "$($testing_repo_branch)" `
-    ) #>
-} else {
-    Write-Log "Downloading the $($testing_repo_name) project from $($project_git_source)"
-    Git clone -b $testing_repo_branch $testing_repo_url $testing_repo_branch $unreal_path\Samples
-    if(-Not $?) {
-        Write-Log "Failed to check out $($testing_repo_name) project from $($testing_repo_url). Error: $($clone_proc.ExitCode)"
-        Throw "Failed to clone $($testing_repo_name) project from $($testing_repo_url)"
-    }
-    <#
-    $clone_proc = Start-Process -Wait -PassThru -NoNewWindow "git" -ArgumentList @(`
-        "clone", `
-        "-b" `
-        "$($testing_repo_branch)" `
-        "$($testing_repo_url)" `
-        "$($unreal_path)\Samples" `
-    )
-    Finish-Event "clone-project" "setup-tests"
-    if ($clone_proc.ExitCode -ne 0) {
-        Write-Log "Failed to clone $($testing_repo_name) project from $($testing_repo_url). Error: $($clone_proc.ExitCode)"
-        Throw "Failed to clone $($testing_repo_name) project from $($testing_repo_url)"
-    }#>
+}
+Catch {
+    Throw $_
+}
+Finally {
+    Finish-Event "setup-project" "setup-tests"
 }
 
 # The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
