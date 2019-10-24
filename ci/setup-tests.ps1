@@ -13,20 +13,20 @@ param(
 # The trailing \ on the destination path is important!
 Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recurse -Container -ErrorAction SilentlyContinue
 
-# Clone and build the testing project
+# Remove project from previous runs if it exists
 $project_path = "$unreal_path\Samples\UnrealGDKCITestProject"
 if (Test-Path $project_path) {
+    Stop-Process -Name "spatiald,java,spatial" -Force -ErrorAction SilentlyContinue # if no process exists, just keep going
+    Get-Process
+
     Write-Log "Removing existing project."
-
-    # Workaround for UNR-2156, where spatiald / runtime processes sometimes never close
-    # Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
-    Stop-Process -Name "spatiald,java" -Force -ErrorAction SilentlyContinue # if no process exists, just keep going
-
     Remove-Item $project_path -Recurse -Force
     if (-Not $?) {
         Throw "Failed to remove existing project at $($project_path)."
     }
 }
+
+# Clone and build the testing project
 Write-Log "Downloading the testing project from $($testing_repo_url)."
 Git clone -b $testing_repo_branch $testing_repo_url $unreal_path\Samples\UnrealGDKCITestProject
 if (-Not $?) {
