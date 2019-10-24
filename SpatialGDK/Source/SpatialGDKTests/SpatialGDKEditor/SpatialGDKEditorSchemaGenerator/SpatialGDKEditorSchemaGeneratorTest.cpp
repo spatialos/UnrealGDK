@@ -55,7 +55,7 @@ NamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const FString& SchemaOutputF
 		FRegexPattern IdPattern = TEXT("(\tid = )([0-9]+)(;)");
 		FRegexMatcher IdRegMatcher(IdPattern, SchemaLine);
 
-		FRegexPattern NamePattern = TEXT("(component )(.+)( \\{)");
+		FRegexPattern NamePattern = TEXT("(^component )(.+)( \\{)");
 		FRegexMatcher NameRegMatcher(NamePattern, SchemaLine);
 
 		FRegexPattern SubobjectNamePattern = TEXT("(\tUnrealObjectRef )(.+)( = )([0-9]+)(;)");
@@ -736,15 +736,17 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_schema_database_deleted_
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
 	SpatialGDKEditor::Schema::SaveSchemaDatabase(gDatabaseOutputFile);
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), gSchemaDatabaseFileName);
+	const FString ExpectedgSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	bool bFileCreated = PlatformFile.FileExists(*ExpectedgSchemaDatabaseFileName);
 
 	// WHEN
 	SpatialGDKEditor::Schema::DeleteSchemaDatabase(gSchemaDatabaseFileName );
 
 	// THEN
-	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), gSchemaDatabaseFileName);
-	const FString ExpectedgSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	TestFalse("Generated schema database does not exists", PlatformFile.FileExists(*ExpectedgSchemaDatabaseFileName));
+	bool bResult = bFileCreated && !PlatformFile.FileExists(*ExpectedgSchemaDatabaseFileName);
+	TestTrue("Generated schema existed and is now deleted", bResult);
 
 	// CLEANUP
 	DeleteTestFolders();
@@ -777,7 +779,6 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loade
 SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_THEN_not_loaded)
 {
 	// GIVEN
-	//AddExpectedError(TEXT("Attempted to delete schema database"), EAutomationExpectedErrorFlags::Contains, 1);
 	SpatialGDKEditor::Schema::DeleteSchemaDatabase(gSchemaDatabaseFileName );
 
 	// WHEN
