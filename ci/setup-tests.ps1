@@ -34,7 +34,7 @@ Try {
         throw "Failed to generate files for the testing project."
     }
     Write-Log "Building the testing project."
-    Start-Process $msbuild_exe "$project_path\Game\GDKShooter.sln","/property:Configuration=Development_Editor" -Wait -ErrorAction Stop -NoNewWindow
+    Start-Process $msbuild_exe "-nologo","$project_path\Game\GDKShooter.sln","-p:Configuration=Development_Editor","/p:Platform=`"Win64`"" -Wait -ErrorAction Stop -NoNewWindow
     #Start-Process $unreal_path\Engine\Build\BatchFiles\Build.bat "UnrealGDKCITestProject","Win64","Development_Editor","$uproject_path","-waitmutex" -Wait -ErrorAction Stop -NoNewWindow
     #Start-Process $unreal_path\Engine\Build\BatchFiles\Build.bat "-Target=`"ShaderCompileWorker Win64 Development`"","-Target=`"UnrealGDKCITestProjectEditor Win64 Development`"","-Project=\`"$($uproject_path)`"","-WaitMutex","-FromMsBuild" -Wait -ErrorAction Stop -NoNewWindow
 }
