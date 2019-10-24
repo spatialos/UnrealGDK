@@ -13,3 +13,4 @@ if (Test-Path "$unreal_path\Samples\UnrealGDKCITestProject\Plugins\UnrealGDK") {
 if (Test-Path "$unreal_path") {
     (Get-Item "$unreal_path").Delete()
 }
+
