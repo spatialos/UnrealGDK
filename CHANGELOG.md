@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enabled compression in modular-udp networking stack
 - Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
 - Add SpatialToggleMetricsDisplay console command.  bEnableMetricsDisplay must be enabled in order for the display to be available.  You must then must call SpatialToggleMetricsDisplay on each client that wants to view the metrics display.
-- Added a setting for enabling zoning.
+- Added a setting for enabling zoning in ProjectSettings->RuntimeSettings.
 
 ### Bug fixes:
 - Spatial networking is now always enabled in built assemblies.
