@@ -274,7 +274,7 @@ public:
 		if (FString* ExpectedContentPtr = ExpectedContents.Find(CurrentClass->GetName()))
 		{
 			FString ExpectedContent = *ExpectedContentPtr;
-			ExpectedContent.ReplaceInline(TEXT("{{id}}"), *FString::FromInt(GetID()));
+			ExpectedContent.ReplaceInline(TEXT("{{id}}"), *FString::FromInt(GetNextFreeId()));
 			return (FileContent.Compare(ExpectedContent) == 0);
 		}
 		else
@@ -284,12 +284,12 @@ public:
 	}
 
 private:
-	int GetID()
+	int GetNextFreeId()
 	{
-		return freeId++;
+		return FreeId++;
 	}
 
-	int freeId = 10000;
+	int FreeId = 10000;
 };
 
 void DeleteTestFolders()
