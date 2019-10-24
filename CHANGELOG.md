@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 
 ### Features:
-- Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
-- Added a VirtualWorkerTranslation component to be used in future UnrealGDK loadbalancing.
+- Added partial framework for use in future UnrealGDK controlled loadbalancing.
 - Add SpatialToggleMetricsDisplay console command.  bEnableMetricsDisplay must be enabled in order for the display to be available.  You must then must call SpatialToggleMetricsDisplay on each client that wants to view the metrics display.
 - Enabled compression in modular-udp networking stack
 - Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
+- Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
 - A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
 - The `GenerateSchema`, `GenerateSchemaAndSnapshots`, and `CookAndGenerateSchema` commandlets can be invoked with command line switches to output additional compiled schema formats. If no such switch is provided, only the schema descriptor will be produced. Recognized switches and resulting output formats are:
 	- `-CompileSchemaDescriptor`: Outputs `schema.descriptor`
@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - The GDK now uses SpatialOS `14.1.0`.
+- Added in-editor support for exposing a local runtime at a particular IP address. This offers the same functionality as the `--runtime_ip` option in the SpatialOS CLI.
 - Visual Studio 2019 is now supported.
 - You can now delete your schema database using options in the GDK toolbar and the commandlet.
 - The GDK now checks that schema and a snapshot are present before attempting to start a local deployment. If either are missing then an error message is displayed.
