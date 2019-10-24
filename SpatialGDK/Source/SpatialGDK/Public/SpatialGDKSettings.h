@@ -201,4 +201,7 @@ public:
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (ConfigRestartRequired = false, DisplayName = "Worker Log Level"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
+	bool bEnableUnrealLoadBalancer;
 };

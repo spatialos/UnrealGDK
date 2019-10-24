@@ -117,6 +117,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	const WorkerAttributeSet WorkerAttribute{ Info.WorkerType.ToString() };
 	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
 
+	// Use SpatialSettings->bEnableUnrealLoadBalancer to switch the value of key: SpatialConstants::ENTITY_ACL_COMPONENT_ID in ComponentWriteAcl to a WorkerRequirementSet using the load balancing worker type string.
+
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
@@ -127,6 +129,12 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+
+	/*const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	}*/
 
 	if (Actor->IsNetStartupActor())
 	{
@@ -220,6 +228,11 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	{
 		ComponentDatas.Add(Persistence().CreatePersistenceData());
 	}
+
+	/*if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		ComponentDatas.Add(AuthorityIntent(NetDriver->LoadBalancer->GetAuthoritativeVirtualWorkerId(*Actor)).CreateAuthorityIntentData());
+	}*/
 
 	if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
 	{

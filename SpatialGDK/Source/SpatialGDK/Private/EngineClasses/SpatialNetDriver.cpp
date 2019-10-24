@@ -308,13 +308,27 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SnapshotManager = NewObject<USnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
 
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 #if !UE_BUILD_SHIPPING
 	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client
-	if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
+	if (IsServer() && SpatialSettings->bEnableMetricsDisplay)
 	{
 		SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
 	}
 #endif
+
+	/*if (IsServer() && SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		VirtualWorkerTranslator = NewObject<USpatialVirtualWorkerTranslator>();
+		VirtualWorkerTranslator->Init(this);
+
+		// TODO: timgibson - get from config data for a map?
+		UGridBasedLoadBalancingStrategy* NewLoadBalancer = NewObject<UGridBasedLoadBalancingStrategy>();
+		NewLoadBalancer->RowCount = SpatialSettings->RowCount;
+		NewLoadBalancer->ColumnCount = SpatialSettings->ColumnCount;
+		NewLoadBalancer->Init(this, VirtualWorkerTranslator);
+		LoadBalancer = NewLoadBalancer;
+	}*/
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
 	Sender->Init(this, &TimerManager);
