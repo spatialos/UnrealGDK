@@ -186,6 +186,78 @@ namespace Improbable
             return 0;
         }
 
+        private static int CreateSimDeployments(string[] args)
+        {
+            var projectName = args[1];
+            var assemblyName = args[2];
+            var targetDeploymentName = args[3];
+            var simDeploymentName = args[4];
+            var simDeploymentJson = args[5];
+            var simDeploymentRegion = args[6];
+
+            var simNumPlayers = 0;
+            if (!Int32.TryParse(args[7], out simNumPlayers))
+            {
+                Console.WriteLine("Cannot parse the number of simulated players to connect.");
+                return 1;
+            }
+
+            var autoConnect = false;
+            if (!Boolean.TryParse(args[8], out autoConnect))
+            {
+                Console.WriteLine("Cannot parse the auto-connect flag.");
+                return 1;
+            }
+
+            try
+            {
+                var deploymentServiceClient = DeploymentServiceClient.Create();
+
+                if (DeploymentExists(deploymentServiceClient, projectName, simDeploymentName))
+                {
+                    StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
+                }
+
+                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, targetDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simNumPlayers);
+
+                // Wait for both deployments to be created.
+                Console.WriteLine("Waiting for the simulated player deployment to be ready...");
+                var simPlayerDeployment = createSimDeploymentOp.PollUntilCompleted().GetResultOrNull();
+                if (simPlayerDeployment == null)
+                {
+                    Console.WriteLine("Failed to create the simulated player deployment");
+                    return 1;
+                }
+
+                Console.WriteLine("Successfully created the simulated player deployment");
+
+                // Update coordinator worker flag for simulated player deployment to notify target deployment is ready.
+                simPlayerDeployment.WorkerFlags.Add(new WorkerFlag
+                {
+                    Key = "target_deployment_ready",
+                    Value = autoConnect.ToString(),
+                    WorkerType = CoordinatorWorkerName
+                });
+                deploymentServiceClient.UpdateDeployment(new UpdateDeploymentRequest { Deployment = simPlayerDeployment });
+
+                Console.WriteLine("Done! Simulated players will start to connect to your deployment");
+            }
+            catch (Grpc.Core.RpcException e)
+            {
+                if (e.Status.StatusCode == Grpc.Core.StatusCode.NotFound)
+                {
+                    Console.WriteLine(
+                        $"Unable to launch the deployment(s). This is likely because the project '{projectName}' or assembly '{assemblyName}' doesn't exist.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return 0;
+        }
+
         private static bool DeploymentExists(DeploymentServiceClient deploymentServiceClient, string projectName,
             string deploymentName)
         {
@@ -463,6 +535,8 @@ namespace Improbable
             Console.WriteLine("Usage:");
             Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> [<sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players>]");
             Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment. The deployments can be started in different regions ('EU', 'US' and 'AP').");
+            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>");
+            Console.WriteLine($"  Starts a simulated player deployment. Can be started in a different region from the target deployment ('EU', 'US' and 'AP').");
             Console.WriteLine("DeploymentLauncher stop <project-name> [deployment-id]");
             Console.WriteLine("  Stops the specified deployment within the project.");
             Console.WriteLine("  If no deployment id argument is specified, all active deployments started by the deployment launcher in the project will be stopped.");
@@ -474,6 +548,7 @@ namespace Improbable
         {
             if (args.Length == 0 ||
                 args[0] == "create" && (args.Length != 11 && args.Length != 7) ||
+                args[0] == "createsim" && args.Length != 9 ||
                 args[0] == "stop" && (args.Length != 2 && args.Length != 3) ||
                 args[0] == "list" && args.Length != 2)
             {
@@ -486,6 +561,11 @@ namespace Improbable
                 if (args[0] == "create")
                 {
                     return CreateDeployment(args);
+                }
+
+                if (args[0] == "createsim")
+                {
+                    return CreateSimDeployments(args);
                 }
 
                 if (args[0] == "stop")
