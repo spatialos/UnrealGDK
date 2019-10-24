@@ -782,7 +782,7 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
-	GenerateSchemaForSublevels();
+	//GenerateSchemaForSublevels();
 
 	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
 	{

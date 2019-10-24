@@ -126,7 +126,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	}
 	SpatialGDKGenerateSchemaForClasses(Classes);
 
-	GenerateSchemaForSublevels();
+	//GenerateSchemaForSublevels();
 
 	FTimespan Duration = FDateTime::Now() - StartTime;
 
