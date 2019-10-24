@@ -17,11 +17,7 @@ Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recu
 $project_path = "$unreal_path\Samples\UnrealGDKCITestProject"
 if (Test-Path $project_path) {
 
-    # TODO: temporary fix, these processes shouldn't be running at this moment but for some reason something is blocking the removal of the spatial directory
-    # Workaround for UNR-2156, where spatiald / runtime processes sometimes never close
-    # Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
-    Stop-Process -Name "spatiald" -ErrorAction SilentlyContinue # if no process exists, just keep going
-    Stop-Process -Name "java" -ErrorAction SilentlyContinue # if no process exists, just keep going
+    & handle $project_path
 
     Write-Log "Removing existing project."
     Remove-Item $project_path -Recurse -Force
