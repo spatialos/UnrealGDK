@@ -7,7 +7,7 @@ param(
   [string] $unreal_path = "$build_home\UnrealEngine",
   [string] $testing_repo_branch = "master",
   [string] $testing_repo_url = "https://github.com/spatialos/UnrealGDKExampleProject.git",
-  [string] $testing_repo_relative_uproject_path = "Game\GDKShooter.uproject"
+  [string] $testing_repo_relative_uproject_path = "Game\GDKShooter.uproject",
   [string] $testing_repo_default_snapshot_map = "FPS-Start_Tiny"
 )
 
@@ -46,6 +46,7 @@ if ($target_platform -eq "Win64") {
     -testing_repo_branch $testing_repo_branch `
     -testing_repo_url $testing_repo_url `
     -uproject_path "$unreal_path\Samples\UnrealGDKCITestProject\$testing_repo_relative_uproject_path" `
+    -testing_repo_default_snapshot_map "$testing_repo_default_snapshop_map" `
     -msbuild_exe "$msbuild_exe"
   Finish-Event "setup-tests" "command"
 
