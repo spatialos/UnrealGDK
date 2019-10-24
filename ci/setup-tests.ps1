@@ -34,9 +34,8 @@ Try {
         throw "Failed to generate files for the testing project."
     }
     Write-Log "Building the testing project."
-    Start-Process $msbuild_exe "/nologo","$project_path\Game\GDKShooter.sln","/p:Configuration=Development_Editor","/p:Platform=`"x64`"" -Wait -ErrorAction Stop -NoNewWindow
-    #Start-Process $unreal_path\Engine\Build\BatchFiles\Build.bat "UnrealGDKCITestProject","Win64","Development_Editor","$uproject_path","-waitmutex" -Wait -ErrorAction Stop -NoNewWindow
-    #Start-Process $unreal_path\Engine\Build\BatchFiles\Build.bat "-Target=`"ShaderCompileWorker Win64 Development`"","-Target=`"UnrealGDKCITestProjectEditor Win64 Development`"","-Project=\`"$($uproject_path)`"","-WaitMutex","-FromMsBuild" -Wait -ErrorAction Stop -NoNewWindow
+    #Start-Process $msbuild_exe "/nologo","$($uproject_path.Replace(".uproject", ".sln"))","/p:Configuration=Development_Editor","/p:Platform=`"x64`"" -Wait -ErrorAction Stop -NoNewWindow
+    Start-Process $msbuild_exe "/nologo","$($uproject_path.Replace(".uproject", ".sln"))" -Wait -ErrorAction Stop -NoNewWindow
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to build testing project."
     }
