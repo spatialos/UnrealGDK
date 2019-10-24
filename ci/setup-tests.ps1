@@ -16,10 +16,12 @@ Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recu
 # Clone and build the testing project
 $project_path = "$unreal_path\Samples\UnrealGDKCITestProject"
 if (Test-Path $project_path) {
-
-    & handle $project_path
-
     Write-Log "Removing existing project."
+
+    # Workaround for UNR-2156, where spatiald / runtime processes sometimes never close
+    # Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
+    Stop-Process -Name "spatiald,java" -Force -ErrorAction SilentlyContinue # if no process exists, just keep going
+
     Remove-Item $project_path -Recurse -Force
     if (-Not $?) {
         Throw "Failed to remove existing project at $($project_path)."

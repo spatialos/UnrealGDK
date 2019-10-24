@@ -39,8 +39,7 @@ Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
 
 # Workaround for UNR-2156, where spatiald / runtime processes sometimes never close
 # Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
-Stop-Process -Name "spatiald" -ErrorAction SilentlyContinue # if no process exists, just keep going
-Stop-Process -Name "java" -ErrorAction SilentlyContinue # if no process exists, just keep going
+Stop-Process -Name "spatiald,java" -Force -ErrorAction SilentlyContinue # if no process exists, just keep going
 
 Write-Log "Exited with code: $($run_tests_proc.ExitCode)" # I can't find any indication of what the exit codes actually mean, so let's not rely on them
 
