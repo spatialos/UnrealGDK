@@ -19,11 +19,11 @@
 
 namespace
 {
-const FString gSchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
-const FString gSchemaDatabaseFileName = TEXT("Spatial/Tests/SchemaDatabase");
-const FString gDatabaseOutputFile = TEXT("/Game/Spatial/Tests/SchemaDatabase");
+const FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+const FString SchemaDatabaseFileName = TEXT("Spatial/Tests/SchemaDatabase");
+const FString DatabaseOutputFile = TEXT("/Game/Spatial/Tests/SchemaDatabase");
 
-TArray<FString> LoadSchemaFileForClassToStringArray(const FString& SchemaOutputFolder, const UClass* CurrentClass)
+TArray<FString> LoadSchemaFileForClassToStringArray(const FString& InSchemaOutputFolder, const UClass* CurrentClass)
 {
 	FString SchemaFileFolder = TEXT("");
 
@@ -33,7 +33,7 @@ TArray<FString> LoadSchemaFileForClassToStringArray(const FString& SchemaOutputF
 	}
 
 	TArray<FString> FileContent;
-	FFileHelper::LoadFileToStringArray(FileContent, *FPaths::SetExtension(FPaths::Combine(FPaths::Combine(SchemaOutputFolder, SchemaFileFolder), CurrentClass->GetName()), TEXT(".schema")));
+	FFileHelper::LoadFileToStringArray(FileContent, *FPaths::SetExtension(FPaths::Combine(FPaths::Combine(InSchemaOutputFolder, SchemaFileFolder), CurrentClass->GetName()), TEXT(".schema")));
 
 	return FileContent;
 }
@@ -45,9 +45,9 @@ struct NamesAndIds
 	TArray<int32> Ids;
 };
 
-NamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const FString& SchemaOutputFolder, const UClass* CurrentClass)
+NamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const FString& InSchemaOutputFolder, const UClass* CurrentClass)
 {
-	const TArray<FString> LoadedSchema = LoadSchemaFileForClassToStringArray(SchemaOutputFolder, CurrentClass);
+	const TArray<FString> LoadedSchema = LoadSchemaFileForClassToStringArray(InSchemaOutputFolder, CurrentClass);
 	NamesAndIds ParsedNamesAndIds;
 
 	for (const auto& SchemaLine : LoadedSchema)
@@ -93,9 +93,9 @@ NamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const FString& SchemaOutputF
 	return ParsedNamesAndIds;
 }
 
-bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FString& SchemaOutputFolder, const USchemaDatabase* SchemaDatabase)
+bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FString& InSchemaOutputFolder, const USchemaDatabase* SchemaDatabase)
 {
-	NamesAndIds ParsedNamesAndIds = ParseAvailableNamesAndIdsFromSchemaFile(SchemaOutputFolder, CurrentClass);
+	NamesAndIds ParsedNamesAndIds = ParseAvailableNamesAndIdsFromSchemaFile(InSchemaOutputFolder, CurrentClass);
 
 	if (CurrentClass->IsChildOf<AActor>())
 	{
@@ -181,7 +181,7 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 	return true;
 }
 
-FString LoadSchemaFileForClass(const FString& SchemaOutputFolder, const UClass* CurrentClass)
+FString LoadSchemaFileForClass(const FString& InSchemaOutputFolder, const UClass* CurrentClass)
 {
 	FString SchemaFileFolder = TEXT("");
 
@@ -191,7 +191,7 @@ FString LoadSchemaFileForClass(const FString& SchemaOutputFolder, const UClass* 
 	}
 
 	FString FileContent;
-	FFileHelper::LoadFileToString(FileContent, *FPaths::SetExtension(FPaths::Combine(FPaths::Combine(SchemaOutputFolder, SchemaFileFolder), CurrentClass->GetName()), TEXT(".schema")));
+	FFileHelper::LoadFileToString(FileContent, *FPaths::SetExtension(FPaths::Combine(FPaths::Combine(InSchemaOutputFolder, SchemaFileFolder), CurrentClass->GetName()), TEXT(".schema")));
 
 	return FileContent;
 }
@@ -296,7 +296,7 @@ void DeleteTestFolders()
 {
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	PlatformFile.DeleteDirectoryRecursively(*FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Spatial/Tests/")));
-	PlatformFile.DeleteDirectoryRecursively(*gSchemaOutputFolder);
+	PlatformFile.DeleteDirectoryRecursively(*SchemaOutputFolder);
 }
 
 } // anonymous namespace
@@ -417,13 +417,13 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_generated_schema_for_these_cla
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// THEN
 	bool bExpectedFilesExist = true;
 	for (const auto& CurrentClass : Classes)
 	{
-		if (LoadSchemaFileForClass(gSchemaOutputFolder, CurrentClass).IsEmpty())
+		if (LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass).IsEmpty())
 		{
 			bExpectedFilesExist = false;
 			break;
@@ -448,10 +448,10 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_WHEN_generated_schema_for_this_class_
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// THEN
-	FString FileContent = LoadSchemaFileForClass(gSchemaOutputFolder, CurrentClass);
+	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
 	TestTrue("Generated Actor schema is valid", Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
 
 	// CLEANUP
@@ -479,13 +479,13 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_the
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// THEN
 	bool bValidSchemaExists = true;
 	for (const auto& CurrentClass : Classes)
 	{
-		FString FileContent = LoadSchemaFileForClass(gSchemaOutputFolder, CurrentClass);
+		FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
 		if(!Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass))
 		{
 			bValidSchemaExists = false;
@@ -511,10 +511,10 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_component_class_WHEN_generated_schema_for_t
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// THEN
-	FString FileContent = LoadSchemaFileForClass(gSchemaOutputFolder, CurrentClass);
+	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
 	TestTrue("Generated Actor schema is valid", Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
 
 	// CLEANUP
@@ -533,10 +533,10 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_an_actor_component_WHEN_generate
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// THEN
-	FString FileContent = LoadSchemaFileForClass(gSchemaOutputFolder, CurrentClass);
+	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
 	TestTrue("Generated Actor schema is valid", Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
 
 	// CLEANUP
@@ -555,10 +555,10 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_actor_components_WHEN_g
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// THEN
-	FString FileContent = LoadSchemaFileForClass(gSchemaOutputFolder, CurrentClass);
+	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
 	TestTrue("Generated Actor schema is valid", Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
 
 	// CLEANUP
@@ -577,10 +577,10 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_object_components_WHEN_
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// THEN
-	FString FileContent = LoadSchemaFileForClass(gSchemaOutputFolder, CurrentClass);
+	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
 	TestTrue("Generated Actor schema is valid", Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
 
 	// CLEANUP
@@ -599,14 +599,14 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_schema_files_exist_WHEN_deleted_generated_f
 	};
 
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// WHEN
-	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
 
 	// THEN
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	TestFalse("Schema directory does not exist", PlatformFile.DirectoryExists(*gSchemaOutputFolder));
+	TestFalse("Schema directory does not exist", PlatformFile.DirectoryExists(*SchemaOutputFolder));
 
 	return true;
 }
@@ -616,11 +616,11 @@ SCHEMA_GENERATOR_TEST(GIVEN_no_schema_files_exist_WHEN_deleted_generated_files_T
 	// GIVEN
 
 	// WHEN
-	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
 
 	// THEN
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	TestFalse("Schema directory does not exist", PlatformFile.DirectoryExists(*gSchemaOutputFolder));
+	TestFalse("Schema directory does not exist", PlatformFile.DirectoryExists(*SchemaOutputFolder));
 
 	return true;
 }
@@ -635,16 +635,16 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 	};
 
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// WHEN
-	SpatialGDKEditor::Schema::SaveSchemaDatabase(gDatabaseOutputFile);
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
 
 	// THEN
-	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), gSchemaDatabaseFileName);
-	const FString ExpectedgSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName);
+	const FString ExpectedSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	TestTrue("Generated schema database exists", PlatformFile.FileExists(*ExpectedgSchemaDatabaseFileName));
+	TestTrue("Generated schema database exists", PlatformFile.FileExists(*ExpectedSchemaDatabaseFileName));
 
 	// CLEANUP
 	DeleteTestFolders();
@@ -659,14 +659,14 @@ SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_s
 	TSet<UClass*> Classes = { CurrentClass };
 
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// WHEN
-	SpatialGDKEditor::Schema::SaveSchemaDatabase(gDatabaseOutputFile);
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
 
 	// THEN
 	bool bDatabaseIsValid = true;
-	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(gDatabaseOutputFile, TEXT(".SchemaDatabase")));
+	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(DatabaseOutputFile, TEXT(".SchemaDatabase")));
 	USchemaDatabase* SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
 	if (SchemaDatabase == nullptr)
 	{
@@ -674,7 +674,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_s
 	}
 	else
 	{
-		if (!TestEqualDatabaseEntryAndSchemaFile(CurrentClass, gSchemaOutputFolder, SchemaDatabase))
+		if (!TestEqualDatabaseEntryAndSchemaFile(CurrentClass, SchemaOutputFolder, SchemaDatabase))
 		{
 			bDatabaseIsValid = false;
 		}
@@ -694,14 +694,14 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 	TSet<UClass*> Classes = AllTestClassesSet;
 
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// WHEN
-	SpatialGDKEditor::Schema::SaveSchemaDatabase(gDatabaseOutputFile);
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
 
 	// THEN
 	bool bDatabaseIsValid = true;
-	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(gDatabaseOutputFile, TEXT(".SchemaDatabase")));
+	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(DatabaseOutputFile, TEXT(".SchemaDatabase")));
 	USchemaDatabase* SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
 	if (SchemaDatabase == nullptr)
 	{
@@ -711,7 +711,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 	{
 		for (const auto& CurrentClass : Classes)
 		{
-			if (!TestEqualDatabaseEntryAndSchemaFile(CurrentClass, gSchemaOutputFolder, SchemaDatabase))
+			if (!TestEqualDatabaseEntryAndSchemaFile(CurrentClass, SchemaOutputFolder, SchemaDatabase))
 			{
 				bDatabaseIsValid = false;
 				break;
@@ -734,18 +734,18 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_schema_database_deleted_
 	TSet<UClass*> Classes = { CurrentClass };
 
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
-	SpatialGDKEditor::Schema::SaveSchemaDatabase(gDatabaseOutputFile);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), gSchemaDatabaseFileName);
-	const FString ExpectedgSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
-	bool bFileCreated = PlatformFile.FileExists(*ExpectedgSchemaDatabaseFileName);
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName);
+	const FString ExpectedSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	bool bFileCreated = PlatformFile.FileExists(*ExpectedSchemaDatabaseFileName);
 
 	// WHEN
-	SpatialGDKEditor::Schema::DeleteSchemaDatabase(gSchemaDatabaseFileName );
+	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
 
 	// THEN
-	bool bResult = bFileCreated && !PlatformFile.FileExists(*ExpectedgSchemaDatabaseFileName);
+	bool bResult = bFileCreated && !PlatformFile.FileExists(*ExpectedSchemaDatabaseFileName);
 	TestTrue("Generated schema existed and is now deleted", bResult);
 
 	// CLEANUP
@@ -761,11 +761,11 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loade
 	TSet<UClass*> Classes = { CurrentClass };
 
 	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
-	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, gSchemaOutputFolder);
-	SpatialGDKEditor::Schema::SaveSchemaDatabase(gDatabaseOutputFile);
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
 
 	// WHEN
-	bool bSuccess = SpatialGDKEditor::Schema::LoadGeneratorStateFromSchemaDatabase(gSchemaDatabaseFileName);
+	bool bSuccess = SpatialGDKEditor::Schema::LoadGeneratorStateFromSchemaDatabase(SchemaDatabaseFileName);
 
 	// THEN
 	TestTrue("Schema database loaded", bSuccess);
@@ -779,12 +779,12 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loade
 SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_THEN_not_loaded)
 {
 	// GIVEN
-	SpatialGDKEditor::Schema::DeleteSchemaDatabase(gSchemaDatabaseFileName );
+	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
 
 	// WHEN
-	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), gSchemaDatabaseFileName);
-	const FString ExpectedgSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
-	bool bSuccess = SpatialGDKEditor::Schema::LoadGeneratorStateFromSchemaDatabase(gSchemaDatabaseFileName);
+	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName);
+	const FString ExpectedSchemaDatabaseFileName = FPaths::SetExtension(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
+	bool bSuccess = SpatialGDKEditor::Schema::LoadGeneratorStateFromSchemaDatabase(SchemaDatabaseFileName);
 
 	// THEN
 	TestFalse("Schema database not loaded", bSuccess);
