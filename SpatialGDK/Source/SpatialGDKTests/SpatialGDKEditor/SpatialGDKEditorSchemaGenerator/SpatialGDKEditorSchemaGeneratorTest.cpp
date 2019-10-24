@@ -38,17 +38,17 @@ TArray<FString> LoadSchemaFileForClassToStringArray(const FString& InSchemaOutpu
 	return FileContent;
 }
 
-struct NamesAndIds
+struct ComponentNamesAndIds
 {
 	TArray<FString> Names;
 	TArray<FString> SubobjectNames;
 	TArray<int32> Ids;
 };
 
-NamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const FString& InSchemaOutputFolder, const UClass* CurrentClass)
+ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const FString& InSchemaOutputFolder, const UClass* CurrentClass)
 {
 	const TArray<FString> LoadedSchema = LoadSchemaFileForClassToStringArray(InSchemaOutputFolder, CurrentClass);
-	NamesAndIds ParsedNamesAndIds;
+	ComponentNamesAndIds ParsedNamesAndIds;
 
 	for (const auto& SchemaLine : LoadedSchema)
 	{
@@ -95,7 +95,7 @@ NamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const FString& InSchemaOutpu
 
 bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FString& InSchemaOutputFolder, const USchemaDatabase* SchemaDatabase)
 {
-	NamesAndIds ParsedNamesAndIds = ParseAvailableNamesAndIdsFromSchemaFile(InSchemaOutputFolder, CurrentClass);
+	ComponentNamesAndIds ParsedNamesAndIds = ParseAvailableNamesAndIdsFromSchemaFile(InSchemaOutputFolder, CurrentClass);
 
 	if (CurrentClass->IsChildOf<AActor>())
 	{
@@ -123,7 +123,7 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 				return false;
 			}
 
-			// TODO: Fix it in the next PR
+			// TODO: UNR-2298 - Uncomment and fix it
 			//for (int i = 0; i < ParsedNamesAndIds.SubobjectNames.Num(); ++i)
 			//{
 			//	const auto& Predicate = [&SchemaName = ParsedNamesAndIds.SubobjectNames[i]](const FActorSpecificSubobjectSchemaData& Data)
