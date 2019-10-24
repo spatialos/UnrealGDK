@@ -21,7 +21,7 @@ if (Test-Path $project_path) {
 
     # Workaround for UNR-2156, where spatiald / runtime processes sometimes never close
     # Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
-    Stop-Process -Name "spatiald,java,spatial" -Force -ErrorAction SilentlyContinue # if no process exists, just keep going
+    Stop-Process -Name "spatiald*,java,spatial" -Force -ErrorAction SilentlyContinue # if no process exists, just keep going
     Get-Process
 
     Remove-Item $project_path -Recurse -Force
