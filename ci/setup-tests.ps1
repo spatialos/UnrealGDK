@@ -34,8 +34,8 @@ Try {
         throw "Failed to generate files for the testing project."
     }
     Write-Log "Building the testing project."
-    #Start-Process $msbuild_exe "/nologo","/verbosity:minimal",".\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln","/property:Configuration=Release","/restore" -Wait -ErrorAction Stop -NoNewWindow
-    Start-Process $unreal_path\Engine\Build\BatchFiles\Build.bat "UnrealGDKCITestProjectEditor","Win64","Debug","$uproject_path" -waitmutex
+    Start-Process $msbuild_exe "$project_path\GDKShooter.sln","/property:Configuration=Development_Editor" -Wait -ErrorAction Stop -NoNewWindow
+    #Start-Process $unreal_path\Engine\Build\BatchFiles\Build.bat "UnrealGDKCITestProject","Win64","Development_Editor","$uproject_path" -waitmutex
 }
 Catch {
     Throw $_
