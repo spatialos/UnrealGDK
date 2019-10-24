@@ -18,15 +18,15 @@ namespace SpatialGDKEditor
 		
 		SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
 		
-		SPATIALGDKEDITOR_API bool LoadGeneratorStateFromSchemaDatabase(FString FileName = "");
+		SPATIALGDKEDITOR_API bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName);
 
 		SPATIALGDKEDITOR_API bool IsAssetReadOnly(FString FileName);
 		
 		SPATIALGDKEDITOR_API bool GeneratedSchemaDatabaseExists();
 		
-		SPATIALGDKEDITOR_API bool SaveSchemaDatabase(FString PackagePath = "");
+		SPATIALGDKEDITOR_API bool SaveSchemaDatabase(const FString& PackagePath);
 		
-		SPATIALGDKEDITOR_API bool DeleteSchemaDatabase(FString PackagePath = "");
+		SPATIALGDKEDITOR_API bool DeleteSchemaDatabase(const FString& PackagePath);
 		
 		SPATIALGDKEDITOR_API void ResetSchemaGeneratorState();
 
@@ -34,11 +34,11 @@ namespace SpatialGDKEditor
 		
 		SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists();
 		
-		SPATIALGDKEDITOR_API void DeleteGeneratedSchemaFiles(FString SchemaOutputPath = "");
+		SPATIALGDKEDITOR_API void DeleteGeneratedSchemaFiles(const FString& SchemaOutputPath);
 
 		SPATIALGDKEDITOR_API void CreateGeneratedSchemaFolder();
 		
-		SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles(FString GDKSchemaCopyDir = "", FString CoreSDKSchemaCopyDir = "");
+		SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& CoreSDKSchemaCopyDir);
 		
 		SPATIALGDKEDITOR_API bool RunSchemaCompiler();
 	}

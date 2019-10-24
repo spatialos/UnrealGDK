@@ -373,13 +373,8 @@ TMap<uint32, FString> CreateComponentIdToClassPathMap()
 	return ComponentIdToClassPath;
 }
 
-bool SaveSchemaDatabase(FString PackagePath /*= ""*/)
+bool SaveSchemaDatabase(const FString& PackagePath)
 {
-	if (PackagePath.IsEmpty())
-	{
-		PackagePath = SpatialConstants::SCHEMA_DATABASE_ASSET_PATH;
-	}
-
 	UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
@@ -507,21 +502,12 @@ TSet<UClass*> GetAllSupportedClasses(const TArray<UObject*>& AllClasses)
 	return Classes;
 }
 
-void CopyWellKnownSchemaFiles(FString GDKSchemaCopyDir /*= ""*/, FString CoreSDKSchemaCopyDir /*= ""*/)
+void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& CoreSDKSchemaCopyDir)
 {
 	FString PluginDir = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory();
 
 	FString GDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
-	if (GDKSchemaCopyDir.IsEmpty())
-	{
-		GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
-	}
-
 	FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema"));
-	if (CoreSDKSchemaCopyDir.IsEmpty())
-	{
-		CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
-	}
 	
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
@@ -552,12 +538,8 @@ void CopyWellKnownSchemaFiles(FString GDKSchemaCopyDir /*= ""*/, FString CoreSDK
 	}
 }
 
-void DeleteGeneratedSchemaFiles(FString SchemaOutputPath /*= ""*/)
+void DeleteGeneratedSchemaFiles(const FString& SchemaOutputPath)
 {
-	if (SchemaOutputPath.IsEmpty())
-	{
-		SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
-	}
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (PlatformFile.DirectoryExists(*SchemaOutputPath))
 	{
@@ -588,16 +570,12 @@ void ResetSchemaGeneratorState()
  void ResetSchemaGeneratorStateAndCleanupFolders()
 {
 	ResetSchemaGeneratorState();
-	DeleteGeneratedSchemaFiles();
+	DeleteGeneratedSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
 	CreateGeneratedSchemaFolder();
 }
 
-bool LoadGeneratorStateFromSchemaDatabase(FString FileName /*= ""*/)
-{
-	if (FileName.IsEmpty())
+bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 	{
-		FileName = SpatialConstants::SCHEMA_DATABASE_FILE_PATH;
-	}
 
 	FString RelativeFileName = FPaths::Combine(FPaths::ProjectContentDir(), FileName);
 	RelativeFileName = FPaths::SetExtension(RelativeFileName, FPackageName::GetAssetPackageExtension());
@@ -665,14 +643,10 @@ bool GeneratedSchemaFolderExists()
 	return PlatformFile.DirectoryExists(*SchemaOutputPath);
 }
 
-bool DeleteSchemaDatabase(FString PackagePath /*= ""*/)
+bool DeleteSchemaDatabase(const FString& PackagePath)
 {
 	FString DatabaseAssetPath = "";
 
-	if (PackagePath.IsEmpty())
-	{
-		PackagePath = SpatialConstants::SCHEMA_DATABASE_FILE_PATH;
-	}
 
 	DatabaseAssetPath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), PackagePath), FPackageName::GetAssetPackageExtension());
 	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*DatabaseAssetPath);
@@ -791,12 +765,12 @@ bool SpatialGDKGenerateSchema()
 
 	TArray<UObject*> AllClasses;
 	GetObjectsOfClass(UClass::StaticClass(), AllClasses);
-	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses(AllClasses)))
+	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses(AllClasses), GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder()))
 	{
 		return false;
 	}
 
-	if (!SaveSchemaDatabase())
+	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
 	{
 		return false;
 	}

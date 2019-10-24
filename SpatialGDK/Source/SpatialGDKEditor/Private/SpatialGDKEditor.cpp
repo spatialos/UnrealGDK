@@ -67,7 +67,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		return false;
 	}
 
-	if (!Schema::LoadGeneratorStateFromSchemaDatabase())
+	if (!Schema::LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
 	{
 		Schema::ResetSchemaGeneratorStateAndCleanupFolders();
 	}
@@ -96,8 +96,10 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	if (bFullScan)
 	{
 		// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
-		Schema::CopyWellKnownSchemaFiles();
-		Schema::DeleteGeneratedSchemaFiles();
+		FString GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
+		FString CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
+		Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
+		Schema::DeleteGeneratedSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
 		Schema::CreateGeneratedSchemaFolder();
 	}
 
