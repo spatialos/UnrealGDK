@@ -146,11 +146,8 @@ public:
 	void UpdateSpatialPositionWithFrequencyCheck();
 	void UpdateSpatialPosition();
 
-private:
-	FString CachedOwnerWorkerAttribute;
-
 public:
-	bool IsProcessingOwnershipChange() const { return !CachedOwnerWorkerAttribute.IsEmpty(); }
+	FORCEINLINE bool IsProcessingOwnershipChange() const { return !CachedOwnerWorkerAttribute.IsEmpty(); }
 	void StartServerProcessOwnershipChange();
 	void FinishServerProcessOwnershipChange();
 	void ClientProcessOwnershipChange(bool bNewNetOwned);
@@ -194,6 +191,9 @@ private:
 
 	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;
+
+	// Worker that needs to take authority over ClientRPC component after the server.
+	FString CachedOwnerWorkerAttribute;
 	// Used on the server to track when the owner changes.
 	FString SavedOwnerWorkerAttribute;
 

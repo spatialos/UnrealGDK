@@ -1237,8 +1237,8 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 {
 	Worker_EntityId EntityId = Op.entity_id;
 
-	// If the update is to the client RPC endpoint, then the handler should have authority over the server rpc endpoint component and vice versa
-	// Ideally these events are never delivered to workers which are not able to handle them with clever interest management
+	// If the update is to the client RPC endpoint, then the handler should have authority over the server RPC endpoint component and vice versa.
+	// Ideally these events are never delivered to workers which are not able to handle them with clever interest management.
 	const Worker_ComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
 		? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
 
@@ -1292,11 +1292,12 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 					continue;
 				}
 
-				// If the parent and child actors do not have the same connection the RPC should not be processed
+				// If the parent and child actors do not have the same connection the RPC should not be processed.
 				const AActor* ParentActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
 				const AActor* ChildActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(ObjectRef.Entity));
 				if (ParentActor && ChildActor && ParentActor->GetNetConnection() != ChildActor->GetNetConnection())
 				{
+					UE_LOG(LogSpatialReceiver, Verbose, TEXT("Ignoring RPC as concerned actor and parent actor do not have the same net connection"));
 					continue;
 				}
 			}
@@ -1305,6 +1306,7 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 		const USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(ObjectRef.Entity);
 		if (ActorChannel && ActorChannel->IsProcessingOwnershipChange())
 		{
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Ignoring RPC as concerned actor is being processed for ownership change by its actor channel"));
 			return;
 		}
 

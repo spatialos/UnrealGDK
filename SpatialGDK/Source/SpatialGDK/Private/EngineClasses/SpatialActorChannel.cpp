@@ -1090,6 +1090,7 @@ void USpatialActorChannel::StartServerProcessOwnershipChange()
 		CachedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
 		NewOwnerWorkerAttribute = SpatialConstants::DefaultServerWorkerType.ToString();
 	}
+
 	UpdateEntityACLToNewOwner(NewOwnerWorkerAttribute);
 
 	for (AActor* Child : Actor->Children)
@@ -1103,6 +1104,7 @@ void USpatialActorChannel::StartServerProcessOwnershipChange()
 	}
 }
 
+// Called from USpatialReciever::HandleActorAuthority after server authority over the ClientRPC has been verified.
 void USpatialActorChannel::FinishServerProcessOwnershipChange()
 {
 	if (!IsAuthoritativeServer())
@@ -1111,7 +1113,7 @@ void USpatialActorChannel::FinishServerProcessOwnershipChange()
 	}
 
 	// Connected to the requested client worker from StartServerProcessOwnershipChange.
-	// Reset CachedOwnerWorkerAttribute so that the Actor channel can be recognized as not processing and ownership change.
+	// Reset CachedOwnerWorkerAttribute so that the Actor channel can be recognized as not processing an ownership change.
 	if (!CachedOwnerWorkerAttribute.IsEmpty())
 	{
 		UpdateEntityACLToNewOwner(CachedOwnerWorkerAttribute);
