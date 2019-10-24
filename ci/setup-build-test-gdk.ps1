@@ -28,7 +28,7 @@ Finish-Event "symlink-gdk" "command"
 
 # Run the required setup steps
 Start-Event "setup-gdk" "command"
-&$PSScriptRoot"\setup-gdk.ps1" -unreal_path $unreal_path -gdk_path "$gdk_in_engine"
+&$PSScriptRoot"\setup-gdk.ps1" -gdk_path "$gdk_in_engine" -msbuild_path "$msbuild_exe"
 Finish-Event "setup-gdk" "command"
 
 # Build the GDK plugin
@@ -43,7 +43,9 @@ if ($target_platform -eq "Win64") {
     -build_output_dir "$build_home\SpatialGDKBuild" `
     -unreal_path $unreal_path `
     -testing_repo_branch $testing_repo_branch `
-    -testing_repo_url $testing_repo_url
+    -testing_repo_url $testing_repo_url `
+    -uproject_path "$unreal_path\Samples\UnrealGDKCITestProject\$testing_repo_relative_uproject_path"
+    -msbuild_exe "$msbuild_exe"
   Finish-Event "setup-tests" "command"
 
   Start-Event "test-gdk" "command"

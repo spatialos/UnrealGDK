@@ -3,38 +3,39 @@ param(
     [string] $build_output_dir,
     [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine", ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
     [string] $testing_repo_branch,
-    [string] $testing_repo_url
+    [string] $testing_repo_url,
+    [string] $uproject_path,
+    [string] $msbuild_exe
 )
 
 # Copy the built files back into the SpatialGDK folder, to have a complete plugin
 # The trailing \ on the destination path is important!
 Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recurse -Container -ErrorAction SilentlyContinue
 
-# Clone the testing project, or pull any changes if it has already been cloned
+# Clone and build the testing project
 Start-Event "setup-project" "setup-tests"
 $project_path = "$unreal_path\Samples\UnrealGDKCITestProject"
 Try {
     if (Test-Path $project_path) {
-        Write-Log "Project already exists, checking out $($testing_repo_branch) and pulling any changes"
-        Git -C $project_path checkout -f $testing_repo_branch
+        Write-Log "Removing existing project."
+        Remove-Item $project_path -Recurse -Force
         if(-Not $?) {
-            Throw "Failed to checkout $($testing_repo_branch) branch of the testing project."
-        }
-        Git -C $project_path clean -df
-        if(-Not $?) {
-            Throw "Failed to clean the existing testing project."
-        }
-        Git -C $project_path pull $testing_repo_url $testing_repo_branch
-        if(-Not $?) {
-            Throw "Failed to pull changes to the existing testing project."
-        }
-    } else {
-        Write-Log "Downloading the testing project from $($testing_repo_url)."
-        Git clone -b $testing_repo_branch $testing_repo_url $unreal_path\Samples\UnrealGDKCITestProject
-        if(-Not $?) {
-            Throw "Failed to clone testing project from $($testing_repo_url)."
+            Throw "Failed to remove existing project at $($project_path)."
         }
     }
+    Write-Log "Downloading the testing project from $($testing_repo_url)."
+    Git clone -b $testing_repo_branch $testing_repo_url $unreal_path\Samples\UnrealGDKCITestProject
+    if(-Not $?) {
+        Throw "Failed to clone testing project from $($testing_repo_url)."
+    }
+    Write-Log "Generating project files."
+    Start-Process $unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe "-projectfiles","-project=`"$uproject_path`"","-game","-engine","-progress" -Wait -ErrorAction Stop -NoNewWindow
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to generate files for the testing project."
+    }
+    Write-Log "Building the testing project."
+    #Start-Process $msbuild_exe "/nologo","/verbosity:minimal",".\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln","/property:Configuration=Release","/restore" -Wait -ErrorAction Stop -NoNewWindow
+    Start-Process $unreal_path\Engine\Build\BatchFiles\Build.bat "UnrealGDKCITestProjectEditor","Win64","Debug","$uproject_path" -waitmutex
 }
 Catch {
     Throw $_
