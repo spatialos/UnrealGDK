@@ -11,6 +11,11 @@ param(
   [string] $testing_repo_default_snapshot_map = "FPS-Start_Tiny"
 )
 
+# TODO: store the test project within the buildkite directory, rather than in engine
+# TODO: properly handle killing lingering spatial processes
+# TODO: make this work with the gym project
+# TODO: fetch default map from somewhere, rather than requiring given default snapshot map 
+
 . "$PSScriptRoot\common.ps1"
 
 Start-Event "cleanup-symlinks" "command"
@@ -46,7 +51,7 @@ if ($target_platform -eq "Win64") {
     -testing_repo_branch $testing_repo_branch `
     -testing_repo_url $testing_repo_url `
     -uproject_path "$unreal_path\Samples\UnrealGDKCITestProject\$testing_repo_relative_uproject_path" `
-    -testing_repo_default_snapshot_map "$testing_repo_default_snapshop_map" `
+    -testing_repo_default_snapshot_map "$testing_repo_default_snapshot_map" `
     -msbuild_exe "$msbuild_exe"
   Finish-Event "setup-tests" "command"
 

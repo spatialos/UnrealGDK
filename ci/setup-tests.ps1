@@ -16,9 +16,10 @@ Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recu
 # Remove project from previous runs if it exists
 $project_path = "$unreal_path\Samples\UnrealGDKCITestProject"
 if (Test-Path $project_path) {
-    Stop-Process -Name "spatiald*","java","spatial" -Force -ErrorAction SilentlyContinue # if no process exists, just keep going
-    Get-Process
 
+    # Kill lingering processes TODO: check if this is necessary, or if just the cleanup after running the tests is enough
+    Stop-Process -Name "spatiald*","java","spatial" -Force -ErrorAction SilentlyContinue # if no process exists, just keep going
+    
     Write-Log "Removing existing project."
     Remove-Item $project_path -Recurse -Force
     if (-Not $?) {
