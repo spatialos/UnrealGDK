@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- Fixed the character movement component not being replecated after possessing a character that was already possessed.
 
 ### Features:
 - Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
@@ -68,7 +69,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
 - When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
 - Fixed a crash upon checking out an actor with a deleted static subobject.
-- Fixed the character movement component not being replecated after possessing a character that was already possessed.
 
 ## [`0.6.2`] - 2019-10-10
 

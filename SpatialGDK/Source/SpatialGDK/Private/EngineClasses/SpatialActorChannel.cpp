@@ -1079,9 +1079,9 @@ void USpatialActorChannel::StartServerProcessOwnershipChange()
 		return;
 	}
 
-	// If you attempt to take possessing of an actor first the server will take authority over the client rpc component.
+	// If you attempt to take possession of an actor, the server will first take authority over the ClientRPC component.
 	// It will later give authority to the requested client worker.
-	// If the actor is being unpossessed we simply set the client workers authority and do not mess about with the server.
+	// If the actor is being unpossessed (NewOwnerWorkerAttribute is empty) we simply remove the client workers authority over the ClientRPC component. We do no hand authority to the server.
 
 	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 	if (!NewOwnerWorkerAttribute.IsEmpty())
