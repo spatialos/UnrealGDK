@@ -162,7 +162,7 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 
 			for (int i = 0; i < ParsedNamesAndIds.Ids.Num(); ++i)
 			{
-				if (SubobjectSchemaData->DynamicSubobjectComponents[i].SchemaComponents[0] != ParsedNamesAndIds.Ids[i])
+				if (SubobjectSchemaData->DynamicSubobjectComponents[i].SchemaComponents[SCHEMA_Data] != ParsedNamesAndIds.Ids[i])
 				{
 					return false;
 				}
