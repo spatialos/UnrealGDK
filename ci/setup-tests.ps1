@@ -34,10 +34,17 @@ Try {
         throw "Failed to generate files for the testing project."
     }
     Write-Log "Building the testing project."
-    Start-Process $msbuild_exe "/nologo","$($uproject_path.Replace(".uproject", ".sln"))","/p:Configuration=`"Development Editor`"","/p:Platform=`"Win64`"" -Wait -ErrorAction Stop -NoNewWindow
-    #Start-Process $msbuild_exe "/nologo","$($uproject_path.Replace(".uproject", ".sln"))" -Wait -ErrorAction Stop -NoNewWindow
+    Start-Process $msbuild_exe "/nologo","$($uproject_path.Replace(".uproject", ".sln"))","/p:Configuration=`"Development Editor`";Platform=`"Win64`"" -Wait -ErrorAction Stop -NoNewWindow
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to build testing project."
+    }
+    Write-Log "Generating snapshot and schema for testing project."
+    Start-Process $unreal_path\Engine\Binaries\Win64\UE4Editor.exe -Wait -PassThru -NoNewWindow -ArgumentList @(`
+        "$uproject_path", `
+        "-run=GenerateSchemaAndSnapshots"
+    )
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to generate schema and snapshots."
     }
 }
 Catch {
