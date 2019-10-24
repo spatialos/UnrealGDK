@@ -1,0 +1,26 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDKEditor\Definitions.SpatialGDKEditor.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDKEditor\Public\WorkerTypeCustomization.h
+C:\sahil-stavka\Engine\Source\Editor\PropertyEditor\Public\IPropertyTypeCustomization.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Utils/ActorGroupManager.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\SpatialConstants.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Improbable/SpatialEngineConstants.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\Schema/UnrealObjectRef.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\Utils/SchemaOption.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\cstdint
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\SpatialCommonTypes.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK/improbable/c_worker.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK/improbable/c_schema.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Inc\SpatialGDK\ActorGroupManager.generated.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\SpatialGDKSettings.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Inc\SpatialGDK\SpatialGDKSettings.generated.h
+C:\sahil-stavka\Engine\Source\Editor\PropertyEditor\Public\PropertyCustomizationHelpers.h
+c:\sahil-stavka\engine\source\editor\propertyeditor\public\PropertyHandle.h
+c:\sahil-stavka\engine\source\editor\propertyeditor\public\PropertyEditorModule.h
+c:\sahil-stavka\engine\source\editor\propertyeditor\public\IDetailsView.h
+c:\sahil-stavka\engine\source\editor\propertyeditor\public\PropertyEditorDelegates.h
+c:\sahil-stavka\engine\source\editor\propertyeditor\public\IDetailCustomNodeBuilder.h
+c:\sahil-stavka\engine\source\editor\propertyeditor\public\DetailWidgetRow.h
+c:\sahil-stavka\engine\source\editor\propertyeditor\public\SResetToDefaultMenu.h
+C:\sahil-stavka\Engine\Source\Editor\ActorPickerMode\Public\ActorPickerMode.h
+C:\sahil-stavka\Engine\Source\Editor\SceneDepthPickerMode\Public\SceneDepthPickerMode.h
+c:\sahil-stavka\engine\source\editor\propertyeditor\public\IDetailPropertyRow.h

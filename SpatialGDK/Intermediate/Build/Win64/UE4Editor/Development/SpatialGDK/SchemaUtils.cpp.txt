@@ -1,0 +1,10 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDK\Definitions.SpatialGDK.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Utils/SchemaUtils.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Schema/UnrealObjectRef.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Utils/SchemaOption.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\cstdint
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\SpatialConstants.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Improbable/SpatialEngineConstants.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\SpatialCommonTypes.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK/improbable/c_worker.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK/improbable/c_schema.h

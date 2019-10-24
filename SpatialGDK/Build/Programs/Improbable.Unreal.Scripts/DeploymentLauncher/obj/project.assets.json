@@ -1,0 +1,1190 @@
+{
+  "version": 3,
+  "targets": {
+    ".NETFramework,Version=v4.5.1": {
+      "Google.Api.CommonProtos/1.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Google.Protobuf": "3.3.0"
+        },
+        "compile": {
+          "lib/net45/Google.Api.CommonProtos.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Api.CommonProtos.dll": {}
+        }
+      },
+      "Google.Api.Gax/2.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "10.0.2",
+          "System.Interactive.Async": "3.1.1",
+          "System.Net.Http": "4.1.1"
+        },
+        "compile": {
+          "lib/net45/Google.Api.Gax.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Api.Gax.dll": {}
+        }
+      },
+      "Google.Api.Gax.Grpc/2.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Google.Api.CommonProtos": "1.1.0",
+          "Google.Api.Gax": "2.1.0",
+          "Google.Apis.Auth": "1.29.1",
+          "Grpc.Auth": "1.6.1",
+          "Grpc.Core": "1.6.1"
+        },
+        "compile": {
+          "lib/net45/Google.Api.Gax.Grpc.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Api.Gax.Grpc.dll": {}
+        }
+      },
+      "Google.Apis/1.29.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.Apis.Core": "1.29.1",
+          "Newtonsoft.Json": "10.0.2",
+          "System.Net.Http": "4.3.1"
+        },
+        "compile": {
+          "lib/net45/Google.Apis.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Apis.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.dll": {}
+        }
+      },
+      "Google.Apis.Auth/1.29.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.Apis": "1.29.1",
+          "Google.Apis.Core": "1.29.1"
+        },
+        "compile": {
+          "lib/net45/Google.Apis.Auth.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.Auth.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Apis.Auth.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.Auth.dll": {}
+        }
+      },
+      "Google.Apis.Core/1.29.1": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "10.0.2",
+          "System.Net.Http": "4.3.1"
+        },
+        "compile": {
+          "lib/net45/Google.Apis.Core.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Apis.Core.dll": {}
+        }
+      },
+      "Google.LongRunning/1.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Google.Api.Gax.Grpc": "2.1.0",
+          "Google.Protobuf": "3.4.1",
+          "Grpc.Core": "1.6.1"
+        },
+        "compile": {
+          "lib/net45/Google.LongRunning.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.LongRunning.dll": {}
+        }
+      },
+      "Google.Protobuf/3.4.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Google.Protobuf.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Protobuf.dll": {}
+        }
+      },
+      "Grpc.Auth/1.6.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.Apis.Auth": "1.21.0",
+          "Grpc.Core": "1.6.1"
+        },
+        "compile": {
+          "lib/net45/Grpc.Auth.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Grpc.Auth.dll": {}
+        }
+      },
+      "Grpc.Core/1.6.1": {
+        "type": "package",
+        "dependencies": {
+          "System.Interactive.Async": "3.1.1"
+        },
+        "compile": {
+          "lib/net45/Grpc.Core.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Grpc.Core.dll": {}
+        },
+        "build": {
+          "build/net45/_._": {}
+        },
+        "runtimeTargets": {
+          "runtimes/linux/native/libgrpc_csharp_ext.x64.so": {
+            "assetType": "native",
+            "rid": "linux"
+          },
+          "runtimes/linux/native/libgrpc_csharp_ext.x86.so": {
+            "assetType": "native",
+            "rid": "linux"
+          },
+          "runtimes/osx/native/libgrpc_csharp_ext.x64.dylib": {
+            "assetType": "native",
+            "rid": "osx"
+          },
+          "runtimes/osx/native/libgrpc_csharp_ext.x86.dylib": {
+            "assetType": "native",
+            "rid": "osx"
+          },
+          "runtimes/win/native/grpc_csharp_ext.x64.dll": {
+            "assetType": "native",
+            "rid": "win"
+          },
+          "runtimes/win/native/grpc_csharp_ext.x86.dll": {
+            "assetType": "native",
+            "rid": "win"
+          }
+        }
+      },
+      "Improbable.SpatialOS.Platform/13.7.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.LongRunning": "1.0.0"
+        },
+        "compile": {
+          "lib/net451/Improbable.SpatialOS.Platform.dll": {}
+        },
+        "runtime": {
+          "lib/net451/Improbable.SpatialOS.Platform.dll": {}
+        }
+      },
+      "Newtonsoft.Json/12.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        }
+      },
+      "System.Interactive.Async/3.1.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/System.Interactive.Async.dll": {}
+        },
+        "runtime": {
+          "lib/net45/System.Interactive.Async.dll": {}
+        }
+      },
+      "System.Net.Http/4.3.1": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "System.Net.Http"
+        ],
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "Common/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/Common.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Common.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.5.1/win": {
+      "Google.Api.CommonProtos/1.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Google.Protobuf": "3.3.0"
+        },
+        "compile": {
+          "lib/net45/Google.Api.CommonProtos.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Api.CommonProtos.dll": {}
+        }
+      },
+      "Google.Api.Gax/2.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "10.0.2",
+          "System.Interactive.Async": "3.1.1",
+          "System.Net.Http": "4.1.1"
+        },
+        "compile": {
+          "lib/net45/Google.Api.Gax.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Api.Gax.dll": {}
+        }
+      },
+      "Google.Api.Gax.Grpc/2.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Google.Api.CommonProtos": "1.1.0",
+          "Google.Api.Gax": "2.1.0",
+          "Google.Apis.Auth": "1.29.1",
+          "Grpc.Auth": "1.6.1",
+          "Grpc.Core": "1.6.1"
+        },
+        "compile": {
+          "lib/net45/Google.Api.Gax.Grpc.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Api.Gax.Grpc.dll": {}
+        }
+      },
+      "Google.Apis/1.29.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.Apis.Core": "1.29.1",
+          "Newtonsoft.Json": "10.0.2",
+          "System.Net.Http": "4.3.1"
+        },
+        "compile": {
+          "lib/net45/Google.Apis.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Apis.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.dll": {}
+        }
+      },
+      "Google.Apis.Auth/1.29.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.Apis": "1.29.1",
+          "Google.Apis.Core": "1.29.1"
+        },
+        "compile": {
+          "lib/net45/Google.Apis.Auth.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.Auth.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Apis.Auth.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.Auth.dll": {}
+        }
+      },
+      "Google.Apis.Core/1.29.1": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "10.0.2",
+          "System.Net.Http": "4.3.1"
+        },
+        "compile": {
+          "lib/net45/Google.Apis.Core.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Apis.Core.dll": {}
+        }
+      },
+      "Google.LongRunning/1.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Google.Api.Gax.Grpc": "2.1.0",
+          "Google.Protobuf": "3.4.1",
+          "Grpc.Core": "1.6.1"
+        },
+        "compile": {
+          "lib/net45/Google.LongRunning.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.LongRunning.dll": {}
+        }
+      },
+      "Google.Protobuf/3.4.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Google.Protobuf.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Protobuf.dll": {}
+        }
+      },
+      "Grpc.Auth/1.6.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.Apis.Auth": "1.21.0",
+          "Grpc.Core": "1.6.1"
+        },
+        "compile": {
+          "lib/net45/Grpc.Auth.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Grpc.Auth.dll": {}
+        }
+      },
+      "Grpc.Core/1.6.1": {
+        "type": "package",
+        "dependencies": {
+          "System.Interactive.Async": "3.1.1"
+        },
+        "compile": {
+          "lib/net45/Grpc.Core.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Grpc.Core.dll": {}
+        },
+        "native": {
+          "runtimes/win/native/grpc_csharp_ext.x64.dll": {},
+          "runtimes/win/native/grpc_csharp_ext.x86.dll": {}
+        },
+        "build": {
+          "build/net45/_._": {}
+        }
+      },
+      "Improbable.SpatialOS.Platform/13.7.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.LongRunning": "1.0.0"
+        },
+        "compile": {
+          "lib/net451/Improbable.SpatialOS.Platform.dll": {}
+        },
+        "runtime": {
+          "lib/net451/Improbable.SpatialOS.Platform.dll": {}
+        }
+      },
+      "Newtonsoft.Json/12.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        }
+      },
+      "System.Interactive.Async/3.1.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/System.Interactive.Async.dll": {}
+        },
+        "runtime": {
+          "lib/net45/System.Interactive.Async.dll": {}
+        }
+      },
+      "System.Net.Http/4.3.1": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "System.Net.Http"
+        ],
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "Common/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/Common.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Common.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.5.1/win-x64": {
+      "Google.Api.CommonProtos/1.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Google.Protobuf": "3.3.0"
+        },
+        "compile": {
+          "lib/net45/Google.Api.CommonProtos.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Api.CommonProtos.dll": {}
+        }
+      },
+      "Google.Api.Gax/2.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "10.0.2",
+          "System.Interactive.Async": "3.1.1",
+          "System.Net.Http": "4.1.1"
+        },
+        "compile": {
+          "lib/net45/Google.Api.Gax.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Api.Gax.dll": {}
+        }
+      },
+      "Google.Api.Gax.Grpc/2.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Google.Api.CommonProtos": "1.1.0",
+          "Google.Api.Gax": "2.1.0",
+          "Google.Apis.Auth": "1.29.1",
+          "Grpc.Auth": "1.6.1",
+          "Grpc.Core": "1.6.1"
+        },
+        "compile": {
+          "lib/net45/Google.Api.Gax.Grpc.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Api.Gax.Grpc.dll": {}
+        }
+      },
+      "Google.Apis/1.29.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.Apis.Core": "1.29.1",
+          "Newtonsoft.Json": "10.0.2",
+          "System.Net.Http": "4.3.1"
+        },
+        "compile": {
+          "lib/net45/Google.Apis.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Apis.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.dll": {}
+        }
+      },
+      "Google.Apis.Auth/1.29.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.Apis": "1.29.1",
+          "Google.Apis.Core": "1.29.1"
+        },
+        "compile": {
+          "lib/net45/Google.Apis.Auth.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.Auth.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Apis.Auth.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.Auth.dll": {}
+        }
+      },
+      "Google.Apis.Core/1.29.1": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "10.0.2",
+          "System.Net.Http": "4.3.1"
+        },
+        "compile": {
+          "lib/net45/Google.Apis.Core.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Apis.Core.dll": {}
+        }
+      },
+      "Google.LongRunning/1.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Google.Api.Gax.Grpc": "2.1.0",
+          "Google.Protobuf": "3.4.1",
+          "Grpc.Core": "1.6.1"
+        },
+        "compile": {
+          "lib/net45/Google.LongRunning.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.LongRunning.dll": {}
+        }
+      },
+      "Google.Protobuf/3.4.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Google.Protobuf.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Protobuf.dll": {}
+        }
+      },
+      "Grpc.Auth/1.6.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.Apis.Auth": "1.21.0",
+          "Grpc.Core": "1.6.1"
+        },
+        "compile": {
+          "lib/net45/Grpc.Auth.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Grpc.Auth.dll": {}
+        }
+      },
+      "Grpc.Core/1.6.1": {
+        "type": "package",
+        "dependencies": {
+          "System.Interactive.Async": "3.1.1"
+        },
+        "compile": {
+          "lib/net45/Grpc.Core.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Grpc.Core.dll": {}
+        },
+        "build": {
+          "build/net45/_._": {}
+        }
+      },
+      "Improbable.SpatialOS.Platform/13.7.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.LongRunning": "1.0.0"
+        },
+        "compile": {
+          "lib/net451/Improbable.SpatialOS.Platform.dll": {}
+        },
+        "runtime": {
+          "lib/net451/Improbable.SpatialOS.Platform.dll": {}
+        }
+      },
+      "Newtonsoft.Json/12.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        }
+      },
+      "System.Interactive.Async/3.1.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/System.Interactive.Async.dll": {}
+        },
+        "runtime": {
+          "lib/net45/System.Interactive.Async.dll": {}
+        }
+      },
+      "System.Net.Http/4.3.1": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "System.Net.Http"
+        ],
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "Common/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/Common.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Common.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.5.1/win-x86": {
+      "Google.Api.CommonProtos/1.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Google.Protobuf": "3.3.0"
+        },
+        "compile": {
+          "lib/net45/Google.Api.CommonProtos.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Api.CommonProtos.dll": {}
+        }
+      },
+      "Google.Api.Gax/2.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "10.0.2",
+          "System.Interactive.Async": "3.1.1",
+          "System.Net.Http": "4.1.1"
+        },
+        "compile": {
+          "lib/net45/Google.Api.Gax.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Api.Gax.dll": {}
+        }
+      },
+      "Google.Api.Gax.Grpc/2.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Google.Api.CommonProtos": "1.1.0",
+          "Google.Api.Gax": "2.1.0",
+          "Google.Apis.Auth": "1.29.1",
+          "Grpc.Auth": "1.6.1",
+          "Grpc.Core": "1.6.1"
+        },
+        "compile": {
+          "lib/net45/Google.Api.Gax.Grpc.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Api.Gax.Grpc.dll": {}
+        }
+      },
+      "Google.Apis/1.29.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.Apis.Core": "1.29.1",
+          "Newtonsoft.Json": "10.0.2",
+          "System.Net.Http": "4.3.1"
+        },
+        "compile": {
+          "lib/net45/Google.Apis.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Apis.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.dll": {}
+        }
+      },
+      "Google.Apis.Auth/1.29.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.Apis": "1.29.1",
+          "Google.Apis.Core": "1.29.1"
+        },
+        "compile": {
+          "lib/net45/Google.Apis.Auth.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.Auth.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Apis.Auth.PlatformServices.dll": {},
+          "lib/net45/Google.Apis.Auth.dll": {}
+        }
+      },
+      "Google.Apis.Core/1.29.1": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "10.0.2",
+          "System.Net.Http": "4.3.1"
+        },
+        "compile": {
+          "lib/net45/Google.Apis.Core.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Apis.Core.dll": {}
+        }
+      },
+      "Google.LongRunning/1.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Google.Api.Gax.Grpc": "2.1.0",
+          "Google.Protobuf": "3.4.1",
+          "Grpc.Core": "1.6.1"
+        },
+        "compile": {
+          "lib/net45/Google.LongRunning.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.LongRunning.dll": {}
+        }
+      },
+      "Google.Protobuf/3.4.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Google.Protobuf.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Google.Protobuf.dll": {}
+        }
+      },
+      "Grpc.Auth/1.6.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.Apis.Auth": "1.21.0",
+          "Grpc.Core": "1.6.1"
+        },
+        "compile": {
+          "lib/net45/Grpc.Auth.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Grpc.Auth.dll": {}
+        }
+      },
+      "Grpc.Core/1.6.1": {
+        "type": "package",
+        "dependencies": {
+          "System.Interactive.Async": "3.1.1"
+        },
+        "compile": {
+          "lib/net45/Grpc.Core.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Grpc.Core.dll": {}
+        },
+        "build": {
+          "build/net45/_._": {}
+        }
+      },
+      "Improbable.SpatialOS.Platform/13.7.1": {
+        "type": "package",
+        "dependencies": {
+          "Google.LongRunning": "1.0.0"
+        },
+        "compile": {
+          "lib/net451/Improbable.SpatialOS.Platform.dll": {}
+        },
+        "runtime": {
+          "lib/net451/Improbable.SpatialOS.Platform.dll": {}
+        }
+      },
+      "Newtonsoft.Json/12.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        }
+      },
+      "System.Interactive.Async/3.1.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/System.Interactive.Async.dll": {}
+        },
+        "runtime": {
+          "lib/net45/System.Interactive.Async.dll": {}
+        }
+      },
+      "System.Net.Http/4.3.1": {
+        "type": "package",
+        "frameworkAssemblies": [
+          "System.Net.Http"
+        ],
+        "compile": {
+          "ref/net45/_._": {}
+        },
+        "runtime": {
+          "lib/net45/_._": {}
+        }
+      },
+      "Common/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/Common.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Common.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Google.Api.CommonProtos/1.1.0": {
+      "sha512": "24Neiw0ZSFBYJ39eUPm2LHWs3g/XrCgFjsp9mLuwnjMduMEPCcyf4d9xJzm7MW0MihA4IB+siKtcaSLD2yXfNw==",
+      "type": "package",
+      "path": "google.api.commonprotos/1.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "google.api.commonprotos.1.1.0.nupkg.sha512",
+        "google.api.commonprotos.nuspec",
+        "lib/net45/Google.Api.CommonProtos.dll",
+        "lib/net45/Google.Api.CommonProtos.xml",
+        "lib/netstandard1.3/Google.Api.CommonProtos.dll",
+        "lib/netstandard1.3/Google.Api.CommonProtos.xml"
+      ]
+    },
+    "Google.Api.Gax/2.1.0": {
+      "sha512": "D9aB8sumhUJYI/GAP3IpeH1nOP33lzaZK5u60bksYX1dXmqzPljlI9RpAx625oLi2yKhisjXxOV41YBoarChCg==",
+      "type": "package",
+      "path": "google.api.gax/2.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "google.api.gax.2.1.0.nupkg.sha512",
+        "google.api.gax.nuspec",
+        "lib/net45/Google.Api.Gax.dll",
+        "lib/net45/Google.Api.Gax.pdb",
+        "lib/net45/Google.Api.Gax.xml",
+        "lib/netstandard1.3/Google.Api.Gax.dll",
+        "lib/netstandard1.3/Google.Api.Gax.pdb",
+        "lib/netstandard1.3/Google.Api.Gax.xml"
+      ]
+    },
+    "Google.Api.Gax.Grpc/2.1.0": {
+      "sha512": "bbuyEIFrnt1mAzeKcKefwnzLNb4bnDolQOUDtS1lB04Y/nRMruGD7BDQVmHvvtEOyaaPWfFS+CPP4JbpsHymZA==",
+      "type": "package",
+      "path": "google.api.gax.grpc/2.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "google.api.gax.grpc.2.1.0.nupkg.sha512",
+        "google.api.gax.grpc.nuspec",
+        "lib/net45/Google.Api.Gax.Grpc.dll",
+        "lib/net45/Google.Api.Gax.Grpc.pdb",
+        "lib/net45/Google.Api.Gax.Grpc.xml",
+        "lib/netstandard1.5/Google.Api.Gax.Grpc.dll",
+        "lib/netstandard1.5/Google.Api.Gax.Grpc.pdb",
+        "lib/netstandard1.5/Google.Api.Gax.Grpc.xml"
+      ]
+    },
+    "Google.Apis/1.29.1": {
+      "sha512": "BE1ydMxUs81NwMV3/GS5Y+OFiw8xPOPXSQ9JpQmjAthP+2t+4KnRrImLJTXglOQBgcZHOlPcpFp9DcZk4syTRQ==",
+      "type": "package",
+      "path": "google.apis/1.29.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "google.apis.1.29.1.nupkg.sha512",
+        "google.apis.nuspec",
+        "lib/net45/Google.Apis.PlatformServices.dll",
+        "lib/net45/Google.Apis.dll",
+        "lib/net45/Google.Apis.xml",
+        "lib/netstandard1.3/Google.Apis.dll",
+        "lib/netstandard1.3/Google.Apis.xml"
+      ]
+    },
+    "Google.Apis.Auth/1.29.1": {
+      "sha512": "SvQ4UXBucpIgn9K8ELs823Amw7/4+9lDppr3BVSfQKKw4+1JG3soaTfcTBpYXIHBEgg091eR/jIMjVFen1rRgg==",
+      "type": "package",
+      "path": "google.apis.auth/1.29.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "google.apis.auth.1.29.1.nupkg.sha512",
+        "google.apis.auth.nuspec",
+        "lib/net45/Google.Apis.Auth.PlatformServices.dll",
+        "lib/net45/Google.Apis.Auth.dll",
+        "lib/net45/Google.Apis.Auth.xml",
+        "lib/netstandard1.3/Google.Apis.Auth.PlatformServices.dll",
+        "lib/netstandard1.3/Google.Apis.Auth.dll",
+        "lib/netstandard1.3/Google.Apis.Auth.xml"
+      ]
+    },
+    "Google.Apis.Core/1.29.1": {
+      "sha512": "Lb663LwBu02c7BoPd2sBHNhPNpkWdZjrLRIeK0+3IY2+x6zRfjs5DxJ/6fvafKuAXilBQv2R7AaptpzET7a04Q==",
+      "type": "package",
+      "path": "google.apis.core/1.29.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "google.apis.core.1.29.1.nupkg.sha512",
+        "google.apis.core.nuspec",
+        "lib/net45/Google.Apis.Core.dll",
+        "lib/net45/Google.Apis.Core.xml",
+        "lib/netstandard1.3/Google.Apis.Core.dll",
+        "lib/netstandard1.3/Google.Apis.Core.xml"
+      ]
+    },
+    "Google.LongRunning/1.0.0": {
+      "sha512": "AbZU9XU0mTc/huZwAVVDZzOurgpYwQ0+UIc0yZNBRxfXOvgY593QLdZsUhSNbO3ITN4xomMfoPMRFtFzq29CMg==",
+      "type": "package",
+      "path": "google.longrunning/1.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "google.longrunning.1.0.0.nupkg.sha512",
+        "google.longrunning.nuspec",
+        "lib/net45/Google.LongRunning.dll",
+        "lib/net45/Google.LongRunning.pdb",
+        "lib/net45/Google.LongRunning.xml",
+        "lib/netstandard1.5/Google.LongRunning.dll",
+        "lib/netstandard1.5/Google.LongRunning.pdb",
+        "lib/netstandard1.5/Google.LongRunning.xml"
+      ]
+    },
+    "Google.Protobuf/3.4.1": {
+      "sha512": "whGnxrX8cgAwbhyP/NhnMtWMd4b+ewOeujl7WVtsrtkPiJrIK2BZLOjfgDPB8im9mPMRebWT/RE/1lJCvDsMuQ==",
+      "type": "package",
+      "path": "google.protobuf/3.4.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "google.protobuf.3.4.1.nupkg.sha512",
+        "google.protobuf.nuspec",
+        "lib/net45/Google.Protobuf.dll",
+        "lib/net45/Google.Protobuf.xml",
+        "lib/netstandard1.0/Google.Protobuf.dll",
+        "lib/netstandard1.0/Google.Protobuf.xml"
+      ]
+    },
+    "Grpc.Auth/1.6.1": {
+      "sha512": "qFBdYoU5AIe3XE2v0HqBKtAYokIxVVJElzrA/WxI1EkRtRhEa0RZgPM/bs7NZRR1s7Vww8G4QnGos2xhRi78Zg==",
+      "type": "package",
+      "path": "grpc.auth/1.6.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "grpc.auth.1.6.1.nupkg.sha512",
+        "grpc.auth.nuspec",
+        "lib/net45/Grpc.Auth.dll",
+        "lib/net45/Grpc.Auth.xml",
+        "lib/netstandard1.5/Grpc.Auth.dll",
+        "lib/netstandard1.5/Grpc.Auth.xml"
+      ]
+    },
+    "Grpc.Core/1.6.1": {
+      "sha512": "GOFi+vrrUkBkzVJ4LIOSCcBKFaQ8zbXMPyQ+KCDe1d84o55JMUwpemqwk+fefNAkdjd/7j9PDAx4hz/6/qdraw==",
+      "type": "package",
+      "path": "grpc.core/1.6.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/net45/Grpc.Core.targets",
+        "grpc.core.1.6.1.nupkg.sha512",
+        "grpc.core.nuspec",
+        "lib/net45/Grpc.Core.dll",
+        "lib/net45/Grpc.Core.xml",
+        "lib/netstandard1.5/Grpc.Core.dll",
+        "lib/netstandard1.5/Grpc.Core.xml",
+        "runtimes/linux/native/libgrpc_csharp_ext.x64.so",
+        "runtimes/linux/native/libgrpc_csharp_ext.x86.so",
+        "runtimes/osx/native/libgrpc_csharp_ext.x64.dylib",
+        "runtimes/osx/native/libgrpc_csharp_ext.x86.dylib",
+        "runtimes/win/native/grpc_csharp_ext.x64.dll",
+        "runtimes/win/native/grpc_csharp_ext.x86.dll"
+      ]
+    },
+    "Improbable.SpatialOS.Platform/13.7.1": {
+      "sha512": "z1/V0rz96mbiPqZhjOnngCbAWXYx7cPUsTQZgLht8YrlC38lcDG2GPfOZKq/hhANHdGS810EIpQCHzJU+YaTFg==",
+      "type": "package",
+      "path": "improbable.spatialos.platform/13.7.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "improbable.spatialos.platform.13.7.1.nupkg.sha512",
+        "improbable.spatialos.platform.nuspec",
+        "lib/net451/Improbable.SpatialOS.Platform.dll",
+        "lib/net451/Improbable.SpatialOS.Platform.xml",
+        "lib/netstandard1.5/Improbable.SpatialOS.Platform.dll",
+        "lib/netstandard1.5/Improbable.SpatialOS.Platform.xml"
+      ]
+    },
+    "Newtonsoft.Json/12.0.1": {
+      "sha512": "pBR3wCgYWZGiaZDYP+HHYnalVnPJlpP1q55qvVb+adrDHmFMDc1NAKio61xTwftK3Pw5h7TZJPJEEVMd6ty8rg==",
+      "type": "package",
+      "path": "newtonsoft.json/12.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.md",
+        "lib/net20/Newtonsoft.Json.dll",
+        "lib/net20/Newtonsoft.Json.pdb",
+        "lib/net20/Newtonsoft.Json.xml",
+        "lib/net35/Newtonsoft.Json.dll",
+        "lib/net35/Newtonsoft.Json.pdb",
+        "lib/net35/Newtonsoft.Json.xml",
+        "lib/net40/Newtonsoft.Json.dll",
+        "lib/net40/Newtonsoft.Json.pdb",
+        "lib/net40/Newtonsoft.Json.xml",
+        "lib/net45/Newtonsoft.Json.dll",
+        "lib/net45/Newtonsoft.Json.pdb",
+        "lib/net45/Newtonsoft.Json.xml",
+        "lib/netstandard1.0/Newtonsoft.Json.dll",
+        "lib/netstandard1.0/Newtonsoft.Json.pdb",
+        "lib/netstandard1.0/Newtonsoft.Json.xml",
+        "lib/netstandard1.3/Newtonsoft.Json.dll",
+        "lib/netstandard1.3/Newtonsoft.Json.pdb",
+        "lib/netstandard1.3/Newtonsoft.Json.xml",
+        "lib/netstandard2.0/Newtonsoft.Json.dll",
+        "lib/netstandard2.0/Newtonsoft.Json.pdb",
+        "lib/netstandard2.0/Newtonsoft.Json.xml",
+        "lib/portable-net40+sl5+win8+wp8+wpa81/Newtonsoft.Json.dll",
+        "lib/portable-net40+sl5+win8+wp8+wpa81/Newtonsoft.Json.pdb",
+        "lib/portable-net40+sl5+win8+wp8+wpa81/Newtonsoft.Json.xml",
+        "lib/portable-net45+win8+wp8+wpa81/Newtonsoft.Json.dll",
+        "lib/portable-net45+win8+wp8+wpa81/Newtonsoft.Json.pdb",
+        "lib/portable-net45+win8+wp8+wpa81/Newtonsoft.Json.xml",
+        "newtonsoft.json.12.0.1.nupkg.sha512",
+        "newtonsoft.json.nuspec"
+      ]
+    },
+    "System.Interactive.Async/3.1.1": {
+      "sha512": "hZccYiIE5RS1/J9Tb/BNtosAGVggdlsJm4Ojdu+gDV0p4AIi+LUfUogMKkRacljQEJd2AG6vYzvcjhQFkqoZmw==",
+      "type": "package",
+      "path": "system.interactive.async/3.1.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net45/System.Interactive.Async.dll",
+        "lib/net45/System.Interactive.Async.xml",
+        "lib/net46/System.Interactive.Async.dll",
+        "lib/net46/System.Interactive.Async.xml",
+        "lib/netstandard1.0/System.Interactive.Async.dll",
+        "lib/netstandard1.0/System.Interactive.Async.xml",
+        "lib/netstandard1.3/System.Interactive.Async.dll",
+        "lib/netstandard1.3/System.Interactive.Async.xml",
+        "system.interactive.async.3.1.1.nupkg.sha512",
+        "system.interactive.async.nuspec"
+      ]
+    },
+    "System.Net.Http/4.3.1": {
+      "sha512": "UrTyRczM3ZvNk6oetBuwlu67MFKKRva+r7bw4JDVZ6Y2IukyZ24td5ppsieu/4yZlogVAIuZul9GIQ3hoiz0yA==",
+      "type": "package",
+      "path": "system.net.http/4.3.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "ThirdPartyNotices.txt",
+        "dotnet_library_license.txt",
+        "lib/Xamarinmac20/_._",
+        "lib/monoandroid10/_._",
+        "lib/monotouch10/_._",
+        "lib/net45/_._",
+        "lib/net46/System.Net.Http.dll",
+        "lib/portable-net45+win8+wpa81/_._",
+        "lib/win8/_._",
+        "lib/wpa81/_._",
+        "lib/xamarinios10/_._",
+        "lib/xamarintvos10/_._",
+        "lib/xamarinwatchos10/_._",
+        "ref/Xamarinmac20/_._",
+        "ref/monoandroid10/_._",
+        "ref/monotouch10/_._",
+        "ref/net45/_._",
+        "ref/net46/System.Net.Http.dll",
+        "ref/net46/System.Net.Http.xml",
+        "ref/net46/de/System.Net.Http.xml",
+        "ref/net46/es/System.Net.Http.xml",
+        "ref/net46/fr/System.Net.Http.xml",
+        "ref/net46/it/System.Net.Http.xml",
+        "ref/net46/ja/System.Net.Http.xml",
+        "ref/net46/ko/System.Net.Http.xml",
+        "ref/net46/ru/System.Net.Http.xml",
+        "ref/net46/zh-hans/System.Net.Http.xml",
+        "ref/net46/zh-hant/System.Net.Http.xml",
+        "ref/netcore50/System.Net.Http.dll",
+        "ref/netcore50/System.Net.Http.xml",
+        "ref/netcore50/de/System.Net.Http.xml",
+        "ref/netcore50/es/System.Net.Http.xml",
+        "ref/netcore50/fr/System.Net.Http.xml",
+        "ref/netcore50/it/System.Net.Http.xml",
+        "ref/netcore50/ja/System.Net.Http.xml",
+        "ref/netcore50/ko/System.Net.Http.xml",
+        "ref/netcore50/ru/System.Net.Http.xml",
+        "ref/netcore50/zh-hans/System.Net.Http.xml",
+        "ref/netcore50/zh-hant/System.Net.Http.xml",
+        "ref/netstandard1.1/System.Net.Http.dll",
+        "ref/netstandard1.1/System.Net.Http.xml",
+        "ref/netstandard1.1/de/System.Net.Http.xml",
+        "ref/netstandard1.1/es/System.Net.Http.xml",
+        "ref/netstandard1.1/fr/System.Net.Http.xml",
+        "ref/netstandard1.1/it/System.Net.Http.xml",
+        "ref/netstandard1.1/ja/System.Net.Http.xml",
+        "ref/netstandard1.1/ko/System.Net.Http.xml",
+        "ref/netstandard1.1/ru/System.Net.Http.xml",
+        "ref/netstandard1.1/zh-hans/System.Net.Http.xml",
+        "ref/netstandard1.1/zh-hant/System.Net.Http.xml",
+        "ref/netstandard1.3/System.Net.Http.dll",
+        "ref/netstandard1.3/System.Net.Http.xml",
+        "ref/netstandard1.3/de/System.Net.Http.xml",
+        "ref/netstandard1.3/es/System.Net.Http.xml",
+        "ref/netstandard1.3/fr/System.Net.Http.xml",
+        "ref/netstandard1.3/it/System.Net.Http.xml",
+        "ref/netstandard1.3/ja/System.Net.Http.xml",
+        "ref/netstandard1.3/ko/System.Net.Http.xml",
+        "ref/netstandard1.3/ru/System.Net.Http.xml",
+        "ref/netstandard1.3/zh-hans/System.Net.Http.xml",
+        "ref/netstandard1.3/zh-hant/System.Net.Http.xml",
+        "ref/portable-net45+win8+wpa81/_._",
+        "ref/win8/_._",
+        "ref/wpa81/_._",
+        "ref/xamarinios10/_._",
+        "ref/xamarintvos10/_._",
+        "ref/xamarinwatchos10/_._",
+        "runtimes/unix/lib/netstandard1.6/System.Net.Http.dll",
+        "runtimes/win/lib/net46/System.Net.Http.dll",
+        "runtimes/win/lib/netcore50/System.Net.Http.dll",
+        "runtimes/win/lib/netstandard1.3/System.Net.Http.dll",
+        "system.net.http.4.3.1.nupkg.sha512",
+        "system.net.http.nuspec"
+      ]
+    },
+    "Common/1.0.0": {
+      "type": "project",
+      "path": "../Common/Common.csproj",
+      "msbuildProject": "../Common/Common.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    ".NETFramework,Version=v4.5.1": [
+      "Common >= 1.0.0",
+      "Improbable.SpatialOS.Platform >= 13.7.1",
+      "Newtonsoft.Json >= 12.0.1"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\sahildhanju\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\sahil-stavka\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Programs\\Improbable.Unreal.Scripts\\DeploymentLauncher\\DeploymentLauncher.csproj",
+      "projectName": "DeploymentLauncher",
+      "projectPath": "C:\\sahil-stavka\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Programs\\Improbable.Unreal.Scripts\\DeploymentLauncher\\DeploymentLauncher.csproj",
+      "packagesPath": "C:\\Users\\sahildhanju\\.nuget\\packages\\",
+      "outputPath": "C:\\sahil-stavka\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Programs\\Improbable.Unreal.Scripts\\DeploymentLauncher\\obj\\",
+      "projectStyle": "PackageReference",
+      "skipContentFileWrite": true,
+      "configFilePaths": [
+        "C:\\Users\\sahildhanju\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net451"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net451": {
+          "projectReferences": {
+            "C:\\sahil-stavka\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Programs\\Improbable.Unreal.Scripts\\Common\\Common.csproj": {
+              "projectPath": "C:\\sahil-stavka\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Programs\\Improbable.Unreal.Scripts\\Common\\Common.csproj"
+            }
+          }
+        }
+      }
+    },
+    "frameworks": {
+      "net451": {
+        "dependencies": {
+          "Improbable.SpatialOS.Platform": {
+            "target": "Package",
+            "version": "[13.7.1, )"
+          },
+          "Newtonsoft.Json": {
+            "target": "Package",
+            "version": "[12.0.1, )"
+          }
+        }
+      }
+    },
+    "runtimes": {
+      "win": {
+        "#import": []
+      },
+      "win-x64": {
+        "#import": []
+      },
+      "win-x86": {
+        "#import": []
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDKServices\Definitions.SpatialGDKServices.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDKServices\Public\SpatialGDKServicesModule.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdkservices\public\LocalDeploymentManager.h
+C:\sahil-stavka\Engine\Source\Developer\DirectoryWatcher\Public\FileCache.h
+c:\sahil-stavka\engine\source\developer\directorywatcher\public\IDirectoryWatcher.h
+c:\sahil-stavka\engine\source\developer\directorywatcher\public\FileCacheUtilities.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdkservices\private\SpatialGDKServicesPrivate.h

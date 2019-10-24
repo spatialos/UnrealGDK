@@ -1,0 +1,3 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDK\Definitions.SpatialGDK.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/GeneratedCppIncludes.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/MetaData.h

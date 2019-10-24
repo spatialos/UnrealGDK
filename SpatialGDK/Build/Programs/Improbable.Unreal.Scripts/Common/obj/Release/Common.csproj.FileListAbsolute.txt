@@ -1,0 +1,6 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Common\bin\Release\Common.dll
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Common\bin\Release\Common.pdb
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Common\obj\Release\Common.csprojAssemblyReference.cache
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Common\obj\Release\Common.csproj.CoreCompileInputs.cache
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Common\obj\Release\Common.dll
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Common\obj\Release\Common.pdb

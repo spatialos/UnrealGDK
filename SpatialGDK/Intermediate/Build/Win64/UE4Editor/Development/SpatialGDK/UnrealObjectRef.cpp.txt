@@ -1,0 +1,4 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDK\Definitions.SpatialGDK.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Schema/UnrealObjectRef.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Utils/SchemaOption.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\cstdint

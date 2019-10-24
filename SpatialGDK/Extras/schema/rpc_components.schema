@@ -1,0 +1,48 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+import "unreal/gdk/core_types.schema";
+
+type UnrealRPCPayload {
+    uint32 offset = 1;
+    uint32 rpc_index = 2;
+    bytes rpc_payload = 3;
+}
+
+type UnrealPackedRPCPayload {
+    uint32 offset = 1;
+    uint32 rpc_index = 2;
+    bytes rpc_payload = 3;
+    EntityId entity = 4;
+}
+
+component UnrealClientRPCEndpoint {
+    id = 9990;
+    // Set to true when authority is gained, indicating that RPCs can be received
+    bool ready = 1;
+    event UnrealRPCPayload client_to_server_rpc_event;
+    event UnrealPackedRPCPayload packed_client_to_server_rpc;
+}
+
+component UnrealServerRPCEndPoint {
+    id = 9989;
+    // Set to true when authority is gained, indicating that RPCs can be received
+    bool ready = 1;
+    event UnrealRPCPayload server_to_client_rpc_event;
+    event UnrealPackedRPCPayload packed_server_to_client_rpc;
+    command Void server_to_server_rpc_command(UnrealRPCPayload);
+}
+
+component UnrealMulticastRPCEndpoint {
+    id = 9987;
+    event UnrealRPCPayload unreliable_multicast_rpc;
+}
+
+// Component that contains a list of RPCs to be executed
+// as a part of entity creation request
+component RPCsOnEntityCreation {
+    id = 9985;
+    list<UnrealRPCPayload> rpcs = 1;
+    command Void clear_rpcs(Void);
+}
+

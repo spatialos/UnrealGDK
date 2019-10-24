@@ -1,0 +1,123 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDK\Definitions.SpatialGDK.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/GeneratedCppIncludes.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/MetaData.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK/Public/Interop/SpatialReceiver.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\EngineClasses/SpatialActorChannel.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\Engine/ActorChannel.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\Engine/Channel.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\Channel.generated.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Public\Net/DataReplication.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\ActorChannel.generated.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\EngineClasses/SpatialNetDriver.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\GameFramework/OnlineReplStructs.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/CoreOnline.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Hash/CityHash.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\OnlineReplStructs.generated.h
+C:\sahil-stavka\Engine\Plugins\Online\OnlineSubsystemUtils\Source\OnlineSubsystemUtils\Classes\IpNetDriver.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\Engine/NetDriver.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\GameFramework/WorldSettings.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\GameFramework/DamageType.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\DamageType.generated.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\GameFramework/Info.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\Info.generated.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\Sound/AudioVolume.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\GameFramework/Volume.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\Volume.generated.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\AudioVolume.generated.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/ConstructorHelpers.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\WorldSettings.generated.h
+C:\sahil-stavka\Engine\Source\Runtime\PacketHandlers\PacketHandler\Public\PacketHandler.h
+c:\sahil-stavka\engine\source\runtime\packethandlers\packethandler\public\PacketTraits.h
+C:\sahil-stavka\Engine\Source\Runtime\PacketHandlers\PacketHandler\Public\DDoSDetection.h
+C:\sahil-stavka\Engine\Source\Runtime\Sockets\Public\IPAddress.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\NetDriver.generated.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\HAL/Runnable.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\HAL/RunnableThread.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\HAL/PlatformAffinity.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Containers/CircularQueue.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Containers/CircularBuffer.h
+C:\sahil-stavka\Engine\Source\Runtime\Sockets\Public\SocketTypes.h
+C:\sahil-stavka\Engine\Plugins\Online\OnlineSubsystemUtils\Intermediate\Build\Win64\UE4Editor\Inc\OnlineSubsystemUtils\IpNetDriver.generated.h
+C:\sahil-stavka\Engine\Plugins\Online\OnlineSubsystem\Source\Public\OnlineSubsystemNames.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Interop/Connection/ConnectionConfig.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Internationalization/Regex.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\SpatialConstants.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Improbable/SpatialEngineConstants.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\Schema/UnrealObjectRef.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\Utils/SchemaOption.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\cstdint
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\SpatialCommonTypes.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK/improbable/c_worker.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK/improbable/c_schema.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\SpatialGDKSettings.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\Utils/ActorGroupManager.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdk\ActorGroupManager.generated.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdk\SpatialGDKSettings.generated.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Interop/SpatialOutputDevice.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdk\SpatialNetDriver.generated.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Interop/Connection/SpatialWorkerConnection.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Interop/Connection/OutgoingMessages.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\string
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\istream
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\ostream
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\ios
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xlocnum
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\climits
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\cmath
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xtgmath.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\cstdio
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\streambuf
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xiosbase
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xlocale
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\cstring
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\stdexcept
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xstring
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xmemory0
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\limits
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\ymath.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\cfloat
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\cwchar
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xutility
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\utility
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\iosfwd
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xatomic0.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\typeinfo
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\vcruntime_typeinfo.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xlocinfo
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xlocinfo.h
+C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\ucrt\locale.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\memory
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xmemory
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xfacet
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\system_error
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\cerrno
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xcall_once.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xerrc.h
+C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\ucrt\share.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\xstring_insert.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdk\SpatialWorkerConnection.generated.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Interop/SpatialClassInfoManager.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Utils/SchemaDatabase.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdk\SchemaDatabase.generated.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdk\SpatialClassInfoManager.generated.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Interop/SpatialStaticComponentView.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Schema/Component.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Schema/StandardLibrary.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Utils/SchemaUtils.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Schema/UnrealMetadata.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdk\SpatialStaticComponentView.generated.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Utils/RepDataUtils.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Public\Net/RepLayout.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Containers/StaticBitArray.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdk\SpatialActorChannel.generated.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\EngineClasses/SpatialPackageMapClient.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\Engine/PackageMapClient.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Misc/NetworkVersion.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Public\Net/DataBunch.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\PackageMapClient.generated.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdk\SpatialPackageMapClient.generated.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Schema/DynamicComponent.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Schema/RPCPayload.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Schema/SpawnData.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\Utils/RPCContainer.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdk\SpatialReceiver.generated.h

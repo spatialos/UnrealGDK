@@ -1,0 +1,3 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDKServices\Definitions.SpatialGDKServices.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDKServices\Public\Interop/Connection/EditorWorkerController.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDKServices\Private\SpatialGDKServicesPrivate.h

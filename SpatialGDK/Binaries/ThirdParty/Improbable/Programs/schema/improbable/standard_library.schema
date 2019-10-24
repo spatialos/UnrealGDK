@@ -1,0 +1,172 @@
+package improbable;
+
+// A set of worker attributes. This represents a minimum set of requirements that a candidate worker
+// must fulfill in order to be eligible for some constraint, and corresponds to the concrete set of
+// capabilities defined in each worker's JSON configuration file.
+type WorkerAttributeSet {
+  // A particular capability is just an arbitrary string. A particular worker's attribute set must
+  // contain _all_ of these attributes in order to satisfy this WorkerAttributeSet.
+  list<string> attribute = 1;
+}
+
+// A WorkerRequirementSet is a way to describe a set of workers. We can use a WorkerRequirementSet
+// to, for example, describe the sorts of workers that are allowed to be authoritative on a
+// particular component.
+//
+// For example, we might want an entity to be readable on any worker that can handle "visual" or
+// "physical" things, and could describe that with a WorkerRequirementSet containing two
+// WorkerAttributeSets:
+//
+//   {
+//     { "visual" },
+//     { "physical" }
+//   }
+type WorkerRequirementSet {
+  // A worker satisfies this WorkerRequirementSet if it satisfies _any_ of these
+  // WorkerAttributeSets (i.e. if any one of these WorkerAttributeSets is a subset of the worker's
+  // attributes).
+  list<WorkerAttributeSet> attribute_set = 1;
+}
+
+// The EntityAcl component defines what sorts of workers can read and write each entity in the
+// simulation. This component is REQUIRED (every entity must be created with it).
+component EntityAcl {
+  id = 50;
+
+  // The read ACL defined the kinds of workers that may check out the entity. Note that a worker
+  // is currently required to satisfy this constraint even if it is authoritative on some component
+  // on this entity; i.e. an entity will _never_ be checked out on any worker that does not match
+  // this WorkerRequirementSet.
+  WorkerRequirementSet read_acl = 1;
+
+  // This map defines the kinds of worker that are allowed to be authoritative on each component,
+  // where components are keyed by their component ID (as defined in schema and generated code).
+  // A component does not have to have an ACL, in which case it can't be authoritative on any
+  // worker.
+  map<uint32, WorkerRequirementSet> component_write_acl = 2;
+}
+
+// The Metadata component is used to hold debug and convenience information about
+// the entity. This component is optional.
+component Metadata {
+  id = 53;
+
+  // The entity type is a string describing what kind of thing the entity represents
+  // in the simulation. It is used by the Inspector to colour or filter entities
+  // based on their entity type, for example "car" or "player".
+  string entity_type = 1;
+}
+
+// A type representing a 3-dimensional position in space. This is primarily used as part of the
+// standard Position component, below, but can also be reused for other purposes.
+type Coordinates {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+// A type representing the dimensions of a cuboid.
+type EdgeLength {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+// The Position component defines the canonical position of an entity inside a SpatialOS simulation.
+// This is used by SpatialOS for load-balancing, authority delegation, and spatial queries. Note
+// that although this component can be used to represent an entity's position on workers, it doesn't
+// _have_ to be: it's completely reasonable for a simulation to define a custom or optimized notion
+// of position, and simply update this component as necessary (perhaps less frequently) for
+// authority delegation.
+component Position {
+  id = 54;
+  Coordinates coords = 1;
+}
+
+// The Peristence component is a marker component used to indicate that an entity should be
+// persisted in simulation snapshots. Any entity without this component will be dropped when a
+// snapshot is taken.
+component Persistence {
+  id = 55;
+}
+
+// An entity's interest is a map of Component IDs to a list of Entity queries, where the queries define other Entities
+// needed to simulate the component.
+//
+// If a Worker is authoritative over a Component ID present in the map, it will be provided with updates for Entities
+// which match the corresponding queries.
+component Interest {
+  id = 58;
+  map<uint32, ComponentInterest> component_interest = 1;
+}
+
+type ComponentInterest {
+  type Query {
+    QueryConstraint constraint = 1;
+
+    // Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid.
+    option<bool> full_snapshot_result = 2;
+    list<uint32> result_component_id = 3;
+
+    // Used for frequency-based rate limiting. Represents the maximum frequency of updates for this
+    // particular query. An empty option represents no rate-limiting (ie. updates are received
+    // as soon as possible). Frequency is measured in Hz.
+    //
+    // If set, the time between consecutive updates will be at least 1/frequency. This is determined
+    // at the time that updates are sent from the Runtime and may not necessarily correspond to the
+    // time updates are received by the worker.
+    //
+    // If after an update has been sent, multiple updates are applied to a component, they will be
+    // merged and sent as a single update after 1/frequency of the last sent update. When components
+    // with events are merged, the resultant component will contain a concatenation of all the
+    // events.
+    //
+    // If multiple queries match the same Entity-Component then the highest of all frequencies is
+    // used.
+    option<float> frequency = 4;
+  }
+
+  type QueryConstraint {
+    // Only one constraint should be provided. Providing more than one is invalid.
+
+    option<SphereConstraint> sphere_constraint = 1;
+    option<CylinderConstraint> cylinder_constraint = 2;
+    option<BoxConstraint> box_constraint = 3;
+    option<RelativeSphereConstraint> relative_sphere_constraint = 4;
+    option<RelativeCylinderConstraint> relative_cylinder_constraint = 5;
+    option<RelativeBoxConstraint> relative_box_constraint = 6;
+    option<int64> entity_id_constraint = 7;
+    option<uint32> component_constraint = 8;
+    list<QueryConstraint> and_constraint = 9;
+    list<QueryConstraint> or_constraint = 10;
+  }
+
+  type SphereConstraint {
+    Coordinates center = 1;
+    double radius = 2;
+  }
+
+  type CylinderConstraint {
+    Coordinates center = 1;
+    double radius = 2;
+  }
+
+  type BoxConstraint {
+    Coordinates center = 1;
+    EdgeLength edge_length = 2;
+  }
+
+  type RelativeSphereConstraint {
+    double radius = 1;
+  }
+
+  type RelativeCylinderConstraint {
+    double radius = 1;
+  }
+
+  type RelativeBoxConstraint {
+    EdgeLength edge_length = 1;
+  }
+
+  list<Query> queries = 1;
+}

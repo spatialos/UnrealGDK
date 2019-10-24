@@ -1,0 +1,25 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDKEditor\Definitions.SpatialGDKEditor.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDKEditor\Public\SpatialGDKEditorCloudLauncher.h
+C:\sahil-stavka\Engine\Source\Runtime\Projects\Public\Interfaces/IPluginManager.h
+C:\sahil-stavka\Engine\Source\Runtime\Projects\Public\PluginDescriptor.h
+c:\sahil-stavka\engine\source\runtime\projects\public\ModuleDescriptor.h
+C:\sahil-stavka\Engine\Source\Runtime\Json\Public\Serialization/JsonWriter.h
+C:\sahil-stavka\Engine\Source\Runtime\Json\Public\Serialization/JsonTypes.h
+c:\sahil-stavka\engine\source\runtime\projects\public\CustomBuildSteps.h
+c:\sahil-stavka\engine\source\runtime\projects\public\LocalizationDescriptor.h
+c:\sahil-stavka\engine\source\runtime\projects\public\PluginReferenceDescriptor.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDKEditor\Public\SpatialGDKEditorSettings.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\SpatialConstants.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Improbable/SpatialEngineConstants.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\Schema/UnrealObjectRef.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\Utils/SchemaOption.h
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\INCLUDE\cstdint
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\SpatialCommonTypes.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK/improbable/c_worker.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK/improbable/c_schema.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDKServices\Public\SpatialGDKServicesModule.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdkservices\public\LocalDeploymentManager.h
+C:\sahil-stavka\Engine\Source\Developer\DirectoryWatcher\Public\FileCache.h
+c:\sahil-stavka\engine\source\developer\directorywatcher\public\IDirectoryWatcher.h
+c:\sahil-stavka\engine\source\developer\directorywatcher\public\FileCacheUtilities.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Inc\SpatialGDKEditor\SpatialGDKEditorSettings.generated.h

@@ -1,0 +1,7 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDKEditorCommandlet\Definitions.SpatialGDKEditorCommandlet.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/GeneratedCppIncludes.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/MetaData.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDKEditorCommandlet/Private/Commandlets/GenerateSchemaCommandlet.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\Commandlets/Commandlet.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\Commandlet.generated.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdkeditorcommandlet\GenerateSchemaCommandlet.generated.h

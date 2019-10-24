@@ -1,0 +1,82 @@
+package improbable.restricted;
+
+// This file contains system components, part of the restricted components package.
+// These components contain data that correspond to SpatialOS Runtime systems.
+// Workers will never gain authority over these components.
+// Workers may not create or delete entities that have these components on them.
+
+// Workers may issue commands against these components, but require the "system_entity_command" permission.
+// These command requests are handled by the Runtime rather than routed to an authoritative worker, as
+// workers may never be authoritative over these components.
+
+
+// The System component is a marker component used to indicate that an entity corresponds to a
+// SpatialOS runtime system entity.
+// It is present on all entities with any of the components below.
+component System {
+  id = 59;
+}
+
+// Represents data relevant to the connection between the Runtime and the worker.
+type Connection {
+  enum ConnectionStatus {
+    UNKNOWN = 0;
+    // The worker requested a bridge from the receptionist, but the bridge has not yet had the worker connect to it.
+    AWAITING_WORKER_CONNECTION = 1;
+    // The worker is connected to the bridge as normal.
+    CONNECTED = 2;
+    // A worker was connected at one point, but is no longer connected. Currently, reconnecting is unsupported.
+    DISCONNECTED = 3;
+  }
+  ConnectionStatus status = 1;
+
+  // The latency measuring the round trip time for:
+  // 1. The runtime sending an op to a worker
+  // 2. The worker responding to that op
+  // 3. The runtime to process the response from the worker
+  // This is not network latency: it is an upper bound on network latency that also captures how backed up with ops a connection is.
+  // 0 if the worker has not yet connected.
+  uint32 data_latency_ms = 2;
+
+  // The UNIX epoch time at which the worker connection was started. 0 if the worker has not yet connected.
+  uint64 connected_since_utc = 3;
+}
+
+// A request-response pair to disconnect a worker from a running deployment.
+type DisconnectRequest {
+}
+type DisconnectResponse {
+}
+
+// The Worker component indicates that the system entity it is on represents a worker.
+// It carries metadata identifying that worker.
+component Worker {
+  id = 60;
+  string worker_id = 1;
+  string worker_type = 2;
+  Connection connection = 3;
+
+  command DisconnectResponse disconnect(DisconnectRequest);
+}
+
+// A bundle of data that can be used to uniquely identify a player.
+type PlayerIdentity {
+  // A player identifier is unique within the context of a single provider.
+  string player_identifier = 1;
+
+  // The provider is the system that was used to authenticate the user.
+  string provider = 2;
+
+  // Arbitrary metadata that can be associated with a player identity by a login service when
+  // the player connects.
+  // This is completely opaque to SpatialOS and its meaning is defined by users.
+  bytes metadata = 3;
+}
+
+// The PlayerClient component is present on worker entities that correspond to player client workers.
+// These are identified by the Runtime as workers that have connected with a player identity token.
+// The contents of this token are exposed in this component.
+component PlayerClient {
+  id = 61;
+  PlayerIdentity player_identity = 1;
+}

@@ -1,0 +1,3 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDKEditor\Definitions.SpatialGDKEditor.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdkeditor\private\schemagenerator\utils\CodeWriter.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Misc/FileHelper.h

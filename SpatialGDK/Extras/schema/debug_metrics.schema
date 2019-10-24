@@ -1,0 +1,16 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+import "unreal/gdk/core_types.schema";
+
+type ModifySettingPayload {
+    string setting_name = 1;
+    float setting_value = 2;
+}
+
+component DebugMetrics {
+    id = 9984;
+    command Void start_rpc_metrics(Void);
+    command Void stop_rpc_metrics(Void);
+    command Void modify_spatial_settings(ModifySettingPayload);
+}

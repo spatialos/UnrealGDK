@@ -1,0 +1,40 @@
+{
+  "template": "sim_players",
+  "world": {
+    "chunkEdgeLengthMeters": 50,
+    "snapshots": {
+      "snapshotWritePeriodSeconds": 0
+    },
+    "dimensions": {
+      "xMeters": 300,
+      "zMeters": 300
+    }
+  },
+  "load_balancing": {
+    "layer_configurations": [
+      {
+        "layer": "SimulatedPlayerCoordinator",
+        "rectangle_grid": {
+          "cols": 10,
+          "rows": 1
+        }
+      }
+    ]
+  },
+  "workers": [
+    {
+      "worker_type": "SimulatedPlayerCoordinator",
+      "flags": [
+		    {
+          "name": "coordinator_start_delay_millis",
+          "value": "10000"
+        }
+      ],
+      "permissions": [
+        {
+          "all": {}
+        }
+      ]
+    }
+  ]
+}

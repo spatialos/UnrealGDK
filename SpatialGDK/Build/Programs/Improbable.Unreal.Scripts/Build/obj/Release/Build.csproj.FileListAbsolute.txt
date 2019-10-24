@@ -1,0 +1,8 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Build\bin\Release\Build.exe
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Build\bin\Release\Build.pdb
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Build\bin\Release\Newtonsoft.Json.dll
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Build\obj\Release\Build.csprojAssemblyReference.cache
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Build\obj\Release\Build.csproj.CoreCompileInputs.cache
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Build\obj\Release\Build.csproj.CopyComplete
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Build\obj\Release\Build.exe
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Build\obj\Release\Build.pdb

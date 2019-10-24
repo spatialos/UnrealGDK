@@ -1,0 +1,7 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDK\Definitions.SpatialGDK.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/GeneratedCppIncludes.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/MetaData.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK/Public/Utils/SpatialMetricsDisplay.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\GameFramework/Info.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\Info.generated.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdk\SpatialMetricsDisplay.generated.h

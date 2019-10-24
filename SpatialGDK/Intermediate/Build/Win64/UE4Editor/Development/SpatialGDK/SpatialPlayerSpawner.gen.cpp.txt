@@ -1,0 +1,15 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDK\Definitions.SpatialGDK.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/GeneratedCppIncludes.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/MetaData.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK/Public/Interop/SpatialPlayerSpawner.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Classes\GameFramework/OnlineReplStructs.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/CoreOnline.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Hash/CityHash.h
+C:\sahil-stavka\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\OnlineReplStructs.generated.h
+C:\sahil-stavka\Engine\Source\Runtime\CoreUObject\Public\UObject/NoExportTypes.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Math/UnitConversion.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Math/UnitConversion.inl
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Internationalization/PolyglotTextData.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK/improbable/c_worker.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK/improbable/c_schema.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\intermediate\build\win64\ue4editor\inc\spatialgdk\SpatialPlayerSpawner.generated.h

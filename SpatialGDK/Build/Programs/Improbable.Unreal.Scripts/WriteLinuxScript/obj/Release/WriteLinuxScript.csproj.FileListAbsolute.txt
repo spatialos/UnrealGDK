@@ -1,0 +1,5 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\WriteLinuxScript\bin\Release\WriteLinuxScript.exe
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\WriteLinuxScript\bin\Release\WriteLinuxScript.pdb
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\WriteLinuxScript\obj\Release\WriteLinuxScript.csproj.CoreCompileInputs.cache
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\WriteLinuxScript\obj\Release\WriteLinuxScript.exe
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\WriteLinuxScript\obj\Release\WriteLinuxScript.pdb

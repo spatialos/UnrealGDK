@@ -1,0 +1,7 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDKEditor\Definitions.SpatialGDKEditor.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdkeditor\private\schemagenerator\utils\DataTypeUtilities.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDKEditor\Private\SchemaGenerator/TypeStructure.h
+C:\sahil-stavka\Engine\Source\Runtime\Engine\Public\Net/RepLayout.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Containers/StaticBitArray.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Algo/Transform.h
+C:\sahil-stavka\Engine\Source\Runtime\Core\Public\Internationalization/Regex.h

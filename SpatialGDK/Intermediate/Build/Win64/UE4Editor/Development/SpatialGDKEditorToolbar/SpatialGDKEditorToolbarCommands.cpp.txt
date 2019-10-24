@@ -1,0 +1,8 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDKEditorToolbar\Definitions.SpatialGDKEditorToolbar.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDKEditorToolbar\Public\SpatialGDKEditorToolbarCommands.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdkeditortoolbar\public\SpatialGDKEditorToolbarStyle.h
+C:\sahil-stavka\Engine\Source\Runtime\SlateCore\Public\Styling/SlateStyle.h
+C:\sahil-stavka\Engine\Source\Runtime\SlateCore\Public\Brushes/SlateBorderBrush.h
+C:\sahil-stavka\Engine\Source\Runtime\SlateCore\Public\Brushes/SlateBoxBrush.h
+C:\sahil-stavka\Engine\Source\Runtime\SlateCore\Public\Brushes/SlateColorBrush.h
+C:\sahil-stavka\Engine\Source\Runtime\SlateCore\Public\Brushes/SlateImageBrush.h

@@ -1,0 +1,13 @@
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Intermediate\Build\Win64\UE4Editor\Development\SpatialGDK\Definitions.SpatialGDK.h
+C:\sahil-stavka\Game\Plugins\UnrealGDK\SpatialGDK\Source\SpatialGDK\Public\SpatialGDKModule.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\Utils/EngineVersionCheck.h
+C:\sahil-stavka\Engine\Source\Runtime\Launch/Resources/SpatialVersion.h
+c:\sahil-stavka\game\plugins\unrealgdk\spatialgdk\source\spatialgdk\public\SpatialGDKLoader.h
+C:\sahil-stavka\Engine\Source\Runtime\Projects\Public\Interfaces/IPluginManager.h
+C:\sahil-stavka\Engine\Source\Runtime\Projects\Public\PluginDescriptor.h
+c:\sahil-stavka\engine\source\runtime\projects\public\ModuleDescriptor.h
+C:\sahil-stavka\Engine\Source\Runtime\Json\Public\Serialization/JsonWriter.h
+C:\sahil-stavka\Engine\Source\Runtime\Json\Public\Serialization/JsonTypes.h
+c:\sahil-stavka\engine\source\runtime\projects\public\CustomBuildSteps.h
+c:\sahil-stavka\engine\source\runtime\projects\public\LocalizationDescriptor.h
+c:\sahil-stavka\engine\source\runtime\projects\public\PluginReferenceDescriptor.h
