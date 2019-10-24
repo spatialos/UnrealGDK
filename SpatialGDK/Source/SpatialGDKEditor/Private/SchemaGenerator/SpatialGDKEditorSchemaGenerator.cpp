@@ -604,7 +604,8 @@ bool LoadGeneratorStateFromSchemaDatabase(FString FileName /*= ""*/)
 
 	if (IsAssetReadOnly(FileName))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"), *RelativeFileName);
+		FString AbsoluteFilePath = FPaths::ConvertRelativePathToFull(RelativeFileName);
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"), *AbsoluteFilePath);
 		return false;
 	}
 
