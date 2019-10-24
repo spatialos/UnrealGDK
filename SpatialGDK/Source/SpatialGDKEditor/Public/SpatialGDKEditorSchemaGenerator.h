@@ -24,6 +24,8 @@ namespace SpatialGDKEditor
 		
 		SPATIALGDKEDITOR_API bool GeneratedSchemaDatabaseExists();
 		
+		SPATIALGDKEDITOR_API void GenerateSchemaForSublevels(const TMultiMap<FName, FName>& LevelNamesToPaths, const FString& SchemaPath);
+
 		SPATIALGDKEDITOR_API bool SaveSchemaDatabase(FString PackagePath = "");
 		
 		SPATIALGDKEDITOR_API bool DeleteSchemaDatabase(FString PackagePath = "");
