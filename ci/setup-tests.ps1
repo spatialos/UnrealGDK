@@ -16,6 +16,20 @@ Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recu
 # Update spatial to newest version
 Start-Process spatial "update" -Wait -ErrorAction Stop -NoNewWindow
 
+# Clean up testing project (symlinks could be invalid during initial cleanup - leaving the project as a result)
+$testing_project_path = "$unreal_path\Samples\UnrealGDKCITestProject"
+if (Test-Path $testing_project_path) {
+
+    # Stop potential running spatial service before removing the project
+    Start-Process spatial "service","stop" -Wait -ErrorAction Stop -NoNewWindow
+
+    Write-Log "Removing existing project."
+    Remove-Item $testing_project_path -Recurse -Force
+    if (-Not $?) {
+        Throw "Failed to remove existing project at $($testing_project_path)."
+    }
+}
+
 # Clone and build the testing project
 Write-Log "Downloading the testing project from $($testing_repo_url)."
 Git clone -b $testing_repo_branch $testing_repo_url $unreal_path\Samples\UnrealGDKCITestProject
