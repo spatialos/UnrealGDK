@@ -45,9 +45,8 @@ struct ComponentNamesAndIds
 	TArray<int32> Ids;
 };
 
-ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const FString& InSchemaOutputFolder, const UClass* CurrentClass)
+ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FString> LoadedSchema)
 {
-	const TArray<FString> LoadedSchema = LoadSchemaFileForClassToStringArray(InSchemaOutputFolder, CurrentClass);
 	ComponentNamesAndIds ParsedNamesAndIds;
 
 	for (const auto& SchemaLine : LoadedSchema)
@@ -95,7 +94,8 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const FString& InSc
 
 bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FString& InSchemaOutputFolder, const USchemaDatabase* SchemaDatabase)
 {
-	ComponentNamesAndIds ParsedNamesAndIds = ParseAvailableNamesAndIdsFromSchemaFile(InSchemaOutputFolder, CurrentClass);
+	const TArray<FString> LoadedSchema = LoadSchemaFileForClassToStringArray(InSchemaOutputFolder, CurrentClass);
+	ComponentNamesAndIds ParsedNamesAndIds = ParseAvailableNamesAndIdsFromSchemaFile(LoadedSchema);
 
 	if (CurrentClass->IsChildOf<AActor>())
 	{
@@ -933,31 +933,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_3_level_names_WHEN_generating_schema_for_sublevels_T
 	// THEN
 	TArray<FString> LoadedSchema;
 	FFileHelper::LoadFileToStringArray(LoadedSchema, *FPaths::Combine(SchemaOutputFolder, TEXT("Sublevels/sublevels.schema")));
-	ComponentNamesAndIds ParsedNamesAndIds;
-
-	for (const auto& SchemaLine : LoadedSchema)
-	{
-		FRegexPattern IdPattern = TEXT("(\tid = )([0-9]+)(;)");
-		FRegexMatcher IdRegMatcher(IdPattern, SchemaLine);
-
-		FRegexPattern NamePattern = TEXT("(^component )(.+)( \\{)");
-		FRegexMatcher NameRegMatcher(NamePattern, SchemaLine);
-
-		if (IdRegMatcher.FindNext())
-		{
-			FString ParsedId = IdRegMatcher.GetCaptureGroup(2);
-
-			if (ParsedId.IsNumeric())
-			{
-				ParsedNamesAndIds.Ids.Push(FCString::Atoi(*ParsedId));
-			}
-		}
-		else if (NameRegMatcher.FindNext())
-		{
-			FString ComponentName = NameRegMatcher.GetCaptureGroup(2);
-			ParsedNamesAndIds.Names.Push(ComponentName);
-		}
-	}
+	ComponentNamesAndIds ParsedNamesAndIds = ParseAvailableNamesAndIdsFromSchemaFile(LoadedSchema);
 
 	bool bHasDuplicateNames = false;
 	for (int i = 0; i < ParsedNamesAndIds.Names.Num() - 1; ++i)
