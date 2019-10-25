@@ -126,6 +126,8 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	}
 	SpatialGDKGenerateSchemaForClasses(Classes);
 
+	GenerateSchemaForSublevels();
+
 	FTimespan Duration = FDateTime::Now() - StartTime;
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Schema Generation Finished in %.2f seconds"), Duration.GetTotalSeconds());
