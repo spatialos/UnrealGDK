@@ -199,6 +199,11 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		return;
 	}
 
+	if (bConnectAsClient)
+	{
+		bPersistSpatialConnection = URL.HasOption(*SpatialConstants::ClientsStayConnectedURLOption);
+	}
+
 	if (!bPersistSpatialConnection)
 	{
 		// Destroy the old connection
@@ -206,6 +211,10 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 		// Create a new SpatialWorkerConnection in the SpatialGameInstance.
 		GameInstance->CreateNewSpatialWorkerConnection();
+	}
+	else
+	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Getting existing connection, not creating a new one"));
 	}
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
@@ -251,7 +260,7 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 {
 	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
 	// There may be more than one of these connections in the future for different replication conditions.
-	if (IsServer())
+	if (!bConnectAsClient)
 	{
 		CreateServerSpatialOSNetConnection();
 	}
@@ -259,12 +268,12 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	CreateAndInitializeCoreClasses();
 
 	// Query the GSM to figure out what map to load
-	if (!IsServer())
+	if (bConnectAsClient)
 	{
 		QueryGSMToLoadMap();
 	}
 
-	if (IsServer())
+	if (!bConnectAsClient)
 	{
 		Sender->CreateServerWorkerEntity();
 		HandleOngoingServerTravel();
@@ -275,7 +284,7 @@ void USpatialNetDriver::InitializeSpatialOutputDevice()
 {
 	int32 PIEIndex = -1; // -1 is Unreal's default index when not using PIE
 #if WITH_EDITOR
-	if (IsServer())
+	if (!bConnectAsClient)
 	{
 		PIEIndex = GEngine->GetWorldContextFromWorldChecked(GetWorld()).PIEInstance;
 	}
@@ -409,6 +418,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 			bWaitingForAcceptingPlayersToSpawn = false;
+			bPersistSpatialConnection = false;
 		}
 		else
 		{

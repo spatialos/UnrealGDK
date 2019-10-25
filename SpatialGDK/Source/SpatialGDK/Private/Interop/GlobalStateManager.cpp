@@ -503,6 +503,8 @@ bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId)
 
 void UGlobalStateManager::ResetGSM()
 {
+	UE_LOG(LogGlobalStateManager, Log, TEXT("GSM being reset"));
+
 	SingletonNameToEntityId.Empty();
 	SetAcceptingPlayers(false);
 

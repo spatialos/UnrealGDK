@@ -80,6 +80,7 @@ public:
 	// Deployment Map Component
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers;
+	int32 SessionID = 0;
 
 	// Startup Actor Manager Component
 	bool bCanBeginPlay;
