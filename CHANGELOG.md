@@ -5,7 +5,6 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
-- Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
 - Bugfix: Fixed a bug that could caused a name collision in schema for sublevels.
 - Bugfix: Dowgraded name collisions during schema generation from Warning to Display.
 
