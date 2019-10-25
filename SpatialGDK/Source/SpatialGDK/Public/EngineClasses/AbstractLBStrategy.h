@@ -43,7 +43,4 @@ public:
 protected:
 
 	uint32 LocalVirtualWorkerId;
-
-	const class USpatialNetDriver* NetDriver;
-
 };

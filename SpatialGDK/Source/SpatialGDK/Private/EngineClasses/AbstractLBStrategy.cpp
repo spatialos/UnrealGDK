@@ -16,5 +16,4 @@ void UAbstractLBStrategy::SetLocalVirtualWorkerId(uint32 InLocalVirtualWorkerId)
 
 void UAbstractLBStrategy::Init(const class USpatialNetDriver* InNetDriver)
 {
-	NetDriver = InNetDriver;
 }
