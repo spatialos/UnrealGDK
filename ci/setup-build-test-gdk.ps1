@@ -8,7 +8,7 @@ param(
   [string] $testing_repo_branch = "master",
   [string] $testing_repo_url = "https://github.com/spatialos/UnrealGDKExampleProject.git",
   [string] $testing_repo_relative_uproject_path = "Game\GDKShooter.uproject",
-  [string] $testing_repo_default_snapshot_map = "FPS-Start_Tiny"
+  [string] $testing_repo_map = "FPS-Start_Tiny"
 )
 
 # TODO: fetch default map from somewhere, rather than requiring given default snapshot map 
@@ -47,8 +47,8 @@ if ($target_platform -eq "Win64") {
     -unreal_path $unreal_path `
     -testing_repo_branch $testing_repo_branch `
     -testing_repo_url $testing_repo_url `
-    -testing_uproject_path "$unreal_path\Samples\UnrealGDKCITestProject\$testing_repo_relative_uproject_path" `
-    -testing_repo_default_snapshot_map "$testing_repo_default_snapshot_map" `
+    -testing_repo_uproject_path "$unreal_path\Samples\UnrealGDKCITestProject\$testing_repo_relative_uproject_path" `
+    -testing_repo_map "$testing_repo_default_snapshot_map" `
     -msbuild_exe "$msbuild_exe"
   Finish-Event "setup-tests" "command"
 
@@ -57,7 +57,8 @@ if ($target_platform -eq "Win64") {
     &$PSScriptRoot"\run-tests.ps1" `
       -unreal_editor_path "$unreal_path\Engine\Binaries\$target_platform\UE4Editor.exe" `
       -uproject_path "$unreal_path\Samples\UnrealGDKCITestProject\$testing_repo_relative_uproject_path" `
-      -output_dir "$PSScriptRoot\TestResults" -log_file_path "$PSScriptRoot\TestResults\tests.log"
+      -output_dir "$PSScriptRoot\TestResults" -log_file_path "$PSScriptRoot\TestResults\tests.log" `
+      -testing_repo_map = "$testing_repo_map"
   }
   Catch {
     Throw $_

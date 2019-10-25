@@ -2,7 +2,8 @@ param(
     [string] $unreal_editor_path,
     [string] $uproject_path,
     [string] $output_dir,
-    [string] $log_file_path
+    [string] $log_file_path,
+    [string] $testing_repo_map
 )
 
 # This resolves a path to be absolute, without actually reading the filesystem.
@@ -22,6 +23,7 @@ $output_dir_absolute = Force-ResolvePath $output_dir
 
 $cmd_args_list = @( `
     "`"$uproject_path_absolute`"", ` # We need some project to run tests in, but for unit tests the exact project shouldn't matter
+    "`"$testing_repo_map`"", ` # The map to run tests in
     "-ExecCmds=`"Automation RunTests SpatialGDK; Quit`"", ` # Run all tests in the SpatialGDK group. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
     "-TestExit=`"Automation Test Queue Empty`"", ` # When to close the editor
     "-ReportOutputPath=`"$($output_dir_absolute)`"", ` # Output folder for test results. If it doesn't exist, gets created. If it does, all contents get deleted before new results get placed there.
