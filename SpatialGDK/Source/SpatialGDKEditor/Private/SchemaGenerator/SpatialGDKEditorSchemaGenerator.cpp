@@ -777,7 +777,7 @@ bool SpatialGDKGenerateSchema()
 
 	GenerateSchemaForSublevels();
 
-	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH)))
+	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
 	{
 		return false;
 	}
