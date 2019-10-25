@@ -6,6 +6,7 @@ param(
     [string] $test_repo_url,
     [string] $test_repo_map,
     [string] $test_repo_uproject_path,
+    [string] $test_repo_path,
     [string] $msbuild_exe
 )
 
@@ -17,30 +18,29 @@ Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recu
 Start-Process spatial "update" -Wait -ErrorAction Stop -NoNewWindow
 
 # Clean up testing project (symlinks could be invalid during initial cleanup - leaving the project as a result)
-$test_project_path = "$unreal_path\Samples\UnrealGDKCITestProject"
-if (Test-Path $test_project_path) {
+if (Test-Path $test_repo_path) {
 
     # Stop potential running spatial service before removing the project
     Start-Process spatial "service","stop" -Wait -ErrorAction Stop -NoNewWindow
 
     Write-Log "Removing existing project."
-    Remove-Item $test_project_path -Recurse -Force
+    Remove-Item $test_repo_path -Recurse -Force
     if (-Not $?) {
-        Throw "Failed to remove existing project at $($test_project_path)."
+        Throw "Failed to remove existing project at $($test_repo_path)."
     }
 }
 
 # Clone and build the testing project
 Write-Log "Downloading the testing project from $($test_repo_url)."
-Git clone -b $test_repo_branch $test_repo_url $unreal_path\Samples\UnrealGDKCITestProject
+Git clone -b $test_repo_branch $test_repo_url $test_repo_path
 if (-Not $?) {
     Throw "Failed to clone testing project from $($test_repo_url)."
 }
 
 # The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
 # copying the plugin into the project's folder bypasses the issue
-New-Item -Path "$test_project_path\Game" -Name "Game" -ItemType "directory" -ErrorAction SilentlyContinue
-New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_project_path\Game\Plugins" -Target "$gdk_home"
+New-Item -Path "$test_repo_path\Game" -Name "Game" -ItemType "directory" -ErrorAction SilentlyContinue
+New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugins" -Target "$gdk_home"
 
 Write-Log "Generating project files."
 Start-Process $unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe "-projectfiles","-project=`"$test_repo_uproject_path`"","-game","-engine","-progress" -Wait -ErrorAction Stop -NoNewWindow
@@ -65,8 +65,8 @@ if (-Not $?) {
 
 # Create the default snapshot
 Copy-Item -Force `
-    -Path "$unreal_path\Samples\UnrealGDKCITestProject\spatial\snapshots\$test_repo_map.snapshot" `
-    -Destination "$unreal_path\Samples\UnrealGDKCITestProject\spatial\snapshots\default.snapshot"
+    -Path "$test_repo_path\spatial\snapshots\$test_repo_map.snapshot" `
+    -Destination "$test_repo_path\spatial\snapshots\default.snapshot"
 
 # Create the TestResults directory if it does not exist, for storing results
 New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorAction SilentlyContinue
