@@ -11,9 +11,6 @@ param(
   [string] $testing_repo_default_snapshot_map = "FPS-Start_Tiny"
 )
 
-# TODO: store the test project within the buildkite directory, rather than in engine
-# TODO: properly handle killing lingering spatial processes
-# TODO: make this work with the gym project
 # TODO: fetch default map from somewhere, rather than requiring given default snapshot map 
 
 . "$PSScriptRoot\common.ps1"
