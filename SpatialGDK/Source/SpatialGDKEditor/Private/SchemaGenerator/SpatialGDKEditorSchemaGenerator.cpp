@@ -261,7 +261,7 @@ void WriteLevelComponent(FCodeWriter& Writer, FString LevelName, uint32 Componen
 	Writer.Outdent().Print("}");
 }
 
-void GenerateSchemaForSublevels()
+TMultiMap<FName, FName> GetLevelNamesToPathsMap()
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 
@@ -274,18 +274,31 @@ void GenerateSchemaForSublevels()
 	});
 
 	TMultiMap<FName, FName> LevelNamesToPaths;
-	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
 	for (FAssetData World : WorldAssets)
 	{
 		LevelNamesToPaths.Add(World.AssetName, World.PackageName);
 	}
 
+	return LevelNamesToPaths;
+}
+
+void GenerateSchemaForSublevels()
+{
+	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	TMultiMap<FName, FName> LevelNamesToPaths = GetLevelNamesToPathsMap();
+	GenerateSchemaForSublevels(SchemaOutputPath, LevelNamesToPaths);
+}
+
+SPATIALGDKEDITOR_API void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap<FName, FName>& LevelNamesToPaths)
+{
 	FCodeWriter Writer;
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
 		package unreal.sublevels;)""");
+
+	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
 	TArray<FName> Keys;
 	LevelNamesToPaths.GetKeys(Keys);
@@ -329,7 +342,6 @@ void GenerateSchemaForSublevels()
 
 	NextAvailableComponentId = IdGenerator.Peek();
 
-	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 	Writer.WriteToFile(FString::Printf(TEXT("%sSublevels/sublevels.schema"), *SchemaOutputPath));
 }
 

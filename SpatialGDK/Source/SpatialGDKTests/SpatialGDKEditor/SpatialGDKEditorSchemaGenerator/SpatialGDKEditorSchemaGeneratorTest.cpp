@@ -918,3 +918,61 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_
 
 	return true;
 }
+
+SCHEMA_GENERATOR_TEST(GIVEN_3_level_names_WHEN_generating_schema_for_sublevels_THEN_generated_schema_contains_3_components_with_unique_names)
+{
+	// GIVEN
+	TMultiMap<FName, FName> LevelNamesToPaths;
+	LevelNamesToPaths.Add(TEXT("TestLevel0"), TEXT("/Game/Maps/FirstTestLevel0"));
+	LevelNamesToPaths.Add(TEXT("TestLevel0"), TEXT("/Game/Maps/SecondTestLevel0"));
+	LevelNamesToPaths.Add(TEXT("TestLevel01"), TEXT("/Game/Maps/TestLevel01"));
+
+	// WHEN
+	SpatialGDKEditor::Schema::GenerateSchemaForSublevels(SchemaOutputFolder, LevelNamesToPaths);
+
+	// THEN
+	TArray<FString> LoadedSchema;
+	FFileHelper::LoadFileToStringArray(LoadedSchema, *FPaths::Combine(SchemaOutputFolder, TEXT("Sublevels/sublevels.schema")));
+	ComponentNamesAndIds ParsedNamesAndIds;
+
+	for (const auto& SchemaLine : LoadedSchema)
+	{
+		FRegexPattern IdPattern = TEXT("(\tid = )([0-9]+)(;)");
+		FRegexMatcher IdRegMatcher(IdPattern, SchemaLine);
+
+		FRegexPattern NamePattern = TEXT("(^component )(.+)( \\{)");
+		FRegexMatcher NameRegMatcher(NamePattern, SchemaLine);
+
+		if (IdRegMatcher.FindNext())
+		{
+			FString ParsedId = IdRegMatcher.GetCaptureGroup(2);
+
+			if (ParsedId.IsNumeric())
+			{
+				ParsedNamesAndIds.Ids.Push(FCString::Atoi(*ParsedId));
+			}
+		}
+		else if (NameRegMatcher.FindNext())
+		{
+			FString ComponentName = NameRegMatcher.GetCaptureGroup(2);
+			ParsedNamesAndIds.Names.Push(ComponentName);
+		}
+	}
+
+	bool bHasDuplicateNames = false;
+	for (int i = 0; i < ParsedNamesAndIds.Names.Num() - 1; ++i)
+	{
+		for (int j = i + 1; j < ParsedNamesAndIds.Names.Num(); ++j)
+		{
+			if (ParsedNamesAndIds.Names[i].Compare(ParsedNamesAndIds.Names[j]) == 0)
+			{
+				bHasDuplicateNames = true;
+				break;
+			}
+		}
+	}
+
+	TestFalse("No duplicate component names generated for equal sublevel map names", bHasDuplicateNames);
+
+	return true;
+}
