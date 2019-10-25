@@ -36,6 +36,12 @@ Git clone -b $testing_repo_branch $testing_repo_url $unreal_path\Samples\UnrealG
 if (-Not $?) {
     Throw "Failed to clone testing project from $($testing_repo_url)."
 }
+
+# The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
+# copying the plugin into the project's folder bypasses the issue
+New-Item -Path "$project_path" -Name "Plugins" -ItemType "directory" -ErrorAction SilentlyContinue
+New-Item -ItemType Junction -Name "UnrealGDK" -Path "$project_path\Plugins" -Target "$gdk_home"
+
 Write-Log "Generating project files."
 Start-Process $unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe "-projectfiles","-project=`"$uproject_path`"","-game","-engine","-progress" -Wait -ErrorAction Stop -NoNewWindow
 if (-Not $?) {
@@ -60,11 +66,6 @@ if (-Not $?) {
 Copy-Item -Force `
     -Path "$unreal_path\Samples\UnrealGDKCITestProject\spatial\snapshots\$testing_repo_default_snapshot_map.snapshot" `
     -Destination "$unreal_path\Samples\UnrealGDKCITestProject\spatial\snapshots\default.snapshot"
-
-# The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
-# copying the plugin into the project's folder bypasses the issue
-New-Item -Path "$project_path" -Name "Plugins" -ItemType "directory" -ErrorAction SilentlyContinue
-New-Item -ItemType Junction -Name "UnrealGDK" -Path "$project_path\Plugins" -Target "$gdk_home"
 
 # Create the TestResults directory if it does not exist, for storing results
 New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorAction SilentlyContinue
