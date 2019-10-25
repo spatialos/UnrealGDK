@@ -853,7 +853,6 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath, IdGenerator);
 	GenerateSchemaForSublevels(GetLevelNamesToPaths(), SchemaOutputPath);
-
 	NextAvailableComponentId = IdGenerator.Peek();
 
 	return true;
