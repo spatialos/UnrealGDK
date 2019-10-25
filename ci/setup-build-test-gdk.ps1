@@ -11,8 +11,6 @@ param(
   [string] $testing_repo_map = "FPS-Start_Tiny"
 )
 
-# TODO: fetch default map from somewhere, rather than requiring given default snapshot map 
-
 . "$PSScriptRoot\common.ps1"
 
 Start-Event "cleanup-symlinks" "command"

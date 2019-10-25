@@ -13,7 +13,7 @@ param(
 # The trailing \ on the destination path is important!
 Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recurse -Container -ErrorAction SilentlyContinue
 
-# Update spatial to newest version # TODO: is this an appropriate version? Is there a pinned one used for development?
+# Update spatial to newest version
 Start-Process spatial "update" -Wait -ErrorAction Stop -NoNewWindow
 
 # Clone and build the testing project
