@@ -5,7 +5,7 @@ param(
     [string] $testing_repo_branch,
     [string] $testing_repo_url,
     [string] $testing_repo_default_snapshot_map,
-    [string] $uproject_path,
+    [string] $testing_uproject_path,
     [string] $msbuild_exe
 )
 
@@ -14,16 +14,16 @@ param(
 Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recurse -Container -ErrorAction SilentlyContinue
 
 # Remove project from previous runs if it exists
-$project_path = "$unreal_path\Samples\UnrealGDKCITestProject"
-if (Test-Path $project_path) {
+$testing_project_path = "$unreal_path\Samples\UnrealGDKCITestProject"
+if (Test-Path $testing_project_path) {
 
     # Stop potential running spatial service before removing the project
     Start-Process spatial "service","stop" -Wait -ErrorAction Stop -NoNewWindow
 
     Write-Log "Removing existing project."
-    Remove-Item $project_path -Recurse -Force
+    Remove-Item $testing_project_path -Recurse -Force
     if (-Not $?) {
-        Throw "Failed to remove existing project at $($project_path)."
+        Throw "Failed to remove existing project at $($testing_project_path)."
     }
 }
 
@@ -39,16 +39,16 @@ if (-Not $?) {
 
 # The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
 # copying the plugin into the project's folder bypasses the issue
-New-Item -Path "$project_path\Game" -Name "Game" -ItemType "directory" -ErrorAction SilentlyContinue
-New-Item -ItemType Junction -Name "UnrealGDK" -Path "$project_path\Game\Plugins" -Target "$gdk_home"
+New-Item -Path "$testing_project_path\Game" -Name "Game" -ItemType "directory" -ErrorAction SilentlyContinue
+New-Item -ItemType Junction -Name "UnrealGDK" -Path "$testing_project_path\Game\Plugins" -Target "$gdk_home"
 
 Write-Log "Generating project files."
-Start-Process $unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe "-projectfiles","-project=`"$uproject_path`"","-game","-engine","-progress" -Wait -ErrorAction Stop -NoNewWindow
+Start-Process $unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe "-projectfiles","-project=`"$testing_uproject_path`"","-game","-engine","-progress" -Wait -ErrorAction Stop -NoNewWindow
 if (-Not $?) {
     throw "Failed to generate files for the testing project."
 }
 Write-Log "Building the testing project."
-Start-Process $msbuild_exe "/nologo","$($uproject_path.Replace(".uproject", ".sln"))","/p:Configuration=`"Development Editor`";Platform=`"Win64`"" -Wait -ErrorAction Stop -NoNewWindow
+Start-Process $msbuild_exe "/nologo","$($testing_uproject_path.Replace(".uproject", ".sln"))","/p:Configuration=`"Development Editor`";Platform=`"Win64`"" -Wait -ErrorAction Stop -NoNewWindow
 if (-Not $?) {
     throw "Failed to build testing project."
 }
@@ -56,7 +56,7 @@ if (-Not $?) {
 # Generate schema and snapshots
 Write-Log "Generating snapshot and schema for testing project."
 Start-Process $unreal_path\Engine\Binaries\Win64\UE4Editor.exe -Wait -PassThru -NoNewWindow -ArgumentList @(`
-    "$uproject_path", `
+    "$testing_uproject_path", `
     "-run=GenerateSchemaAndSnapshots"
 )
 if (-Not $?) {
