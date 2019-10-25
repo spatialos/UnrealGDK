@@ -292,12 +292,45 @@ private:
 	int FreeId = 10000;
 };
 
-void DeleteTestFolders()
+class SchemaTestFixture
 {
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	PlatformFile.DeleteDirectoryRecursively(*FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Spatial/Tests/")));
-	PlatformFile.DeleteDirectoryRecursively(*SchemaOutputFolder);
-}
+public:
+	SchemaTestFixture()
+	{
+		SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
+		EnableSpatialNetworking();
+	}
+	~SchemaTestFixture()
+	{
+		DeleteTestFolders();
+		ResetSpatialNetworking();
+	}
+
+private:
+
+	void DeleteTestFolders()
+	{
+		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+		PlatformFile.DeleteDirectoryRecursively(*FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Spatial/Tests/")));
+		PlatformFile.DeleteDirectoryRecursively(*SchemaOutputFolder);
+	}
+
+	void EnableSpatialNetworking()
+	{
+		UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
+		bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
+		GeneralProjectSettings->bSpatialNetworking = true;
+	}
+
+	void ResetSpatialNetworking()
+	{
+		UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
+		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
+		bCachedSpatialNetworking = true;
+	}
+
+	bool bCachedSpatialNetworking = true;
+};
 
 } // anonymous namespace
 
@@ -407,14 +440,14 @@ SCHEMA_GENERATOR_TEST(GIVEN_child_of_a_class_without_any_spatial_tags_WHEN_check
 
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_generated_schema_for_these_classes_THEN_corresponding_schema_files_exist)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	TSet<UClass*> Classes =
 	{
 		USpatialTypeObjectStub::StaticClass(),
 		ASpatialTypeActor::StaticClass()
 	};
-
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
@@ -432,20 +465,17 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_generated_schema_for_these_cla
 
 	TestTrue("All expected schema files have been generated", bExpectedFilesExist);
 
-	// CLEANUP
-	DeleteTestFolders();
-
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_valid_schema_exists)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	SchemaValidator Validator;
 	UClass* CurrentClass = ASpatialTypeActor::StaticClass();
 	TSet<UClass*> Classes = { CurrentClass };
-
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
@@ -454,14 +484,13 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_WHEN_generated_schema_for_this_class_
 	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
 	TestTrue("Generated Actor schema is valid", Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
 
-	// CLEANUP
-	DeleteTestFolders();
-
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_these_classes_THEN_files_with_valid_schema_exist)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	SchemaValidator Validator;
 	TSet<UClass*> Classes =
@@ -476,7 +505,6 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_the
 		return A.GetPathName() < B.GetPathName();
 	});
 
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
@@ -495,42 +523,37 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_the
 
 	TestTrue("Generated Actor schema is valid", bValidSchemaExists);
 
-	// CLEANUP
-	DeleteTestFolders();
-
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_component_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_valid_schema_exists)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	SchemaValidator Validator;
 	UClass* CurrentClass = USpatialTypeActorComponent::StaticClass();
 	TSet<UClass*> Classes = { CurrentClass };
 
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
-
+	
 	// WHEN
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// THEN
 	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
 	TestTrue("Generated Actor schema is valid", Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
-
-	// CLEANUP
-	DeleteTestFolders();
 
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_an_actor_component_WHEN_generated_schema_for_this_class_THEN_a_file_with_valid_schema_exists)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	SchemaValidator Validator;
 	UClass* CurrentClass = ASpatialTypeActorWithActorComponent::StaticClass();
 	TSet<UClass*> Classes = { CurrentClass };
-
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
@@ -538,21 +561,18 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_an_actor_component_WHEN_generate
 	// THEN
 	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
 	TestTrue("Generated Actor schema is valid", Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
-
-	// CLEANUP
-	DeleteTestFolders();
 
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_actor_components_WHEN_generated_schema_for_this_class_THEN_files_with_valid_schema_exist)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	SchemaValidator Validator;
 	UClass* CurrentClass = ASpatialTypeActorWithMultipleActorComponents::StaticClass();
 	TSet<UClass*> Classes = { CurrentClass };
-
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
@@ -560,21 +580,18 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_actor_components_WHEN_g
 	// THEN
 	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
 	TestTrue("Generated Actor schema is valid", Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
-
-	// CLEANUP
-	DeleteTestFolders();
 
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_object_components_WHEN_generated_schema_for_this_class_THEN_files_with_valid_schema_exist)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	SchemaValidator Validator;
 	UClass* CurrentClass = ASpatialTypeActorWithMultipleObjectComponents::StaticClass();
 	TSet<UClass*> Classes = { CurrentClass };
-
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 
 	// WHEN
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
@@ -583,14 +600,13 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_object_components_WHEN_
 	FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
 	TestTrue("Generated Actor schema is valid", Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass));
 
-	// CLEANUP
-	DeleteTestFolders();
-
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	TSet<UClass*> Classes =
 	{
@@ -598,7 +614,6 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_schema_files_exist_WHEN_deleted_generated_f
 		ASpatialTypeActor::StaticClass()
 	};
 
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// WHEN
@@ -627,6 +642,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_no_schema_files_exist_WHEN_deleted_generated_files_T
 
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_schema_database_exists)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	TSet<UClass*> Classes =
 	{
@@ -634,7 +651,6 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 		ASpatialTypeActor::StaticClass()
 	};
 
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// WHEN
@@ -646,19 +662,17 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	TestTrue("Generated schema database exists", PlatformFile.FileExists(*ExpectedSchemaDatabaseFileName));
 
-	// CLEANUP
-	DeleteTestFolders();
-
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_saved_THEN_valid_schema_database_exists)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	UClass* CurrentClass = ASpatialTypeActorWithSubobject::StaticClass();
 	TSet<UClass*> Classes = { CurrentClass };
 
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// WHEN
@@ -682,18 +696,16 @@ SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_s
 
 	TestTrue("Generated schema database is valid", bDatabaseIsValid);
 
-	// CLEANUP
-	DeleteTestFolders();
-
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_valid_schema_database_exists)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	TSet<UClass*> Classes = AllTestClassesSet;
 
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// WHEN
@@ -721,19 +733,17 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 
 	TestTrue("Generated schema database is valid", bDatabaseIsValid);
 
-	// CLEANUP
-	DeleteTestFolders();
-
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_schema_database_deleted_THEN_no_schema_database_exists)
 {
+	SchemaTestFixture Fixture;
+	
 	// GIVEN
 	UClass* CurrentClass = ASpatialTypeActor::StaticClass();
 	TSet<UClass*> Classes = { CurrentClass };
 
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
 
@@ -749,19 +759,17 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_schema_database_deleted_
 	bool bResult = bFileCreated && !PlatformFile.FileExists(*ExpectedSchemaDatabaseFileName);
 	TestTrue("Generated schema existed and is now deleted", bResult);
 
-	// CLEANUP
-	DeleteTestFolders();
-
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loaded)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	UClass* CurrentClass = ASpatialTypeActor::StaticClass();
 	TSet<UClass*> Classes = { CurrentClass };
 
-	SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
 
@@ -771,14 +779,13 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loade
 	// THEN
 	TestTrue("Schema database loaded", bSuccess);
 
-	// CLEANUP
-	DeleteTestFolders();
-
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_THEN_not_loaded)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	SpatialGDKEditor::Schema::DeleteSchemaDatabase(SchemaDatabaseFileName );
 
@@ -795,6 +802,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_TH
 
 SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WHEN_copied_THEN_valid_files_exist)
 {
+	SchemaTestFixture Fixture;
+
 	// GIVEN
 	FString GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("/Tests/schema/unreal/gdk"));
 	FString CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("/Tests/build/dependencies/schema/standard_library"));
@@ -861,14 +870,13 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 
 	TestTrue("Expected files have been copied", bExpectedFilesCopied);
 
-	// CLEANUP
-	DeleteTestFolders();
-
 	return true;
 }
 
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_THEN_all_unsupported_classes_are_filtered)
 {
+	SchemaTestFixture Fixture;
+	
 	// GIVEN
 	TArray<UObject*> Classes = AllTestClassesArray;
 
