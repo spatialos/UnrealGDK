@@ -47,7 +47,7 @@ if ($target_platform -eq "Win64") {
     -test_repo_url $test_repo_url `
     -test_repo_uproject_path "$build_home\TestProject\$test_repo_relative_uproject_path" `
     -test_repo_map "$test_repo_map" `
-    -test_repo_path "$build_home\TestProject"
+    -test_repo_path "$build_home\TestProject" `
     -msbuild_exe "$msbuild_exe"
   Finish-Event "setup-tests" "command"
 
