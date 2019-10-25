@@ -5,6 +5,8 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- Bugfix: Fixed a bug that could caused a name collision in schema for sublevels.
+- Bugfix: Dowgraded name collisions during schema generation from Warning to Display.
 
 ### Features:
 - Added partial framework for use in future UnrealGDK controlled loadbalancing.

@@ -271,7 +271,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	{
 		if (Collision.Value.Num() > 1)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for classes [%s]"),
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for classes [%s]"),
 				*Collision.Key, *FString::Join(Collision.Value, TEXT(", ")));
 		}
 	}
@@ -296,16 +296,17 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 	}
 }
 
-void WriteLevelComponent(FCodeWriter& Writer, FString LevelName, uint32 ComponentId)
+void WriteLevelComponent(FCodeWriter& Writer, FString LevelName, uint32 ComponentId, FString ClassPath)
 {
 	Writer.PrintNewLine();
+	Writer.Printf("// {0}", *ClassPath);
 	Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(LevelName));
 	Writer.Indent();
 	Writer.Printf("id = {0};", ComponentId);
 	Writer.Outdent().Print("}");
 }
 
-void GenerateSchemaForSublevels(const FString& SchemaPath, FComponentIdGenerator& IdGenerator)
+TMultiMap<FName, FName> GetLevelNamesToPathsMap()
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 
@@ -324,11 +325,25 @@ void GenerateSchemaForSublevels(const FString& SchemaPath, FComponentIdGenerator
 		LevelNamesToPaths.Add(World.AssetName, World.PackageName);
 	}
 
+	return LevelNamesToPaths;
+}
+
+void GenerateSchemaForSublevels()
+{
+	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	TMultiMap<FName, FName> LevelNamesToPaths = GetLevelNamesToPathsMap();
+	GenerateSchemaForSublevels(SchemaOutputPath, LevelNamesToPaths);
+}
+
+SPATIALGDKEDITOR_API void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap<FName, FName>& LevelNamesToPaths)
+{
 	FCodeWriter Writer;
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
 		package unreal.sublevels;)""");
+
+	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
 	TArray<FName> Keys;
 	LevelNamesToPaths.GetKeys(Keys);
@@ -351,7 +366,7 @@ void GenerateSchemaForSublevels(const FString& SchemaPath, FComponentIdGenerator
 					LevelPathToComponentId.Add(LevelPaths[i].ToString(), ComponentId);
 					LevelComponentIds.Add(ComponentId);
 				}
-				WriteLevelComponent(Writer, FString::Printf(TEXT("%s%d"), *LevelNameString, i), ComponentId);
+				WriteLevelComponent(Writer, FString::Printf(TEXT("%sInd%d"), *LevelNameString, i), ComponentId, LevelPaths[i].ToString());
 				
 			}
 		}
@@ -366,11 +381,13 @@ void GenerateSchemaForSublevels(const FString& SchemaPath, FComponentIdGenerator
 				LevelPathToComponentId.Add(LevelPath, ComponentId);
 				LevelComponentIds.Add(ComponentId);
 			}
-			WriteLevelComponent(Writer, LevelName.ToString(), ComponentId);
+			WriteLevelComponent(Writer, LevelName.ToString(), ComponentId, LevelPath);
 		}
 	}
 
-	Writer.WriteToFile(FString::Printf(TEXT("%sSublevels/sublevels.schema"), *SchemaPath));
+	NextAvailableComponentId = IdGenerator.Peek();
+
+	Writer.WriteToFile(FString::Printf(TEXT("%sSublevels/sublevels.schema"), *SchemaOutputPath));
 }
 
 FString GenerateIntermediateDirectory()
@@ -861,6 +878,8 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
+	GenerateSchemaForSublevels();
+
 	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
 	{
 		return false;
@@ -929,7 +948,7 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath, IdGenerator);
-	GenerateSchemaForSublevels(SchemaOutputPath, IdGenerator);
+
 	NextAvailableComponentId = IdGenerator.Peek();
 
 	return true;
