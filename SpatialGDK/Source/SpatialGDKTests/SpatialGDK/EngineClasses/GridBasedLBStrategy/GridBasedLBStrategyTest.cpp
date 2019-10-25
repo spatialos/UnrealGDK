@@ -17,13 +17,15 @@ UWorld* TestWorld;
 TMap<FName, AActor*> TestActors;
 UGridBasedLBStrategy* Strat;
 
+// Copied from AutomationCommon::GetAnyGameWorld()
 UWorld* GetAnyGameWorld()
 {
 	UWorld* World = nullptr;
 	const TIndirectArray<FWorldContext>& WorldContexts = GEngine->GetWorldContexts();
 	for (const FWorldContext& Context : WorldContexts)
 	{
-		if (((Context.WorldType == EWorldType::PIE) || (Context.WorldType == EWorldType::Game)) && (Context.World() != NULL))
+		if ((Context.WorldType == EWorldType::PIE || Context.WorldType == EWorldType::Game)
+			&& (Context.World() != nullptr))
 		{
 			World = Context.World();
 			break;
