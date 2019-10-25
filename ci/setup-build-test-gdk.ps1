@@ -46,7 +46,7 @@ if ($target_platform -eq "Win64") {
     -testing_repo_branch $testing_repo_branch `
     -testing_repo_url $testing_repo_url `
     -testing_repo_uproject_path "$unreal_path\Samples\UnrealGDKCITestProject\$testing_repo_relative_uproject_path" `
-    -testing_repo_map "$testing_repo_default_snapshot_map" `
+    -testing_repo_map "$testing_repo_map" `
     -msbuild_exe "$msbuild_exe"
   Finish-Event "setup-tests" "command"
 
