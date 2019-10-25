@@ -14,3 +14,16 @@ if (Test-Path "$unreal_path") {
     (Get-Item "$unreal_path").Delete()
 }
 
+# Clean up testing project
+$testing_project_path = "$unreal_path\Samples\UnrealGDKCITestProject"
+if (Test-Path $testing_project_path) {
+
+    # Stop potential running spatial service before removing the project
+    Start-Process spatial "service","stop" -Wait -ErrorAction Stop -NoNewWindow
+
+    Write-Log "Removing existing project."
+    Remove-Item $testing_project_path -Recurse -Force
+    if (-Not $?) {
+        Throw "Failed to remove existing project at $($testing_project_path)."
+    }
+}
