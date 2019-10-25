@@ -200,7 +200,8 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Region code is invalid."));
 		bValid = false;
 	}
-	if (GetSnapshotPath().IsEmpty()) {
+	if (GetSnapshotPath().IsEmpty())
+	{
 		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Snapshot path cannot be empty."));
 		bValid = false;
 	}
