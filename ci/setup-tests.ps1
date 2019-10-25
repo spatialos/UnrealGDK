@@ -17,15 +17,18 @@ Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recu
 $project_path = "$unreal_path\Samples\UnrealGDKCITestProject"
 if (Test-Path $project_path) {
 
-    # Kill lingering processes TODO: check if this is necessary, or if just the cleanup after running the tests is enough
-    Stop-Process -Name "spatiald*","java","spatial" -Force -ErrorAction SilentlyContinue # if no process exists, just keep going
-    
+    # Stop potential running spatial service before removing the project
+    Start-Process spatial "service","stop" -Wait -ErrorAction Stop -NoNewWindow
+
     Write-Log "Removing existing project."
     Remove-Item $project_path -Recurse -Force
     if (-Not $?) {
         Throw "Failed to remove existing project at $($project_path)."
     }
 }
+
+# Update spatial to newest version # TODO: is this an appropriate version? Is there a pinned one used for development?
+Start-Process spatial "update" -Wait -ErrorAction Stop -NoNewWindow
 
 # Clone and build the testing project
 Write-Log "Downloading the testing project from $($testing_repo_url)."

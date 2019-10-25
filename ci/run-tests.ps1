@@ -37,11 +37,10 @@ Write-Log "Running $($ue_path_absolute) $($cmd_args_list)"
 $run_tests_proc = Start-Process -PassThru -NoNewWindow $ue_path_absolute -ArgumentList $cmd_args_list
 Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
 
-# Workaround for UNR-2156, where spatiald / runtime processes sometimes never close
+# Workaround for UNR-2156 and UNR-2076, where spatiald / runtime processes sometimes never close, or where runtimes are orphaned
 # Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
-Stop-Process -Name "spatiald*","java","spatial" -Force -ErrorAction SilentlyContinue # if no process exists, just keep going
-
-Write-Log "Exited with code: $($run_tests_proc.ExitCode)" # I can't find any indication of what the exit codes actually mean, so let's not rely on them
+Start-Process spatial "service","stop" -Wait -ErrorAction Stop -NoNewWindow
+Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
 
 ## Read the test results, and pass/fail this build step 
 $results_path = Join-Path -Path $output_dir_absolute -ChildPath "index.json"
