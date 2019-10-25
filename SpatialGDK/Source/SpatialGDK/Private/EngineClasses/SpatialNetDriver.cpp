@@ -497,6 +497,12 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		return;
 	}
 
+	// Increment the session id, so don't users rejoin the old game.
+	NetDriver->GlobalStateManager->IncrementSessionID();
+
+	NetDriver->GlobalStateManager->ResetGSM();
+
+
 	// Register that this server will be responsible for loading the snapshot once it has finished wiping the world + loading the new map.
 	Cast<USpatialGameInstance>(World->GetGameInstance())->bResponsibleForSnapshotLoading = true;
 
@@ -554,7 +560,6 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	USpatialNetDriver::PostWorldWipeDelegate FinishServerTravel;
 	FinishServerTravel.BindLambda([World, NetDriver, NewURL, NetMode, bSeamless, bAbsolute]
 	{
-		NetDriver->GlobalStateManager->ResetGSM();
 
 		UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Finishing Server Travel : %s"), *NewURL);
 		check(World);

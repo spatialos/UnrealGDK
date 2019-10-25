@@ -108,6 +108,11 @@ void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate&
 		bool bUpdateAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
 		ApplyAcceptingPlayersUpdate(bUpdateAcceptingPlayers);
 	}
+
+	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID) == 1)
+	{
+		SessionID = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
+	}
 }
 
 void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate)
@@ -687,4 +692,19 @@ void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 {
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;
+}
+
+
+void UGlobalStateManager::IncrementSessionID()
+{
+	SessionID++;
+
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate();
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, SessionID);
+	
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
