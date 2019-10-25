@@ -2,7 +2,6 @@
 
 #include "TestGridBasedLBStrategy.h"
 
-
 UGridBasedLBStrategy* UTestGridBasedLBStrategy::Create(uint32 InRows, uint32 InCols, float WorldWidth, float WorldHeight)
 {
 	UTestGridBasedLBStrategy* Strat = NewObject<UTestGridBasedLBStrategy>();

@@ -7,7 +7,7 @@
 #include "TestGridBasedLBStrategy.generated.h"
 
 /**
- * 
+ * This class is for testing purposes only.
  */
 UCLASS()
 class SPATIALGDKTESTS_API UTestGridBasedLBStrategy : public UGridBasedLBStrategy

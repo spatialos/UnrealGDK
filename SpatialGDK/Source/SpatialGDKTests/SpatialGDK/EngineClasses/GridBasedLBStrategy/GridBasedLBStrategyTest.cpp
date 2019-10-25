@@ -1,14 +1,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "TestDefinitions.h"
-#include "GridBasedLBStrategy.h"
-#include "TestGridBasedLBStrategy.h"
-#include "CoreMinimal.h"
-#include "AutomationEditorCommon.h"
-#include "Engine/World.h"
-#include "GameFramework/GameStateBase.h"
 #include "AutomationCommon.h"
+#include "AutomationEditorCommon.h"
+#include "CoreMinimal.h"
+#include "Engine/World.h"
 #include "GameFramework/DefaultPawn.h"
+#include "GameFramework/GameStateBase.h"
+#include "GridBasedLBStrategy.h"
+#include "TestDefinitions.h"
+#include "TestGridBasedLBStrategy.h"
 
 #define GRIDBASEDLBSTRATEGY_TEST(TestName) \
 	TEST(Core, UGridBasedLBStrategy, TestName)

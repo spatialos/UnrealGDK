@@ -2,7 +2,6 @@
 
 #include "AbstractLBStrategy.h"
 #include "SpatialNetDriver.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
 
 UAbstractLBStrategy::UAbstractLBStrategy()
 	: Super()
