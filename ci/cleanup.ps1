@@ -11,6 +11,7 @@ if (Test-Path "$unreal_path\Samples\UnrealGDKCITestProject\Plugins\UnrealGDK") {
     (Get-Item "$unreal_path\Samples\UnrealGDKCITestProject\Plugins\UnrealGDK").Delete() # TODO needs to stay in sync with setup-tests
 }
 if (Test-Path "$unreal_path") {
+    Write-Log "$unreal_path"
     (Get-Item "$unreal_path").Delete()
 }
 
