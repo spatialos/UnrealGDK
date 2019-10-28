@@ -298,7 +298,7 @@ void FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked()
 	if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("DeleteSchemaDatabasePrompt", "Are you sure you want to delete the schema database?")) == EAppReturnType::Yes)
 	{
 		OnShowTaskStartNotification(TEXT("Deleting schema database"));
-		if (SpatialGDKEditor::Schema::DeleteSchemaDatabase())
+		if (SpatialGDKEditor::Schema::DeleteSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 		{
 			OnShowSuccessNotification(TEXT("Schema database deleted"));
 		}
@@ -783,9 +783,7 @@ void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
 		]
 	);
 
-	TSharedPtr<SWindow> RootWindow = FGlobalTabmanager::Get()->GetRootWindow();
-
-	FSlateApplication::Get().AddModalWindow(SimulatedPlayerDeploymentWindowPtr.ToSharedRef(), RootWindow);
+	FSlateApplication::Get().AddWindow(SimulatedPlayerDeploymentWindowPtr.ToSharedRef());
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
