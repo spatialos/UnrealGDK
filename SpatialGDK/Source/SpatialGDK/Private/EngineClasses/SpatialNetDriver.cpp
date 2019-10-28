@@ -414,7 +414,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	if (!IsServer())
 	{
 		// If we know the GSM is already accepting players, simply spawn.
-		if (GlobalStateManager->bAcceptingPlayers && GetWorld()->RemovePIEPrefix(GlobalStateManager->DeploymentMapURL) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
+		if (GlobalStateManager->GetAcceptingPlayers() && GetWorld()->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 			bWaitingForAcceptingPlayersToSpawn = false;
@@ -462,7 +462,8 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 	if (bWaitingForAcceptingPlayersToSpawn && bAcceptingPlayers)
 	{
 		// If we have the correct map loaded then ask to spawn.
-		if (GetWorld() != nullptr && GetWorld()->RemovePIEPrefix(GlobalStateManager->DeploymentMapURL) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
+		FString DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
+		if (GetWorld() != nullptr && GetWorld()->RemovePIEPrefix(DeploymentMapURL) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 
@@ -472,13 +473,13 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 		else
 		{
 			// Load the correct map based on the GSM URL
-			UE_LOG(LogSpatial, Log, TEXT("Welcomed by SpatialOS (Level: %s)"), *GlobalStateManager->DeploymentMapURL);
+			UE_LOG(LogSpatial, Log, TEXT("Welcomed by SpatialOS (Level: %s)"), *DeploymentMapURL);
 
 			// Extract map name and options
 			FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
 			FURL LastURL = WorldContext.PendingNetGame->URL;
 
-			FURL RedirectURL = FURL(&LastURL, *GlobalStateManager->DeploymentMapURL, (ETravelType)WorldContext.TravelType);
+			FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
 			RedirectURL.Host = LastURL.Host;
 			RedirectURL.Port = LastURL.Port;
 			RedirectURL.Op.Append(LastURL.Op);
@@ -570,7 +571,6 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	USpatialNetDriver::PostWorldWipeDelegate FinishServerTravel;
 	FinishServerTravel.BindLambda([World, NetDriver, NewURL, NetMode, bSeamless, bAbsolute]
 	{
-
 		UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Finishing Server Travel : %s"), *NewURL);
 		check(World);
 		World->NextURL = NewURL;
