@@ -232,7 +232,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_r
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_fuzzy_boundary_THEN_should_relinquish_authority)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -242,7 +242,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_fuzzy_boundary_TH
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor1"));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FMoveActor("Actor1", FVector(0.f, 0.f, 0.f)));
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FMoveActor("Actor1", FVector(2.f, 0.f, 0.f)));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanup());
