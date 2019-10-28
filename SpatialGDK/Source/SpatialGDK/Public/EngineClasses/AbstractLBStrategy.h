@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SpatialConstants.h"
 #include "UObject/NoExportTypes.h"
 #include "AbstractLBStrategy.generated.h"
 
@@ -31,14 +32,14 @@ public:
 
 	virtual void Init(const class USpatialNetDriver* InNetDriver);
 
-	bool IsReady() const { return LocalVirtualWorkerId != 0; }
+	bool IsReady() const { return LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
 
 	void SetLocalVirtualWorkerId(uint32 LocalVirtualWorkerId);
 
 	virtual TArray<uint32> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {} ; )
 
 	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const { return false; }
-	virtual uint32 WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return 0; )
+	virtual uint32 WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID; )
 
 protected:
 

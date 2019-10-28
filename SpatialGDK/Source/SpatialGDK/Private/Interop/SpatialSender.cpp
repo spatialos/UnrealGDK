@@ -214,7 +214,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
 	// TODO(zoning): For now, setting AuthorityIntent to an invalid value.
-	ComponentDatas.Add(AuthorityIntent(SpatialConstants::INVALID_AUTHORITY_INTENT_ID).CreateAuthorityIntentData());
+	ComponentDatas.Add(AuthorityIntent(SpatialConstants::INVALID_VIRTUAL_WORKER_ID).CreateAuthorityIntentData());
 
 	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
 	{

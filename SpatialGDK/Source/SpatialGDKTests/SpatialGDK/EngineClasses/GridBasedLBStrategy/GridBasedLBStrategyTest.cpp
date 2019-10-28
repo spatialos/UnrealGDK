@@ -1,14 +1,15 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "AutomationCommon.h"
-#include "AutomationEditorCommon.h"
 #include "CoreMinimal.h"
 #include "Engine/World.h"
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameStateBase.h"
 #include "GridBasedLBStrategy.h"
+#include "SpatialConstants.h"
 #include "TestDefinitions.h"
 #include "TestGridBasedLBStrategy.h"
+#include "Tests/AutomationCommon.h"
+#include "Tests/AutomationEditorCommon.h"
 
 #define GRIDBASEDLBSTRATEGY_TEST(TestName) \
 	TEST(Core, UGridBasedLBStrategy, TestName)
@@ -177,7 +178,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worke
 	TArray<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
 	for (uint32 VirtualWorkerId : VirtualWorkerIds)
 	{
-		TestNotEqual("Virtual Worker Id", VirtualWorkerId, (uint32)0);
+		TestNotEqual("Virtual Worker Id", VirtualWorkerId, SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
 	}
 
 	return true;
