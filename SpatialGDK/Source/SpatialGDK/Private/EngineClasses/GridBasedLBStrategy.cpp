@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "GridBasedLBStrategy.h"
+#include "EngineClasses/GridBasedLBStrategy.h"
+
 #include "Utils/SpatialActorUtils.h"
 
 UGridBasedLBStrategy::UGridBasedLBStrategy()

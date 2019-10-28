@@ -1,7 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "AbstractLBStrategy.h"
-#include "SpatialNetDriver.h"
+#include "EngineClasses/AbstractLBStrategy.h"
+
+#include "EngineClasses/SpatialNetDriver.h"
 
 UAbstractLBStrategy::UAbstractLBStrategy()
 	: Super()
