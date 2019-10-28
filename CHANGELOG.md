@@ -5,8 +5,6 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
-- Bugfix: Fixed a bug that could caused a name collision in schema for sublevels.
-- Bugfix: Dowgraded name collisions during schema generation from Warning to Display.
 
 ### Features:
 - Added partial framework for use in future UnrealGDK controlled loadbalancing.
@@ -15,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
 - A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
+
+### Bug fixes:
+- Fixed a bug that could caused a name collision in schema for sublevels.
+- Dowgraded name collisions during schema generation from Warning to Display.
+- Replicating a static subobject after it has been deleted on a client no longer results in client attaching a new dynamic subobject.
 
 ## [`0.7.0-preview`] - 2019-10-11
 
