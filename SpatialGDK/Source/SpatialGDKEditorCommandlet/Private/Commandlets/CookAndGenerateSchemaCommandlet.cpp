@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "CookAndGenerateSchemaCommandlet.h"
+#include "SpatialConstants.h"
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 
@@ -68,14 +69,22 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	ObjectListener.StartListening(&ReferencedClasses);
 	
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Try Load Schema Database."));
-	if (!TryLoadExistingSchemaDatabase())
+	if (IsAssetReadOnly(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to load Schema Database."));
 		return 0;
 	}
 
+	if (!LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
+	{
+		ResetSchemaGeneratorStateAndCleanupFolders();
+	}
+
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Finding supported C++ and in-memory Classes."));
-	for (const auto& SupportedClass : GetAllSupportedClasses())
+
+	TArray<UObject*> AllClasses;
+	GetObjectsOfClass(UClass::StaticClass(), AllClasses);
+	for (const auto& SupportedClass : GetAllSupportedClasses(AllClasses))
 	{
 		ReferencedClasses.Add(FSoftClassPath(SupportedClass));
 	}
@@ -117,11 +126,13 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	}
 	SpatialGDKGenerateSchemaForClasses(Classes);
 
+	GenerateSchemaForSublevels();
+
 	FTimespan Duration = FDateTime::Now() - StartTime;
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Schema Generation Finished in %.2f seconds"), Duration.GetTotalSeconds());
 	
-	if (!SaveSchemaDatabase())
+	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to save schema database."));
 		return 0;

@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
 - A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
 
+### Bug fixes:
+- Fixed a bug that could caused a name collision in schema for sublevels.
+- Downgraded name collisions during schema generation from Warning to Display.
+- Replicating a static subobject after it has been deleted on a client no longer results in client attaching a new dynamic subobject.
+
 ## [`0.7.0-preview`] - 2019-10-11
 
 ### New Known Issues:
@@ -68,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
 - When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
 - Fixed a crash upon checking out an actor with a deleted static subobject.
+- Fixed an issue where launching a cloud deployment with an invalid assembly name or deployment name wouldn't show a helpful error message 
 
 ## [`0.6.2`] - 2019-10-10
 
