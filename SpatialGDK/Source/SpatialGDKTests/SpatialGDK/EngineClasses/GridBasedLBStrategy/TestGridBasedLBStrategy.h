@@ -9,7 +9,7 @@
 /**
  * This class is for testing purposes only.
  */
-UCLASS()
+UCLASS(HideDropdown)
 class SPATIALGDKTESTS_API UTestGridBasedLBStrategy : public UGridBasedLBStrategy
 {
 	GENERATED_BODY()
