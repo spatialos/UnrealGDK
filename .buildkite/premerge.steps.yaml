@@ -10,11 +10,11 @@ common: &common
     - "agent_count=1"
     - "capable_of_building=gdk-for-unreal"
     - "environment=production"
-    - "machine_type=quad"  # this name matches to SpatialOS node-size names
+    - "machine_type=quad-high-cpu"  # this name matches to SpatialOS node-size names
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1569490589-f9345a43b21a6cec-------z}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1571386242-18ca3a2dfd1173f6-------z}"
   retry:
     automatic:
       - <<: *agent_transients
@@ -22,21 +22,45 @@ common: &common
   plugins:
     - ca-johnson/taskkill#v4.1: ~
 
+script_runner: &script_runner
+  agents:
+  - "agent_count=8"
+  - "capable_of_building=platform"
+  - "environment=production"
+  - "machine_type=quarter"
+  - "permission_set=builder"
+  - "platform=linux"
+  - "queue=${CI_LINUX_BUILDER_QUEUE:-v3-1569277658-42ebcf6cb8969a53-------z}"
+  - "scaler_version=2"
+  - "working_hours_time_zone=london"
+
+env:
+  FASTBUILD_CACHE_PATH: "\\\\gdk-for-unreal-cache.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba\\fastbuild"
+  FASTBUILD_CACHE_MODE: rw
+  FASTBUILD_BROKERAGE_PATH: "\\\\fastbuild-brokerage.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba"
+
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
 
 steps:
-  - label: "build-GDK-:windows:"
-    command: "powershell ./ci/setup-and-build-gdk.ps1 -target_platform Win64"
+  - label: "build-and-test-GDK-:windows:"
+    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
-      - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
+      - "ci/TestResults/*"
 
   - label: "build-GDK-:linux:"
-    command: "powershell ./ci/setup-and-build-gdk.ps1 -target_platform Linux"
+    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
-      - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+
+  - label: "enforce version restrictions"
+    command: "ci/check-version-file.sh"
+    <<: *script_runner
+
 
   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
   - trigger: "unrealgdkexampleproject-nightly"
