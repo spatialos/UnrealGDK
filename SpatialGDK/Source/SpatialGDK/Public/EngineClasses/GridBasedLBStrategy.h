@@ -39,12 +39,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"))
 	float WorldHeight;
 
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0"))
-	float EdgeFuzziness;
-
 private:
 
 	TArray<uint32> VirtualWorkerIds;
 
 	TArray<FBox2D> WorkerCells;
+
+	static bool IsInside(const FBox2D& Box, const FVector2D& Location);
 };
