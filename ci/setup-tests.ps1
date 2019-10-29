@@ -53,7 +53,7 @@ New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorA
 
 # Generate schema and snapshots
 Write-Log "Generating snapshot and schema for testing project"
-$commandlet_process = Start-Process $unreal_path\Engine\Binaries\Win64\UE4Editor.exe -Wait -PassThru -NoNewWindow -ArgumentList -RedirectStandardOutput "$PSScriptRoot\TestResults\stdout.txt" -RedirectStandardError "$PSScriptRoot\TestResults\stderr.txt" @(`
+$commandlet_process = Start-Process $unreal_path\Engine\Binaries\Win64\UE4Editor.exe -Wait -PassThru -NoNewWindow -RedirectStandardOutput "$PSScriptRoot\TestResults\stdout.txt" -RedirectStandardError "$PSScriptRoot\TestResults\stderr.txt" -ArgumentList @(`
     "$test_repo_uproject_path", `
     "-run=GenerateSchemaAndSnapshots", `
     "-MapPaths=`"$test_repo_map`""
