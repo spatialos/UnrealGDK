@@ -19,11 +19,7 @@ Start-Process spatial "update" -Wait -ErrorAction Stop -NoNewWindow
 
 # Clean up testing project (symlinks could be invalid during initial cleanup - leaving the project as a result)
 if (Test-Path $test_repo_path) {
-
-    # Stop potential running spatial service before removing the project
-    Start-Process spatial "service","stop" -Wait -ErrorAction Stop -NoNewWindow
-
-    Write-Log "Removing existing project."
+    Write-Log "Removing existing project"
     Remove-Item $test_repo_path -Recurse -Force
     if (-Not $?) {
         Throw "Failed to remove existing project at $($test_repo_path)."
@@ -31,7 +27,7 @@ if (Test-Path $test_repo_path) {
 }
 
 # Clone and build the testing project
-Write-Log "Downloading the testing project from $($test_repo_url)."
+Write-Log "Downloading the testing project from $($test_repo_url)"
 Git clone -b $test_repo_branch $test_repo_url $test_repo_path
 if (-Not $?) {
     Throw "Failed to clone testing project from $($test_repo_url)."
@@ -42,19 +38,19 @@ if (-Not $?) {
 New-Item -Path "$test_repo_path\Game" -Name "Game" -ItemType "directory" -ErrorAction SilentlyContinue
 New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugins" -Target "$gdk_home"
 
-Write-Log "Generating project files."
+Write-Log "Generating project files"
 Start-Process $unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe "-projectfiles","-project=`"$test_repo_uproject_path`"","-game","-engine","-progress" -Wait -ErrorAction Stop -NoNewWindow
 if (-Not $?) {
     throw "Failed to generate files for the testing project."
 }
-Write-Log "Building the testing project."
+Write-Log "Building the testing project"
 Start-Process $msbuild_exe "/nologo","$($test_repo_uproject_path.Replace(".uproject", ".sln"))","/p:Configuration=`"Development Editor`";Platform=`"Win64`"" -Wait -ErrorAction Stop -NoNewWindow
 if (-Not $?) {
     throw "Failed to build testing project."
 }
 
 # Generate schema and snapshots
-Write-Log "Generating snapshot and schema for testing project."
+Write-Log "Generating snapshot and schema for testing project"
 Start-Process $unreal_path\Engine\Binaries\Win64\UE4Editor.exe -Wait -PassThru -NoNewWindow -ArgumentList @(`
     "$test_repo_uproject_path", `
     "-run=GenerateSchemaAndSnapshots"
