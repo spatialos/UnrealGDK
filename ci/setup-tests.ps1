@@ -48,12 +48,9 @@ if (-Not $?) {
     throw "Failed to build testing project."
 }
 
-# Create the TestResults directory if it does not exist, for storing results
-New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorAction SilentlyContinue
-
 # Generate schema and snapshots
 Write-Log "Generating snapshot and schema for testing project"
-$commandlet_process = Start-Process $unreal_path\Engine\Binaries\Win64\UE4Editor.exe -Wait -PassThru -NoNewWindow -RedirectStandardOutput "$PSScriptRoot\TestResults\stdout.txt" -RedirectStandardError "$PSScriptRoot\TestResults\stderr.txt" -ArgumentList @(`
+$commandlet_process = Start-Process $unreal_path\Engine\Binaries\Win64\UE4Editor.exe -Wait -PassThru -NoNewWindow -ArgumentList @(`
     "$test_repo_uproject_path", `
     "-run=GenerateSchemaAndSnapshots", `
     "-MapPaths=`"$test_repo_map`""
@@ -67,6 +64,9 @@ if (-Not $?) {
 Copy-Item -Force `
     -Path "$test_repo_path\spatial\snapshots\$test_repo_map.snapshot" `
     -Destination "$test_repo_path\spatial\snapshots\default.snapshot"
+
+# Create the TestResults directory if it does not exist, for storing results
+New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorAction SilentlyContinue
 
 # Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
 Add-Content -Path "$unreal_path\Engine\Config\BaseEditorSettings.ini" -Value "`r`n[/Script/IntroTutorials.TutorialStateSettings]`r`nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)`r`n"
