@@ -108,6 +108,11 @@ void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate&
 		bool bUpdateAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
 		ApplyAcceptingPlayersUpdate(bUpdateAcceptingPlayers);
 	}
+
+	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID) == 1)
+	{
+		SessionID = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
+	}
 }
 
 void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate)
@@ -496,6 +501,25 @@ bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId)
 	}
 }
 
+void UGlobalStateManager::ResetGSM()
+{
+	UE_LOG(LogGlobalStateManager, Log, TEXT("GSM being reset"));
+
+	SingletonNameToEntityId.Empty();
+	SetAcceptingPlayers(false);
+
+	// Reset the BeginPlay flag so Startup Actors are properly managed.
+	SetCanBeginPlay(false);
+
+	// Reset the Singleton map so Singletons are recreated.
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate();
+	Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
+
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+}
+
 void UGlobalStateManager::BeginDestroy()
 {
 	Super::BeginDestroy();
@@ -670,4 +694,19 @@ void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 {
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;
+}
+
+
+void UGlobalStateManager::IncrementSessionID()
+{
+	SessionID++;
+
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate();
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, SessionID);
+	
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
