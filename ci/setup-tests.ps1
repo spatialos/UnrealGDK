@@ -52,7 +52,6 @@ if (-Not $?) {
 # Generate schema and snapshots
 Write-Log "Generating snapshot and schema for testing project"
 Start-Process $unreal_path\Engine\Binaries\Win64\UE4Editor.exe -Wait -PassThru -NoNewWindow -ArgumentList @(`
-    "$test_repo_uproject_path", `
     "-run=GenerateSchemaAndSnapshots"
 )
 if (-Not $?) {
