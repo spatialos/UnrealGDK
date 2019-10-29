@@ -35,7 +35,8 @@ if (-Not $?) {
 
 # The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
 # copying the plugin into the project's folder bypasses the issue
-New-Item -Path "$test_repo_path\Game" -Name "Game" -ItemType "directory" -ErrorAction SilentlyContinue
+New-Item -Path "$test_repo_path" -Name "Game" -ItemType "directory" -ErrorAction SilentlyContinue
+New-Item -Path "$test_repo_path\Game" -Name "Plugins" -ItemType "directory" -ErrorAction SilentlyContinue
 New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugins" -Target "$gdk_home"
 
 Write-Log "Generating project files"
