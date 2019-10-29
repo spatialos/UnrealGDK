@@ -248,6 +248,8 @@ bool FLocalDeploymentManager::KillProcessBlockingPort(int32 Port)
 
 bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 {
+	return true;
+
 	bool bSuccess = true;
 
 	// Check for the known runtime port (5301) which could be blocked.
