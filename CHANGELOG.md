@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug that could caused a name collision in schema for sublevels.
 - Downgraded name collisions during schema generation from Warning to Display.
 - Replicating a static subobject after it has been deleted on a client no longer results in client attaching a new dynamic subobject.
+- Fixed a bug that caused entity pool reservations to cease after a request times out.
 
 ## [`0.7.0-preview`] - 2019-10-11
 
