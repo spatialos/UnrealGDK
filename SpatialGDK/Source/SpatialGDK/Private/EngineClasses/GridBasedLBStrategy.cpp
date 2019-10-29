@@ -2,6 +2,7 @@
 
 #include "EngineClasses/GridBasedLBStrategy.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SpatialActorUtils.h"
 
 UGridBasedLBStrategy::UGridBasedLBStrategy()
@@ -13,7 +14,7 @@ UGridBasedLBStrategy::UGridBasedLBStrategy()
 {
 }
 
-void UGridBasedLBStrategy::Init(const class USpatialNetDriver* InNetDriver)
+void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver)
 {
 	Super::Init(InNetDriver);
 
