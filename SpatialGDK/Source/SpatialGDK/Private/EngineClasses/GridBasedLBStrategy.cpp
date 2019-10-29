@@ -23,22 +23,34 @@ void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver)
 		VirtualWorkerIds.Add(i);
 	}
 
-	// TODO(my) Copied this logic wholesale from prototype
 	const float WorldWidthMin = -(WorldWidth / 2.f);
 	const float WorldHeightMin = -(WorldHeight / 2.f);
 
 	const float ColumnWidth = WorldWidth / Cols;
 	const float RowHeight = WorldHeight / Rows;
 
+	float XMin = WorldWidthMin;
+	float YMin = WorldHeightMin;
+	float XMax, YMax;
+
 	for (uint32 Col = 0; Col < Cols; ++Col)
 	{
+		XMax = XMin + ColumnWidth;
+
 		for (uint32 Row = 0; Row < Rows; ++Row)
 		{
-			FVector2D Min(WorldWidthMin + (Col * ColumnWidth), WorldHeightMin + (Row * RowHeight));
-			FVector2D Max(Min.X + ColumnWidth, Min.Y + RowHeight);
+			YMax = YMin + RowHeight;
+
+			FVector2D Min(XMin, YMin);
+			FVector2D Max(XMax, YMax);
 			FBox2D Cell(Min, Max);
 			WorkerCells.Add(MoveTemp(Cell));
+
+			YMin = YMax;
 		}
+
+		YMin = WorldHeightMin;
+		XMin = XMax;
 	}
 }
 
