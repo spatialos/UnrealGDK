@@ -34,7 +34,17 @@ To build the GDK for Unreal you need the following software installed on your ma
   - You need the DirectX End-User Runtime to run Unreal Engine 4 clients.
 - <a href="https://visualstudio.microsoft.com/vs/" data-track-link="Clicked VS 2019|product=Docs|platform=Win|label=Win">**Visual Studio 2019**</a><a href="https://visualstudio.microsoft.com/vs/older-downloads/"" data-track-link="Clicked VS 2017|product=Docs|platform=Win|label=Win"> (or 2017)</a>.
     
-    During the installation of Visual Studio, select the following items in the Workloads tab:
+    If you're using **Visual Studio 2019**, during the installation of Visual Studio, select the following items in the Workloads tab:
+
+    - **Universal Windows Platform development**
+    - **.NET desktop development**
+      - You must also select the **.NET Framework 4.6.2 development tools** component in the Installation details section.
+    - **Desktop development with C++**
+      - You must then deselect **MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.23)**, which was added as part of the **Desktop development with C++** Workload. You will be notified that: "If you continue, we'll remove the componenet and any items liseted above that depend on it." Select remove to confirm your decision.
+    - Lastly, add **MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.22)** from the Individual components tab.
+
+    If you're using **Visual Studio 2017**, during the installation of Visual Studio, select the following items in the Workloads tab:
+
     - **Universal Windows Platform development**<br>
     - **.NET desktop development** <br>
       - You must also select the **.NET Framework 4.6.2 development tools**
