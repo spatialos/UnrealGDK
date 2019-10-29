@@ -66,6 +66,7 @@ public:
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
+	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
 private:
