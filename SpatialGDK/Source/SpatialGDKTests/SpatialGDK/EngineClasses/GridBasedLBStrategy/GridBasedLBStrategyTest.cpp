@@ -14,9 +14,13 @@
 #define GRIDBASEDLBSTRATEGY_TEST(TestName) \
 	TEST(Core, UGridBasedLBStrategy, TestName)
 
-UWorld* TestWorld;
-TMap<FName, AActor*> TestActors;
-UGridBasedLBStrategy* Strat;
+// Test Globals
+namespace
+{
+	UWorld* TestWorld;
+	TMap<FName, AActor*> TestActors;
+	UGridBasedLBStrategy* Strat;
+}
 
 // Copied from AutomationCommon::GetAnyGameWorld()
 UWorld* GetAnyGameWorld()

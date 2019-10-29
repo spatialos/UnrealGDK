@@ -44,7 +44,7 @@ void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver)
 			FVector2D Min(XMin, YMin);
 			FVector2D Max(XMax, YMax);
 			FBox2D Cell(Min, Max);
-			WorkerCells.Add(MoveTemp(Cell));
+			WorkerCells.Add(Cell);
 
 			YMin = YMax;
 		}
