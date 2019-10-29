@@ -76,8 +76,7 @@ pushd "$($gdk_home)"
 
     ## Create an UnrealEngine symlink to the correct directory
     Remove-Item $unreal_path -ErrorAction ignore -Recurse -Force
-    # TODO make proper ps1 style
-    cmd /c mklink /J $unreal_path "$engine_cache_directory\$($unreal_version)"
+    New-Item -ItemType Junction -Path "$unreal_path" -Target "$engine_cache_directory\$($unreal_version)"
 
     $clang_path = "$unreal_path\ClangToolchain"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
