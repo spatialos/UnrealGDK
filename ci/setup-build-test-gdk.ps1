@@ -8,7 +8,7 @@ param(
   [string] $test_repo_branch = "master",
   [string] $test_repo_url = "https://github.com/spatialos/UnrealGDKTestGyms.git",
   [string] $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject",
-  [string] $test_repo_map = "ThirdPersonExampleMap"
+  [string] $test_repo_map = "EmptyGym"
 )
 
 . "$PSScriptRoot\common.ps1"
