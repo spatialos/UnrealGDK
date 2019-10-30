@@ -38,19 +38,19 @@ if (-Not $?) {
 New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugins" -Target "$gdk_home"
 
 Write-Log "Generating project files"
-Start-Process $unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe "-projectfiles","-project=`"$test_repo_uproject_path`"","-game","-engine","-progress" -Wait -ErrorAction Stop -NoNewWindow
+Start-Process "$unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe" "-projectfiles","-project=`"$test_repo_uproject_path`"","-game","-engine","-progress" -Wait -ErrorAction Stop -NoNewWindow
 if (-Not $?) {
     throw "Failed to generate files for the testing project."
 }
 Write-Log "Building the testing project"
-Start-Process $msbuild_exe "/nologo","$($test_repo_uproject_path.Replace(".uproject", ".sln"))","/p:Configuration=`"Development Editor`";Platform=`"Win64`"" -Wait -ErrorAction Stop -NoNewWindow
+Start-Process "$msbuild_exe" "/nologo","$($test_repo_uproject_path.Replace(".uproject", ".sln"))","/p:Configuration=`"Development Editor`";Platform=`"Win64`"" -Wait -ErrorAction Stop -NoNewWindow
 if (-Not $?) {
     throw "Failed to build testing project."
 }
 
 # Generate schema and snapshots
 Write-Log "Generating snapshot and schema for testing project"
-$commandlet_process = Start-Process $unreal_path\Engine\Binaries\Win64\UE4Editor.exe -Wait -PassThru -NoNewWindow -ArgumentList @(`
+$commandlet_process = Start-Process "$unreal_path\Engine\Binaries\Win64\UE4Editor.exe" -Wait -PassThru -NoNewWindow -ArgumentList @(`
     "$test_repo_uproject_path", `
     "-run=GenerateSchemaAndSnapshots", `
     "-MapPaths=`"$test_repo_map`""
