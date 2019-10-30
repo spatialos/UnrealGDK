@@ -172,7 +172,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <tr>
     <td>RPCs - Reliability</td>
     <td class="caveats"></td>
-    <td>RPCs can be unreliable under heavy load. Planned to be resolved in Q3 2019.</td>
+    <td>RPCs can be unreliable under heavy load. This is planned to be resolved in the future.</td>
   </tr>
   <tr>
     <td>Actor Roles</td>
