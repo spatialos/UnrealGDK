@@ -27,7 +27,7 @@ $cmd_args_list = @( `
     "-ExecCmds=`"Automation RunTests SpatialGDK; Quit`"", ` # Run all tests in the SpatialGDK group. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
     "-TestExit=`"Automation Test Queue Empty`"", ` # When to close the editor
     "-ReportOutputPath=`"$($output_dir_absolute)`"", ` # Output folder for test results. If it doesn't exist, gets created. If it does, all contents get deleted before new results get placed there.
-    "-ABSLOG=`"$($log_file_path)`"", ` # Sets the name of the log file produced during this run. This file is saved in <Project folder>/Saved/Logs/. The lack of "-" is correct, -Log is a flag and doesn't set the file name
+    "-ABSLOG=`"$($log_file_path)`"", ` # Sets the path for the log file produced during this run.
     "-nopause", ` # Close the unreal log window automatically on exit
     "-nosplash", ` # No splash screen
     "-unattended", ` # Disable anything requiring user feedback
