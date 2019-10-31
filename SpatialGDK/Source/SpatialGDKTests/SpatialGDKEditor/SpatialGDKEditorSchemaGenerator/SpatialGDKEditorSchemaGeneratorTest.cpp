@@ -45,7 +45,7 @@ struct ComponentNamesAndIds
 	TArray<int32> Ids;
 };
 
-ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FString> LoadedSchema)
+ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FString>& LoadedSchema)
 {
 	ComponentNamesAndIds ParsedNamesAndIds;
 
@@ -927,6 +927,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_
 
 SCHEMA_GENERATOR_TEST(GIVEN_3_level_names_WHEN_generating_schema_for_sublevels_THEN_generated_schema_contains_3_components_with_unique_names)
 {
+	SchemaTestFixture Fixture;
+	
 	// GIVEN
 	TMultiMap<FName, FName> LevelNamesToPaths;
 	LevelNamesToPaths.Add(TEXT("TestLevel0"), TEXT("/Game/Maps/FirstTestLevel0"));
