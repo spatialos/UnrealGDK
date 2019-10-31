@@ -5,8 +5,6 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
-- Bugfix: Fixed a bug that could caused a name collision in schema for sublevels.
-- Bugfix: Dowgraded name collisions during schema generation from Warning to Display.
 
 ### Features:
 - Added partial framework for use in future UnrealGDK controlled loadbalancing.
@@ -16,16 +14,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
 - A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
 
+### Bug fixes:
+- Fixed a bug that could caused a name collision in schema for sublevels.
+- Downgraded name collisions during schema generation from Warning to Display.
+- Replicating a static subobject after it has been deleted on a client no longer results in client attaching a new dynamic subobject.
+- Fixed a bug that caused entity pool reservations to cease after a request times out.
+- Running `BuildWorker.bat` for `SimulatedPlayer` no longer fails if the project path has a space in it.
+
 ## [`0.7.0-preview`] - 2019-10-11
 
 ### New Known Issues:
-- MSVC v14.23 removes `typeinfo.h` and replaces it with `typeinfo`. This change causes errors when building the Unreal Engine. This issue affects Visual Studio 2019 users. Until [this proposed fix](https://github.com/EpicGames/UnrealEngine/pull/6226) is accepted by Epic Games, you can work around the issue by:
+- MSVC v14.23 removes `typeinfo.h` and replaces it with `typeinfo`. This change causes errors when building the Unreal Engine. This issue **only affects Visual Studio 2019** users. You can work around the issue by:
 1. Open Visual Studio Installer.
 1. Select "Modify" on your Visual Studio 2019 installation.
-1. Select the "Individual components" tab.
-1. Uncheck "MSVC v142 - VS 2019 C++ x64/x86 build tools (**v14.22**)".
-1. Check "MSVC v142 - VS 2019 C++ x64/x86 build tools (**v14.23**)".
-1. Select "Modify" to confirm your changes.
+1. In the Installation details section uncheck all workloads and components until only **Visual Studio code editor** remains.
+1. Select the following items in the Workloads tab:
+* **Universal Windows Platform development**
+* **.NET desktop development**
+* You must also select the **.NET Framework 4.6.2 development tools** component in the Installation details section.
+* **Desktop development with C++**
+* You must then deselect **MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.23)**, which was added as part of the **Desktop development with C++** Workload. You will be notified that: "If you continue, we'll remove the componenet and any items liseted above that depend on it." Select remove to confirm your decision.
+* Lastly, add **MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.22)** from the Individual components tab.
+5. Select "Modify" to confirm your changes.
 
 ### Breaking Changes:
 - If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you now need to enable generating schema for them using `SpatialType` UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
@@ -70,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
 - When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
 - Fixed a crash upon checking out an actor with a deleted static subobject.
+- Fixed an issue where launching a cloud deployment with an invalid assembly name or deployment name wouldn't show a helpful error message 
 
 ## [`0.6.2`] - 2019-10-10
 
