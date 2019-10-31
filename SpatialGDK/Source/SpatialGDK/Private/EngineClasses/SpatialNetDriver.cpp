@@ -324,7 +324,10 @@ void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 	check(NetConnection);
 
 	ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
-	TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
+	// This is a hexadecimal representation of 127.0.0.1, this is just a fake address so that Unreal doesn't ensure-crash on disconnecting from SpatialOS
+	// See UNetDriver::RemoveClientConnection for more details, but basically there is a TMap which uses internet addresses as the key and an unitialised
+	// internet address for a connection causes the TMap.Find to fail
+	TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr(0x7F000001);
 
 	// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
 	// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.

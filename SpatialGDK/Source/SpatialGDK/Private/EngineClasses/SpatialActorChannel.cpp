@@ -232,7 +232,8 @@ void USpatialActorChannel::UpdateShadowData()
 #if ENGINE_MINOR_VERSION <= 22
 	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
 #else
-	//TODO: Needs a replacement for InitShadowData
+	ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer.Buffer.Empty();
+	ActorReplicator->RepLayout->InitRepStateStaticBuffer(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, (const uint8*)Actor);
 #endif
 
 	// Refresh the shadow data for all replicated components of this actor as well.
@@ -242,7 +243,8 @@ void USpatialActorChannel::UpdateShadowData()
 #if ENGINE_MINOR_VERSION <= 22
 		ComponentReplicator.RepLayout->InitShadowData(ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, ActorComponent->GetClass(), (uint8*)ActorComponent);
 #else
-		//TODO: Needs a replacement for InitShadowData
+		ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer.Buffer.Empty();
+		ComponentReplicator.RepLayout->InitRepStateStaticBuffer(ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, (const uint8*)ActorComponent);
 #endif
 	}
 }
@@ -953,7 +955,9 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 #if ENGINE_MINOR_VERSION <= 22
 	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
 #else
-	//TODO: Needs a replacement for InitShadowData
+	//TODO: This is basically a workaround where we do not construct a proper ShadowData state, so we just reset it here - this also probably leaks memory if the shadow data has arrays
+	Replicator.RepState->GetReceivingRepState()->StaticBuffer.Buffer.Empty();
+	Replicator.RepLayout->InitRepStateStaticBuffer(Replicator.RepState->GetReceivingRepState()->StaticBuffer, (const uint8*)TargetObject);
 #endif
 
 	return &Replicator;
