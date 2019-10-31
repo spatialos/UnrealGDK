@@ -501,7 +501,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 	}
 
 	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
-		FNotificationInfo Info(FText::FromString(TEXT("Starting simulated player deployment...")));
+		FNotificationInfo Info(FText::FromString(TEXT("Starting cloud deployment...")));
 		Info.bUseSuccessFailIcons = true;
 		Info.bFireAndForget = false;
 
