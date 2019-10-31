@@ -448,6 +448,11 @@ USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 	// in this case we can use the PendingNetGame to get the NetDriver
 	if (NetDriver == nullptr)
 	{
+		if (GameInstance->GetWorldContext()->PendingNetGame == nullptr)
+		{
+			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("USpatialWorkerConnection::GetSpatialNetDriverChecked: GetWorld()->GetNetDriver() and GetWorldContext()->PendingNetGame are both null!"));
+			return nullptr;
+		}
 		NetDriver = GameInstance->GetWorldContext()->PendingNetGame->GetNetDriver();
 	}
 
