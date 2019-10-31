@@ -257,7 +257,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	// "Struct->StructFlags & STRUCT_NetSerializeNative" is true. In this case, the entire struct is replicated as a whole.
 #if ENGINE_MINOR_VERSION <= 22
 	FRepLayout RepLayout;
-	RepLayout.InitFromClass(Class);
+	RepLayout.InitFromObjectClass(Class);
 	TSharedPtr<FRepLayout> RepLayoutPtr = RepLayout;
 #else
 	TSharedPtr<FRepLayout> RepLayoutPtr = FRepLayout::CreateFromClass(Class, nullptr/*ServerConnection*/, ECreateRepLayoutFlags::None);
