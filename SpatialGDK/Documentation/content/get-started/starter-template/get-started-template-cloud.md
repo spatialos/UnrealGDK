@@ -159,9 +159,7 @@ The SpatialOS CLI has a set of commands for managing and developing SpatialOS pr
 For more information on the CLI commands for building workers and launching cloud deployments:</br> * See the
 [Cloud deployment workflow summary]({{urlRoot}}/content/cloud-deployment-workflow).</br>
 * See also the [Glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
-
 <%(/Expandable)%>
-
 
 To launch a cloud deployment from Unreal Editor:
 
@@ -193,7 +191,11 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
   This is: `C:/...<filepath>.../<ProjectRoot>/spatial/snapshots/default.snapshot`. </br></br>
   * **Region**: The real-world geographical location that you want your cloud deployment hosted in. </br>You can change this by selecting a different region from the drop-down list. You might prefer the region you are in.</br></br>
 1. You can also choose to add simulated players via the dialogue box or skip this and move on to item _4._</br></br>
-  To do this, you launch a simulated players deployment with your your game deployment via the **Simulated Players** section of the Cloud Deployment dialog box:</br></br>
+  Build out the simulated player clients (which will run on Linux in the cloud) using the following command:</br></br>
+  ```
+  BuildWorker.bat <YourProject>SimulatedPlayer Linux <Configuration> <YourProject>.uproject 
+  ```
+  Then, back in the Editor Deploy window:</br></br>
   * **Add simulated players**: Check the box.</br></br>
   * **Deployment Name**: Enter a name for your simulated player deployment. This labels the deployment in the Console. Make it different to your game deployment name.</br></br>
   * **Number of Simulated Players**: Choose the number of simulated players you want to start. </br></br>
@@ -220,7 +222,8 @@ There is a summary on when to update schema, how to build and upload workers, an
 <br/>
 
 <br/>------------<br/>
-*2019-08-12 Page updated with editorial review: updated terms and narrative.*<br/>
-*2019-07-22 Page updated with limited editorial review.*<br/>
+_2019-10-31 Page updated without editorial review: add missing build step for simulated player clients._<br/>
+_2019-08-12 Page updated with editorial review: updated terms and narrative._<br/>
+_2019-07-22 Page updated with limited editorial review._<br/>
 
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1241)
