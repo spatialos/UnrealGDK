@@ -79,34 +79,9 @@ DEFINE_LATENT_COMMAND(StartSlowComputation)
 		FScopeLock SlowComputationLock(&ComputationResult.Mutex);
 		FPlatformProcess::Sleep(COMPUTATION_DURATION);
 		ComputationResult.Value = 42;
-		// TODO(Alex): do some computation and return a variable here
 	});
 
 	return true;
-}
-
-DEFINE_LATENT_COMMAND(WaitForComputationToFinish)
-{
-	const double NewTime = FPlatformTime::Seconds();
-	const double TimePassed = FPlatformTime::Seconds() - StartTime;
-
-	if (TimePassed >= MIN_WAIT_TIME_FOR_SLOW_COMPUTATION)
-	{
-		FScopeTryLock SlowComputationLock(&ComputationResult.Mutex);
-
-		if (SlowComputationLock.IsLocked())
-		{
-			return true;
-		}
-
-		if (TimePassed >= MAX_WAIT_TIME_FOR_SLOW_COMPUTATION)
-		{
-			UE_LOG(LogSpatialGDKExamples, Error, TEXT("Computation timed out"));
-			return true;
-		}
-	}
-
-	return false;
 }
 
 DEFINE_LATENT_COMMAND_ONE_PARAMETER(WaitForComputationAndCheckResult, FAutomationTestBase*, Test)
@@ -137,7 +112,6 @@ DEFINE_LATENT_COMMAND_ONE_PARAMETER(WaitForComputationAndCheckResult, FAutomatio
 EXAMPLE_SIMPLE_TEST(GIVEN_WHEN_THEN)
 {
 	ADD_LATENT_AUTOMATION_COMMAND(StartSlowComputation());
-	//ADD_LATENT_AUTOMATION_COMMAND(WaitForComputationToFinish());
 	ADD_LATENT_AUTOMATION_COMMAND(WaitForComputationAndCheckResult(this));
 
     return true;
