@@ -202,6 +202,7 @@ private:
 	bool bMapLoaded;
 
 	FString SnapshotToLoad;
+	int32 SessionId;
 
 	class USpatialGameInstance* GetGameInstance() const;
 
@@ -214,8 +215,6 @@ private:
 	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor);
 
 	void QueryGSMToLoadMap();
-
-	void HandleOngoingServerTravel();
 
 	void HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists);
 	bool FindAndDispatchStartupOpsServer(const TArray<Worker_OpList*>& InOpLists);

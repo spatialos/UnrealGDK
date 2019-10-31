@@ -46,15 +46,14 @@ public:
 	void RetryQueryGSM(bool bRetryUntilAcceptingPlayers);
 	bool GetAcceptingPlayersFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
-	void SetDeploymentMapURL(const FString& MapURL);
+
+	void SetAcceptingPlayers(bool bAcceptingPlayers);
+	void SetCanBeginPlay(const bool bInCanBeginPlay);
 	void IncrementSessionID();
 
 	FORCEINLINE FString GetDeploymentMapURL() const { return DeploymentMapURL; }
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
-	FORCEINLINE int32 GetSessionID() const { return SessionID; }
-
-	void SetAcceptingPlayers(bool bAcceptingPlayers);
-	void SetCanBeginPlay(const bool bInCanBeginPlay);
+	FORCEINLINE int32 GetSessionId() const { return SessionId; }
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 	bool HandlesComponent(const Worker_ComponentId ComponentId) const;
@@ -84,12 +83,12 @@ private:
 	// Deployment Map Component
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers;
-	int32 SessionID = 0;
+	int32 SessionId = 0;
 
-public:
 	// Startup Actor Manager Component
 	bool bCanBeginPlay;
 
+public:
 #if WITH_EDITOR
 	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
@@ -98,6 +97,7 @@ public:
 	void ReceiveShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
 private:
+	void SetDeploymentMapURL(const FString& MapURL);
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
 	void ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate);

@@ -68,12 +68,11 @@ void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Dat
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 	
-	// Set the Deployment Map URL.
 	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
 
-	// Set the AcceptingPlayers state.
-	bool bDataAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
-	ApplyAcceptingPlayersUpdate(bDataAcceptingPlayers);
+	ApplyAcceptingPlayersUpdate(GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID));
+
+	SessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
 }
 
 void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentData& Data)
@@ -111,7 +110,7 @@ void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate&
 
 	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID) == 1)
 	{
-		SessionID = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
+		SessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
 	}
 }
 
@@ -538,6 +537,7 @@ void UGlobalStateManager::BeginDestroy()
 			Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 			Update.schema_type = Schema_CreateComponentUpdate();
 			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
+			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
 
 			NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 		}
@@ -699,14 +699,14 @@ void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 
 void UGlobalStateManager::IncrementSessionID()
 {
-	SessionID++;
+	SessionId++;
 
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, SessionID);
+	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, SessionId);
 	
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }

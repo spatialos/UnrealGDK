@@ -93,8 +93,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ChannelDefinitions[CHTYPE_Actor] = SpatialChannelDefinition;
 	ChannelDefinitionMap[NAME_Actor] = SpatialChannelDefinition;
 
-	// Extract the snapshot to load (if any) from the map URL so that once we are connected to a deployment we can load that snapshot into the Spatial deployment.
-	SnapshotToLoad = URL.GetOption(*SpatialConstants::SnapshotURLOption, TEXT(""));
+	SessionId = FCString::Atoi(URL.GetOption(*SpatialConstants::SessionIdURLOption, TEXT("")));
 
 	// We do this here straight away to trigger LoadMap.
 	if (bInitAsClient)
@@ -276,7 +275,6 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	if (!bConnectAsClient)
 	{
 		Sender->CreateServerWorkerEntity();
-		HandleOngoingServerTravel();
 	}
 }
 
@@ -311,7 +309,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Dispatcher = NewObject<USpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
-	GlobalStateManager = NewObject<UGlobalStateManager>();
+	GlobalStateManager = Connection->GlobalStateManager;
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	StaticComponentView = Connection->StaticComponentView;
 	SnapshotManager = NewObject<USnapshotManager>();
@@ -380,21 +378,6 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 	GlobalStateManager->QueryGSM(true /*bRetryUntilAcceptingPlayers*/);
 }
 
-void USpatialNetDriver::HandleOngoingServerTravel()
-{
-	check(!bConnectAsClient);
-
-	// Here if we are a server and this is server travel (there is a snapshot to load) we want to load the snapshot.
-	if (!ServerConnection && !SnapshotToLoad.IsEmpty() && Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bResponsibleForSnapshotLoading)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Worker authoriative over the GSM is loading snapshot: %s"), *SnapshotToLoad);
-		SnapshotManager->LoadSnapshot(SnapshotToLoad);
-
-		// Once we've finished loading the snapshot we must update our bResponsibleForSnapshotLoading in-case we do not gain authority over the new GSM.
-		Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bResponsibleForSnapshotLoading = false;
-	}
-}
-
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
 	if (LoadedWorld == nullptr)
@@ -411,10 +394,21 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 
 	// If we're the client, we can now ask the server to spawn our controller.
-	if (!IsServer())
+	if (IsServer())
+	{
+		if (GlobalStateManager && !ServerConnection)
+		{
+			GlobalStateManager->SetCanBeginPlay(true);
+			GlobalStateManager->TriggerBeginPlay();
+			GlobalStateManager->SetAcceptingPlayers(true);
+		}
+	}
+	else
 	{
 		// If we know the GSM is already accepting players, simply spawn.
-		if (GlobalStateManager->GetAcceptingPlayers() && GetWorld()->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
+        if (GlobalStateManager->GetAcceptingPlayers() &&
+            SessionId == GlobalStateManager->GetSessionId() &&
+            GetWorld()->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 			bWaitingForAcceptingPlayersToSpawn = false;
@@ -482,7 +476,6 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 			FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
 			RedirectURL.Host = LastURL.Host;
 			RedirectURL.Port = LastURL.Port;
-			RedirectURL.Op.Append(LastURL.Op);
 			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
 
 			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
@@ -513,10 +506,6 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 
 	NetDriver->GlobalStateManager->ResetGSM();
 
-
-	// Register that this server will be responsible for loading the snapshot once it has finished wiping the world + loading the new map.
-	Cast<USpatialGameInstance>(World->GetGameInstance())->bResponsibleForSnapshotLoading = true;
-
 	GameMode->StartToLeaveMap();
 
 	// Force an old style load screen if the server has been up for a long time so that TimeSeconds doesn't overflow and break everything
@@ -544,15 +533,10 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 
 	FString NewURL = URL;
 
-	bool SnapshotOption = NewURL.Contains(TEXT("snapshot="));
-	if (!SnapshotOption)
+	bool bSessionIdOption = NewURL.Contains(SpatialConstants::SessionIdURLOption);
+	if (!bSessionIdOption)
 	{
-		// In the case that we don't have a snapshot option, we assume the map name will be the snapshot name.
-		// Remove any leading path before the map name.
-		FString Path;
-		FString MapName;
-		NextMap.Split(TEXT("/"), &Path, &MapName, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
-		NewURL.Append(FString::Printf(TEXT("?snapshot=%s"), *MapName));
+		NewURL.Append(FString::Printf(TEXT("?sessionId=%d"), NetDriver->GlobalStateManager->GetSessionId()));
 	}
 
 	// Notify clients we're switching level and give them time to receive.
@@ -1944,10 +1928,7 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 
 void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe)
 {
-	if (Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bResponsibleForSnapshotLoading)
-	{
-		SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
-	}
+	SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 }
 
 uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject)

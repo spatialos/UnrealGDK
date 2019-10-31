@@ -7,7 +7,6 @@
 
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/Connection/OutgoingMessages.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "SpatialGDKSettings.h"
 #include "UObject/WeakObjectPtr.h"
 
@@ -20,6 +19,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
 class USpatialGameInstance;
 class USpatialStaticComponentView;
+class UGlobalStateManager;
 class UWorld;
 
 enum class SpatialConnectionType
@@ -68,6 +68,8 @@ public:
 
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
+	UPROPERTY()
+	UGlobalStateManager* GlobalStateManager;
 
 private:
 	void ConnectToReceptionist(bool bConnectAsClient);
