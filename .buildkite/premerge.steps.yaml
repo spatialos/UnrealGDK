@@ -14,7 +14,7 @@ common: &common
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1572523200-2f33678e336fc673-------z}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1571386242-18ca3a2dfd1173f6-------z}"
   retry:
     automatic:
       - <<: *agent_transients
@@ -30,7 +30,7 @@ script_runner: &script_runner
   - "machine_type=quarter"
   - "permission_set=builder"
   - "platform=linux"
-  - "queue=${CI_LINUX_BUILDER_QUEUE:-v3-1572524284-e64831bf1e88b227-------z}"
+  - "queue=${CI_LINUX_BUILDER_QUEUE:-v3-1569277658-42ebcf6cb8969a53-------z}"
   - "scaler_version=2"
   - "working_hours_time_zone=london"
 
