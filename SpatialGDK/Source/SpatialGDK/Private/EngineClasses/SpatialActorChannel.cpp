@@ -97,7 +97,8 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	TimeWhenPositionLastUpdated = 0.0f;
 
 	PendingDynamicSubobjects.Empty();
-	SavedOwnerWorkerAttribute.Empty();
+	IntendedOwnerWorkerAttribute.Empty();
+	CurrentOwnerWorkerAttribute.Empty();
 
 	FramesTillDormancyAllowed = 0;
 
@@ -864,7 +865,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
 
-	SavedOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(InActor);
+	CurrentOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(InActor);
 }
 
 bool USpatialActorChannel::TryResolveActor()
@@ -1080,14 +1081,13 @@ void USpatialActorChannel::StartServerProcessOwnershipChange()
 	}
 
 	// If you attempt to take possession of an actor, the server will first take authority over the ClientRPC component.
-	// It will later give authority to the requested client worker.
+	// It will later give authority to the requested client worker once we can verify the server has over the ClientRPC component in spatial.
 	// If the actor is being unpossessed (NewOwnerWorkerAttribute is empty) we simply remove the client workers authority over the ClientRPC component. We do no hand authority to the server.
-
 	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 	if (!NewOwnerWorkerAttribute.IsEmpty())
 	{
-		// Setting CachedOwnerWorkerAttribute will trigger FinishServerProcessOwnershipChange from HandleAuthority once authority has been confirmed.
-		CachedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
+		// Setting IntendedOwnerWorkerAttribute will trigger FinishServerProcessOwnershipChange from HandleAuthority once authority has been confirmed.
+		IntendedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
 		NewOwnerWorkerAttribute = SpatialConstants::DefaultServerWorkerType.ToString();
 	}
 
@@ -1112,12 +1112,12 @@ void USpatialActorChannel::FinishServerProcessOwnershipChange()
 		return;
 	}
 
-	// Connected to the requested client worker from StartServerProcessOwnershipChange.
-	// Reset CachedOwnerWorkerAttribute so that the Actor channel can be recognized as not processing an ownership change.
-	if (!CachedOwnerWorkerAttribute.IsEmpty())
+	// Update ACL componant ownershup to the IntendedOwnerWorkerAttribute set in StartServerProcessOwnershipChange.
+	// Reset IntendedOwnerWorkerAttribute so that the Actor channel can be recognized as not processing an ownership change.
+	if (!IntendedOwnerWorkerAttribute.IsEmpty())
 	{
-		UpdateEntityACLToNewOwner(CachedOwnerWorkerAttribute);
-		CachedOwnerWorkerAttribute.Empty();
+		UpdateEntityACLToNewOwner(IntendedOwnerWorkerAttribute);
+		IntendedOwnerWorkerAttribute.Empty();
 	}
 
 	for (AActor* Child : Actor->Children)
@@ -1133,13 +1133,13 @@ void USpatialActorChannel::FinishServerProcessOwnershipChange()
 
 void USpatialActorChannel::UpdateEntityACLToNewOwner(const FString& NewOwnerWorkerAttribute)
 {
-	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
+	if (CurrentOwnerWorkerAttribute != NewOwnerWorkerAttribute)
 	{
 		bool bSuccess = Sender->UpdateEntityACLs(EntityId, NewOwnerWorkerAttribute);
 
 		if (bSuccess)
 		{
-			SavedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
+			CurrentOwnerWorkerAttribute = NewOwnerWorkerAttribute;
 		}
 	}
 }

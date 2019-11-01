@@ -5,7 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
-- Fixed the character movement component not being replecated after possessing a character that was already possessed.
+- Fixed the character movement component not being replecated after possessing a character that was already possessed by another player.
 
 ### Features:
 - Added partial framework for use in future UnrealGDK controlled loadbalancing.

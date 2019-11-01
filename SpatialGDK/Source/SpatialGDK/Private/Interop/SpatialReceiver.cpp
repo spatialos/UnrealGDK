@@ -1292,8 +1292,7 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 			{
 				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
 
-
-				// In a zoned multi-worker scenario we might not have gained authority over the current entity in this bundle in time
+				// In a zoned, multi-worker scenario we might not have gained authority over the current entity in this bundle in time
 				// before processing so don't ApplyRPCs to an entity that we don't have authority over.
 				if (StaticComponentView->GetAuthority(ObjectRef.Entity, RPCEndpointComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
 				{
@@ -1301,6 +1300,7 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 				}
 
 				// If the parent and child actors do not have the same connection the RPC should not be processed.
+				// This avoids listening to RPCs from an old client when an actor has been possessed by a new client. 
 				const AActor* ParentActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
 				const AActor* ChildActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(ObjectRef.Entity));
 				if (ParentActor && ChildActor && ParentActor->GetNetConnection() != ChildActor->GetNetConnection())
@@ -1315,7 +1315,7 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 		if (ActorChannel && ActorChannel->IsProcessingOwnershipChange())
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Ignoring RPC as concerned actor is being processed for ownership change by its actor channel"));
-			return;
+			continue;
 		}
 
 		if (UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
