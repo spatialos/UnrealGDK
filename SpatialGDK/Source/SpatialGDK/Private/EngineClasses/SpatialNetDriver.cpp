@@ -458,7 +458,9 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 	{
 		// If we have the correct map loaded then ask to spawn.
 		FString DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
-		if (GetWorld() != nullptr && GetWorld()->RemovePIEPrefix(DeploymentMapURL) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
+
+		UWorld* World = GetWorld();
+		if (World && World->RemovePIEPrefix(DeploymentMapURL) == World->RemovePIEPrefix(World->URL.Map))
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 
