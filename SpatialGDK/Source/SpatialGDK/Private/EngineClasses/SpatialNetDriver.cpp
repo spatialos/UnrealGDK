@@ -2215,6 +2215,12 @@ void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 // This is enforced by the fact that the class is a Singleton spawned on servers by the SpatialNetDriver.
 void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
 {
-	check(SpatialDebugger == nullptr);
+	check(!IsServer());
+	if (SpatialDebugger != nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("SpatialDebugger should only be set once on each client!"));
+		return;
+	}
+
 	SpatialDebugger = InSpatialDebugger;
 }
