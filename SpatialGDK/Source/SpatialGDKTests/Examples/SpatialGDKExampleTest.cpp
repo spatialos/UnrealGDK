@@ -68,7 +68,7 @@ EXAMPLE_SIMPLE_TEST(GIVEN_initial_value_WHEN_performing_slow_compuation_THEN_the
 	ADD_LATENT_AUTOMATION_COMMAND(StartSlowComputation());
 	ADD_LATENT_AUTOMATION_COMMAND(WaitForComputationAndCheckResult(this));
 
-    return true;
+	return true;
 }
 
 // 2. Simple test example
