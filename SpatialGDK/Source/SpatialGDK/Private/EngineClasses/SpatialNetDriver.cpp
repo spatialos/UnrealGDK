@@ -53,6 +53,34 @@ DEFINE_STAT(STAT_SpatialConsiderList);
 DEFINE_STAT(STAT_SpatialActorsRelevant);
 DEFINE_STAT(STAT_SpatialActorsChanged);
 
+namespace
+{
+	void ConnectToLocator(const TArray<FString>& Args, UWorld* World)
+	{
+		if (Args.Num() != 2)
+		{
+			return;
+		}
+
+		FURL URL;
+		URL.Host = SpatialConstants::LOCATOR_HOST;
+		FString Login = SpatialConstants::URL_LOGIN_OPTION + Args[0];
+		FString PlayerIdentiry = SpatialConstants::URL_PLAYER_IDENTITY_OPTION + Args[1];
+		URL.AddOption(*PlayerIdentiry);
+		URL.AddOption(*Login);
+
+		FString Error;
+		FWorldContext &WorldContext = GEngine->GetWorldContextFromWorldChecked(World);
+		GEngine->Browse(WorldContext, URL, Error);
+	}
+
+	FAutoConsoleCommandWithWorldAndArgs ConnectToLocatorCommand = FAutoConsoleCommandWithWorldAndArgs(
+		TEXT("ConnectToLocator"),
+		TEXT("Usage: ConnectToLocator <login> <playerToken>"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&ConnectToLocator)
+	);
+}
+
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, bAuthoritativeDestruction(true)
@@ -274,34 +302,6 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 
 	Connection->Connect(bConnectAsClient);
-}
-
-namespace
-{
-	void ConnectToLocator(const TArray<FString> & Args, UWorld * World)
-	{
-		if (Args.Num() != 2)
-		{
-			return;
-		}
-
-		FURL URL;
-		URL.Host = SpatialConstants::LOCATOR_HOST;
-		FString Login = SpatialConstants::URL_LOGIN_OPTION + Args[0];
-		FString PlayerIdentiry = SpatialConstants::URL_PLAYER_IDENTITY_OPTION + Args[1];
-		URL.AddOption(*PlayerIdentiry);
-		URL.AddOption(*Login);
-
-		FString Error;
-		FWorldContext &WorldContext = GEngine->GetWorldContextFromWorldChecked(World);
-		GEngine->Browse(WorldContext, URL, Error);
-	}
-
-	FAutoConsoleCommandWithWorldAndArgs ConnectToLocatorCommand = FAutoConsoleCommandWithWorldAndArgs(
-		TEXT("ConnectToLocator"),
-		TEXT("Usage: ConnectToLocator <login> <playerToken>"),
-		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&ConnectToLocator)
-	);
 }
 
 void USpatialNetDriver::OnConnectedToSpatialOS()
