@@ -1,10 +1,12 @@
 /*
-0. How to run tests:
+1. How to run tests:
 	- Tests can be run via Session Frontend in UE4 Editor
+	(https://docs.unrealengine.com/en-US/Programming/Automation/index.html has more information)
 
 	- Tests can be run via command line
+	// TODO(Alex): add examples
 
-1. Folder structure
+2. Folder structure
 	- Tests are located in a separate SpatialGDKTests module.
 	So for every component that needs to be tested - it has to be exposed via corresponding macro.
 	E.g. `class FRPCContainer` -> `class SPATIALGDK_API FRPCContainer`, to make FRPCContainer testable.
@@ -17,7 +19,7 @@
 	`UnrealGDK\SpatialGDK\Source\SpatialGDKTests\SpatialGDK\Utils\RPCContainer\RPCContainerTest.cpp`.
 	There should be a folder with the same name as component tested. It should include the test and all the supporting files.
 
-2. Test definitions (check TestDefinitions.h for more info)
+3. Test definitions (check TestDefinitions.h for more info)
     - We have defined 3 types of Macro to be used when writing tests:
 	(https://docs.unrealengine.com/en-US/Programming/Automation/TechnicalGuide/index.html has more information)
 	TEST - the most common simple test
@@ -42,7 +44,7 @@
 		are pre-programmed with expectations which form a specification of the calls they are expected to receive.
 		They can throw an exception if they receive a call they don't expect and are checked during verification to ensure they got all the calls they were expecting.
 
-3. Test naming convention
+4. Test naming convention
 	- `GIVEN_WHEN_THEN` should be used.
 	E.g. `GIVEN_one_and_two_WHEN_summed_THEN_the_sum_is_three`
 	Tests should contain only one TestTrue/TestFalse statement.
