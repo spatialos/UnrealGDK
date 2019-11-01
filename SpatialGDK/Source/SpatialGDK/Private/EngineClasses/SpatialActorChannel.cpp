@@ -939,7 +939,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{
 	case WORKER_STATUS_CODE_SUCCESS:
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request succeeded. "
+		UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Create entity request succeeded. "
 			"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
 	case WORKER_STATUS_CODE_TIMEOUT:
@@ -950,7 +950,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request timed out. Retrying. "
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Create entity request timed out. Retrying. "
 				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 			Sender->SendCreateEntityRequest(this);
 		}
@@ -958,18 +958,18 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 	case WORKER_STATUS_CODE_APPLICATION_ERROR:
 		if (bEntityIsInView)
 		{
-			UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request failed as the entity already exists and is in view. "
+			UE_LOG(LogSpatialActorChannel, Log, TEXT("Create entity request failed as the entity already exists and is in view. "
 				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Create entity request failed."
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Create entity request failed."
 				"Either the reservation expired, the entity already existed, or the entity was invalid. "
 				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		}
 		break;
 	default:
-		UE_LOG(LogSpatialReceiver, Error, TEXT("Create entity request failed. This likely indicates a bug in the Unreal GDK and should be reported."
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("Create entity request failed. This likely indicates a bug in the Unreal GDK and should be reported."
 			"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
 	}
