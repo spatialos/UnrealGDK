@@ -45,7 +45,7 @@ public:
 	UFUNCTION(Exec, Category = "SpatialGDK", BlueprintCallable)
 	void SpatialToggleDebugger();
 
-	// TODO: These should all be exposed through a runtime UI
+	// TODO: Expose these through a runtime UI: https://improbableio.atlassian.net/browse/UNR-2359.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "X location of player data panel"))
 	int PlayerPanelStartX = 64;
 
@@ -56,13 +56,13 @@ public:
 	float MaxRange = 100.0f * 100.0f; // 100m
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show server authority for every entity in range"))
-	bool bShowAuth;
+	bool bShowAuth = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show authority intent for every entity in range"))
-	bool bShowAuthIntent;
+	bool bShowAuthIntent = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show lock status for every entity in range"))
-	bool bShowLock;
+	bool bShowLock = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show EntityId for every entity in range"))
 	bool bShowEntityId = true;
@@ -71,7 +71,7 @@ public:
 	bool bShowActorName = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
-	bool bAutoStart;
+	bool bAutoStart = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Icon"))
 	UTexture2D *AuthTexture;
@@ -84,6 +84,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Locked Icon"))
 	UTexture2D *LockedTexture;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Box Icon"))
+	UTexture2D *BoxTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
 	FVector WorldSpaceActorTagOffset = FVector(0.0f, 0.0f, 200.0f);
@@ -114,8 +117,8 @@ private:
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
-	void GetServerWorkerColor(const Worker_EntityId EntityId, FColor& Color) const;
-	void GetVirtualWorkerColor(const Worker_EntityId EntityId, FColor& Color) const;
+	const FColor& GetServerWorkerColor(const Worker_EntityId EntityId) const;
+	const FColor& GetVirtualWorkerColor(const Worker_EntityId EntityId) const;
 
 	bool GetLockStatus(const Worker_EntityId EntityId);
 
@@ -128,6 +131,7 @@ private:
 		ICON_AUTH_INTENT,
 		ICON_UNLOCKED,
 		ICON_LOCKED,
+		ICON_BOX,
 		ICON_MAX
 	};
 

@@ -22,6 +22,7 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+	PrimaryActorTick.TickInterval = 1.f;
 
 	bAlwaysRelevant = true;
 	bNetLoadOnClient = false;
@@ -34,8 +35,7 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	// For GDK design reasons, this is the approach chosen to get a pointer
 	// on the net driver to the client ASpatialDebugger.  Various alternatives
 	// were considered and this is the best of a bad bunch.
-	if (NetDriver &&
-		NetDriver->IsServer() == false)
+	if (NetDriver != nullptr &&	!NetDriver->IsServer())
 	{
 		NetDriver->SetSpatialDebugger(this);
 	}
@@ -47,7 +47,7 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 
 	check(NetDriver != nullptr);
 
-	if (NetDriver->IsServer() == false)
+	if (!NetDriver->IsServer())
 	{
 		// Since we have no guarantee on the order we'll receive the PC/Pawn/PlayerState
 		// over the wire, we check here once per tick (currently 1 Hz tick rate) to setup our local pointers.
@@ -65,7 +65,7 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 		if (LocalPawn.IsValid())
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SortingActors);
-			const FVector PlayerLocation = LocalPawn->GetActorLocation();
+			const FVector& PlayerLocation = LocalPawn->GetActorLocation();
 
 			EntityActorMapping.ValueSort([PlayerLocation](const TWeakObjectPtr<AActor>& A, const TWeakObjectPtr<AActor>& B) {
 				return FVector::Dist(PlayerLocation, A->GetActorLocation()) > FVector::Dist(PlayerLocation, B->GetActorLocation());
@@ -80,7 +80,7 @@ void ASpatialDebugger::BeginPlay()
 
 	check(NetDriver != nullptr);
 
-	if (NetDriver->IsServer() == false)
+	if (!NetDriver->IsServer())
 	{
 		EntityActorMapping.Reserve(ENTITY_ACTOR_MAP_RESERVATION_COUNT);
 
@@ -89,13 +89,13 @@ void ASpatialDebugger::BeginPlay()
 		TArray<Worker_EntityId_Key> EntityIds;
 		NetDriver->StaticComponentView->GetEntityIds(EntityIds);
 
-		// Capture any entities that are already present on this client (ie they came over the wire before the SpatialDebugger did)
+		// Capture any entities that are already present on this client (ie they came over the wire before the SpatialDebugger did).
 		for (const Worker_EntityId_Key EntityId : EntityIds)
 		{
 			OnEntityAdded(EntityId);
 		}
 
-		// Register callbacks to get notified of all future entity arrivals / deletes
+		// Register callbacks to get notified of all future entity arrivals / deletes.
 		OnEntityAddedHandle = NetDriver->Receiver->OnEntityAddedDelegate.AddUObject(this, &ASpatialDebugger::OnEntityAdded);
 		OnEntityRemovedHandle = NetDriver->Receiver->OnEntityRemovedDelegate.AddUObject(this, &ASpatialDebugger::OnEntityRemoved);
 
@@ -113,7 +113,7 @@ void ASpatialDebugger::BeginPlay()
 
 void ASpatialDebugger::Destroyed()
 {
-	if (NetDriver && NetDriver->Receiver)
+	if (NetDriver != nullptr && NetDriver->Receiver != nullptr)
 	{
 		if (OnEntityAddedHandle.IsValid())
 		{
@@ -136,9 +136,9 @@ void ASpatialDebugger::Destroyed()
 
 void ASpatialDebugger::LoadIcons()
 {
-	check(NetDriver != nullptr && NetDriver->IsServer() == false);
+	check(NetDriver != nullptr && !NetDriver->IsServer());
 
-	const TArray<UTexture2D*> IconTextures = { AuthTexture, AuthIntentTexture, UnlockedTexture, LockedTexture };
+	const TArray<UTexture2D*> IconTextures = { AuthTexture, AuthIntentTexture, UnlockedTexture, LockedTexture, BoxTexture };
 
 	UTexture2D* DefaultTexture = nullptr;
 	if (IconTextures.Contains(nullptr))
@@ -155,7 +155,7 @@ void ASpatialDebugger::LoadIcons()
 
 void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 {
-	check(NetDriver != nullptr && NetDriver->IsServer() == false);
+	check(NetDriver != nullptr && !NetDriver->IsServer());
 
 	TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(EntityId);
 
@@ -168,7 +168,7 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 	{
 		EntityActorMapping.Add(EntityId, Actor);
 
-		// Each client will only receive a PlayerController once
+		// Each client will only receive a PlayerController once.
 		if (Actor->IsA<APlayerController>())
 		{
 			LocalPlayerController = Cast<APlayerController>(Actor);
@@ -178,7 +178,7 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 
 void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 {
-	check(NetDriver != nullptr && NetDriver->IsServer() == false);
+	check(NetDriver != nullptr && !NetDriver->IsServer());
 
 	EntityActorMapping.Remove(EntityId);
 }
@@ -187,28 +187,8 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 {
 	SCOPE_CYCLE_COUNTER(STAT_DrawTag);
 
-	// TODO: Smarter positioning of elements so they're centered no matter how many are enabled
+	// TODO: Smarter positioning of elements so they're centered no matter how many are enabled https://improbableio.atlassian.net/browse/UNR-2360.
 	int32 HorizontalOffset = -32.0f;
-
-	if (bShowAuth)
-	{
-		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
-		FColor ServerWorkerColor;
-		GetServerWorkerColor(EntityId, ServerWorkerColor);
-		Canvas->SetDrawColor(ServerWorkerColor);
-		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
-		HorizontalOffset += 16.0f;
-	}
-
-	if (bShowAuthIntent)
-	{
-		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
-		FColor VirtualWorkerColor;
-		GetVirtualWorkerColor(EntityId, VirtualWorkerColor);
-		Canvas->SetDrawColor(VirtualWorkerColor);
-		Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
-		HorizontalOffset += 16.0f;
-	}
 
 	if (bShowLock)
 	{
@@ -218,6 +198,30 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 
 		Canvas->SetDrawColor(FColor::White);
 		Canvas->DrawIcon(Icons[LockIcon], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
+		HorizontalOffset += 16.0f;
+	}
+
+	if (bShowAuth)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
+		const FColor& ServerWorkerColor = GetServerWorkerColor(EntityId);
+		Canvas->SetDrawColor(FColor::White);
+		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
+		HorizontalOffset += 16.0f;
+		Canvas->SetDrawColor(ServerWorkerColor);
+		Canvas->DrawIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
+		HorizontalOffset += 16.0f;
+	}
+
+	if (bShowAuthIntent)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
+		const FColor& VirtualWorkerColor = GetVirtualWorkerColor(EntityId);
+		Canvas->SetDrawColor(FColor::White);
+		Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
+		HorizontalOffset += 16.0f;
+		Canvas->SetDrawColor(VirtualWorkerColor);
+		Canvas->DrawIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
 		HorizontalOffset += 16.0f;
 	}
 
@@ -242,11 +246,11 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	}
 }
 
-void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controller */) // Controller is invalid
+void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controller */) // Controller is invalid.
 {
 	SCOPE_CYCLE_COUNTER(STAT_DrawDebug);
 
-	check(NetDriver != nullptr && NetDriver->IsServer() == false);
+	check(NetDriver != nullptr && !NetDriver->IsServer());
 
 	DrawDebugLocalPlayer(Canvas);
 
@@ -295,9 +299,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 
 void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 {
-	if (LocalPawn == nullptr ||
-		LocalPlayerController == nullptr ||
-		LocalPlayerState == nullptr)
+	if (LocalPawn == nullptr ||	LocalPlayerController == nullptr ||	LocalPlayerState == nullptr)
 	{
 		return;
 	}
@@ -322,9 +324,9 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 	}
 }
 
-void ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId, FColor& Color) const
+const FColor& ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId) const
 {
-	check(NetDriver != nullptr && NetDriver->IsServer() == false);
+	check(NetDriver != nullptr && !NetDriver->IsServer());
 
 	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
 	int32 VirtualWorkerId = (AuthorityIntentComponent != nullptr) ? AuthorityIntentComponent->VirtualWorkerId : SpatialConstants::INVALID_AUTHORITY_INTENT_ID;
@@ -332,31 +334,31 @@ void ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId, FCo
 	if (VirtualWorkerId != SpatialConstants::INVALID_AUTHORITY_INTENT_ID &&
 		VirtualWorkerId < ServerTintColors.Num())
 	{
-		Color = ServerTintColors[VirtualWorkerId];
+		return ServerTintColors[VirtualWorkerId];
 	}
 	else
 	{
-		Color = InvalidServerTintColor;
+		return InvalidServerTintColor;
 	}
 }
 
-// TODO: Implement once this functionality is available (basically we need the ServerWorkerId -> VirtualWorkerId mapping)
-void ASpatialDebugger::GetServerWorkerColor(const Worker_EntityId EntityId, FColor& Color) const
+// TODO: Implement once this functionality is available https://improbableio.atlassian.net/browse/UNR-2362.
+const FColor& ASpatialDebugger::GetServerWorkerColor(const Worker_EntityId EntityId) const
 {
-	check(NetDriver != nullptr && NetDriver->IsServer() == false);
-	Color = InvalidServerTintColor;
+	check(NetDriver != nullptr && !NetDriver->IsServer());
+	return InvalidServerTintColor;
 }
 
-// TODO: Implement once this functionality is available
+// TODO: Implement once this functionality is available https://improbableio.atlassian.net/browse/UNR-2361.
 bool ASpatialDebugger::GetLockStatus(const Worker_EntityId Entityid)
 {
-	check(NetDriver != nullptr && NetDriver->IsServer() == false);
+	check(NetDriver != nullptr && !NetDriver->IsServer());
 	return false;
 }
 
 void ASpatialDebugger::SpatialToggleDebugger()
 {
-	check(NetDriver != nullptr && NetDriver->IsServer() == false);
+	check(NetDriver != nullptr && !NetDriver->IsServer());
 
 	if (DrawDebugDelegateHandle.IsValid())
 	{
