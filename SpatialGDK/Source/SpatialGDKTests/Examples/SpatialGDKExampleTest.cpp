@@ -3,6 +3,7 @@
 #include "TestDefinitions.h"
 
 #include "Misc/ScopeTryLock.h"
+#include "HAL/PlatformFilemanager.h"
 
 #define EXAMPLE_SIMPLE_TEST(TestName) \
 	TEST(SpatialGDKExamples, SimpleExamples, TestName)
@@ -118,3 +119,53 @@ void ComplexTest::GetTests(TArray<FString>& OutBeautifiedNames, TArray <FString>
 	OutBeautifiedNames.Add(TEXT("GIVEN_three_and_five_WHEN_summed_THEN_the_sum_is_eight"));
 	OutTestCommands.Add(TEXT("3 5 8"));
 }
+
+// 4. Example of test fixture
+namespace
+{
+const FString ExampleTestFolder = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("ExampleTests/"));
+
+class ExampleTestFixture
+{
+public:
+	ExampleTestFixture()
+	{
+		CreateTestFolders();
+	}
+	~ExampleTestFixture()
+	{
+		DeleteTestFolders();
+	}
+
+private:
+
+	void CreateTestFolders()
+	{
+		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+		PlatformFile.CreateDirectoryTree(*ExampleTestFolder);
+	}
+
+	void DeleteTestFolders()
+	{
+		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+		PlatformFile.DeleteDirectoryRecursively(*ExampleTestFolder);
+	}
+};
+}
+
+EXAMPLE_SIMPLE_TEST(GIVEN_empty_folder_WHEN_creating_a_file_THEN_the_file_has_been_created)
+{
+	ExampleTestFixture Fixture;
+
+	FString FilePath = FPaths::Combine(ExampleTestFolder, TEXT("Example.txt"));
+
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	IFileHandle* Handle = PlatformFile.OpenWrite(*FilePath);
+	delete Handle;
+
+	TestTrue("Example.txt exists", PlatformFile.FileExists(*FilePath));
+
+	return true;
+}
+
+// 5. Do we need examples of stub/dummy/mock/spy/fake?
