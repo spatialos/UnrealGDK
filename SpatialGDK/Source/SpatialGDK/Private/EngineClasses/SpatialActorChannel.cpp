@@ -945,7 +945,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 	case WORKER_STATUS_CODE_TIMEOUT:
 		if (bEntityIsInView)
 		{
-			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Create entity request failed but the entity was already in view. "
+			UE_LOG(LogSpatialActorChannel, Log, TEXT("Create entity request failed but the entity was already in view. "
 				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		}
 		else
@@ -958,19 +958,19 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 	case WORKER_STATUS_CODE_APPLICATION_ERROR:
 		if (bEntityIsInView)
 		{
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request failed as the entity already exists and is in view. "
+			UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request failed as the entity already exists and is in view. "
 				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request failed."
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Create entity request failed."
 				"Either the reservation expired, the entity already existed, or the entity was invalid. "
 				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		}
 		break;
 	default:
 		UE_LOG(LogSpatialReceiver, Error, TEXT("Create entity request failed. This likely indicates a bug in the Unreal GDK and should be reported."
-				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+			"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
 	}
 }
