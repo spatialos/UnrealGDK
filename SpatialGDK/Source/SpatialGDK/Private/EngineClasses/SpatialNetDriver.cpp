@@ -394,6 +394,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 
 	// If we're the client, we can now ask the server to spawn our controller.
+
 	if (IsServer())
 	{
 		if (GlobalStateManager && !ServerConnection)
@@ -407,8 +408,8 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	{
 		// If we know the GSM is already accepting players, simply spawn.
         if (GlobalStateManager->GetAcceptingPlayers() &&
-			(SessionId == 0 || SessionId == GlobalStateManager->GetSessionId()) &&
-			GetWorld()->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
+            (SessionId == 0 || SessionId == GlobalStateManager->GetSessionId()) &&
+            GetWorld()->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 			bWaitingForAcceptingPlayersToSpawn = false;
