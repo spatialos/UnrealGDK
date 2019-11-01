@@ -41,7 +41,6 @@ DEFINE_LATENT_COMMAND(StartSlowComputation)
 
 DEFINE_LATENT_COMMAND_ONE_PARAMETER(WaitForComputationAndCheckResult, FAutomationTestBase*, Test)
 {
-	const double NewTime = FPlatformTime::Seconds();
 	const double TimePassed = FPlatformTime::Seconds() - StartTime;
 
 	if (TimePassed >= MIN_WAIT_TIME_FOR_SLOW_COMPUTATION)
