@@ -178,7 +178,7 @@ private:
 	void ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, const Worker_ComponentData& Data);
 	// This is called for AddComponentOps not in a critical section, which means they are not a part of the initial entity creation.
 	void HandleIndividualAddComponent(const Worker_AddComponentOp& Op);
-	void AttachDynamicSubobject(Worker_EntityId EntityId, const FClassInfo& Info);
+	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 

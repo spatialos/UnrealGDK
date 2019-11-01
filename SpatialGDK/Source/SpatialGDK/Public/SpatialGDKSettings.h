@@ -205,4 +205,12 @@ public:
 
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta=(MetaClass="SpatialDebugger"))
 	FSoftClassPath SpatialDebuggerClassPath;
+
+	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
+		bool bEnableUnrealLoadBalancer;
+
+	/** EXPERIMENTAL: Worker type to assign for load balancing. */
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
+		FWorkerType LoadBalancingWorkerType;
 };
