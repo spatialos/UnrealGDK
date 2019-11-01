@@ -138,19 +138,16 @@ void ASpatialDebugger::LoadIcons()
 {
 	check(NetDriver != nullptr && !NetDriver->IsServer());
 
-	const TArray<UTexture2D*> IconTextures = { AuthTexture, AuthIntentTexture, UnlockedTexture, LockedTexture, BoxTexture };
+	UTexture2D* DefaultTexture = DefaultTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"));
 
-	UTexture2D* DefaultTexture = nullptr;
-	if (IconTextures.Contains(nullptr))
-	{
-		DefaultTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"));
-		UE_LOG(LogSpatialDebugger, Warning, TEXT("At least one required icon texture has not been specified, will use default engine texture."));
-	}
+	const float IconWidth = 16.0f;
+	const float IconHeight = 16.0f;
 
-	for (int32 i = 0; i < ICON_MAX; ++i)
-	{
-		Icons[i] = UCanvas::MakeIcon(IconTextures[i] != nullptr ? IconTextures[i] : DefaultTexture, 0.0f, 0.0f, 16.0f, 16.0f);
-	}
+	Icons[ICON_AUTH] = UCanvas::MakeIcon(AuthTexture != nullptr ? AuthTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
+	Icons[ICON_AUTH_INTENT] = UCanvas::MakeIcon(AuthIntentTexture != nullptr ? AuthIntentTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
+	Icons[ICON_UNLOCKED] = UCanvas::MakeIcon(UnlockedTexture != nullptr ? UnlockedTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
+	Icons[ICON_LOCKED] = UCanvas::MakeIcon(LockedTexture != nullptr ? LockedTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
+	Icons[ICON_BOX] = UCanvas::MakeIcon(BoxTexture != nullptr ? BoxTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
 }
 
 void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
