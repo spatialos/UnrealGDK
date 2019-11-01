@@ -192,9 +192,14 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
   This is: `C:/...<filepath>.../UnrealGDKExampleProject/spatial/snapshots/default.snapshot`. </br></br>
   * **Region**: The real-world geographical location that you want your cloud deployment hosted in. </br>You can change this by selecting a different region from the drop-down list. You might prefer the region you are in.</br></br>
 1. You can also choose to add simulated players via the dialogue box or skip this and move on to item _4._</br></br>
-  Build out the simulated player clients (which will run on Linux in the cloud) using the following command:</br></br>
+   Build out the simulated player clients (which will run on Linux in the cloud) using the following command:</br></br>
+  Engine plugin filepath (default):</br>
   ```
-  BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
+  UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
+  ```
+  Project plugin filepath:</br>
+  ```
+  <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
   ```
   Then, back in the Editor Deploy window:</br></br>
   * **Add simulated players**: Check the box.</br></br>

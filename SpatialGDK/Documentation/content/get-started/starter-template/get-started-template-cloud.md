@@ -130,7 +130,7 @@ The assembly name is how you identify the group of `.zip` files in this upload o
 To do this: 
 
 1. In a terminal window, navigate to your `<ProjectRoot>\spatial\` directory. 
-2. Run the following command: </br>
+1. Run the following command: </br>
  `spatial cloud upload myassembly` 
  </br></br>(Remember to replace `myassembly` with a name for your assembly - for example: `mygdktemplateassembly1`). </br></br>
  The upload command looks like this:</br>
@@ -192,8 +192,13 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
   * **Region**: The real-world geographical location that you want your cloud deployment hosted in. </br>You can change this by selecting a different region from the drop-down list. You might prefer the region you are in.</br></br>
 1. You can also choose to add simulated players via the dialogue box or skip this and move on to item _4._</br></br>
   Build out the simulated player clients (which will run on Linux in the cloud) using the following command:</br></br>
+  Engine plugin filepath (default):</br>
   ```
-  BuildWorker.bat <YourProject>SimulatedPlayer Linux <Configuration> <YourProject>.uproject 
+  UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
+  ```
+  Project plugin filepath:</br>
+  ```
+  <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
   ```
   Then, back in the Editor Deploy window:</br></br>
   * **Add simulated players**: Check the box.</br></br>
