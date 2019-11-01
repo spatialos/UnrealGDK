@@ -15,7 +15,7 @@
 namespace
 {
 	// TODO: UNR-1969 - Prepare LocalDeployment in CI pipeline
-	const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 10.0;
+	const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 20.0;
 
 	// TODO: UNR-1964 - Move EDeploymentState enum to LocalDeploymentManager
 	enum class EDeploymentState { IsRunning, IsNotRunning };
@@ -152,7 +152,8 @@ DEFINE_LATENT_COMMAND_TWO_PARAMETERS(CheckDeploymentState, FAutomationTestBase*,
 	return true;
 }
 
-LOCALDEPLOYMENT_TEST(GIVEN_no_deployment_running_WHEN_deployment_started_THEN_deployment_running)
+// UNR-1975 after fixing the flakiness of these tests, and investigating how they can be run in CI (UNR-1969), re-enable them
+/*LOCALDEPLOYMENT_TEST(GIVEN_no_deployment_running_WHEN_deployment_started_THEN_deployment_running)
 {
 	// GIVEN
 	ADD_LATENT_AUTOMATION_COMMAND(StopDeployment());
@@ -186,4 +187,4 @@ LOCALDEPLOYMENT_TEST(GIVEN_deployment_running_WHEN_deployment_stopped_THEN_deplo
 	// THEN
 	ADD_LATENT_AUTOMATION_COMMAND(CheckDeploymentState(this, EDeploymentState::IsNotRunning));
     return true;
-}
+}*/
