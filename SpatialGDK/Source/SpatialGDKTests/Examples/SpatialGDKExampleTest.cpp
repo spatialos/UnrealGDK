@@ -167,5 +167,3 @@ EXAMPLE_SIMPLE_TEST(GIVEN_empty_folder_WHEN_creating_a_file_THEN_the_file_has_be
 
 	return true;
 }
-
-// 5. Do we need examples of stub/dummy/mock/spy/fake?

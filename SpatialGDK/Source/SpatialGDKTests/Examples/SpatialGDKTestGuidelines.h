@@ -1,10 +1,14 @@
 /*
-0. Session Frontend and cmd (how to run tests)
+0. How to run tests:
+	- Tests can be run via Session Frontend in UE4 Editor
+
+	- Tests can be run via command line
 
 1. Folder structure
 	- Tests are located in a separate SpatialGDKTests module.
 	So for every component that needs to be tested - it has to be exposed via corresponding macro.
 	E.g. `class FRPCContainer` -> `class SPATIALGDK_API FRPCContainer`, to make FRPCContainer testable.
+	WThe macro is different in each module SPATIALGDK_API, SPATIALGDKSERVICES_API etc.
 
 	- The folder structure inside SpatialGDKTests should resemble the folder structure for components being tested.
 	E.g. If file tested is
@@ -16,9 +20,9 @@
 2. Test definitions (check TestDefinitions.h for more info)
     - We have defined 3 types of Macro to be used when writing tests:
 	(https://docs.unrealengine.com/en-US/Programming/Automation/TechnicalGuide/index.html has more information)
-	TEST
-	COMPLEX_TEST
-	DEFINE_LATENT_COMMAND...
+	TEST - the most common simple test
+	COMPLEX_TEST - same as simple test, but allows having multiple test cases run through the same test function body.
+	DEFINE_LATENT_COMMAND... - used to run tests that require more than 1 thread.
 
 	- There are 5 types of mock objects we can use in tests:
 	Dummy objects
@@ -47,5 +51,6 @@
 	- There are no Test Fixtures out of the box in Unreal Automation Testing Framework
 	The solution for now is to instantiate an object at the beginning of test,
 	that sets up the environment in the constructor and cleans it up in the destructor
-	(however, that cannot be used with Latent Commands).
+	(however, that cannot be used with Latent Commands,
+	since the destructor will likely to be called earlier than necessary).
 */
