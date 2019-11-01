@@ -93,7 +93,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ChannelDefinitions[CHTYPE_Actor] = SpatialChannelDefinition;
 	ChannelDefinitionMap[NAME_Actor] = SpatialChannelDefinition;
 
-	SessionId = FCString::Atoi(URL.GetOption(*SpatialConstants::SessionIdURLOption, TEXT("")));
+	SessionId = FCString::Atoi(URL.GetOption(*SpatialConstants::SessionIdURLOption, TEXT("0")));
 
 	// We do this here straight away to trigger LoadMap.
 	if (bInitAsClient)
@@ -407,8 +407,8 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	{
 		// If we know the GSM is already accepting players, simply spawn.
         if (GlobalStateManager->GetAcceptingPlayers() &&
-            SessionId == GlobalStateManager->GetSessionId() &&
-            GetWorld()->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
+			(SessionId == 0 || SessionId == GlobalStateManager->GetSessionId()) &&
+			GetWorld()->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 			bWaitingForAcceptingPlayersToSpawn = false;
