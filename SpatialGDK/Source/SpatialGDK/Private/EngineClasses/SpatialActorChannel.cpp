@@ -34,6 +34,12 @@ DECLARE_CYCLE_STAT(TEXT("ReplicateActor"), STAT_SpatialActorChannelReplicateActo
 DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
 
+#if ENGINE_MINOR_VERSION <= 22
+	const int32 MaxSendingChangeHistory = FRepState::MAX_CHANGE_HISTORY;
+#else
+	const int32 MaxSendingChangeHistory = FSendingRepState::MAX_CHANGE_HISTORY;
+#endif
+
 namespace
 {
 // This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
@@ -43,20 +49,18 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 {
 #if ENGINE_MINOR_VERSION <= 22
 	FRepState* SendingRepState = RepState.Get();
-	int32 MaxChangeHistory = FRepState::MAX_CHANGE_HISTORY;
 #else
 	FSendingRepState* SendingRepState = RepState->GetSendingRepState();
-	int32 MaxChangeHistory = FSendingRepState::MAX_CHANGE_HISTORY;
 #endif
 
 	check(SendingRepState->HistoryEnd >= SendingRepState->HistoryStart);
 
 	const int32 HistoryCount = SendingRepState->HistoryEnd - SendingRepState->HistoryStart;
-	check(HistoryCount < MaxChangeHistory);
+	check(HistoryCount < MaxSendingChangeHistory);
 
 	for (int32 i = SendingRepState->HistoryStart; i < SendingRepState->HistoryEnd; i++)
 	{
-		const int32 HistoryIndex = i % MaxChangeHistory;
+		const int32 HistoryIndex = i % MaxSendingChangeHistory;
 
 		FRepChangedHistory & HistoryItem = SendingRepState->ChangeHistory[HistoryIndex];
 
@@ -71,12 +75,12 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 	// Remove any tiling in the history markers to keep them from wrapping over time
 	const int32 NewHistoryCount = SendingRepState->HistoryEnd - SendingRepState->HistoryStart;
 
-	check(NewHistoryCount <= MaxChangeHistory);
+	check(NewHistoryCount <= MaxSendingChangeHistory);
 
-	SendingRepState->HistoryStart = SendingRepState->HistoryStart % MaxChangeHistory;
+	SendingRepState->HistoryStart = SendingRepState->HistoryStart % MaxSendingChangeHistory;
 	SendingRepState->HistoryEnd = SendingRepState->HistoryStart + NewHistoryCount;
 }
-}
+} // end anonymous namespace
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
@@ -404,14 +408,12 @@ int64 USpatialActorChannel::ReplicateActor()
 #if ENGINE_MINOR_VERSION <= 22
 	ActorReplicator->ChangelistMgr->Update(ActorReplicator->RepState.Get(), Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 	FRepState* SendingRepState = ActorReplicator->RepState.Get();
-	int32 MaxChangeHistory = FRepState::MAX_CHANGE_HISTORY;
 #else
 	ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr, Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 	FSendingRepState* SendingRepState = ActorReplicator->RepState->GetSendingRepState();
-	int32 MaxChangeHistory = FSendingRepState::MAX_CHANGE_HISTORY;
 #endif
 
-	const int32 PossibleNewHistoryIndex = SendingRepState->HistoryEnd % MaxChangeHistory;
+	const int32 PossibleNewHistoryIndex = SendingRepState->HistoryEnd % MaxSendingChangeHistory;
 	FRepChangedHistory& PossibleNewHistoryItem = SendingRepState->ChangeHistory[PossibleNewHistoryIndex];
 	TArray<uint16>& RepChanged = PossibleNewHistoryItem.Changed;
 
@@ -691,14 +693,12 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 #if ENGINE_MINOR_VERSION <= 22
 	Replicator.ChangelistMgr->Update(Replicator.RepState.Get(), Object, Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 	FRepState* SendingRepState = Replicator.RepState.Get();
-	int32 MaxChangeHistory = FRepState::MAX_CHANGE_HISTORY;
 #else
 	Replicator.RepLayout->UpdateChangelistMgr(Replicator.RepState->GetSendingRepState(), *Replicator.ChangelistMgr, Object, Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 	FSendingRepState* SendingRepState = Replicator.RepState->GetSendingRepState();
-	int32 MaxChangeHistory = FSendingRepState::MAX_CHANGE_HISTORY;
 #endif
 
-	const int32 PossibleNewHistoryIndex = SendingRepState->HistoryEnd % MaxChangeHistory;
+	const int32 PossibleNewHistoryIndex = SendingRepState->HistoryEnd % MaxSendingChangeHistory;
 	FRepChangedHistory& PossibleNewHistoryItem = SendingRepState->ChangeHistory[PossibleNewHistoryIndex];
 	TArray<uint16>& RepChanged = PossibleNewHistoryItem.Changed;
 
