@@ -3,8 +3,14 @@
 	- Tests can be run via Session Frontend in UE4 Editor
 	(https://docs.unrealengine.com/en-US/Programming/Automation/index.html has more information)
 
-	- Tests can be run via command line
-	// TODO(Alex): add examples
+	- Tests can be run via command line:
+	{PathToUnreal}\Engine\Binaries\Win64\UE4Editor-Cmd.exe ^
+	 "{PathToUProjectFile}.uproject" ^
+	 -unattended -nopause -NullRHI -log -log=RunTests.log ^
+	 -ExecCmds="Automation RunTests {TestFilter}; Quit"
+
+	where {TestFilter} is a match on the test names
+	(e.g SpatialGDK matches all GDK tests, FRPCContainer matches all tests in RPCContainerTest)
 
 2. Folder structure
 	- Tests are located in a separate SpatialGDKTests module.

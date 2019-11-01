@@ -17,16 +17,16 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKExamples);
 // 1. Latent command example
 namespace
 {
-	const double MAX_WAIT_TIME_FOR_SLOW_COMPUTATION = 2.0;
-	const double MIN_WAIT_TIME_FOR_SLOW_COMPUTATION = 1.0;
-	const double COMPUTATION_DURATION = 1.0;
+const double MAX_WAIT_TIME_FOR_SLOW_COMPUTATION = 2.0;
+const double MIN_WAIT_TIME_FOR_SLOW_COMPUTATION = 1.0;
+const double COMPUTATION_DURATION = 1.0;
 
-	struct
-	{
-		FCriticalSection Mutex;
-		int Value;
-	} ComputationResult;
-}
+struct
+{
+	FCriticalSection Mutex;
+	int Value;
+} ComputationResult;
+} // anonymous namespace
 
 DEFINE_LATENT_COMMAND(StartSlowComputation)
 {
@@ -151,7 +151,7 @@ private:
 		PlatformFile.DeleteDirectoryRecursively(*ExampleTestFolder);
 	}
 };
-}
+} // anonymous namespace
 
 EXAMPLE_SIMPLE_TEST(GIVEN_empty_folder_WHEN_creating_a_file_THEN_the_file_has_been_created)
 {
