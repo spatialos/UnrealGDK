@@ -1611,7 +1611,7 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseO
 	{
 		if (Delegate->ExecuteIfBound(Op))
 		{
-			return;
+			CreateEntityDelegates.Remove(Op.request_id);
 		}
 	}
 
@@ -1622,7 +1622,7 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseO
 	{
 		Channel->OnCreateEntityResponse(Op);
 	}
-	else
+	else if (Channel.IsStale())
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received CreateEntityResponse for actor which no longer has an actor channel: "
 			"request id: %d, entity id: %lld. This should only happen in the case where we attempt to delete the entity before we have authority. "
