@@ -537,7 +537,6 @@ void UGlobalStateManager::BeginDestroy()
 			Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 			Update.schema_type = Schema_CreateComponentUpdate();
 			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
-			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
 
 			NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 		}

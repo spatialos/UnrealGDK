@@ -533,8 +533,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 
 	FString NewURL = URL;
 
-	bool bSessionIdOption = NewURL.Contains(SpatialConstants::SessionIdURLOption);
-	if (!bSessionIdOption)
+	if (!NewURL.Contains(SpatialConstants::SessionIdURLOption))
 	{
 		NewURL.Append(FString::Printf(TEXT("?sessionId=%d"), NetDriver->GlobalStateManager->GetSessionId()));
 	}

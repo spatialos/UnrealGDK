@@ -74,12 +74,6 @@ void USpatialWorkerConnection::DestroyConnection()
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
 {
-	//if (bIsConnected)
-	//{
-	//	OnConnectionSuccess();
-	//	return;
-	//}
-
 	if (bIsConnected)
 	{
 		AsyncTask(ENamedThreads::GameThread, [WeakThis = TWeakObjectPtr<USpatialWorkerConnection>(this)]
@@ -91,7 +85,6 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 			});
 		return;
 	}
-
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
