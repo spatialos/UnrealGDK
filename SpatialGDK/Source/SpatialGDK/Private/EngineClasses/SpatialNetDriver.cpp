@@ -64,6 +64,12 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
 {
+#if ENGINE_MINOR_VERSION >= 23
+	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
+	// Native Unreal now iterates over all commands on clients, and no longer has access to a BaseHandleToCmdIndex
+	// in the RepLayout, the below change forces its creation on clients, but this is a workaround
+	bMaySendProperties = true;
+#endif
 }
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
@@ -2205,16 +2211,5 @@ void USpatialNetDriver::SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpati
 void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 {
 	TombstonedEntities.Add(EntityId);
-}
-#endif
-
-#if ENGINE_MINOR_VERSION >= 23
-TSharedPtr<FRepLayout> USpatialNetDriver::GetObjectClassRepLayout(UClass * InClass)
-{
-	UNetConnection* ServerConnectionHack = ServerConnection;
-	ServerConnection = nullptr;
-	TSharedPtr<FRepLayout> Result = Super::GetObjectClassRepLayout(InClass);
-	ServerConnection = ServerConnectionHack;
-	return Result;
 }
 #endif

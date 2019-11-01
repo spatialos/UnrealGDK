@@ -183,10 +183,6 @@ public:
 	void TrackTombstone(const Worker_EntityId EntityId);
 #endif
 
-#if ENGINE_MINOR_VERSION >= 23
-	TSharedPtr<FRepLayout> GetObjectClassRepLayout(UClass * InClass) override;
-#endif
-
 private:
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
