@@ -1609,10 +1609,8 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseO
 
 	if (CreateEntityDelegate* Delegate = CreateEntityDelegates.Find(Op.request_id))
 	{
-		if (Delegate->ExecuteIfBound(Op))
-		{
-			CreateEntityDelegates.Remove(Op.request_id);
-		}
+		Delegate->ExecuteIfBound(Op);
+		CreateEntityDelegates.Remove(Op.request_id);
 	}
 
 	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
