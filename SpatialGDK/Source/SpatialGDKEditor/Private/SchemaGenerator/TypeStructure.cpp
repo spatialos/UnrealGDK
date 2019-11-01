@@ -258,7 +258,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 #if ENGINE_MINOR_VERSION <= 22
 	FRepLayout RepLayout;
 	RepLayout.InitFromObjectClass(Class);
-	TSharedPtr<FRepLayout> RepLayoutPtr = RepLayout;
+	FRepLayout* RepLayoutPtr = &RepLayout;
 #else
 	TSharedPtr<FRepLayout> RepLayoutPtr = FRepLayout::CreateFromClass(Class, nullptr/*ServerConnection*/, ECreateRepLayoutFlags::None);
 #endif

@@ -403,7 +403,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 #if ENGINE_MINOR_VERSION <= 22
 	ActorReplicator->ChangelistMgr->Update(ActorReplicator->RepState.Get(), Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
-	FRepState* SendingRepState = ActorReplicator->RepState;
+	FRepState* SendingRepState = ActorReplicator->RepState.Get();
 	int32 MaxChangeHistory = FRepState::MAX_CHANGE_HISTORY;
 #else
 	ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr, Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
@@ -968,7 +968,11 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
 
+#if ENGINE_MINOR_VERSION <= 22
+	Replicator.RepState->RepNotifies = RepNotifies;
+#else
 	Replicator.RepState->GetReceivingRepState()->RepNotifies = RepNotifies;
+#endif
 
 	Replicator.CallRepNotifies(false);
 
