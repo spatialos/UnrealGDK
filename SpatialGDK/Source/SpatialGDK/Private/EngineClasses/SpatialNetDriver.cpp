@@ -406,10 +406,11 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 	else
 	{
+		UWorld* World = GetWorld();
 		// If we know the GSM is already accepting players, simply spawn.
-        if (GlobalStateManager->GetAcceptingPlayers() &&
-            (SessionId == 0 || SessionId == GlobalStateManager->GetSessionId()) &&
-            GetWorld()->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
+		if (GlobalStateManager->GetAcceptingPlayers() &&
+		   (SessionId == 0 || SessionId == GlobalStateManager->GetSessionId()) &&
+		   World->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == World->RemovePIEPrefix(World->URL.Map))
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 			bWaitingForAcceptingPlayersToSpawn = false;
@@ -458,7 +459,6 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 	{
 		// If we have the correct map loaded then ask to spawn.
 		FString DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
-
 		UWorld* World = GetWorld();
 		if (World && World->RemovePIEPrefix(DeploymentMapURL) == World->RemovePIEPrefix(World->URL.Map))
 		{
