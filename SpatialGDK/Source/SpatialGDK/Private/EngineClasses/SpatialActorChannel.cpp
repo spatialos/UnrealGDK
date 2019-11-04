@@ -34,14 +34,14 @@ DECLARE_CYCLE_STAT(TEXT("ReplicateActor"), STAT_SpatialActorChannelReplicateActo
 DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
 
+namespace
+{
 #if ENGINE_MINOR_VERSION <= 22
 	const int32 MaxSendingChangeHistory = FRepState::MAX_CHANGE_HISTORY;
 #else
 	const int32 MaxSendingChangeHistory = FSendingRepState::MAX_CHANGE_HISTORY;
 #endif
 
-namespace
-{
 // This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
 // We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
 // In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
