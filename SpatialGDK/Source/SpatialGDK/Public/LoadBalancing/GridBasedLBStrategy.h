@@ -35,7 +35,7 @@ public:
 /* End UAbstractLBStrategy Interface */
 
 protected:
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin="1"))
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"))
 	uint32 Rows;
 
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"))

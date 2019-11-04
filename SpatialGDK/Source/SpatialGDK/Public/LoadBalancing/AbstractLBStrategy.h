@@ -30,7 +30,7 @@ class SPATIALGDK_API UAbstractLBStrategy : public UObject
 public:
 	UAbstractLBStrategy();
 
-	virtual void Init(const class USpatialNetDriver* InNetDriver);
+	virtual void Init(const USpatialNetDriver* InNetDriver);
 
 	bool IsReady() const { return LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
 
