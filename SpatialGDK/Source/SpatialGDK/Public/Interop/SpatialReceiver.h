@@ -108,9 +108,6 @@ DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseO
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, const Worker_ReserveEntityIdsResponseOp&);
 DECLARE_DELEGATE_OneParam(CreateEntityDelegate, const Worker_CreateEntityResponseOp&);
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityAddedDelegate, const Worker_EntityId);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityRemovedDelegate, const Worker_EntityId);
-
 UCLASS()
 class USpatialReceiver : public UObject
 {
@@ -214,9 +211,6 @@ public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
-
-	FOnEntityAddedDelegate OnEntityAddedDelegate;
-	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
 
 private:
 	UPROPERTY()
