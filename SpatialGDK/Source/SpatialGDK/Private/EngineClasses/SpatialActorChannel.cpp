@@ -366,10 +366,12 @@ int64 USpatialActorChannel::ReplicateActor()
 		PlayerController->SendClientAdjustment();
 	}
 
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
 	// Update SpatialOS position.
 	if (!bCreatingNewEntity)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bBatchSpatialPositionUpdates)
+		if (SpatialGDKSettings->bBatchSpatialPositionUpdates)
 		{
 			Sender->RegisterChannelForPositionUpdate(this);
 		}
@@ -519,7 +521,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	/* TODO(zoning)
-	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer &&
+	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
 		// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
 		// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently.
 		//bWroteSomethingImportant &&

@@ -128,7 +128,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
 
 	const FString ACLAttribute = SpatialSettings->bEnableUnrealLoadBalancer ? SpatialConstants::ZoningAttribute : Info.WorkerType.ToString();
-	const WorkerAttributeSet ACLAttributeSet = { WorkerAttribute };
+	const WorkerAttributeSet ACLAttributeSet = { ACLAttribute };
 	const WorkerRequirementSet ACLRequirementSet = { ACLAttributeSet };
 
 	WriteAclMap ComponentWriteAcl;

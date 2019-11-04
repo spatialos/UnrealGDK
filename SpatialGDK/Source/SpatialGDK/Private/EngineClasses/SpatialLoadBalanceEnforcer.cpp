@@ -66,8 +66,8 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		WriteAuthAssignmentRequest& Request = AclWriteAuthAssignmentRequests[i];
 		const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
 
-		static const int16_t ConcerningNumAttmempts = 10;
-		if (Request.ProcessAttempts % ConcerningNumAttmempts == 0)
+		static const int16_t ConcerningNumAttmempts = 5;
+		if (Request.ProcessAttempts >= ConcerningNumAttmempts)
 		{
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Failed to process WriteAuthAssignmentRequest with EntityID: %lld. Process attempts made: %d"), Request.EntityId, Request.ProcessAttempts);
 		}
