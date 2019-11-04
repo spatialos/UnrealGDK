@@ -35,7 +35,6 @@ class USpatialStaticComponentView;
 class USnapshotManager;
 class USpatialMetrics;
 class ASpatialMetricsDisplay;
-class ASpatialDebugger;
 
 class UEntityPool;
 
@@ -117,7 +116,6 @@ public:
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
-	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
@@ -145,8 +143,6 @@ public:
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
-	UPROPERTY()
-	ASpatialDebugger* SpatialDebugger;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
