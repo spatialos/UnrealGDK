@@ -162,10 +162,7 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 			return false;
 		}
 		const FString PackagePath = Data.PackagePath.ToString();
-		if (!PackagePath.StartsWith("/Game"))
-		{
-			return false;
-		}
+
 		for (const auto& Directory : DirectoriesToNeverCook)
 		{
 			if (PackagePath.StartsWith(Directory.Path))
