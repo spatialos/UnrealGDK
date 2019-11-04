@@ -35,6 +35,7 @@ class USpatialStaticComponentView;
 class USnapshotManager;
 class USpatialMetrics;
 class ASpatialMetricsDisplay;
+class USpatialLoadBalanceEnforcer;
 
 class UEntityPool;
 
@@ -141,6 +142,8 @@ public:
 	USnapshotManager* SnapshotManager;
 	UPROPERTY()
 	USpatialMetrics* SpatialMetrics;
+	UPROPERTY()
+	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 

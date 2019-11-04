@@ -14,6 +14,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
@@ -46,6 +47,7 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
+	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer;
 	TimerManager = InTimerManager;
 
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
@@ -317,6 +319,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	{
 		GlobalStateManager->AuthorityChanged(Op);
 		return;
+	}
+
+	if (LoadBalanceEnforcer)
+	{
+		LoadBalanceEnforcer->AuthorityChanged(Op);
 	}
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));
@@ -1136,7 +1143,12 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-		check(false); // TODO(zoning): Handle updates to the entity's authority intent.
+		if (NetDriver->IsServer())
+		{
+			check(NetDriver->StaticComponentView);
+			check(LoadBalanceEnforcer);
+			LoadBalanceEnforcer->OnComponentUpdated(Op);
+		}
 		break;
 	}
 

@@ -98,6 +98,16 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
 	}
 
+	//Add Zoning Attribute if we are using the load balancer.
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		WorkerAttributeSet ZoningAttributeSet = { SpatialConstants::ZoningAttribute };
+		AnyServerRequirementSet.Add(ZoningAttributeSet);
+		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
+		AnyServerOrOwningClientRequirementSet.Add(ZoningAttributeSet);
+	}
+
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
@@ -117,16 +127,25 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	const WorkerAttributeSet WorkerAttribute{ Info.WorkerType.ToString() };
 	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
 
+	const FString ACLAttribute = SpatialSettings->bEnableUnrealLoadBalancer ? SpatialConstants::ZoningAttribute : Info.WorkerType.ToString();
+	const WorkerAttributeSet ACLAttributeSet = { WorkerAttribute };
+	const WorkerRequirementSet ACLRequirementSet = { ACLAttributeSet };
+
 	WriteAclMap ComponentWriteAcl;
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ACLRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	}
 
 	if (Actor->IsNetStartupActor())
 	{
@@ -220,6 +239,12 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	{
 		ComponentDatas.Add(Persistence().CreatePersistenceData());
 	}
+
+	/* TODO(zoning)
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		ComponentDatas.Add(AuthorityIntent(NetDriver->LoadBalancer->GetAuthoritativeVirtualWorkerId(*Actor)).CreateAuthorityIntentData());
+	}*/
 
 	if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
 	{

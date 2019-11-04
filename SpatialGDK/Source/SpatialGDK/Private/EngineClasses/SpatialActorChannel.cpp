@@ -518,6 +518,25 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 	}
 
+	/* TODO(zoning)
+	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer &&
+		// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
+		// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently.
+		//bWroteSomethingImportant &&
+		Actor->HasAuthority() &&
+		NetDriver->LoadBalancer->ShouldChangeAuthority(*Actor))
+	{
+		const FString NewAuthVirtualWorkerId = NetDriver->LoadBalancer->GetAuthoritativeVirtualWorkerId(*Actor);
+		if (NewAuthVirtualWorkerId.IsEmpty() == false)
+		{
+			Sender->SendAuthorityUpdate(*Actor, NewAuthVirtualWorkerId);
+		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Should transition actor %s to new server, but auth virtual worker id is empty!"), *Actor->GetName());
+		}
+	}*/
+
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
 	LastUpdateTime = Connection->Driver->Time;
 
