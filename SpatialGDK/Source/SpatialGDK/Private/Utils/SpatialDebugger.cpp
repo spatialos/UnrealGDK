@@ -326,9 +326,9 @@ const FColor& ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId Enti
 	check(NetDriver != nullptr && !NetDriver->IsServer());
 
 	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
-	int32 VirtualWorkerId = (AuthorityIntentComponent != nullptr) ? AuthorityIntentComponent->VirtualWorkerId : SpatialConstants::INVALID_AUTHORITY_INTENT_ID;
+	int32 VirtualWorkerId = (AuthorityIntentComponent != nullptr) ? AuthorityIntentComponent->VirtualWorkerId : SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
-	if (VirtualWorkerId != SpatialConstants::INVALID_AUTHORITY_INTENT_ID &&
+	if (VirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID &&
 		VirtualWorkerId < ServerTintColors.Num())
 	{
 		return ServerTintColors[VirtualWorkerId];
