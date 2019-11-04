@@ -31,6 +31,8 @@ void USpatialLoadBalanceEnforcer::Tick()
 
 void USpatialLoadBalanceEnforcer::OnComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
+	check(NetDriver)
+	check(NetDriver->StaticComponentView)
 	if (Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID &&
 		NetDriver->StaticComponentView->GetAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -64,7 +66,6 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 	for (int i = Size - 1; i >= 0; i--)
 	{
 		WriteAuthAssignmentRequest& Request = AclWriteAuthAssignmentRequests[i];
-		const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
 
 		static const int16_t ConcerningNumAttmempts = 5;
 		if (Request.ProcessAttempts >= ConcerningNumAttmempts)
@@ -76,6 +77,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 
 		// TODO - if some entities won't have the component we should detect that before queueing the request.
 		// Need to be certain it is invalid to get here before receiving the AuthIntentComponent for an entity, then we can check() on it.
+		const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
 		if (!AuthorityIntentComponent)
 		{
 			//UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("Detected entity without AuthIntent component"));
@@ -114,15 +116,15 @@ void USpatialLoadBalanceEnforcer::SetAclWriteAuthority(const Worker_EntityId Ent
 	TArray<Worker_ComponentId> ComponentIds;
 	EntityACL->ComponentWriteAcl.GetKeys(ComponentIds);
 
-	for (int i = 0; i < ComponentIds.Num(); ++i)
+	for (const Worker_ComponentId& ComponentId : ComponentIds)
 	{
-		if (ComponentIds[i] == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
-			ComponentIds[i] == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
+			ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
 			continue;
 		}
 
-		WorkerRequirementSet* RequirementSet = EntityACL->ComponentWriteAcl.Find(ComponentIds[i]);
+		WorkerRequirementSet* RequirementSet = EntityACL->ComponentWriteAcl.Find(ComponentId);
 		check(RequirementSet->Num() == 1);
 		RequirementSet->Empty();
 		RequirementSet->Add(OwningWorkerAttribute);

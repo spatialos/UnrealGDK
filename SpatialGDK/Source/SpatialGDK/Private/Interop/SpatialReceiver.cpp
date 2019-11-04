@@ -1145,7 +1145,6 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		if (NetDriver->IsServer())
 		{
-			check(NetDriver->StaticComponentView);
 			check(LoadBalanceEnforcer);
 			LoadBalanceEnforcer->OnComponentUpdated(Op);
 		}
