@@ -409,8 +409,8 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		UWorld* World = GetWorld();
 		// If we know the GSM is already accepting players, simply spawn.
 		if (GlobalStateManager->GetAcceptingPlayers() &&
-		   (SessionId == 0 || SessionId == GlobalStateManager->GetSessionId()) &&
-		   World->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == World->RemovePIEPrefix(World->URL.Map))
+		    (SessionId == 0 || SessionId == GlobalStateManager->GetSessionId()) &&
+		    World->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == World->RemovePIEPrefix(World->URL.Map))
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 			bWaitingForAcceptingPlayersToSpawn = false;
