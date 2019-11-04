@@ -28,7 +28,7 @@ struct
 } ComputationResult;
 } // anonymous namespace
 
-DEFINE_LATENT_COMMAND(StartSlowComputation)
+DEFINE_LATENT_COMMAND(StartBackgroundThreadComputation)
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, []
 	{
@@ -66,7 +66,7 @@ DEFINE_LATENT_COMMAND_ONE_PARAMETER(WaitForComputationAndCheckResult, FAutomatio
 
 EXAMPLE_SIMPLE_TEST(GIVEN_initial_value_WHEN_performing_slow_compuation_THEN_the_result_is_correct)
 {
-	ADD_LATENT_AUTOMATION_COMMAND(StartSlowComputation());
+	ADD_LATENT_AUTOMATION_COMMAND(StartBackgroundThreadComputation());
 	ADD_LATENT_AUTOMATION_COMMAND(WaitForComputationAndCheckResult(this));
 
 	return true;

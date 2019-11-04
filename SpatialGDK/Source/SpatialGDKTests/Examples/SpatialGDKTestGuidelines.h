@@ -25,6 +25,9 @@
 	`UnrealGDK\SpatialGDK\Source\SpatialGDKTests\SpatialGDK\Utils\RPCContainer\RPCContainerTest.cpp`.
 	There should be a folder with the same name as component tested. It should include the test and all the supporting files.
 
+	- In case of integration tests, that involve multiple components - they should be located in
+	`UnrealGDK\SpatialGDK\Source\SpatialGDKTests\IntegrationTests\<Custom Test Folder>` folder.
+
 3. Test definitions (check TestDefinitions.h for more info)
     - We have defined 3 types of Macro to be used when writing tests:
 	(https://docs.unrealengine.com/en-US/Programming/Automation/TechnicalGuide/index.html has more information)
