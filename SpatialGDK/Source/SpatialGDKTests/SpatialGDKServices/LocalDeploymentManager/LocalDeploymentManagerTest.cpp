@@ -122,7 +122,7 @@ DEFINE_LATENT_COMMAND_TWO_PARAMETERS(WaitForDeployment, FAutomationTestBase*, Te
 	const double NewTime = FPlatformTime::Seconds();
 	if (NewTime - StartTime >= MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION)
 	{
-		// the given time for the deployment to start/stop has expired - test its current state
+		// The given time for the deployment to start/stop has expired - test its current state.
 		FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
 
 		if (ExpectedDeploymentState == EDeploymentState::IsRunning)
