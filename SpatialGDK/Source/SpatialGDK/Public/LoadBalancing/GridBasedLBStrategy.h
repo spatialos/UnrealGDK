@@ -28,7 +28,7 @@ public:
 /* UAbstractLBStrategy Interface */
 	virtual void Init(const class USpatialNetDriver* InNetDriver) override;
 
-	virtual TArray<uint32> GetVirtualWorkerIds() const;
+	virtual TSet<uint32> GetVirtualWorkerIds() const;
 
 	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const override;
 	virtual uint32 WhoShouldHaveAuthority(const AActor& Actor) const override;

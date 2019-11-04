@@ -54,9 +54,9 @@ void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver)
 	}
 }
 
-TArray<uint32> UGridBasedLBStrategy::GetVirtualWorkerIds() const
+TSet<uint32> UGridBasedLBStrategy::GetVirtualWorkerIds() const
 {
-	return VirtualWorkerIds;
+	return TSet<uint32>(VirtualWorkerIds);
 }
 
 bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const

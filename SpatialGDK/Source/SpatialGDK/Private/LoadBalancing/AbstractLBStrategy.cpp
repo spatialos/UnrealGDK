@@ -6,7 +6,7 @@
 
 UAbstractLBStrategy::UAbstractLBStrategy()
 	: Super()
-	, LocalVirtualWorkerId(0)
+	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 {
 }
 

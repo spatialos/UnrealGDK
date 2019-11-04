@@ -56,8 +56,8 @@ bool FCreateStrategy::Update()
 	Strat = UTestGridBasedLBStrategy::Create(Rows, Cols, WorldWidth, WorldHeight);
 	Strat->Init(nullptr);
 
-	TArray<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
-	Strat->SetLocalVirtualWorkerId(VirtualWorkerIds[LocalWorkerIdIndex]);
+	TSet<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
+	Strat->SetLocalVirtualWorkerId(VirtualWorkerIds.Array()[LocalWorkerIdIndex]);
 
 	return true;
 }
@@ -168,7 +168,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_call
 	Strat = UTestGridBasedLBStrategy::Create(2, 3, 10000.f, 10000.f);
 	Strat->Init(nullptr);
 
-	TArray<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
+	TSet<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
 	TestEqual("Number of Virtual Workers", VirtualWorkerIds.Num(), 6);
 
 	return true;
@@ -179,7 +179,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worke
 	Strat = UTestGridBasedLBStrategy::Create(5, 10, 10000.f, 10000.f);
 	Strat->Init(nullptr);
 
-	TArray<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
+	TSet<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
 	for (uint32 VirtualWorkerId : VirtualWorkerIds)
 	{
 		TestNotEqual("Virtual Worker Id", VirtualWorkerId, SpatialConstants::INVALID_VIRTUAL_WORKER_ID);

@@ -36,7 +36,7 @@ public:
 
 	void SetLocalVirtualWorkerId(uint32 LocalVirtualWorkerId);
 
-	virtual TArray<uint32> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {} ; )
+	virtual TSet<uint32> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
 
 	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const { return false; }
 	virtual uint32 WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID; )
