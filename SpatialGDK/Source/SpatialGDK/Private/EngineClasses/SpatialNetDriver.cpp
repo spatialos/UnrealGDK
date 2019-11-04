@@ -310,9 +310,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SnapshotManager = NewObject<USnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
 
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+
 #if !UE_BUILD_SHIPPING
 	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client
-	if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
+	if (IsServer() && SpatialSettings->bEnableMetricsDisplay)
 	{
 		SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
 	}
