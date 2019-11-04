@@ -119,12 +119,13 @@ DEFINE_LATENT_COMMAND(StopDeployment)
 
 DEFINE_LATENT_COMMAND_TWO_PARAMETERS(WaitForDeployment, FAutomationTestBase*, Test, EDeploymentState, ExpectedDeploymentState)
 {
+	FLocalDeploymentManager* const LocalDeploymentManager = GetLocalDeploymentManager();
+
 	const double NewTime = FPlatformTime::Seconds();
+
 	if (NewTime - StartTime >= MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION)
 	{
 		// The given time for the deployment to start/stop has expired - test its current state.
-		FLocalDeploymentManager* const LocalDeploymentManager = GetLocalDeploymentManager();
-
 		if (ExpectedDeploymentState == EDeploymentState::IsRunning)
 		{
 			Test->TestTrue(TEXT("Deployment is running"), LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping());
@@ -135,8 +136,7 @@ DEFINE_LATENT_COMMAND_TWO_PARAMETERS(WaitForDeployment, FAutomationTestBase*, Te
 		}
 		return true;
 	}
-
-	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
+	
 	if (LocalDeploymentManager->IsDeploymentStopping())
 	{
 		return false;
