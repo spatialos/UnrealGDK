@@ -45,7 +45,7 @@ struct ComponentNamesAndIds
 	TArray<int32> Ids;
 };
 
-ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FString> LoadedSchema)
+ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FString>& LoadedSchema)
 {
 	ComponentNamesAndIds ParsedNamesAndIds;
 
@@ -196,40 +196,46 @@ FString LoadSchemaFileForClass(const FString& InSchemaOutputFolder, const UClass
 	return FileContent;
 }
 
-TArray<UObject*> AllTestClassesArray =
+const TArray<UObject*>& AllTestClassesArray()
 {
-	USchemaGenObjectStub::StaticClass(),
-	USpatialTypeObjectStub::StaticClass(),
-	UChildOfSpatialTypeObjectStub::StaticClass(),
-	UNotSpatialTypeObjectStub::StaticClass(),
-	UChildOfNotSpatialTypeObjectStub::StaticClass(),
-	UNoSpatialFlagsObjectStub::StaticClass(),
-	UChildOfNoSpatialFlagsObjectStub::StaticClass(),
-	ASpatialTypeActor::StaticClass(),
-	ANonSpatialTypeActor::StaticClass(),
-	USpatialTypeActorComponent::StaticClass(),
-	ASpatialTypeActorWithActorComponent::StaticClass(),
-	ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
-	ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
-	ASpatialTypeActorWithSubobject::StaticClass()
+	static TArray<UObject*> TestClassesArray = {
+		USchemaGenObjectStub::StaticClass(),
+		USpatialTypeObjectStub::StaticClass(),
+		UChildOfSpatialTypeObjectStub::StaticClass(),
+		UNotSpatialTypeObjectStub::StaticClass(),
+		UChildOfNotSpatialTypeObjectStub::StaticClass(),
+		UNoSpatialFlagsObjectStub::StaticClass(),
+		UChildOfNoSpatialFlagsObjectStub::StaticClass(),
+		ASpatialTypeActor::StaticClass(),
+		ANonSpatialTypeActor::StaticClass(),
+		USpatialTypeActorComponent::StaticClass(),
+		ASpatialTypeActorWithActorComponent::StaticClass(),
+		ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
+		ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
+		ASpatialTypeActorWithSubobject::StaticClass()
+	};
+	return TestClassesArray;
 };
 
-TSet<UClass*> AllTestClassesSet =
+const TSet<UClass*>& AllTestClassesSet()
 {
-	USchemaGenObjectStub::StaticClass(),
-	USpatialTypeObjectStub::StaticClass(),
-	UChildOfSpatialTypeObjectStub::StaticClass(),
-	UNotSpatialTypeObjectStub::StaticClass(),
-	UChildOfNotSpatialTypeObjectStub::StaticClass(),
-	UNoSpatialFlagsObjectStub::StaticClass(),
-	UChildOfNoSpatialFlagsObjectStub::StaticClass(),
-	ASpatialTypeActor::StaticClass(),
-	ANonSpatialTypeActor::StaticClass(),
-	USpatialTypeActorComponent::StaticClass(),
-	ASpatialTypeActorWithActorComponent::StaticClass(),
-	ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
-	ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
-	ASpatialTypeActorWithSubobject::StaticClass()
+	static TSet<UClass*> TestClassesSet = {
+		USchemaGenObjectStub::StaticClass(),
+		USpatialTypeObjectStub::StaticClass(),
+		UChildOfSpatialTypeObjectStub::StaticClass(),
+		UNotSpatialTypeObjectStub::StaticClass(),
+		UChildOfNotSpatialTypeObjectStub::StaticClass(),
+		UNoSpatialFlagsObjectStub::StaticClass(),
+		UChildOfNoSpatialFlagsObjectStub::StaticClass(),
+		ASpatialTypeActor::StaticClass(),
+		ANonSpatialTypeActor::StaticClass(),
+		USpatialTypeActorComponent::StaticClass(),
+		ASpatialTypeActorWithActorComponent::StaticClass(),
+		ASpatialTypeActorWithMultipleActorComponents::StaticClass(),
+		ASpatialTypeActorWithMultipleObjectComponents::StaticClass(),
+		ASpatialTypeActorWithSubobject::StaticClass()
+	};
+	return TestClassesSet;
 };
 
 TMap<FString, FString> ExpectedContents =
@@ -704,7 +710,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 	SchemaTestFixture Fixture;
 
 	// GIVEN
-	TSet<UClass*> Classes = AllTestClassesSet;
+	const TSet<UClass*>& Classes = AllTestClassesSet();
 
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
@@ -878,7 +884,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_
 	SchemaTestFixture Fixture;
 	
 	// GIVEN
-	TArray<UObject*> Classes = AllTestClassesArray;
+	const TArray<UObject*>& Classes = AllTestClassesArray();
 
 	// WHEN
 	TSet<UClass*> FilteredClasses = SpatialGDKEditor::Schema::GetAllSupportedClasses(Classes);
@@ -921,6 +927,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_
 
 SCHEMA_GENERATOR_TEST(GIVEN_3_level_names_WHEN_generating_schema_for_sublevels_THEN_generated_schema_contains_3_components_with_unique_names)
 {
+	SchemaTestFixture Fixture;
+	
 	// GIVEN
 	TMultiMap<FName, FName> LevelNamesToPaths;
 	LevelNamesToPaths.Add(TEXT("TestLevel0"), TEXT("/Game/Maps/FirstTestLevel0"));
