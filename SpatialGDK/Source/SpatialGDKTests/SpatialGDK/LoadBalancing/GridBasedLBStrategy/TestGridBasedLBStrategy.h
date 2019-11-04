@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EngineClasses/GridBasedLBStrategy.h"
+#include "LoadBalancing/GridBasedLBStrategy.h"
 #include "TestGridBasedLBStrategy.generated.h"
 
 /**

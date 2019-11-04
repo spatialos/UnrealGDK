@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/World.h"
-#include "EngineClasses/GridBasedLBStrategy.h"
+#include "LoadBalancing/GridBasedLBStrategy.h"
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameStateBase.h"
 #include "SpatialConstants.h"

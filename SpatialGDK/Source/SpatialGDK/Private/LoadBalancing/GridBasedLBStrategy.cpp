@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "EngineClasses/GridBasedLBStrategy.h"
+#include "LoadBalancing/GridBasedLBStrategy.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SpatialActorUtils.h"

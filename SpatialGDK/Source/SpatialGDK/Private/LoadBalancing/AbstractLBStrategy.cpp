@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "EngineClasses/AbstractLBStrategy.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 
