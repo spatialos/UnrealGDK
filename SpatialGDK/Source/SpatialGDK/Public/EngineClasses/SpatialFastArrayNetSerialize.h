@@ -25,11 +25,11 @@ public:
 #else
 	virtual void NetSerializeStruct(FNetDeltaSerializeInfo& Params);
 
-	//TODO: Look at whether we need to implement these
-	virtual void GatherGuidReferencesForFastArray(struct FFastArrayDeltaSerializeParams& Params) {};
-	virtual bool MoveGuidToUnmappedForFastArray(struct FFastArrayDeltaSerializeParams& Params) { return false; };
-	virtual void UpdateUnmappedGuidsForFastArray(struct FFastArrayDeltaSerializeParams& Params) {};
-	virtual bool NetDeltaSerializeForFastArray(struct FFastArrayDeltaSerializeParams& Params) { return false; };
+	//TODO: Look at whether we need to implement these - added check(false)s here to guarantee no entry
+	virtual void GatherGuidReferencesForFastArray(struct FFastArrayDeltaSerializeParams& Params) { checkf(false, TEXT("GatherGuidReferencesForFastArray called - the GDK assumes that this is not called. Tell us what happened.")); };
+	virtual bool MoveGuidToUnmappedForFastArray(struct FFastArrayDeltaSerializeParams& Params) { checkf(false, TEXT("MoveGuidToUnmappedForFastArray called - the GDK assumes that this is not called. Tell us what happened.")); return false; };
+	virtual void UpdateUnmappedGuidsForFastArray(struct FFastArrayDeltaSerializeParams& Params) { checkf(false, TEXT("UpdateUnmappedGuidsForFastArray called - the GDK assumes that this is not called. Tell us what happened.")); };
+	virtual bool NetDeltaSerializeForFastArray(struct FFastArrayDeltaSerializeParams& Params) { checkf(false, TEXT("NetDeltaSerializeForFastArray called - the GDK assumes that this is not called. Tell us what happened.")); return false; };
 #endif
 
 private:
