@@ -76,8 +76,8 @@ In some situations, a worker (either a client or a server) may receive an RPC wi
 To disable these warnings on an RPC in C++, add an `AllowUnresolvedParameters` tag to the `UFUNCTION` macro of the RPC function.
 
 ```
-UFUNCTION(CrossServer, AllowUnresolvedParameters, Reliable, WithValidation)
-void MyCrossServerRPC();
+UFUNCTION(Server, AllowUnresolvedParameters, Reliable)
+void MyServerRPC();
 ```
 
 #### How to allow unresolved parameters in an RPC (using Blueprints)
