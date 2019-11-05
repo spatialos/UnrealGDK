@@ -932,30 +932,47 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		return;
 	}
 
-	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+	// True if the entity is in the worker's view.
+	// If this is the case then we know the entity was created and do not need to retry if the request timed-out.
+	const bool bEntityIsInView = NetDriver->StaticComponentView->HasComponent(Position::ComponentId, GetEntityId());
+
+	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{
-		if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
+	case WORKER_STATUS_CODE_SUCCESS:
+		UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Create entity request succeeded. "
+			"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		break;
+	case WORKER_STATUS_CODE_TIMEOUT:
+		if (bEntityIsInView)
 		{
-			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Failed to create entity for actor %s Reason: %s. Retrying..."), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
-			Sender->SendCreateEntityRequest(this);
-		}
-#if !UE_BUILD_SHIPPING
-		// Commands can timeout locally, but still be processed by the runtime. When this occurs, our follow up `CreateEntityRequest` will be
-		// superfluous, as the entity will already be created. If we detect that the entity is already in our view, reduce the message severity
-		else if (NetDriver->StaticComponentView->GetComponentData<SpatialGDK::Position>(GetEntityId()) == nullptr)
-		{
-			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to create entity for actor %s: Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+			UE_LOG(LogSpatialActorChannel, Log, TEXT("Create entity request failed but the entity was already in view. "
+				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		}
 		else
 		{
-			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Failed to create entity for actor %s, entity already in view : Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Create entity request timed out. Retrying. "
+				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+			Sender->SendCreateEntityRequest(this);
 		}
-#endif // !UE_BUILD_SHIPPING
-
-		return;
+		break;
+	case WORKER_STATUS_CODE_APPLICATION_ERROR:
+		if (bEntityIsInView)
+		{
+			UE_LOG(LogSpatialActorChannel, Log, TEXT("Create entity request failed as the entity already exists and is in view. "
+				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Create entity request failed."
+				"Either the reservation expired, the entity already existed, or the entity was invalid. "
+				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		}
+		break;
+	default:
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("Create entity request failed. This likely indicates a bug in the Unreal GDK and should be reported."
+			"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		break;
 	}
-
-	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Created entity (%lld) for: %s."), Op.entity_id, *Actor->GetName());
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()
@@ -1017,33 +1034,6 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId I
 	{
 		SendPositionUpdate(Child, NetDriver->PackageMap->GetEntityIdFromObject(Child), NewPosition);
 	}
-}
-
-FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
-{
-	FVector Location = FVector::ZeroVector;
-
-	// If the Actor is a Controller, use its Pawn's position,
-	// Otherwise if the Actor has an Owner, use its position.
-	// Otherwise if the Actor has a well defined location then use that
-	// Otherwise use the origin
-	AController* Controller = Cast<AController>(InActor);
-	if (Controller != nullptr && Controller->GetPawn() != nullptr)
-	{
-		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();
-		Location = PawnRootComponent ? PawnRootComponent->GetComponentLocation() : FVector::ZeroVector;
-	}
-	else if (InActor->GetOwner() != nullptr && InActor->GetOwner()->GetIsReplicated())
-	{
-		return GetActorSpatialPosition(InActor->GetOwner());
-	}
-	else if (USceneComponent* RootComponent = InActor->GetRootComponent())
-	{
-		Location = RootComponent->GetComponentLocation();
-	}
-
-	// Rebase location onto zero origin so actor is positioned correctly in SpatialOS.
-	return FRepMovement::RebaseOntoZeroOrigin(Location, InActor);
 }
 
 void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object)
