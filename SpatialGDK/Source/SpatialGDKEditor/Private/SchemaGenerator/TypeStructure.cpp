@@ -258,13 +258,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 #if ENGINE_MINOR_VERSION <= 22
 	FRepLayout RepLayout;
 	RepLayout.InitFromObjectClass(Class);
-	FRepLayout* RepLayoutPtr = &RepLayout;
 #else
 	TSharedPtr<FRepLayout> RepLayoutPtr = FRepLayout::CreateFromClass(Class, nullptr/*ServerConnection*/, ECreateRepLayoutFlags::None);
+	FRepLayout& RepLayout = *RepLayoutPtr.Get();
 #endif
-	for (int CmdIndex = 0; CmdIndex < RepLayoutPtr->Cmds.Num(); ++CmdIndex)
+	for (int CmdIndex = 0; CmdIndex < RepLayout.Cmds.Num(); ++CmdIndex)
 	{
-		FRepLayoutCmd& Cmd = RepLayoutPtr->Cmds[CmdIndex];
+		FRepLayoutCmd& Cmd = RepLayout.Cmds[CmdIndex];
 		if (Cmd.Type == ERepLayoutCmdType::Return || Cmd.Property == nullptr)
 		{
 			continue;
@@ -276,7 +276,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			continue;
 		}
 
-		FRepParentCmd& Parent = RepLayoutPtr->Parents[Cmd.ParentIndex];
+		FRepParentCmd& Parent = RepLayout.Parents[Cmd.ParentIndex];
 
 		// In a FRepLayout, all the root level replicated properties in a class are stored in the Parents array.
 		// The Cmds array is an expanded version of the Parents array. This usually maps 1:1 with the Parents array (as most properties
@@ -344,8 +344,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		RepDataNode->ArrayIndex = PropertyNode->StaticArrayIndex;
 		if (Parent.RoleSwapIndex != -1)
 		{
-			const int32 SwappedCmdIndex = RepLayoutPtr->Parents[Parent.RoleSwapIndex].CmdStart;
-			RepDataNode->RoleSwapHandle = static_cast<int32>(RepLayoutPtr->Cmds[SwappedCmdIndex].RelativeHandle);
+			const int32 SwappedCmdIndex = RepLayout.Parents[Parent.RoleSwapIndex].CmdStart;
+			RepDataNode->RoleSwapHandle = static_cast<int32>(RepLayout.Cmds[SwappedCmdIndex].RelativeHandle);
 		}
 		else
 		{
