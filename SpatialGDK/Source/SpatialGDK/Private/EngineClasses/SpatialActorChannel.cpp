@@ -1057,33 +1057,6 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId I
 	}
 }
 
-FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
-{
-	FVector Location = FVector::ZeroVector;
-
-	// If the Actor is a Controller, use its Pawn's position,
-	// Otherwise if the Actor has an Owner, use its position.
-	// Otherwise if the Actor has a well defined location then use that
-	// Otherwise use the origin
-	AController* Controller = Cast<AController>(InActor);
-	if (Controller != nullptr && Controller->GetPawn() != nullptr)
-	{
-		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();
-		Location = PawnRootComponent ? PawnRootComponent->GetComponentLocation() : FVector::ZeroVector;
-	}
-	else if (InActor->GetOwner() != nullptr && InActor->GetOwner()->GetIsReplicated())
-	{
-		return GetActorSpatialPosition(InActor->GetOwner());
-	}
-	else if (USceneComponent* RootComponent = InActor->GetRootComponent())
-	{
-		Location = RootComponent->GetComponentLocation();
-	}
-
-	// Rebase location onto zero origin so actor is positioned correctly in SpatialOS.
-	return FRepMovement::RebaseOntoZeroOrigin(Location, InActor);
-}
-
 void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object)
 {
 	// Prevent rep notify callbacks from being issued when unresolved obj references exist inside UStructs.

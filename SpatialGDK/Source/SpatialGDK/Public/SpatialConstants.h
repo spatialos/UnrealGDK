@@ -175,7 +175,7 @@ namespace SpatialConstants
 
 	// AuthorityIntent codes and Field IDs.
 	const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
-	const uint32 INVALID_AUTHORITY_INTENT_ID                                = 0;
+	const uint32 INVALID_VIRTUAL_WORKER_ID                                = 0;
 
 	// VirtualWorkerTranslation Field IDs.
 	const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
