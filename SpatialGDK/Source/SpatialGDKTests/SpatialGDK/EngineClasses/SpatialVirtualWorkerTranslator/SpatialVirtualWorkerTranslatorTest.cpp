@@ -11,7 +11,7 @@
 #include <WorkerSDK/improbable/c_schema.h>
 
 #define VIRTUALWORKERTRANSLATOR_TEST(TestName) \
-	TEST(Core, SpatialVirtualWorkerTranslator, TestName)
+	GDK_TEST(Core, SpatialVirtualWorkerTranslator, TestName)
 
 VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings)
 {
