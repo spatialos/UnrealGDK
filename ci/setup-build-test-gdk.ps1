@@ -6,9 +6,9 @@ param(
   [string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build. Should ultimately resolve to "C:\b\<number>\".
   [string] $unreal_path = "$build_home\UnrealEngine",
   [string] $test_repo_branch = "master",
-  [string] $test_repo_url = "https://github.com/spatialos/UnrealGDKThirdPersonShooter.git",
-  [string] $test_repo_relative_uproject_path = "Game\ThirdPersonShooter.uproject",
-  [string] $test_repo_map = "AIGym"
+  [string] $test_repo_url = "https://github.com/spatialos/UnrealGDKTestGyms.git",
+  [string] $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject",
+  [string] $test_repo_map = "EmptyGym"
 )
 
 . "$PSScriptRoot\common.ps1"
