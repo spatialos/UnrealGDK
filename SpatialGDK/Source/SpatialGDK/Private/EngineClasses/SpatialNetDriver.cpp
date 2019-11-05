@@ -68,6 +68,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
 	// Native Unreal now iterates over all commands on clients, and no longer has access to a BaseHandleToCmdIndex
 	// in the RepLayout, the below change forces its creation on clients, but this is a workaround
+	// TODO: UNR-2375
 	bMaySendProperties = true;
 #endif
 }
