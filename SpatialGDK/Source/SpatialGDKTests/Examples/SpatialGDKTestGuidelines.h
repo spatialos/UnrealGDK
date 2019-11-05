@@ -34,7 +34,7 @@
 	TEST - a simple test, that should be used if it's one of a kind (i.e. it's body can't be reused, otherwise use COMPLEX_TEST),
 	and if doesn't rely on background threads doing the computation (otherwise use LATENT_COMMANDs).
 	COMPLEX_TEST - same as simple test, but allows having multiple test cases run through the same test function body.
-	DEFINE_LATENT_COMMAND... - used to run tests that require more than 1 thread.
+	DEFINE_LATENT_COMMAND... - used to run tests that are expected to run across multiple ticks.
 
 	- There are 5 types of mock objects we can use in tests:
 	Dummy objects
