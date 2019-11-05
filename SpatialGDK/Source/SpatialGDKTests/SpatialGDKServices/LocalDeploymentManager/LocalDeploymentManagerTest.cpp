@@ -10,7 +10,7 @@
 #include "CoreMinimal.h"
 
 #define LOCALDEPLOYMENT_TEST(TestName) \
-	TEST(Services, LocalDeployment, TestName)
+	GDK_TEST(Services, LocalDeployment, TestName)
 
 namespace
 {
@@ -57,8 +57,8 @@ namespace
 	}
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND(StartDeployment);
-bool StartDeployment::Update()
+DEFINE_LATENT_AUTOMATION_COMMAND(FStartDeployment);
+bool FStartDeployment::Update()
 {
 	if (const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
@@ -98,8 +98,8 @@ bool StartDeployment::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND(StopDeployment);
-bool StopDeployment::Update()
+DEFINE_LATENT_AUTOMATION_COMMAND(FStopDeployment);
+bool FStopDeployment::Update()
 {
 	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
 
@@ -119,8 +119,8 @@ bool StopDeployment::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(WaitForDeployment, FAutomationTestBase*, Test, EDeploymentState, ExpectedDeploymentState);
-bool WaitForDeployment::Update()
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FWaitForDeployment, FAutomationTestBase*, Test, EDeploymentState, ExpectedDeploymentState);
+bool FWaitForDeployment::Update()
 {
 	const double NewTime = FPlatformTime::Seconds();
 	if (NewTime - StartTime >= MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION)
@@ -139,8 +139,8 @@ bool WaitForDeployment::Update()
 	}
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(CheckDeploymentState, FAutomationTestBase*, Test, EDeploymentState, ExpectedDeploymentState);
-bool CheckDeploymentState::Update()
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FCheckDeploymentState, FAutomationTestBase*, Test, EDeploymentState, ExpectedDeploymentState);
+bool FCheckDeploymentState::Update()
 {
 	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
 
@@ -156,39 +156,40 @@ bool CheckDeploymentState::Update()
 	return true;
 }
 
+/*
 // UNR-1975 after fixing the flakiness of these tests, and investigating how they can be run in CI (UNR-1969), re-enable them
-/*LOCALDEPLOYMENT_TEST(GIVEN_no_deployment_running_WHEN_deployment_started_THEN_deployment_running)
+LOCALDEPLOYMENT_TEST(GIVEN_no_deployment_running_WHEN_deployment_started_THEN_deployment_running)
 {
 	// GIVEN
-	ADD_LATENT_AUTOMATION_COMMAND(StopDeployment());
-	ADD_LATENT_AUTOMATION_COMMAND(WaitForDeployment(this, EDeploymentState::IsNotRunning));
+	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
 
 	// WHEN
-	ADD_LATENT_AUTOMATION_COMMAND(StartDeployment());
-	ADD_LATENT_AUTOMATION_COMMAND(WaitForDeployment(this, EDeploymentState::IsRunning));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartDeployment());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsRunning));
 
 	// THEN
-	ADD_LATENT_AUTOMATION_COMMAND(CheckDeploymentState(this, EDeploymentState::IsRunning));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckDeploymentState(this, EDeploymentState::IsRunning));
 
 	// Cleanup
-	ADD_LATENT_AUTOMATION_COMMAND(StopDeployment());
-	ADD_LATENT_AUTOMATION_COMMAND(WaitForDeployment(this, EDeploymentState::IsNotRunning));
+	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
     return true;
 }
 
 LOCALDEPLOYMENT_TEST(GIVEN_deployment_running_WHEN_deployment_stopped_THEN_deployment_not_running)
 {
 	// GIVEN
-	ADD_LATENT_AUTOMATION_COMMAND(StopDeployment());
-	ADD_LATENT_AUTOMATION_COMMAND(WaitForDeployment(this, EDeploymentState::IsNotRunning));
-	ADD_LATENT_AUTOMATION_COMMAND(StartDeployment());
-	ADD_LATENT_AUTOMATION_COMMAND(WaitForDeployment(this, EDeploymentState::IsRunning));
+	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartDeployment());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsRunning));
 
 	// WHEN
-	ADD_LATENT_AUTOMATION_COMMAND(StopDeployment());
-	ADD_LATENT_AUTOMATION_COMMAND(WaitForDeployment(this, EDeploymentState::IsNotRunning));
+	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
 
 	// THEN
-	ADD_LATENT_AUTOMATION_COMMAND(CheckDeploymentState(this, EDeploymentState::IsNotRunning));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckDeploymentState(this, EDeploymentState::IsNotRunning));
     return true;
 }*/
