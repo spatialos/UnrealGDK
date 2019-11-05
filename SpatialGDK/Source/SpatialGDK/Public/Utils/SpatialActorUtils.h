@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 
+#include "Components/SceneComponent.h"
 #include "Engine/EngineTypes.h"
 #include "EngineClasses/SpatialNetConnection.h"
-#include "Components/SceneComponent.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"
 

@@ -67,10 +67,10 @@ bool FWaitForWorld::Update()
 {
 	TestWorld = GetAnyGameWorld();
 
-	if (TestWorld && TestWorld->AreActorsInitialized() )
+	if (TestWorld && TestWorld->AreActorsInitialized())
 	{
 		AGameStateBase* GameState = TestWorld->GetGameState();
-		if (GameState && GameState->HasMatchStarted() )
+		if (GameState && GameState->HasMatchStarted())
 		{
 			return true;
 		}

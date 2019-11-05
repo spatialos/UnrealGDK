@@ -76,7 +76,7 @@ uint32 UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
-		return 0;
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
@@ -89,7 +89,7 @@ uint32 UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
 		}
 	}
 
-	return 0;
+	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 }
 
 bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location)
