@@ -50,7 +50,6 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDr
 	return CppStructOps->NetDeltaSerialize(NetDeltaInfo, Source);
 }
 
-#if ENGINE_MINOR_VERSION <= 22
 void SpatialFastArrayNetSerializeCB::NetSerializeStruct(UScriptStruct* Struct, FBitArchive& Ar, UPackageMap* PackageMap, void* Data, bool& bHasUnmapped)
 {
 	// Check if struct has custom NetSerialize function, otherwise call standard struct replication
@@ -77,36 +76,12 @@ void SpatialFastArrayNetSerializeCB::NetSerializeStruct(UScriptStruct* Struct, F
 		RepLayout_SerializePropertiesForStruct(*RepLayout, Ar, PackageMap, reinterpret_cast<uint8*>(Data), bHasUnmapped);
 	}
 }
-#else
-//TODO: Probably copy more from FNetSerializeCB::NetSerializeStruct
+
+#if ENGINE_MINOR_VERSION >= 23
 void SpatialFastArrayNetSerializeCB::NetSerializeStruct(FNetDeltaSerializeInfo& Params)
 {
-	UScriptStruct* ScriptStruct = static_cast<UScriptStruct*>(Params.Struct);
-	FBitArchive& Ar = Params.Reader ? static_cast<FBitArchive&>(*Params.Reader) : static_cast<FBitArchive&>(*Params.Writer);
-
-	// Check if struct has custom NetSerialize function, otherwise call standard struct replication
-	if (EnumHasAnyFlags(ScriptStruct->StructFlags, STRUCT_NetSerializeNative))
-	{
-		UScriptStruct::ICppStructOps* CppStructOps = ScriptStruct->GetCppStructOps();
-		check(CppStructOps); // else should not have STRUCT_NetSerializeNative
-		bool bSuccess = true;
-		if (!CppStructOps->NetSerialize(Ar, Params.Map, bSuccess, reinterpret_cast<uint8*>(Params.Data)))
-		{
-			Params.bOutHasMoreUnmapped = true;
-		}
-
-		// Check the success of the serialization and print a warning if it failed. This is how native handles failed serialization.
-		if (!bSuccess)
-		{
-			UE_LOG(LogSpatialNetSerialize, Warning, TEXT("SpatialFastArrayNetSerialize: NetSerialize %s failed."), *Params.Struct->GetFullName());
-		}
-	}
-	else
-	{
-		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetStructRepLayout(ScriptStruct);
-
-		RepLayout_SerializePropertiesForStruct(*RepLayout, Ar, Params.Map, reinterpret_cast<uint8*>(Params.Data), Params.bOutHasMoreUnmapped);
-	}
+	// TODO: UNR-2371
+	checkf(false, TEXT("The GDK does not support the new version of NetSerializeStruct yet."));
 }
 #endif
 
