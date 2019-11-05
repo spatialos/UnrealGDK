@@ -955,7 +955,7 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 #if ENGINE_MINOR_VERSION <= 22
 	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
 #else
-	//TODO: This is basically a workaround where we do not construct a proper ShadowData state, so we just reset it here - this also probably leaks memory if the shadow data has arrays
+	// TODO: UNR-2372 - Investigate not resetting the ShadowData.
 	Replicator.RepState->GetReceivingRepState()->StaticBuffer.Buffer.Empty();
 	Replicator.RepLayout->InitRepStateStaticBuffer(Replicator.RepState->GetReceivingRepState()->StaticBuffer, (const uint8*)TargetObject);
 #endif
