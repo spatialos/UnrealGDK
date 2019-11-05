@@ -87,6 +87,23 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 {
 	Super::Init(InConnection, ChannelIndex, CreateFlag);
 
+	// Actor Channels are pooled, so we must initialize internal state here.
+	bCreatedEntity = false;
+	bCreatingNewEntity = false;
+	EntityId = SpatialConstants::INVALID_ENTITY_ID;
+	bInterestDirty = false;
+	bNetOwned = false;
+	LastPositionSinceUpdate = FVector::ZeroVector;
+	TimeWhenPositionLastUpdated = 0.0f;
+
+	PendingDynamicSubobjects.Empty();
+	SavedOwnerWorkerAttribute.Empty();
+
+	FramesTillDormancyAllowed = 0;
+
+	ActorHandoverShadowData = nullptr;
+	HandoverShadowDataMap.Empty();
+
 	NetDriver = Cast<USpatialNetDriver>(Connection->Driver);
 	check(NetDriver);
 	Sender = NetDriver->Sender;
@@ -871,23 +888,27 @@ bool USpatialActorChannel::TryResolveActor()
 	return true;
 }
 
-FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
+FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
 {
+	// If there is no NetGUID for this object, we will crash in FObjectReplicator::StartReplicating, so we verify this here.
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
-	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid());
+	if (ObjectNetGUID.IsDefault() || !ObjectNetGUID.IsValid())
+	{
+		// SpatialReceiver tried to resolve this object in the PackageMap, but it didn't propagate to GuidCache.
+		// This could happen if the UnrealObjectRef was already mapped to a different object that's been destroyed.
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("PreReceiveSpatialUpdate: NetGUID is invalid! Object: %s"), *TargetObject->GetPathName());
+		return nullptr;
+	}
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PreNetReceive();
 	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
 
-	return Replicator;
+	return &Replicator;
 }
 
 void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies)
 {
-	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
-	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
-
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
 
@@ -1012,7 +1033,7 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();
 		Location = PawnRootComponent ? PawnRootComponent->GetComponentLocation() : FVector::ZeroVector;
 	}
-	else if (InActor->GetOwner() != nullptr && InActor->GetIsReplicated())
+	else if (InActor->GetOwner() != nullptr && InActor->GetOwner()->GetIsReplicated())
 	{
 		return GetActorSpatialPosition(InActor->GetOwner());
 	}
