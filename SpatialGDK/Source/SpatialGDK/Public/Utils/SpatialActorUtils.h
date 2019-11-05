@@ -9,6 +9,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/Pawn.h"
 
 namespace SpatialGDK
 {

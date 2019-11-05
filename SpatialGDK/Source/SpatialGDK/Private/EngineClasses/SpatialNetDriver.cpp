@@ -29,6 +29,8 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/GridBasedLBStrategy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -57,6 +59,7 @@ DEFINE_STAT(STAT_SpatialActorsChanged);
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, LoadBalanceEnforcer(nullptr)
+	, LoadBalanceStrategy(nullptr)
 	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
@@ -326,12 +329,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		VirtualWorkerTranslator->Init(this);
 		LoadBalanceEnforcer = NewObject<USpatialLoadBalanceEnforcer>();
 		LoadBalanceEnforcer->Init(this, VirtualWorkerTranslator.Get());
+
 		// TODO: timgibson - get from config data for a map?
-		//UGridBasedLoadBalancingStrategy* NewLoadBalancer = NewObject<UGridBasedLoadBalancingStrategy>();
-		//NewLoadBalancer->RowCount = SpatialSettings->RowCount;
-		//NewLoadBalancer->ColumnCount = SpatialSettings->ColumnCount;
-		//NewLoadBalancer->Init(this, VirtualWorkerTranslator);
-		//LoadBalancer = NewLoadBalancer;
+		LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>();
+		LoadBalanceStrategy->Init(this);
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);

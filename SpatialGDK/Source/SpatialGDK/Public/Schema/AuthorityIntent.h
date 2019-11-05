@@ -62,7 +62,7 @@ struct AuthorityIntent : Component
 
 	// Id of the Unreal server worker which should be authoritative for the entity.
 	// 0 is reserved as an invalid/unset value.
-	uint32 VirtualWorkerId;
+	VirtualWorkerId VirtualWorkerId;
 };
 
 } // namespace SpatialGDK

@@ -10,9 +10,11 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpoint.h"
@@ -240,11 +242,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ComponentDatas.Add(Persistence().CreatePersistenceData());
 	}
 
-	/* TODO(zoning)
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		ComponentDatas.Add(AuthorityIntent(NetDriver->LoadBalancer->GetAuthoritativeVirtualWorkerId(*Actor)).CreateAuthorityIntentData());
-	}*/
+		ComponentDatas.Add(AuthorityIntent(NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor)).CreateAuthorityIntentData());
+	}
 
 	if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
 	{
@@ -683,6 +684,28 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 
 	Worker_ComponentUpdate Update = Position::CreatePositionUpdate(Coordinates::FromFVector(Location));
 	Connection->SendComponentUpdate(EntityId, &Update);
+}
+
+void USpatialSender::SendAuthorityUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId)
+{
+	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
+	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+	check(NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID));
+
+	UE_LOG(LogSpatialSender, Log, TEXT("(%s) Sending authority update for entity id %d. Virtual worker '%d' should become authoritative over %s"), *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
+
+	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+	check(AuthorityIntentComponent != nullptr);
+	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
+
+	Worker_ComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
+	Connection->SendComponentUpdate(EntityId, &Update);
+
+	if (NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		// Also notify the translator directly on the worker that sends the component update, as the update will short circuit
+		NetDriver->LoadBalanceEnforcer->QueueAclAssignmentRequest(EntityId);
+	}
 }
 
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)

@@ -36,6 +36,7 @@ class USnapshotManager;
 class USpatialMetrics;
 class ASpatialMetricsDisplay;
 class USpatialLoadBalanceEnforcer;
+class UAbstractLBStrategy;
 
 class UEntityPool;
 
@@ -143,9 +144,11 @@ public:
 	UPROPERTY()
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
+	ASpatialMetricsDisplay* SpatialMetricsDisplay;
+	UPROPERTY()
 	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
 	UPROPERTY()
-	ASpatialMetricsDisplay* SpatialMetricsDisplay;
+	UAbstractLBStrategy* LoadBalanceStrategy;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
