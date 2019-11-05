@@ -11,9 +11,10 @@
 #include <WorkerSDK/improbable/c_schema.h>
 
 #define VIRTUALWORKERTRANSLATOR_TEST(TestName) \
-	TEST(Core, SpatialVirtualWorkerTranslator, TestName)
+	GDK_TEST(Core, SpatialVirtualWorkerTranslator, TestName)
 
-VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings)
+VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings);
+bool Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings::RunTest(const FString& Parameters)
 {
 	// The class is initialized with no data.
 	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>();
@@ -23,7 +24,8 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_nothing_has_changed_THEN_retu
 	return true;
 }
 
-VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the_updated_mapping)
+VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the_updated_mapping);
+bool Given_no_mapping_WHEN_it_is_updated_THEN_return_the_updated_mapping::RunTest(const FString& Parameters)
 {
 	// The class is initialized with no data.
 	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>();

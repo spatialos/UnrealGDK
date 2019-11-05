@@ -57,7 +57,8 @@ namespace
 	}
 }
 
-DEFINE_LATENT_COMMAND(StartDeployment)
+DEFINE_LATENT_AUTOMATION_COMMAND(StartDeployment);
+bool StartDeployment::Update()
 {
 	if (const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
@@ -97,7 +98,8 @@ DEFINE_LATENT_COMMAND(StartDeployment)
 	return true;
 }
 
-DEFINE_LATENT_COMMAND(StopDeployment)
+DEFINE_LATENT_AUTOMATION_COMMAND(StopDeployment);
+bool StopDeployment::Update()
 {
 	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
 
@@ -117,7 +119,8 @@ DEFINE_LATENT_COMMAND(StopDeployment)
 	return true;
 }
 
-DEFINE_LATENT_COMMAND_TWO_PARAMETERS(WaitForDeployment, FAutomationTestBase*, Test, EDeploymentState, ExpectedDeploymentState)
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(WaitForDeployment, FAutomationTestBase*, Test, EDeploymentState, ExpectedDeploymentState);
+bool WaitForDeployment::Update()
 {
 	const double NewTime = FPlatformTime::Seconds();
 	if (NewTime - StartTime >= MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION)
@@ -136,7 +139,8 @@ DEFINE_LATENT_COMMAND_TWO_PARAMETERS(WaitForDeployment, FAutomationTestBase*, Te
 	}
 }
 
-DEFINE_LATENT_COMMAND_TWO_PARAMETERS(CheckDeploymentState, FAutomationTestBase*, Test, EDeploymentState, ExpectedDeploymentState)
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(CheckDeploymentState, FAutomationTestBase*, Test, EDeploymentState, ExpectedDeploymentState);
+bool CheckDeploymentState::Update()
 {
 	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
 

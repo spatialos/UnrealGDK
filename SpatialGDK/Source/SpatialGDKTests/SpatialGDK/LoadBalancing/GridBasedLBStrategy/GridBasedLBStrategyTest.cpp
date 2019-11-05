@@ -12,7 +12,7 @@
 #include "Tests/AutomationEditorCommon.h"
 
 #define GRIDBASEDLBSTRATEGY_TEST(TestName) \
-	TEST(Core, UGridBasedLBStrategy, TestName)
+	GDK_TEST(Core, UGridBasedLBStrategy, TestName)
 
 // Test Globals
 namespace
@@ -163,7 +163,8 @@ bool FCheckVirtualWorkersMatch::Update()
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_called_THEN_it_returns_6_ids)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_called_THEN_it_returns_6_ids);
+bool GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_called_THEN_it_returns_6_ids::RunTest(const FString& Parameters)
 {
 	Strat = UTestGridBasedLBStrategy::Create(2, 3, 10000.f, 10000.f);
 	Strat->Init(nullptr);
@@ -174,7 +175,8 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_call
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worker_ids_are_valid)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worker_ids_are_valid);
+bool GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worker_ids_are_valid::RunTest(const FString& Parameters)
 {
 	Strat = UTestGridBasedLBStrategy::Create(5, 10, 10000.f, 10000.f);
 	Strat->Init(nullptr);
@@ -188,7 +190,8 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worke
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready);
+bool GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready::RunTest(const FString& Parameters)
 {
 	Strat = UTestGridBasedLBStrategy::Create(1, 1, 10000.f, 10000.f);
 	Strat->Init(nullptr);
@@ -202,7 +205,8 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false);
+bool GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false::RunTest(const FString& Parameters)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -216,7 +220,8 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_reli
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_return_different_virtual_workers)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_return_different_virtual_workers);
+bool GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_return_different_virtual_workers::RunTest(const FString& Parameters)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -236,7 +241,8 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_r
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority);
+bool GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority::RunTest(const FString& Parameters)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -254,7 +260,8 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_sho
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_should_belong_to_same_worker_id)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_should_belong_to_same_worker_id);
+bool GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_should_belong_to_same_worker_id::RunTest(const FString& Parameters)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -270,7 +277,8 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_shou
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_relinquishes_based_on_local_id)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_relinquishes_based_on_local_id);
+bool GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_relinquishes_based_on_local_id::RunTest(const FString& Parameters)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
