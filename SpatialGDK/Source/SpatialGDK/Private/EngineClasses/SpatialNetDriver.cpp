@@ -331,7 +331,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		LoadBalanceEnforcer->Init(this, VirtualWorkerTranslator.Get());
 
 		// TODO: timgibson - get from config data for a map?
-		LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>();
+		switch (SpatialSettings->LoadBalanceStrategy)
+		{
+		case ELoadBalanceStrategy::Grid:
+		default:
+			LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>();
+			break;
+		}
+
 		LoadBalanceStrategy->Init(this);
 	}
 
