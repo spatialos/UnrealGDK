@@ -71,7 +71,7 @@ The call is not processed because this type of RPC is only for a server-worker i
 
 In some situations, a worker (either a client or a server) may receive an RPC with a parameter that it cannot resolve. In these instances, the GDK will output a warning. However, sometimes this behaviour is acceptable. To account for these cases where the behaviour is acceptable, you can disable the warnings on a per-RPC basis, either using C++ or using Blueprints.
 
-#### How to allow unresolved parameters in an RPC (using C++)
+#### How to disable warnings for unresolved parameters in an RPC (using C++)
 
 To disable these warnings on an RPC in C++, add an `AllowUnresolvedParameters` tag to the `UFUNCTION` macro of the RPC function.
 
