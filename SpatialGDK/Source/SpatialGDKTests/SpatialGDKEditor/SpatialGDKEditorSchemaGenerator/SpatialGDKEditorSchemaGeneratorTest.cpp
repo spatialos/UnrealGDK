@@ -340,8 +340,7 @@ private:
 
 } // anonymous namespace
 
-SCHEMA_GENERATOR_TEST(GIVEN_spatial_type_class_WHEN_checked_if_supported_THEN_is_supported);
-bool GIVEN_spatial_type_class_WHEN_checked_if_supported_THEN_is_supported::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_spatial_type_class_WHEN_checked_if_supported_THEN_is_supported)
 {
 	// GIVEN
 	const UClass* SupportedClass = USpatialTypeObjectStub::StaticClass();
@@ -354,8 +353,7 @@ bool GIVEN_spatial_type_class_WHEN_checked_if_supported_THEN_is_supported::RunTe
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_class_derived_from_spatial_type_class_WHEN_checked_if_supported_THEN_is_supported);
-bool GIVEN_class_derived_from_spatial_type_class_WHEN_checked_if_supported_THEN_is_supported::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_class_derived_from_spatial_type_class_WHEN_checked_if_supported_THEN_is_supported)
 {
 	// GIVEN
 	const UClass* SupportedClass = UChildOfSpatialTypeObjectStub::StaticClass();
@@ -368,8 +366,7 @@ bool GIVEN_class_derived_from_spatial_type_class_WHEN_checked_if_supported_THEN_
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_null_pointer_WHEN_checked_if_supported_THEN_is_not_supported);
-bool GIVEN_null_pointer_WHEN_checked_if_supported_THEN_is_not_supported::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_null_pointer_WHEN_checked_if_supported_THEN_is_not_supported)
 {
 	// GIVEN
 	const UClass* SupportedClass = nullptr;
@@ -382,8 +379,7 @@ bool GIVEN_null_pointer_WHEN_checked_if_supported_THEN_is_not_supported::RunTest
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_non_spatial_type_class_WHEN_checked_if_supported_THEN_is_not_supported);
-bool GIVEN_non_spatial_type_class_WHEN_checked_if_supported_THEN_is_not_supported::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_non_spatial_type_class_WHEN_checked_if_supported_THEN_is_not_supported)
 {
 	// GIVEN
 	const UClass* SupportedClass = UNotSpatialTypeObjectStub::StaticClass();
@@ -396,8 +392,7 @@ bool GIVEN_non_spatial_type_class_WHEN_checked_if_supported_THEN_is_not_supporte
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_class_derived_from_non_spatial_type_class_WHEN_checked_if_supported_THEN_is_not_supported);
-bool GIVEN_class_derived_from_non_spatial_type_class_WHEN_checked_if_supported_THEN_is_not_supported::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_class_derived_from_non_spatial_type_class_WHEN_checked_if_supported_THEN_is_not_supported)
 {
 	// GIVEN
 	const UClass* SupportedClass = UChildOfNotSpatialTypeObjectStub::StaticClass();
@@ -410,8 +405,7 @@ bool GIVEN_class_derived_from_non_spatial_type_class_WHEN_checked_if_supported_T
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_not_spatial_tag_WHEN_checked_if_supported_THEN_is_not_supported);
-bool GIVEN_a_class_with_not_spatial_tag_WHEN_checked_if_supported_THEN_is_not_supported::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_not_spatial_tag_WHEN_checked_if_supported_THEN_is_not_supported)
 {
 	// GIVEN
 	const UClass* SupportedClass = UNotSpatialTypeObjectStub::StaticClass();
@@ -424,8 +418,7 @@ bool GIVEN_a_class_with_not_spatial_tag_WHEN_checked_if_supported_THEN_is_not_su
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_a_class_without_any_spatial_tags_WHEN_checked_if_supported_THEN_is_not_supported);
-bool GIVEN_a_class_without_any_spatial_tags_WHEN_checked_if_supported_THEN_is_not_supported::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_a_class_without_any_spatial_tags_WHEN_checked_if_supported_THEN_is_not_supported)
 {
 	// GIVEN
 	const UClass* SupportedClass = UNoSpatialFlagsObjectStub ::StaticClass();
@@ -438,8 +431,7 @@ bool GIVEN_a_class_without_any_spatial_tags_WHEN_checked_if_supported_THEN_is_no
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_child_of_a_class_without_any_spatial_tags_WHEN_checked_if_supported_THEN_is_not_supported);
-bool GIVEN_child_of_a_class_without_any_spatial_tags_WHEN_checked_if_supported_THEN_is_not_supported::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_child_of_a_class_without_any_spatial_tags_WHEN_checked_if_supported_THEN_is_not_supported)
 {
 	// GIVEN
 	const UClass* SupportedClass = UChildOfNoSpatialFlagsObjectStub::StaticClass();
@@ -452,8 +444,7 @@ bool GIVEN_child_of_a_class_without_any_spatial_tags_WHEN_checked_if_supported_T
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_generated_schema_for_these_classes_THEN_corresponding_schema_files_exist);
-bool GIVEN_multiple_classes_WHEN_generated_schema_for_these_classes_THEN_corresponding_schema_files_exist::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_generated_schema_for_these_classes_THEN_corresponding_schema_files_exist)
 {
 	SchemaTestFixture Fixture;
 
@@ -483,8 +474,7 @@ bool GIVEN_multiple_classes_WHEN_generated_schema_for_these_classes_THEN_corresp
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_expected_schema_exists);
-bool GIVEN_an_Actor_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_expected_schema_exists::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_expected_schema_exists)
 {
 	SchemaTestFixture Fixture;
 
@@ -503,8 +493,7 @@ bool GIVEN_an_Actor_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_these_classes_THEN_files_with_expected_schema_exist);
-bool GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_these_classes_THEN_files_with_expected_schema_exist::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_these_classes_THEN_files_with_expected_schema_exist)
 {
 	SchemaTestFixture Fixture;
 
@@ -543,8 +532,7 @@ bool GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_these_classes_THEN_f
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_component_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_expected_schema_exists);
-bool GIVEN_an_Actor_component_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_expected_schema_exists::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_component_class_WHEN_generated_schema_for_this_class_THEN_a_file_with_expected_schema_exists)
 {
 	SchemaTestFixture Fixture;
 
@@ -564,8 +552,7 @@ bool GIVEN_an_Actor_component_class_WHEN_generated_schema_for_this_class_THEN_a_
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_an_actor_component_WHEN_generated_schema_for_this_class_THEN_a_file_with_expected_schema_exists);
-bool GIVEN_an_Actor_class_with_an_actor_component_WHEN_generated_schema_for_this_class_THEN_a_file_with_expected_schema_exists::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_an_actor_component_WHEN_generated_schema_for_this_class_THEN_a_file_with_expected_schema_exists)
 {
 	SchemaTestFixture Fixture;
 
@@ -584,8 +571,7 @@ bool GIVEN_an_Actor_class_with_an_actor_component_WHEN_generated_schema_for_this
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_actor_components_WHEN_generated_schema_for_this_class_THEN_files_with_expected_schema_exist);
-bool GIVEN_an_Actor_class_with_multiple_actor_components_WHEN_generated_schema_for_this_class_THEN_files_with_expected_schema_exist::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_actor_components_WHEN_generated_schema_for_this_class_THEN_files_with_expected_schema_exist)
 {
 	SchemaTestFixture Fixture;
 
@@ -604,8 +590,7 @@ bool GIVEN_an_Actor_class_with_multiple_actor_components_WHEN_generated_schema_f
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_object_components_WHEN_generated_schema_for_this_class_THEN_files_with_expected_schema_exist);
-bool GIVEN_an_Actor_class_with_multiple_object_components_WHEN_generated_schema_for_this_class_THEN_files_with_expected_schema_exist::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_object_components_WHEN_generated_schema_for_this_class_THEN_files_with_expected_schema_exist)
 {
 	SchemaTestFixture Fixture;
 
@@ -624,8 +609,7 @@ bool GIVEN_an_Actor_class_with_multiple_object_components_WHEN_generated_schema_
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_multiple_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist);
-bool GIVEN_multiple_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist)
 {
 	SchemaTestFixture Fixture;
 
@@ -648,8 +632,7 @@ bool GIVEN_multiple_schema_files_exist_WHEN_deleted_generated_files_THEN_no_sche
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_no_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist);
-bool GIVEN_no_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_no_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist)
 {
 	// GIVEN
 
@@ -663,8 +646,7 @@ bool GIVEN_no_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_fil
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_schema_database_exists);
-bool GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_schema_database_exists::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_schema_database_exists)
 {
 	SchemaTestFixture Fixture;
 
@@ -689,8 +671,7 @@ bool GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THE
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_saved_THEN_expected_schema_database_exists);
-bool GIVEN_a_class_with_schema_generated_WHEN_schema_database_saved_THEN_expected_schema_database_exists::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_saved_THEN_expected_schema_database_exists)
 {
 	SchemaTestFixture Fixture;
 
@@ -724,8 +705,7 @@ bool GIVEN_a_class_with_schema_generated_WHEN_schema_database_saved_THEN_expecte
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_expected_schema_database_exists);
-bool GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_expected_schema_database_exists::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_expected_schema_database_exists)
 {
 	SchemaTestFixture Fixture;
 
@@ -762,8 +742,7 @@ bool GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THE
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_schema_database_deleted_THEN_no_schema_database_exists);
-bool GIVEN_schema_database_exists_WHEN_schema_database_deleted_THEN_no_schema_database_exists::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_schema_database_deleted_THEN_no_schema_database_exists)
 {
 	SchemaTestFixture Fixture;
 	
@@ -789,8 +768,7 @@ bool GIVEN_schema_database_exists_WHEN_schema_database_deleted_THEN_no_schema_da
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loaded);
-bool GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loaded::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loaded)
 {
 	SchemaTestFixture Fixture;
 
@@ -810,8 +788,7 @@ bool GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loaded::RunTest(const 
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_THEN_not_loaded);
-bool GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_THEN_not_loaded::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_THEN_not_loaded)
 {
 	SchemaTestFixture Fixture;
 
@@ -829,8 +806,7 @@ bool GIVEN_schema_database_does_not_exist_WHEN_tried_to_load_THEN_not_loaded::Ru
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WHEN_copied_THEN_expected_files_exist);
-bool GIVEN_source_and_destination_of_well_known_schema_files_WHEN_copied_THEN_expected_files_exist::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WHEN_copied_THEN_expected_files_exist)
 {
 	SchemaTestFixture Fixture;
 
@@ -903,8 +879,7 @@ bool GIVEN_source_and_destination_of_well_known_schema_files_WHEN_copied_THEN_ex
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_THEN_all_unsupported_classes_are_filtered);
-bool GIVEN_multiple_classes_WHEN_getting_all_supported_classes_THEN_all_unsupported_classes_are_filtered::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_WHEN_getting_all_supported_classes_THEN_all_unsupported_classes_are_filtered)
 {
 	SchemaTestFixture Fixture;
 	
@@ -950,8 +925,7 @@ bool GIVEN_multiple_classes_WHEN_getting_all_supported_classes_THEN_all_unsuppor
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_3_level_names_WHEN_generating_schema_for_sublevels_THEN_generated_schema_contains_3_components_with_unique_names);
-bool GIVEN_3_level_names_WHEN_generating_schema_for_sublevels_THEN_generated_schema_contains_3_components_with_unique_names::RunTest(const FString& Parameters)
+SCHEMA_GENERATOR_TEST(GIVEN_3_level_names_WHEN_generating_schema_for_sublevels_THEN_generated_schema_contains_3_components_with_unique_names)
 {
 	SchemaTestFixture Fixture;
 	

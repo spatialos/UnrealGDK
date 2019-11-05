@@ -13,8 +13,7 @@
 #define VIRTUALWORKERTRANSLATOR_TEST(TestName) \
 	GDK_TEST(Core, SpatialVirtualWorkerTranslator, TestName)
 
-VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings);
-bool Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings::RunTest(const FString& Parameters)
+VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings)
 {
 	// The class is initialized with no data.
 	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>();
@@ -24,8 +23,7 @@ bool Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings::RunTest(
 	return true;
 }
 
-VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the_updated_mapping);
-bool Given_no_mapping_WHEN_it_is_updated_THEN_return_the_updated_mapping::RunTest(const FString& Parameters)
+VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the_updated_mapping)
 {
 	// The class is initialized with no data.
 	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>();

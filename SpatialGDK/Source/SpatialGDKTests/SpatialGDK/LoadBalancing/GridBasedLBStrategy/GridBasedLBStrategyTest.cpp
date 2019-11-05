@@ -163,8 +163,7 @@ bool FCheckVirtualWorkersMatch::Update()
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_called_THEN_it_returns_6_ids);
-bool GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_called_THEN_it_returns_6_ids::RunTest(const FString& Parameters)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_called_THEN_it_returns_6_ids)
 {
 	Strat = UTestGridBasedLBStrategy::Create(2, 3, 10000.f, 10000.f);
 	Strat->Init(nullptr);
@@ -175,8 +174,7 @@ bool GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_called_THEN_it_returns_6
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worker_ids_are_valid);
-bool GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worker_ids_are_valid::RunTest(const FString& Parameters)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worker_ids_are_valid)
 {
 	Strat = UTestGridBasedLBStrategy::Create(5, 10, 10000.f, 10000.f);
 	Strat->Init(nullptr);
@@ -190,8 +188,7 @@ bool GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worker_ids_are_valid::Run
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready);
-bool GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready::RunTest(const FString& Parameters)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready)
 {
 	Strat = UTestGridBasedLBStrategy::Create(1, 1, 10000.f, 10000.f);
 	Strat->Init(nullptr);
@@ -205,8 +202,7 @@ bool GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready::
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false);
-bool GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false::RunTest(const FString& Parameters)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -220,8 +216,7 @@ bool GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_r
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_return_different_virtual_workers);
-bool GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_return_different_virtual_workers::RunTest(const FString& Parameters)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_return_different_virtual_workers)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -241,8 +236,7 @@ bool GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_return_different_virt
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority);
-bool GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority::RunTest(const FString& Parameters)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -260,8 +254,7 @@ bool GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_autho
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_should_belong_to_same_worker_id);
-bool GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_should_belong_to_same_worker_id::RunTest(const FString& Parameters)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_should_belong_to_same_worker_id)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -277,8 +270,7 @@ bool GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_should_belong_to_same_wo
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_relinquishes_based_on_local_id);
-bool GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_relinquishes_based_on_local_id::RunTest(const FString& Parameters)
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_relinquishes_based_on_local_id)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 

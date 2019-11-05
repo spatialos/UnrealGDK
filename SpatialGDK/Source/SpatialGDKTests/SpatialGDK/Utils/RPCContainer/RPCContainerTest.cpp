@@ -44,8 +44,7 @@ namespace
 	}
 } // anonymous namespace
 
-RPCCONTAINER_TEST(GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_queued);
-bool GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_queued::RunTest(const FString& Parameters)
+RPCCONTAINER_TEST(GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_queued)
 {
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
@@ -56,8 +55,7 @@ bool GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_queued::RunTe
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_queued);
-bool GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_queued::RunTest(const FString& Parameters)
+RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_queued)
 {
 	UObjectStub* TargetObject = NewObject<UObjectStub>();
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
@@ -71,8 +69,7 @@ bool GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_queued::RunTest(
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_added_THEN_they_are_queued);
-bool GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_added_THEN_they_are_queued::RunTest(const FString& Parameters)
+RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_added_THEN_they_are_queued)
 {
 	UObjectStub* TargetObject = NewObject<UObjectStub>();
 	FPendingRPCParams Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
@@ -88,8 +85,7 @@ bool GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_added_THEN_th
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_nothing_is_queued);
-bool GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_nothing_is_queued::RunTest(const FString& Parameters)
+RPCCONTAINER_TEST(GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_nothing_is_queued)
 {
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
@@ -103,8 +99,7 @@ bool GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_nothing_is_que
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_same_type_WHEN_processed_once_THEN_nothing_is_queued);
-bool GIVEN_a_container_storing_multiple_values_of_same_type_WHEN_processed_once_THEN_nothing_is_queued::RunTest(const FString& Parameters)
+RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_same_type_WHEN_processed_once_THEN_nothing_is_queued)
 {
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
 	FPendingRPCParams Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
@@ -120,8 +115,7 @@ bool GIVEN_a_container_storing_multiple_values_of_same_type_WHEN_processed_once_
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_THEN_they_are_queued);
-bool GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_THEN_they_are_queued::RunTest(const FString& Parameters)
+RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_THEN_they_are_queued)
 {
 	UObjectStub* TargetObject = NewObject<UObjectStub>();
 
@@ -140,8 +134,7 @@ bool GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_TH
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_nothing_is_queued);
-bool GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_nothing_is_queued::RunTest(const FString& Parameters)
+RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_nothing_is_queued)
 {
 	UObjectDummy* TargetObject = NewObject<UObjectDummy>();
 	FPendingRPCParams ParamsUnreliable = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
@@ -159,8 +152,7 @@ bool GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_values_have_been_processed_in_order);
-bool GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_values_have_been_processed_in_order::RunTest(const FString& Parameters)
+RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_values_have_been_processed_in_order)
 {
 	UObjectSpy* TargetObject = NewObject<UObjectSpy>();
 	FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
@@ -204,8 +196,7 @@ bool GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_2_seconds_THEN_warning_is_logged);
-bool GIVEN_a_container_with_one_value_WHEN_processing_after_2_seconds_THEN_warning_is_logged::RunTest(const FString& Parameters)
+RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_2_seconds_THEN_warning_is_logged)
 {
 	UObjectStub* TargetObject = NewObject<UObjectStub>();
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
