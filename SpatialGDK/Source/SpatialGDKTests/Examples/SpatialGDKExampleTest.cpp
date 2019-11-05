@@ -17,8 +17,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKExamples);
 // 1. Latent command example
 namespace
 {
-const double MAX_WAIT_TIME_FOR_SLOW_COMPUTATION = 2.0;
-const double MIN_WAIT_TIME_FOR_SLOW_COMPUTATION = 1.0;
+const double MAX_WAIT_TIME_FOR_BACKGROUND_COMPUTATION = 2.0;
+const double MIN_WAIT_TIME_FOR_BACKGROUND_COMPUTATION = 1.0;
 const double COMPUTATION_DURATION = 1.0;
 
 struct
@@ -32,7 +32,7 @@ DEFINE_LATENT_COMMAND(StartBackgroundThreadComputation)
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, []
 	{
-		FScopeLock SlowComputationLock(&ComputationResult.Mutex);
+		FScopeLock BackgroundComputationLock(&ComputationResult.Mutex);
 		FPlatformProcess::Sleep(COMPUTATION_DURATION);
 		ComputationResult.Value = 42;
 	});
@@ -44,17 +44,17 @@ DEFINE_LATENT_COMMAND_ONE_PARAMETER(WaitForComputationAndCheckResult, FAutomatio
 {
 	const double TimePassed = FPlatformTime::Seconds() - StartTime;
 
-	if (TimePassed >= MIN_WAIT_TIME_FOR_SLOW_COMPUTATION)
+	if (TimePassed >= MIN_WAIT_TIME_FOR_BACKGROUND_COMPUTATION)
 	{
-		FScopeTryLock SlowComputationLock(&ComputationResult.Mutex);
+		FScopeTryLock BackgroundComputationLock(&ComputationResult.Mutex);
 
-		if (SlowComputationLock.IsLocked())
+		if (BackgroundComputationLock.IsLocked())
 		{
-			Test->TestTrue("Computation result is equal to expected value", LocalResult->Value == 42);
+			Test->TestTrue("Computation result is equal to expected value", ComputationResult.Value == 42);
 			return true;
 		}
 
-		if (TimePassed >= MAX_WAIT_TIME_FOR_SLOW_COMPUTATION)
+		if (TimePassed >= MAX_WAIT_TIME_FOR_BACKGROUND_COMPUTATION)
 		{
 			Test->TestTrue("Computation finished in time", false);
 			return true;
@@ -64,7 +64,7 @@ DEFINE_LATENT_COMMAND_ONE_PARAMETER(WaitForComputationAndCheckResult, FAutomatio
 	return false;
 }
 
-EXAMPLE_SIMPLE_TEST(GIVEN_initial_value_WHEN_performing_slow_compuation_THEN_the_result_is_correct)
+EXAMPLE_SIMPLE_TEST(GIVEN_initial_value_WHEN_performing_background_compuation_THEN_the_result_is_correct)
 {
 	ADD_LATENT_AUTOMATION_COMMAND(StartBackgroundThreadComputation());
 	ADD_LATENT_AUTOMATION_COMMAND(WaitForComputationAndCheckResult(this));
