@@ -35,16 +35,16 @@ public:
 /* End UAbstractLBStrategy Interface */
 
 protected:
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"))
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")
 	uint32 Rows;
 
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"))
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")
 	uint32 Cols;
 
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"))
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")
 	float WorldWidth;
 
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"))
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")
 	float WorldHeight;
 
 private:
