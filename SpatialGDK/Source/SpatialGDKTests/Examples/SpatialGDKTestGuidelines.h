@@ -57,7 +57,7 @@
 4. Test naming convention
 	- `GIVEN_WHEN_THEN` should be used.
 	E.g. `GIVEN_one_and_two_WHEN_summed_THEN_the_sum_is_three`
-	Tests should contain only one TestTrue/TestFalse statement.
+	The number TestTrue/TestFalse in Tests should be kept minimal.
 
 5. Test fixtures (to perform the setup and cleanup before and after test correspondingly)
 	- There are no Test Fixtures out of the box in Unreal Automation Testing Framework

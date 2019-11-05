@@ -50,13 +50,13 @@ DEFINE_LATENT_COMMAND_ONE_PARAMETER(WaitForComputationAndCheckResult, FAutomatio
 
 		if (SlowComputationLock.IsLocked())
 		{
-			Test->TestTrue("", ComputationResult.Value == 42);
+			Test->TestTrue("Computation result is equal to expected value", LocalResult->Value == 42);
 			return true;
 		}
 
 		if (TimePassed >= MAX_WAIT_TIME_FOR_SLOW_COMPUTATION)
 		{
-			UE_LOG(LogSpatialGDKExamples, Error, TEXT("Computation timed out"));
+			Test->TestTrue("Computation finished in time", false);
 			return true;
 		}
 	}
