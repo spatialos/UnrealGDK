@@ -1,3 +1,52 @@
+---
+agent_transients: &agent_transients
+  # This is designed to trap and retry failures because agent lost
+  # connection. Agent exits with -1 in this case.
+  exit_status: -1
+  limit: 3
+
+common: &common
+  agents:
+    - "agent_count=1"
+    - "capable_of_building=gdk-for-unreal"
+    - "environment=production"
+    - "machine_type=quad-high-cpu"  # this name matches to SpatialOS node-size names
+    - "platform=windows"
+    - "permission_set=builder"
+    - "scaler_version=2"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1572523200-2f33678e336fc673-------z}"
+  retry:
+    automatic:
+      - <<: *agent_transients
+  timeout_in_minutes: 60
+  plugins:
+    - ca-johnson/taskkill#v4.1: ~
+
+script_runner: &script_runner
+  agents:
+  - "agent_count=8"
+  - "capable_of_building=platform"
+  - "environment=production"
+  - "machine_type=quarter"
+  - "permission_set=builder"
+  - "platform=linux"
+  - "queue=${CI_LINUX_BUILDER_QUEUE:-v3-1572524284-e64831bf1e88b227-------z}"
+  - "scaler_version=2"
+  - "working_hours_time_zone=london"
+
+env:
+  FASTBUILD_CACHE_PATH: "\\\\gdk-for-unreal-cache.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba\\fastbuild"
+  FASTBUILD_CACHE_MODE: rw
+  FASTBUILD_BROKERAGE_PATH: "\\\\fastbuild-brokerage.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba"
+
+# NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
+# These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
+
+steps:
+  - label: "Generate and upload steps"
+    command: "ci/generate_and_upload_steps.sh"
+    <<: *script_runner
+
 steps:
   - label: "enforce version restrictions"
     command: "ci/check-version-file.sh"
