@@ -35,5 +35,5 @@ steps:
         GDK_BRANCH="${BUILDKITE_BRANCH}"
 
   - label: "Generate and upload GDK building steps"
-    command: "ci/generate_and_upload_gdk_steps.sh"
+    command: "ci/generate_and_upload_build_steps.sh"
     <<: *script_runner
