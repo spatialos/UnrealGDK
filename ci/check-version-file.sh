@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Ensure that at least one engine version is listed
 if [$(cat ci/unreal-engine.version) = ""]; then
-    error_msg="The merge target branch does not allow a floating (HEAD) engine versions. Use pinned versions. (Of the form UnrealEngine-{commit hash})"
+    error_msg="No version has been listed in the unreal-engine.version file."
             
     echo $error_msg | buildkite-agent annotate --context "check-version-file" --style error
 

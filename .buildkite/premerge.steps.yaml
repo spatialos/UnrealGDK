@@ -24,7 +24,7 @@ steps:
   - label: "enforce version restrictions"
     command: "ci/check-version-file.sh"
     <<: *script_runner
-  # No point in running other steps in version is invalid
+  # No point in running other steps if the listed versions are invalid
   - wait 
 
   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
