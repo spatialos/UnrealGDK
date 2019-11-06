@@ -77,12 +77,4 @@ void SpatialFastArrayNetSerializeCB::NetSerializeStruct(UScriptStruct* Struct, F
 	}
 }
 
-#if ENGINE_MINOR_VERSION >= 23
-void SpatialFastArrayNetSerializeCB::NetSerializeStruct(FNetDeltaSerializeInfo& Params)
-{
-	// TODO: UNR-2371
-	checkf(false, TEXT("The GDK does not support the new version of NetSerializeStruct yet."));
-}
-#endif
-
 } // namespace SpatialGDK
