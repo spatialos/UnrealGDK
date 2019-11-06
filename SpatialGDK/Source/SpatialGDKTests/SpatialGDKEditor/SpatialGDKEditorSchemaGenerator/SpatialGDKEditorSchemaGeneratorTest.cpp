@@ -15,7 +15,7 @@
 #define LOCTEXT_NAMESPACE "SpatialGDKEDitorSchemaGeneratorTest"
 
 #define SCHEMA_GENERATOR_TEST(TestName) \
-	TEST(SpatialGDKEditor, SchemaGenerator, TestName)
+	GDK_TEST(SpatialGDKEditor, SchemaGenerator, TestName)
 
 namespace
 {
