@@ -1,14 +1,32 @@
 steps:
-  - label: "build-and-test-GDK-:windows:"
+  - label: "build-and-test-GDK-:windows:-4.22"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
       - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
       - "ci/TestResults/*"
+    env: ENGINE_COMMIT_HASH="HEAD 4.22-SpatialOSUnrealGDK"
 
-  - label: "build-GDK-:linux:"
+  - label: "build-GDK-:linux:-4.22"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+    env: ENGINE_COMMIT_HASH="HEAD 4.22-SpatialOSUnrealGDK"
+  
+  - label: "build-and-test-GDK-:windows:-4.23"
+    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    artifact_paths:
+      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
+      - "ci/TestResults/*"
+    env: ENGINE_COMMIT_HASH="HEAD 4.23-SpatialOSUnrealGDK"
+
+  - label: "build-GDK-:linux:-4.23"
+    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    artifact_paths:
+      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+    env: ENGINE_COMMIT_HASH="HEAD 4.23-SpatialOSUnrealGDK"

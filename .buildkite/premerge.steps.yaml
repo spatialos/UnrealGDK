@@ -31,8 +31,7 @@ steps:
     branches: "master preview release"
     async: true
     build:
-      env:
-        GDK_BRANCH="${BUILDKITE_BRANCH}"
+      env: GDK_BRANCH="${BUILDKITE_BRANCH}"
 
   - label: "generate and upload GDK build steps"
     commands:
