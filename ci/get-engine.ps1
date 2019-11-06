@@ -12,16 +12,8 @@ pushd "$($gdk_home)"
 
     # Fetch the version of Unreal Engine we need
     pushd "ci"
-        # Allow users to override the engine version if required
-        if (Test-Path env:ENGINE_COMMIT_HASH)
-        {
-            $version_file_contents = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
-            Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($version_file_contents)"
-        } else {
-            # Read Engine version from the file and trim any trailing white spaces and new lines.
-            $version_file_contents = (Get-Content -Path "unreal-engine.version" -Raw).Trim()
-            Write-Log "Using engine version found in unreal-engine.version file: $($version_file_contents)"
-        }
+        $version_file_contents = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
+        Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($version_file_contents)"
 
         # Check if we are using a 'floating' engine version, meaning that we want to get the latest built version of the engine on some branch
         # This is specified by putting "HEAD name/of-a-branch" in the unreal-engine.version file

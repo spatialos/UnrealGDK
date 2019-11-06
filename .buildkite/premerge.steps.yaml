@@ -40,4 +40,6 @@ steps:
     commands:
       - "chmod -R +rwx ci" # give the Linux user access to everything in the ci directory
       - "ci/generate_and_upload_build_steps.sh"
+    env:
+        ENGINE_VERSION: "${ENGINE_VERSION}"
     <<: *script_runner
