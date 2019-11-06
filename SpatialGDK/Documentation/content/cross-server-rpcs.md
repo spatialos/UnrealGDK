@@ -85,7 +85,10 @@ void MyServerRPC();
 
 #### How to disable warnings for unresolved parameters in an RPC (using Blueprints)
 
-To disable these warnings on an RPC in a Blueprint, in the **Details** panel of the event, click the eye in the top-right, and make sure **Show All Advanced Details** is ticked. The **Allow Unresolved Parameters** field in the panel will appear.
+To disable these warnings on an RPC in a Blueprint:
+1.  In the **Details** panel of the event, select the eye in the top-right.
+2. Check the **Show All Advanced Details** option. 
+The panel now displays the **Allow Unresolved Parameters** field.
 
 <br/>------<br/>
 _2019-06-06 Page updated with editorial review_
