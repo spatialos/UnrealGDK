@@ -49,7 +49,7 @@ public:
 
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void SetCanBeginPlay(const bool bInCanBeginPlay);
-	void IncrementSessionID();
+	void IncrementSessionIDAndUpdateSpatial();
 
 	FORCEINLINE FString GetDeploymentMapURL() const { return DeploymentMapURL; }
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }

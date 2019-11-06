@@ -93,7 +93,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ChannelDefinitions[CHTYPE_Actor] = SpatialChannelDefinition;
 	ChannelDefinitionMap[NAME_Actor] = SpatialChannelDefinition;
 
-	SessionId = FCString::Atoi(URL.GetOption(*SpatialConstants::SessionIdURLOption, TEXT("0")));
+	// If no sessionId exists in the URL options, SessionId member will be set to 0.
+	SessionId = FCString::Atoi(URL.GetOption(*SpatialConstants::SpatialSessionIdURLOption, TEXT("0")));
 
 	// We do this here straight away to trigger LoadMap.
 	if (bInitAsClient)
@@ -393,8 +394,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	// If we're the client, we can now ask the server to spawn our controller.
-
 	if (IsServer())
 	{
 		if (GlobalStateManager && !ServerConnection)
@@ -406,8 +405,9 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 	else
 	{
-		UWorld* World = GetWorld();
+		// If we're the client, we can now ask the server to spawn our controller.
 		// If we know the GSM is already accepting players, simply spawn.
+		UWorld* World = GetWorld();
 		if (GlobalStateManager->GetAcceptingPlayers() &&
 		    (SessionId == 0 || SessionId == GlobalStateManager->GetSessionId()) &&
 		    World->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == World->RemovePIEPrefix(World->URL.Map))
@@ -505,7 +505,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	}
 
 	// Increment the session id, so don't users rejoin the old game.
-	NetDriver->GlobalStateManager->IncrementSessionID();
+	NetDriver->GlobalStateManager->IncrementSessionIDAndUpdateSpatial();
 
 	NetDriver->GlobalStateManager->ResetGSM();
 
@@ -536,9 +536,9 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 
 	FString NewURL = URL;
 
-	if (!NewURL.Contains(SpatialConstants::SessionIdURLOption))
+	if (!NewURL.Contains(SpatialConstants::SpatialSessionIdURLOption))
 	{
-		NewURL.Append(FString::Printf(TEXT("?sessionId=%d"), NetDriver->GlobalStateManager->GetSessionId()));
+		NewURL.Append(FString::Printf(TEXT("?spatialSessionId=%d"), NetDriver->GlobalStateManager->GetSessionId()));
 	}
 
 	// Notify clients we're switching level and give them time to receive.

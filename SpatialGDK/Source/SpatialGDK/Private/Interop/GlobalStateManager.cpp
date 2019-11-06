@@ -696,7 +696,7 @@ void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 }
 
 
-void UGlobalStateManager::IncrementSessionID()
+void UGlobalStateManager::IncrementSessionIDAndUpdateSpatial()
 {
 	SessionId++;
 

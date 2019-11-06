@@ -199,7 +199,7 @@ namespace SpatialConstants
 	const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
 	static const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
-	static const FString SessionIdURLOption = TEXT("sessionId=");
+	static const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
 
 	static const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
 	static const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");
