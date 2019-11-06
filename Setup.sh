@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -e -u -o pipefail -x
+set -e -u -o pipefail
+[[ -n "${DEBUG:-}" ]] && set -x
 
 if [ "$(uname -s)" != "Darwin" ]; then
     echo "This script should only be used on OS X. If you are using Windows, please run Setup.bat."
