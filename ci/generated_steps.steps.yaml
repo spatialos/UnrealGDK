@@ -1,4 +1,3 @@
-steps:
   - label: "build-and-test-GDK-:windows:-INSERT_ENGINE_COMMIT_HASH"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
