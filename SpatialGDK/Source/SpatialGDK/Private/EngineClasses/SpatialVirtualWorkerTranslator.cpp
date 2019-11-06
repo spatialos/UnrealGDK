@@ -12,23 +12,15 @@ DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
 SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator()
 	: NetDriver(nullptr)
-{
-	bWorkerEntityQueryInFlight = false;
-	bIsReady = false;
-	DesiredVirtualWorkerCount = 0;
-}
+	, bWorkerEntityQueryInFlight(false)
+	, bIsReady(false)
+{}
 
 void SpatialVirtualWorkerTranslator::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-	if (NetDriver != nullptr)
-	{
-		WorkerId = NetDriver->Connection->GetWorkerId();
-	}
-	else
-	{
-		WorkerId = "InvalidWorkerId";
-	}
+	// If this is being run from tests, NetDriver will be null.
+	WorkerId = (NetDriver != nullptr) ? NetDriver->Connection->GetWorkerId() : "InvalidWorkerId";
 }
 
 void SpatialVirtualWorkerTranslator::SetDesiredVirtualWorkerCount(uint32 NumberOfVirtualWorkers)
@@ -40,7 +32,7 @@ void SpatialVirtualWorkerTranslator::SetDesiredVirtualWorkerCount(uint32 NumberO
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) SetDesiredVirtualWorkerCount called after the translator is ready, ignoring."), *WorkerId);
 	}
 
-	DesiredVirtualWorkerCount = NumberOfVirtualWorkers;
+	UnassignedVirtualWorkers.Empty();
 	for (uint32 i = 0; i < NumberOfVirtualWorkers; i++)
 	{
 		UnassignedVirtualWorkers.Enqueue(i);
@@ -64,12 +56,9 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 	// The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID. 
 	ApplyMappingFromSchema(ComponentObject);
 
-	if (NetDriver)
+	for (const auto& Entry : VirtualToPhysicalWorkerMapping)
 	{
-		for (auto& Entry : VirtualToPhysicalWorkerMapping)
-		{
-			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) assignment: %d - %s"), *WorkerId, Entry.Key, *(Entry.Value));
-		}
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) assignment: %d - %s"), *WorkerId, Entry.Key, *(Entry.Value));
 	}
 }
 
@@ -148,14 +137,15 @@ void SpatialVirtualWorkerTranslator::ConstructVirtualWorkerMappingFromQueryRespo
 	// The query response is an array of entities. Each of these represents a worker.
 	for (uint32_t i = 0; i < Op.result_count; ++i)
 	{
-		for (uint32_t j = 0; j < Op.results[i].component_count; j++)
+		const Worker_Entity& Entity = Op.results[i];
+		for (uint32_t j = 0; j < Entity.component_count; j++)
 		{
-			Worker_ComponentData Data = Op.results[i].components[j];
+			const Worker_ComponentData& Data = Entity.components[j];
 			// System entities which represent workers have a component on them which specifies the SpatialOS worker ID,
 			// which is the string we use to refer to them as a physical worker ID.
 			if (Data.component_id == SpatialConstants::WORKER_COMPONENT_ID)
 			{
-				Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+				const Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 				const FString& WorkerType = SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::WORKER_TYPE_ID);
 

@@ -53,7 +53,6 @@ private:
 	bool bWorkerEntityQueryInFlight;
 
 	bool bIsReady;
-	uint32 DesiredVirtualWorkerCount;
 
 	// The WorkerId of this worker, for logging purposes.
 	FString WorkerId;
