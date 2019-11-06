@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
 - A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
+- Improved logging around entity creation.
 - Server travel supported for single server game worlds. Does not currantly support zoning or off-loading.
 
 ### Bug fixes:

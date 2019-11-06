@@ -136,9 +136,7 @@ public:
 	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies);
 
-	void OnCreateEntityResponse(const struct Worker_CreateEntityResponseOp& Op);
-
-	FVector GetActorSpatialPosition(AActor* Actor);
+	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 	
