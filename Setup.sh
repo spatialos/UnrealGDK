@@ -73,7 +73,6 @@ spatial package retrieve worker_sdk  c-static-fullylinked-arm-clang-ios  "${PINN
 spatial package retrieve worker_sdk  csharp                              "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/worker_sdk/csharp.zip
 
 echo "Unpack dependencies"
-mkdir -p "${BINARIES_DIR}"/Programs/worker_sdk
 unzip -oq "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip            -d "${BINARIES_DIR}"/Programs/
 unzip -oq "${CORE_SDK_DIR}"/schema/standard_library.zip                       -d "${BINARIES_DIR}"/Programs/schema/
 unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip                          -d "${BINARIES_DIR}"/Headers/
