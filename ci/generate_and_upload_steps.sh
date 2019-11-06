@@ -1,4 +1,4 @@
 #!/bin/bash
 set -euo pipefail
 
-buildkite-agent pipeline upload stage_2_premerge.steps.yaml
+buildkite-agent pipeline upload ci/stage_2_premerge.steps.yaml
