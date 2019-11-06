@@ -68,7 +68,7 @@ The tables below show where cross-server RPCs are executed based on where they w
 
 #### Invoking a cross-server RPC from a client-worker
 
-The SpatialOS Runtime doe not process the call because this type of RPC is only available to a server-worker, not a client-worker.
+The SpatialOS Runtime does not process the call because this type of RPC is only available to a server-worker, not a client-worker.
 
 ### Unresolved parameters in an RPC
 
