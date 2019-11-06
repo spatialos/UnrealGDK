@@ -43,30 +43,6 @@ env:
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
 
 steps:
-  - label: "build-and-test-GDK-:windows:"
-    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
-    artifact_paths:
-      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
-      - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
-      - "ci/TestResults/*"
-
-  - label: "build-GDK-:linux:"
-    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
-    artifact_paths:
-      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
-
   - label: "enforce version restrictions"
-    command: "ci/check-version-file.sh"
+    command: "ci/generate_and_upload_steps.sh"
     <<: *script_runner
-
-
-  # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
-  - trigger: "unrealgdkexampleproject-nightly"
-    label: "Post merge Example Project build"
-    branches: "master preview release"
-    async: true
-    build:
-      env:
-        GDK_BRANCH="${BUILDKITE_BRANCH}"
