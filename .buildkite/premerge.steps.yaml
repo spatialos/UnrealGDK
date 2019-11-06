@@ -36,5 +36,6 @@ steps:
 
   - label: "generate and upload GDK build steps"
     commands:
-      - sh "ci/generate_and_upload_build_steps.sh"
+      - "chmod -R +rwx ci"
+      - "ci/generate_and_upload_build_steps.sh"
     <<: *script_runner
