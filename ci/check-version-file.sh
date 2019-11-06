@@ -6,7 +6,7 @@ set -euo pipefail
 # If a PR attempts to merge into a protected branch while using non-pinned engine versions, fail this step and thus block the merge.
 
 # Ensure that at least one engine version is listed
-if[$(cat ci/unreal-engine.version) -eq ""]; then
+if [$(cat ci/unreal-engine.version) = ""]; then
     error_msg="The merge target branch does not allow a floating (HEAD) engine versions. Use pinned versions. (Of the form UnrealEngine-{commit hash})"
             
     echo $error_msg | buildkite-agent annotate --context "check-version-file" --style error
