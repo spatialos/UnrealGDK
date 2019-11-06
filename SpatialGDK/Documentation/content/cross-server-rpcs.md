@@ -9,17 +9,20 @@ Cross-server RPCs facilitate [zoning]({{urlRoot}}/content/glossary#zoning), whic
 
 In Unreal’s native single-server architecture, your game server holds the canonical state of the whole game world. As there is a single game server, it has complete authority over all server Actors and so it is able to invoke and execute functions on Actors unhindered. 
 
-In SpatialOS games, there can be more than one server; these multiple servers are known as “server-workers”. (Find out more about server-workers as well as “client-workers” in the [glossary]({{urlRoot}}/content/glossary#worker).) In a SpatialOS game that runs across many server-workers, SpatialOS server-workers have the concept of “worker authority” - where only one server-worker at a time is able to invoke and execute functions on Actors. (Find out more about authority in the [glossary]({{urlRoot}}/content/glossary#authority).)
+In SpatialOS games, there can be more than one server; each of these servers is known as a “server-worker”. (Find out more about server-workers as well as “client-workers” in the [glossary]({{urlRoot}}/content/glossary#worker).) In a SpatialOS game that runs across many server-worker, SpatialOS server-workers have the concept of “worker authority” - where only one server-worker at a time is able to invoke and execute functions on Actors. (Find out more about authority in the [glossary]({{urlRoot}}/content/glossary#authority).)
 
 As Unreal expects there to be only one server, rather than several servers, the GDK has a custom solution to take advantage of the SpatialOS distributed server architecture. This involves handling the scenario where a server-worker attempts to invoke an RPC on an Actor that another server-worker has [authority]({{urlRoot}}/content/glossary#worker) over. This custom solution is the cross-server RPC. The GDK offers cross-server RPC in addition to support for the [native RPC types that Unreal provides (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs).
 
-When a cross-server RPC is invoked by a server-worker, SpatialOS routes the execution through the SpatialOS [Runtime]({{urlRoot}}/content/glossary#spatialos-runtime) to the server-worker that has authority - this server-worker executes the RPC.
+When a server-worker invokes a cross-server RPC, the SpatialOS [Runtime]({{urlRoot}}/content/glossary#spatialos-runtime) routes its execution to the server-worker that has authority and this this server-worker executes the RPC.
 
 The example diagram below shows a player successfully shooting another player’s hat across a server-worker boundary.
 
 ![A situation where you might need cross-server RPCs]({{assetRoot}}assets/shooting-workflow-simple.png)
 
-In the diagram, Server-worker 1 has authority over Player 1 and Server-worker 2 has authority over Player 2. If Player 1 shoots a bullet, Server-worker 1 knows about the bullet and can make any necessary changes to Player 1 but it can’t make changes to Player 2 when the bullet hits. SpatialOS ensures that Server-worker 2 can make changes to Player 2 (the hat gets hit by the bullet) by routing the change notification from Server-worker 1 to Server-worker 2.
+In the diagram:
+*  Server-worker 1 has authority over Player 1 and Server-worker 2 has authority over Player 2. 
+* If Player 1 shoots a bullet, Server-worker 1 knows about the bullet and can make any necessary changes to Player 1 but it can’t make changes to Player 2 when the bullet hits. 
+* The SpatialOS Runtime ensures that Server-worker 2 can make changes to Player 2 (the hat gets hit by the bullet) by routing the change notification from Server-worker 1 to Server-worker 2.
 
 ### How to send a cross-server RPC (using C++)
 
@@ -65,7 +68,7 @@ The tables below show where cross-server RPCs are executed based on where they w
 
 #### Invoking a cross-server RPC from a client-worker
 
-The call is not processed because this type of RPC is only for a server-worker instance to call.
+The SpatialOS Runtime doe not process the call because this type of RPC is only available to a server-worker, not a client-worker.
 
 ### Unresolved parameters in an RPC
 
@@ -85,6 +88,6 @@ void MyServerRPC();
 To disable these warnings on an RPC in a Blueprint, in the **Details** panel of the event, click the eye in the top-right, and make sure **Show All Advanced Details** is ticked. The **Allow Unresolved Parameters** field in the panel will appear.
 
 <br/>------<br/>
-_2019-06-06 Page updated with limited editorial review_
+_2019-06-06 Page updated with editorial review_
 <br/>
 _2019-06-06 Updated invoking a cross-server RPC from a client worker guidance_
