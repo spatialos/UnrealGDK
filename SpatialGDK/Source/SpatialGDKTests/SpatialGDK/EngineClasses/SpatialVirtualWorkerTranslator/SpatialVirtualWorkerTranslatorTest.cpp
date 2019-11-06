@@ -11,7 +11,7 @@
 #include <WorkerSDK/improbable/c_schema.h>
 
 #define VIRTUALWORKERTRANSLATOR_TEST(TestName) \
-	TEST(Core, SpatialVirtualWorkerTranslator, TestName)
+	GDK_TEST(Core, SpatialVirtualWorkerTranslator, TestName)
 
 VIRTUALWORKERTRANSLATOR_TEST(Given_init_is_not_called_THEN_return_not_ready)
 {

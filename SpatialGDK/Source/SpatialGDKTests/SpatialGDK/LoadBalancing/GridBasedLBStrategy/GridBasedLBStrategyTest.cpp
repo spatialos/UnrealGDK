@@ -12,7 +12,7 @@
 #include "Tests/AutomationEditorCommon.h"
 
 #define GRIDBASEDLBSTRATEGY_TEST(TestName) \
-	TEST(Core, UGridBasedLBStrategy, TestName)
+	GDK_TEST(Core, UGridBasedLBStrategy, TestName)
 
 // Test Globals
 namespace
