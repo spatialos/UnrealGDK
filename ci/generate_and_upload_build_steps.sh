@@ -1,12 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-IFS=$'\n'
-for commit_hash in $(cat < ci/unreal-engine.version); do
-    echo "hash: $commit_hash"
-    echo "s/INSERT_ENGINE_COMMIT_HASH/$commit_hash/g"
-done
+# This script generates steps for each engine version listed in unreal-engine.version, and adds those to generated_base.steps.yaml
+# The steps are based on the template in generated_steps.steps.yaml
 
+IFS=$'\n'
 for commit_hash in $(cat < ci/unreal-engine.version); do
     sed "s/INSERT_ENGINE_COMMIT_HASH/$commit_hash/g" ci/generated_steps.steps.yaml >> ci/generated_base.steps.yaml
 done
