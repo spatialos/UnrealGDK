@@ -6,10 +6,10 @@
 #include "HAL/PlatformFilemanager.h"
 
 #define EXAMPLE_SIMPLE_TEST(TestName) \
-	TEST(SpatialGDKExamples, SimpleExamples, TestName)
+	GDK_TEST(SpatialGDKExamples, SimpleExamples, TestName)
 
 #define EXAMPLE_COMPLEX_TEST(TestName) \
-	COMPLEX_TEST(SpatialGDKExamples, ComplexExamples, TestName)
+	GDK_COMPLEX_TEST(SpatialGDKExamples, ComplexExamples, TestName)
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKExamples, Log, All);
 DEFINE_LOG_CATEGORY(LogSpatialGDKExamples);
@@ -28,7 +28,8 @@ struct
 } ComputationResult;
 } // anonymous namespace
 
-DEFINE_LATENT_COMMAND(StartBackgroundThreadComputation)
+DEFINE_LATENT_AUTOMATION_COMMAND(FStartBackgroundThreadComputation);
+bool FStartBackgroundThreadComputation::Update()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, []
 	{
@@ -40,7 +41,8 @@ DEFINE_LATENT_COMMAND(StartBackgroundThreadComputation)
 	return true;
 }
 
-DEFINE_LATENT_COMMAND_ONE_PARAMETER(WaitForComputationAndCheckResult, FAutomationTestBase*, Test)
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForComputationAndCheckResult, FAutomationTestBase*, Test);
+bool FWaitForComputationAndCheckResult::Update()
 {
 	const double TimePassed = FPlatformTime::Seconds() - StartTime;
 
@@ -66,8 +68,8 @@ DEFINE_LATENT_COMMAND_ONE_PARAMETER(WaitForComputationAndCheckResult, FAutomatio
 
 EXAMPLE_SIMPLE_TEST(GIVEN_initial_value_WHEN_performing_background_compuation_THEN_the_result_is_correct)
 {
-	ADD_LATENT_AUTOMATION_COMMAND(StartBackgroundThreadComputation());
-	ADD_LATENT_AUTOMATION_COMMAND(WaitForComputationAndCheckResult(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartBackgroundThreadComputation());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForComputationAndCheckResult(this));
 
 	return true;
 }
@@ -85,7 +87,8 @@ EXAMPLE_SIMPLE_TEST(GIVEN_one_and_two_WHEN_summed_THEN_the_sum_is_three)
 }
 
 // 3. Complex test example
-EXAMPLE_COMPLEX_TEST(ComplexTest)
+EXAMPLE_COMPLEX_TEST(ComplexTest);
+bool ComplexTest::RunTest(const FString& Parameters)
 {
 	TArray<FString> OutArray;
 	Parameters.ParseIntoArrayWS(OutArray);
