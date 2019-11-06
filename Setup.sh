@@ -33,14 +33,7 @@ if [ -e .git/hooks ]; then
     fi
 
     # Add git hook to run Setup.sh when RequireSetup file has been updated.
-    echo '#!/usr/bin/env bash'                                                              >> .git/hooks/post-merge
-    echo 'changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)"'    >> .git/hooks/post-merge
-    echo 'check_run() {'                                                                    >> .git/hooks/post-merge
-    echo 'echo "${changed_files}" | grep --quiet "${1}" && exec ${2}'                       >> .git/hooks/post-merge
-    echo '}'                                                                                >> .git/hooks/post-merge
-    echo 'check_run RequireSetup "sh Setup.sh"'                                             >> .git/hooks/post-merge
-
-    chmod +x .git/hooks/post-merge
+    cp "$(pwd)/SpatialGDK/Extras/git/post-merge" "$(pwd)/.git/hooks"
 fi
 
 echo "Clean folders"
