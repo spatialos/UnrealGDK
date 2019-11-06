@@ -20,7 +20,7 @@ The example diagram below shows a player successfully shooting another player’
 ![A situation where you might need cross-server RPCs]({{assetRoot}}assets/shooting-workflow-simple.png)
 
 In the diagram:
-*  Server-worker 1 has authority over Player 1 and Server-worker 2 has authority over Player 2. 
+* Server-worker 1 has authority over Player 1 and Server-worker 2 has authority over Player 2. 
 * If Player 1 shoots a bullet, Server-worker 1 knows about the bullet and can make any necessary changes to Player 1 but it can’t make changes to Player 2 when the bullet hits. 
 * The SpatialOS Runtime ensures that Server-worker 2 can make changes to Player 2 (the hat gets hit by the bullet) by routing the change notification from Server-worker 1 to Server-worker 2.
 
@@ -68,7 +68,7 @@ The tables below show where cross-server RPCs are executed based on where they w
 
 #### Invoking a cross-server RPC from a client-worker
 
-The SpatialOS Runtime doe not process the call because this type of RPC is only available to a server-worker, not a client-worker.
+The SpatialOS Runtime does not process the call because this type of RPC is only available to a server-worker, not a client-worker.
 
 ### Unresolved parameters in an RPC
 
@@ -85,7 +85,10 @@ void MyServerRPC();
 
 #### How to disable warnings for unresolved parameters in an RPC (using Blueprints)
 
-To disable these warnings on an RPC in a Blueprint, in the **Details** panel of the event, click the eye in the top-right, and make sure **Show All Advanced Details** is ticked. The **Allow Unresolved Parameters** field in the panel will appear.
+To disable these warnings on an RPC in a Blueprint:
+1.  In the **Details** panel of the event, select the eye in the top-right.
+2. Check the **Show All Advanced Details** option. 
+The panel now displays the **Allow Unresolved Parameters** field.
 
 <br/>------<br/>
 _2019-06-06 Page updated with editorial review_
