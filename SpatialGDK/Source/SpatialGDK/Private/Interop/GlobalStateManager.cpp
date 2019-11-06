@@ -502,7 +502,7 @@ bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId)
 
 void UGlobalStateManager::ResetGSM()
 {
-	UE_LOG(LogGlobalStateManager, Log, TEXT("GSM being reset"));
+	UE_LOG(LogGlobalStateManager, Log, TEXT("GSM is being reset"));
 
 	SingletonNameToEntityId.Empty();
 	SetAcceptingPlayers(false);
@@ -694,7 +694,6 @@ void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;
 }
-
 
 void UGlobalStateManager::IncrementSessionIDAndUpdateSpatial()
 {

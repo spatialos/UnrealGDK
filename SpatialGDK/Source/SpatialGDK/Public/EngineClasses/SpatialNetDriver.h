@@ -200,6 +200,7 @@ private:
 	bool bWaitingForAcceptingPlayersToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
+	bool bWaitForGlobalStateManagerServerTravelReady;
 
 	FString SnapshotToLoad;
 	int32 SessionId;
@@ -241,6 +242,9 @@ private:
 	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn);
 
 	void ProcessPendingDormancy();
+
+	bool IsGlobalStateManagerServerTravelReady() const;
+	void OnGlobalStateManagerServerTravelReady();
 
 	friend USpatialNetConnection;
 	friend USpatialWorkerConnection;

@@ -61,6 +61,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bWaitingForAcceptingPlayersToSpawn(false)
 	, bIsReadyToStart(false)
 	, bMapLoaded(false)
+	, bWaitForGlobalStateManagerServerTravelReady(false)
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
 {
@@ -379,6 +380,19 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 	GlobalStateManager->QueryGSM(true /*bRetryUntilAcceptingPlayers*/);
 }
 
+bool USpatialNetDriver::IsGlobalStateManagerServerTravelReady() const
+{
+	return GlobalStateManager->GetAcceptingPlayers() &&
+		   (SessionId == 0 || SessionId == GlobalStateManager->GetSessionId());
+}
+
+void USpatialNetDriver::OnGlobalStateManagerServerTravelReady()
+{
+	PlayerSpawner->SendPlayerSpawnRequest();
+	bWaitingForAcceptingPlayersToSpawn = false;
+	bPersistSpatialConnection = false;
+}
+
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
 	if (LoadedWorld == nullptr)
@@ -396,25 +410,25 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	if (IsServer())
 	{
-		if (GlobalStateManager && !ServerConnection)
+		if (GlobalStateManager != nullptr)
 		{
 			GlobalStateManager->SetCanBeginPlay(true);
 			GlobalStateManager->TriggerBeginPlay();
 			GlobalStateManager->SetAcceptingPlayers(true);
+		}
+		else
+		{
+			UE_LOG(LogSpatial, Error, TEXT("Trying to call GlobalStateManager->SetAcceptingPlayers(true) when GlobalStateManager is nullptr"),);
 		}
 	}
 	else
 	{
 		// If we're the client, we can now ask the server to spawn our controller.
 		// If we know the GSM is already accepting players, simply spawn.
-		UWorld* World = GetWorld();
-		if (GlobalStateManager->GetAcceptingPlayers() &&
-		    (SessionId == 0 || SessionId == GlobalStateManager->GetSessionId()) &&
-		    World->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == World->RemovePIEPrefix(World->URL.Map))
+		UWorld* CurrentWorld = GetWorld();
+		if (CurrentWorld && CurrentWorld->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map))
 		{
-			PlayerSpawner->SendPlayerSpawnRequest();
-			bWaitingForAcceptingPlayersToSpawn = false;
-			bPersistSpatialConnection = false;
+			bWaitForGlobalStateManagerServerTravelReady = true;
 		}
 		else
 		{
@@ -459,13 +473,10 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 	{
 		// If we have the correct map loaded then ask to spawn.
 		FString DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
-		UWorld* World = GetWorld();
-		if (World && World->RemovePIEPrefix(DeploymentMapURL) == World->RemovePIEPrefix(World->URL.Map))
+		UWorld* CurrentWorld = GetWorld();
+		if (CurrentWorld && CurrentWorld->RemovePIEPrefix(DeploymentMapURL) == CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map))
 		{
-			PlayerSpawner->SendPlayerSpawnRequest();
-
-			// Unregister our interest in spawning on accepting players changing again.
-			bWaitingForAcceptingPlayersToSpawn = false;
+			bWaitForGlobalStateManagerServerTravelReady = true;
 		}
 		else
 		{
@@ -1325,6 +1336,12 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			HandleStartupOpQueueing(OpLists);
 			return;
+		}
+
+		if (bWaitForGlobalStateManagerServerTravelReady && IsGlobalStateManagerServerTravelReady())
+		{
+			OnGlobalStateManagerServerTravelReady();
+			bWaitForGlobalStateManagerServerTravelReady = false;
 		}
 
 		for (Worker_OpList* OpList : OpLists)

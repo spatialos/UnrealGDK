@@ -17,9 +17,9 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
+class UGlobalStateManager;
 class USpatialGameInstance;
 class USpatialStaticComponentView;
-class UGlobalStateManager;
 class UWorld;
 
 enum class SpatialConnectionType
@@ -68,6 +68,7 @@ public:
 
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
+
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 

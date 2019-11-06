@@ -26,7 +26,7 @@ void USnapshotManager::Init(USpatialNetDriver* InNetDriver)
 // Should only be triggered by the worker which is authoritative over the GSM.
 void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate& PostWorldWipeDelegate)
 {
-	UE_LOG(LogSnapshotManager, Log, TEXT("World wipe for deployment has been triggered. All unreal metadata entities will be deleted!"));
+	UE_LOG(LogSnapshotManager, Log, TEXT("World wipe for deployment has been triggered. All entities with the UnrealMetaData component will be deleted!"));
 
 	Worker_Constraint UnrealMetadataConstraint;
 	UnrealMetadataConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
