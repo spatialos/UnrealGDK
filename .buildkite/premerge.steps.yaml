@@ -21,6 +21,19 @@ script_runner: &script_runner
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
 
 steps:
-  - label: "Generate and upload steps"
-    command: "ci/generate_and_upload_steps.sh"
+  - label: "enforce version restrictions"
+    command: "ci/check-version-file.sh"
+    <<: *script_runner
+  
+  # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
+  - trigger: "unrealgdkexampleproject-nightly"
+    label: "Post merge Example Project build"
+    branches: "master preview release"
+    async: true
+    build:
+      env:
+        GDK_BRANCH="${BUILDKITE_BRANCH}"
+
+  - label: "Generate and upload GDK building steps"
+    command: "ci/generate_and_upload_gdk_steps.sh"
     <<: *script_runner

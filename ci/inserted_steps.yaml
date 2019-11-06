@@ -1,0 +1,14 @@
+steps:
+  - label: "build-and-test-GDK-:windows:"
+    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    artifact_paths:
+      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
+      - "ci/TestResults/*"
+
+  - label: "build-GDK-:linux:"
+    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    artifact_paths:
+      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
