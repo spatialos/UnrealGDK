@@ -219,40 +219,42 @@ void SpatialVirtualWorkerTranslator::QueryForWorkerEntities()
 	WorkerEntityQuery.constraint = WorkerEntityConstraint;
 	WorkerEntityQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
+	// Make the query.
 	Worker_RequestId RequestID;
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&WorkerEntityQuery);
-
-	// The Lambda below allows the translator to deal with the returned list of connection entities when they are received.
-	// Note that this worker may have lost authority for the translation mapping in the meantime, so it's possible the
-	// returned information will be thrown away.
-	EntityQueryDelegate WorkerEntityQueryDelegate;
-	WorkerEntityQueryDelegate.BindLambda([this](const Worker_EntityQueryResponseOp& Op)
-	{
-		if (!NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID))
-		{
-			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Received response to WorkerEntityQuery, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *WorkerId);
-		}
-		else if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-		{
-			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Could not find Worker Entities via entity query: %s"), *WorkerId, UTF8_TO_TCHAR(Op.message));
-		}
-		else if (Op.result_count == 0)
-		{
-			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Worker Entity query shows that Worker Entities do not yet exist in the world."), *WorkerId);
-		}
-		else
-		{
-			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Processing Worker Entity query response"), *WorkerId);
-			ConstructVirtualWorkerMappingFromQueryResponse(Op);
-			SendVirtualWorkerMappingUpdate();
-		}
-
-		bWorkerEntityQueryInFlight = false;
-	});
-
 	bWorkerEntityQueryInFlight = true;
 
+	// Register a method to handle the query response.
+	EntityQueryDelegate WorkerEntityQueryDelegate;
+	WorkerEntityQueryDelegate.BindRaw(this, &SpatialVirtualWorkerTranslator::WorkerEntityQueryDelegate);
 	NetDriver->Receiver->AddEntityQueryDelegate(RequestID, WorkerEntityQueryDelegate);
+}
+
+// This method allows the translator to deal with the returned list of connection entities when they are received.
+// Note that this worker may have lost authority for the translation mapping in the meantime, so it's possible the
+// returned information will be thrown away.
+void SpatialVirtualWorkerTranslator::WorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op)
+{
+	if (!NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID))
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Received response to WorkerEntityQuery, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *WorkerId);
+	}
+	else if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Could not find Worker Entities via entity query: %s"), *WorkerId, UTF8_TO_TCHAR(Op.message));
+	}
+	else if (Op.result_count == 0)
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Worker Entity query shows that Worker Entities do not yet exist in the world."), *WorkerId);
+	}
+	else
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Processing Worker Entity query response"), *WorkerId);
+		ConstructVirtualWorkerMappingFromQueryResponse(Op);
+		SendVirtualWorkerMappingUpdate();
+	}
+
+	bWorkerEntityQueryInFlight = false;
 }
 
 void SpatialVirtualWorkerTranslator::AssignWorker(const PhysicalWorkerName& Name)
