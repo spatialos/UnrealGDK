@@ -57,9 +57,16 @@
 4. Test naming convention
 	- `GIVEN_WHEN_THEN` should be used.
 	E.g. `GIVEN_one_and_two_WHEN_summed_THEN_the_sum_is_three`
-	The number TestTrue/TestFalse in Tests should be kept minimal.
 
-5. Test fixtures (to perform the setup and cleanup before and after test correspondingly)
+5. Test coverage
+	- Unit tests should be isolated: Tests should be runnable on any machine, in any order, without affecting each other.
+	If possible, tests should have no dependencies on environmental factors or global/external state.
+	- Unit tests should verify a single use-case or code path:
+	they are simpler and more understandable, and that is good for maintainability and debugging.
+	- Unit tests should use a minimal (1, when possible) number of TestTrue/TestFalse assertions,
+	that covers only what is needed for the use-case/code path you are testing.
+
+6. Test fixtures (to perform the setup and cleanup before and after test correspondingly)
 	- There are no Test Fixtures out of the box in Unreal Automation Testing Framework
 	The solution for now is to instantiate an object at the beginning of test,
 	that sets up the environment in the constructor and cleans it up in the destructor
