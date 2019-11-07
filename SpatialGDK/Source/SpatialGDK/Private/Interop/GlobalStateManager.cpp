@@ -47,9 +47,9 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 		bool bRunUnderOneProcess = true;
 		PlayInSettings->GetRunUnderOneProcess(bRunUnderOneProcess);
 
-		if (!bRunUnderOneProcess)
+		if (!bRunUnderOneProcess && !PrePIEEndedHandle.IsValid())
 		{
-			FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::OnPrePIEEnded);
+			PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::OnPrePIEEnded);
 		}
 	}
 #endif // WITH_EDITOR
@@ -130,6 +130,7 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 void UGlobalStateManager::OnPrePIEEnded(bool bValue)
 {
 	SendShutdownMultiProcessRequest();
+	FEditorDelegates::PrePIEEnded.Remove(PrePIEEndedHandle);
 }
 
 void UGlobalStateManager::SendShutdownMultiProcessRequest()

@@ -418,7 +418,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		}
 		else
 		{
-			UE_LOG(LogSpatial, Error, TEXT("Trying to call GlobalStateManager->SetAcceptingPlayers(true) when GlobalStateManager is nullptr"),);
+			UE_LOG(LogSpatial, Log, TEXT("Trying to call GlobalStateManager->SetAcceptingPlayers(true) when GlobalStateManager is nullptr"),);
 		}
 	}
 	else

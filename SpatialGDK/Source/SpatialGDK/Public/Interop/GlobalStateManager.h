@@ -123,4 +123,6 @@ private:
 	USpatialReceiver* Receiver;
 
 	FTimerManager* TimerManager;
+
+	FDelegateHandle PrePIEEndedHandle;
 };
