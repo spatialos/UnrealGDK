@@ -20,15 +20,15 @@ public:
 	SpatialFastArrayNetSerializeCB(USpatialNetDriver* InNetDriver)
 		: NetDriver(InNetDriver)
 	{ }
-	virtual void NetSerializeStruct(UScriptStruct* Struct, FBitArchive& Ar, UPackageMap* PackageMap, void* Data, bool& bHasUnmapped);
+	virtual void NetSerializeStruct(UScriptStruct* Struct, FBitArchive& Ar, UPackageMap* PackageMap, void* Data, bool& bHasUnmapped) override;
 #if ENGINE_MINOR_VERSION >= 23
 	//TODO: UNR-2371 - Look at whether we need to implement these and implement 'NetSerializeStruct(FNetDeltaSerializeInfo& Params)'.
-	virtual void NetSerializeStruct(FNetDeltaSerializeInfo& Params) { checkf(false, TEXT("The GDK does not support the new version of NetSerializeStruct yet.")); };
+	virtual void NetSerializeStruct(FNetDeltaSerializeInfo& Params) override { checkf(false, TEXT("The GDK does not support the new version of NetSerializeStruct yet.")); };
 
-	virtual void GatherGuidReferencesForFastArray(struct FFastArrayDeltaSerializeParams& Params) { checkf(false, TEXT("GatherGuidReferencesForFastArray called - the GDK currently does not support delta serialization of structs within fast arrays.")); };
-	virtual bool MoveGuidToUnmappedForFastArray(struct FFastArrayDeltaSerializeParams& Params) { checkf(false, TEXT("MoveGuidToUnmappedForFastArray called - the GDK currently does not support delta serialization of structs within fast arrays.")); return false; };
-	virtual void UpdateUnmappedGuidsForFastArray(struct FFastArrayDeltaSerializeParams& Params) { checkf(false, TEXT("UpdateUnmappedGuidsForFastArray called - the GDK currently does not support delta serialization of structs within fast arrays.")); };
-	virtual bool NetDeltaSerializeForFastArray(struct FFastArrayDeltaSerializeParams& Params) { checkf(false, TEXT("NetDeltaSerializeForFastArray called - the GDK currently does not support delta serialization of structs within fast arrays.")); return false; };
+	virtual void GatherGuidReferencesForFastArray(struct FFastArrayDeltaSerializeParams& Params) override { checkf(false, TEXT("GatherGuidReferencesForFastArray called - the GDK currently does not support delta serialization of structs within fast arrays.")); };
+	virtual bool MoveGuidToUnmappedForFastArray(struct FFastArrayDeltaSerializeParams& Params) override { checkf(false, TEXT("MoveGuidToUnmappedForFastArray called - the GDK currently does not support delta serialization of structs within fast arrays.")); return false; };
+	virtual void UpdateUnmappedGuidsForFastArray(struct FFastArrayDeltaSerializeParams& Params) override { checkf(false, TEXT("UpdateUnmappedGuidsForFastArray called - the GDK currently does not support delta serialization of structs within fast arrays.")); };
+	virtual bool NetDeltaSerializeForFastArray(struct FFastArrayDeltaSerializeParams& Params) override { checkf(false, TEXT("NetDeltaSerializeForFastArray called - the GDK currently does not support delta serialization of structs within fast arrays.")); return false; };
 #endif
 
 private:
