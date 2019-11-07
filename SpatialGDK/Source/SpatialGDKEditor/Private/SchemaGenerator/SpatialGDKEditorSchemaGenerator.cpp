@@ -852,8 +852,6 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 		return false;
 	}
 
-	check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
-
 	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath, IdGenerator);
