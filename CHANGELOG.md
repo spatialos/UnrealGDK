@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replicating a static subobject after it has been deleted on a client no longer results in client attaching a new dynamic subobject.
 - Fixed a bug that caused entity pool reservations to cease after a request times out.
 - Running `BuildWorker.bat` for `SimulatedPlayer` no longer fails if the project path has a space in it.
-- The editor no longer crashes if you start PIE with out-of-date schema.
+- Fixed a crash when starting PIE with out-of-date schema.
 
 ## [`0.7.0-preview`] - 2019-10-11
 
