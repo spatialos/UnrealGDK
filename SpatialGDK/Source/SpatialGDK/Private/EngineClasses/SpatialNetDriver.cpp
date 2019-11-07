@@ -383,7 +383,7 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 bool USpatialNetDriver::IsGlobalStateManagerServerTravelReady() const
 {
 	return GlobalStateManager->GetAcceptingPlayers() &&
-		   (SessionId == 0 || SessionId == GlobalStateManager->GetSessionId());
+		   SessionId == GlobalStateManager->GetSessionId();
 }
 
 void USpatialNetDriver::OnGlobalStateManagerServerTravelReady()
@@ -423,8 +423,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 	else
 	{
-		// If we're the client, we can now ask the server to spawn our controller.
-		// If we know the GSM is already accepting players, simply spawn.
+		// If we're the client, we should wait for the GSM to be ready to ask the server to spawn a player.
 		UWorld* CurrentWorld = GetWorld();
 		if (CurrentWorld && CurrentWorld->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map))
 		{
@@ -472,7 +471,7 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 	if (bWaitingForAcceptingPlayersToSpawn && bAcceptingPlayers)
 	{
 		// If we have the correct map loaded then ask to spawn.
-		FString DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
+		const FString& DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
 		UWorld* CurrentWorld = GetWorld();
 		if (CurrentWorld && CurrentWorld->RemovePIEPrefix(DeploymentMapURL) == CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map))
 		{
@@ -515,7 +514,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		return;
 	}
 
-	// Increment the session id, so don't users rejoin the old game.
+	// Increment the session id, so users don't rejoin the old game.
 	NetDriver->GlobalStateManager->IncrementSessionIDAndUpdateSpatial();
 
 	NetDriver->GlobalStateManager->ResetGSM();

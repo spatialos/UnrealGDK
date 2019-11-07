@@ -157,6 +157,7 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 		
 		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server. 
 		SetAcceptingPlayers(false);
+		SetSessionIDInternal(0);
 
 		// If we have multiple servers, they need to be informed of PIE session ending.
 		SendShutdownAdditionalServersEvent();
@@ -699,13 +700,17 @@ void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 void UGlobalStateManager::IncrementSessionIDAndUpdateSpatial()
 {
 	SessionId++;
+	SetSessionIDInternal(SessionId);
+}
 
+void UGlobalStateManager::SetSessionIDInternal(int32 InSessionId)
+{
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, SessionId);
-	
+	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, InSessionId);
+
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }

@@ -98,6 +98,7 @@ public:
 #endif // WITH_EDITOR
 private:
 	void SetDeploymentMapURL(const FString& MapURL);
+	void SetSessionIDInternal(int32 InSessionId);
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
 	void ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate);
