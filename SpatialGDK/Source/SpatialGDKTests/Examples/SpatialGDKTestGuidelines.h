@@ -35,6 +35,7 @@
 	and if doesn't rely on background threads doing the computation (otherwise use LATENT_COMMANDs).
 	COMPLEX_TEST - same as simple test, but allows having multiple test cases run through the same test function body.
 	DEFINE_LATENT_COMMAND... - used to run tests that are expected to run across multiple ticks.
+	Latent command names should start with `F` (e.g. DEFINE_LATENT_AUTOMATION_COMMAND(FStartDeployment)").
 
 	- There are 5 types of mock objects we can use in tests:
 	Dummy objects
