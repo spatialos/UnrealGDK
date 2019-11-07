@@ -30,6 +30,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 	ReserveEntityIDsDelegate CacheEntityIDsDelegate;
 	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](const Worker_ReserveEntityIdsResponseOp& Op)
 	{
+		bIsAwaitingResponse = false;
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			// UNR-630 - Temporary hack to avoid failure to reserve entities due to timeout on large maps
@@ -74,7 +75,6 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 			}
 		}, SpatialConstants::ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS, false);
 
-		bIsAwaitingResponse = false;
 		if (!bIsReady)
 		{
 			bIsReady = true;
