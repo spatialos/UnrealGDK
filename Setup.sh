@@ -1,144 +1,88 @@
-#!/bin/bash
-
-# EXPERIMENTAL!
-# This file is experimental and is not maintained directly by Improbable. Please use at your own risk.
+#!/usr/bin/env bash
 
 set -e -u -o pipefail
+[[ -n "${DEBUG:-}" ]] && set -x
 
 if [ "$(uname -s)" != "Darwin" ]; then
     echo "This script should only be used on OS X. If you are using Windows, please run Setup.bat."
     exit 1
 fi
 
-function markStartOfBlock {
-    echo "Starting: $1"
-}
-
-function markEndOfBlock {
-    echo "Finished: $1"
-}
-
 pushd "$(dirname "$0")"
 
-markStartOfBlock "$0"
+PINNED_CORE_SDK_VERSION=$(cat ./SpatialGDK/Extras/core-sdk.version)
+BUILD_DIR="$(pwd)/SpatialGDK/Build"
+CORE_SDK_DIR="${BUILD_DIR}/core_sdk"
+WORKER_SDK_DIR="$(pwd)/SpatialGDK/Source/SpatialGDK/Public/WorkerSDK"
+BINARIES_DIR="$(pwd)/SpatialGDK/Binaries/ThirdParty/Improbable"
+SCHEMA_COPY_DIR="$(pwd)/../../../spatial/schema/unreal/gdk"
+SCHEMA_STD_COPY_DIR="$(pwd)/../../../spatial/build/dependencies/schema/standard_library"
+SPATIAL_DIR="$(pwd)/../../../spatial"
 
-markStartOfBlock "Setup the git hooks"
-    if [ -e .git/hooks ]; then
-        # Remove the old post-checkout hook.
-        if [ -e .git/hooks/post-checkout ]; then rm -f .git/hooks/post-checkout; fi
 
-        # Remove the old post-merge hook.
-        if [ -e .git/hooks/post-merge ]; then rm -f .git/hooks/post-merge; fi
-
-        # Add git hook to run Setup.bat when RequireSetup file has been updated.
-        echo '#!/usr/bin/env bash' > .git/hooks/post-merge
-        echo 'changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)"' >> .git/hooks/post-merge
-        echo 'check_run() {' >> .git/hooks/post-merge
-        echo 'echo "$changed_files" | grep --quiet "$1" && exec $2' >> .git/hooks/post-merge
-        echo '}' >> .git/hooks/post-merge
-        echo 'check_run RequireSetup "sh Setup.sh"' >> .git/hooks/post-merge
-    fi
-markEndOfBlock "Setup the git hooks"
-
-markStartOfBlock "Check dependencies"
-    which msbuild > /dev/null
-    if [ $? -eq 1 ]; then
-        echo "Error: Could not find the MSBuild executable. Please make sure you have Microsoft Visual Studio or Microsoft Build Tools installed."
-        exit 1
+echo "Setup the git hooks"
+if [ -e .git/hooks ]; then
+    # Remove the old post-checkout hook.
+    if [ -e .git/hooks/post-checkout ]; then
+        rm -f .git/hooks/post-checkout
     fi
 
-    which spatial > /dev/null
-    if [ $? -eq 1 ]; then
-        echo "Error: Could not find spatial. Please make sure you have it installed and the containing directory added to PATH environment variable."
-        exit 1
+    # Remove the old post-merge hook.
+    if [ -e .git/hooks/post-merge ]; then
+        rm -f .git/hooks/post-merge
     fi
-markEndOfBlock "Check dependencies"
 
-markStartOfBlock "Setup variables"
-    PINNED_CORE_SDK_VERSION=$(cat ./SpatialGDK/Extras/core-sdk.version)
-    BUILD_DIR="$(dirname "$0")/SpatialGDK/Build"
-    CORE_SDK_DIR="$BUILD_DIR/core_sdk"
-    WORKER_SDK_DIR="$(dirname "$0")/SpatialGDK/Source/SpatialGDK/Public/WorkerSDK"
-    BINARIES_DIR="$(dirname "$0")/SpatialGDK/Binaries/ThirdParty/Improbable"
-    SCHEMA_COPY_DIR="$(dirname "$0")/../../../spatial/schema/unreal/gdk"
-    SCHEMA_STD_COPY_DIR="$(dirname "$0")/../../../spatial/build/dependencies/schema/standard_library"
-    SPATIAL_DIR="$(dirname "$0")/../../../spatial"
-markEndOfBlock "Setup variables"
-
-markStartOfBlock "Clean folders"
-    rm -rf $CORE_SDK_DIR           2>/dev/null
-    rm -rf $WORKER_SDK_DIR         2>/dev/null
-    rm -rf $BINARIES_DIR           2>/dev/null
-
-    if [ ! -z "$SPATIAL_DIR" ]; then
-        rm -rf $SCHEMA_STD_COPY_DIR    2>/dev/null
-        rm -rf $SCHEMA_COPY_DIR    2>/dev/null
-    fi
-    
-markEndOfBlock "Clean folders"
-
-markStartOfBlock "Create folders"
-    mkdir -p $WORKER_SDK_DIR          >/dev/null 2>/dev/null
-    mkdir -p $CORE_SDK_DIR/schema     >/dev/null 2>/dev/null
-    mkdir -p $CORE_SDK_DIR/tools      >/dev/null 2>/dev/null
-    mkdir -p $CORE_SDK_DIR/worker_sdk >/dev/null 2>/dev/null
-    mkdir -p $BINARIES_DIR            >/dev/null 2>/dev/null
-    mkdir -p $BINARIES_DIR/Programs/worker_sdk >/dev/null 2>/dev/null
-    
-    if [ ! -z "$SPATIAL_DIR" ]; then
-        mkdir -p $SCHEMA_STD_COPY_DIR     >/dev/null 2>/dev/null
-        rm -rf $SCHEMA_COPY_DIR    2>/dev/null
-    fi
-markEndOfBlock "Create folders"
-
-markStartOfBlock "Retrieve dependencies"
-    spatial package retrieve tools           schema_compiler-x86_64-win32               $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/tools/schema_compiler-x86_64-win32.zip
-    spatial package retrieve schema          standard_library                           $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/schema/standard_library.zip
-    spatial package retrieve worker_sdk      c_headers                                  $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c_headers.zip
-    spatial package retrieve worker_sdk      c-dynamic-x86-vc140_md-win32               $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86-vc140_md-win32.zip
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-vc140_md-win32            $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-vc140_md-win32.zip
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc510-linux              $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc510-linux.zip
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-clang-macos               $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang-macos.zip
-    spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang-ios         $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
-    spatial package retrieve worker_sdk      csharp                                     $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/csharp.zip
-markEndOfBlock "Retrieve dependencies"
-
-markStartOfBlock "Unpack dependencies"
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c_headers.zip                                   -d $BINARIES_DIR/Headers/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86-vc140_md-win32.zip                -d $BINARIES_DIR/Win32/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-vc140_md-win32.zip             -d $BINARIES_DIR/Win64/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc510-linux.zip               -d $BINARIES_DIR/Linux/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang-macos.zip                -d $BINARIES_DIR/Mac/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang-ios.zip          -d $BINARIES_DIR/IOS/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/csharp.zip                                      -d $BINARIES_DIR/Programs/worker_sdk/csharp/
-    unzip -oq $CORE_SDK_DIR/tools/schema_compiler-x86_64-win32.zip                     -d $BINARIES_DIR/Programs/
-    unzip -oq $CORE_SDK_DIR/schema/standard_library.zip                                -d $BINARIES_DIR/Programs/schema/
-
-    cp -R $BINARIES_DIR/Headers/include/ $WORKER_SDK_DIR
-markEndOfBlock "Unpack dependencies"
-
-if [ ! -z "$SPATIAL_DIR" ]; then
-    markStartOfBlock "Copy standard library schema"
-        echo "Copying standard library schemas to $SCHEMA_STD_COPY_DIR"
-        cp -R $BINARIES_DIR/Programs/schema/* $SCHEMA_STD_COPY_DIR
-    markEndOfBlock "Copy standard library schema"
-
-    markStartOfBlock "Copy GDK schema"
-        rm -rf $SCHEMA_COPY_DIR   2>/dev/null
-        mkdir -p $SCHEMA_COPY_DIR >/dev/null 2>/dev/null
-
-        echo "Copying schemas to $SCHEMA_COPY_DIR."
-        cp -R $(dirname %0)/SpatialGDK/Extras/schema/* $SCHEMA_COPY_DIR
-    markEndOfBlock "Copy GDK schema"
+    # Add git hook to run Setup.sh when RequireSetup file has been updated.
+    cp "$(pwd)/SpatialGDK/Extras/git/post-merge" "$(pwd)/.git/hooks"
 fi
 
-markStartOfBlock "Build C# utilities"
-    msbuild /nologo /verbosity:minimal ./SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
-markEndOfBlock "Build C# utilities"
+echo "Clean folders"
+rm -rf "${CORE_SDK_DIR}"
+rm -rf "${WORKER_SDK_DIR}"
+rm -rf "${BINARIES_DIR}"
 
-markEndOfBlock "$0"
+if [ -d "${SPATIAL_DIR}" ]; then
+    rm -rf "${SCHEMA_STD_COPY_DIR}"
+    rm -rf "${SCHEMA_COPY_DIR}"
+fi
+
+echo "Create folders"
+mkdir -p "${WORKER_SDK_DIR}"
+mkdir -p "${CORE_SDK_DIR}"/schema
+mkdir -p "${CORE_SDK_DIR}"/tools
+mkdir -p "${CORE_SDK_DIR}"/worker_sdk
+mkdir -p "${BINARIES_DIR}"/Programs/worker_sdk
+
+if [ -d "${SPATIAL_DIR}" ]; then
+    mkdir -p "${SCHEMA_STD_COPY_DIR}"
+    mkdir -p "${SCHEMA_COPY_DIR}"
+fi
+
+echo "Retrieve dependencies"
+spatial package retrieve tools       schema_compiler-x86_64-macos        "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip
+spatial package retrieve schema      standard_library                    "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/schema/standard_library.zip
+spatial package retrieve worker_sdk  c_headers                           "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip
+spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos        "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip
+spatial package retrieve worker_sdk  c-static-fullylinked-arm-clang-ios  "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
+spatial package retrieve worker_sdk  csharp                              "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/worker_sdk/csharp.zip
+
+echo "Unpack dependencies"
+unzip -oq "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip            -d "${BINARIES_DIR}"/Programs/
+unzip -oq "${CORE_SDK_DIR}"/schema/standard_library.zip                       -d "${BINARIES_DIR}"/Programs/schema/
+unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip                          -d "${BINARIES_DIR}"/Headers/
+unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip       -d "${BINARIES_DIR}"/Mac/
+unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip -d "${BINARIES_DIR}"/IOS/
+unzip -oq "${CORE_SDK_DIR}"/worker_sdk/csharp.zip                             -d "${BINARIES_DIR}"/Programs/worker_sdk/csharp/
+cp -R "${BINARIES_DIR}"/Headers/include/ "${WORKER_SDK_DIR}"
+
+if [ -d "${SPATIAL_DIR}" ]; then
+    echo "Copying standard library schemas to ${SCHEMA_STD_COPY_DIR}"
+    cp -R "${BINARIES_DIR}/Programs/schema" "${SCHEMA_STD_COPY_DIR}"
+
+    echo "Copying schemas to ${SCHEMA_COPY_DIR}"
+    cp -R SpatialGDK/Extras/schema "${SCHEMA_COPY_DIR}"
+fi
 
 popd
 
 echo "UnrealGDK build completed successfully!"
-exit 0
