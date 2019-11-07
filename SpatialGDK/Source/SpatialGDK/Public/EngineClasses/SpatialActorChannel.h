@@ -109,21 +109,21 @@ public:
 		return FindOrCreateReplicator(Object)->RepState->StaticBuffer;
 	}
 
-	// UChannel interface
-#if ENGINE_MINOR_VERSION <= 20
-	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, bool bOpenedLocally) override;
-	virtual int64 Close() override;
-#else
+	// Begin UChannel interface
 	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, EChannelCreateFlags CreateFlag) override;
 	virtual int64 Close(EChannelCloseReason Reason) override;
-#endif
+	// End UChannel interface
+
+	// Begin UActorChannel inteface
 	virtual int64 ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
+	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
+	virtual bool ReadyForDormancy(bool suppressLogs = false) override;
+	// End UActorChannel interface
 
 	bool TryResolveActor();
 
 	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
-	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 
 	TMap<UObject*, const FClassInfo*> GetHandoverSubobjects();
 
@@ -133,12 +133,10 @@ public:
 	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
-	FObjectReplicator& PreReceiveSpatialUpdate(UObject* TargetObject);
+	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies);
 
-	void OnCreateEntityResponse(const struct Worker_CreateEntityResponseOp& Op);
-
-	FVector GetActorSpatialPosition(AActor* Actor);
+	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 	
@@ -156,12 +154,9 @@ public:
 	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
 protected:
-	// UChannel Interface
-#if ENGINE_MINOR_VERSION <= 20
-	virtual bool CleanUp(const bool bForDestroy) override;
-#else
+	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
-#endif
+	// End UChannel interface
 
 private:
 	void DynamicallyAttachSubobject(UObject* Object);
@@ -205,6 +200,8 @@ private:
 
 	FVector LastPositionSinceUpdate;
 	float TimeWhenPositionLastUpdated;
+
+	uint8 FramesTillDormancyAllowed = 0;
 
 	// Shadow data for Handover properties.
 	// For each object with handover properties, we store a blob of memory which contains

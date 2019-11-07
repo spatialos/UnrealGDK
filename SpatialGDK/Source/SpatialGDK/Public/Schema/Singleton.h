@@ -24,7 +24,7 @@ struct Singleton : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
 
 		return Data;
 	}

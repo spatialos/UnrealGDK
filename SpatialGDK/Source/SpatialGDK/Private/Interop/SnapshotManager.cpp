@@ -30,14 +30,14 @@ void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate&
 
 	Worker_Constraint GSMConstraint;
 	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
-	GSMConstraint.entity_id_constraint.entity_id = GlobalStateManager->GlobalStateManagerEntityId;
+	GSMConstraint.constraint.entity_id_constraint.entity_id = GlobalStateManager->GlobalStateManagerEntityId;
 
 	Worker_NotConstraint NotGSMConstraint;
 	NotGSMConstraint.constraint = &GSMConstraint;
 
 	Worker_Constraint WorldConstraint;
 	WorldConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_NOT;
-	WorldConstraint.not_constraint = NotGSMConstraint;
+	WorldConstraint.constraint.not_constraint = NotGSMConstraint;
 
 	Worker_EntityQuery WorldQuery{};
 	WorldQuery.constraint = WorldConstraint;
@@ -111,7 +111,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 	Worker_SnapshotInputStream* Snapshot = Worker_SnapshotInputStream_Create(TCHAR_TO_UTF8(*SnapshotPath), &Parameters);
 
-	FString Error = Worker_SnapshotInputStream_GetError(Snapshot);
+	FString Error = Worker_SnapshotInputStream_GetState(Snapshot).error_message;
 	if (!Error.IsEmpty())
 	{
 		UE_LOG(LogSnapshotManager, Error, TEXT("Error when attempting to read snapshot '%s': %s"), *SnapshotPath, *Error);
@@ -124,7 +124,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 	// Get all of the entities from the snapshot.
 	while (Worker_SnapshotInputStream_HasNext(Snapshot) > 0)
 	{
-		Error = Worker_SnapshotInputStream_GetError(Snapshot);
+		Error = Worker_SnapshotInputStream_GetState(Snapshot).error_message;
 		if (!Error.IsEmpty())
 		{
 			UE_LOG(LogSnapshotManager, Error, TEXT("Error when reading snapshot. Aborting load snapshot: %s"), *Error);
@@ -134,16 +134,16 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 		const Worker_Entity* EntityToSpawn = Worker_SnapshotInputStream_ReadEntity(Snapshot);
 
-		Error = Worker_SnapshotInputStream_GetError(Snapshot);
+		Error = Worker_SnapshotInputStream_GetState(Snapshot).error_message;
 		if (Error.IsEmpty())
 		{
 			TArray<Worker_ComponentData> EntityComponents;
 			for (uint32_t i = 0; i < EntityToSpawn->component_count; ++i)
 			{
 				// Entity component data must be deep copied so that it can be used for CreateEntityRequest.
-				Schema_ComponentData* CopySchemaData = DeepCopyComponentData(EntityToSpawn->components[i].schema_type);
+				Schema_ComponentData* CopySchemaData = Schema_CopyComponentData(EntityToSpawn->components[i].schema_type);
 				Worker_ComponentData EntityComponentData{};
-				EntityComponentData.component_id = Schema_GetComponentDataComponentId(CopySchemaData);
+				EntityComponentData.component_id = EntityToSpawn->components[i].component_id;
 				EntityComponentData.schema_type = CopySchemaData;
 				EntityComponents.Add(EntityComponentData);
 			}

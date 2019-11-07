@@ -3,10 +3,7 @@
 #include "CoreMinimal.h"
 
 #include "Utils/SchemaOption.h"
-
-#include <cstdint>
-
-using Worker_EntityId = std::int64_t;
+#include <WorkerSDK/Improbable/c_worker.h>
 
 class USpatialPackageMapClient;
 

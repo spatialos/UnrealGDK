@@ -1,9 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "GenerateSchemaCommandlet.h"
+#include "SpatialConstants.h"
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
+
+using namespace SpatialGDKEditor::Schema;
 
 UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
 {
@@ -17,7 +20,7 @@ bool UGenerateSchemaCommandlet::HandleOptions(const TArray<FString>& Switches)
 {
 	if (Switches.Contains("delete-schema-db"))
 	{
-		if (DeleteSchemaDatabase())
+		if (DeleteSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 		{
 			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Deleted schema database"));
 		}

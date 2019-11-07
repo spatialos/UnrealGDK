@@ -11,13 +11,19 @@ public class SpatialGDKServices : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(
 			new string[] {
+				"EditorStyle",
+				"Engine",
+				"OutputLog",
+				"Slate",
+				"SlateCore",
 				"Core",
 				"CoreUObject",
-				"Engine",
 				"EngineSettings",
-				"UnrealEd",
 				"Json",
-				"JsonUtilities"
-            });
+				"JsonUtilities",
+				"UnrealEd",
+				"Sockets"
+			}
+		);
 	}
 }

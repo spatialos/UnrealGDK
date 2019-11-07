@@ -9,6 +9,24 @@
 
 #include "SpatialGDKSettings.generated.h"
 
+/**
+ * Enum that maps Unreal's log verbosity to allow use in settings.
+**/
+UENUM()
+namespace ESettingsWorkerLogVerbosity
+{
+	enum Type
+	{
+		Fatal = 1,
+		Error,
+		Warning,
+		Display,
+		Log,
+		Verbose,
+		VeryVerbose,
+	};
+}
+
 UCLASS(config = SpatialGDKSettings, defaultconfig)
 class SPATIALGDK_API USpatialGDKSettings : public UObject
 {
@@ -98,10 +116,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Wait Time Before Processing Received RPC With Unresolved Refs"))
 	float QueuedIncomingRPCWaitTime;
 
-	/** Query Based Interest is required for level streaming and the AlwaysInterested UPROPERTY specifier to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
-	UPROPERTY(config, meta = (ConfigRestartRequired = false))
-	bool bUsingQBI;
-
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (ConfigRestartRequired = false))
 	float PositionUpdateFrequency;
@@ -172,7 +186,7 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
 	FWorkerType DefaultWorkerType;
 
-	/** Enable running different server worker types to split the simulation by Actor Groups. */
+	/** Enable running different server worker types to split the simulation by Actor Groups. Can be overridden with command line argument OverrideSpatialOffloading. */
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
 	bool bEnableOffloading;
 
@@ -200,4 +214,16 @@ private:
 
 public:
 	uint32 GetRPCRingBufferSize(ESchemaComponentType RPCType) const;
+	
+	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
+	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (ConfigRestartRequired = false, DisplayName = "Worker Log Level"))
+	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
+
+	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
+		bool bEnableUnrealLoadBalancer;
+
+	/** EXPERIMENTAL: Worker type to assign for load balancing. */
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
+		FWorkerType LoadBalancingWorkerType;
 };

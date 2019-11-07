@@ -10,6 +10,8 @@
 
 #include "SpatialGDKEditorSettings.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEditorSettings, Log, All);
+
 USTRUCT()
 struct FWorldLaunchSection
 {
@@ -18,12 +20,10 @@ struct FWorldLaunchSection
 	FWorldLaunchSection()
 		: Dimensions(2000, 2000)
 		, ChunkEdgeLengthMeters(50)
-		, StreamingQueryIntervalSeconds(4)
 		, SnapshotWritePeriodSeconds(0)
 	{
 		LegacyFlags.Add(TEXT("bridge_qos_max_timeout"), TEXT("0"));
 		LegacyFlags.Add(TEXT("bridge_soft_handover_enabled"), TEXT("false"));
-		LegacyFlags.Add(TEXT("enable_chunk_interest"), TEXT("false"));
 	}
 
 	/** The size of the simulation, in meters, for the auto-generated launch configuration file. */
@@ -33,10 +33,6 @@ struct FWorldLaunchSection
 	/** The size of the grid squares that the world is divided into, in “world units” (an arbitrary unit that worker instances can interpret as they choose). */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Chunk edge length in meters"))
 	int32 ChunkEdgeLengthMeters;
-
-	/** The time in seconds between streaming query updates. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Streaming query interval in seconds"))
-	int32 StreamingQueryIntervalSeconds;
 
 	/** The frequency in seconds to write snapshots of the simulated world. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Snapshot write period in seconds"))
@@ -261,6 +257,14 @@ private:
 	FFilePath SpatialOSLaunchConfig;
 
 public:
+	/** Expose the runtime on a particular IP address when it is running on this machine. Changes are applied on next local deployment startup. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Expose local runtime"))
+	bool bExposeRuntimeIP;
+
+	/** If the runtime is set to be exposed, specify on which IP address it should be reachable. Changes are applied on next local deployment startup. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bExposeRuntimeIP", ConfigRestartRequired = false, DisplayName = "Exposed local runtime IP address"))
+	FString ExposedRuntimeIP;
+
 	/** Select the check box to stop your game’s local deployment when you shut down Unreal Editor. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Stop local deployment on exit"))
 	bool bStopSpatialOnExit;
