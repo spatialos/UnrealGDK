@@ -11,6 +11,11 @@ param(
   [string] $test_repo_map = "EmptyGym"
 )
 
+# Allow overriding testing branch via environment variable
+if (Test-Path env:TEST_REPO_BRANCH) {
+  $test_repo_branch = $env:TEST_REPO_BRANCH
+}
+
 . "$PSScriptRoot\common.ps1"
 
 Start-Event "cleanup-symlinks" "command"
