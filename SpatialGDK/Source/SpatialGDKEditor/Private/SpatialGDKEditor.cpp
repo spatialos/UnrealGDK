@@ -54,6 +54,13 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	FScopedSlowTask Progress(100.f, LOCTEXT("GeneratingSchema", "Generating Schema..."));
 	Progress.MakeDialog(true);
 
+#if ENGINE_MINOR_VERSION <= 22
+	// Force spatial networking so schema layouts are correct
+	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
+	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
+	GeneralProjectSettings->bSpatialNetworking = true;
+#endif
+
 	RemoveEditorAssetLoadedCallback();
 
 	if (Schema::IsAssetReadOnly(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
@@ -118,6 +125,9 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 	}
 
+#if ENGINE_MINOR_VERSION <= 22
+	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
+#endif
 	bSchemaGeneratorRunning = false;
 
 	if (bResult)
