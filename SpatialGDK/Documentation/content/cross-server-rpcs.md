@@ -91,6 +91,6 @@ To disable these warnings on an RPC in a Blueprint:
 The panel now displays the **Allow Unresolved Parameters** field.
 
 <br/>------<br/>
-_2019-06-06 Page updated with editorial review_
+_2019-1-06 Page updated with editorial review: added disabling warnings for unresolved parameters in RPCs
 <br/>
 _2019-06-06 Updated invoking a cross-server RPC from a client worker guidance_
