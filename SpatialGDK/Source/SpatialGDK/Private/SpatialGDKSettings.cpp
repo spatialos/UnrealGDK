@@ -19,10 +19,11 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, HeartbeatTimeoutSeconds(10.0f)
 	, ActorReplicationRateLimit(0)
 	, EntityCreationRateLimit(0)
+	, UseIsActorRelevantForConnection(false)
 	, OpsUpdateRate(1000.0f)
 	, bEnableHandover(true)
 	, MaxNetCullDistanceSquared(900000000.0f) // Set to twice the default Actor NetCullDistanceSquared (300m)
-	, bUsingQBI(true)
+	, QueuedIncomingRPCWaitTime(1.0f)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
 	, bEnableMetrics(true)
@@ -32,12 +33,13 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bCheckRPCOrder(false)
 	, bBatchSpatialPositionUpdates(true)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
-	, bEnableServerQBI(bUsingQBI)
-	, bPackRPCs(true)
+	, bEnableServerQBI(true)
+	, bPackRPCs(false)
 	, bUseDevelopmentAuthenticationFlow(false)
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
 	, bEnableOffloading(false)
 	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
+	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -46,9 +48,17 @@ void USpatialGDKSettings::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	// Check any command line overrides for using QBI (after reading the config value):
+	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
-	FParse::Bool(CommandLine, TEXT("useQBI"), bUsingQBI);
+
+	if (FParse::Param(CommandLine, TEXT("OverrideSpatialOffloading")))
+	{
+		bEnableOffloading = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideSpatialOffloading="), bEnableOffloading);
+	}
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();

@@ -2,35 +2,33 @@
 
 #include "SpatialGDKEditorSettings.h"
 
-#include "Dom/JsonObject.h"
 #include "Internationalization/Regex.h"
 #include "ISettingsModule.h"
-#include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "Templates/SharedPointer.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, bShowSpatialServiceButton(false)
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
+	, bExposeRuntimeIP(false)
+	, ExposedRuntimeIP(TEXT(""))
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
-	, SimulatedPlayerLaunchConfigPath(FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir() /
-		TEXT("Plugins/UnrealGDK/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json"))))
+	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
-	SpatialOSSnapshotFile = GetSpatialOSSnapshotFile();
-	ProjectName = GetProjectNameFromSpatial();
+	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
+	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
@@ -101,27 +99,6 @@ void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
 	}
 }
 
-FString USpatialGDKEditorSettings::GetProjectNameFromSpatial() const
-{
-	FString FileContents;
-	const FString SpatialOSFile = FSpatialGDKServicesModule::GetSpatialOSDirectory().Append(TEXT("/spatialos.json"));
-
-	if (!FFileHelper::LoadFileToString(FileContents, *SpatialOSFile))
-	{
-		return TEXT("");
-	}
-
-	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(FileContents);
-	TSharedPtr<FJsonObject> JsonObject;
-
-	if (FJsonSerializer::Deserialize(Reader, JsonObject))
-	{
-		return JsonObject->GetStringField("name");
-	}
-
-	return FString();
-}
-
 bool USpatialGDKEditorSettings::IsAssemblyNameValid(const FString& Name)
 {
 	const FRegexPattern AssemblyPatternRegex(SpatialConstants::AssemblyPattern);
@@ -162,12 +139,6 @@ void USpatialGDKEditorSettings::SetPrimaryDeploymentName(const FString& Name)
 void USpatialGDKEditorSettings::SetAssemblyName(const FString& Name)
 {
 	AssemblyName = Name;
-	SaveConfig();
-}
-
-void USpatialGDKEditorSettings::SetProjectName(const FString& Name)
-{
-	ProjectName = Name;
 	SaveConfig();
 }
 
@@ -213,20 +184,51 @@ void USpatialGDKEditorSettings::SetNumberOfSimulatedPlayers(uint32 Number)
 
 bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 {
-	bool result = IsAssemblyNameValid(AssemblyName) &&
-		IsDeploymentNameValid(PrimaryDeploymentName) &&
-		IsProjectNameValid(ProjectName) &&
-		!SnapshotPath.FilePath.IsEmpty() &&
-		!PrimaryLaunchConfigPath.FilePath.IsEmpty() &&
-		IsRegionCodeValid(PrimaryDeploymentRegionCode);
+	bool bValid = true;
+	if (!IsAssemblyNameValid(AssemblyName))
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. It should match the regex: %s"), *SpatialConstants::AssemblyPattern);
+		bValid = false;
+	}
+	if (!IsDeploymentNameValid(PrimaryDeploymentName))
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. It should match the regex: %s"), *SpatialConstants::DeploymentPattern);
+		bValid = false;
+	}
+	if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Region code is invalid."));
+		bValid = false;
+	}
+	if (GetSnapshotPath().IsEmpty())
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Snapshot path cannot be empty."));
+		bValid = false;
+	}
+	if (GetPrimaryLanchConfigPath().IsEmpty())
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Launch config path cannot be empty."));
+		bValid = false;
+	}
 
 	if (IsSimulatedPlayersEnabled())
 	{
-		result = result &&
-			IsDeploymentNameValid(SimulatedPlayerDeploymentName) &&
-			!SimulatedPlayerLaunchConfigPath.IsEmpty() &&
-			IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode);
+		if (!IsDeploymentNameValid(SimulatedPlayerDeploymentName))
+		{
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. It should match the regex: %s"), *SpatialConstants::DeploymentPattern);
+			bValid = false;
+		}
+		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
+		{
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player region code is invalid."));
+			bValid = false;
+		}
+		if (GetSimulatedPlayerLaunchConfigPath().IsEmpty())
+		{
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player launch config path cannot be empty."));
+			bValid = false;
+		}
 	}
 
-	return result;
+	return bValid;
 }

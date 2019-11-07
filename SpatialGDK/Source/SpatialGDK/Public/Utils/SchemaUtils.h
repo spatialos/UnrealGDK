@@ -109,18 +109,24 @@ inline WorkerRequirementSet GetWorkerRequirementSetFromSchema(Schema_Object* Obj
 
 inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const FUnrealObjectRef& ObjectRef)
 {
+	using namespace SpatialConstants;
+
 	Schema_Object* ObjectRefObject = Schema_AddObject(Object, Id);
 
-	Schema_AddEntityId(ObjectRefObject, 1, ObjectRef.Entity);
-	Schema_AddUint32(ObjectRefObject, 2, ObjectRef.Offset);
+	Schema_AddEntityId(ObjectRefObject, UNREAL_OBJECT_REF_ENTITY_ID, ObjectRef.Entity);
+	Schema_AddUint32(ObjectRefObject, UNREAL_OBJECT_REF_OFFSET_ID, ObjectRef.Offset);
 	if (ObjectRef.Path)
 	{
-		AddStringToSchema(ObjectRefObject, 3, *ObjectRef.Path);
-		Schema_AddBool(ObjectRefObject, 4, ObjectRef.bNoLoadOnClient);
+		AddStringToSchema(ObjectRefObject, UNREAL_OBJECT_REF_PATH_ID, *ObjectRef.Path);
+		Schema_AddBool(ObjectRefObject, UNREAL_OBJECT_REF_NO_LOAD_ON_CLIENT_ID, ObjectRef.bNoLoadOnClient);
 	}
 	if (ObjectRef.Outer)
 	{
-		AddObjectRefToSchema(ObjectRefObject, 5, *ObjectRef.Outer);
+		AddObjectRefToSchema(ObjectRefObject, UNREAL_OBJECT_REF_OUTER_ID, *ObjectRef.Outer);
+	}
+	if (ObjectRef.bUseSingletonClassPath)
+	{
+		Schema_AddBool(ObjectRefObject, UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID, ObjectRef.bUseSingletonClassPath);
 	}
 }
 
@@ -128,23 +134,29 @@ FUnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id
 
 inline FUnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
+	using namespace SpatialConstants;
+
 	FUnrealObjectRef ObjectRef;
 
 	Schema_Object* ObjectRefObject = Schema_IndexObject(Object, Id, Index);
 
-	ObjectRef.Entity = Schema_GetEntityId(ObjectRefObject, 1);
-	ObjectRef.Offset = Schema_GetUint32(ObjectRefObject, 2);
-	if (Schema_GetObjectCount(ObjectRefObject, 3) > 0)
+	ObjectRef.Entity = Schema_GetEntityId(ObjectRefObject, UNREAL_OBJECT_REF_ENTITY_ID);
+	ObjectRef.Offset = Schema_GetUint32(ObjectRefObject, UNREAL_OBJECT_REF_OFFSET_ID);
+	if (Schema_GetObjectCount(ObjectRefObject, UNREAL_OBJECT_REF_PATH_ID) > 0)
 	{
-		ObjectRef.Path = GetStringFromSchema(ObjectRefObject, 3);
+		ObjectRef.Path = GetStringFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_PATH_ID);
 	}
-	if (Schema_GetBoolCount(ObjectRefObject, 4) > 0)
+	if (Schema_GetBoolCount(ObjectRefObject, UNREAL_OBJECT_REF_NO_LOAD_ON_CLIENT_ID) > 0)
 	{
-		ObjectRef.bNoLoadOnClient = GetBoolFromSchema(ObjectRefObject, 4);
+		ObjectRef.bNoLoadOnClient = GetBoolFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_NO_LOAD_ON_CLIENT_ID);
 	}
-	if (Schema_GetObjectCount(ObjectRefObject, 5) > 0)
+	if (Schema_GetObjectCount(ObjectRefObject, UNREAL_OBJECT_REF_OUTER_ID) > 0)
 	{
-		ObjectRef.Outer = GetObjectRefFromSchema(ObjectRefObject, 5);
+		ObjectRef.Outer = GetObjectRefFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_OUTER_ID);
+	}
+	if (Schema_GetBoolCount(ObjectRefObject, UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID) > 0)
+	{
+		ObjectRef.bUseSingletonClassPath = GetBoolFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID);
 	}
 
 	return ObjectRef;
@@ -225,22 +237,6 @@ inline FVector GetVectorFromSchema(Schema_Object* Object, Schema_FieldId Id)
 	Vector.Z = Schema_GetFloat(VectorObject, 3);
 
 	return Vector;
-}
-
-inline void DeepCopySchemaObject(Schema_Object* Source, Schema_Object* Target)
-{
-	uint32_t Length = Schema_GetWriteBufferLength(Source);
-	uint8_t* Buffer = Schema_AllocateBuffer(Target, Length);
-	Schema_WriteToBuffer(Source, Buffer);
-	Schema_Clear(Target);
-	Schema_MergeFromBuffer(Target, Buffer, Length);
-}
-
-inline Schema_ComponentData* DeepCopyComponentData(Schema_ComponentData* Source)
-{
-	Schema_ComponentData* Copy = Schema_CreateComponentData(Schema_GetComponentDataComponentId(Source));
-	DeepCopySchemaObject(Schema_GetComponentDataFields(Source), Schema_GetComponentDataFields(Copy));
-	return Copy;
 }
 
 // Generates the full path from an ObjectRef, if it has paths. Writes the result to OutPath.

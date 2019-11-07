@@ -18,6 +18,8 @@
 #include "UObject/StrongObjectPtr.h"
 #include "Settings/ProjectPackagingSettings.h"
 
+using namespace SpatialGDKEditor;
+
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditor"
@@ -59,10 +61,15 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	RemoveEditorAssetLoadedCallback();
 
-	if (!TryLoadExistingSchemaDatabase())
+	if (Schema::IsAssetReadOnly(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
 		bSchemaGeneratorRunning = false;
 		return false;
+	}
+
+	if (!Schema::LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
+	{
+		Schema::ResetSchemaGeneratorStateAndCleanupFolders();
 	}
 
 	TArray<TStrongObjectPtr<UObject>> LoadedAssets;
@@ -73,7 +80,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		{
 			bSchemaGeneratorRunning = false;
 			LoadedAssets.Empty();
-			CollectGarbage(RF_NoFlags, true);
+			CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 			return false;
 		}
 	}
@@ -89,12 +96,15 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	if (bFullScan)
 	{
 		// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
-		CopyWellKnownSchemaFiles();
-		DeleteGeneratedSchemaFiles();
+		FString GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
+		FString CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
+		Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
+		Schema::DeleteGeneratedSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
+		Schema::CreateGeneratedSchemaFolder();
 	}
 
 	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
-	bool bResult = SpatialGDKGenerateSchema();
+	bool bResult = Schema::SpatialGDKGenerateSchema();
 	
 	// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
 	if (ErroredBlueprints.Num() > 0)
@@ -110,7 +120,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	{
 		Progress.EnterProgressFrame(10.f);
 		LoadedAssets.Empty();
-		CollectGarbage(RF_NoFlags, true);
+		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 	}
 
 	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
@@ -178,15 +188,11 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 
 		const FString* GeneratedClassPathPtr = nullptr;
 
-#if ENGINE_MINOR_VERSION <= 20
-		GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass");
-#else
 		FAssetDataTagMapSharedView::FFindTagResult GeneratedClassFindTagResult = Data.TagsAndValues.FindTag("GeneratedClass");
 		if (GeneratedClassFindTagResult.IsSet())
 		{
 			GeneratedClassPathPtr = &GeneratedClassFindTagResult.GetValue();
 		}
-#endif
 
 		if (GeneratedClassPathPtr != nullptr)
 		{ 
@@ -248,7 +254,7 @@ void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSi
 
 bool FSpatialGDKEditor::FullScanRequired()
 {
-	return !GeneratedSchemaFolderExists();
+	return !Schema::GeneratedSchemaFolderExists() || !Schema::GeneratedSchemaDatabaseExists();
 }
 
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()

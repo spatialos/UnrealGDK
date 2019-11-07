@@ -1,8 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "GenerateSchemaAndSnapshotsCommandlet.h"
-#include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditor.h"
+#include "SpatialGDKEditorCommandletPrivate.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
 
 #include "Engine/LevelStreaming.h"
 #include "Engine/ObjectLibrary.h"
@@ -34,10 +35,23 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 
 	FSpatialGDKEditor SpatialGDKEditor;
 
-	// Do full schema generation
-	if (!GenerateSchema(SpatialGDKEditor))
+	if (!HandleOptions(Switches))
 	{
+		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema generation aborted"));
 		return 1;
+	}
+
+	if (Switches.Contains("SkipSchema"))
+	{
+		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Skipping schema generation"));
+	}
+	else
+	{
+		// Do full schema generation
+		if (!GenerateSchema(SpatialGDKEditor))
+		{
+			return 1;
+		}
 	}
 
 	if (Params.Contains(MapPathsParamName))

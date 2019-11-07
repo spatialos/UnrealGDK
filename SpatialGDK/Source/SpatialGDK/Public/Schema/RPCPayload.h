@@ -71,7 +71,7 @@ struct RPCsOnEntityCreation : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		for (const auto& Payload : RPCs)
@@ -87,7 +87,7 @@ struct RPCsOnEntityCreation : Component
 	{
 		Worker_ComponentUpdate Update = {};
 		Update.component_id = ComponentId;
-		Update.schema_type = Schema_CreateComponentUpdate(ComponentId);
+		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 		Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
 
@@ -98,7 +98,8 @@ struct RPCsOnEntityCreation : Component
 	{
 		Worker_CommandRequest CommandRequest = {};
 		CommandRequest.component_id = ComponentId;
-		CommandRequest.schema_type = Schema_CreateCommandRequest(ComponentId, SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION);
+		CommandRequest.command_index = SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION;
+		CommandRequest.schema_type = Schema_CreateCommandRequest();
 		return CommandRequest;
 	}
 

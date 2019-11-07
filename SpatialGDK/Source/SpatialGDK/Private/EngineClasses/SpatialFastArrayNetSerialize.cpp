@@ -17,6 +17,7 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDri
 	NetDeltaInfo.Reader = &Reader;
 	NetDeltaInfo.Map = Reader.PackageMap;
 	NetDeltaInfo.NetSerializeCB = &SerializeCB;
+	NetDeltaInfo.Object = Object;
 
 	UStructProperty* ParentStruct = Cast<UStructProperty>(ParentProperty);
 	check(ParentStruct);
@@ -37,6 +38,7 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDr
 	NetDeltaInfo.Writer = &Writer;
 	NetDeltaInfo.Map = Writer.PackageMap;
 	NetDeltaInfo.NetSerializeCB = &SerializeCB;
+	NetDeltaInfo.Object = Object;
 
 	UStructProperty* ParentStruct = Cast<UStructProperty>(ParentProperty);
 	check(ParentStruct);

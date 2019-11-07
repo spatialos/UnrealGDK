@@ -35,6 +35,9 @@ public:
 	// The SpatialWorkerConnection must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
 	void CreateNewSpatialWorkerConnection();
 
+	// Destroying the SpatialWorkerConnection disconnects us from SpatialOS.
+	void DestroySpatialWorkerConnection();
+
 	FORCEINLINE USpatialWorkerConnection* GetSpatialWorkerConnection() { return SpatialConnection; }
 
 	void HandleOnConnected();

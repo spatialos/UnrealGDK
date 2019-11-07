@@ -16,15 +16,15 @@
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/InterestFactory.h"
 
+DEFINE_LOG_CATEGORY(LogComponentFactory);
+
 namespace SpatialGDK
 {
 
-ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, bool bInterestDirty, USpatialNetDriver* InNetDriver)
+ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
-	, PendingRepUnresolvedObjectsMap(RepUnresolvedObjectsMap)
-	, PendingHandoverUnresolvedObjectsMap(HandoverUnresolvedObjectsMap)
 	, bInterestHasChanged(bInterestDirty)
 { }
 
@@ -45,7 +45,6 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 			if (GetGroupFromCondition(Parent.Condition) == PropertyGroup)
 			{
 				const uint8* Data = (uint8*)Object + Cmd.Offset;
-				TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 
 				bool bProcessedFastArrayProperty = false;
 
@@ -56,7 +55,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 					// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
 					if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
 					{
-						FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
+						FSpatialNetBitWriter ValueDataWriter(PackageMap);
 
 						if (FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct) || bIsInitialData)
 						{
@@ -69,24 +68,10 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 
 				if (!bProcessedFastArrayProperty)
 				{
-					AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, UnresolvedObjects, ClearedIds);
+					AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, ClearedIds);
 				}
 
-				if (UnresolvedObjects.Num() == 0)
-				{
-					bWroteSomething = true;
-				}
-				else
-				{
-					if (!bIsInitialData)
-					{
-						// Don't send updates for fields with unresolved objects, unless it's the initial data,
-						// in which case all fields should be populated.
-						Schema_ClearField(ComponentObject, HandleIterator.Handle);
-					}
-
-					PendingRepUnresolvedObjectsMap.Add(HandleIterator.Handle, UnresolvedObjects);
-				}
+				bWroteSomething = true;
 			}
 
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
@@ -112,36 +97,21 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 		const FHandoverPropertyInfo& PropertyInfo = Info.HandoverProperties[ChangedHandle - 1];
 
 		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
-		FUnresolvedObjectsSet UnresolvedObjects;
 
-		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, UnresolvedObjects, ClearedIds);
+		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, ClearedIds);
 
-		if (UnresolvedObjects.Num() == 0)
-		{
-			bWroteSomething = true;
-		}
-		else
-		{
-			if (!bIsInitialData)
-			{
-				// Don't send updates for fields with unresolved objects, unless it's the initial data,
-				// in which case all fields should be populated.
-				Schema_ClearField(ComponentObject, ChangedHandle);
-			}
-
-			PendingHandoverUnresolvedObjectsMap.Add(ChangedHandle, UnresolvedObjects);
-		}
+		bWroteSomething = true;
 	}
 
 	return bWroteSomething;
 }
 
-void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds)
+void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TArray<Schema_FieldId>* ClearedIds)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
 		UScriptStruct* Struct = StructProperty->Struct;
-		FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
+		FSpatialNetBitWriter ValueDataWriter(PackageMap);
 		bool bHasUnmapped = false;
 
 		if (Struct->StructFlags & STRUCT_NetSerializeNative)
@@ -216,63 +186,14 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		FUnrealObjectRef ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
-
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
-
-		if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())
-		{
-			FNetworkGUID NetGUID;
-			if (ObjectValue->IsSupportedForNetworking())
-			{
-				NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
-
-				if (!NetGUID.IsValid())
-				{
-					if (ObjectValue->IsFullNameStableForNetworking())
-					{
-						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
-					}
-					else
-					{
-						NetGUID = PackageMap->TryResolveObjectAsEntity(ObjectValue);
-					}
-				}
-			}
-
-			// The secondary part of the check is needed if we couldn't assign an entity id (e.g. ran out of entity ids)
-			if (NetGUID.IsValid() || (ObjectValue->IsSupportedForNetworking() && !ObjectValue->IsFullNameStableForNetworking()))
-			{
-				ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-			}
-			else
-			{
-				ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
-			}
-
-			if (ObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
-			{
-				// There are cases where something assigned a NetGUID without going through the FSpatialNetGUID (e.g. FObjectReplicator)
-				// Assign an UnrealObjectRef by going through the FSpatialNetGUID flow
-				if (ObjectValue->IsFullNameStableForNetworking())
-				{
-					PackageMap->ResolveStablyNamedObject(ObjectValue);
-					ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-				}
-				else
-				{
-					UnresolvedObjects.Add(ObjectValue);
-					ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
-				}
-			}
-		}
 
 		if (ObjectProperty->PropertyFlags & CPF_AlwaysInterested)
 		{
 			bInterestHasChanged = true;
 		}
 
-		AddObjectRefToSchema(Object, FieldId, ObjectRef);
+		AddObjectRefToSchema(Object, FieldId, FUnrealObjectRef::FromObjectPtr(ObjectValue, PackageMap));
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
 	{
@@ -291,7 +212,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 		for (int i = 0; i < ArrayHelper.Num(); i++)
 		{
-			AddProperty(Object, FieldId, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), UnresolvedObjects, ClearedIds);
+			AddProperty(Object, FieldId, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), ClearedIds);
 		}
 
 		if (ArrayHelper.Num() == 0 && ClearedIds)
@@ -307,16 +228,24 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		}
 		else
 		{
-			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, UnresolvedObjects, ClearedIds);
+			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, ClearedIds);
 		}
 	}
 	else if (Property->IsA<UDelegateProperty>() || Property->IsA<UMulticastDelegateProperty>() || Property->IsA<UInterfaceProperty>())
 	{
 		// These properties can be set to replicate, but won't serialize across the network.
 	}
+	else if (Property->IsA<UMapProperty>())
+	{
+		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TMaps are not supported."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
+	}
+	else if (Property->IsA<USetProperty>())
+	{
+		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TSets are not supported."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
+	}
 	else
 	{
-		checkf(false, TEXT("Tried to add unknown property in field %d"), FieldId);
+		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Attempted to add unknown property type."), *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
 	}
 }
 
@@ -346,7 +275,7 @@ Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId Co
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
-	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
+	ComponentData.schema_type = Schema_CreateComponentData();
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
 	// We're currently ignoring ClearedId fields, which is problematic if the initial replicated state
@@ -360,7 +289,7 @@ Worker_ComponentData ComponentFactory::CreateEmptyComponentData(Worker_Component
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
-	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
+	ComponentData.schema_type = Schema_CreateComponentData();
 
 	return ComponentData;
 }
@@ -418,7 +347,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	// Only support Interest for Actors for now.
 	if (Object->IsA<AActor>() && bInterestHasChanged)
 	{
-		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, NetDriver);
+		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
 		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());
 	}
 
@@ -430,7 +359,7 @@ Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	Worker_ComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = ComponentId;
-	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 	TArray<Schema_FieldId> ClearedIds;
@@ -455,7 +384,7 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	Worker_ComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = ComponentId;
-	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 	TArray<Schema_FieldId> ClearedIds;

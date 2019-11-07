@@ -12,9 +12,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialNetSerialize);
 
-FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<TWeakObjectPtr<const UObject>>& InUnresolvedObjects)
+FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap)
 	: FNetBitWriter(InPackageMap, 0)
-	, UnresolvedObjects(InUnresolvedObjects)
 {}
 
 void FSpatialNetBitWriter::SerializeObjectRef(FUnrealObjectRef& ObjectRef)
@@ -36,38 +35,14 @@ void FSpatialNetBitWriter::SerializeObjectRef(FUnrealObjectRef& ObjectRef)
 	{
 		SerializeObjectRef(*ObjectRef.Outer);
 	}
+
+	SerializeBits(&ObjectRef.bNoLoadOnClient, 1);
+	SerializeBits(&ObjectRef.bUseSingletonClassPath, 1);
 }
 
 FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 {
-	FUnrealObjectRef ObjectRef;
-	if (Value != nullptr && !Value->IsPendingKill())
-	{
-		auto PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
-		FNetworkGUID NetGUID = PackageMapClient->GetNetGUIDFromObject(Value);
-		if (!NetGUID.IsValid())
-		{
-			if (Value->IsFullNameStableForNetworking())
-			{
-				NetGUID = PackageMapClient->ResolveStablyNamedObject(Value);
-			}
-			else
-			{
-				NetGUID = PackageMapClient->TryResolveObjectAsEntity(Value);
-			}
-		}
-		ObjectRef = FUnrealObjectRef(PackageMapClient->GetUnrealObjectRefFromNetGUID(NetGUID));
-		if (ObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
-		{
-			UnresolvedObjects.Add(Value);
-			ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
-		}
-	}
-	else
-	{
-		ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
-	}
-
+	FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Value, Cast<USpatialPackageMapClient>(PackageMap));
 	SerializeObjectRef(ObjectRef);
 
 	return *this;
