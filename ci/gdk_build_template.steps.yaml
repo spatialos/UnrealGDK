@@ -27,7 +27,7 @@ env:
   FASTBUILD_BROKERAGE_PATH: "\\\\fastbuild-brokerage.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba"
 
 steps:
-  - label: "build-and-test-GDK-:windows:-INSERT_ENGINE_COMMIT_HASH"
+  - label: "build-and-test-GDK-:windows:-ENGINE_COMMIT_HASH_PLACEHOLDER"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
@@ -35,12 +35,12 @@ steps:
       - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
       - "ci/TestResults/*"
     env:
-      ENGINE_COMMIT_HASH: "INSERT_ENGINE_COMMIT_HASH"
+      ENGINE_COMMIT_HASH: "ENGINE_COMMIT_HASH_PLACEHOLDER"
 
-  - label: "build-GDK-:linux:-INSERT_ENGINE_COMMIT_HASH"
+  - label: "build-GDK-:linux:-ENGINE_COMMIT_HASH_PLACEHOLDER"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
     env:
-      ENGINE_COMMIT_HASH: "INSERT_ENGINE_COMMIT_HASH"
+      ENGINE_COMMIT_HASH: "ENGINE_COMMIT_HASH_PLACEHOLDER"
