@@ -80,7 +80,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		{
 			bSchemaGeneratorRunning = false;
 			LoadedAssets.Empty();
-			CollectGarbage(RF_NoFlags, true);
+			CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 			return false;
 		}
 	}
@@ -120,7 +120,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	{
 		Progress.EnterProgressFrame(10.f);
 		LoadedAssets.Empty();
-		CollectGarbage(RF_NoFlags, true);
+		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 	}
 
 	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
