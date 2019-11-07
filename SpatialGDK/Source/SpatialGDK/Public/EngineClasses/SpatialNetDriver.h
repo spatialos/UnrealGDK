@@ -200,9 +200,14 @@ private:
 	bool bWaitingForAcceptingPlayersToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
+
+	// Client variable used to signify when we should wait for the GSM to be ready in order to
+	// ask the server to spawn a player.
 	bool bWaitForGlobalStateManagerServerTravelReady;
 
 	FString SnapshotToLoad;
+	// Client variable which stores the SessionId given to us by the server in the URL options.
+	// Used to compare aginst the GSM SessionId to ensure the the server is ready to spawn players.
 	int32 SessionId;
 
 	class USpatialGameInstance* GetGameInstance() const;
