@@ -333,17 +333,7 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 		// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use it to clean up the old entry.
 		ClassInfoMap.Remove(Info->Class);
 
-		// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of TryCreateClassInfoForComponentId).
-		TryCreateClassInfoForComponentId(ComponentId);
-		TSharedRef<FClassInfo> NewInfo = ComponentToClassInfoMap.FindChecked(ComponentId);
-		if (UClass* NewClass = NewInfo->Class.Get())
-		{
-			return NewClass;
-		}
-		else
-		{
-			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not reload class for component %d!"), ComponentId);
-		}
+		// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of LoadClassForComponent).
 	}
 
 	return nullptr;
