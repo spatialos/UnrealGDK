@@ -189,8 +189,8 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
   * **Snapshot File**: The absolute filepath to your project's `.snapshot` snapshot file from `C:/`. </br>
   This is: `C:/...<filepath>.../<ProjectRoot>/spatial/snapshots/default.snapshot`. </br></br>
   * **Region**: The real-world geographical location that you want your cloud deployment hosted in. </br>You can change this by selecting a different region from the drop-down list. You might prefer the region you are in.</br></br>
-1. You can also choose to add simulated players via the dialogue box or skip this and move on to item _4._</br></br>
-  Build out the simulated player clients (which will run on Linux in the cloud) using the following command:</br></br>
+1. You can also choose to add simulated players via the dialogue box or skip this and move on to step 4.</br></br>
+  Build out the simulated player clients using the following command. Note that the simulated players will run on Linux in the cloud. If your game clients use any plugins which don't run on Linux, you'll need to disable them when running in on Linux:</br></br>
   Engine plugin filepath (default):</br>
   ```
   UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject -skipshadercompile
