@@ -334,13 +334,13 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td></td>
   </tr>
   <tr>
-    <td><a href="https://docs.unrealengine.com/en-US/Engine/Chaos/ChaosDestruction/">Chaos Destruction</a></td>
-    <td class="unplanned"></td>
+    <td><a href="https://docs.unrealengine.com/en-us/Engine/Physics/Tracing">Tracing</a></td>
+    <td class="supported"></td>
     <td></td>
   </tr>
   <tr>
-    <td><a href="https://docs.unrealengine.com/en-us/Engine/Physics/Tracing">Tracing</a></td>
-    <td class="supported"></td>
+    <td><a href="https://docs.unrealengine.com/en-US/Engine/Chaos/ChaosDestruction/">Chaos Destruction</a></td>
+    <td class="unplanned"></td>
     <td></td>
   </tr>
   <tr>
@@ -351,6 +351,11 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <tr>
     <td><a href="https://docs.unrealengine.com/Engine/Sequencer">Sequence Editor</td>
     <td class="supported"></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><a href="https://docs.unrealengine.com/en-US/Engine/Performance/UnrealInsights/">Unreal Insights</a></td>
+    <td class="unplanned"></td>
     <td></td>
   </tr>
 
