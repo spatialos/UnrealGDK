@@ -64,6 +64,13 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
 {
+#if ENGINE_MINOR_VERSION >= 23
+	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
+	// Native Unreal now iterates over all commands on clients, and no longer has access to a BaseHandleToCmdIndex
+	// in the RepLayout, the below change forces its creation on clients, but this is a workaround
+	// TODO: UNR-2375
+	bMaySendProperties = true;
+#endif
 }
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
@@ -342,7 +349,14 @@ void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 	check(NetConnection);
 
 	ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
+	// This is just a fake address so that Unreal doesn't ensure-crash on disconnecting from SpatialOS
+	// See UNetDriver::RemoveClientConnection for more details, but basically there is a TMap which uses internet addresses as the key and an unitialised
+	// internet address for a connection causes the TMap.Find to fail
 	TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
+	bool bIsAddressValid = false;
+	FromAddr->SetIp(*SpatialConstants::LOCAL_HOST, bIsAddressValid);
+
+	check(bIsAddressValid);
 
 	// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
 	// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.
@@ -1505,8 +1519,8 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	// We may not need to keep it in the future, but for now it looks like path of least resistance is to have one UPlayer (UConnection) per player.
 	// We use an internal counter to give each client a unique IP address for Unreal's internal bookkeeping.
 	ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
-	TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr(UniqueClientIpAddressCounter);
-	UniqueClientIpAddressCounter++;
+	TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
+	FromAddr->SetIp(UniqueClientIpAddressCounter++);
 
 	SpatialConnection->InitRemoteConnection(this, nullptr, InUrl, *FromAddr, USOCK_Open);
 	Notify->NotifyAcceptedConnection(SpatialConnection);
@@ -1918,7 +1932,11 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 		}
 		else
 		{
+#if ENGINE_MINOR_VERSION <= 22
 			Channel->SetChannelActor(Actor);
+#else
+			Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
+#endif
 		}
 	}
 
