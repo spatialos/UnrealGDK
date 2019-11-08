@@ -45,6 +45,13 @@ public:
 		}
 	}
 
+#if ENGINE_MINOR_VERSION >= 23
+	virtual void OnUObjectArrayShutdown() override
+	{
+		GUObjectArray.RemoveUObjectCreateListener(this);
+	}
+#endif
+
 private:
 	TSet<FSoftClassPath>* VisitedClasses;
 	TSet<FSoftClassPath> UnsupportedClasses;
@@ -100,7 +107,11 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	// Sort classes here so that batching does not have an effect on ordering.
 	ReferencedClasses.Sort([](const FSoftClassPath& A, const FSoftClassPath& B)
 	{
+#if ENGINE_MINOR_VERSION <= 22
 		return A.GetAssetPathName() < B.GetAssetPathName();
+#else
+		return FNameLexicalLess()(A.GetAssetPathName(), B.GetAssetPathName());
+#endif
 	});
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Start Schema Generation for discovered assets."));

@@ -5,23 +5,6 @@ agent_transients: &agent_transients
   exit_status: -1
   limit: 3
 
-common: &common
-  agents:
-    - "agent_count=1"
-    - "capable_of_building=gdk-for-unreal"
-    - "environment=production"
-    - "machine_type=quad-high-cpu"  # this name matches to SpatialOS node-size names
-    - "platform=windows"
-    - "permission_set=builder"
-    - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1572523200-2f33678e336fc673-------z}"
-  retry:
-    automatic:
-      - <<: *agent_transients
-  timeout_in_minutes: 60
-  plugins:
-    - ca-johnson/taskkill#v4.1: ~
-
 script_runner: &script_runner
   agents:
   - "agent_count=8"
@@ -34,15 +17,11 @@ script_runner: &script_runner
   - "scaler_version=2"
   - "working_hours_time_zone=london"
 
-env:
-  FASTBUILD_CACHE_PATH: "\\\\gdk-for-unreal-cache.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba\\fastbuild"
-  FASTBUILD_CACHE_MODE: rw
-  FASTBUILD_BROKERAGE_PATH: "\\\\fastbuild-brokerage.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba"
-
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
 
 steps:
+<<<<<<< HEAD
   - label: "build-and-test-GDK-:windows:"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
@@ -57,10 +36,13 @@ steps:
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
 
+=======
+>>>>>>> master
   - label: "enforce version restrictions"
     command: "ci/check-version-file.sh"
     <<: *script_runner
-
+  # No point in running other steps if the listed versions are invalid
+  - wait 
 
   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
   - trigger: "unrealgdkexampleproject-nightly"
@@ -69,4 +51,12 @@ steps:
     async: true
     build:
       env:
-        GDK_BRANCH="${BUILDKITE_BRANCH}"
+        GDK_BRANCH: "${BUILDKITE_BRANCH}"
+
+  - label: "generate and upload GDK build steps"
+    commands:
+      - "chmod -R +rwx ci" # give the Linux user access to everything in the ci directory
+      - "ci/generate_and_upload_build_steps.sh"
+    env:
+        ENGINE_VERSION: "${ENGINE_VERSION}"
+    <<: *script_runner

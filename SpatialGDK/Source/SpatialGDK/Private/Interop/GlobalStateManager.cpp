@@ -274,7 +274,11 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
 	NetDriver->PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId);
 
+#if ENGINE_MINOR_VERSION <= 22
 	Channel->SetChannelActor(SingletonActor);
+#else
+	Channel->SetChannelActor(SingletonActor, ESetChannelActorFlags::None);
+#endif
 
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
 }
@@ -338,7 +342,11 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 			}
 		}
 
+#if ENGINE_MINOR_VERSION <= 22
 		Channel->SetChannelActor(SingletonActor);
+#else
+		Channel->SetChannelActor(SingletonActor, ESetChannelActorFlags::None);
+#endif
 		UE_LOG(LogGlobalStateManager, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActorClass->GetName());
 	}
 	else
