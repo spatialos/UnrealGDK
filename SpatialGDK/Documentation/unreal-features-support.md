@@ -342,6 +342,11 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td></td>
   </tr>
   <tr>
+    <td><a href="https://docs.unrealengine.com/en-US/Engine/Chaos/ChaosDestruction/">Chaos Destruction</a></td>
+    <td class="unsupported"></td>
+    <td></td>
+  </tr>
+  <tr>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Physics/Tracing">Tracing</a></td>
     <td class="supported"></td>
     <td></td>
