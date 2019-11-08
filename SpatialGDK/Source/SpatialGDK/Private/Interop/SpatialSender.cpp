@@ -500,13 +500,13 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Receiver->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
 }
 
-bool USpatialSender::CheckClassIsSupported(const FString& PathName)
+bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
 {
 	// Level blueprint classes could have a PIE prefix, this will remove it.
 	FString RemappedPathName = PathName;
 	GEngine->NetworkRemapPath(NetDriver, RemappedPathName, false);
 
-	return ClassInfoManager->CheckClassIsSupported(RemappedPathName);
+	return ClassInfoManager->ValidateOrExit_IsSupportedClass(RemappedPathName);
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)

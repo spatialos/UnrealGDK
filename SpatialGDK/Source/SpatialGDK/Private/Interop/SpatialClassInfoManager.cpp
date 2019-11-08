@@ -40,13 +40,15 @@ bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, UActorGro
 	return true;
 }
 
-bool USpatialClassInfoManager::CheckClassIsSupported(const FString& PathName)
+bool USpatialClassInfoManager::ValidateOrExit_IsSupportedClass(const FString& PathName)
 {
 	if (!IsSupportedClass(PathName))
 	{
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is marked as SpatialType, and schema has been generated."), *PathName);
+#if !UE_BUILD_SHIPPING
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *PathName);
 		QuitGame();
+#endif //!UE_BUILD_SHIPPING
 		return false;
 	}
 
@@ -111,7 +113,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	Info->Class = Class;
 
 	// Note: we have to add Class to ClassInfoMap before quitting, as it is expected to be in there by GetOrCreateClassInfoByClass. Therefore the quitting logic cannot be moved higher up.
-	if (!CheckClassIsSupported(ClassPath))
+	if (!ValidateOrExit_IsSupportedClass(ClassPath))
 	{
 		return;
 	}
