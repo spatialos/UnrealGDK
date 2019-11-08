@@ -532,7 +532,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
 		if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
-			Sender->SendAuthorityUpdate(*Actor, NewAuthVirtualWorkerId);
+			Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
 		}
 		else
 		{

@@ -75,7 +75,7 @@ public:
 	void SendComponentInterestForActor(USpatialActorChannel* Channel, Worker_EntityId EntityId, bool bNetOwned);
 	void SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
-	void SendAuthorityUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
+	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	ERPCResult SendRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
