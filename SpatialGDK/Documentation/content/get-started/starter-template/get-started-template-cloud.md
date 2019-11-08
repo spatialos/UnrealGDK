@@ -147,7 +147,6 @@ Problems with uploading workers?</br>
 <%(/Expandable)%>
 
 ### Step 4: Launch your cloud deployment 
-### (Optional: add simulated players)
 
 The next step is to launch a cloud deployment using the assembly that you just uploaded. You can do this in Unreal Editor or using the SpatialOS CLI's commands. This guide uses Unreal Editor.</br></br>
 As part of this step, you can choose to launch some simulated players with your deployment. Simulated players are game clients mimicking real players of your game. You can use them for testing client connection flow and server-worker load at scale.
