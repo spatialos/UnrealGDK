@@ -329,12 +329,12 @@ ESpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 	return ConnectionType;
 }
 
-void USpatialWorkerConnection::SetConnectionType(ESpatialConnectionType NewType)
+void USpatialWorkerConnection::SetConnectionType(ESpatialConnectionType InConnectionType)
 {
 	// The locator config may not have been initialized
-	check(!(NewType == ESpatialConnectionType::Locator && LocatorConfig.LocatorHost.IsEmpty()))
+	check(!(InConnectionType == ESpatialConnectionType::Locator && LocatorConfig.LocatorHost.IsEmpty()))
 
-	ConnectionType = NewType;
+	ConnectionType = InConnectionType;
 }
 
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()

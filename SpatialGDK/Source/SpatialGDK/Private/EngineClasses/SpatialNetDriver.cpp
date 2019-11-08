@@ -53,34 +53,6 @@ DEFINE_STAT(STAT_SpatialConsiderList);
 DEFINE_STAT(STAT_SpatialActorsRelevant);
 DEFINE_STAT(STAT_SpatialActorsChanged);
 
-namespace
-{
-	void ConnectToLocator(const TArray<FString>& Args, UWorld* World)
-	{
-		if (Args.Num() != 2)
-		{
-			return;
-		}
-
-		FURL URL;
-		URL.Host = SpatialConstants::LOCATOR_HOST;
-		FString Login = SpatialConstants::URL_LOGIN_OPTION + Args[0];
-		FString PlayerIdentiry = SpatialConstants::URL_PLAYER_IDENTITY_OPTION + Args[1];
-		URL.AddOption(*PlayerIdentiry);
-		URL.AddOption(*Login);
-
-		FString Error;
-		FWorldContext &WorldContext = GEngine->GetWorldContextFromWorldChecked(World);
-		GEngine->Browse(WorldContext, URL, Error);
-	}
-
-	FAutoConsoleCommandWithWorldAndArgs ConnectToLocatorCommand = FAutoConsoleCommandWithWorldAndArgs(
-		TEXT("ConnectToLocator"),
-		TEXT("Usage: ConnectToLocator <login> <playerToken>"),
-		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&ConnectToLocator)
-	);
-}
-
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, bAuthoritativeDestruction(true)
@@ -217,65 +189,46 @@ USpatialGameInstance* USpatialNetDriver::GetGameInstance() const
 	return GameInstance;
 }
 
-void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
+
+void USpatialNetDriver::StartSetupConnectionConfigFromCommandLine(bool& bSuccessfullyLoaded, bool& bUseReceptionist)
 {
 	USpatialGameInstance* GameInstance = GetGameInstance();
 
-	if (GameInstance == nullptr)
+	FString CommandLineLocatorHost;
+	FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), CommandLineLocatorHost);
+	if (!CommandLineLocatorHost.IsEmpty())
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("A SpatialGameInstance is required. Make sure your game's GameInstance inherits from SpatialGameInstance"));
-		return;
+		bSuccessfullyLoaded = !Connection->LocatorConfig.TryLoadCommandLineArgs();
+		bUseReceptionist = false;
+	}
+	else
+	{
+		bSuccessfullyLoaded = !Connection->ReceptionistConfig.TryLoadCommandLineArgs();
+		bUseReceptionist = true;
 	}
 
-	if (!bPersistSpatialConnection)
+	GameInstance->SetFirstConnectionToSpatialOSAttempted();
+}
+
+void USpatialNetDriver::StartSetupConnectionConfigFromURL(const FURL& URL, bool& bUseReceptionist)
+{
+	bUseReceptionist = URL.Host == SpatialConstants::LOCATOR_HOST || URL.HasOption(TEXT("locator"));
+	if (bUseReceptionist)
 	{
-		GameInstance->DestroySpatialWorkerConnection();
-		GameInstance->CreateNewSpatialWorkerConnection();
+		Connection->ReceptionistConfig.SetReceptionistHost(URL.Host);
 	}
-
-	Connection = GameInstance->GetSpatialWorkerConnection();
-
-	bool bShouldLoadFromURL = true;
-	bool bUseReceptionist = true;
-
-	// If this is the first connection try using the command line arguments to setup the config objects.
-	// If arguments can not be found we will use the regular flow of loading from the input URL.
-	if (!GameInstance->bFirstConnectionToSpatialOSAttempted || URL.Host == SpatialConstants::RECONNECT_USING_ARGUMENTS)
+	else
 	{
-		FString CommandLineLocatorHost;
-		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), CommandLineLocatorHost);
-		if(!CommandLineLocatorHost.IsEmpty())
-		{
-			bShouldLoadFromURL = !Connection->LocatorConfig.TryLoadCommandLineArgs();
-			bUseReceptionist = false;
-		}
-		else
-		{
-			bShouldLoadFromURL = !Connection->ReceptionistConfig.TryLoadCommandLineArgs();
-			bUseReceptionist = true;
-		}
-
-		GameInstance->bFirstConnectionToSpatialOSAttempted = true;
+		FLocatorConfig& LocatorConfig = Connection->LocatorConfig;
+		LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
+		LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
 	}
+}
 
-	// Copy relevant URL info into the relevant config object.
-	if(bShouldLoadFromURL)
-	{
-		if (URL.Host == SpatialConstants::LOCATOR_HOST || URL.HasOption(TEXT("locator")))
-		{
-			FLocatorConfig& LocatorConfig = Connection->LocatorConfig;
-			LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
-			LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
-			bUseReceptionist = false;
-		}
-		else
-		{
-			Connection->ReceptionistConfig.SetReceptionistHost(URL.Host);
-			bUseReceptionist = true;
-		}
-	}
-
-	// Setup for the config objects regardless of loading from command line or URL
+void USpatialNetDriver::FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist)
+{
+	// Finish setup for the config objects regardless of loading from command line or URL
+	USpatialGameInstance* GameInstance = GetGameInstance();
 	if (bUseReceptionist)
 	{
 		// Use Receptionist
@@ -299,7 +252,44 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorConfig.LocatorHost);
 		LocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
 	}
+}
 
+void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
+{
+	USpatialGameInstance* GameInstance = GetGameInstance();
+
+	if (GameInstance == nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("A SpatialGameInstance is required. Make sure your game's GameInstance inherits from SpatialGameInstance"));
+		return;
+	}
+
+	if (!bPersistSpatialConnection)
+	{
+		GameInstance->DestroySpatialWorkerConnection();
+		GameInstance->CreateNewSpatialWorkerConnection();
+	}
+
+	Connection = GameInstance->GetSpatialWorkerConnection();
+
+	bool bUseReceptionist;
+	bool bShouldLoadFromURL = true;
+
+	// If this is the first connection try using the command line arguments to setup the config objects.
+	// If arguments can not be found we will use the regular flow of loading from the input URL.
+	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted() || URL.Host == SpatialConstants::RECONNECT_USING_COMMANDLINE_ARGUMENTS)
+	{
+		bool bSuccessfullyLoadedFromCommandLine;
+		StartSetupConnectionConfigFromCommandLine(bSuccessfullyLoadedFromCommandLine, bUseReceptionist);
+		bShouldLoadFromURL = !bSuccessfullyLoadedFromCommandLine;
+	}
+
+	if(bShouldLoadFromURL)
+	{
+		StartSetupConnectionConfigFromURL(URL, bUseReceptionist);
+	}
+
+	FinishSetupConnectionConfig(URL, bUseReceptionist);
 
 	Connection->Connect(bConnectAsClient);
 }

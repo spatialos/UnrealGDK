@@ -61,7 +61,7 @@ public:
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
-	void SetConnectionType(ESpatialConnectionType newType);
+	void SetConnectionType(ESpatialConnectionType InConnectionType);
 
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;

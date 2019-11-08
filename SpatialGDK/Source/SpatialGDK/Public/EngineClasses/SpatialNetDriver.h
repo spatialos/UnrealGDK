@@ -269,4 +269,8 @@ private:
 	static const int32 EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT = 256;
 	TArray<Worker_EntityId> TombstonedEntities;
 #endif
+
+	void StartSetupConnectionConfigFromCommandLine(bool& bSuccessfullyLoaded, bool& bUseReceptionist);
+	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bUseReceptionist);
+	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
 };
