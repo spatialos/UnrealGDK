@@ -41,6 +41,8 @@ public:
 	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const { return false; }
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID; )
 
+	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; }
+
 protected:
 
 	VirtualWorkerId LocalVirtualWorkerId;

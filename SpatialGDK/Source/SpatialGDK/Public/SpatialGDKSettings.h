@@ -27,15 +27,6 @@ namespace ESettingsWorkerLogVerbosity
 	};
 }
 
-UENUM()
-namespace ELoadBalanceStrategy
-{
-	enum Type
-	{
-		Grid = 0
-	};
-}
-
 UCLASS(config = SpatialGDKSettings, defaultconfig)
 class SPATIALGDK_API USpatialGDKSettings : public UObject
 {
@@ -220,5 +211,5 @@ public:
 		FWorkerType LoadBalancingWorkerType;
 
 	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-		TEnumAsByte<ELoadBalanceStrategy::Type> LoadBalanceStrategy;
+	TSubclassOf<class UAbstractLBStrategy> LoadBalanceStrategy;
 };

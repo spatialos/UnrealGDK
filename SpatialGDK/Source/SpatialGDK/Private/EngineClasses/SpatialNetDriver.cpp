@@ -30,7 +30,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "LoadBalancing/GridBasedLBStrategy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -330,15 +329,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		LoadBalanceEnforcer = NewObject<USpatialLoadBalanceEnforcer>();
 		LoadBalanceEnforcer->Init(this, VirtualWorkerTranslator.Get());
 
-		// TODO: timgibson - get from config data for a map?
-		switch (SpatialSettings->LoadBalanceStrategy)
-		{
-		case ELoadBalanceStrategy::Grid:
-		default:
-			LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>();
-			break;
-		}
-
+		// TODO: timgibson - get from config data for a map?#
+		LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(nullptr, SpatialSettings->LoadBalanceStrategy);
 		LoadBalanceStrategy->Init(this);
 	}
 

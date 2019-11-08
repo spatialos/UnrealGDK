@@ -536,7 +536,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 		else
 		{
-			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Should transition actor %s to new server, but auth virtual worker id is empty!"), *Actor->GetName());
+			UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
 		}
 	}
 

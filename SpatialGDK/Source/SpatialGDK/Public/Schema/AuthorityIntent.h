@@ -20,7 +20,7 @@ struct AuthorityIntent : Component
 
 	AuthorityIntent() = default;
 
-	AuthorityIntent(uint32 InVirtualWorkerId)
+	AuthorityIntent(VirtualWorkerId InVirtualWorkerId)
 		: VirtualWorkerId(InVirtualWorkerId) {}
 
 	AuthorityIntent(const Worker_ComponentData& Data)

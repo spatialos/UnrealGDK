@@ -15,6 +15,7 @@ using namespace SpatialGDK;
 USpatialLoadBalanceEnforcer::USpatialLoadBalanceEnforcer(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, NetDriver(nullptr)
+	, VirtualWorkerTranslator(nullptr)
 {
 }
 
@@ -53,7 +54,11 @@ void USpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeO
 
 void USpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId EntityId)
 {
-	if (!AclWriteAuthAssignmentRequests.ContainsByPredicate([EntityId](const WriteAuthAssignmentRequest& Request) { return Request.EntityId == EntityId; }))
+	if (AclWriteAuthAssignmentRequests.ContainsByPredicate([EntityId](const WriteAuthAssignmentRequest& Request) { return Request.EntityId == EntityId; }))
+	{
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("(%s) Already has an ACL authority request for entity %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
+	}
+	else
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("(%s) Queueing ACL assignment request for %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
 		AclWriteAuthAssignmentRequests.Add(WriteAuthAssignmentRequest(EntityId));
@@ -62,11 +67,11 @@ void USpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityI
 
 void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 {
-	const int32 Size = AclWriteAuthAssignmentRequests.Num();
-	for (int i = Size - 1; i >= 0; i--)
-	{
-		WriteAuthAssignmentRequest& Request = AclWriteAuthAssignmentRequests[i];
+	TArray<Worker_EntityId> CompletedRequests;
+	CompletedRequests.Reserve(AclWriteAuthAssignmentRequests.Num());
 
+	for (WriteAuthAssignmentRequest& Request : AclWriteAuthAssignmentRequests)
+	{
 		static const int16_t ConcerningNumAttmempts = 5;
 		if (Request.ProcessAttempts >= ConcerningNumAttmempts)
 		{
@@ -80,7 +85,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
 		if (!AuthorityIntentComponent)
 		{
-			//UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("Detected entity without AuthIntent component"));
+			//UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Detected entity without AuthIntent component"));
 			continue;
 		}
 
@@ -93,8 +98,10 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		}
 
 		SetAclWriteAuthority(Request.EntityId, *OwningWorkerId);
-		AclWriteAuthAssignmentRequests.RemoveAt(i);
+		CompletedRequests.Add(Request.EntityId);
 	}
+
+	AclWriteAuthAssignmentRequests.RemoveAll([CompletedRequests](const WriteAuthAssignmentRequest& Request) { return CompletedRequests.Contains(Request.EntityId); });
 }
 
 void USpatialLoadBalanceEnforcer::SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId)
