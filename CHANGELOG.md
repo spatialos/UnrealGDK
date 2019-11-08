@@ -13,12 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
 - A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
-- The `GenerateSchema`, `GenerateSchemaAndSnapshots`, and `CookAndGenerateSchema` commandlets can be invoked with command line switches to output additional compiled schema formats. If no such switch is provided, only the schema descriptor will be produced. Recognized switches and resulting output formats are:
-	- `-CompileSchemaDescriptor`: Outputs `schema.descriptor`
-	- `-CompileSchemaBundle`: Outputs `schema.sb`
-	- `-CompileSchemaBundleJson`: Outputs `schema.sb.json`
-	- `-CompileSchemaAST`: Outputs `*.pb` files (one per `.schema` file found)
-	- `-CompileSchemaASTJson`: Outputs `*.json` files (one per `.schema` file found)
+- The `GenerateSchema`, `GenerateSchemaAndSnapshots`, and `CookAndGenerateSchema` commandlets can be invoked with the `-AdditionalSchemaCompilerArguments="..."` command line switch to output additional compiled schema formats. If no such switch is provided, only the schema descriptor will be produced. This switch's value should be a subset of the arguments that can be passed to the schema compiler directly (e.g., `--bundle_out="path/to/bundle.sb"`). A full list of possibles values is available via the [schema compiler documentation](https://docs.improbable.io/reference/14.2/shared/schema/introduction#schema-compiler-cli-reference)
 
 ### Bug fixes:
 - Fixed a bug that could caused a name collision in schema for sublevels.

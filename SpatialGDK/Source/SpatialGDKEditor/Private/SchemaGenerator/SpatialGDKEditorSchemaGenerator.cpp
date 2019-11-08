@@ -55,52 +55,6 @@ TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 
 const FString RelativeSchemaDatabaseFilePath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH), FPackageName::GetAssetPackageExtension());
 
-enum class CompiledSchemaFormat : uint8
-{
-	Descriptor,
-	Bundle,
-	BundleJson,
-	AST,
-	ASTJson
-};
-
-const TMap<FString, CompiledSchemaFormat> SwitchesToFormats{
-	{ FString{ TEXT("compileschemadescriptor") }, CompiledSchemaFormat::Descriptor },
-	{ FString{ TEXT("compileschemabundle") }, CompiledSchemaFormat::Bundle },
-	{ FString{ TEXT("compileschemabundlejson") }, CompiledSchemaFormat::BundleJson },
-	{ FString{ TEXT("compileschemaast") }, CompiledSchemaFormat::AST },
-	{ FString{ TEXT("compileschemaastjson") }, CompiledSchemaFormat::ASTJson }
-};
-
-TSet<CompiledSchemaFormat> GetCompiledSchemaFormats()
-{
-	TArray<FString> Tokens;
-	TArray<FString> Switches;
-	FCommandLine::Parse(FCommandLine::Get(), Tokens, Switches);
-
-	TArray<FString> CompileSchemaSwitches = Switches.FilterByPredicate([](const FString& Switch) {
-		return Switch.StartsWith(FString{ TEXT("CompileSchema") });
-	});
-
-	if (CompileSchemaSwitches.Num() == 0)
-	{
-		// Fall back to just the descriptor format if no specific schema compiler switches are provided
-		return TSet<CompiledSchemaFormat>{ CompiledSchemaFormat::Descriptor };
-	}
-
-	TSet<CompiledSchemaFormat> OutFormats;
-
-	for (const FString& CompileSchemaSwitch : CompileSchemaSwitches)
-	{
-		if (const CompiledSchemaFormat* FormatPtr = SwitchesToFormats.Find(CompileSchemaSwitch.ToLower()))
-		{
-			OutFormats.Add(*FormatPtr);
-		}
-	}
-
-	return OutFormats;
-}
-
 namespace SpatialGDKEditor
 {
 namespace Schema
@@ -786,37 +740,11 @@ bool RunSchemaCompiler()
 	FString CoreSDKSchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
 	FString CompiledSchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
 	FString CompiledSchemaASTDir = FPaths::Combine(CompiledSchemaDir, TEXT("ast"));
+	FString SchemaDescriptorOutput = FPaths::Combine(CompiledSchemaDir, TEXT("schema.descriptor"));
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	FString SchemaCompilerBaseArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *CoreSDKSchemaDir);
-	TArray<FString> SchemaCompilerFormatArgs;
-
-	TSet<CompiledSchemaFormat> CompiledSchemaFormats = GetCompiledSchemaFormats();
-	for (const CompiledSchemaFormat& Format : CompiledSchemaFormats)
-	{
-		switch (Format)
-		{
-		case CompiledSchemaFormat::Descriptor:
-			SchemaCompilerFormatArgs.Add(FString::Printf(TEXT("--descriptor_set_out=\"%s\""), *FPaths::Combine(CompiledSchemaDir, TEXT("schema.descriptor"))));
-			break;
-		case CompiledSchemaFormat::Bundle:
-			SchemaCompilerFormatArgs.Add(FString::Printf(TEXT("--bundle_out=\"%s\""), *FPaths::Combine(CompiledSchemaDir, TEXT("schema.sb"))));
-			break;
-		case CompiledSchemaFormat::BundleJson:
-			SchemaCompilerFormatArgs.Add(FString::Printf(TEXT("--bundle_json_out=\"%s\""), *FPaths::Combine(CompiledSchemaDir, TEXT("schema.sb.json"))));
-			break;
-		case CompiledSchemaFormat::AST:
-			SchemaCompilerFormatArgs.Add(FString::Printf(TEXT("--ast_proto_out=\"%s\""), *CompiledSchemaASTDir));
-			break;
-		case CompiledSchemaFormat::ASTJson:
-			SchemaCompilerFormatArgs.Add(FString::Printf(TEXT("--ast_json_out=\"%s\""), *CompiledSchemaASTDir));
-			break;
-		default:
-			checkNoEntry();
-			return false;
-		}
-	}
+	const FString& SchemaCompilerBaseArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path "), *SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
 
 	// If there's already a compiled schema dir, blow it away so we don't have lingering artifacts from previous generation runs.
 	if (FPaths::DirectoryExists(CompiledSchemaDir))
@@ -834,17 +762,26 @@ bool RunSchemaCompiler()
 		return false;
 	}
 
-	// Because ASTs are output per .schema file, we'll place them in their own subfolder to keep things tidy.
-	if (CompiledSchemaFormats.Contains(CompiledSchemaFormat::AST) || CompiledSchemaFormats.Contains(CompiledSchemaFormat::ASTJson))
+	FString AdditionalSchemaCompilerArgs;
+
+	TArray<FString> Tokens;
+	TArray<FString> Switches;
+	FCommandLine::Parse(FCommandLine::Get(), Tokens, Switches);
+
+	if (const FString* schemaCompileArgsCLSwitchPtr = Switches.FindByPredicate([](const FString& clSwitch) { return clSwitch.StartsWith(FString{ TEXT("AdditionalSchemaCompilerArgs") }); }))
 	{
-		if (!PlatformFile.CreateDirectoryTree(*CompiledSchemaASTDir))
+		AdditionalSchemaCompilerArgs = *schemaCompileArgsCLSwitchPtr;
+		if (AdditionalSchemaCompilerArgs.Contains(FString{ TEXT("ast_proto_out") }) || AdditionalSchemaCompilerArgs.Contains(FString{ TEXT("ast_json_out") }))
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create compiled schema AST directory '%s'! Please make sure the parent directory is writeable."), *CompiledSchemaASTDir);
-			return false;
+			if (!PlatformFile.CreateDirectoryTree(*CompiledSchemaASTDir))
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create compiled schema AST directory '%s'! Please make sure the parent directory is writeable."), *CompiledSchemaASTDir);
+				return false;
+			}
 		}
 	}
 
-	FString SchemaCompilerArgs = FString::Printf(TEXT("%s %s"), *SchemaCompilerBaseArgs, *FString::Join(SchemaCompilerFormatArgs, TEXT(" ")));
+	FString SchemaCompilerArgs = FString::Printf(TEXT("%s %s"), *SchemaCompilerBaseArgs, *FString::Join(AdditionalSchemaCompilerArgs, TEXT(" ")));
 
 	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Starting '%s' with `%s` arguments."), *SchemaCompilerExe, *SchemaCompilerArgs);
 
