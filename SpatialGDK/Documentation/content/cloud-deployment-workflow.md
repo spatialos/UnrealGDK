@@ -75,11 +75,11 @@ You can launch a cloud deployment using the Unreal Editor or the SpatialOS CLI. 
     Build out the simulated player clients (which will run on Linux in the cloud) using the following command:</br></br>
     Engine plugin filepath (default):</br>
     ```
-    UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
+    UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject -skipshadercompile
     ```
     Project plugin filepath:</br>
     ```
-    <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
+    <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject -skipshadercompile
     ```
     Then, back in the Editor Deploy window:</br></br>
 	1. Check the box next to **Add simulated players**.

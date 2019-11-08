@@ -194,11 +194,11 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
   Build out the simulated player clients (which will run on Linux in the cloud) using the following command:</br></br>
   Engine plugin filepath (default):</br>
   ```
-  UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
+  UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject -skipshadercompile
   ```
   Project plugin filepath:</br>
   ```
-  <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
+  <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject -skipshadercompile
   ```
   Then, back in the Editor Deploy window:</br></br>
   * **Add simulated players**: Check the box.</br></br>
