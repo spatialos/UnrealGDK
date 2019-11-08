@@ -47,18 +47,10 @@ The following tables show the state of support of Unreal Engine features on the 
         <td>Supported with caveats or workarounds</td>
         <td class="caveats"></td>
     </tr>    
-    <!-- <tr>
-        <td>Q2 - Q3 2019</td>
-        <td class="indev"></td>
-    </tr> -->
     <tr>
         <td>Currently unplanned</td>
         <td class="unplanned"></td>
     </tr>   
-    <!-- </tr>
-        <td>Not applicable, or not planned to be delivered</td>
-        <td class="na"></td>
-    </tr> -->
 </table>
 
 ## Single-Server Support
@@ -343,7 +335,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-US/Engine/Chaos/ChaosDestruction/">Chaos Destruction</a></td>
-    <td class="unsupported"></td>
+    <td class="unplanned"></td>
     <td></td>
   </tr>
   <tr>
@@ -361,13 +353,17 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td class="supported"></td>
     <td></td>
   </tr>
+
+<!-- ------ Unreal Engine Verions ------ -->
+
   <tr>
-    <td>UE4 4.22 Support</td>
+    <td rowspan="2"><b>Unreal Engine Versions<b></td>
+    <td>4.22 Support</td>
     <td class="supported"></td>
     <td></td>
   </tr>
   <tr>
-    <td>UE4 4.23 Support</td>
+    <td>4.23 Support</td>
     <td class="supported"></td>
     <td></td>
   </tr>
