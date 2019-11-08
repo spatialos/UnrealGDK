@@ -28,7 +28,7 @@ if (Test-Path $test_repo_path) {
 
 # Clone and build the testing project
 Write-Log "Downloading the testing project from $($test_repo_url)"
-Git clone -b $test_repo_branch $test_repo_url $test_repo_path
+Git clone -b "$test_repo_branch" "$test_repo_url" "$test_repo_path" --depth 1
 if (-Not $?) {
     Throw "Failed to clone testing project from $($test_repo_url)."
 }
