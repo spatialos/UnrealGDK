@@ -880,7 +880,9 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 		return false;
 	}
 
+#if ENGINE_MINOR_VERSION <= 22
 	check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
+#endif
 
 	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 

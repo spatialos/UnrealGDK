@@ -106,7 +106,11 @@ public:
 	FORCEINLINE FRepStateStaticBuffer& GetObjectStaticBuffer(UObject* Object)
 	{
 		check(ObjectHasReplicator(Object));
+#if ENGINE_MINOR_VERSION <= 22
 		return FindOrCreateReplicator(Object)->RepState->StaticBuffer;
+#else
+		return FindOrCreateReplicator(Object)->RepState->GetReceivingRepState()->StaticBuffer;
+#endif
 	}
 
 	// Begin UChannel interface
@@ -116,7 +120,11 @@ public:
 
 	// Begin UActorChannel inteface
 	virtual int64 ReplicateActor() override;
+#if ENGINE_MINOR_VERSION <= 22
 	virtual void SetChannelActor(AActor* InActor) override;
+#else
+	virtual void SetChannelActor(AActor* InActor, ESetChannelActorFlags Flags) override;
+#endif
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 	virtual bool ReadyForDormancy(bool suppressLogs = false) override;
 	// End UActorChannel interface
@@ -136,9 +144,7 @@ public:
 	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies);
 
-	void OnCreateEntityResponse(const struct Worker_CreateEntityResponseOp& Op);
-
-	FVector GetActorSpatialPosition(AActor* Actor);
+	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 	
