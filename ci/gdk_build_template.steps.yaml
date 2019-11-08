@@ -1,0 +1,46 @@
+agent_transients: &agent_transients
+  # This is designed to trap and retry failures because agent lost
+  # connection. Agent exits with -1 in this case.
+  exit_status: -1
+  limit: 3
+
+common: &common
+  agents:
+    - "agent_count=1"
+    - "capable_of_building=gdk-for-unreal"
+    - "environment=production"
+    - "machine_type=quad-high-cpu"  # this name matches to SpatialOS node-size names
+    - "platform=windows"
+    - "permission_set=builder"
+    - "scaler_version=2"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1572523200-2f33678e336fc673-------z}"
+  retry:
+    automatic:
+      - <<: *agent_transients
+  timeout_in_minutes: 60
+  plugins:
+    - ca-johnson/taskkill#v4.1: ~
+
+env:
+  FASTBUILD_CACHE_PATH: "\\\\gdk-for-unreal-cache.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba\\fastbuild"
+  FASTBUILD_CACHE_MODE: rw
+  FASTBUILD_BROKERAGE_PATH: "\\\\fastbuild-brokerage.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba"
+
+steps:
+  - label: "build-and-test-GDK-:windows:-ENGINE_COMMIT_HASH_PLACEHOLDER"
+    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    artifact_paths:
+      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
+      - "ci/TestResults/*"
+    env:
+      ENGINE_COMMIT_HASH: "ENGINE_COMMIT_HASH_PLACEHOLDER"
+
+  - label: "build-GDK-:linux:-ENGINE_COMMIT_HASH_PLACEHOLDER"
+    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    artifact_paths:
+      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+    env:
+      ENGINE_COMMIT_HASH: "ENGINE_COMMIT_HASH_PLACEHOLDER"
