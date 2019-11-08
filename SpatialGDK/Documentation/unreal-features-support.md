@@ -335,7 +335,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 
 <!-- ------ Misc ------ -->
 
- <tr>
+  <tr>
     <td rowspan="5"><b>Misc<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Physics">Physics Simulation</a></td>
     <td class="supported"></td>
@@ -345,22 +345,27 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Physics/Tracing">Tracing</a></td>
     <td class="supported"></td>
     <td></td>
-</tr>
+  </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Animation">Skeletal Mesh Animation System</a></td>
     <td class="supported"></td>
     <td></td>
-</tr>
+  </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/Engine/Sequencer">Sequence Editor</td>
     <td class="supported"></td>
     <td></td>
-</tr>
+  </tr>
   <tr>
     <td>UE4 4.22 Support</td>
     <td class="supported"></td>
     <td></td>
-</tr>
+  </tr>
+  <tr>
+    <td>UE4 4.23 Support</td>
+    <td class="supported"></td>
+    <td></td>
+  </tr>
 
 <!-- ------ Platforms ------ -->
 
@@ -399,6 +404,7 @@ The table for multiserver support is coming soon.
 
 
 <br/>------<br/>
+_2019-11-08 Added support for Unreal Engine 4.23 support_</br>
 _2019-08-20 Updated with editorial review: Rescheduled Gameplay Debugger support_</br>
 _2019-07-31 Added support for Dynamic Components, RPCs ordering, and Ability System (0.6.0 release)_</br>
 _2019-07-04 Online Subsystem abstraction support pushed out._
