@@ -337,17 +337,16 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		LoadBalanceEnforcer->Init(this, VirtualWorkerTranslator.Get());
 
 		// TODO: zoning - Move to AWorldSettings subclass
-		LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(nullptr, SpatialSettings->LoadBalanceStrategy);
+		LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
 		LoadBalanceStrategy->Init(this);
+
+		VirtualWorkerTranslator->SetDesiredVirtualWorkerCount(LoadBalanceStrategy->GetVirtualWorkerIds().Num());
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
 	Sender->Init(this, &TimerManager);
-	Receiver->Init(this, &TimerManager);
+	Receiver->Init(this, VirtualWorkerTranslator.Get(), &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
-	// TODO(zoning): This currently hard codes the desired number of virtual workers. This should be retrieved
-	// from the configuration.
-	VirtualWorkerTranslator->SetDesiredVirtualWorkerCount(2);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
