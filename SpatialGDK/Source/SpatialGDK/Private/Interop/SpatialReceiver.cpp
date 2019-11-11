@@ -625,7 +625,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId);
 
+#if ENGINE_MINOR_VERSION <= 22
 		Channel->SetChannelActor(EntityActor);
+#else
+		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
+#endif
 
 		// Apply initial replicated properties.
 		// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
@@ -1568,7 +1572,10 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
 	if (GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCWaitTime < TimeDiff)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing RPC %s::%s with unresolved references after %f seconds of queueing"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), TimeDiff);
+		if ((Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing RPC %s::%s with unresolved references after %f seconds of queueing"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), TimeDiff);
+		}
 		bApplyWithUnresolvedRefs = true;
 	}
 

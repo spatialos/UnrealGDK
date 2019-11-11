@@ -1,10 +1,21 @@
 #!/bin/bash
 set -euo pipefail
 
-# This script enforces that certain 'protected' branches always stay on a pinned engine version, 
+# This script enforces that some engine version is specified and that certain 'protected' branches always stay on a pinned engine versions, 
 # so that each commit on those branches captures the specific engine version against which it should be built. 
-# If a PR attempts to merge into a protected branch while using a non-pinned engine version, fail this step and thus block the merge.
+# If a PR attempts to merge into a protected branch while using non-pinned engine versions, fail this step and thus block the merge.
 
+# Ensure that at least one engine version is listed
+if [$(cat ci/unreal-engine.version) = ""]; then
+    error_msg="No version has been listed in the unreal-engine.version file."
+            
+    echo $error_msg | buildkite-agent annotate --context "check-version-file" --style error
+
+    printf '%s\n' "$error_msg" >&2
+    exit 1
+fi;
+
+# Enforce pinned engine versions on the following branches
 protected_branches=(release preview)
 
 is_protected=0
@@ -24,16 +35,18 @@ do
 done
 
 if [ $is_protected -eq 1 ]; then
-    engine_version=$(cat ci/unreal-engine.version)
-    
-    echo "Found engine version $engine_version"
+    # Ensure that every listed engine version is pinned
+    IFS=$'\n'
+    for engine_version in $(cat < ci/unreal-engine.version); do
+        echo "Found engine version $engine_version"
 
-    if [[ $engine_version == HEAD* ]]; then # version starts with "HEAD"
-        error_msg="The merge target branch does not allow a floating (HEAD) engine version. Use a pinned version. (Of the form UnrealEngine-{commit hash})"
-        
-        echo $error_msg | buildkite-agent annotate --context "check-version-file" --style error
+        if [[ $engine_version == HEAD* ]]; then # version starts with "HEAD"
+            error_msg="The merge target branch does not allow floating (HEAD) engine versions. Use pinned versions. (Of the form UnrealEngine-{commit hash})"
+            
+            echo $error_msg | buildkite-agent annotate --context "check-version-file" --style error
 
-        printf '%s\n' "$error_msg" >&2
-        exit 1
-    fi
+            printf '%s\n' "$error_msg" >&2
+            exit 1
+        fi
+    done
 fi
