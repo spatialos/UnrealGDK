@@ -1921,7 +1921,12 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 
 	check(Actor != nullptr);
 	check(PackageMap != nullptr);
-	check(GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(Actor)) == nullptr);
+	if (USpatialActorChannel* Channel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(Actor)))
+	{
+		// This can happen if schema database is out of date and no schema was generated for a subobject.
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("CreateSpatialActorChannel: Channel is already present for actor %s"), *Actor->GetPathName());
+		return Channel;
+	}
 
 	USpatialNetConnection* NetConnection = GetSpatialOSNetConnection();
 	check(NetConnection != nullptr);
