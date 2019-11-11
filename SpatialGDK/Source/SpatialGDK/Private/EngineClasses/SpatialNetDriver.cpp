@@ -329,6 +329,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
 	VirtualWorkerTranslator->Init(this);
+	// TODO(zoning): This currently hard codes the desired number of virtual workers. This should be retrieved
+	// from the configuration.
+	VirtualWorkerTranslator->SetDesiredVirtualWorkerCount(2);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
