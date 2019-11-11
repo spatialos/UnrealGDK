@@ -113,6 +113,8 @@ public:
 	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 	void CreateServerWorkerEntity(int AttemptCounter = 1);
 
+	bool ValidateOrExit_IsSupportedClass(const FString& PathName);
+
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);

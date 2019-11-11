@@ -14,6 +14,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
@@ -156,6 +157,13 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		{
 			// This would normally get registered through the channel cleanup, but we don't have one for this entity
 			NetDriver->RegisterDormantEntityId(Op.entity_id);
+		}
+		return;
+	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
+		if (NetDriver->VirtualWorkerTranslator != nullptr)
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
+			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
 		return;
 	}
@@ -1153,6 +1161,13 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 			LoadBalanceEnforcer->OnComponentUpdated(Op);
 		}
 		break;
+	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
+		if (NetDriver->VirtualWorkerTranslator != nullptr)
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
+			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+		}
+		return;
 	}
 
 	if (Op.update.component_id < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
