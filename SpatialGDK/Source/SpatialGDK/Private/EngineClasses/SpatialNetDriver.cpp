@@ -329,7 +329,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		LoadBalanceEnforcer = NewObject<USpatialLoadBalanceEnforcer>();
 		LoadBalanceEnforcer->Init(this, VirtualWorkerTranslator.Get());
 
-		// TODO: timgibson - get from config data for a map?#
+		// TODO: zoning - Move to AWorldSettings subclass
 		LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(nullptr, SpatialSettings->LoadBalanceStrategy);
 		LoadBalanceStrategy->Init(this);
 	}

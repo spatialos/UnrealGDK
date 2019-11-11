@@ -56,7 +56,7 @@ void USpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityI
 {
 	if (AclWriteAuthAssignmentRequests.ContainsByPredicate([EntityId](const WriteAuthAssignmentRequest& Request) { return Request.EntityId == EntityId; }))
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("(%s) Already has an ACL authority request for entity %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("(%s) Already has an ACL authority request for entity %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
 	}
 	else
 	{
@@ -85,7 +85,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
 		if (!AuthorityIntentComponent)
 		{
-			//UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Detected entity without AuthIntent component"));
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Detected entity without AuthIntent component"));
 			continue;
 		}
 
