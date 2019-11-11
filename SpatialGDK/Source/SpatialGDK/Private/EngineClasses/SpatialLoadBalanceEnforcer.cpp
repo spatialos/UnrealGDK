@@ -85,7 +85,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
 		if (!AuthorityIntentComponent)
 		{
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Detected entity without AuthIntent component"));
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Detected entity without AuthIntent component. EntityId: %lld"), Request.EntityId);
 			continue;
 		}
 
