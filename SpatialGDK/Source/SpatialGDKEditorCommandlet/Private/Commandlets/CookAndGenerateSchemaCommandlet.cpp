@@ -68,7 +68,7 @@ UCookAndGenerateSchemaCommandlet::UCookAndGenerateSchemaCommandlet()
 int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 {
 	// Force spatial networking
-	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = true;
+	GetMutableDefault<UGeneralProjectSettings>()->SetUseSpatialNetworking(true);
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook and Generate Schema Started."));
 	FObjectListener ObjectListener;
