@@ -33,7 +33,7 @@ public:
 	// the next mapping update.
 	const FString* GetPhysicalWorkerForVirtualWorker(VirtualWorkerId id);
 
-	// On receiving an version of the translation state, apply that to the internal mapping.
+	// On receiving a version of the translation state, apply that to the internal mapping.
 	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
 
 	void OnComponentUpdated(const Worker_ComponentUpdateOp& Op);
