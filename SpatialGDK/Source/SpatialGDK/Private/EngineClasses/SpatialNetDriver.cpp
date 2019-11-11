@@ -329,6 +329,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
 	VirtualWorkerTranslator->Init(this);
+	// TODO(zoning): This currently hard codes the desired number of virtual workers. This should be retrieved
+	// from the configuration.
+	VirtualWorkerTranslator->SetDesiredVirtualWorkerCount(2);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
@@ -1183,6 +1186,14 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		GetOrCreateSpatialActorChannel(CallingObject);
 	}
 
+	// If this object's class isn't present in the schema database, we will log an error and tell the
+	// game to quit. Unfortunately, there's one more tick after that during which RPCs could be called.
+	// Check that the class is supported so we don't crash in USpatialClassInfoManager::GetRPCInfo.
+	if (!Sender->ValidateOrExit_IsSupportedClass(CallingObject->GetClass()->GetPathName()))
+	{
+		return;
+	}
+
 	int ReliableRPCIndex = 0;
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 	{
@@ -1821,6 +1832,13 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 			TargetActor = Cast<AActor>(TargetObject->GetOuter());
 		}
 		check(TargetActor);
+
+		if (USpatialActorChannel* ActorChannel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetActor)))
+		{
+			// This can happen if schema database is out of date and had no entry for a static subobject.
+			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("GetOrCreateSpatialActorChannel: No channel for target object but channel already present for actor. Target object: %s, actor: %s"), *TargetObject->GetPathName(), *TargetActor->GetPathName());
+			return ActorChannel;
+		}
 		Channel = CreateSpatialActorChannel(TargetActor);
 	}
 #if !UE_BUILD_SHIPPING
