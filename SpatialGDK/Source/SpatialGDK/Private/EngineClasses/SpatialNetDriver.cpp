@@ -1829,6 +1829,13 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 			TargetActor = Cast<AActor>(TargetObject->GetOuter());
 		}
 		check(TargetActor);
+
+		if (USpatialActorChannel* ActorChannel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetActor)))
+		{
+			// This can happen if schema database is out of date and had no entry for a static subobject.
+			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("GetOrCreateSpatialActorChannel: No channel for target object but channel already present for actor. Target object: %s, actor: %s"), *TargetObject->GetPathName(), *TargetActor->GetPathName());
+			return ActorChannel;
+		}
 		Channel = CreateSpatialActorChannel(TargetActor);
 	}
 #if !UE_BUILD_SHIPPING
@@ -1921,12 +1928,7 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 
 	check(Actor != nullptr);
 	check(PackageMap != nullptr);
-	if (USpatialActorChannel* Channel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(Actor)))
-	{
-		// This can happen if schema database is out of date and no schema was generated for a subobject.
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("CreateSpatialActorChannel: Channel is already present for actor %s"), *Actor->GetPathName());
-		return Channel;
-	}
+	check(GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(Actor)) == nullptr);
 
 	USpatialNetConnection* NetConnection = GetSpatialOSNetConnection();
 	check(NetConnection != nullptr);
