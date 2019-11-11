@@ -1183,6 +1183,14 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		GetOrCreateSpatialActorChannel(CallingObject);
 	}
 
+	// If this object's class isn't present in the schema database, we will log an error and tell the
+	// game to quit. Unfortunately, there's one more tick after that during which RPCs could be called.
+	// Check that the class is supported so we don't crash in USpatialClassInfoManager::GetRPCInfo.
+	if (!Sender->ValidateOrExit_IsSupportedClass(CallingObject->GetClass()->GetPathName()))
+	{
+		return;
+	}
+
 	int ReliableRPCIndex = 0;
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 	{
