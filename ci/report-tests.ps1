@@ -43,7 +43,7 @@ if (Test-Path "$test_result_dir\index.html" -PathType Leaf) {
 }
 
 ## Read the test results, and pass/fail the build accordingly 
-$results_path = Join-Path -Path $output_dir_absolute -ChildPath "index.json"
+$results_path = Join-Path -Path $test_result_dir -ChildPath "index.json"
 $results_json = Get-Content $results_path -Raw
 
 $results_obj = ConvertFrom-Json $results_json
