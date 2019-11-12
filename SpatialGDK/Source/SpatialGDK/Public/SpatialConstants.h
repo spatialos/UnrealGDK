@@ -87,7 +87,8 @@ namespace SpatialConstants
 		INVALID_ENTITY_ID = 0,
 		INITIAL_SPAWNER_ENTITY_ID = 1,
 		INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
-		FIRST_AVAILABLE_ENTITY_ID = 3,
+		INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = 3,
+		FIRST_AVAILABLE_ENTITY_ID = 4,
 	};
 
 	const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
@@ -97,6 +98,8 @@ namespace SpatialConstants
 	const Worker_ComponentId POSITION_COMPONENT_ID							= 54;
 	const Worker_ComponentId PERSISTENCE_COMPONENT_ID						= 55;
 	const Worker_ComponentId INTEREST_COMPONENT_ID							= 58;
+	// This is a component on per-worker system entities.
+	const Worker_ComponentId WORKER_COMPONENT_ID							= 60;
 
 	const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID		= 100;
 
@@ -176,12 +179,16 @@ namespace SpatialConstants
 
 	// AuthorityIntent codes and Field IDs.
 	const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
-	const uint32 INVALID_VIRTUAL_WORKER_ID                                = 0;
+	const uint32 INVALID_VIRTUAL_WORKER_ID									= 0;
 
 	// VirtualWorkerTranslation Field IDs.
 	const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
 	const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID							= 1;
 	const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME						= 2;
+
+	// WorkerEntity Field IDs.
+	const Schema_FieldId WORKER_ID_ID										= 1;
+	const Schema_FieldId WORKER_TYPE_ID										= 2;
 
 	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;

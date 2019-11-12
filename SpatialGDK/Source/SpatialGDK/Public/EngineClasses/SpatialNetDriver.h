@@ -146,6 +146,8 @@ public:
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
@@ -184,7 +186,6 @@ public:
 #endif
 
 private:
-	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
