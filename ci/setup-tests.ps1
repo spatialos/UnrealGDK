@@ -15,7 +15,7 @@ param(
 Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recurse -Container -ErrorAction SilentlyContinue
 
 # Update spatial to newest version
-Start-Process spatial "update" "20191106.121025.bda19848a2" -Wait -ErrorAction Stop -NoNewWindow
+Start-Process spatial "update","20191106.121025.bda19848a2" -Wait -ErrorAction Stop -NoNewWindow
 
 # Clean up testing project (symlinks could be invalid during initial cleanup - leaving the project as a result)
 if (Test-Path $test_repo_path) {
