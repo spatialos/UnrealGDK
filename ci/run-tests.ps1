@@ -24,7 +24,7 @@ $output_dir_absolute = Force-ResolvePath $output_dir
 $cmd_args_list = @( `
     "`"$uproject_path_absolute`"", ` # We need some project to run tests in, but for unit tests the exact project shouldn't matter
     "`"$test_repo_map`"", ` # The map to run tests in
-    "-ExecCmds=`"Automation RunAll; Quit`"", ` # Run all tests. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
+    "-ExecCmds=`"Automation RunTests SpatialGDK; Quit`"", ` # Run all tests. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
     "-TestExit=`"Automation Test Queue Empty`"", ` # When to close the editor
     "-ReportOutputPath=`"$($output_dir_absolute)`"", ` # Output folder for test results. If it doesn't exist, gets created. If it does, all contents get deleted before new results get placed there.
     "-ABSLOG=`"$($log_file_path)`"", ` # Sets the path for the log file produced during this run.
@@ -43,19 +43,3 @@ Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
 # Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
 Start-Process spatial "service","stop" -Wait -ErrorAction Stop -NoNewWindow
 Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
-
-## Read the test results, and pass/fail this build step 
-$results_path = Join-Path -Path $output_dir_absolute -ChildPath "index.json"
-$results_json = Get-Content $results_path -Raw
-
-$results_obj = ConvertFrom-Json $results_json
-
-Write-Log "Test results are displayed in a nicer form in the artifacts (index.html / index.json)"
-
-if ($results_obj.failed -ne 0) {
-    $fail_msg = "$($results_obj.failed) tests failed. Logs for these tests are contained in the tests.log artifact."
-    Write-Log $fail_msg
-    Throw $fail_msg
-}
-
-Write-Log "All tests passed!"

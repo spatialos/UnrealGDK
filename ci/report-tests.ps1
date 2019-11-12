@@ -2,6 +2,9 @@ param(
     [string] $test_result_dir
 )
 
+# Artifact path used by Buildkite (drop the initial C:\)
+$formatted_test_result_dir = (Split-Path -Path "$test_result_dir" -NoQualifier).Substring(1)
+
 if (Test-Path "$test_result_dir\index.html" -PathType Leaf) {
     # The Unreal Engine produces a mostly undocumented index.html/index.json as the result of running a test suite, for now seems mostly
     # for internal use - but it's an okay visualisation for test results, so we fix it up here to display as a build artifact in CI
@@ -30,11 +33,27 @@ if (Test-Path "$test_result_dir\index.html" -PathType Leaf) {
     }
 
     # %5C is the escape code for a backslash \, needed to successfully reach the artifact from the serving site
-    ((Get-Content -Path "$test_result_dir\index.html" -Raw) -Replace "index.json", "ci%5CTestResults%5Cindex.json") | Set-Content -Path "$test_result_dir\index.html"
+    ((Get-Content -Path "$test_result_dir\index.html" -Raw) -Replace "index.json", "$($formatted_test_result_dir.Replace("\","%5C"))%5Cindex.json") | Set-Content -Path "$test_result_dir\index.html"
 
-    echo "Test results in a nicer format can be found <a href='artifact://ci\TestResults\index.html'>here</a>.`n" | Out-File "$gdk_home/annotation.md"
+    echo "Test results in a nicer format can be found <a href='artifact://$formatted_test_result_dir\index.html'>here</a>.`n" | Out-File "$gdk_home/annotation.md"
 
     Get-Content "$gdk_home/annotation.md" | buildkite-agent annotate `
         --context "unreal-gdk-test-artifact-location"  `
         --style info
 }
+
+## Read the test results, and pass/fail the build accordingly 
+$results_path = Join-Path -Path $output_dir_absolute -ChildPath "index.json"
+$results_json = Get-Content $results_path -Raw
+
+$results_obj = ConvertFrom-Json $results_json
+
+Write-Log "Test results are displayed in a nicer form in the artifacts (index.html / index.json)"
+
+if ($results_obj.failed -ne 0) {
+    $fail_msg = "$($results_obj.failed) tests failed. Logs for these tests are contained in the tests.log artifact."
+    Write-Log $fail_msg
+    Throw $fail_msg
+}
+
+Write-Log "All tests passed!"
