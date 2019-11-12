@@ -178,7 +178,7 @@ namespace SpatialConstants
 
 	// AuthorityIntent codes and Field IDs.
 	const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
-	const uint32 INVALID_VIRTUAL_WORKER_ID									= 0;
+	const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID							= 0;
 
 	// VirtualWorkerTranslation Field IDs.
 	const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
@@ -195,7 +195,7 @@ namespace SpatialConstants
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 	const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 
-	static const FName DefaultActorGroup = FName(TEXT("Default"));
+	const FName DefaultActorGroup = FName(TEXT("Default"));
 
 	const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType.ToString()};
 	const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType.ToString()};
@@ -204,12 +204,12 @@ namespace SpatialConstants
 	const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
 	const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
-	static const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
-	static const FString SnapshotURLOption = TEXT("snapshot=");
+	const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
+	const FString SnapshotURLOption = TEXT("snapshot=");
 
-	static const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
-	static const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");
-	static const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
+	const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
+	const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");
+	const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
 
 	inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 	{
@@ -235,6 +235,8 @@ namespace SpatialConstants
 
 	const FString SCHEMA_DATABASE_FILE_PATH  = TEXT("Spatial/SchemaDatabase");
 	const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
+
+	const FString ZoningAttribute = DefaultServerWorkerType.ToString();
 
 } // ::SpatialConstants
 
