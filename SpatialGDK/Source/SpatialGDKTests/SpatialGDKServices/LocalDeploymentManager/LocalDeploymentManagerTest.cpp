@@ -15,7 +15,7 @@
 namespace
 {
 	// TODO: UNR-1969 - Prepare LocalDeployment in CI pipeline
-	const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 20.0;
+	const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 30.0;
 
 	// TODO: UNR-1964 - Move EDeploymentState enum to LocalDeploymentManager
 	enum class EDeploymentState { IsRunning, IsNotRunning };
