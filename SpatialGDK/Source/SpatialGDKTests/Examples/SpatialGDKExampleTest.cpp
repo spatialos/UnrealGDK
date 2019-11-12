@@ -5,6 +5,8 @@
 #include "Misc/ScopeTryLock.h"
 #include "HAL/PlatformFilemanager.h"
 
+#include <memory>
+
 #define EXAMPLE_SIMPLE_TEST(TestName) \
 	GDK_TEST(SpatialGDKExamples, SimpleExamples, TestName)
 
@@ -163,8 +165,7 @@ EXAMPLE_SIMPLE_TEST(GIVEN_empty_folder_WHEN_creating_a_file_THEN_the_file_has_be
 	FString FilePath = FPaths::Combine(ExampleTestFolder, TEXT("Example.txt"));
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	IFileHandle* Handle = PlatformFile.OpenWrite(*FilePath);
-	delete Handle;
+	TUniquePtr<IFileHandle> Handle = TUniquePtr<IFileHandle>(PlatformFile.OpenWrite(*FilePath));
 
 	TestTrue("Example.txt exists", PlatformFile.FileExists(*FilePath));
 
