@@ -15,11 +15,11 @@ pushd "$($gdk_home)"
         # Allow overriding the engine version if required
         if (Test-Path env:ENGINE_COMMIT_HASH) {
             $version_description = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
-            Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($version_description)"
+            Echo "Using engine version defined by ENGINE_COMMIT_HASH: $($version_description)"
         } else {
             # Read Engine version from the file and trim any trailing white spaces and new lines.
             $version_description = Get-Content -Path "unreal-engine.version" -First 1
-            Write-Log "Using engine version found in unreal-engine.version file: $($version_description)"
+            Echo "Using engine version found in unreal-engine.version file: $($version_description)"
         }
 
         # Check if we are using a 'floating' engine version, meaning that we want to get the latest built version of the engine on some branch
@@ -45,7 +45,7 @@ pushd "$($gdk_home)"
         Start-Event "download-unreal-engine" "get-unreal-engine"
 
         $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
-        Write-Log "Downloading Unreal Engine artifacts version $unreal_version from $($engine_gcs_path)"
+        Echo "Downloading Unreal Engine artifacts version $unreal_version from $($engine_gcs_path)"
 
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
             "cp", `
@@ -60,7 +60,6 @@ pushd "$($gdk_home)"
         }
 
         Start-Event "unzip-unreal-engine" "get-unreal-engine"
-        Write-Log "Unzipping Unreal Engine"
         $zip_proc = Start-Process -Wait -PassThru -NoNewWindow "7z" -ArgumentList @(`
         "x", `
         "$($unreal_version).zip", `

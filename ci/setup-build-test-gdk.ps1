@@ -38,9 +38,7 @@ Start-Event "setup-gdk" "command"
 Finish-Event "setup-gdk" "command"
 
 # Build the GDK plugin
-Start-Event "build-gdk" "command"
 &$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform) -build_output_dir "$build_home\SpatialGDKBuild" -unreal_path $unreal_path
-Finish-Event "build-gdk" "command"
 
 # Only run tests on Windows, as we do not have a linux agent - should not matter
 if ($target_platform -eq "Win64") {
