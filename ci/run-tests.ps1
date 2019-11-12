@@ -24,7 +24,7 @@ $output_dir_absolute = Force-ResolvePath $output_dir
 $cmd_args_list = @( `
     "`"$uproject_path_absolute`"", ` # We need some project to run tests in, but for unit tests the exact project shouldn't matter
     "`"$test_repo_map`"", ` # The map to run tests in
-    "-ExecCmds=`"Automation RunTests SpatialGDK; Quit`"", ` # Run all tests in the SpatialGDK group. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
+    "-ExecCmds=`"Automation RunAll; Quit`"", ` # Run all tests. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
     "-TestExit=`"Automation Test Queue Empty`"", ` # When to close the editor
     "-ReportOutputPath=`"$($output_dir_absolute)`"", ` # Output folder for test results. If it doesn't exist, gets created. If it does, all contents get deleted before new results get placed there.
     "-ABSLOG=`"$($log_file_path)`"", ` # Sets the path for the log file produced during this run.
