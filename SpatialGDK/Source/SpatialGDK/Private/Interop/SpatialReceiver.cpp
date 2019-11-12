@@ -14,6 +14,8 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
@@ -38,7 +40,7 @@ DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel,
 
 using namespace SpatialGDK;
 
-void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
+void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -46,6 +48,8 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
+	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer;
+	VirtualWorkerTranslator = InVirtualWorkerTranslator;
 	TimerManager = InTimerManager;
 
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
@@ -154,6 +158,13 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		{
 			// This would normally get registered through the channel cleanup, but we don't have one for this entity
 			NetDriver->RegisterDormantEntityId(Op.entity_id);
+		}
+		return;
+	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
+		if (VirtualWorkerTranslator != nullptr)
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
+			VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
 		return;
 	}
@@ -317,6 +328,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	{
 		GlobalStateManager->AuthorityChanged(Op);
 		return;
+	}
+
+	if (LoadBalanceEnforcer)
+	{
+		LoadBalanceEnforcer->AuthorityChanged(Op);
 	}
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));
@@ -617,7 +633,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId);
 
+#if ENGINE_MINOR_VERSION <= 22
 		Channel->SetChannelActor(EntityActor);
+#else
+		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
+#endif
 
 		// Apply initial replicated properties.
 		// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
@@ -1136,8 +1156,19 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-		check(false); // TODO(zoning): Handle updates to the entity's authority intent.
+		if (NetDriver->IsServer())
+		{
+			check(LoadBalanceEnforcer);
+			LoadBalanceEnforcer->OnAuthorityIntentComponentUpdated(Op);
+		}
 		break;
+	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
+		if (VirtualWorkerTranslator != nullptr)
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
+			VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+		}
+		return;
 	}
 
 	if (Op.update.component_id < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
