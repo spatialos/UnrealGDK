@@ -45,9 +45,9 @@ if ($target_platform -eq "Win64") {
   Start-Event "setup-tests" "command"
   &$PSScriptRoot"\setup-tests.ps1" `
     -build_output_dir "$build_home\SpatialGDKBuild" `
-    -unreal_path $unreal_path `
-    -test_repo_branch $test_repo_branch `
-    -test_repo_url $test_repo_url `
+    -unreal_path "$unreal_path" `
+    -test_repo_branch "$test_repo_branch" `
+    -test_repo_url "$test_repo_url" `
     -test_repo_uproject_path "$build_home\TestProject\$test_repo_relative_uproject_path" `
     -test_repo_map "$test_repo_map" `
     -test_repo_path "$build_home\TestProject" `
