@@ -19,24 +19,24 @@
 
 #include "SpatialNetDriver.generated.h"
 
+class ASpatialMetricsDisplay;
+class UAbstractLBStrategy;
+class UActorGroupManager;
+class UEntityPool;
+class UGlobalStateManager;
+class USnapshotManager;
 class USpatialActorChannel;
+class USpatialClassInfoManager;
+class USpatialDispatcher;
+class USpatialLoadBalanceEnforcer;
+class USpatialMetrics;
 class USpatialNetConnection;
 class USpatialPackageMapClient;
-
-class USpatialWorkerConnection;
-class USpatialDispatcher;
-class USpatialSender;
-class USpatialReceiver;
-class UActorGroupManager;
-class USpatialClassInfoManager;
-class UGlobalStateManager;
 class USpatialPlayerSpawner;
+class USpatialReceiver;
+class USpatialSender;
 class USpatialStaticComponentView;
-class USnapshotManager;
-class USpatialMetrics;
-class ASpatialMetricsDisplay;
-
-class UEntityPool;
+class USpatialWorkerConnection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -143,10 +143,12 @@ public:
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
+	UPROPERTY()
+	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
+	UPROPERTY()
+	UAbstractLBStrategy* LoadBalanceStrategy;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
-
-	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
@@ -186,6 +188,7 @@ public:
 #endif
 
 private:
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
