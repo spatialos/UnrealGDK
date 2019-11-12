@@ -11,8 +11,9 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
 
-class USpatialNetDriver;
 class SpatialVirtualWorkerTranslator;
+class USpatialNetDriver;
+class USpatialSender;
 
 UCLASS()
 class USpatialLoadBalanceEnforcer : public UObject
@@ -21,7 +22,7 @@ class USpatialLoadBalanceEnforcer : public UObject
 
 public:
 
-	void Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
+	void Init(USpatialNetDriver* InNetDriver, USpatialSender* InUpatialSender, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
 	void Tick();
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
@@ -32,6 +33,7 @@ public:
 private:
 
 	USpatialNetDriver* NetDriver;
+	USpatialSender* Sender;
 	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 	struct WriteAuthAssignmentRequest
@@ -41,11 +43,10 @@ private:
 			, ProcessAttempts(0)
 		{}
 		Worker_EntityId EntityId;
-		int16_t ProcessAttempts;
+		int16 ProcessAttempts;
 	};
 
 	TArray<WriteAuthAssignmentRequest> AclWriteAuthAssignmentRequests;
 
 	void ProcessQueuedAclAssignmentRequests();
-	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId);
 };

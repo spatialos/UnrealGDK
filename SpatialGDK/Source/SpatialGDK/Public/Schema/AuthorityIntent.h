@@ -18,10 +18,13 @@ struct AuthorityIntent : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
 
-	AuthorityIntent() = default;
+	AuthorityIntent()
+		: VirtualWorkerId(SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID)
+	{}
 
 	AuthorityIntent(VirtualWorkerId InVirtualWorkerId)
-		: VirtualWorkerId(InVirtualWorkerId) {}
+		: VirtualWorkerId(InVirtualWorkerId)
+	{}
 
 	AuthorityIntent(const Worker_ComponentData& Data)
 	{

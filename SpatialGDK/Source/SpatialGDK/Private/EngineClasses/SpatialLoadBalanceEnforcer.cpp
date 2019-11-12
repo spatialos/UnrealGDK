@@ -4,6 +4,7 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/SpatialSender.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
 #include "SpatialCommonTypes.h"
@@ -15,13 +16,17 @@ using namespace SpatialGDK;
 USpatialLoadBalanceEnforcer::USpatialLoadBalanceEnforcer(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, NetDriver(nullptr)
+	, Sender(nullptr)
 	, VirtualWorkerTranslator(nullptr)
 {
 }
 
-void USpatialLoadBalanceEnforcer::Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
+void USpatialLoadBalanceEnforcer::Init(USpatialNetDriver* InNetDriver,
+	USpatialSender* InUpatialSender,
+	SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
 {
 	NetDriver = InNetDriver;
+	Sender = InUpatialSender;
 	VirtualWorkerTranslator = InVirtualWorkerTranslator;
 }
 
@@ -32,8 +37,8 @@ void USpatialLoadBalanceEnforcer::Tick()
 
 void USpatialLoadBalanceEnforcer::OnComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
-	check(NetDriver)
-	check(NetDriver->StaticComponentView)
+	check(NetDriver != nullptr)
+	check(NetDriver->StaticComponentView != nullptr)
 	if (Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID &&
 		NetDriver->StaticComponentView->GetAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -72,8 +77,8 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 
 	for (WriteAuthAssignmentRequest& Request : AclWriteAuthAssignmentRequests)
 	{
-		static const int16_t ConcerningNumAttmempts = 5;
-		if (Request.ProcessAttempts >= ConcerningNumAttmempts)
+		static const int16 MaxNumProcessAttempts = 5;
+		if (Request.ProcessAttempts >= MaxNumProcessAttempts)
 		{
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Failed to process WriteAuthAssignmentRequest with EntityID: %lld. Process attempts made: %d"), Request.EntityId, Request.ProcessAttempts);
 		}
@@ -83,62 +88,23 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		// TODO - if some entities won't have the component we should detect that before queueing the request.
 		// Need to be certain it is invalid to get here before receiving the AuthIntentComponent for an entity, then we can check() on it.
 		const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
-		if (!AuthorityIntentComponent)
+		if (AuthorityIntentComponent == nullptr)
 		{
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Detected entity without AuthIntent component. EntityId: %lld"), Request.EntityId);
 			continue;
 		}
 
 		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
-		if (!OwningWorkerId)
+		if (OwningWorkerId == nullptr)
 		{
 			// A virtual worker -> physical worker mapping may not be established yet.
 			// We'll retry on the next Tick().
 			continue;
 		}
 
-		SetAclWriteAuthority(Request.EntityId, *OwningWorkerId);
+		Sender->SetAclWriteAuthority(Request.EntityId, *OwningWorkerId);
 		CompletedRequests.Add(Request.EntityId);
 	}
 
 	AclWriteAuthAssignmentRequests.RemoveAll([CompletedRequests](const WriteAuthAssignmentRequest& Request) { return CompletedRequests.Contains(Request.EntityId); });
-}
-
-void USpatialLoadBalanceEnforcer::SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId)
-{
-	check(NetDriver);
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Failing to set Acl WriteAuth for entity %lld to workerid: %s because this worker doesn't have authority over the EntityACL component."), *NetDriver->Connection->GetWorkerId(), EntityId, *WorkerId);
-		return;
-	}
-
-	EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-	check(EntityACL);
-
-	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *WorkerId);
-
-	WorkerAttributeSet OwningWorkerAttribute = { WriteWorkerId };
-
-	TArray<Worker_ComponentId> ComponentIds;
-	EntityACL->ComponentWriteAcl.GetKeys(ComponentIds);
-
-	for (const Worker_ComponentId& ComponentId : ComponentIds)
-	{
-		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
-			ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
-		{
-			continue;
-		}
-
-		WorkerRequirementSet* RequirementSet = EntityACL->ComponentWriteAcl.Find(ComponentId);
-		check(RequirementSet->Num() == 1);
-		RequirementSet->Empty();
-		RequirementSet->Add(OwningWorkerAttribute);
-	}
-
-	UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("(%s) Setting Acl WriteAuth for entity %lld to workerid: %s"), *NetDriver->Connection->GetWorkerId(), EntityId, *WorkerId);
-
-	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }

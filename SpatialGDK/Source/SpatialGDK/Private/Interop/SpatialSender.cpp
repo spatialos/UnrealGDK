@@ -718,6 +718,45 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	}
 }
 
+void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId)
+{
+	check(NetDriver);
+	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+	{
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Failing to set Acl WriteAuth for entity %lld to workerid: %s because this worker doesn't have authority over the EntityACL component."), *NetDriver->Connection->GetWorkerId(), EntityId, *WorkerId);
+		return;
+	}
+
+	EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<EntityAcl>(EntityId);
+	check(EntityACL);
+
+	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *WorkerId);
+
+	WorkerAttributeSet OwningWorkerAttribute = { WriteWorkerId };
+
+	TArray<Worker_ComponentId> ComponentIds;
+	EntityACL->ComponentWriteAcl.GetKeys(ComponentIds);
+
+	for (const Worker_ComponentId& ComponentId : ComponentIds)
+	{
+		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
+			ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+		{
+			continue;
+		}
+
+		WorkerRequirementSet* RequirementSet = EntityACL->ComponentWriteAcl.Find(ComponentId);
+		check(RequirementSet->Num() == 1);
+		RequirementSet->Empty();
+		RequirementSet->Add(OwningWorkerAttribute);
+	}
+
+	UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("(%s) Setting Acl WriteAuth for entity %lld to workerid: %s"), *NetDriver->Connection->GetWorkerId(), EntityId, *WorkerId);
+
+	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
+	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+}
+
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
