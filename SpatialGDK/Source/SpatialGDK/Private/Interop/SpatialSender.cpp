@@ -4,7 +4,6 @@
 
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
-#include "Net/NetworkProfiler.h"
 
 #include "Engine/Engine.h"
 #include "EngineClasses/SpatialActorChannel.h"
@@ -14,6 +13,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
+#include "Net/NetworkProfiler.h"
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpoint.h"
