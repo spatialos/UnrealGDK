@@ -100,7 +100,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
 	}
 
-	//Add Zoning Attribute if we are using the load balancer.
+	// Add Zoning Attribute if we are using the load balancer.
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
