@@ -44,7 +44,7 @@ private:
 			, ProcessAttempts(0)
 		{}
 		Worker_EntityId EntityId;
-		int16 ProcessAttempts;
+		int32 ProcessAttempts;
 	};
 
 	TArray<WriteAuthAssignmentRequest> AclWriteAuthAssignmentRequests;

@@ -75,7 +75,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 
 	for (WriteAuthAssignmentRequest& Request : AclWriteAuthAssignmentRequests)
 	{
-		static const int16 WarnOnAttemptNum = 5;
+		static const int32 WarnOnAttemptNum = 5;
 		if (Request.ProcessAttempts >= WarnOnAttemptNum)
 		{
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Failed to process WriteAuthAssignmentRequest with EntityID: %lld. Process attempts made: %d"), Request.EntityId, Request.ProcessAttempts);
