@@ -334,7 +334,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
 		VirtualWorkerTranslator->Init(this);
 		LoadBalanceEnforcer = NewObject<USpatialLoadBalanceEnforcer>();
-		LoadBalanceEnforcer->Init(this, Sender, VirtualWorkerTranslator.Get());
+		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator.Get());
 
 		// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
 		LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);

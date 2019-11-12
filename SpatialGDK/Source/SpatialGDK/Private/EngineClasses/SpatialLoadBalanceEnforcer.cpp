@@ -2,7 +2,6 @@
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialStaticComponentView.h"
@@ -15,18 +14,20 @@ using namespace SpatialGDK;
 
 USpatialLoadBalanceEnforcer::USpatialLoadBalanceEnforcer(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, NetDriver(nullptr)
+	, StaticComponentView(nullptr)
 	, Sender(nullptr)
 	, VirtualWorkerTranslator(nullptr)
 {
 }
 
-void USpatialLoadBalanceEnforcer::Init(USpatialNetDriver* InNetDriver,
-	USpatialSender* InUpatialSender,
+void USpatialLoadBalanceEnforcer::Init(const FString &InWorkerId,
+	USpatialStaticComponentView* InStaticComponentView,
+	USpatialSender* InSpatialSender,
 	SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
 {
-	NetDriver = InNetDriver;
-	Sender = InUpatialSender;
+	WorkerId = InWorkerId;
+	StaticComponentView = InStaticComponentView;
+	Sender = InSpatialSender;
 	VirtualWorkerTranslator = InVirtualWorkerTranslator;
 }
 
@@ -37,10 +38,9 @@ void USpatialLoadBalanceEnforcer::Tick()
 
 void USpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
-	check(NetDriver != nullptr)
-	check(NetDriver->StaticComponentView != nullptr)
+	check(StaticComponentView != nullptr)
 	check(Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
-	if (NetDriver->StaticComponentView->GetAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (StaticComponentView->GetAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		QueueAclAssignmentRequest(Op.entity_id);
 	}
@@ -51,8 +51,6 @@ void USpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeO
 	if (AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID &&
 		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		// We have gained authority over the ACL component for some entity
-		// If we have authority, the responsibility here is to set the EntityACL write auth to match the worker requested via the virtual worker component
 		QueueAclAssignmentRequest(AuthOp.entity_id);
 	}
 }
@@ -61,11 +59,11 @@ void USpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityI
 {
 	if (AclWriteAuthAssignmentRequests.ContainsByPredicate([EntityId](const WriteAuthAssignmentRequest& Request) { return Request.EntityId == EntityId; }))
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("(%s) Already has an ACL authority request for entity %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("An ACL assignment request already exists for entity %lld on worker %s."), EntityId, *WorkerId);
 	}
 	else
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("(%s) Queueing ACL assignment request for %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Queueing ACL assignment request for entity %lld on worker %s."), EntityId, *WorkerId);
 		AclWriteAuthAssignmentRequests.Add(WriteAuthAssignmentRequest(EntityId));
 	}
 }
@@ -87,7 +85,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 
 		// TODO - if some entities won't have the component we should detect that before queueing the request.
 		// Need to be certain it is invalid to get here before receiving the AuthIntentComponent for an entity, then we can check() on it.
-		const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
+		const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
 		if (AuthorityIntentComponent == nullptr)
 		{
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Detected entity without AuthIntent component. EntityId: %lld"), Request.EntityId);

@@ -12,8 +12,8 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
 
 class SpatialVirtualWorkerTranslator;
-class USpatialNetDriver;
 class USpatialSender;
+class USpatialStaticComponentView;
 
 UCLASS()
 class USpatialLoadBalanceEnforcer : public UObject
@@ -22,7 +22,7 @@ class USpatialLoadBalanceEnforcer : public UObject
 
 public:
 
-	void Init(USpatialNetDriver* InNetDriver, USpatialSender* InUpatialSender, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
+	void Init(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, USpatialSender* InSpatialSender, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
 	void Tick();
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
@@ -32,7 +32,8 @@ public:
 
 private:
 
-	USpatialNetDriver* NetDriver;
+	FString WorkerId;
+	USpatialStaticComponentView* StaticComponentView;
 	USpatialSender* Sender;
 	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
