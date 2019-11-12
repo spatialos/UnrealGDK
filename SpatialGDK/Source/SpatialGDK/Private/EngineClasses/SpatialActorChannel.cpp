@@ -557,7 +557,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
 		NetDriver->LoadBalanceStrategy != nullptr &&
 		// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
-		// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently.
+		// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
 		//bWroteSomethingImportant &&
 		Actor->HasAuthority() &&
 		NetDriver->LoadBalanceStrategy->ShouldRelinquishAuthority(*Actor))

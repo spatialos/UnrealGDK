@@ -35,12 +35,12 @@ void USpatialLoadBalanceEnforcer::Tick()
 	ProcessQueuedAclAssignmentRequests();
 }
 
-void USpatialLoadBalanceEnforcer::OnComponentUpdated(const Worker_ComponentUpdateOp& Op)
+void USpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
 	check(NetDriver != nullptr)
 	check(NetDriver->StaticComponentView != nullptr)
-	if (Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID &&
-		NetDriver->StaticComponentView->GetAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
+	check(Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
+	if (NetDriver->StaticComponentView->GetAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		QueueAclAssignmentRequest(Op.entity_id);
 	}
@@ -77,8 +77,8 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 
 	for (WriteAuthAssignmentRequest& Request : AclWriteAuthAssignmentRequests)
 	{
-		static const int16 MaxNumProcessAttempts = 5;
-		if (Request.ProcessAttempts >= MaxNumProcessAttempts)
+		static const int16 WarnOnAttemptNum = 5;
+		if (Request.ProcessAttempts >= WarnOnAttemptNum)
 		{
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Failed to process WriteAuthAssignmentRequest with EntityID: %lld. Process attempts made: %d"), Request.EntityId, Request.ProcessAttempts);
 		}
@@ -90,7 +90,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
 		if (AuthorityIntentComponent == nullptr)
 		{
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Detected entity without AuthIntent component. EntityId: %lld"), Request.EntityId);
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Detected entity without AuthIntent component. EntityId: %lld"), Request.EntityId);
 			continue;
 		}
 

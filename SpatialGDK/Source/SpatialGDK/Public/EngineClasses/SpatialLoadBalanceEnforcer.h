@@ -28,7 +28,7 @@ public:
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
 	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
 
-	void OnComponentUpdated(const Worker_ComponentUpdateOp& Op);
+	void OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op);
 
 private:
 

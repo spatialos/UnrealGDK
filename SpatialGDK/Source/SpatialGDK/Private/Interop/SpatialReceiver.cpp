@@ -1159,7 +1159,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		if (NetDriver->IsServer())
 		{
 			check(LoadBalanceEnforcer);
-			LoadBalanceEnforcer->OnComponentUpdated(Op);
+			LoadBalanceEnforcer->OnAuthorityIntentComponentUpdated(Op);
 		}
 		break;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
