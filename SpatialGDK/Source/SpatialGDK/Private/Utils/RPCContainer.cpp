@@ -128,7 +128,7 @@ void FRPCContainer::ProcessRPCs()
 {
 	if (bAlreadyProcessingRPCs)
 	{
-		UE_LOG(LogRPCContainer, Warning, TEXT("Calling ProcessRPCs recursively, ignoring the call"));
+		UE_LOG(LogRPCContainer, Log, TEXT("Calling ProcessRPCs recursively, ignoring the call"));
 		return;
 	}
 
