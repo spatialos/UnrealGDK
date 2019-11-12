@@ -96,6 +96,7 @@ public:
 	void BindProcessingFunction(const FProcessRPCDelegate& Function);
 	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, SpatialGDK::RPCPayload&& InPayload);
 	void ProcessRPCs();
+	void DropForEntity(const Worker_EntityId& EntityId);
 
 	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const;
 

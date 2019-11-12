@@ -141,6 +141,14 @@ void FRPCContainer::ProcessRPCs()
 	}
 }
 
+void FRPCContainer::DropForEntity(const Worker_EntityId& EntityId)
+{
+	for (auto& RpcMap : QueuedRPCs)
+	{
+		RpcMap.Value.Remove(EntityId);
+	}
+}
+
 bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const
 {
 	if(const FRPCMap* MapOfQueues = QueuedRPCs.Find(Type))

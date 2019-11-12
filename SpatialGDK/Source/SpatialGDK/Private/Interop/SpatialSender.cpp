@@ -527,6 +527,11 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Receiver->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
 }
 
+void USpatialSender::OnEntityDestroyed(const Worker_EntityId EntityId)
+{
+	OutgoingRPCs.DropForEntity(EntityId);
+}
+
 bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
 {
 	// Level blueprint classes could have a PIE prefix, this will remove it.
