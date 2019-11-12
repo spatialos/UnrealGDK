@@ -13,7 +13,7 @@ common: &common
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1572523200-2f33678e336fc673-------z}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-2019-11-11-bk3891-f17bd2c787d2fe1c}"
   retry:
     automatic:
       - <<: *agent_transients
