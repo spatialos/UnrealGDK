@@ -13,7 +13,7 @@ script_runner: &script_runner
   - "machine_type=quarter"
   - "permission_set=builder"
   - "platform=linux"
-  - "queue=${CI_LINUX_BUILDER_QUEUE:-v3-1572524284-e64831bf1e88b227-------z}"
+  - "queue=${CI_LINUX_BUILDER_QUEUE:-v4-2019-11-11-bk3891-f17bd2c787d2fe1c}"
   - "scaler_version=2"
   - "working_hours_time_zone=london"
 
