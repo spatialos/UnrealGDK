@@ -2,10 +2,8 @@
 
 #include "TestDefinitions.h"
 
-#include "Misc/ScopeTryLock.h"
 #include "HAL/PlatformFilemanager.h"
-
-#include <memory>
+#include "Misc/ScopeTryLock.h"
 
 #define EXAMPLE_SIMPLE_TEST(TestName) \
 	GDK_TEST(SpatialGDKExamples, SimpleExamples, TestName)
@@ -98,6 +96,7 @@ bool ComplexTest::RunTest(const FString& Parameters)
 	if (OutArray.Num() != 3)
 	{
 		UE_LOG(LogSpatialGDKExamples, Error, TEXT("Invalid Test Input"));
+		TestTrue("The input is valid", false);
 		return true;
 	}
 
