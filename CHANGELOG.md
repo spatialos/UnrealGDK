@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`0.8.0-preview`] - 2019-11-18
 
+### Breaking Changes:
+- This is the last GDK version to support Unreal Engine 4.22. You will need to upgrade your project to use Unreal Engine 4.23 (`4.23-SpatialOSUnrealGDK-preview`) in order to continue receiving GDK releases and support.
+- When upgrading to Unreal Engine 4.23 you must:
+1. `git checkout 4.23-SpatialOSUnrealGDK-preview`
+1. `git pull`
+1. Download and install the `-v15 clang-8.0.1-based` toolchain from this [Unreal Engine Documentation page](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html).
+1. Run `Setup.bat`, which is located in the root directory of the `UnrealEngine` repository.
+1. Run `GenerateProjectFiles.bat`, which is in the same root directory.
+For more information, check the [Keep your GDK up to date](https://docs.improbable.io/unreal/preview/content/upgrading) SpatialOS documentation.
+
+
 ### Features:
 - You can now call `SpatialToggleMetricsDisplay` from the console in your Unreal clients in order to view metrics. `bEnableMetricsDisplay` must be enabled on clients where you want to use this feature.
 - The modular-udp networking stack now uses compression by default.
