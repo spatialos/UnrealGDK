@@ -807,7 +807,6 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	// TODO: fix this with working sets (UNR-411)
 	NetDriver->StartIgnoringAuthoritativeDestruction();
 
-	IncomingRPCs.DropForEntity(EntityId);
 	Sender->OnEntityDestroyed(EntityId);
 
 	// Clean up the actor channel. For clients, this will also call destroy on the actor.
@@ -1802,6 +1801,12 @@ bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel* Channel)
 	}
 
 	return false;
+}
+
+
+void USpatialReceiver::ClearPendingRPCs(Worker_EntityId EntityId)
+{
+	IncomingRPCs.DropForEntity(EntityId);
 }
 
 void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs)

@@ -155,6 +155,7 @@ public:
 	void RemoveActor(Worker_EntityId EntityId);
 	bool IsPendingOpsOnChannel(USpatialActorChannel* Channel);
 
+	void ClearPendingRPCs(Worker_EntityId EntityId);
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();

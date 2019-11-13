@@ -186,6 +186,11 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 		NetDriver->RegisterDormantEntityId(EntityId);
 	}
 
+	if (CloseReason == EChannelCloseReason::Destroyed || CloseReason == EChannelCloseReason::LevelUnloaded)
+	{
+		Receiver->ClearPendingRPCs(EntityId);
+	}
+
 	NetDriver->RemoveActorChannel(EntityId);
 
 	return UActorChannel::CleanUp(bForDestroy, CloseReason);
