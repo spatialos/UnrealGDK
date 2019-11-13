@@ -14,6 +14,7 @@ common: &common
     - "permission_set=builder"
     - "scaler_version=2"
     - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1572523200-2f33678e336fc673-------z}"
+    - "boot_disk_size_gb=500"
   retry:
     automatic:
       - <<: *agent_transients
