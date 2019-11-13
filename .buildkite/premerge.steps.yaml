@@ -36,7 +36,7 @@ steps:
       env:
         GDK_BRANCH: "${BUILDKITE_BRANCH}"
 
-  - label: "generate-and-upload-GDK-build-steps"
+  - label: "generate-pipeline-steps"
     commands:
       - "chmod -R +rwx ci" # give the Linux user access to everything in the ci directory
       - "ci/generate-and-upload-build-steps.sh"
