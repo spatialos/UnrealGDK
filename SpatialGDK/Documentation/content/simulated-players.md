@@ -82,7 +82,7 @@ void AExampleActor::BeginPlay()
 ### Blueprint example
 
 ![Calling Is Simulated Player in Blueprints]({{assetRoot}}assets/screen-grabs/simulated-players/is-simulated-player.png)
-<br>_Image: You can call **Is Simulated Player** from a Blueprint class_
+<br>_Image: You can call **Is Simulated Player** from any Blueprint class, and it will return true if the current process is a simulated player client._
 
 ## Launching simulated player deployments
 
