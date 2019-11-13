@@ -21,38 +21,58 @@ const double MAX_WAIT_TIME_FOR_BACKGROUND_COMPUTATION = 2.0;
 const double MIN_WAIT_TIME_FOR_BACKGROUND_COMPUTATION = 1.0;
 const double COMPUTATION_DURATION = 1.0;
 
-struct
+struct ComputationResult
 {
 	FCriticalSection Mutex;
-	int Value;
-} ComputationResult;
+	int Value = 0;
+};
+
+ComputationResult* ResultPtr = nullptr;
 } // anonymous namespace
 
-DEFINE_LATENT_AUTOMATION_COMMAND(FStartBackgroundThreadComputation);
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FInitComputationResult, ComputationResult**, InResult);
+bool FInitComputationResult::Update()
+{
+	check((*InResult) == nullptr);
+	*InResult = new ComputationResult;
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FCleanupComputationResult, ComputationResult**, InResult);
+bool FCleanupComputationResult::Update()
+{
+	check((*InResult) != nullptr);
+	delete (*InResult);
+	*InResult = nullptr;
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FStartBackgroundThreadComputation, ComputationResult**, InResult);
 bool FStartBackgroundThreadComputation::Update()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, []
+	ComputationResult** LocalResult = InResult;
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalResult]
 	{
-		FScopeLock BackgroundComputationLock(&ComputationResult.Mutex);
+		FScopeLock BackgroundComputationLock(&(*LocalResult)->Mutex);
 		FPlatformProcess::Sleep(COMPUTATION_DURATION);
-		ComputationResult.Value = 42;
+		(*LocalResult)->Value = 42;
 	});
 
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForComputationAndCheckResult, FAutomationTestBase*, Test);
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FWaitForComputationAndCheckResult, FAutomationTestBase*, Test, ComputationResult**, InResult);
 bool FWaitForComputationAndCheckResult::Update()
 {
 	const double TimePassed = FPlatformTime::Seconds() - StartTime;
 
 	if (TimePassed >= MIN_WAIT_TIME_FOR_BACKGROUND_COMPUTATION)
 	{
-		FScopeTryLock BackgroundComputationLock(&ComputationResult.Mutex);
+		FScopeTryLock BackgroundComputationLock(&(*InResult)->Mutex);
 
 		if (BackgroundComputationLock.IsLocked())
 		{
-			Test->TestTrue("Computation result is equal to expected value", ComputationResult.Value == 42);
+			Test->TestTrue("Computation result is equal to expected value", (*InResult)->Value == 42);
 			return true;
 		}
 
@@ -68,8 +88,10 @@ bool FWaitForComputationAndCheckResult::Update()
 
 EXAMPLE_SIMPLE_TEST(GIVEN_initial_value_WHEN_performing_background_compuation_THEN_the_result_is_correct)
 {
-	ADD_LATENT_AUTOMATION_COMMAND(FStartBackgroundThreadComputation());
-	ADD_LATENT_AUTOMATION_COMMAND(FWaitForComputationAndCheckResult(this));
+	ADD_LATENT_AUTOMATION_COMMAND(FInitComputationResult(&ResultPtr));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartBackgroundThreadComputation(&ResultPtr));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForComputationAndCheckResult(this, &ResultPtr));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanupComputationResult(&ResultPtr));
 
 	return true;
 }
