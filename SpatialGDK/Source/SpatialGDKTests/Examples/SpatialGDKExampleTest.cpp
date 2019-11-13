@@ -27,30 +27,27 @@ struct ComputationResult
 	int Value = 0;
 };
 
-ComputationResult* ResultPtr = nullptr;
+TUniquePtr<ComputationResult> ResultPtr = nullptr;
 } // anonymous namespace
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FInitComputationResult, ComputationResult**, InResult);
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FInitComputationResult, TUniquePtr<ComputationResult>*, InResult);
 bool FInitComputationResult::Update()
 {
-	check((*InResult) == nullptr);
-	*InResult = new ComputationResult;
+	*InResult = MakeUnique<ComputationResult>();
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FCleanupComputationResult, ComputationResult**, InResult);
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FCleanupComputationResult, TUniquePtr<ComputationResult>*, InResult);
 bool FCleanupComputationResult::Update()
 {
-	check((*InResult) != nullptr);
-	delete (*InResult);
 	*InResult = nullptr;
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FStartBackgroundThreadComputation, ComputationResult**, InResult);
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FStartBackgroundThreadComputation, TUniquePtr<ComputationResult>*, InResult);
 bool FStartBackgroundThreadComputation::Update()
 {
-	ComputationResult** LocalResult = InResult;
+	TUniquePtr<ComputationResult>* LocalResult = InResult;
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalResult]
 	{
 		FScopeLock BackgroundComputationLock(&(*LocalResult)->Mutex);
@@ -61,7 +58,7 @@ bool FStartBackgroundThreadComputation::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FWaitForComputationAndCheckResult, FAutomationTestBase*, Test, ComputationResult**, InResult);
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FWaitForComputationAndCheckResult, FAutomationTestBase*, Test, TUniquePtr<ComputationResult>*, InResult);
 bool FWaitForComputationAndCheckResult::Update()
 {
 	const double TimePassed = FPlatformTime::Seconds() - StartTime;
