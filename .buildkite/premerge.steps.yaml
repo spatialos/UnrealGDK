@@ -16,6 +16,7 @@ script_runner: &script_runner
   - "queue=${CI_LINUX_BUILDER_QUEUE:-v3-1572524284-e64831bf1e88b227-------z}"
   - "scaler_version=2"
   - "working_hours_time_zone=london"
+  - "boot_disk_size_gb=500"
 
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
