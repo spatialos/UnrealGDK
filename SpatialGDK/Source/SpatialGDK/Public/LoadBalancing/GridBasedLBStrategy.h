@@ -28,10 +28,10 @@ public:
 /* UAbstractLBStrategy Interface */
 	virtual void Init(const class USpatialNetDriver* InNetDriver) override;
 
-	virtual TSet<uint32> GetVirtualWorkerIds() const;
+	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const;
 
 	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const override;
-	virtual uint32 WhoShouldHaveAuthority(const AActor& Actor) const override;
+	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 /* End UAbstractLBStrategy Interface */
 
 protected:
@@ -49,7 +49,7 @@ protected:
 
 private:
 
-	TArray<uint32> VirtualWorkerIds;
+	TArray<VirtualWorkerId> VirtualWorkerIds;
 
 	TArray<FBox2D> WorkerCells;
 

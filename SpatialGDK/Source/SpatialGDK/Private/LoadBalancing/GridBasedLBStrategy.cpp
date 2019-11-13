@@ -54,9 +54,9 @@ void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver)
 	}
 }
 
-TSet<uint32> UGridBasedLBStrategy::GetVirtualWorkerIds() const
+TSet<VirtualWorkerId> UGridBasedLBStrategy::GetVirtualWorkerIds() const
 {
-	return TSet<uint32>(VirtualWorkerIds);
+	return TSet<VirtualWorkerId>(VirtualWorkerIds);
 }
 
 bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const
@@ -72,7 +72,7 @@ bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const
 	return !IsInside(WorkerCells[LocalVirtualWorkerId - 1], Actor2DLocation);
 }
 
-uint32 UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
+VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
