@@ -190,8 +190,8 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
   This is: `C:/...<filepath>.../<ProjectRoot>/spatial/snapshots/default.snapshot`. </br></br>
   * **Region**: The real-world geographical location that you want your cloud deployment hosted in. </br>You can change this by selecting a different region from the drop-down list. You might prefer the region you are in.</br></br>
 1. You can also choose to add simulated players via the dialogue box or skip this and move on to step 4.</br></br>
-  Build out the simulated player clients using the following command. Note that the simulated players will run on Linux in the cloud. If your game clients use any plugins which don't run on Linux, you'll need to disable them when running on Linux:</br></br>
-  Engine plugin filepath (default):</br>
+   Build out the simulated player clients using the following command.</br>
+  Engine plugin filepath (default):</br></br>
   ```
   UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject -skipshadercompile
   ```
@@ -199,6 +199,10 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
   ```
   <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject -skipshadercompile
   ```
+  <%(#Expandable title="Note: disabling game client plugins which don't run on Linux")%>
+  Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like
+  `if (Target.Platform != UnrealTargetPlatform.Linux)`
+  <%(/Expandable)%>
   Then, back in the Editor Deploy window:</br></br>
   * **Add simulated players**: Check the box.</br></br>
   * **Deployment Name**: Enter a name for your simulated player deployment. This labels the deployment in the Console. Make it different to your game deployment name.</br></br>
