@@ -32,6 +32,7 @@ class USpatialLoadBalanceEnforcer;
 class USpatialMetrics;
 class USpatialNetConnection;
 class USpatialPackageMapClient;
+class USpatialGameInstance;
 class USpatialPlayerSpawner;
 class USpatialReceiver;
 class USpatialSender;
@@ -272,4 +273,8 @@ private:
 	static const int32 EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT = 256;
 	TArray<Worker_EntityId> TombstonedEntities;
 #endif
+
+	void StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist);
+	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
+	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
 };
