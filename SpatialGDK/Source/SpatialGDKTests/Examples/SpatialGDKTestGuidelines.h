@@ -39,7 +39,7 @@
 	(https://docs.unrealengine.com/en-US/Programming/Automation/TechnicalGuide/index.html has more information)
 	TEST - a simple test, that should be used if it's one of a kind (i.e. it's body can't be reused, otherwise use COMPLEX_TEST),
 	and if doesn't rely on background threads doing the computation (otherwise use LATENT_COMMANDs).
-	COMPLEX_TEST - same as simple test, but allows having multiple test cases run through the same test function body.
+	GDK_COMPLEX_TEST - same as simple test, but allows having multiple test cases run through the same test function body.
 	DEFINE_LATENT_COMMAND... - used to run tests that are expected to run across multiple ticks.
 	Latent command names should start with `F` (e.g. DEFINE_LATENT_AUTOMATION_COMMAND(FStartDeployment)").
 
