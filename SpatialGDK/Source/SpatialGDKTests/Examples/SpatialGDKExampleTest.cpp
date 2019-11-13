@@ -164,7 +164,7 @@ EXAMPLE_SIMPLE_TEST(GIVEN_empty_folder_WHEN_creating_a_file_THEN_the_file_has_be
 	FString FilePath = FPaths::Combine(ExampleTestFolder, TEXT("Example.txt"));
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	TUniquePtr<IFileHandle> Handle = TUniquePtr<IFileHandle>(PlatformFile.OpenWrite(*FilePath));
+	PlatformFile.OpenWrite(*FilePath);
 
 	TestTrue("Example.txt exists", PlatformFile.FileExists(*FilePath));
 
