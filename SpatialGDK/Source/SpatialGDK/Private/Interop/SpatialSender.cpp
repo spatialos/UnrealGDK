@@ -10,9 +10,11 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpoint.h"
@@ -98,6 +100,16 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
 	}
 
+	// Add Zoning Attribute if we are using the load balancer.
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		WorkerAttributeSet ZoningAttributeSet = { SpatialConstants::ZoningAttribute };
+		AnyServerRequirementSet.Add(ZoningAttributeSet);
+		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
+		AnyServerOrOwningClientRequirementSet.Add(ZoningAttributeSet);
+	}
+
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
@@ -121,12 +133,24 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		const WorkerAttributeSet ACLAttributeSet = { SpatialConstants::ZoningAttribute };
+		const WorkerRequirementSet ACLRequirementSet = { ACLAttributeSet };
+		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ACLRequirementSet);
+		ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	}
+	else
+	{
+		const WorkerAttributeSet ACLAttributeSet = { Info.WorkerType.ToString() };
+		const WorkerRequirementSet ACLRequirementSet = { ACLAttributeSet };
+		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ACLRequirementSet);
+	}
 
 	if (Actor->IsNetStartupActor())
 	{
@@ -213,12 +237,15 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
-	// TODO(zoning): For now, setting AuthorityIntent to an invalid value.
-	ComponentDatas.Add(AuthorityIntent(SpatialConstants::INVALID_VIRTUAL_WORKER_ID).CreateAuthorityIntentData());
 
 	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
 	{
 		ComponentDatas.Add(Persistence().CreatePersistenceData());
+	}
+
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId()));
 	}
 
 	if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
@@ -667,6 +694,67 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 
 	Worker_ComponentUpdate Update = Position::CreatePositionUpdate(Coordinates::FromFVector(Location));
 	Connection->SendComponentUpdate(EntityId, &Update);
+}
+
+void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId)
+{
+	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
+	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+	check(NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID));
+
+	UE_LOG(LogSpatialSender, Log, TEXT("(%s) Sending authority update for entity id %d. Virtual worker '%d' should become authoritative over %s"), *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
+
+	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+	check(AuthorityIntentComponent != nullptr);
+	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
+
+	Worker_ComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
+	Connection->SendComponentUpdate(EntityId, &Update);
+
+	if (NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		// Also notify the translator directly on the worker that sends the component update, as the update will short circuit
+		NetDriver->LoadBalanceEnforcer->QueueAclAssignmentRequest(EntityId);
+	}
+}
+
+void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId)
+{
+	check(NetDriver);
+	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+	{
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Failing to set Acl WriteAuth for entity %lld to workerid: %s because this worker doesn't have authority over the EntityACL component."), *NetDriver->Connection->GetWorkerId(), EntityId, *WorkerId);
+		return;
+	}
+
+	EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<EntityAcl>(EntityId);
+	check(EntityACL);
+
+	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *WorkerId);
+
+	WorkerAttributeSet OwningWorkerAttribute = { WriteWorkerId };
+
+	TArray<Worker_ComponentId> ComponentIds;
+	EntityACL->ComponentWriteAcl.GetKeys(ComponentIds);
+
+	for (const Worker_ComponentId& ComponentId : ComponentIds)
+	{
+		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
+			ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+		{
+			continue;
+		}
+
+		WorkerRequirementSet* RequirementSet = EntityACL->ComponentWriteAcl.Find(ComponentId);
+		check(RequirementSet->Num() == 1);
+		RequirementSet->Empty();
+		RequirementSet->Add(OwningWorkerAttribute);
+	}
+
+	UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("(%s) Setting Acl WriteAuth for entity %lld to workerid: %s"), *NetDriver->Connection->GetWorkerId(), EntityId, *WorkerId);
+
+	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
+	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }
 
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)

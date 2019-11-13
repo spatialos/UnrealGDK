@@ -20,6 +20,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SnapshotManager.h"
@@ -28,6 +29,7 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -55,6 +57,8 @@ DEFINE_STAT(STAT_SpatialActorsChanged);
 
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, LoadBalanceEnforcer(nullptr)
+	, LoadBalanceStrategy(nullptr)
 	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
@@ -314,24 +318,35 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
 	SnapshotManager = NewObject<USnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
-	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
+
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 #if !UE_BUILD_SHIPPING
 	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client
-	if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
+	if (IsServer() && SpatialSettings->bEnableMetricsDisplay)
 	{
 		SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
 	}
 #endif
 
+	if (IsServer() && SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
+		VirtualWorkerTranslator->Init(this);
+		LoadBalanceEnforcer = NewObject<USpatialLoadBalanceEnforcer>();
+		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator.Get());
+
+		// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
+		LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
+		LoadBalanceStrategy->Init(this);
+
+		VirtualWorkerTranslator->SetDesiredVirtualWorkerCount(LoadBalanceStrategy->GetVirtualWorkerIds().Num());
+	}
+
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
 	Sender->Init(this, &TimerManager);
-	Receiver->Init(this, &TimerManager);
+	Receiver->Init(this, VirtualWorkerTranslator.Get(), &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
-	VirtualWorkerTranslator->Init(this);
-	// TODO(zoning): This currently hard codes the desired number of virtual workers. This should be retrieved
-	// from the configuration.
-	VirtualWorkerTranslator->SetDesiredVirtualWorkerCount(2);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
@@ -1359,6 +1374,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
 		{
 			SpatialMetrics->TickMetrics();
+		}
+
+		if (LoadBalanceEnforcer != nullptr)
+		{
+			LoadBalanceEnforcer->Tick();
 		}
 	}
 }
