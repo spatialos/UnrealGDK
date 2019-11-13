@@ -22,7 +22,7 @@
 		- These tests are located in a separate SpatialGDKTests module.
 		So for every component that needs to be tested - it has to be exposed via corresponding macro.
 		E.g. `class FRPCContainer` -> `class SPATIALGDK_API FRPCContainer`, to make FRPCContainer testable.
-		WThe macro is different in each module SPATIALGDK_API, SPATIALGDKSERVICES_API etc.
+		The macro is different in each module SPATIALGDK_API, SPATIALGDKSERVICES_API etc.
 
 		- The folder structure inside SpatialGDKTests should resemble the folder structure for components being tested.
 		E.g. If file tested is
