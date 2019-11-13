@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug that caused entity pool reservations to cease after a request times out.
 - Running `BuildWorker.bat` for `SimulatedPlayer` no longer fails if the project path has a space in it.
 - Fixed a crash when starting PIE with out-of-date schema.
+- Servers maintain interest in AlwaysRelevant Actors
 
 ## [`0.7.0-preview`] - 2019-10-11
 
