@@ -527,7 +527,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Receiver->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
 }
 
-void USpatialSender::OnEntityDestroyed(const Worker_EntityId EntityId)
+void USpatialSender::ClearPendingRPCs(const Worker_EntityId EntityId)
 {
 	OutgoingRPCs.DropForEntity(EntityId);
 }

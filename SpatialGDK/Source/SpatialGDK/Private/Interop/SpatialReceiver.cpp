@@ -807,8 +807,6 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	// TODO: fix this with working sets (UNR-411)
 	NetDriver->StartIgnoringAuthoritativeDestruction();
 
-	Sender->OnEntityDestroyed(EntityId);
-
 	// Clean up the actor channel. For clients, this will also call destroy on the actor.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
