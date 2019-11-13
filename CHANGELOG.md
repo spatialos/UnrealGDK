@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`0.8.0-preview`] - 2019-11-18
 
 ### Features:
-- Add SpatialToggleMetricsDisplay console command.  bEnableMetricsDisplay must be enabled in order for the display to be available.  You must then must call SpatialToggleMetricsDisplay on each client that wants to view the metrics display.
+- You can now call `SpatialToggleMetricsDisplay` from the console in your Unreal clients in order to view metrics. `bEnableMetricsDisplay` must be enabled on clients where you want to use this feature.
 - Enabled compression in modular-udp networking stack
 - Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
