@@ -768,9 +768,9 @@ bool RunSchemaCompiler()
 	TArray<FString> Switches;
 	FCommandLine::Parse(FCommandLine::Get(), Tokens, Switches);
 
-	if (const FString* schemaCompileArgsCLSwitchPtr = Switches.FindByPredicate([](const FString& clSwitch) { return clSwitch.StartsWith(FString{ TEXT("AdditionalSchemaCompilerArgs") }); }))
+	if (const FString* SchemaCompileArgsCLSwitchPtr = Switches.FindByPredicate([](const FString& ClSwitch) { return ClSwitch.StartsWith(FString{ TEXT("AdditionalSchemaCompilerArgs") }); }))
 	{
-		FString switchName;
+		FString SwitchName;
 		schemaCompileArgsCLSwitchPtr->Split(FString{ TEXT("=") }, &switchName, &AdditionalSchemaCompilerArgs);
 		if (AdditionalSchemaCompilerArgs.Contains(FString{ TEXT("ast_proto_out") }) || AdditionalSchemaCompilerArgs.Contains(FString{ TEXT("ast_json_out") }))
 		{
