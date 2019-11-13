@@ -13,10 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The modular-udp networking stack now uses compression by default.
 - Reduced network latency by switching off default rpc-packing. If you need this on by default, you can re-enable it by editing `SpatialGDKSettings.ini`
 - When you start a local deployment the GDK now checks the port required by the runtime and, if its in use, prompts you to kill that process.
-- You can now measure round-trip ping from a player controller to the server-woker that's currenrly authoritative over it using the configurable actor component 'SpatialPingComponent'. The latest ping value can be accessed through the component via 'GetPing()' or via the rolling average stored in 'PlayerState'.
-- Added the AllowUnresolvedParameters function flag that disables warnings for processing RPCs with unresolved parameters. This flag can be enabled through Blueprints or by adding a tag to the `UFUNCTION` macro.
+- You can now measure round-trip ping from a player controller to the server-woker that's currently authoritative over it using the configurable actor component 'SpatialPingComponent'. The latest ping value can be accessed through the component via 'GetPing()' or via the rolling average stored in 'PlayerState'.
+- You can disable the warnings that trigger when RPCs are processed with unresolved parameters using the `AllowUnresolvedParameters` function flag. This flag can be enabled through Blueprints or by adding a tag to the `UFUNCTION` macro.
 - Improved logging around entity creation.
-- Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK).
+- Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK-preview).
 
 ### Bug fixes:
 - Fixed a bug that could caused a name collision in schema for sublevels.
