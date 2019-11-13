@@ -48,16 +48,20 @@ public:
 	// Invoked when this worker fails to initiate a connection to SpatialOS
 	FOnConnectionFailedEvent OnConnectionFailed;
 
+	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
+	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
+
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.
 	bool HasSpatialNetDriver() const;
 
 private:
-
 	// SpatialConnection is stored here for persistence between map travels.
 	UPROPERTY()
 	USpatialWorkerConnection* SpatialConnection;
+
+	bool bFirstConnectionToSpatialOSAttempted = false;
 
 	// If this flag is set to true standalone clients will not attempt to connect to a deployment automatically if a 'loginToken' exists in arguments.
 	UPROPERTY(Config)
