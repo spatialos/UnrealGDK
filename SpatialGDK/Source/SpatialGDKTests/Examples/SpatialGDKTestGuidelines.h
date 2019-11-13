@@ -37,7 +37,7 @@
 3. Test definitions (check TestDefinitions.h for more info)
     - We have defined 3 types of Macro to be used when writing tests:
 	(https://docs.unrealengine.com/en-US/Programming/Automation/TechnicalGuide/index.html has more information)
-	TEST - a simple test, that should be used if it's one of a kind (i.e. it's body can't be reused, otherwise use COMPLEX_TEST),
+	GDK_TEST - a simple test, that should be used if it's one of a kind (i.e. it's body can't be reused, otherwise use GDK_COMPLEX_TEST),
 	and if doesn't rely on background threads doing the computation (otherwise use LATENT_COMMANDs).
 	GDK_COMPLEX_TEST - same as simple test, but allows having multiple test cases run through the same test function body.
 	DEFINE_LATENT_COMMAND... - used to run tests that are expected to run across multiple ticks.
