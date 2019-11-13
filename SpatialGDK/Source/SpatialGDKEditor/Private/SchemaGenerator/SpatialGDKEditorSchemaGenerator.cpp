@@ -752,6 +752,7 @@ bool RunSchemaCompiler()
 		if (!PlatformFile.DeleteDirectoryRecursively(*CompiledSchemaDir))
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not delete pre-existing compiled schema directory '%s'! Please make sure the directory is writeable."), *CompiledSchemaDir);
+			return false;
 		}
 	}
 
