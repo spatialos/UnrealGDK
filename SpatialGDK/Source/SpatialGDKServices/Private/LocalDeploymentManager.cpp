@@ -42,7 +42,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 		if (!FSpatialGDKServicesModule::SpatialPreRunChecks())
 		{
 			UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Pre run checks for LocalDeploymentManager failed. Local deployments cannot be started. Spatial networking will be disabled."));
-			GetMutableDefault<UGeneralProjectSettings>()->SetUseSpatialNetworking(false);
+			GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(false);
 			return;
 		}
 

@@ -8,27 +8,23 @@
 
 namespace
 {
-	const bool bEarliestFlag = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+	bool bEarliestFlag;
 
-	FString const EarliestFlagReport = TEXT("Spatial activation Flag [Earliest]:");
-	FString const SettingsFlagReport = TEXT("Spatial activation Flag [Settings]:");
-	FString const CurrentFlagReport = TEXT("Spatial activation Flag [Current]:");
+	const FString EarliestFlagReport = TEXT("Spatial activation Flag [Earliest]:");
+	const FString CurrentFlagReport = TEXT("Spatial activation Flag [Current]:");
+}
+
+void InitializeSpatialFlagEarlyValues()
+{
+	bEarliestFlag = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
 GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationReport)
 {
-	UBoolProperty* SpatialFlagProperty = Cast<UBoolProperty>(UGeneralProjectSettings::StaticClass()->FindPropertyByName("bSpatialNetworking"));
-	TestNotNull("Property existence", SpatialFlagProperty);
+	const UGeneralProjectSettings* ProjectSettings = GetDefault<UGeneralProjectSettings>();
 
-	UGeneralProjectSettings const* ProjectSettings = GetDefault<UGeneralProjectSettings>();
-	TestNotNull("Settings existence", ProjectSettings);
-
-	// Bypass C++ function to get the property saved to settings.
-	bool SettingsPropertyValue = SpatialFlagProperty->GetPropertyValue(SpatialFlagProperty->ContainerPtrToValuePtr<void const*>(ProjectSettings));
-
-	UE_LOG(LogTemp, Display, TEXT("%s %i"), EarliestFlagReport.GetCharArray().GetData(), bEarliestFlag);
-	UE_LOG(LogTemp, Display, TEXT("%s %i"), SettingsFlagReport.GetCharArray().GetData(), SettingsPropertyValue);
-	UE_LOG(LogTemp, Display, TEXT("%s %i"), CurrentFlagReport.GetCharArray().GetData(), ProjectSettings->UsesSpatialNetworking());
+	UE_LOG(LogTemp, Display, TEXT("%s %i"), *EarliestFlagReport, bEarliestFlag);
+	UE_LOG(LogTemp, Display, TEXT("%s %i"), *CurrentFlagReport, ProjectSettings->UsesSpatialNetworking());
 
 	return true;
 }
@@ -38,11 +34,10 @@ namespace
 	struct ReportedFlags
 	{
 		bool bEarliestFlag;
-		bool bSettingsFlag;
 		bool bCurrentFlag;
 	};
 
-	ReportedFlags RunSubProcessAndExtractFlags(FAutomationTestBase& test, FString const& commandLineArgs)
+	ReportedFlags RunSubProcessAndExtractFlags(FAutomationTestBase& Test, const FString& CommandLineArgs)
 	{
 		ReportedFlags Flags;
 
@@ -50,20 +45,19 @@ namespace
 		FString StdOut;
 		FString StdErr;
 
-		FPlatformProcess::ExecProcess(TEXT("UE4Editor"), commandLineArgs.GetCharArray().GetData(), &ReturnCode, &StdOut, &StdErr);
+		FPlatformProcess::ExecProcess(TEXT("UE4Editor"), *CommandLineArgs, &ReturnCode, &StdOut, &StdErr);
 
-		test.TestTrue("Sucessful run", ReturnCode == 0);
+		Test.TestTrue("Sucessful run", ReturnCode == 0);
 
-		auto extractFlag = [&](FString const& pattern, bool& flag)
+		auto ExtractFlag = [&](const FString& Pattern, bool& bFlag)
 		{
-			int32 patternPos = StdOut.Find(pattern);
-			test.TestTrue((TEXT("Found pattern : ") + pattern).GetCharArray().GetData(),  patternPos >= 0);
-			flag = FCString::Atoi(&StdOut[patternPos + pattern.Len() + 1]) != 0;
+			int32 PatternPos = StdOut.Find(Pattern);
+			Test.TestTrue(*(TEXT("Found pattern : ") + Pattern),  PatternPos >= 0);
+			bFlag = FCString::Atoi(&StdOut[PatternPos + Pattern.Len() + 1]) != 0;
 		};
 
-		extractFlag(EarliestFlagReport, Flags.bEarliestFlag);
-		extractFlag(SettingsFlagReport, Flags.bSettingsFlag);
-		extractFlag(CurrentFlagReport, Flags.bCurrentFlag);
+		ExtractFlag(EarliestFlagReport, Flags.bEarliestFlag);
+		ExtractFlag(CurrentFlagReport, Flags.bCurrentFlag);
 
 		return Flags;
 	}
@@ -73,13 +67,13 @@ GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride)
 {
 	FString ProjectPath = FPaths::GetProjectFilePath();
 	FString CommandLineArgs = ProjectPath;
-	CommandLineArgs.Append(" -ExecCmds=\"Automation RunTests SpatialGDK.Core.UGeneralProjectSettings.SpatialActivationReport; Quit\"");
-	CommandLineArgs.Append(" -TestExit=\"Automation Test Queue Empty\"");
-	CommandLineArgs.Append(" -nopause");
-	CommandLineArgs.Append(" -nosplash");
-	CommandLineArgs.Append(" -unattended");
-	CommandLineArgs.Append(" -nullRHI");
-	CommandLineArgs.Append(" -stdout");
+	CommandLineArgs.Append(TEXT(" -ExecCmds=\"Automation RunTests SpatialGDK.Core.UGeneralProjectSettings.SpatialActivationReport; Quit\""));
+	CommandLineArgs.Append(TEXT(" -TestExit=\"Automation Test Queue Empty\""));
+	CommandLineArgs.Append(TEXT(" -nopause"));
+	CommandLineArgs.Append(TEXT(" -nosplash"));
+	CommandLineArgs.Append(TEXT(" -unattended"));
+	CommandLineArgs.Append(TEXT(" -nullRHI"));
+	CommandLineArgs.Append(TEXT(" -stdout"));
 
 	UBoolProperty* SpatialFlagProperty = Cast<UBoolProperty>(UGeneralProjectSettings::StaticClass()->FindPropertyByName("bSpatialNetworking"));
 	TestNotNull("Property existence", SpatialFlagProperty);
@@ -87,59 +81,59 @@ GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride)
 	UGeneralProjectSettings* ProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
 	TestNotNull("Settings existence", ProjectSettings);
 
-	void* SpatialFlagPtr = SpatialFlagProperty->ContainerPtrToValuePtr<void const*>(ProjectSettings);
+	void* SpatialFlagPtr = SpatialFlagProperty->ContainerPtrToValuePtr<const void*>(ProjectSettings);
 
-	bool SavedFlagValue = SpatialFlagProperty->GetPropertyValue(SpatialFlagPtr);
+	bool bSavedFlagValue = SpatialFlagProperty->GetPropertyValue(SpatialFlagPtr);
 
 	{
-		ProjectSettings->SetUseSpatialNetworking(false);
+		ProjectSettings->SetUsesSpatialNetworking(false);
 		ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
 
-		auto flags = RunSubProcessAndExtractFlags(*this, CommandLineArgs);
+		ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, CommandLineArgs);
 
-		TestTrue("Settings applied", flags.bEarliestFlag == false && flags.bSettingsFlag == false);
-		TestTrue("Expected early value", flags.bCurrentFlag == flags.bEarliestFlag);
+		TestTrue("Settings applied", Flags.bEarliestFlag == false);
+		TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
 	}
 
 	{
-		ProjectSettings->SetUseSpatialNetworking(true);
+		ProjectSettings->SetUsesSpatialNetworking(true);
 		ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
 
-		auto flags = RunSubProcessAndExtractFlags(*this, CommandLineArgs);
+		ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, CommandLineArgs);
 
-		TestTrue("Settings applied", flags.bEarliestFlag == true && flags.bSettingsFlag == true);
-		TestTrue("Expected early value", flags.bCurrentFlag == flags.bEarliestFlag);
+		TestTrue("Settings applied", Flags.bEarliestFlag == true);
+		TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
 	}
 
 	{
 		SpatialFlagProperty->SetPropertyValue(SpatialFlagPtr, false);
 		ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
 
-		FString commandLineOverride = CommandLineArgs;
-		commandLineOverride.Append(" -OverrideSpatialNetworking=true");
+		FString CommandLineOverride = CommandLineArgs;
+		CommandLineOverride.Append(" -OverrideSpatialNetworking=true");
 
-		auto flags = RunSubProcessAndExtractFlags(*this, commandLineOverride);
+		ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, CommandLineOverride);
 
-		TestTrue("Override applied", flags.bEarliestFlag == true && flags.bSettingsFlag == false);
-		TestTrue("Expected early value", flags.bCurrentFlag == flags.bEarliestFlag);
+		TestTrue("Override applied", Flags.bEarliestFlag == true);
+		TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
 	}
 
 	{
 		SpatialFlagProperty->SetPropertyValue(SpatialFlagPtr, true);
 		ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
 
-		FString commandLineOverride = CommandLineArgs;
-		commandLineOverride.Append(" -OverrideSpatialNetworking=false");
+		FString CommandLineOverride = CommandLineArgs;
+		CommandLineOverride.Append(" -OverrideSpatialNetworking=false");
 
-		auto flags = RunSubProcessAndExtractFlags(*this, commandLineOverride);
+		ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, CommandLineOverride);
 
-		TestTrue("Override applied", flags.bEarliestFlag == false && flags.bSettingsFlag == true);
-		TestTrue("Expected early value", flags.bCurrentFlag == flags.bEarliestFlag);
+		TestTrue("Override applied", Flags.bEarliestFlag == false);
+		TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
 
 	}
 
 	// Restore original flags
-	ProjectSettings->SetUseSpatialNetworking(SavedFlagValue);
+	ProjectSettings->SetUsesSpatialNetworking(bSavedFlagValue);
 	ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
 
 	return true;
