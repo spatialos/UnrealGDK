@@ -34,6 +34,10 @@
 		- In case of integration tests, that involve multiple components - they should be located in
 		`UnrealGDK\SpatialGDK\Source\SpatialGDKTests\IntegrationTests\<Custom Test Folder>` folder.
 
+		- Tests should be stripped out in Shipping builds.
+		If tests are not in SpatialGDKTests module - their code should be surrounded with `#if !UE_BUILD_SHIPPING` macro
+		SpatialGDKTests module should be excluded in shipping builds.
+
 3. Test definitions (check TestDefinitions.h for more info)
     - We have defined 3 types of Macro to be used when writing tests:
 	(https://docs.unrealengine.com/en-US/Programming/Automation/TechnicalGuide/index.html has more information)
