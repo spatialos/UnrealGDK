@@ -205,12 +205,12 @@ void USpatialNetDriver::StartSetupConnectionConfigFromCommandLine(bool& bOutSucc
 	FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), CommandLineLocatorHost);
 	if (!CommandLineLocatorHost.IsEmpty())
 	{
-		bOutSuccessfullyLoaded = !Connection->LocatorConfig.TryLoadCommandLineArgs();
+		bOutSuccessfullyLoaded = Connection->LocatorConfig.TryLoadCommandLineArgs();
 		bOutUseReceptionist = false;
 	}
 	else
 	{
-		bOutSuccessfullyLoaded = !Connection->ReceptionistConfig.TryLoadCommandLineArgs();
+		bOutSuccessfullyLoaded = Connection->ReceptionistConfig.TryLoadCommandLineArgs();
 		bOutUseReceptionist = true;
 	}
 }
@@ -282,16 +282,36 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
-
-	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted() || URL.Host == SpatialConstants::RECONNECT_USING_COMMANDLINE_ARGUMENTS)
+	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
 	{
 		bool bSuccessfullyLoadedFromCommandLine;
 		StartSetupConnectionConfigFromCommandLine(bSuccessfullyLoadedFromCommandLine, bUseReceptionist);
 		bShouldLoadFromURL = !bSuccessfullyLoadedFromCommandLine;
 		GameInstance->SetFirstConnectionToSpatialOSAttempted();
 	}
+	else if (URL.Host == SpatialConstants::RECONNECT_USING_COMMANDLINE_ARGUMENTS)
+	{
+		bool bSuccessfullyLoadedFromCommandLine;
+		StartSetupConnectionConfigFromCommandLine(bSuccessfullyLoadedFromCommandLine, bUseReceptionist);
 
-	if(bShouldLoadFromURL)
+		if (!bSuccessfullyLoadedFromCommandLine)
+		{
+			if (bUseReceptionist)
+			{
+				Connection->ReceptionistConfig.LoadDefaults();
+			}
+			else
+			{
+				Connection->LocatorConfig.LoadDefaults();
+			}
+		}
+
+		// Setting bShouldLoadFromURL to false is important here because if we fail to load command line args,
+		// we do not want to set the ReceptionistConfig URL to SpatialConstants::RECONNECT_USING_COMMANDLINE_ARGUMENTS.
+		bShouldLoadFromURL = false;
+	}
+
+	if (bShouldLoadFromURL)
 	{
 		StartSetupConnectionConfigFromURL(URL, bUseReceptionist);
 	}
