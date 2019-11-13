@@ -110,4 +110,5 @@ private:
 	bool ApplyFunction(FPendingRPCParams& Params);
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
+	bool bAlreadyProcessingRPCs = false;
 };
