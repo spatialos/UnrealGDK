@@ -271,7 +271,7 @@ private:
 	TArray<Worker_EntityId> TombstonedEntities;
 #endif
 
-	void StartSetupConnectionConfigFromCommandLine(bool& bSuccessfullyLoaded, bool& bUseReceptionist);
-	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bUseReceptionist);
+	void StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist);
+	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
 	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
 };

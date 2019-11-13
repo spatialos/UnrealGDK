@@ -125,7 +125,7 @@ public:
 		return bSuccess;
 	}
 
-	void SetReceptionistHost(FString host)
+	void SetReceptionistHost(const FString& host)
 	{
 		ReceptionistHost = host;
 		UseExternalIp = ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0;

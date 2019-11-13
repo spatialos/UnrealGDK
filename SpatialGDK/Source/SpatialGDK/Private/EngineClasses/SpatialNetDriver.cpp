@@ -197,7 +197,7 @@ USpatialGameInstance* USpatialNetDriver::GetGameInstance() const
 }
 
 
-void USpatialNetDriver::StartSetupConnectionConfigFromCommandLine(bool& bSuccessfullyLoaded, bool& bUseReceptionist)
+void USpatialNetDriver::StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist)
 {
 	USpatialGameInstance* GameInstance = GetGameInstance();
 
@@ -205,22 +205,20 @@ void USpatialNetDriver::StartSetupConnectionConfigFromCommandLine(bool& bSuccess
 	FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), CommandLineLocatorHost);
 	if (!CommandLineLocatorHost.IsEmpty())
 	{
-		bSuccessfullyLoaded = !Connection->LocatorConfig.TryLoadCommandLineArgs();
-		bUseReceptionist = false;
+		bOutSuccessfullyLoaded = !Connection->LocatorConfig.TryLoadCommandLineArgs();
+		bOutUseReceptionist = false;
 	}
 	else
 	{
-		bSuccessfullyLoaded = !Connection->ReceptionistConfig.TryLoadCommandLineArgs();
-		bUseReceptionist = true;
+		bOutSuccessfullyLoaded = !Connection->ReceptionistConfig.TryLoadCommandLineArgs();
+		bOutUseReceptionist = true;
 	}
-
-	GameInstance->SetFirstConnectionToSpatialOSAttempted();
 }
 
-void USpatialNetDriver::StartSetupConnectionConfigFromURL(const FURL& URL, bool& bUseReceptionist)
+void USpatialNetDriver::StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist)
 {
-	bUseReceptionist = URL.Host == SpatialConstants::LOCATOR_HOST || URL.HasOption(TEXT("locator"));
-	if (bUseReceptionist)
+	bOutUseReceptionist = !(URL.Host == SpatialConstants::LOCATOR_HOST || URL.HasOption(TEXT("locator")));
+	if (bOutUseReceptionist)
 	{
 		Connection->ReceptionistConfig.SetReceptionistHost(URL.Host);
 	}
@@ -279,16 +277,18 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
 
-	bool bUseReceptionist;
+	bool bUseReceptionist = true;
 	bool bShouldLoadFromURL = true;
 
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
+
 	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted() || URL.Host == SpatialConstants::RECONNECT_USING_COMMANDLINE_ARGUMENTS)
 	{
 		bool bSuccessfullyLoadedFromCommandLine;
 		StartSetupConnectionConfigFromCommandLine(bSuccessfullyLoadedFromCommandLine, bUseReceptionist);
 		bShouldLoadFromURL = !bSuccessfullyLoadedFromCommandLine;
+		GameInstance->SetFirstConnectionToSpatialOSAttempted();
 	}
 
 	if(bShouldLoadFromURL)

@@ -67,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The GDK no longer generates schema for all UObject subclasses. Schema generation for Actor, ActorComponent and GameplayAbility subclasses is enabled by default, other classes can be enabled using `SpatialType` UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
 - Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
 - Added the `OverrideSpatialOffloading` command line flag. This allows you to toggle offloading at launch time.
-- The initial connection from a worker will attempt to use relevant command line arguments (receptionistHost, locatorHost) to inform the connection. If these are not provided the standard connection flow will be followed. Subsequent  connections will not use command line arguments.
+- The initial connection from a worker will attempt to use relevant command line arguments (receptionistHost, locatorHost) to inform the connection. If these are not provided the standard connection flow will be followed. Subsequent connections will not use command line arguments.
 - The command "Open 0.0.0.0" can be used to connect a worker using its command line arguments, simulating initial connection.
 - The command "ConnectToLocator <login> <playerToken>" has been added to allow for explicit connections to deployments.
 
