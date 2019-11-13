@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK-preview).
 
 ### Bug fixes:
-- Fixed a bug that could caused a name collision in schema for sublevels.
+- Fixed a bug that could cause name collisions in schema generated for sublevels.
 - Downgraded name collisions during schema generation from Warning to Display.
 - Replicating a static subobject after it has been deleted on a client no longer results in client attaching a new dynamic subobject.
 - Fixed a bug that caused entity pool reservations to cease after a request times out.
