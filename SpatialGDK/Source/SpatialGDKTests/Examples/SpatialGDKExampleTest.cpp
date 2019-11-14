@@ -134,7 +134,7 @@ bool ComplexTest::RunTest(const FString& Parameters)
 	return true;
 }
 
-void ComplexTest::GetTests(TArray<FString>& OutBeautifiedNames, TArray <FString>& OutTestCommands) const
+void ComplexTest::GetTests(TArray<FString>& OutBeautifiedNames, TArray<FString>& OutTestCommands) const
 {
 	OutBeautifiedNames.Add(TEXT("GIVEN_two_and_two_WHEN_summed_THEN_the_sum_is_four"));
 	OutTestCommands.Add(TEXT("2 2 4"));
