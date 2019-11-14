@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Multiple deployments for session-based games
+# [Deprecated] Multiple deployments for session-based games
 ## 6: Play your game
 
 ### Step 1: Launch clients with the Launcher
@@ -74,4 +74,5 @@ If you want to start a project from scratch, follow our [Template guide](https:/
 
 
 <br/>------<br/>
+_2019-10-16 Tutorial deprecated_<br/>
 _2019-05-21 Page added with editorial review_
