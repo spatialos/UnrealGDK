@@ -547,10 +547,10 @@ namespace Improbable
         private static int Main(string[] args)
         {
             if (args.Length == 0 ||
-                args[0] == "create" && (args.Length != 11 && args.Length != 7) ||
-                args[0] == "createsim" && args.Length != 9 ||
-                args[0] == "stop" && (args.Length != 2 && args.Length != 3) ||
-                args[0] == "list" && args.Length != 2)
+                (args[0] == "create" && (args.Length != 11 && args.Length != 7)) ||
+                (args[0] == "createsim" && args.Length != 9) ||
+                (args[0] == "stop" && (args.Length != 2 && args.Length != 3)) ||
+                (args[0] == "list" && args.Length != 2))
             {
                 ShowUsage();
                 return 1;
