@@ -65,7 +65,6 @@ namespace
 
 GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride)
 {
-#if 0
 	FString ProjectPath = FPaths::GetProjectFilePath();
 	FString CommandLineArgs = ProjectPath;
 	CommandLineArgs.Append(TEXT(" -ExecCmds=\"Automation RunTests SpatialGDK.Core.UGeneralProjectSettings.SpatialActivationReport; Quit\""));
@@ -136,6 +135,6 @@ GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride)
 	// Restore original flags
 	ProjectSettings->SetUsesSpatialNetworking(bSavedFlagValue);
 	ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
-#endif
+
 	return true;
 }
