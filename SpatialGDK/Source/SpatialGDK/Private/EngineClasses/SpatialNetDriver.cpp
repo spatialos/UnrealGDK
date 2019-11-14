@@ -20,6 +20,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SnapshotManager.h"
@@ -28,6 +29,7 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -55,6 +57,8 @@ DEFINE_STAT(STAT_SpatialActorsChanged);
 
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, LoadBalanceEnforcer(nullptr)
+	, LoadBalanceStrategy(nullptr)
 	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
@@ -196,6 +200,69 @@ USpatialGameInstance* USpatialNetDriver::GetGameInstance() const
 	return GameInstance;
 }
 
+
+void USpatialNetDriver::StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist)
+{
+	USpatialGameInstance* GameInstance = GetGameInstance();
+
+	FString CommandLineLocatorHost;
+	FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), CommandLineLocatorHost);
+	if (!CommandLineLocatorHost.IsEmpty())
+	{
+		bOutSuccessfullyLoaded = Connection->LocatorConfig.TryLoadCommandLineArgs();
+		bOutUseReceptionist = false;
+	}
+	else
+	{
+		bOutSuccessfullyLoaded = Connection->ReceptionistConfig.TryLoadCommandLineArgs();
+		bOutUseReceptionist = true;
+	}
+}
+
+void USpatialNetDriver::StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist)
+{
+	bOutUseReceptionist = !(URL.Host == SpatialConstants::LOCATOR_HOST || URL.HasOption(TEXT("locator")));
+	if (bOutUseReceptionist)
+	{
+		Connection->ReceptionistConfig.SetReceptionistHost(URL.Host);
+	}
+	else
+	{
+		FLocatorConfig& LocatorConfig = Connection->LocatorConfig;
+		LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
+		LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
+	}
+}
+
+void USpatialNetDriver::FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist)
+{
+	// Finish setup for the config objects regardless of loading from command line or URL
+	USpatialGameInstance* GameInstance = GetGameInstance();
+	if (bUseReceptionist)
+	{
+		// Use Receptionist
+		Connection->SetConnectionType(ESpatialConnectionType::Receptionist);
+
+		FReceptionistConfig& ReceptionistConfig = Connection->ReceptionistConfig;
+		ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
+
+		const TCHAR* UseExternalIpForBridge = TEXT("useExternalIpForBridge");
+		if (URL.HasOption(UseExternalIpForBridge))
+		{
+			FString UseExternalIpOption = URL.GetOption(UseExternalIpForBridge, TEXT(""));
+			ReceptionistConfig.UseExternalIp = !UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase);
+		}
+	}
+	else
+	{
+		// Use Locator
+		Connection->SetConnectionType(ESpatialConnectionType::Locator);
+		FLocatorConfig& LocatorConfig = Connection->LocatorConfig;
+		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorConfig.LocatorHost);
+		LocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
+	}
+}
+
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 {
 	USpatialGameInstance* GameInstance = GetGameInstance();
@@ -208,48 +275,52 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	if (!bPersistSpatialConnection)
 	{
-		// Destroy the old connection
 		GameInstance->DestroySpatialWorkerConnection();
-
-		// Create a new SpatialWorkerConnection in the SpatialGameInstance.
 		GameInstance->CreateNewSpatialWorkerConnection();
 	}
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
 
-	if (URL.HasOption(TEXT("locator")))
+	bool bUseReceptionist = true;
+	bool bShouldLoadFromURL = true;
+
+	// If this is the first connection try using the command line arguments to setup the config objects.
+	// If arguments can not be found we will use the regular flow of loading from the input URL.
+	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
 	{
-		// Obtain PIT and LT.
-		Connection->LocatorConfig.PlayerIdentityToken = URL.GetOption(TEXT("playeridentity="), TEXT(""));
-		Connection->LocatorConfig.LoginToken = URL.GetOption(TEXT("login="), TEXT(""));
-		Connection->LocatorConfig.UseExternalIp = true;
-		Connection->LocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
+		bool bSuccessfullyLoadedFromCommandLine;
+		StartSetupConnectionConfigFromCommandLine(bSuccessfullyLoadedFromCommandLine, bUseReceptionist);
+		bShouldLoadFromURL = !bSuccessfullyLoadedFromCommandLine;
+		GameInstance->SetFirstConnectionToSpatialOSAttempted();
 	}
-	else // Using Receptionist
+	else if (URL.Host == SpatialConstants::RECONNECT_USING_COMMANDLINE_ARGUMENTS)
 	{
-		Connection->ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
+		bool bSuccessfullyLoadedFromCommandLine;
+		StartSetupConnectionConfigFromCommandLine(bSuccessfullyLoadedFromCommandLine, bUseReceptionist);
 
-		// Check for overrides in the travel URL.
-		if (!URL.Host.IsEmpty() && URL.Host.Compare(SpatialConstants::LOCAL_HOST) != 0)
+		if (!bSuccessfullyLoadedFromCommandLine)
 		{
-			Connection->ReceptionistConfig.ReceptionistHost = URL.Host;
-		}
-
-		bool bHasUseExternalIpOption = URL.HasOption(TEXT("useExternalIpForBridge"));
-
-		if (bHasUseExternalIpOption)
-		{
-			FString UseExternalIpOption = URL.GetOption(TEXT("useExternalIpForBridge"), TEXT(""));
-			if (UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase))
+			if (bUseReceptionist)
 			{
-				Connection->ReceptionistConfig.UseExternalIp = false;
+				Connection->ReceptionistConfig.LoadDefaults();
 			}
 			else
 			{
-				Connection->ReceptionistConfig.UseExternalIp = true;
+				Connection->LocatorConfig.LoadDefaults();
 			}
 		}
+
+		// Setting bShouldLoadFromURL to false is important here because if we fail to load command line args,
+		// we do not want to set the ReceptionistConfig URL to SpatialConstants::RECONNECT_USING_COMMANDLINE_ARGUMENTS.
+		bShouldLoadFromURL = false;
 	}
+
+	if (bShouldLoadFromURL)
+	{
+		StartSetupConnectionConfigFromURL(URL, bUseReceptionist);
+	}
+
+	FinishSetupConnectionConfig(URL, bUseReceptionist);
 
 	Connection->Connect(bConnectAsClient);
 }
@@ -314,21 +385,35 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
 	SnapshotManager = NewObject<USnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
-	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
+
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 #if !UE_BUILD_SHIPPING
 	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client
-	if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
+	if (IsServer() && SpatialSettings->bEnableMetricsDisplay)
 	{
 		SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
 	}
 #endif
 
+	if (IsServer() && SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
+		VirtualWorkerTranslator->Init(this);
+		LoadBalanceEnforcer = NewObject<USpatialLoadBalanceEnforcer>();
+		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator.Get());
+
+		// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
+		LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
+		LoadBalanceStrategy->Init(this);
+
+		VirtualWorkerTranslator->SetDesiredVirtualWorkerCount(LoadBalanceStrategy->GetVirtualWorkerIds().Num());
+	}
+
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
 	Sender->Init(this, &TimerManager);
-	Receiver->Init(this, &TimerManager);
+	Receiver->Init(this, VirtualWorkerTranslator.Get(), &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
-	VirtualWorkerTranslator->Init(this);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
@@ -1356,6 +1441,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
 		{
 			SpatialMetrics->TickMetrics();
+		}
+
+		if (LoadBalanceEnforcer != nullptr)
+		{
+			LoadBalanceEnforcer->Tick();
 		}
 	}
 }

@@ -42,7 +42,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 		if (!FSpatialGDKServicesModule::SpatialPreRunChecks())
 		{
 			UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Pre run checks for LocalDeploymentManager failed. Local deployments cannot be started. Spatial networking will be disabled."));
-			GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = false;
+			GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(false);
 			return;
 		}
 
@@ -69,7 +69,7 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 			// Stop existing spatial service to guarantee that any new existing spatial service would be running in the current project.
 			TryStopSpatialService();
 			// Start spatial service in the current project if spatial networking is enabled
-			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+			if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 			{
 				TryStartSpatialService(RuntimeIPToExpose);
 			}

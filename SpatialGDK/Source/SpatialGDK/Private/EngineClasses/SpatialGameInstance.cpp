@@ -31,7 +31,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 		if (NetDriver == nullptr)
 		{
 			// If Spatial networking is enabled, override the GameNetDriver with the SpatialNetDriver
-			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+			if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 			{
 				if (FNetDriverDefinition* DriverDefinition = GEngine->NetDriverDefinitions.FindByPredicate([](const FNetDriverDefinition& CurDef)
 				{
@@ -57,7 +57,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 		}
 	}
 
-	if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking && !bHasSpatialNetDriver)
+	if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && !bHasSpatialNetDriver)
 	{
 		UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
 										  "Please make sure you set up the net driver definitions as specified in the porting "
@@ -109,7 +109,7 @@ void USpatialGameInstance::StartGameInstance()
 		{
 			// Initialize a locator configuration which will parse command line arguments.
 			FLocatorConfig LocatorConfig;
-			if (!LocatorConfig.LoginToken.IsEmpty())
+			if (LocatorConfig.TryLoadCommandLineArgs())
 			{
 				// Modify the commandline args to have a Host IP to force a NetDriver to be used.
 				const TCHAR* CommandLineArgs = FCommandLine::Get();

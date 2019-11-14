@@ -126,10 +126,18 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 
 void FRPCContainer::ProcessRPCs()
 {
+	if (bAlreadyProcessingRPCs)
+	{
+		UE_LOG(LogRPCContainer, Log, TEXT("Calling ProcessRPCs recursively, ignoring the call"));
+		return;
+	}
+
+	bAlreadyProcessingRPCs = true;
+
 	for (auto& RPCs : QueuedRPCs)
 	{
 		FRPCMap& MapOfQueues = RPCs.Value;
-		for(auto It = MapOfQueues.CreateIterator(); It; ++It)
+		for (auto It = MapOfQueues.CreateIterator(); It; ++It)
 		{
 			FArrayOfParams& RPCList = It.Value();
 			ProcessRPCs(RPCList);
@@ -139,6 +147,8 @@ void FRPCContainer::ProcessRPCs()
 			}
 		}
 	}
+
+	bAlreadyProcessingRPCs = false;
 }
 
 bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const
