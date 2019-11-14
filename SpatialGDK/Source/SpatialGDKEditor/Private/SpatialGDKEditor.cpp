@@ -57,8 +57,8 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 #if ENGINE_MINOR_VERSION <= 22
 	// Force spatial networking so schema layouts are correct
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
-	GeneralProjectSettings->bSpatialNetworking = true;
+	bool bCachedSpatialNetworking = GeneralProjectSettings->UsesSpatialNetworking();
+	GeneralProjectSettings->SetUsesSpatialNetworking(true);
 #endif
 
 	RemoveEditorAssetLoadedCallback();
@@ -126,7 +126,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	}
 
 #if ENGINE_MINOR_VERSION <= 22
-	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
+	GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(bCachedSpatialNetworking);
 #endif
 	bSchemaGeneratorRunning = false;
 
