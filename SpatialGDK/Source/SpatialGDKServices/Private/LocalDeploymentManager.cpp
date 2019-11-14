@@ -41,8 +41,8 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 		// Check for the existence of Spatial and Spot. If they don't exist then don't start any background processes. Disable spatial networking if either is true.
 		if (!FSpatialGDKServicesModule::SpatialPreRunChecks())
 		{
-			UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Pre run checks for LocalDeploymentManager failed. Local deployments cannot be started. Spatial networking will be disabled."));
-			GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(false);
+			UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Pre run checks for LocalDeploymentManager failed. Local deployments cannot be started."));
+			bLocalDeploymentManagerEnabled = false;
 			return;
 		}
 
@@ -59,7 +59,7 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 {
 #if PLATFORM_WINDOWS
 	// Don't kick off background processes when running commandlets
-	if (!IsRunningCommandlet())
+	if (!IsRunningCommandlet() && bLocalDeploymentManagerEnabled)
 	{
 		// If a service was running, restart to guarantee that the service is running in this project with the correct settings.
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("(Re)starting Spatial service in this project."));
@@ -69,6 +69,7 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 			// Stop existing spatial service to guarantee that any new existing spatial service would be running in the current project.
 			TryStopSpatialService();
 			// Start spatial service in the current project if spatial networking is enabled
+			
 			if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 			{
 				TryStartSpatialService(RuntimeIPToExpose);
@@ -134,6 +135,10 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 
 void FLocalDeploymentManager::RefreshServiceStatus()
 {
+	if(!bLocalDeploymentManagerEnabled)
+	{
+		return;
+	}
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		IsServiceRunningAndInCorrectDirectory();
@@ -269,6 +274,12 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 
 bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose)
 {
+	if (!bLocalDeploymentManagerEnabled)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment manager is disabled because spatial services are unavailable."));
+		return false;
+	}
+
 	bRedeployRequired = false;
 
 	if (bStoppingDeployment)
@@ -436,6 +447,12 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 
 bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
 {
+	if (!bLocalDeploymentManagerEnabled)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment manager is disabled because spatial services are unavailable."));
+		return false;
+	}
+
 	if (bSpatialServiceRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start spatial service but it is already running."));
@@ -484,6 +501,11 @@ bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
 
 bool FLocalDeploymentManager::TryStopSpatialService()
 {
+	if (!bLocalDeploymentManagerEnabled)
+	{
+		return false;
+	}
+
 	if (bStoppingSpatialService)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Tried to stop spatial service but it is already being stopped."));
@@ -585,6 +607,11 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 
 bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
 {
+	if (!bLocalDeploymentManagerEnabled)
+	{
+		return false;
+	}
+
 	FString SpotProjectInfoArgs = TEXT("alpha service project-info --json");
 	FString SpotProjectInfoResult;
 	FString StdErr;
