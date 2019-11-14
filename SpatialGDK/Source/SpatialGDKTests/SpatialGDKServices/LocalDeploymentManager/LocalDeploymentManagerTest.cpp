@@ -15,7 +15,7 @@
 namespace
 {
 	// TODO: UNR-1969 - Prepare LocalDeployment in CI pipeline
-	const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 20.0;
+	const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 30.0;
 
 	// TODO: UNR-1964 - Move EDeploymentState enum to LocalDeploymentManager
 	enum class EDeploymentState { IsRunning, IsNotRunning };
@@ -122,13 +122,24 @@ bool FStopDeployment::Update()
 DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FWaitForDeployment, FAutomationTestBase*, Test, EDeploymentState, ExpectedDeploymentState);
 bool FWaitForDeployment::Update()
 {
+	FLocalDeploymentManager* const LocalDeploymentManager = GetLocalDeploymentManager();
+
 	const double NewTime = FPlatformTime::Seconds();
+
 	if (NewTime - StartTime >= MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION)
 	{
+		// The given time for the deployment to start/stop has expired - test its current state.
+		if (ExpectedDeploymentState == EDeploymentState::IsRunning)
+		{
+			Test->TestTrue(TEXT("Deployment is running"), LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping());
+		}
+		else
+		{
+			Test->TestFalse(TEXT("Deployment is not running"), LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping());
+		}
 		return true;
 	}
-
-	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
+	
 	if (LocalDeploymentManager->IsDeploymentStopping())
 	{
 		return false;
@@ -156,8 +167,6 @@ bool FCheckDeploymentState::Update()
 	return true;
 }
 
-/*
-// UNR-1975 after fixing the flakiness of these tests, and investigating how they can be run in CI (UNR-1969), re-enable them
 LOCALDEPLOYMENT_TEST(GIVEN_no_deployment_running_WHEN_deployment_started_THEN_deployment_running)
 {
 	// GIVEN
@@ -192,4 +201,4 @@ LOCALDEPLOYMENT_TEST(GIVEN_deployment_running_WHEN_deployment_stopped_THEN_deplo
 	// THEN
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckDeploymentState(this, EDeploymentState::IsNotRunning));
     return true;
-}*/
+}
