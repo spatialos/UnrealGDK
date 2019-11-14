@@ -34,10 +34,6 @@ steps:
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
       - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
-<<<<<<< HEAD
-      - "ci/TestResults/*"
-=======
->>>>>>> test GIVEN conditions
     env:
       ENGINE_COMMIT_HASH: "ENGINE_COMMIT_HASH_PLACEHOLDER"
 
