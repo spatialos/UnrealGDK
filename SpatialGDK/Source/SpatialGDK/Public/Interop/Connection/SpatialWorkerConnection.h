@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "Containers/Queue.h"
@@ -22,7 +23,7 @@ class USpatialGameInstance;
 class USpatialStaticComponentView;
 class UWorld;
 
-enum class SpatialConnectionType
+enum class ESpatialConnectionType
 {
 	Receptionist,
 	LegacyLocator,
@@ -63,6 +64,8 @@ public:
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
+	void SetConnectionType(ESpatialConnectionType InConnectionType);
+
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
@@ -81,7 +84,7 @@ private:
 	void OnPreConnectionFailure(const FString& Reason);
 	void OnConnectionFailure();
 
-	SpatialConnectionType GetConnectionType() const;
+	ESpatialConnectionType GetConnectionType() const;
 
 	void CacheWorkerAttributes();
 
@@ -123,4 +126,6 @@ private:
 
 	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
 	Worker_RequestId NextRequestId = 0;
+
+	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 };

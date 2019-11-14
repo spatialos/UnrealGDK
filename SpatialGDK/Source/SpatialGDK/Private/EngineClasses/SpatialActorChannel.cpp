@@ -20,6 +20,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/ServerRPCEndpoint.h"
@@ -183,6 +184,12 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 	else
 	{
 		NetDriver->RegisterDormantEntityId(EntityId);
+	}
+
+	if (CloseReason == EChannelCloseReason::Destroyed || CloseReason == EChannelCloseReason::LevelUnloaded)
+	{
+		Receiver->ClearPendingRPCs(EntityId);
+		Sender->ClearPendingRPCs(EntityId);
 	}
 
 	NetDriver->RemoveActorChannel(EntityId);
@@ -388,10 +395,12 @@ int64 USpatialActorChannel::ReplicateActor()
 		PlayerController->SendClientAdjustment();
 	}
 
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
 	// Update SpatialOS position.
 	if (!bCreatingNewEntity)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bBatchSpatialPositionUpdates)
+		if (SpatialGDKSettings->bBatchSpatialPositionUpdates)
 		{
 			Sender->RegisterChannelForPositionUpdate(this);
 		}
@@ -548,6 +557,24 @@ int64 USpatialActorChannel::ReplicateActor()
 				RepComp.Value()->CleanUp();
 				RepComp.RemoveCurrent();
 			}
+		}
+	}
+
+	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
+		NetDriver->LoadBalanceStrategy != nullptr &&
+		// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
+		// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
+		Actor->HasAuthority() &&
+		NetDriver->LoadBalanceStrategy->ShouldRelinquishAuthority(*Actor))
+	{
+		const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
+		if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+		{
+			Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
+		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
 		}
 	}
 
