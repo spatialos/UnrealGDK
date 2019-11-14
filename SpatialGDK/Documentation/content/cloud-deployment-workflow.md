@@ -112,6 +112,7 @@ Where:
 
 <br>
 <br/>------<br/>
+_2019-11-14 Page updated without editorial review: added callout for plugins which won't run on Linux._<br/>
 _2019-10-31 Page updated without editorial review: add missing build step for simulated player clients._<br/>
 _2019-07-31 Page updated with limited editorial review_<br/>
 _2019-07-21 Page updated with limited editorial review_
