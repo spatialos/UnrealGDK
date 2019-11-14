@@ -81,6 +81,9 @@ You can launch a cloud deployment using the Unreal Editor or the SpatialOS CLI. 
     ```
     <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject
     ```
+    <%(#Expandable title="Note: using the `-skipshadercompile` flag")%>
+    By default, an Unreal Linux client build will attempt to re-build all shaders for the OpenGL Shading Language. You may find that when building out your Linux clients, shaders take a long time to build and fail often. It's not necessary to have them built for Linux clients, so you can skip shader compilation by adding the flag `-skipshadercompile` to the above command.
+    <%(/Expandable)%>
     <%(#Expandable title="Note: disabling game client plugins which don't run on Linux")%>
     Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like
     `if (Target.Platform != UnrealTargetPlatform.Linux)`
@@ -112,6 +115,7 @@ Where:
 
 <br>
 <br/>------<br/>
+_2019-11-14 Page updated without editorial review: added callout for plugins which won't run on Linux, and `-skipshadercompile` option._<br/>
 _2019-10-31 Page updated without editorial review: add missing build step for simulated player clients._<br/>
 _2019-07-31 Page updated with limited editorial review_<br/>
 _2019-07-21 Page updated with limited editorial review_
