@@ -21,7 +21,7 @@ Before starting this tutorial you _**must**_ follow:
 This tutorial assumes that you are familiar with the basic development workflows of the GDK from the "Set up a project" guides: [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro), [Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro).
 
 Additionally, to communicate with the Database Sync Worker, you will be sending SpatialOS commands and listening to events, so a basic understanding of [SpatialOS messaging](https://docs.improbable.io/reference/latest/shared/design/object-interaction) is required.
-(This is something the GDK typically abstracts from you from you when you build Unreal workers - in this case we will be integrating a C# worker using the [SpatialOS Worker SDK](https://docs.improbable.io/reference/latest/shared/glossary#worker-sdk) directly so these concepts are important to understand.)
+(This is something the GDK typically abstracts from you when you build Unreal workers - in this case we will be integrating a C# worker using the [SpatialOS Worker SDK](https://docs.improbable.io/reference/latest/shared/glossary#worker-sdk) directly so these concepts are important to understand.)
 
 </br>
 #### **> Next:** [1: Set up]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-setup)
