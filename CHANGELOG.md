@@ -4,26 +4,42 @@ All notable changes to the SpatialOS Game Development Kit for Unreal will be doc
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased-`x.y.z`] - 2019-xx-xx
+## [Unreleased-`x.y.z`] - 20xx-xx-xx
+
+## [`0.8.0-preview`] - 2019-11-18
+
+### Breaking Changes:
+- This is the last GDK version to support Unreal Engine 4.22. You will need to upgrade your project to use Unreal Engine 4.23 (`4.23-SpatialOSUnrealGDK-preview`) in order to continue receiving GDK releases and support.
+- When upgrading to Unreal Engine 4.23 you must:
+1. `git checkout 4.23-SpatialOSUnrealGDK-preview`
+1. `git pull`
+1. Download and install the `-v15 clang-8.0.1-based` toolchain from this [Unreal Engine Documentation page](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html).
+1. Run `Setup.bat`, which is located in the root directory of the `UnrealEngine` repository.
+1. Run `GenerateProjectFiles.bat`, which is in the same root directory.
+For more information, check the [Keep your GDK up to date](https://docs.improbable.io/unreal/preview/content/upgrading) SpatialOS documentation.
+
 
 ### Features:
-- Added partial framework for use in future UnrealGDK controlled loadbalancing.
-- Add SpatialToggleMetricsDisplay console command.  bEnableMetricsDisplay must be enabled in order for the display to be available.  You must then must call SpatialToggleMetricsDisplay on each client that wants to view the metrics display.
-- Enabled compression in modular-udp networking stack
-- Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
-- Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
-- A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
-- Added the AllowUnresolvedParameters function flag that disables warnings for processing RPCs with unresolved parameters. This flag can be enabled through Blueprints or by adding a tag to the `UFUNCTION` macro.
+- You can now call `SpatialToggleMetricsDisplay` from the console in your Unreal clients in order to view metrics. `bEnableMetricsDisplay` must be enabled on clients where you want to use this feature.
+- The modular-udp networking stack now uses compression by default.
+- Reduced network latency by switching off default rpc-packing. If you need this on by default, you can re-enable it by editing `SpatialGDKSettings.ini`
+- When you start a local deployment, the GDK now checks the port required by the runtime and, if it's in use, prompts you to kill that process.
+- You can now measure round-trip ping from a player controller to the server-woker that's currently authoritative over it using the configurable actor component 'SpatialPingComponent'. The latest ping value can be accessed through the component via 'GetPing()' or via the rolling average stored in 'PlayerState'.
+- You can disable the warnings that trigger when RPCs are processed with unresolved parameters using the `AllowUnresolvedParameters` function flag. This flag can be enabled through Blueprints or by adding a tag to the `UFUNCTION` macro.
 - Improved logging around entity creation.
-- Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK).
+- Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK-preview).
 
 ### Bug fixes:
-- Fixed a bug that could caused a name collision in schema for sublevels.
+- Fixed a bug that could cause name collisions in schema generated for sublevels.
 - Downgraded name collisions during schema generation from Warning to Display.
 - Replicating a static subobject after it has been deleted on a client no longer results in client attaching a new dynamic subobject.
 - Fixed a bug that caused entity pool reservations to cease after a request times out.
 - Running `BuildWorker.bat` for `SimulatedPlayer` no longer fails if the project path has a space in it.
 - Fixed a crash when starting PIE with out-of-date schema.
+
+### Internal:
+Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
+- We've added a partial loadbalancing framework. When this is completed in a future release, you will be able to control loadbalancing using server-workers.
 
 ## [`0.7.0-preview`] - 2019-10-11
 
