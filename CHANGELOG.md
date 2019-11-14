@@ -38,7 +38,7 @@ For more information, check the [Keep your GDK up to date](https://docs.improbab
 - Fixed a crash when starting PIE with out-of-date schema.
 
 ### Internal:
-Features listed in this internal section are not ready for you to use but, in the spirint of open development, we detail every change we make to the GDK.
+Features listed in this internal section are not ready for you to use but, in the spirit of open development, we detail every change we make to the GDK.
 - We've added a partial loadbalancing framework. When this is completed in a future release, you will be able to control loadbalancing using server-workers.
 
 ## [`0.7.0-preview`] - 2019-10-11
