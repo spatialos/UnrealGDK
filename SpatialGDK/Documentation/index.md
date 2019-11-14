@@ -30,7 +30,6 @@ Project, you can learn more about the GDK’s functionality with tutorials and g
 <img src="{{assetRoot}}assets/example-project/example-project-headline.png" style=" float: right; margin: 0; display: block; width: 60%; padding: 20px 20px"/>
 
 * **Multiserver offloading**: Learn how to offload groups of Actors so Unreal server functionality is split between multiple servers using the Example Project.
-* **Multiple deployments for session-based games**: Upload a session-based FPS example game to the cloud using the Example Project.
 * **Multiserver zoning**: Implement shooting across the boundaries of different servers computing one game world using the Example Project. (**Note:** Zoning is in preview.)
 * **Database sync worker**: Learn how to integrate server database synchronization into your project using the Example Project.
 * **The porting guide**: Port your existing UE project to SpatialOS.
@@ -53,6 +52,7 @@ Project, you can learn more about the GDK’s functionality with tutorials and g
 #### **> Next:** [Get started]({{urlRoot}}/content/get-started/introduction.md)
 
 </br>------</br>
-_2019-08-09 Updated with editorial review_</br>
-_2019-08-08 Updated with editorial review: renamed "multiserver shooter tutorial" to "multiserver zoning tutorial"_ </br>
+_2019-10-18 Page updated with editorial review: removed mention of the deprecated tutorial - multiple deployments for session-based games_</br>
+_2019-08-09 Page updated with editorial review_</br>
+_2019-08-08 Page updated with editorial review: renamed "multiserver shooter tutorial" to "multiserver zoning tutorial"_ </br>
 _2019-07-31 Updated with limited editorial review_

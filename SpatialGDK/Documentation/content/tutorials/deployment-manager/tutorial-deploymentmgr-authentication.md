@@ -1,7 +1,7 @@
 
 <%(TOC)%>
 
-# Multiple deployments for session-based games
+# [Deprecated] Multiple deployments for session-based games
 ## 2: Generate an authentication token
 
 >**Note:** This section describes generating and using development authentication tokens. These are for in-development testing only. They are for early-stage development so you don’t have to create your own game authentication service before testing your game clients. Do not include development authentication tokens in production projects. 

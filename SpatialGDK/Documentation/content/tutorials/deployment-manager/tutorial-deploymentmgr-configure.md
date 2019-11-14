@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Multiple deployments for session-based games
+# [Deprecated] Multiple deployments for session-based games
 ## 4: Configure the Deployment Manager
 
 There are three steps to configuring the Deployment Manager:
