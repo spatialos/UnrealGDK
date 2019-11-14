@@ -109,7 +109,7 @@ void USpatialGameInstance::StartGameInstance()
 		{
 			// Initialize a locator configuration which will parse command line arguments.
 			FLocatorConfig LocatorConfig;
-			if (!LocatorConfig.LoginToken.IsEmpty())
+			if (LocatorConfig.TryLoadCommandLineArgs())
 			{
 				// Modify the commandline args to have a Host IP to force a NetDriver to be used.
 				const TCHAR* CommandLineArgs = FCommandLine::Get();

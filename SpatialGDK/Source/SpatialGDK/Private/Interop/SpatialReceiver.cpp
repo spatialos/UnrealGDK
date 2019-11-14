@@ -818,13 +818,9 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 		{
 			PackageMap->RemoveEntityActor(EntityId);
 		}
-		else if (Actor == nullptr)
-		{
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. EntityId: %lld"), EntityId);
-		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. Actor: %s EntityId: %lld"), *Actor->GetName(), EntityId);
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. Actor: %s EntityId: %lld"), *GetNameSafe(Actor), EntityId);
 		}
 	}
 
