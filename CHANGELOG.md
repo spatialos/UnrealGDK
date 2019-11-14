@@ -23,7 +23,7 @@ For more information, check the [Keep your GDK up to date](https://docs.improbab
 - You can now call `SpatialToggleMetricsDisplay` from the console in your Unreal clients in order to view metrics. `bEnableMetricsDisplay` must be enabled on clients where you want to use this feature.
 - The modular-udp networking stack now uses compression by default.
 - Reduced network latency by switching off default rpc-packing. If you need this on by default, you can re-enable it by editing `SpatialGDKSettings.ini`
-- When you start a local deployment the GDK now checks the port required by the runtime and, if its in use, prompts you to kill that process.
+- When you start a local deployment, the GDK now checks the port required by the runtime and, if it's in use, prompts you to kill that process.
 - You can now measure round-trip ping from a player controller to the server-woker that's currently authoritative over it using the configurable actor component 'SpatialPingComponent'. The latest ping value can be accessed through the component via 'GetPing()' or via the rolling average stored in 'PlayerState'.
 - You can disable the warnings that trigger when RPCs are processed with unresolved parameters using the `AllowUnresolvedParameters` function flag. This flag can be enabled through Blueprints or by adding a tag to the `UFUNCTION` macro.
 - Improved logging around entity creation.
