@@ -36,30 +36,33 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 {
 #if PLATFORM_WINDOWS
 	// Don't kick off background processes when running commandlets
-	if (IsRunningCommandlet() == false)
+	const bool bCommandletRunning = IsRunningCommandlet();
+
+	// Check for the existence of Spatial and Spot. If they don't exist then don't start any background processes.
+	const bool bSpatialServicesAvailable = FSpatialGDKServicesModule::SpatialPreRunChecks();
+
+	if (bCommandletRunning || !bSpatialServicesAvailable)
 	{
-		// Check for the existence of Spatial and Spot. If they don't exist then don't start any background processes. Disable spatial networking if either is true.
-		if (!FSpatialGDKServicesModule::SpatialPreRunChecks())
+		if (!bSpatialServicesAvailable)
 		{
 			UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Pre run checks for LocalDeploymentManager failed. Local deployments cannot be started."));
-			bLocalDeploymentManagerEnabled = false;
-			return;
 		}
-
-		// Ensure the worker.jsons are up to date.
-		WorkerBuildConfigAsync();
-
-		// Watch the worker config directory for changes.
-		StartUpWorkerConfigDirectoryWatcher();
+		bLocalDeploymentManagerEnabled = false;
+		return;
 	}
+
+	// Ensure the worker.jsons are up to date.
+	WorkerBuildConfigAsync();
+
+	// Watch the worker config directory for changes.
+	StartUpWorkerConfigDirectoryWatcher();
 #endif // PLATFORM_WINDOWS
 }
 
 void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 {
 #if PLATFORM_WINDOWS
-	// Don't kick off background processes when running commandlets
-	if (!IsRunningCommandlet() && bLocalDeploymentManagerEnabled)
+	if (bLocalDeploymentManagerEnabled)
 	{
 		// If a service was running, restart to guarantee that the service is running in this project with the correct settings.
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("(Re)starting Spatial service in this project."));
@@ -139,6 +142,7 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 	{
 		return;
 	}
+
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		IsServiceRunningAndInCorrectDirectory();
