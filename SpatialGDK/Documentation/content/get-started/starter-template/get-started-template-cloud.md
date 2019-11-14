@@ -212,7 +212,8 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
   * **Number of Simulated Players**: Choose the number of simulated players you want to start. </br></br>
   * **Region**: The real-world geographical location that you want your simulated players cloud deployment hosted in. 
 <%(#Expandable title="Tell me more about developing with simulated players")%>
-There is a basic implementation of simulated players included with the Starter Template. You can find out more about setting up simulated players by: </br></br> *  Exploring the source code (look for `SimulatedPlayerCharacter_BP`).</br>*  Trying them out by deploying simulated players with this project.</br>*  Checking out the [simulated players]({{urlRoot}}/content/simulated-players) documentation. <%(/Expandable)%>
+There is a basic implementation of simulated players included with the Starter Template. You can find out more about setting up simulated players by: </br></br> *  Exploring the source code (look for `SimulatedPlayerCharacter_BP`).</br>*  Trying them out by deploying simulated players with this project.</br>*  Checking out the [simulated players]({{urlRoot}}/content/simulated-players) documentation. 
+<%(/Expandable)%>
 3. Select **Launch deployment**.</br>
 Your deployment(s) won’t launch instantly - the Editor launches a console window which shows the progress of the deployment. </br>
 When your deployment(s) have launched, you can open the Console at [console.improbable.io](https://console.improbable.io/) to view them.
