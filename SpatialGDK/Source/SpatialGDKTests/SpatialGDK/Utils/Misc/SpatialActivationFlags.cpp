@@ -63,78 +63,110 @@ namespace
 	}
 }
 
-GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride)
+struct SpatialActivationFlagTestFixture
 {
-	FString ProjectPath = FPaths::GetProjectFilePath();
-	FString CommandLineArgs = ProjectPath;
-	CommandLineArgs.Append(TEXT(" -ExecCmds=\"Automation RunTests SpatialGDK.Core.UGeneralProjectSettings.SpatialActivationReport; Quit\""));
-	CommandLineArgs.Append(TEXT(" -TestExit=\"Automation Test Queue Empty\""));
-	CommandLineArgs.Append(TEXT(" -nopause"));
-	CommandLineArgs.Append(TEXT(" -nosplash"));
-	CommandLineArgs.Append(TEXT(" -unattended"));
-	CommandLineArgs.Append(TEXT(" -nullRHI"));
-	CommandLineArgs.Append(TEXT(" -stdout"));
-
-	UBoolProperty* SpatialFlagProperty = Cast<UBoolProperty>(UGeneralProjectSettings::StaticClass()->FindPropertyByName("bSpatialNetworking"));
-	TestNotNull("Property existence", SpatialFlagProperty);
-
-	UGeneralProjectSettings* ProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	TestNotNull("Settings existence", ProjectSettings);
-
-	void* SpatialFlagPtr = SpatialFlagProperty->ContainerPtrToValuePtr<const void*>(ProjectSettings);
-
-	bool bSavedFlagValue = SpatialFlagProperty->GetPropertyValue(SpatialFlagPtr);
-
+	SpatialActivationFlagTestFixture(FAutomationTestBase& Test)
 	{
-		ProjectSettings->SetUsesSpatialNetworking(false);
-		ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
+		ProjectPath = FPaths::GetProjectFilePath();
+		CommandLineArgs = ProjectPath;
+		CommandLineArgs.Append(TEXT(" -ExecCmds=\"Automation RunTests SpatialGDK.Core.UGeneralProjectSettings.SpatialActivationReport; Quit\""));
+		CommandLineArgs.Append(TEXT(" -TestExit=\"Automation Test Queue Empty\""));
+		CommandLineArgs.Append(TEXT(" -nopause"));
+		CommandLineArgs.Append(TEXT(" -nosplash"));
+		CommandLineArgs.Append(TEXT(" -unattended"));
+		CommandLineArgs.Append(TEXT(" -nullRHI"));
+		CommandLineArgs.Append(TEXT(" -stdout"));
 
-		ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, CommandLineArgs);
+		SpatialFlagProperty = Cast<UBoolProperty>(UGeneralProjectSettings::StaticClass()->FindPropertyByName("bSpatialNetworking"));
+		Test.TestNotNull("Property existence", SpatialFlagProperty);
 
-		TestTrue("Settings applied", Flags.bEarliestFlag == false);
-		TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
+		ProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
+		Test.TestNotNull("Settings existence", ProjectSettings);
+
+		SpatialFlagPtr = SpatialFlagProperty->ContainerPtrToValuePtr<const void*>(ProjectSettings);
+		bSavedFlagValue = SpatialFlagProperty->GetPropertyValue(SpatialFlagPtr);
 	}
 
+	~SpatialActivationFlagTestFixture()
 	{
-		ProjectSettings->SetUsesSpatialNetworking(true);
+		ProjectSettings->SetUsesSpatialNetworking(bSavedFlagValue);
 		ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
-
-		ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, CommandLineArgs);
-
-		TestTrue("Settings applied", Flags.bEarliestFlag == true);
-		TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
 	}
 
+	void ChangeSetting(bool bEnabled)
 	{
-		SpatialFlagProperty->SetPropertyValue(SpatialFlagPtr, false);
+		ProjectSettings->SetUsesSpatialNetworking(bEnabled);
 		ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
-
-		FString CommandLineOverride = CommandLineArgs;
-		CommandLineOverride.Append(" -OverrideSpatialNetworking=true");
-
-		ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, CommandLineOverride);
-
-		TestTrue("Override applied", Flags.bEarliestFlag == true);
-		TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
 	}
 
-	{
-		SpatialFlagProperty->SetPropertyValue(SpatialFlagPtr, true);
-		ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
+	FString CommandLineArgs;
 
-		FString CommandLineOverride = CommandLineArgs;
-		CommandLineOverride.Append(" -OverrideSpatialNetworking=false");
+private:
+	FString ProjectPath;
+	UBoolProperty* SpatialFlagProperty;
+	UGeneralProjectSettings* ProjectSettings;
+	void* SpatialFlagPtr;
+	bool bSavedFlagValue;
+};
 
-		ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, CommandLineOverride);
+GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_False)
+{
+	SpatialActivationFlagTestFixture TestFixture(*this);
 
-		TestTrue("Override applied", Flags.bEarliestFlag == false);
-		TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
+	TestFixture.ChangeSetting(false);
 
-	}
+	ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, TestFixture.CommandLineArgs);
 
-	// Restore original flags
-	ProjectSettings->SetUsesSpatialNetworking(bSavedFlagValue);
-	ProjectSettings->UpdateSinglePropertyInConfigFile(SpatialFlagProperty, ProjectSettings->GetDefaultConfigFilename());
+	TestTrue("Settings applied", Flags.bEarliestFlag == false);
+	TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
+
+	return true;
+}
+
+GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_True)
+{
+	SpatialActivationFlagTestFixture TestFixture(*this);
+
+	TestFixture.ChangeSetting(true);
+
+	ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, TestFixture.CommandLineArgs);
+
+	TestTrue("Settings applied", Flags.bEarliestFlag == true);
+	TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
+
+	return true;
+}
+
+GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_True)
+{
+	SpatialActivationFlagTestFixture TestFixture(*this);
+
+	TestFixture.ChangeSetting(false);
+
+	FString CommandLineOverride = TestFixture.CommandLineArgs;
+	CommandLineOverride.Append(" -OverrideSpatialNetworking=true");
+
+	ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, CommandLineOverride);
+
+	TestTrue("Override applied", Flags.bEarliestFlag == true);
+	TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
+
+	return true;
+}
+
+GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_False)
+{
+	SpatialActivationFlagTestFixture TestFixture(*this);
+
+	TestFixture.ChangeSetting(true);
+
+	FString CommandLineOverride = TestFixture.CommandLineArgs;
+	CommandLineOverride.Append(" -OverrideSpatialNetworking=false");
+
+	ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, CommandLineOverride);
+
+	TestTrue("Override applied", Flags.bEarliestFlag == false);
+	TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
 
 	return true;
 }
