@@ -400,18 +400,20 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	{
 		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
 		VirtualWorkerTranslator->Init(this);
-		LoadBalanceEnforcer = NewObject<USpatialLoadBalanceEnforcer>();
-		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator.Get());
 
 		// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
+		// TODO: Exit cleanly if SpatialSettings->LoadBalanceStrategy is not set.
 		LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
-		LoadBalanceStrategy->Init(this);
+		LoadBalanceStrategy->Init(this, VirtualWorkerTranslator.Get());
 
-		VirtualWorkerTranslator->SetDesiredVirtualWorkerCount(LoadBalanceStrategy->GetVirtualWorkerIds().Num());
+		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+
+		LoadBalanceEnforcer = NewObject<USpatialLoadBalanceEnforcer>();
+		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator.Get());
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
-	Sender->Init(this, &TimerManager);
+	Sender->Init(this, VirtualWorkerTranslator.Get(), &TimerManager);
 	Receiver->Init(this, VirtualWorkerTranslator.Get(), &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
 	SnapshotManager->Init(this);
@@ -2215,6 +2217,14 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 {
 	TArray<Worker_Op*> FoundOps;
 
+	Worker_Op* EntityQueryReservationResponseOp = nullptr;
+	FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE, &EntityQueryReservationResponseOp);
+
+	if (EntityQueryReservationResponseOp != nullptr)
+	{
+		FoundOps.Add(EntityQueryReservationResponseOp);
+	}
+
 	// Search for entity id reservation response and process it.  The entity id reservation
 	// can fail to reserve entity ids.  In that case, the EntityPool will not be marked ready,
 	// a new query will be sent, and we will process the new response here when it arrives.
@@ -2257,9 +2267,43 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 		}
 	}
 
+	auto IsVirtualWorkerTranslatorReady = [this]()
+	{
+		return VirtualWorkerTranslator != nullptr ? VirtualWorkerTranslator->IsReady() : true;
+	};
+
+	if (!IsVirtualWorkerTranslatorReady())
+	{
+		Worker_Op* AddComponentOp = nullptr;
+		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, &AddComponentOp);
+
+		Worker_Op* AuthorityChangedOp = nullptr;
+		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, &AuthorityChangedOp);
+
+		Worker_Op* ComponentUpdateOp = nullptr;
+		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_COMPONENT_UPDATE, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, &ComponentUpdateOp);
+
+		if (AddComponentOp != nullptr)
+		{
+			FoundOps.Add(AddComponentOp);
+		}
+
+		if (AuthorityChangedOp != nullptr)
+		{
+			FoundOps.Add(AuthorityChangedOp);
+		}
+
+		if (ComponentUpdateOp != nullptr)
+		{
+			FoundOps.Add(ComponentUpdateOp);
+		}
+	}
+
 	SelectiveProcessOps(FoundOps);
 
-	if (PackageMap->IsEntityPoolReady() && GlobalStateManager->IsReadyToCallBeginPlay())
+	if (PackageMap->IsEntityPoolReady() &&
+		GlobalStateManager->IsReadyToCallBeginPlay() &&
+		IsVirtualWorkerTranslatorReady())
 	{
 		// Return whether or not we are ready to start
 		return true;

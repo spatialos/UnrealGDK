@@ -26,7 +26,7 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_init_and_set_desired_worker_count_called_THEN
 {
 	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>();
 	translator->Init(nullptr);
-	translator->SetDesiredVirtualWorkerCount(1);  // unimportant random value.
+	translator->AddVirtualWorkerIds({1});  // unimportant random value.
 
 	TestTrue("Initialized Translator is ready.", translator->IsReady());
 

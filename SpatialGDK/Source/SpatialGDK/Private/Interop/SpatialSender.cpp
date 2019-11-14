@@ -11,6 +11,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
@@ -62,9 +63,10 @@ FPendingRPC::FPendingRPC(FPendingRPC&& Other)
 {
 }
 
-void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
+void USpatialSender::Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
+	VirtualWorkerTranslator = InVirtualWorkerTranslator;
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Connection = InNetDriver->Connection;
 	Receiver = InNetDriver->Receiver;
@@ -245,7 +247,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId()));
+		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(VirtualWorkerTranslator->GetLocalVirtualWorkerId()));
 	}
 
 	if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
