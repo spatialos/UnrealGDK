@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "Interop/Connection/EditorWorkerController.h"
 
 #include "SpatialGDKServicesPrivate.h"
