@@ -25,7 +25,8 @@ public:
 	// Currently that is only the number of virtual workers desired.
 	bool IsReady() const { return bIsReady; }
 
-	void SetDesiredVirtualWorkerCount(uint32 NumberOfVirtualWorkers);
+	void AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds);
+	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; }
 
 	// Returns the name of the worker currently assigned to VirtualWorkerId id or nullptr if there is
 	// no worker assigned.
@@ -56,6 +57,7 @@ private:
 
 	// The WorkerId of this worker, for logging purposes.
 	FString WorkerId;
+	VirtualWorkerId LocalVirtualWorkerId;
 
 	// Serialization and deserialization of the mapping.
 	void ApplyMappingFromSchema(Schema_Object* Object);

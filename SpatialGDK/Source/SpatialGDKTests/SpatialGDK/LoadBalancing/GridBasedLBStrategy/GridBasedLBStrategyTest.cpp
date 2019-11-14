@@ -54,10 +54,7 @@ DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FCreateStrategy, uint32, Rows, u
 bool FCreateStrategy::Update()
 {
 	Strat = UTestGridBasedLBStrategy::Create(Rows, Cols, WorldWidth, WorldHeight);
-	Strat->Init(nullptr);
-
-	TSet<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
-	Strat->SetLocalVirtualWorkerId(VirtualWorkerIds.Array()[LocalWorkerIdIndex]);
+	Strat->Init(nullptr, nullptr);
 
 	return true;
 }
@@ -166,7 +163,7 @@ bool FCheckVirtualWorkersMatch::Update()
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_called_THEN_it_returns_6_ids)
 {
 	Strat = UTestGridBasedLBStrategy::Create(2, 3, 10000.f, 10000.f);
-	Strat->Init(nullptr);
+	Strat->Init(nullptr, nullptr);
 
 	TSet<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
 	TestEqual("Number of Virtual Workers", VirtualWorkerIds.Num(), 6);
@@ -177,27 +174,13 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_virtual_worker_ids_is_call
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_grid_WHEN_get_virtual_worker_ids_THEN_all_worker_ids_are_valid)
 {
 	Strat = UTestGridBasedLBStrategy::Create(5, 10, 10000.f, 10000.f);
-	Strat->Init(nullptr);
+	Strat->Init(nullptr, nullptr);
 
 	TSet<uint32> VirtualWorkerIds = Strat->GetVirtualWorkerIds();
 	for (uint32 VirtualWorkerId : VirtualWorkerIds)
 	{
 		TestNotEqual("Virtual Worker Id", VirtualWorkerId, SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
 	}
-
-	return true;
-}
-
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready)
-{
-	Strat = UTestGridBasedLBStrategy::Create(1, 1, 10000.f, 10000.f);
-	Strat->Init(nullptr);
-
-	TestFalse("IsReady Before LocalVirtualWorkerId Set", Strat->IsReady());
-
-	Strat->SetLocalVirtualWorkerId(123);
-
-	TestTrue("IsReady After LocalVirtualWorkerId Set", Strat->IsReady());
 
 	return true;
 }

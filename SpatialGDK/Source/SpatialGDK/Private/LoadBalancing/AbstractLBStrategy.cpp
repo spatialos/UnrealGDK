@@ -3,18 +3,19 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 
 UAbstractLBStrategy::UAbstractLBStrategy()
 	: Super()
-	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 {
 }
 
-void UAbstractLBStrategy::SetLocalVirtualWorkerId(uint32 InLocalVirtualWorkerId)
+void UAbstractLBStrategy::Init(const USpatialNetDriver* InNetDriver, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
 {
-	LocalVirtualWorkerId = InLocalVirtualWorkerId;
+	VirtualWorkerTranslator = InVirtualWorkerTranslator;
 }
 
-void UAbstractLBStrategy::Init(const USpatialNetDriver* InNetDriver)
+VirtualWorkerId UAbstractLBStrategy::GetLocalVirtualWorkerId() const
 {
+	return VirtualWorkerTranslator->GetLocalVirtualWorkerId();
 }
