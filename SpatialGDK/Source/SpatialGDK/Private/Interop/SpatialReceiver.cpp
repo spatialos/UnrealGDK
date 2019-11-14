@@ -545,8 +545,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
 	{
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker. "
-			"Entity id: $lld"), *EntityActor->GetName(), EntityId);
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker. "
+			"Entity id: %lld"), *NetDriver->Connection->GetWorkerId(), *EntityActor->GetName(), EntityId);
 
 		// Assume SimulatedProxy until we've been delegated Authority
 		bool bAuthority = StaticComponentView->GetAuthority(EntityId, Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
@@ -564,6 +564,9 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 	else
 	{
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity has been checked out on the worker which didn't spawn it. "
+			"Entity id: %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
+
 		UClass* Class = UnrealMetadataComp->GetNativeEntityClass();
 		if (Class == nullptr)
 		{
@@ -818,13 +821,9 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 		{
 			PackageMap->RemoveEntityActor(EntityId);
 		}
-		else if (Actor == nullptr)
-		{
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. EntityId: %lld"), EntityId);
-		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. Actor: %s EntityId: %lld"), *Actor->GetName(), EntityId);
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. Actor: %s EntityId: %lld"), *GetNameSafe(Actor), EntityId);
 		}
 	}
 
