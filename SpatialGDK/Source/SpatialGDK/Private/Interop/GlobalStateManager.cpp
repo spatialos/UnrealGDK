@@ -118,7 +118,7 @@ void UGlobalStateManager::ApplySessionIdUpdate(int32 InSessionId)
 {
 	if (SessionId != InSessionId)
 	{
-		UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - SessionId: %lld"), SessionId);
+		UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - SessionId: %lld"), InSessionId);
 		SessionId = InSessionId;
 		NetDriver->OnGSMUpdated();
 	}
