@@ -8,6 +8,10 @@
 
 bool SpatialGDKCloudLaunch()
 {
+	// static bool bResult = false;
+	// FPlatformProcess::Sleep(2.0f);
+	// return bResult=!bResult;
+
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	const FString CmdExecutable = TEXT("cmd.exe");
@@ -40,10 +44,23 @@ bool SpatialGDKCloudLaunch()
 	);
 
 	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
-		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0,
+		*CmdExecutable, *LauncherCmdArguments, false, true, true, nullptr, 0,
 		*SpatialGDKSettings->GetDeploymentLauncherPath(), nullptr, nullptr);
 
-	return DeploymentLauncherProcHandle.IsValid();
+	if (DeploymentLauncherProcHandle.IsValid())
+	{
+		int32 ExitCode = 0;
+
+		FPlatformProcess::WaitForProc(DeploymentLauncherProcHandle);
+		FPlatformProcess::GetProcReturnCode(DeploymentLauncherProcHandle, &ExitCode);
+		FPlatformProcess::CloseProc(DeploymentLauncherProcHandle);
+
+		return (ExitCode == 0);
+	}
+	else
+	{
+		return false;
+	}
 }
  
 bool SpatialGDKCloudStop()
@@ -57,5 +74,18 @@ bool SpatialGDKCloudStop()
 		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0,
 		*SpatialGDKSettings->GetDeploymentLauncherPath(), nullptr, nullptr);
 
-	return DeploymentLauncherProcHandle.IsValid();
+	if (DeploymentLauncherProcHandle .IsValid())
+	{
+		int32 ExitCode = 0;
+
+		FPlatformProcess::WaitForProc(DeploymentLauncherProcHandle);
+		FPlatformProcess::GetProcReturnCode(DeploymentLauncherProcHandle, &ExitCode);
+		FPlatformProcess::CloseProc(DeploymentLauncherProcHandle);
+
+		return (ExitCode == 0);
+	}
+	else
+	{
+		return false;
+	}
 }
