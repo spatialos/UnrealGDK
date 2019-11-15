@@ -252,8 +252,8 @@ exit /b !ERRORLEVEL!";
                     {
                         "/I",
                         "/Y",
-                        workerCoordinatorPath,
-                        linuxSimulatedPlayerPath
+                        Quote(workerCoordinatorPath),
+                        Quote(linuxSimulatedPlayerPath)
                     });
                 }
                 else

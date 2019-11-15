@@ -159,23 +159,29 @@ FString FSpatialGDKServicesModule::ParseProjectName()
 
 	FString SpatialFileName = TEXT("spatialos.json");
 	FString SpatialFileResult;
-	FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialDirectory, SpatialFileName));
 
-	TSharedPtr<FJsonObject> JsonParsedSpatialFile;
-	if (ParseJson(SpatialFileResult, JsonParsedSpatialFile))
+	if (FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialDirectory, SpatialFileName)))
 	{
-		if (JsonParsedSpatialFile->TryGetStringField(TEXT("name"), ProjectNameParsed))
+		TSharedPtr<FJsonObject> JsonParsedSpatialFile;
+		if (ParseJson(SpatialFileResult, JsonParsedSpatialFile))
 		{
-			return ProjectNameParsed;
+			if (JsonParsedSpatialFile->TryGetStringField(TEXT("name"), ProjectNameParsed))
+			{
+				return ProjectNameParsed;
+			}
+			else
+			{
+				UE_LOG(LogSpatialGDKServices, Error, TEXT("'name' does not exist in spatialos.json. Can't read project name."));
+			}
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKServices, Error, TEXT("'name' does not exist in spatialos.json. Can't read project name."));
+			UE_LOG(LogSpatialGDKServices, Error, TEXT("Json parsing of spatialos.json failed. Can't get project name."));
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKServices, Error, TEXT("Json parsing of spatialos.json failed. Can't get project name."));
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Loading spatialos.json failed. Can't get project name."));
 	}
 
 	ProjectNameParsed.Empty();

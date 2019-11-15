@@ -126,10 +126,18 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 
 void FRPCContainer::ProcessRPCs()
 {
+	if (bAlreadyProcessingRPCs)
+	{
+		UE_LOG(LogRPCContainer, Log, TEXT("Calling ProcessRPCs recursively, ignoring the call"));
+		return;
+	}
+
+	bAlreadyProcessingRPCs = true;
+
 	for (auto& RPCs : QueuedRPCs)
 	{
 		FRPCMap& MapOfQueues = RPCs.Value;
-		for(auto It = MapOfQueues.CreateIterator(); It; ++It)
+		for (auto It = MapOfQueues.CreateIterator(); It; ++It)
 		{
 			FArrayOfParams& RPCList = It.Value();
 			ProcessRPCs(RPCList);
@@ -138,6 +146,16 @@ void FRPCContainer::ProcessRPCs()
 				It.RemoveCurrent();
 			}
 		}
+	}
+
+	bAlreadyProcessingRPCs = false;
+}
+
+void FRPCContainer::DropForEntity(const Worker_EntityId& EntityId)
+{
+	for (auto& RpcMap : QueuedRPCs)
+	{
+		RpcMap.Value.Remove(EntityId);
 	}
 }
 
