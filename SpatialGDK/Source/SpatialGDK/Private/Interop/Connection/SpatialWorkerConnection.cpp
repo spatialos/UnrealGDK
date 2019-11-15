@@ -28,7 +28,6 @@ void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
 {
 	GameInstance = InGameInstance;
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
-	GlobalStateManager = NewObject<UGlobalStateManager>();
 }
 
 void USpatialWorkerConnection::FinishDestroy()

@@ -387,6 +387,12 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Dispatcher = NewObject<USpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
+
+	if (Connection->GlobalStateManager == nullptr)
+	{
+		Connection->GlobalStateManager = NewObject<UGlobalStateManager>();
+	}
+
 	GlobalStateManager = Connection->GlobalStateManager;
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	StaticComponentView = Connection->StaticComponentView;
