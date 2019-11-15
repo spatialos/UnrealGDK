@@ -772,7 +772,7 @@ bool RunSchemaCompiler()
 	if (const FString* SchemaCompileArgsCLSwitchPtr = Switches.FindByPredicate([](const FString& ClSwitch) { return ClSwitch.StartsWith(FString{ TEXT("AdditionalSchemaCompilerArgs") }); }))
 	{
 		FString SwitchName;
-		schemaCompileArgsCLSwitchPtr->Split(FString{ TEXT("=") }, &switchName, &AdditionalSchemaCompilerArgs);
+		SchemaCompileArgsCLSwitchPtr->Split(FString{ TEXT("=") }, &SwitchName, &AdditionalSchemaCompilerArgs);
 		if (AdditionalSchemaCompilerArgs.Contains(FString{ TEXT("ast_proto_out") }) || AdditionalSchemaCompilerArgs.Contains(FString{ TEXT("ast_json_out") }))
 		{
 			if (!PlatformFile.CreateDirectoryTree(*CompiledSchemaASTDir))
