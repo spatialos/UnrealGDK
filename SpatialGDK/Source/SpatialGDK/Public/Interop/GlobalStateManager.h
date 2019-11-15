@@ -49,7 +49,7 @@ public:
 
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void SetCanBeginPlay(const bool bInCanBeginPlay);
-	void IncrementSessionIDAndUpdateSpatial();
+	void IncrementSessionID();
 
 	FORCEINLINE FString GetDeploymentMapURL() const { return DeploymentMapURL; }
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
@@ -98,9 +98,10 @@ public:
 #endif // WITH_EDITOR
 private:
 	void SetDeploymentMapURL(const FString& MapURL);
-	void SetSessionIDInternal(int32 InSessionId);
+	void SendSessionIdUpdate();
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
+	void ApplySessionIdUpdate(int32 InSessionId);
 	void ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate);
 
 	void BecomeAuthoritativeOverAllActors();

@@ -72,7 +72,7 @@ void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Dat
 
 	ApplyAcceptingPlayersUpdate(GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID));
 
-	SessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
+	ApplySessionIdUpdate(Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID));
 }
 
 void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentData& Data)
@@ -110,7 +110,17 @@ void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate&
 
 	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID) == 1)
 	{
-		SessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
+		ApplySessionIdUpdate(Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID));
+	}
+}
+
+void UGlobalStateManager::ApplySessionIdUpdate(int32 InSessionId)
+{
+	if (SessionId != InSessionId)
+	{
+		UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - SessionId: %lld"), SessionId);
+		SessionId = InSessionId;
+		NetDriver->OnGSMUpdated();
 	}
 }
 
@@ -120,9 +130,7 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 	{
 		UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - AcceptingPlayers: %s"), bAcceptingPlayersUpdate ? TEXT("true") : TEXT("false"));
 		bAcceptingPlayers = bAcceptingPlayersUpdate;
-
-		// Tell the SpatialNetDriver that AcceptingPlayers has changed.
-		NetDriver->OnAcceptingPlayersChanged(bAcceptingPlayersUpdate);
+		NetDriver->OnGSMUpdated();
 	}
 }
 
@@ -157,7 +165,8 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 		
 		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server. 
 		SetAcceptingPlayers(false);
-		SetSessionIDInternal(0);
+		SessionId = 0;
+		SendSessionIdUpdate();
 
 		// If we have multiple servers, they need to be informed of PIE session ending.
 		SendShutdownAdditionalServersEvent();
@@ -705,20 +714,20 @@ void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 	DeploymentMapURL = MapURL;
 }
 
-void UGlobalStateManager::IncrementSessionIDAndUpdateSpatial()
+void UGlobalStateManager::IncrementSessionID()
 {
 	SessionId++;
-	SetSessionIDInternal(SessionId);
+	SendSessionIdUpdate();
 }
 
-void UGlobalStateManager::SetSessionIDInternal(int32 InSessionId)
+void UGlobalStateManager::SendSessionIdUpdate()
 {
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, InSessionId);
+	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, SessionId);
 
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }

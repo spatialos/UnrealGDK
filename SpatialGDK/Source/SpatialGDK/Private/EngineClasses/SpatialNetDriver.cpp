@@ -65,7 +65,6 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bWaitingForAcceptingPlayersToSpawn(false)
 	, bIsReadyToStart(false)
 	, bMapLoaded(false)
-	, bWaitForGlobalStateManagerServerTravelReady(false)
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
 {
@@ -351,8 +350,7 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	{
 		QueryGSMToLoadMap();
 	}
-
-	if (!bConnectAsClient)
+	else
 	{
 		Sender->CreateServerWorkerEntity();
 	}
@@ -479,19 +477,6 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 	GlobalStateManager->QueryGSM(true /*bRetryUntilAcceptingPlayers*/);
 }
 
-bool USpatialNetDriver::IsGlobalStateManagerServerTravelReady() const
-{
-	return GlobalStateManager->GetAcceptingPlayers() &&
-		   SessionId == GlobalStateManager->GetSessionId();
-}
-
-void USpatialNetDriver::OnGlobalStateManagerServerTravelReady()
-{
-	PlayerSpawner->SendPlayerSpawnRequest();
-	bWaitingForAcceptingPlayersToSpawn = false;
-	bPersistSpatialConnection = false;
-}
-
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
 	if (LoadedWorld == nullptr)
@@ -518,19 +503,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		else
 		{
 			UE_LOG(LogSpatial, Log, TEXT("Trying to call GlobalStateManager->SetAcceptingPlayers(true) when GlobalStateManager is nullptr"),);
-		}
-	}
-	else
-	{
-		// If we're the client, we should wait for the GSM to be ready to ask the server to spawn a player.
-		UWorld* CurrentWorld = GetWorld();
-		if (CurrentWorld && CurrentWorld->RemovePIEPrefix(GlobalStateManager->GetDeploymentMapURL()) == CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map))
-		{
-			bWaitForGlobalStateManagerServerTravelReady = true;
-		}
-		else
-		{
-			checkNoEntry();
 		}
 	}
 
@@ -564,19 +536,15 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 	}
 }
 
-void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
+void USpatialNetDriver::OnGSMUpdated()
 {
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
-	if (bWaitingForAcceptingPlayersToSpawn && bAcceptingPlayers)
+	if (bWaitingForAcceptingPlayersToSpawn &&
+		GlobalStateManager->GetAcceptingPlayers())
 	{
-		// If we have the correct map loaded then ask to spawn.
-		const FString& DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
 		UWorld* CurrentWorld = GetWorld();
-		if (CurrentWorld && CurrentWorld->RemovePIEPrefix(DeploymentMapURL) == CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map))
-		{
-			bWaitForGlobalStateManagerServerTravelReady = true;
-		}
-		else
+		const FString& DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
+		if (CurrentWorld == nullptr || CurrentWorld->RemovePIEPrefix(DeploymentMapURL) != CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map))
 		{
 			// Load the correct map based on the GSM URL
 			UE_LOG(LogSpatial, Log, TEXT("Welcomed by SpatialOS (Level: %s)"), *DeploymentMapURL);
@@ -593,6 +561,14 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
 			WorldContext.PendingNetGame->bSentJoinRequest = false;
 			WorldContext.PendingNetGame->URL = RedirectURL;
+		}
+
+		//If the GSM is accepting players and the SessionId has been updated, we can request to spawn a player.
+		if (SessionId == GlobalStateManager->GetSessionId())
+		{
+			PlayerSpawner->SendPlayerSpawnRequest();
+			bWaitingForAcceptingPlayersToSpawn = false;
+			bPersistSpatialConnection = false;
 		}
 	}
 }
@@ -614,7 +590,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	}
 
 	// Increment the session id, so users don't rejoin the old game.
-	NetDriver->GlobalStateManager->IncrementSessionIDAndUpdateSpatial();
+	NetDriver->GlobalStateManager->IncrementSessionID();
 
 	NetDriver->GlobalStateManager->ResetGSM();
 
@@ -1442,12 +1418,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			HandleStartupOpQueueing(OpLists);
 			return;
-		}
-
-		if (bWaitForGlobalStateManagerServerTravelReady && IsGlobalStateManagerServerTravelReady())
-		{
-			OnGlobalStateManagerServerTravelReady();
-			bWaitForGlobalStateManagerServerTravelReady = false;
 		}
 
 		for (Worker_OpList* OpList : OpLists)

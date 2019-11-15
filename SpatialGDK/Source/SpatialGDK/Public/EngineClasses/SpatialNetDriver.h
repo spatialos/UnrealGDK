@@ -91,8 +91,8 @@ public:
 	// You can check if we connected by calling GetSpatialOS()->IsConnected()
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
-	// When the AcceptingPlayers state on the GSM has changed this method will be called.
-	void OnAcceptingPlayersChanged(bool bAcceptingPlayers);
+	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
+	void OnGSMUpdated();
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName);
@@ -206,10 +206,6 @@ private:
 	bool bIsReadyToStart;
 	bool bMapLoaded;
 
-	// Client variable used to signify when we should wait for the GSM to be ready in order to
-	// ask the server to spawn a player.
-	bool bWaitForGlobalStateManagerServerTravelReady;
-
 	FString SnapshotToLoad;
 	// Client variable which stores the SessionId given to us by the server in the URL options.
 	// Used to compare aginst the GSM SessionId to ensure the the server is ready to spawn players.
@@ -252,9 +248,6 @@ private:
 	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn);
 
 	void ProcessPendingDormancy();
-
-	bool IsGlobalStateManagerServerTravelReady() const;
-	void OnGlobalStateManagerServerTravelReady();
 
 	friend USpatialNetConnection;
 	friend USpatialWorkerConnection;

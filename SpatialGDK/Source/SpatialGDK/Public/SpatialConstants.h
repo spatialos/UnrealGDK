@@ -206,7 +206,6 @@ namespace SpatialConstants
 	const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
 	const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
-	const FString SnapshotURLOption = TEXT("snapshot=");
 	const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
 
 	const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
