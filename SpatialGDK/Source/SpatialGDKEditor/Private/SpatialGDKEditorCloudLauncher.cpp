@@ -8,10 +8,6 @@
 
 bool SpatialGDKCloudLaunch()
 {
-	// static bool bResult = false;
-	// FPlatformProcess::Sleep(2.0f);
-	// return bResult=!bResult;
-
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	const FString CmdExecutable = TEXT("cmd.exe");
