@@ -357,7 +357,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td></td>
 </tr>
   <tr>
-    <td>UE4 4.22 Support</td>
+    <td>Unreal Engine 4.23</td>
     <td class="supported"></td>
     <td></td>
 </tr>

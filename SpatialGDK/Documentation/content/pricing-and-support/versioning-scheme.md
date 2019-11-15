@@ -71,10 +71,10 @@ The [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) follows t
 
 For example:
 
-*   ``4.22-SpatialOSUnrealGDK-release`` (default)
-*   ``4.22-SpatialOSUnrealGDK-preview``
+*   ``4.23-SpatialOSUnrealGDK-release`` (default)
+*   ``4.23-SpatialOSUnrealGDK-preview``
 
-when Unreal Engine 4.22 is the version supported.
+when Unreal Engine 4.23 is the version supported.
 
 ## Unreal Engine version support
 
