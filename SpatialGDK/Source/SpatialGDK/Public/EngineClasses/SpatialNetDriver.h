@@ -19,25 +19,26 @@
 
 #include "SpatialNetDriver.generated.h"
 
+class ASpatialDebugger;
+class ASpatialMetricsDisplay;
+class UAbstractLBStrategy;
+class UActorGroupManager;
+class UEntityPool;
+class UGlobalStateManager;
+class USnapshotManager;
 class USpatialActorChannel;
+class USpatialClassInfoManager;
+class USpatialDispatcher;
+class USpatialLoadBalanceEnforcer;
+class USpatialMetrics;
 class USpatialNetConnection;
 class USpatialPackageMapClient;
-
-class USpatialWorkerConnection;
-class USpatialDispatcher;
-class USpatialSender;
-class USpatialReceiver;
-class UActorGroupManager;
-class USpatialClassInfoManager;
-class UGlobalStateManager;
+class USpatialGameInstance;
 class USpatialPlayerSpawner;
+class USpatialReceiver;
+class USpatialSender;
 class USpatialStaticComponentView;
-class USnapshotManager;
-class USpatialMetrics;
-class ASpatialMetricsDisplay;
-class ASpatialDebugger;
-
-class UEntityPool;
+class USpatialWorkerConnection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -147,6 +148,10 @@ public:
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 	UPROPERTY()
 	ASpatialDebugger* SpatialDebugger;
+	UPROPERTY()
+	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
+	UPROPERTY()
+	UAbstractLBStrategy* LoadBalanceStrategy;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
@@ -272,4 +277,8 @@ private:
 	static const int32 EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT = 256;
 	TArray<Worker_EntityId> TombstonedEntities;
 #endif
+
+	void StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist);
+	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
+	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
 };

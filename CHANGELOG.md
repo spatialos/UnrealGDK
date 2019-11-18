@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- The server no longer crashes, when received RPCs are processed recursively.
 
 ### Features:
 - Added partial framework for use in future UnrealGDK controlled loadbalancing.
@@ -13,7 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
 - A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
+- Added the AllowUnresolvedParameters function flag that disables warnings for processing RPCs with unresolved parameters. This flag can be enabled through Blueprints or by adding a tag to the `UFUNCTION` macro.
 - Improved logging around entity creation.
+- Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK).
 
 ### Bug fixes:
 - Fixed a bug that could caused a name collision in schema for sublevels.
@@ -21,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replicating a static subobject after it has been deleted on a client no longer results in client attaching a new dynamic subobject.
 - Fixed a bug that caused entity pool reservations to cease after a request times out.
 - Running `BuildWorker.bat` for `SimulatedPlayer` no longer fails if the project path has a space in it.
+- Fixed a crash when starting PIE with out-of-date schema.
+- Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
+- Take into account OverrideSpatialNetworking command line argument as early as possible (LocalDeploymentManager used to query bSpatialNetworking before the command line was parsed).
+- Servers maintain interest in AlwaysRelevant Actors.
 
 ## [`0.7.0-preview`] - 2019-10-11
 
@@ -64,6 +71,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The GDK no longer generates schema for all UObject subclasses. Schema generation for Actor, ActorComponent and GameplayAbility subclasses is enabled by default, other classes can be enabled using `SpatialType` UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
 - Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
 - Added the `OverrideSpatialOffloading` command line flag. This allows you to toggle offloading at launch time.
+- The initial connection from a worker will attempt to use relevant command line arguments (receptionistHost, locatorHost) to inform the connection. If these are not provided the standard connection flow will be followed. Subsequent connections will not use command line arguments.
+- The command "Open 0.0.0.0" can be used to connect a worker using its command line arguments, simulating initial connection.
+- The command "ConnectToLocator <login> <playerToken>" has been added to allow for explicit connections to deployments.
 - Add SpatialDebugger and associated content.  This tool can be enabled via the SpatialToggleDebugger console command.  Documentation will be added for this soon.
 
 ### Bug fixes:
@@ -82,7 +92,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
 - When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
 - Fixed a crash upon checking out an actor with a deleted static subobject.
-- Fixed an issue where launching a cloud deployment with an invalid assembly name or deployment name wouldn't show a helpful error message 
+- Fixed an issue where launching a cloud deployment with an invalid assembly name or deployment name wouldn't show a helpful error message.
+- The command line argument "receptionistHost <URL>" will now not overide connections to "127.0.0.1".
+- The receptionist will now be used for appropriate URLs after connecting to a locator URL.
 
 ## [`0.6.2`] - 2019-10-10
 

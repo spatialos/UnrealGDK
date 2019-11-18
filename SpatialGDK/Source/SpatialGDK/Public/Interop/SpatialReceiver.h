@@ -26,6 +26,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 class USpatialNetConnection;
 class USpatialSender;
 class UGlobalStateManager;
+class USpatialLoadBalanceEnforcer;
+class SpatialVirtualWorkerTranslator;
 
 struct PendingAddComponentWrapper
 {
@@ -116,7 +118,7 @@ class USpatialReceiver : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager);
+	void Init(USpatialNetDriver* NetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator, FTimerManager* InTimerManager);
 
 	// Dispatcher Calls
 	void OnCriticalSection(bool InCriticalSection);
@@ -156,6 +158,7 @@ public:
 	void RemoveActor(Worker_EntityId EntityId);
 	bool IsPendingOpsOnChannel(USpatialActorChannel* Channel);
 
+	void ClearPendingRPCs(Worker_EntityId EntityId);
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -235,6 +238,11 @@ private:
 
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
+
+	UPROPERTY()
+	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
+
+	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 	FTimerManager* TimerManager;
 

@@ -15,7 +15,7 @@
 #define LOCTEXT_NAMESPACE "SpatialGDKEDitorSchemaGeneratorTest"
 
 #define SCHEMA_GENERATOR_TEST(TestName) \
-	TEST(SpatialGDKEditor, SchemaGenerator, TestName)
+	GDK_TEST(SpatialGDKEditor, SchemaGenerator, TestName)
 
 namespace
 {
@@ -324,14 +324,14 @@ private:
 	void EnableSpatialNetworking()
 	{
 		UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-		bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
-		GeneralProjectSettings->bSpatialNetworking = true;
+		bCachedSpatialNetworking = GeneralProjectSettings->UsesSpatialNetworking();
+		GeneralProjectSettings->SetUsesSpatialNetworking(true);
 	}
 
 	void ResetSpatialNetworking()
 	{
 		UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
+		GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(bCachedSpatialNetworking);
 		bCachedSpatialNetworking = true;
 	}
 
