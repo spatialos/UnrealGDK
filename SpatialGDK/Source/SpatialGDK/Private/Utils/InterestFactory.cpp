@@ -132,8 +132,8 @@ Interest InterestFactory::CreateServerWorkerInterest()
 	}
 	else
 	{
-		// Ensure server worker receives the GSM entity
-		Constraint.EntityIdConstraint = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
+		// Ensure server worker receives always relevant entities
+		Constraint = CreateAlwaysRelevantConstraint();
 	}
 
 	Query Query;
@@ -384,7 +384,7 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint() const
 }
 
 
-QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint() const
+QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint()
 {
 	QueryConstraint AlwaysRelevantConstraint;
 

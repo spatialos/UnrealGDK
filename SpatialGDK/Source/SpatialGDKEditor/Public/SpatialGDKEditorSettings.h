@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -9,6 +10,8 @@
 #include "SpatialGDKServicesModule.h"
 
 #include "SpatialGDKEditorSettings.generated.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEditorSettings, Log, All);
 
 USTRUCT()
 struct FWorldLaunchSection
