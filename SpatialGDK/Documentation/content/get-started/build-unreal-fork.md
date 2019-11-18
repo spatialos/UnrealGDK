@@ -5,7 +5,7 @@
 
 To use the SpatialOS GDK for Unreal, you first need to download and build the SpatialOS fork of Unreal Engine (UE). You will download and install the GDK for Unreal plugin.
 
-**Note:** If you cloned an earlier version of the fork and plugin, the setup steps below may cause errors. See the [Keep your GDK up to date]({{urlRoot}}/content/upgrading#step-2-update-your-unreal-engine-fork-and-plugin) for guidance on installing the latest versions.
+**Note:** If you cloned an earlier version of the fork and plugin, the setup steps below may cause errors. See the [Keep your GDK up to date]({{urlRoot}}/content/upgrading) for guidance on installing the latest versions.
 
 ### Step 1: Join the Epic Games organization on GitHub
 
