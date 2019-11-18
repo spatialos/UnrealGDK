@@ -227,10 +227,10 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	}
 }
 
-bool FSpatialGDKEditor::IsManualWorkerConnectionSet(const FString& LaunchConfigPath)
+bool FSpatialGDKEditor::IsManualWorkerConnectionSet(const FString& LaunchConfigPath) const
 {
 	FString FileContents;
-	FFileHelper::LoadFileToString(FileContents, LaunchConfigPath.GetCharArray().GetData());
+	FFileHelper::LoadFileToString(FileContents, *LaunchConfigPath);
 
 	const FRegexPattern ManualWorkerFlagPattern("\"manual_worker_connection_only\" *: *true");
 	FRegexMatcher ManualWorkerFlagMatcher(ManualWorkerFlagPattern, FileContents);

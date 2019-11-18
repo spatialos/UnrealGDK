@@ -33,7 +33,7 @@ private:
 
 	bool LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets);
 
-	bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath);
+	bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath) const;
 
 	FDelegateHandle OnAssetLoadedHandle;
 	void OnAssetLoaded(UObject* Asset);
