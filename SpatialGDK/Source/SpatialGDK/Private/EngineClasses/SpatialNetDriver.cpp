@@ -62,7 +62,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
-	, bWaitingForAcceptingPlayersToSpawn(false)
+	, bWaitingToSpawn(false)
 	, bIsReadyToStart(false)
 	, bMapLoaded(false)
 	, NextRPCIndex(0)
@@ -472,15 +472,51 @@ void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 	GetWorld()->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
 }
 
+bool USpatialNetDriver::IsGSMReadyForServerTravel()
+{
+	return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
+}
+
+void USpatialNetDriver::OnQueryGSMSuccess()
+{
+	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
+	if (bWaitingToSpawn && IsGSMReadyForServerTravel())
+	{
+		UWorld* CurrentWorld = GetWorld();
+		const FString& DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
+		if (CurrentWorld == nullptr || CurrentWorld->RemovePIEPrefix(DeploymentMapURL) != CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map))
+		{
+			// Load the correct map based on the GSM URL
+			UE_LOG(LogSpatial, Log, TEXT("Welcomed by SpatialOS (Level: %s)"), *DeploymentMapURL);
+
+			// Extract map name and options
+			FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
+			FURL LastURL = WorldContext.PendingNetGame->URL;
+
+			FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
+			RedirectURL.Host = LastURL.Host;
+			RedirectURL.Port = LastURL.Port;
+			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
+
+			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
+			WorldContext.PendingNetGame->bSentJoinRequest = false;
+			WorldContext.PendingNetGame->URL = RedirectURL;
+		}
+	}
+}
+
 void USpatialNetDriver::QueryGSMToLoadMap()
 {
 	check(bConnectAsClient);
 
 	// Register our interest in spawning.
-	bWaitingForAcceptingPlayersToSpawn = true;
+	bWaitingToSpawn = true;
+
+	UGlobalStateManager::QuerySuccessDelegate QuerySuccessDelegate;
+	QuerySuccessDelegate.BindUObject(this, &USpatialNetDriver::OnQueryGSMSuccess);
 
 	// Begin querying the state of the GSM so we know the state of AcceptingPlayers.
-	GlobalStateManager->QueryGSM(true /*bRetryUntilAcceptingPlayers*/);
+	GlobalStateManager->QueryGSM(true, SessionId, QuerySuccessDelegate);
 }
 
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
@@ -502,14 +538,22 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	{
 		if (GlobalStateManager != nullptr)
 		{
+			// Increment the session id, so users don't rejoin the old game.
 			GlobalStateManager->SetCanBeginPlay(true);
 			GlobalStateManager->TriggerBeginPlay();
 			GlobalStateManager->SetAcceptingPlayers(true);
+			GlobalStateManager->IncrementSessionID();
 		}
 		else
 		{
 			UE_LOG(LogSpatial, Log, TEXT("Trying to call GlobalStateManager->SetAcceptingPlayers(true) when GlobalStateManager is nullptr"),);
 		}
+	}
+	else if (IsGSMReadyForServerTravel())
+	{
+		PlayerSpawner->SendPlayerSpawnRequest();
+		bWaitingToSpawn = false;
+		bPersistSpatialConnection = false;
 	}
 
 	bMapLoaded = true;
@@ -542,43 +586,6 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 	}
 }
 
-void USpatialNetDriver::OnGSMUpdated()
-{
-	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
-	if (bWaitingForAcceptingPlayersToSpawn &&
-		GlobalStateManager->GetAcceptingPlayers())
-	{
-		UWorld* CurrentWorld = GetWorld();
-		const FString& DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
-		if (CurrentWorld == nullptr || CurrentWorld->RemovePIEPrefix(DeploymentMapURL) != CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map))
-		{
-			// Load the correct map based on the GSM URL
-			UE_LOG(LogSpatial, Log, TEXT("Welcomed by SpatialOS (Level: %s)"), *DeploymentMapURL);
-
-			// Extract map name and options
-			FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
-			FURL LastURL = WorldContext.PendingNetGame->URL;
-
-			FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
-			RedirectURL.Host = LastURL.Host;
-			RedirectURL.Port = LastURL.Port;
-			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
-
-			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
-			WorldContext.PendingNetGame->bSentJoinRequest = false;
-			WorldContext.PendingNetGame->URL = RedirectURL;
-		}
-
-		//If the GSM is accepting players and the SessionId has been updated, we can request to spawn a player.
-		if (SessionId == GlobalStateManager->GetSessionId())
-		{
-			PlayerSpawner->SendPlayerSpawnRequest();
-			bWaitingForAcceptingPlayersToSpawn = false;
-			bPersistSpatialConnection = false;
-		}
-	}
-}
-
 // NOTE: This method is a clone of the ProcessServerTravel located in GameModeBase with modifications to support Spatial.
 // Will be called via a delegate that has been set in the UWorld instead of the original in GameModeBase.
 void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode)
@@ -594,9 +601,6 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		UE_LOG(LogGameMode, Warning, TEXT("Trying to server travel on a server which is not authoritative over the GSM."));
 		return;
 	}
-
-	// Increment the session id, so users don't rejoin the old game.
-	NetDriver->GlobalStateManager->IncrementSessionID();
 
 	NetDriver->GlobalStateManager->ResetGSM();
 
@@ -629,7 +633,8 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 
 	if (!NewURL.Contains(SpatialConstants::SpatialSessionIdURLOption))
 	{
-		NewURL.Append(FString::Printf(TEXT("?spatialSessionId=%d"), NetDriver->GlobalStateManager->GetSessionId()));
+		int32 NextSessionId = NetDriver->GlobalStateManager->GetSessionId() + 1;
+		NewURL.Append(FString::Printf(TEXT("?spatialSessionId=%d"), NextSessionId));
 	}
 
 	// Notify clients we're switching level and give them time to receive.

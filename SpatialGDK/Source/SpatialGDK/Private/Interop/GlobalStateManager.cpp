@@ -120,7 +120,6 @@ void UGlobalStateManager::ApplySessionIdUpdate(int32 InSessionId)
 	{
 		UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - SessionId: %lld"), InSessionId);
 		SessionId = InSessionId;
-		NetDriver->OnGSMUpdated();
 	}
 }
 
@@ -130,7 +129,6 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 	{
 		UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - AcceptingPlayers: %s"), bAcceptingPlayersUpdate ? TEXT("true") : TEXT("false"));
 		bAcceptingPlayers = bAcceptingPlayersUpdate;
-		NetDriver->OnGSMUpdated();
 	}
 }
 
@@ -593,8 +591,9 @@ void UGlobalStateManager::TriggerBeginPlay()
 }
 
 // Queries for the GlobalStateManager in the deployment.
-// bRetryUntilAcceptingPlayers will continue querying until the state of AcceptingPlayers is true, this is so clients know when to connect to the deployment.
-void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
+// bRetryUntilAcceptingPlayers will continue querying until the state of AcceptingPlayers and SessionId are the same as the given arguments
+// This is so clients know when to connect to the deployment.
+void UGlobalStateManager::QueryGSM(bool AcceptingPlayersToCheck, int32 SessionIdToCheck, const QuerySuccessDelegate& Callback, bool bRetryUntilAcceptingPlayers /*=true*/)
 {
 	Worker_ComponentConstraint GSMComponentConstraint{};
 	GSMComponentConstraint.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
@@ -611,7 +610,7 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
 
 	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this, bRetryUntilAcceptingPlayers](const Worker_EntityQueryResponseOp& Op)
+	GSMQueryDelegate.BindLambda([this, AcceptingPlayersToCheck, SessionIdToCheck, Callback, bRetryUntilAcceptingPlayers](const Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -623,24 +622,26 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 		}
 		else
 		{
-			bool bNewAcceptingPlayers = GetAcceptingPlayersFromQueryResponse(Op);
+			bool bNewAcceptingPlayers = false;
+			int32 QuerySessionId = 0;
+			bool bQueryResponseSuccess = GetAcceptingPlayersAndSessionIdFromQueryResponse(Op, bNewAcceptingPlayers, QuerySessionId);
+			bool bChecksAreGood = bQueryResponseSuccess && bNewAcceptingPlayers == AcceptingPlayersToCheck && QuerySessionId == SessionIdToCheck;
 
-			if (!bNewAcceptingPlayers && bRetryUntilAcceptingPlayers)
+			if (!bChecksAreGood)
 			{
-				UE_LOG(LogGlobalStateManager, Log, TEXT("Not yet accepting new players. Will retry query for GSM."));
-				RetryQueryGSM(bRetryUntilAcceptingPlayers);
+				UE_LOG(LogGlobalStateManager, Log, TEXT("Spatial GSM state does not match the required state to finish QueryGSM. Will retry query for GSM."));
 			}
 			else
 			{
 				ApplyDeploymentMapDataFromQueryResponse(Op);
+				Callback.ExecuteIfBound();
+				return;
 			}
-
-			return;
 		}
 
 		if (bRetryUntilAcceptingPlayers)
 		{
-			RetryQueryGSM(bRetryUntilAcceptingPlayers);
+			RetryQueryGSM(AcceptingPlayersToCheck, SessionIdToCheck, Callback, bRetryUntilAcceptingPlayers);
 		}
 	});
 
@@ -659,9 +660,12 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_E
 	}
 }
 
-bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
+bool UGlobalStateManager::GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers, int32& OutSessionId)
 {
 	checkf(Op.result_count == 1, TEXT("There should never be more than one GSM"));
+
+	bool AcceptingPlayersFound = false;
+	bool SessionIdFound = false;
 
 	// Iterate over each component on the GSM until we get the DeploymentMap component.
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
@@ -673,18 +677,29 @@ bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(const Worker_Enti
 
 			if (Schema_GetBoolCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID) == 1)
 			{
-				bool bDataAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
-				return bDataAcceptingPlayers;
+				OutAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
+				AcceptingPlayersFound = true;
+			}
+
+			if (Schema_GetUint32Count(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID) == 1)
+			{
+				OutSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
+				SessionIdFound = true;
+			}
+
+			if (AcceptingPlayersFound && SessionIdFound)
+			{
+				return true;
 			}
 		}
 	}
 
-	UE_LOG(LogGlobalStateManager, Warning, TEXT("Entity query response for the GSM did not contain an AcceptingPlayers state."));
+	UE_LOG(LogGlobalStateManager, Warning, TEXT("Entity query response for the GSM did not contain both AcceptingPlayers and SessionId states."));
 
 	return false;
 }
 
-void UGlobalStateManager::RetryQueryGSM(bool bRetryUntilAcceptingPlayers)
+void UGlobalStateManager::RetryQueryGSM(bool AcceptingPlayersToCheck, int32 SessionIdToCheck, const QuerySuccessDelegate& Callback, bool bRetryUntilAcceptingPlayers /*=true*/)
 {
 	// TODO: UNR-656 - TLDR: Hack to get around runtime not giving data on streaming queries unless you have write authority.
 	// There is currently a bug in runtime which prevents clients from being able to have read access on the component via the streaming query.
@@ -699,11 +714,11 @@ void UGlobalStateManager::RetryQueryGSM(bool bRetryUntilAcceptingPlayers)
 
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
 	FTimerHandle RetryTimer;
-	TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<UGlobalStateManager>(this), bRetryUntilAcceptingPlayers]()
+	TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<UGlobalStateManager>(this), AcceptingPlayersToCheck, SessionIdToCheck, Callback, bRetryUntilAcceptingPlayers]()
 	{
 		if (UGlobalStateManager* GSM = WeakThis.Get())
 		{
-			GSM->QueryGSM(bRetryUntilAcceptingPlayers);
+			GSM->QueryGSM(AcceptingPlayersToCheck, SessionIdToCheck, Callback, bRetryUntilAcceptingPlayers);
 		}
 	}, RetryTimerDelay, false);
 }

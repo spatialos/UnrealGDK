@@ -92,7 +92,7 @@ public:
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
 	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
-	void OnGSMUpdated();
+	void OnQueryGSMSuccess();
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName);
@@ -202,7 +202,7 @@ private:
 	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
 	bool bPersistSpatialConnection;
-	bool bWaitingForAcceptingPlayersToSpawn;
+	bool bWaitingToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
 
@@ -278,4 +278,6 @@ private:
 	void StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist);
 	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
 	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
+
+	bool IsGSMReadyForServerTravel();
 };

@@ -42,9 +42,10 @@ public:
 	void ExecuteInitialSingletonActorReplication();
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
 
-	void QueryGSM(bool bRetryUntilAcceptingPlayers);
-	void RetryQueryGSM(bool bRetryUntilAcceptingPlayers);
-	bool GetAcceptingPlayersFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
+	DECLARE_DELEGATE(QuerySuccessDelegate);
+	void QueryGSM(bool AcceptingPlayersToCheck, int32 SessionIdToCheck, const QuerySuccessDelegate& Callback, bool bRetryUntilAcceptingPlayers = true);
+	void RetryQueryGSM(bool AcceptingPlayersToCheck, int32 SessionIdToCheck, const QuerySuccessDelegate& Callback, bool bRetryUntilAcceptingPlayers = true);
+	bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers, int32& OutSessionId);
 	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
