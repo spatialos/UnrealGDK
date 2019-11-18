@@ -10,16 +10,17 @@
 #include "Editor.h"
 #include "FileHelpers.h"
 
-#include "AssetRegistryModule.h"
 #include "AssetDataTagMap.h"
+#include "AssetRegistryModule.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "GeneralProjectSettings.h"
 #include "Internationalization/Regex.h"
 #include "Misc/FileHelper.h"
+#include "Misc/MessageDialog.h"
 #include "Misc/ScopedSlowTask.h"
+#include "Settings/ProjectPackagingSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "UObject/StrongObjectPtr.h"
-#include "Settings/ProjectPackagingSettings.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
 using namespace SpatialGDKEditor;
@@ -228,7 +229,7 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	}
 }
 
-void FSpatialGDKEditor::WarnIfManualWorkerConnectionSet(FString LaunchConfigPath)
+bool FSpatialGDKEditor::IsManualWorkerConnectionSet(const FString& LaunchConfigPath)
 {
 	FString FileContents;
 	FFileHelper::LoadFileToString(FileContents, LaunchConfigPath.GetCharArray().GetData());
@@ -238,19 +239,24 @@ void FSpatialGDKEditor::WarnIfManualWorkerConnectionSet(FString LaunchConfigPath
 
 	if (ManualWorkerFlagMatcher.FindNext())
 	{
-		UE_LOG(LogSpatialGDKEditor, Warning, TEXT("A cloud deployment with \"manual_worker_connection_only\" set to true was launched. This means the server worker will need to be connected manually."));
-		
-		FNotificationInfo Info(FText::FromString(TEXT("Manual worker connection only set for cloud build")));
-		Info.bUseSuccessFailIcons = false;
-		Info.bFireAndForget = false;
-		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+		UE_LOG(LogSpatialGDKEditor, Warning, TEXT("Launch configuration for cloud deployment has \"manual_worker_connection_only\" set to true. This means server workers will need to be connected manually."));
+		return true;
 	}
+
+	return false;
 }
 
 void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	WarnIfManualWorkerConnectionSet(SpatialGDKSettings->GetPrimaryLaunchConfigPath());
+	if (IsManualWorkerConnectionSet(SpatialGDKSettings->GetPrimaryLaunchConfigPath()))
+	{
+		if (!FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("AllowManualWorkerConnection", "Chosen launch configuration will not automatically launch servers. Do you want to continue?")) == EAppReturnType::Yes)
+		{
+			FailureCallback.ExecuteIfBound();
+			return;
+		}
+	}
 
 #if ENGINE_MINOR_VERSION <= 22
 	LaunchCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
