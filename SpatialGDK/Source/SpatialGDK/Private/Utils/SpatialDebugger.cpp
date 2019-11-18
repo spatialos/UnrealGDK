@@ -35,7 +35,7 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	// For GDK design reasons, this is the approach chosen to get a pointer
 	// on the net driver to the client ASpatialDebugger.  Various alternatives
 	// were considered and this is the best of a bad bunch.
-	if (NetDriver != nullptr &&	!NetDriver->IsServer())
+	if (NetDriver != nullptr && GetNetMode() == NM_Client)
 	{
 		NetDriver->SetSpatialDebugger(this);
 	}
@@ -248,6 +248,14 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 	SCOPE_CYCLE_COUNTER(STAT_DrawDebug);
 
 	check(NetDriver != nullptr && !NetDriver->IsServer());
+
+#if WITH_EDITOR
+	// Prevent one client's data rendering in another client's view in PIE when using UDebugDrawService.  Lifted from EQSRenderingComponent.
+	if (Canvas && Canvas->SceneView && Canvas->SceneView->Family && Canvas->SceneView->Family->Scene && Canvas->SceneView->Family->Scene->GetWorld() != GetWorld())
+	{
+		return;
+	}
+#endif
 
 	DrawDebugLocalPlayer(Canvas);
 

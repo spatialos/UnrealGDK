@@ -30,7 +30,7 @@ DECLARE_CYCLE_STAT(TEXT("DrawText"), STAT_DrawText, STATGROUP_SpatialDebugger);
 DECLARE_CYCLE_STAT(TEXT("BuildText"), STAT_BuildText, STATGROUP_SpatialDebugger);
 DECLARE_CYCLE_STAT(TEXT("SortingActors"), STAT_SortingActors, STATGROUP_SpatialDebugger);
 
-UCLASS(SpatialType=Singleton, Blueprintable, NotPlaceable)
+UCLASS(SpatialType=(Singleton, NotPersistent), Blueprintable, NotPlaceable)
 class SPATIALGDK_API ASpatialDebugger :
 	public AInfo
 {
