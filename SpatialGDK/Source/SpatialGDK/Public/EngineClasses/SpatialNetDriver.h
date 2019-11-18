@@ -279,5 +279,6 @@ private:
 	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
 	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
 
-	bool IsGSMReadyForServerTravel();
+	void MakePlayerSpawnRequest();
+	bool CanSendPlayerSpawnRequests();
 };

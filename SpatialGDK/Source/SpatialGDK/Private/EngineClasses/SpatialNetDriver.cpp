@@ -472,7 +472,7 @@ void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 	GetWorld()->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
 }
 
-bool USpatialNetDriver::IsGSMReadyForServerTravel()
+bool USpatialNetDriver::CanSendPlayerSpawnRequests()
 {
 	return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
 }
@@ -480,7 +480,7 @@ bool USpatialNetDriver::IsGSMReadyForServerTravel()
 void USpatialNetDriver::OnQueryGSMSuccess()
 {
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
-	if (bWaitingToSpawn && IsGSMReadyForServerTravel())
+	if (bWaitingToSpawn && CanSendPlayerSpawnRequests())
 	{
 		UWorld* CurrentWorld = GetWorld();
 		const FString& DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
@@ -501,6 +501,10 @@ void USpatialNetDriver::OnQueryGSMSuccess()
 			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
 			WorldContext.PendingNetGame->bSentJoinRequest = false;
 			WorldContext.PendingNetGame->URL = RedirectURL;
+		}
+		else
+		{
+			MakePlayerSpawnRequest();
 		}
 	}
 }
@@ -549,14 +553,22 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			UE_LOG(LogSpatial, Log, TEXT("Trying to call GlobalStateManager->SetAcceptingPlayers(true) when GlobalStateManager is nullptr"),);
 		}
 	}
-	else if (IsGSMReadyForServerTravel())
+	else if (CanSendPlayerSpawnRequests())
+	{
+		MakePlayerSpawnRequest();
+	}
+
+	bMapLoaded = true;
+}
+
+void USpatialNetDriver::MakePlayerSpawnRequest()
+{
+	if (bWaitingToSpawn)
 	{
 		PlayerSpawner->SendPlayerSpawnRequest();
 		bWaitingToSpawn = false;
 		bPersistSpatialConnection = false;
 	}
-
-	bMapLoaded = true;
 }
 
 void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
