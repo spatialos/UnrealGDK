@@ -12,7 +12,6 @@
 
 #include "AssetDataTagMap.h"
 #include "AssetRegistryModule.h"
-#include "Framework/Notifications/NotificationManager.h"
 #include "GeneralProjectSettings.h"
 #include "Internationalization/Regex.h"
 #include "Misc/FileHelper.h"
@@ -21,7 +20,6 @@
 #include "Settings/ProjectPackagingSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "UObject/StrongObjectPtr.h"
-#include "Widgets/Notifications/SNotificationList.h"
 
 using namespace SpatialGDKEditor;
 
