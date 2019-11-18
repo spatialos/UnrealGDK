@@ -110,6 +110,9 @@ public:
 
 	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
 	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
+
+	Worker_ComponentId GetComponentIdForComponentClass(const UClass& ActorClass, const UClass& ComponentClass) const;
+	TArray<Worker_ComponentId> GetComponentIdsForComponentClassHierarchy(const UClass& ActorClass, const UClass& ComponentClass, const bool bIncludeDerivedTypes = true) const;
 	
 	const FRPCInfo& GetRPCInfo(UObject* Object, UFunction* Function);
 

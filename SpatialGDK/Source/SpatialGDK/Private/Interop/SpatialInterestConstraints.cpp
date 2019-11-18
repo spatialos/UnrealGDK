@@ -114,16 +114,23 @@ void UActorClassConstraint::CreateConstraint(const USpatialClassInfoManager& Cla
 
 void UComponentClassConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
-	if (!ComponentClass.Get())
+	if (!ComponentClass.Get() || !ActorClass.Get())
 	{
 		return;
 	}
 
-	TArray<Worker_ComponentId> ComponentIds = ClassInfoManager.GetComponentIdsForClassHierarchy(*ComponentClass.Get(), bIncludeDerivedClasses);
-	for (Worker_ComponentId ComponentId : ComponentIds)
+	TArray<Worker_ComponentId> ComponentIds = ClassInfoManager.GetComponentIdsForComponentClassHierarchy(*ActorClass.Get(), *ComponentClass.Get(), bIncludeDerivedClasses);
+	if (ComponentIds.Num() > 1)
 	{
-		SpatialGDK::QueryConstraint ComponentTypeConstraint;
-		ComponentTypeConstraint.ComponentConstraint = ComponentId;
-		OutConstraint.OrConstraint.Add(ComponentTypeConstraint);
+		for (Worker_ComponentId ComponentId : ComponentIds)
+		{
+			SpatialGDK::QueryConstraint ComponentTypeConstraint;
+			ComponentTypeConstraint.ComponentConstraint = ComponentId;
+			OutConstraint.OrConstraint.Add(ComponentTypeConstraint);
+		}
+	}
+	else if (ComponentIds.Num() == 1)
+	{
+		OutConstraint.ComponentConstraint = ComponentIds[0];
 	}
 }

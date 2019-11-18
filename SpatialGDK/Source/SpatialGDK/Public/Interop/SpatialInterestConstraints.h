@@ -281,11 +281,14 @@ public:
 
 	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const override;
 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Actor Class Constraint")
+	TSubclassOf<AActor> ActorClass;
+
 	/** The base type of component that this constraint will capture. */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Component Class Constraint")
 	TSubclassOf<UActorComponent> ComponentClass;
 
 	/** Whether this constraint should capture derived types. */
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Component Class Constraint")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Actor Class Constraint")
 	bool bIncludeDerivedClasses = true;
 };

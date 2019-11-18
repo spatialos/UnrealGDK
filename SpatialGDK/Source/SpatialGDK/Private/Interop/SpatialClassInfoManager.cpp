@@ -395,6 +395,56 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHier
 	return OutComponentIds;
 }
 
+Worker_ComponentId USpatialClassInfoManager::GetComponentIdForComponentClass(const UClass& ActorClass, const UClass& ComponentClass) const
+{
+	const FString ClassPath = ActorClass.GetPathName();
+	TArray<Worker_ComponentId> ComponentIds;
+	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(ActorClass.GetPathName()))
+	{
+		for (const auto& Entry : ActorSchemaData->SubobjectData)
+		{
+			if (Entry.Value.ClassPath == ComponentClass.GetPathName())
+			{
+				return Entry.Value.SchemaComponents[SCHEMA_Data];
+			}
+		}
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
+}
+
+TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForComponentClassHierarchy(const UClass& ActorClass, const UClass& ComponentClass, const bool bIncludeDerivedTypes /* = true */) const
+{
+	TArray<Worker_ComponentId> OutComponentIds;
+
+	check(SchemaDatabase);
+	if (bIncludeDerivedTypes)
+	{
+		for (TObjectIterator<UClass> It; It; ++It)
+		{
+			const UClass* Class = *It;
+			check(Class);
+			if (Class->IsChildOf(&ActorClass))
+			{
+				Worker_ComponentId ComponentId = GetComponentIdForComponentClass(*Class, ComponentClass);
+				if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+				{
+					OutComponentIds.Add(ComponentId);
+				}
+			}
+		}
+	}
+	else
+	{
+		Worker_ComponentId ComponentId = GetComponentIdForComponentClass(ActorClass, ComponentClass);
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			OutComponentIds.Add(ComponentId);
+		}
+	}
+
+	return OutComponentIds;
+}
+
 
 bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
 {
