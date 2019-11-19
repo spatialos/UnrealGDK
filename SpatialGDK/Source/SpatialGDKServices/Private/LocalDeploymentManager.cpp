@@ -34,7 +34,6 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	, bStartingSpatialService(false)
 	, bStoppingSpatialService(false)
 {
-#if PLATFORM_WINDOWS
 	// Don't kick off background processes when running commandlets
 	const bool bCommandletRunning = IsRunningCommandlet();
 
@@ -56,12 +55,10 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 
 	// Watch the worker config directory for changes.
 	StartUpWorkerConfigDirectoryWatcher();
-#endif // PLATFORM_WINDOWS
 }
 
 void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 {
-#if PLATFORM_WINDOWS
 	if (bLocalDeploymentManagerEnabled)
 	{
 		// If a service was running, restart to guarantee that the service is running in this project with the correct settings.
@@ -86,7 +83,6 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 			RefreshServiceStatus();
 		});
 	}
-#endif // PLATFORM_WINDOWS
 }
 
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
