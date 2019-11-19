@@ -192,7 +192,7 @@ void USpatialGDKEditorSettings::SetNumberOfSimulatedPlayers(uint32 Number)
 	SaveConfig();
 }
 
-bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& LaunchConfigPath) const
+bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& LaunchConfigPath)
 {
 	FString FileContents;
 	FFileHelper::LoadFileToString(FileContents, *LaunchConfigPath);

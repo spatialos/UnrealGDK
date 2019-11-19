@@ -321,7 +321,7 @@ private:
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
-	bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath) const;
+	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath);
 
 public:
 	/** If you have selected **Auto-generate launch configuration file**, you can change the default options in the file from the drop-down menu. */
