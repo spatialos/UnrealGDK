@@ -50,7 +50,7 @@ $tests_passed = $test_results_obj.failed -eq 0
 
 # Upload artifacts to Buildkite, merge all output streams to extract artifact ID in the Slack message generation
 $ErrorActionPreference = "Continue" # For some reason every piece of output being piped is considered an error
-$upload_output = buildkite-agent "artifact" "upload" "$test_result_dir\*" *>&1 | %{ "$_" } | Out-String
+$upload_output = buildkite-agent artifact upload "$test_result_dir\*" *>&1 | %{ "$_" } | Out-String
 $ErrorActionPreference = "Stop" # Restore preference
 
 # Artifacts are assigned an ID upon upload, so grab IDs from upload process output to build the artifact URLs
@@ -97,7 +97,7 @@ $slack_attachment = [ordered]@{
 
 $slack_attachment | ConvertTo-Json | Set-Content -Path "$test_result_dir\slack_attachment_$env:BUILDKITE_STEP_ID.json"
 
-buildkite-agent "artifact" "upload" "$test_result_dir\slack_attachment_$env:BUILDKITE_STEP_ID.json"
+buildkite-agent artifact upload "$test_result_dir\slack_attachment_$env:BUILDKITE_STEP_ID.json"
 
 # Fail this build if any tests failed
 if (-Not $tests_passed) {
