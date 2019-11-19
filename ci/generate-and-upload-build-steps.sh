@@ -1,9 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# This script generates steps for each engine version listed in unreal-engine.version, and adds those to generated_base.steps.yaml
-# The steps are based on the template in generated_steps.steps.yaml
-
+# This script generates steps for each engine version listed in unreal-engine.version, based on the gdk_build.template.steps.yaml template
 if [ -z "${ENGINE_VERSION}" ]; then 
     echo "Generating build steps for each engine version listed in unreal-engine.version"  
     IFS=$'\n'
