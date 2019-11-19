@@ -496,7 +496,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 	{
 		if (ToolbarPtr)
 		{
-			ToolbarPtr->OnShowFailedNotification("Deployment configuration is not valid.");
+			ToolbarPtr->OnShowFailedNotification(TEXT("Deployment configuration is not valid."));
 		}
 
 		return FReply::Handled();
@@ -506,7 +506,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 	{
 		if (ToolbarPtr)
 		{
-			ToolbarPtr->OnShowTaskStartNotification("Starting cloud deployment...");
+			ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
 		}
 
 		SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
@@ -550,7 +550,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
 
 		FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
-		if (ToolbarPtr)
+		if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 		{
 			ToolbarPtr->OnShowTaskStartNotification("Stopping cloud deployment ...");
 		}
