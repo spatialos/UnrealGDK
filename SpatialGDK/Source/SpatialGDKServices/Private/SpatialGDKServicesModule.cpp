@@ -20,8 +20,14 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKServices);
 
 IMPLEMENT_MODULE(FSpatialGDKServicesModule, SpatialGDKServices);
 
+#if PLATFORM_WINDOWS
 const FString SpatialExe = TEXT("spatial.exe");
 const FString SpotExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe"));
+#elif PLATFORM_MAC
+const FString SpatialExe = TEXT("/usr/local/bin/spatial");
+const FString SpotExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot"));
+#endif
+
 static const FName SpatialOutputLogTabName = FName(TEXT("SpatialOutputLog"));
 
 TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
@@ -96,7 +102,7 @@ bool FSpatialGDKServicesModule::SpatialPreRunChecks()
 
 	if (ExitCode != 0)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Spatial.exe does not exist on this machine! Please make sure Spatial is installed before trying to start a local deployment. %s"), *SpatialExistenceCheckResult);
+		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("%s does not exist on this machine! Please make sure Spatial is installed before trying to start a local deployment. %s"), *SpatialExe, *SpatialExistenceCheckResult);
 		return false;
 	}
 
@@ -106,7 +112,7 @@ bool FSpatialGDKServicesModule::SpatialPreRunChecks()
 
 	if (ExitCode != 0)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Spot.exe does not exist on this machine! Please make sure to run Setup.bat in the UnrealGDK Plugin before trying to start a local deployment."));
+		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("%s does not exist on this machine! Please make sure to run Setup.bat in the UnrealGDK Plugin before trying to start a local deployment."), *SpotExe);
 		return false;
 	}
 

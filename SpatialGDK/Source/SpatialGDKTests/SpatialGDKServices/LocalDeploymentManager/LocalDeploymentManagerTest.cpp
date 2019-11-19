@@ -35,8 +35,7 @@ namespace
 		FString BuildConfigArgs = TEXT("worker build build-config");
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
-		const FString SpatialExe(TEXT("spatial.exe"));
-		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialExe, BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
+		FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
 
 		const int32 ExitCodeSuccess = 0;
 		return (ExitCode == ExitCodeSuccess);
