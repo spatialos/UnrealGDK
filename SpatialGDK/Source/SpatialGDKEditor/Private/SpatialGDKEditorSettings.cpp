@@ -192,7 +192,6 @@ void USpatialGDKEditorSettings::SetNumberOfSimulatedPlayers(uint32 Number)
 	SaveConfig();
 }
 
-
 bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& LaunchConfigPath) const
 {
 	FString FileContents;
@@ -209,7 +208,6 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 
 	return false;
 }
-
 
 bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 {
