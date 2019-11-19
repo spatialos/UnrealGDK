@@ -8,13 +8,17 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorCloudLauncher);
 
+namespace
+{
+	const FString LauncherExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher/DeploymentLauncher.exe"));
+}
+
 bool SpatialGDKCloudLaunch()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	const FString LauncherExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher/DeploymentLauncher.exe"));
 
-	FString LauncherArguments = FString::Printf(
+	FString LauncherCreateArguments = FString::Printf(
 		TEXT("create %s %s %s \"%s\" \"%s\" %s"),
 		*FSpatialGDKServicesModule::GetProjectName(),
 		*SpatialGDKSettings->GetAssemblyName(),
@@ -26,9 +30,9 @@ bool SpatialGDKCloudLaunch()
 
 	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
 	{
-		LauncherArguments = FString::Printf(
+		LauncherCreateArguments = FString::Printf(
 			TEXT("%s %s \"%s\" %s %s"),
-			*LauncherArguments,
+			*LauncherCreateArguments,
 			*SpatialGDKSettings->GetSimulatedPlayerDeploymentName(),
 			*SpatialGDKSettings->GetSimulatedPlayerLaunchConfigPath(),
 			*SpatialGDKSettings->GetSimulatedPlayerRegionCode().ToString(),
@@ -40,7 +44,7 @@ bool SpatialGDKCloudLaunch()
 	FString OutString;
 	FString OutErr;
 
-	bool bSuccess = FPlatformProcess::ExecProcess(*LauncherExe, *LauncherArguments, &OutCode, &OutString, &OutErr);
+	bool bSuccess = FPlatformProcess::ExecProcess(*LauncherExe, *LauncherCreateArguments, &OutCode, &OutString, &OutErr);
 	if (OutCode != 0)
 	{
 		UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("Cloud Launch failed with code %d: %s"), OutCode, *OutString);
@@ -58,7 +62,6 @@ bool SpatialGDKCloudStop()
 	// TODO: UNR-2435 - Add a Stop Deployment button and fix the code below:
 	// get and provide deployment-id to stop the deployment as one of the LauncherStopArguments
 	const FString LauncherStopArguments = TEXT("stop");
-	const FString LauncherExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher/DeploymentLauncher.exe"));
 
 	int32 OutCode = 0;
 	FString OutString;
