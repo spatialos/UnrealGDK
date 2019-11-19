@@ -36,6 +36,7 @@ steps:
       - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
     env:
       ENGINE_COMMIT_HASH: "ENGINE_COMMIT_HASH_PLACEHOLDER"
+      BUILD_CONFIGURATION: "BUILD_CONFIGURATION_PLACEHOLDER"
 
   - label: "build-GDK-:linux:-ENGINE_COMMIT_HASH_PLACEHOLDER"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
@@ -44,3 +45,4 @@ steps:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
     env:
       ENGINE_COMMIT_HASH: "ENGINE_COMMIT_HASH_PLACEHOLDER"
+      BUILD_CONFIGURATION: "BUILD_CONFIGURATION_PLACEHOLDER"
