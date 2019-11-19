@@ -4,6 +4,7 @@
 
 #include "Internationalization/Regex.h"
 #include "ISettingsModule.h"
+#include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
 #include "Settings/LevelEditorPlaySettings.h"
@@ -12,6 +13,7 @@
 #include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
+#define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -190,6 +192,25 @@ void USpatialGDKEditorSettings::SetNumberOfSimulatedPlayers(uint32 Number)
 	SaveConfig();
 }
 
+
+bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& LaunchConfigPath) const
+{
+	FString FileContents;
+	FFileHelper::LoadFileToString(FileContents, *LaunchConfigPath);
+
+	const FRegexPattern ManualWorkerFlagPattern("\"manual_worker_connection_only\" *: *true");
+	FRegexMatcher ManualWorkerFlagMatcher(ManualWorkerFlagPattern, FileContents);
+
+	if (ManualWorkerFlagMatcher.FindNext())
+	{
+		UE_LOG(LogSpatialEditorSettings, Warning, TEXT("Launch configuration for cloud deployment has \"manual_worker_connection_only\" set to true. This means server workers will need to be connected manually."));
+		return true;
+	}
+
+	return false;
+}
+
+
 bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 {
 	bool bValid = true;
@@ -235,6 +256,15 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		{
 			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player launch config path cannot be empty."));
 			bValid = false;
+		}
+	}
+
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (IsManualWorkerConnectionSet(SpatialGDKSettings->GetPrimaryLaunchConfigPath()))
+	{
+		if (!FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("AllowManualWorkerConnection", "Chosen launch configuration will not automatically launch servers. Do you want to continue?")) == EAppReturnType::Yes)
+		{
+			return false;
 		}
 	}
 
