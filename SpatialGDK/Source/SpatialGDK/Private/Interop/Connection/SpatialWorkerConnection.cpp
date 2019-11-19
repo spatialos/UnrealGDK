@@ -27,7 +27,6 @@ using namespace SpatialGDK;
 void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
 {
 	GameInstance = InGameInstance;
-	StaticComponentView = NewObject<USpatialStaticComponentView>();
 }
 
 void USpatialWorkerConnection::FinishDestroy()
