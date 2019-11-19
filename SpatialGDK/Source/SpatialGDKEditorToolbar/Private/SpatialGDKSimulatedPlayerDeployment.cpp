@@ -548,24 +548,29 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnRefreshClicked()
 FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 {
 	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
-		FNotificationInfo Info(FText::FromString(TEXT("Stopping cloud deployment ...")));
-		Info.bUseSuccessFailIcons = true;
-		Info.bFireAndForget = false;
 
-		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-
-		NotificationItem->SetCompletionState(SNotificationItem::CS_Pending);
+		FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
+		if (ToolbarPtr)
+		{
+			ToolbarPtr->OnShowTaskStartNotification("Stopping cloud deployment ...");
+		}
 
 		SpatialGDKEditorSharedPtr->StopCloudDeployment(
-				FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("Successfully launched the stop cloud deployments command.")));
-				NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
+			FSimpleDelegate::CreateLambda([]()
+			{
+				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				{
+					ToolbarPtr->OnShowSuccessNotification("Successfully launched the stop cloud deployments command.");
+				}
 			}),
-				FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("Failed to launch the DeploymentLauncher script properly.")));
-				NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-			})
-		);
+
+			FSimpleDelegate::CreateLambda([]()
+			{
+				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				{
+					ToolbarPtr->OnShowFailedNotification("Failed to launch the DeploymentLauncher script properly.");
+				}
+			}));
 	}
 	return FReply::Handled();
 }
