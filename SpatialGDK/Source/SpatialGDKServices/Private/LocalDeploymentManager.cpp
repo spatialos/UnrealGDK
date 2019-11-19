@@ -9,10 +9,19 @@
 #include "FileCache.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/Connection/EditorWorkerController.h"
+#include "Internationalization/Regex.h"
+#include "Internationalization/Internationalization.h"
+#include "IPAddress.h"
 #include "Json/Public/Dom/JsonObject.h"
+#include "Misc/MessageDialog.h"
 #include "SpatialGDKServicesModule.h"
+#include "SocketSubsystem.h"
+#include "Sockets.h"
+#include "UObject/CoreNet.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
+
+#define LOCTEXT_NAMESPACE "FLocalDeploymentManager"
 
 static const FString SpatialServiceVersion(TEXT("20190930.180414.3b04a59226"));
 
@@ -27,31 +36,46 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 {
 #if PLATFORM_WINDOWS
 	// Don't kick off background processes when running commandlets
-	if (IsRunningCommandlet() == false)
+	const bool bCommandletRunning = IsRunningCommandlet();
+
+	// Check for the existence of Spatial and Spot. If they don't exist then don't start any background processes.
+	const bool bSpatialServicesAvailable = FSpatialGDKServicesModule::SpatialPreRunChecks();
+
+	if (bCommandletRunning || !bSpatialServicesAvailable)
 	{
-		// Check for the existence of Spatial and Spot. If they don't exist then don't start any background processes. Disable spatial networking if either is true.
-		if (!FSpatialGDKServicesModule::SpatialPreRunChecks())
+		if (!bSpatialServicesAvailable)
 		{
-			UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Pre run checks for LocalDeploymentManager failed. Local deployments cannot be started. Spatial networking will be disabled."));
-			GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = false;
-			return;
+			UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Pre run checks for LocalDeploymentManager failed. Local deployments cannot be started."));
 		}
+		bLocalDeploymentManagerEnabled = false;
+		return;
+	}
 
-		// Ensure the worker.jsons are up to date.
-		WorkerBuildConfigAsync();
+	// Ensure the worker.jsons are up to date.
+	WorkerBuildConfigAsync();
 
-		// Watch the worker config directory for changes.
-		StartUpWorkerConfigDirectoryWatcher();
+	// Watch the worker config directory for changes.
+	StartUpWorkerConfigDirectoryWatcher();
+#endif // PLATFORM_WINDOWS
+}
 
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
+{
+#if PLATFORM_WINDOWS
+	if (bLocalDeploymentManagerEnabled)
+	{
+		// If a service was running, restart to guarantee that the service is running in this project with the correct settings.
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("(Re)starting Spatial service in this project."));
+
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeIPToExpose]
 		{
 			// Stop existing spatial service to guarantee that any new existing spatial service would be running in the current project.
 			TryStopSpatialService();
-
 			// Start spatial service in the current project if spatial networking is enabled
-			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+			
+			if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 			{
-				TryStartSpatialService();
+				TryStartSpatialService(RuntimeIPToExpose);
 			}
 			else
 			{
@@ -62,7 +86,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 			RefreshServiceStatus();
 		});
 	}
-#endif
+#endif // PLATFORM_WINDOWS
 }
 
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
@@ -114,6 +138,11 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 
 void FLocalDeploymentManager::RefreshServiceStatus()
 {
+	if(!bLocalDeploymentManagerEnabled)
+	{
+		return;
+	}
+
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		IsServiceRunningAndInCorrectDirectory();
@@ -136,8 +165,125 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 	});
 }
 
-bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName)
+bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 {
+	ISocketSubsystem* SocketSubsystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
+	bool bCanBindToPort = false;
+
+	// Set our broadcast address.
+	TSharedRef<FInternetAddr> BroadcastAddr = SocketSubsystem->CreateInternetAddr();
+	BroadcastAddr->SetBroadcastAddress();
+	BroadcastAddr->SetPort(Port);
+	
+	// Now the listen address.
+	TSharedRef<FInternetAddr> ListenAddr = SocketSubsystem->GetLocalBindAddr(*GLog);
+	ListenAddr->SetPort(Port);
+	const FString SocketName = TEXT("Runtime Port Test");
+
+	// Now create and set up our sockets.
+	FSocket* ListenSocket = SocketSubsystem->CreateSocket(NAME_Stream, SocketName, false /* bForceUDP */);
+	if (ListenSocket != nullptr)
+	{
+		ListenSocket->SetReuseAddr();
+		ListenSocket->SetNonBlocking();
+		ListenSocket->SetRecvErr();
+	
+		// Bind to our listen port.
+		if (ListenSocket->Bind(*ListenAddr))
+		{
+			bCanBindToPort = ListenSocket->Listen(0 /* MaxBacklog*/ );
+			ListenSocket->Close();
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Failed to bind listen socket to addr (%s) for %s, the port is likely in use"), *ListenAddr->ToString(true), *SocketName);
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Failed to create listen socket for %s, the port is likely in use"), *SocketName);
+	}
+
+	// Either we couldn't create the socket or couldn't listen on it so the port is probably bound.
+	return !bCanBindToPort;
+}
+
+bool FLocalDeploymentManager::KillProcessBlockingPort(int32 Port)
+{
+	bool bSuccess = true;
+
+	const FString NetStatCmd = FString::Printf(TEXT("netstat"));
+
+	// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
+	const FString NetStatArgs = TEXT("-n -o -a");
+	FString NetStatResult;
+	int32 ExitCode;
+	FString StdErr;
+	bSuccess = FPlatformProcess::ExecProcess(*NetStatCmd, *NetStatArgs, &ExitCode, &NetStatResult, &StdErr);
+
+	if (ExitCode == ExitCodeSuccess && bSuccess)
+	{
+		// Get the line of the netstat output that contains the port we're looking for.
+		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), RequiredRuntimePort));
+		FRegexMatcher PidMatcher(PidMatcherPattern, NetStatResult);
+		if (PidMatcher.FindNext())
+		{
+			FString Pid = PidMatcher.GetCaptureGroup(3 /* Get the PID, which is the third group. */);
+
+			const FString TaskKillCmd = TEXT("taskkill");
+			const FString TaskKillArgs = FString::Printf(TEXT("/F /PID %s"), *Pid);
+			FString TaskKillResult;
+			bSuccess = FPlatformProcess::ExecProcess(*TaskKillCmd, *TaskKillArgs, &ExitCode, &TaskKillResult, &StdErr);
+			bSuccess = bSuccess && ExitCode == ExitCodeSuccess;
+			if (!bSuccess)
+			{
+				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to kill process blocking required port. Error: %s"), *StdErr);
+			}
+		}
+		else
+		{
+			bSuccess = false;
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find PID of the process that is blocking the runtime port."));
+		}
+	}
+	else
+	{
+		bSuccess = false;
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to find the process that is blocking required port. Error: %s"), *StdErr);
+	}
+
+	return bSuccess;
+}
+
+bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
+{
+	bool bSuccess = true;
+
+	// Check for the known runtime port (5301) which could be blocked.
+	if (CheckIfPortIsBound(RequiredRuntimePort))
+	{
+		// If it exists offer the user the ability to kill it.
+		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess", "A required port is blocked by another process (potentially by an old deployment). Would you like to kill this process?")) == EAppReturnType::Yes)
+		{
+			bSuccess = KillProcessBlockingPort(RequiredRuntimePort);
+		}
+		else
+		{
+			bSuccess = false;
+		}
+	}
+
+	return bSuccess;
+}
+
+bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose)
+{
+	if (!bLocalDeploymentManagerEnabled)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment manager is disabled because spatial services are unavailable."));
+		return false;
+	}
+
 	bRedeployRequired = false;
 
 	if (bStoppingDeployment)
@@ -155,14 +301,27 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		return false;
 	}
 
+	if (!LocalDeploymentPreRunChecks())
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to start a local deployment but a required port is already bound by another process."));
+		return false;
+	}
+
 	LocalRunningDeploymentID.Empty();
 
 	bStartingDeployment = true;
 
+	// Stop the currently running service if the runtime IP is to be exposed, but is different from the one specified
+	if (ExposedRuntimeIP != RuntimeIPToExpose)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Settings for exposing runtime IP have changed since service startup. Restarting service to reflect changes."));
+		TryStopSpatialService();
+	}
+
 	// If the service is not running then start it.
 	if (!bSpatialServiceRunning)
 	{
-		TryStartSpatialService();
+		TryStartSpatialService(RuntimeIPToExpose);
 	}
 
 	SnapshotName.RemoveFromEnd(TEXT(".snapshot"));
@@ -290,17 +449,36 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	return bSuccess;
 }
 
-bool FLocalDeploymentManager::TryStartSpatialService()
+bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
 {
+	if (!bLocalDeploymentManagerEnabled)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment manager is disabled because spatial services are unavailable."));
+		return false;
+	}
+
 	if (bSpatialServiceRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start spatial service but it is already running."));
+		return false;
+	}
+	else if (bStartingSpatialService)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start spatial service but it is already being started."));
 		return false;
 	}
 
 	bStartingSpatialService = true;
 
 	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s"), *SpatialServiceVersion);
+
+	// Pass exposed runtime IP if one has been specified
+	if (!RuntimeIPToExpose.IsEmpty())
+	{
+		SpatialServiceStartArgs.Append(FString::Printf(TEXT(" --runtime_ip=%s"), *RuntimeIPToExpose));
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Trying to start spatial service with exposed runtime ip: %s"), *RuntimeIPToExpose);
+	}
+
 	FString ServiceStartResult;
 	int32 ExitCode;
 
@@ -308,21 +486,17 @@ bool FLocalDeploymentManager::TryStartSpatialService()
 
 	bStartingSpatialService = false;
 
-	if (ExitCode != ExitCodeSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service failed to start! %s"), *ServiceStartResult);
-		return false;
-	}
-
-	if (ServiceStartResult.Contains(TEXT("RUNNING")))
+	if (ExitCode == ExitCodeSuccess && ServiceStartResult.Contains(TEXT("RUNNING")))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service started!"));
+		ExposedRuntimeIP = RuntimeIPToExpose;
 		bSpatialServiceRunning = true;
 		return true;
 	}
 	else
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service failed to start! %s"), *ServiceStartResult);
+		ExposedRuntimeIP = TEXT("");
 		bSpatialServiceRunning = false;
 		bLocalDeploymentRunning = false;
 		return false;
@@ -331,6 +505,17 @@ bool FLocalDeploymentManager::TryStartSpatialService()
 
 bool FLocalDeploymentManager::TryStopSpatialService()
 {
+	if (!bLocalDeploymentManagerEnabled)
+	{
+		return false;
+	}
+
+	if (bStoppingSpatialService)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Tried to stop spatial service but it is already being stopped."));
+		return false;
+	}
+
 	bStoppingSpatialService = true;
 
 	FString SpatialServiceStartArgs = TEXT("service stop");
@@ -343,6 +528,7 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 	if (ExitCode == ExitCodeSuccess)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service stopped!"));
+		ExposedRuntimeIP = TEXT("");
 		bSpatialServiceRunning = false;
 		bSpatialServiceInProjectDirectory = true;
 		bLocalDeploymentRunning = false;
@@ -425,6 +611,11 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 
 bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
 {
+	if (!bLocalDeploymentManagerEnabled)
+	{
+		return false;
+	}
+
 	FString SpotProjectInfoArgs = TEXT("alpha service project-info --json");
 	FString SpotProjectInfoResult;
 	FString StdErr;
@@ -484,6 +675,7 @@ bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
 			UE_LOG(LogSpatialDeploymentManager, Error,
 				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
 
+			ExposedRuntimeIP = TEXT("");
 			bSpatialServiceInProjectDirectory = false;
 			bSpatialServiceRunning = false;
 			bLocalDeploymentRunning = false;

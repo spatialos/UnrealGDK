@@ -9,6 +9,7 @@
 #include "TimerManager.h"
 #include "UObject/CoreOnline.h"
 
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "SpatialConstants.h"
@@ -18,24 +19,25 @@
 
 #include "SpatialNetDriver.generated.h"
 
+class ASpatialMetricsDisplay;
+class UAbstractLBStrategy;
+class UActorGroupManager;
+class UEntityPool;
+class UGlobalStateManager;
+class USnapshotManager;
 class USpatialActorChannel;
+class USpatialClassInfoManager;
+class USpatialDispatcher;
+class USpatialLoadBalanceEnforcer;
+class USpatialMetrics;
 class USpatialNetConnection;
 class USpatialPackageMapClient;
-
-class USpatialWorkerConnection;
-class USpatialDispatcher;
-class USpatialSender;
-class USpatialReceiver;
-class UActorGroupManager;
-class USpatialClassInfoManager;
-class UGlobalStateManager;
+class USpatialGameInstance;
 class USpatialPlayerSpawner;
+class USpatialReceiver;
+class USpatialSender;
 class USpatialStaticComponentView;
-class USnapshotManager;
-class USpatialMetrics;
-class ASpatialMetricsDisplay;
-
-class UEntityPool;
+class USpatialWorkerConnection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -142,6 +144,10 @@ public:
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
+	UPROPERTY()
+	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
+	UPROPERTY()
+	UAbstractLBStrategy* LoadBalanceStrategy;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
@@ -183,6 +189,7 @@ public:
 #endif
 
 private:
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
@@ -266,4 +273,8 @@ private:
 	static const int32 EDITOR_TOMBSTONED_ENTITY_TRACKING_RESERVATION_COUNT = 256;
 	TArray<Worker_EntityId> TombstonedEntities;
 #endif
+
+	void StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist);
+	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
+	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
 };

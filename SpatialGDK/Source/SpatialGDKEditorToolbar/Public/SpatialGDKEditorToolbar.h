@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "Async/Future.h"
@@ -100,6 +101,8 @@ private:
 
 	bool IsSnapshotGenerated() const;
 	bool IsSchemaGenerated() const;
+
+	FString GetOptionalExposedRuntimeIP() const;
 
 	static void ShowCompileLog();
 
