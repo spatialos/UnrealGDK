@@ -514,7 +514,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 			{
 				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
-					ToolbarPtr->OnShowSuccessNotification("Successfully initiated launching of the cloud deployment.");
+					ToolbarPtr->OnShowSuccessNotification("Successfully launched cloud deployment.");
 				}
 			}),
 
@@ -522,7 +522,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 			{
 				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
-					ToolbarPtr->OnShowFailedNotification("Failed to launch the DeploymentLauncher script properly.");
+					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment.");
 				}
 			}));
 
@@ -560,7 +560,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 			{
 				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
-					ToolbarPtr->OnShowSuccessNotification("Successfully launched the stop cloud deployments command.");
+					ToolbarPtr->OnShowSuccessNotification("Successfully stopped cloud deployment.");
 				}
 			}),
 
@@ -568,7 +568,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 			{
 				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
-					ToolbarPtr->OnShowFailedNotification("Failed to launch the DeploymentLauncher script properly.");
+					ToolbarPtr->OnShowFailedNotification("Failed to stop cloud deployment.");
 				}
 			}));
 	}
