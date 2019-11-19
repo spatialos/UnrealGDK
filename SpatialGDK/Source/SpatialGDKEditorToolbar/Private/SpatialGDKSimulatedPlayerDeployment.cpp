@@ -549,7 +549,6 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 {
 	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
 
-		FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 		if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 		{
 			ToolbarPtr->OnShowTaskStartNotification("Stopping cloud deployment ...");
