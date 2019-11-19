@@ -71,6 +71,8 @@ private:
 	// This is the frequency at which check the 'spatial service status' to ensure we have the correct state as the user can change spatial service outside of the editor.
 	static const int32 RefreshFrequency = 3;
 
+	bool bLocalDeploymentManagerEnabled = true;
+
 	bool bLocalDeploymentRunning;
 	bool bSpatialServiceRunning;
 	bool bSpatialServiceInProjectDirectory;

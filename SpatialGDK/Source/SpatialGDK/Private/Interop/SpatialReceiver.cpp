@@ -1800,6 +1800,12 @@ bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel* Channel)
 	return false;
 }
 
+
+void USpatialReceiver::ClearPendingRPCs(Worker_EntityId EntityId)
+{
+	IncomingRPCs.DropForEntity(EntityId);
+}
+
 void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs)
 {
 	for (const FUnrealObjectRef& UnresolvedRef : UnresolvedRefs)

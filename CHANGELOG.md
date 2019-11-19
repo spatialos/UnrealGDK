@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 - The server no longer crashes, when received RPCs are processed recursively.
+- DeploymentLauncher can parse a .pb.json launch configuration.
 
 ### Features:
 - Added partial framework for use in future UnrealGDK controlled loadbalancing.
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug that caused entity pool reservations to cease after a request times out.
 - Running `BuildWorker.bat` for `SimulatedPlayer` no longer fails if the project path has a space in it.
 - Fixed a crash when starting PIE with out-of-date schema.
+- Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
 - Take into account OverrideSpatialNetworking command line argument as early as possible (LocalDeploymentManager used to query bSpatialNetworking before the command line was parsed).
 - Servers maintain interest in AlwaysRelevant Actors.
 
