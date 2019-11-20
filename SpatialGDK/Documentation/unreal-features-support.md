@@ -319,8 +319,8 @@ Support of Unreal features with the GDK in a single server-worker configuration:
  <tr>
     <td rowspan="3"><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling"><b>Travel<b></a></td>
     <td>Server Travel</td>
-    <td class="unplanned"></td>
-    <td>Server Travel is on the <a href="https://github.com/spatialos/UnrealGDK/projects/1#card-22461878"> roadmap</a> but is not currently supported.</td>
+    <td class="supported"></td>
+    <td>Not supported when used along side zoning or off-loading</td>
   </tr>
   <tr>
     <td>Client Travel</td>
