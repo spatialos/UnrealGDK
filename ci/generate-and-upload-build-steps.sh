@@ -2,12 +2,12 @@
 set -euo pipefail
 
 generate_build_configuration_steps () {
+    echo "debug:"
+    echo "$NIGHTLY_BUILD"
+    echo "${NIGHTLY_BUILD+x}"
+    echo ["$NIGHTLY_BUILD" = "true"]
+    echo "${NIGHTLY_BUILD+x}" = "x"
     if [ "${NIGHTLY_BUILD+x}" = "x" ] && ["$NIGHTLY_BUILD" = "true"]; then  # if NIGHTLY_BUILD exists AND is equal to "true"
-        echo "debug:"
-        echo "$NIGHTLY_BUILD"
-        echo "${NIGHTLY_BUILD+x}"
-        echo ["$NIGHTLY_BUILD" = "true"]
-        echo "${NIGHTLY_BUILD+x}" = "x"
         echo "This is a nightly build. Generating the appropriate steps..."
         for build_target_suffix in "" "Editor" "Server" "SimulatedPlayer"; do
             for build_state in "DebugGame" "Development" "Shipping" "Test"; do
