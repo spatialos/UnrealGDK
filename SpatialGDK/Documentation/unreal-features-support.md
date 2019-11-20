@@ -370,8 +370,8 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-US/Engine/Performance/UnrealInsights/">Unreal Insights</a></td>
-    <td class="unplanned"></td>
     <td></td>
+    <td class="unplanned"></td>
   </tr>
 
 <!-- ------ Unreal Engine Verions ------ -->
