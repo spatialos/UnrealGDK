@@ -47,17 +47,17 @@ The following tables show the state of support of Unreal Engine features on the 
         <td>Supported with caveats or workarounds</td>
         <td class="caveats"></td>
     </tr>
-    <!-- <tr>	
-        <td>Q2 - Q3 2019</td>	
-        <td class="indev"></td>	
+    <!-- <tr>
+        <td>Q2 - Q3 2019</td>
+        <td class="indev"></td>
     </tr> -->
     <tr>
         <td>Currently unplanned</td>
         <td class="unplanned"></td>
     </tr>
-    <!-- </tr>	
-        <td>Not applicable, or not planned to be delivered</td>	
-        <td class="na"></td>	
+    <!-- </tr>
+        <td>Not applicable, or not planned to be delivered</td>
+        <td class="na"></td>
     </tr> -->
 </table>
 
