@@ -9,7 +9,7 @@ $all_steps_passed = $true
 Get-ChildItem -Recurse "$PSScriptRoot/slack_attachments" -Filter *.json | Foreach-Object {
     $attachment = Get-Content -Path $_.FullName | Out-String | ConvertFrom-Json
     if ($attachment.color -eq "danger") {
-        all_steps_passed = $false
+        $all_steps_passed = $false
     }
     $attachments += $attachment
 }
