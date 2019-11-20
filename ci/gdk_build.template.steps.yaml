@@ -28,7 +28,7 @@ env:
   FASTBUILD_BROKERAGE_PATH: "\\\\fastbuild-brokerage.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba"
 
 steps:
-  - label: "build-BUILD_PLATFORM_TARGET-ENGINE_COMMIT_HASH_PLACEHOLDER-BUILD_STATE_PLACEHOLDER-BUILD_TARGET_SUFFIX_PLACEHOLDER"
+  - label: "build-BUILD_PLATFORM_PLACEHOLDER-ENGINE_COMMIT_HASH_PLACEHOLDER-BUILD_STATE_PLACEHOLDER-BUILD_TARGET_SUFFIX_PLACEHOLDER"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
