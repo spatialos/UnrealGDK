@@ -42,15 +42,23 @@ The following tables show the state of support of Unreal Engine features on the 
     <tr>
         <td>Fully supported, available now</td>
         <td class="supported"></td>
-    </tr>    
+    </tr>
     <tr>
         <td>Supported with caveats or workarounds</td>
         <td class="caveats"></td>
-    </tr>    
+    </tr>
+    <!-- <tr>	
+        <td>Q2 - Q3 2019</td>	
+        <td class="indev"></td>	
+    </tr> -->
     <tr>
         <td>Currently unplanned</td>
         <td class="unplanned"></td>
-    </tr>   
+    </tr>
+    <!-- </tr>	
+        <td>Not applicable, or not planned to be delivered</td>	
+        <td class="na"></td>	
+    </tr> -->
 </table>
 
 ## Single-Server Support
