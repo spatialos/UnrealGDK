@@ -2,78 +2,39 @@
 
 # Multiserver offloading
 
-## 2. Make gameplay changes
+## 2. Gameplay Changes
 
-### CrossServerPawn
+When using offloading, there are a few changes to gameplay logic that you need to make to support using multiple servers.
 
-A common scenario when building offloaded gameplay features is when interacting actors are offloaded to different workers. Traditionally, this would have been done by either having the actor performing an action on another actor invoking a function directly on the actor. This worked fine when there was only one server maintaining the entire state of the world that has authority over all actors in the simulation. In the case of offloading, this no longer the case if the two interacting actors have their authority assigned to different worker types.
+### RPCs
 
-To solve this, any functions invoked by the interacting actor will need to be handled via a [Cross-server RPCs]({{urlRoot}}/content/technical-overview/gdk-concepts#cross-server-rpcs).
-
-In the case of the example project, the turrets are set up to run on a separate worker(AIWorker). If a player shoots the turret, a call to TakeDamage is invoked which is part of the native Actor API in unreal. The TakeDamage function is not an RPC function so it would not be executed on the turrets unless they internally get routed to the AIWorker using a cross-server RPC.
-
-In the example project, this is implmented via a class called ACrossServerPawn which implements the actor interface and overrides the implementation for TakeDamage to invoke a new cross server rpc called TakeDamageCrossServer as shown in the snippet below:
-
+Sending an RPC to an Actor that is owned by a different server require using [Cross-server RPCs]({{urlRoot}}/content/technical-overview/gdk-concepts#cross-server-rpcs). This can be done in code using a custom function paramter.
 ```
-float ACrossServerPawn::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-    TakeDamageCrossServer(Damage, DamageEvent, nullptr, DamageCauser);
-     return Damage;
-}
-
-void ACrossServerPawn::TakeDamageCrossServer_Implementation(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-	float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
-	IncomingDamage.Broadcast(ActualDamage, DamageEvent, EventInstigator, DamageCauser);
-}
+UFUNCTION(CrossServer, Reliable)
+void TakeDamageCrossServer(float Damage, const struct FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
 ```
+Or in Blueprints using the custom replication setting
 
-The turret blueprint (BP_Turret_Base) inherits from the ACrossServerPawn class.
 
-### GDKCharacter
+<%(Lightbox image="{{assetRoot}}assets/offloading-project/blueprint-cross-server-rpc.png")%>
 
-The CrashBot and the Player does not use the ACrossServerPawn. Instead, they implement the GDKCharacter base class which uses the same take damage override pattern to enable the cross server interaction.
+The Example Project contains a custom Pawn subclass `ACrossServerPawn` that overrides the standard TakeDamage behaviour with a cross-server version. This allows any server worker to use the standard TakeDamage method and have it routed to the correct server worker.
 
-### Turrets
+### BeginPlay
 
-Due to how offloading works in the GDK, level placed actors are spawned on an UnrealWorker and then replicated to the worker matching their actor group, at which point the correct worker can start simulating the entity with the correct authority configuration. This can lead to problems due to certain initialization steps occurring on the initial worker not being replicated correctly.
+When using Offloading, the server worker that spawns an Actor might not end up having authority over it. To be able to run initialization logic on the correct worker, The GDK adds an OnAuthorityGained Event. When using offloading, this event gets called once on the owning worker for the Actor, allowing you to do any initialization needed. For backwards compatibility, When SpatialNetworking is disabled, OnAuthorityGained will get called immediately after BeginPlay on the Server.
 
-In the case of the turret, its controller is not a replicated actor and therefore, its creation needs to be deferred until authority is gained over its SpatialOS entity on the AIWorker. This was done by hooking up the controller creation to the OnAuthorityGained delegate on the turret (See image below). In addition to this, the Auto Possess Player and Auto Possess AI settings the blueprint details panel had to be set to be disabled to prevent them from being created at launch.
+In the Example Project, the Crashbots disable the Standard 'Auto Posses AI' behaviour to avoid spawning AIControllers on the wrong servers. Instead, OnAuthorityGained is used to spawn the default controller.
 
-<%(Lightbox image="{{assetRoot}}assets/offloading-project/turrets.png")%>
-<br>
+<%(Lightbox image="{{assetRoot}}assets/offloading-project/spawn-default-controller.png")%>
 
-### CrashBot
+### Utility Methods
 
-Another thing that needs to be taken into consideration when implementing gameplay features with offloading is that actor groups are defined on a class level. This means that if you define a weapon class that your player and you later want to allow your offloaded AI characters to use that weapon as well, then you may run into issues as the weapon can only have its authority assigned to one worker. 
+For more complex behaviours using ActorGroups, you can use the utility methods in `SpatialStatics`. Using ownership of actor groups to control game logic allows you to change your server configuration without having to make code changes.
 
-The solution to this is to create a new subclass of the weapon that can be assigned to the actor group that the offloaded AI belongs to.
+When Offloading is disabled all Actor Classes belong to a 'Default' actor group, which is owned by the 'Default Worker Type' defined in the Offloading Settings.
 
-In the example project,  the Player characters and the CrashBots have the same base class, we had to create a child blueprint called BP_CrashBot to ensure that the offloading configuration setup correctly.
-
-In addition to the CrashBot blueprint, the example project had to create an additional version of the CrashBot named  BP_CrashBot_PlacedInWorld. This was to work around the issue of creating controllers first when the authority was gained.
-
-Mention weapon to allow it to be used for the bots.
-
-### Ensure that code get executed on the correct server worker
-
-With the introduction of offloading, it is no longer enough to check whether the netmode is a dedicated server to ensure that logic is run on the worker that has authority. An actor could now be updated from any given server type and therefore it is important to be mindful of checking whether the current server worker has authority over the entity. Below are a few example snippets from the UEquipmentComponent where such checks were added to ensure correct flow:
-
-```
-void UEquippedComponent::SpawnStarterTemplates(FGDKMetaData MetaData)
-{
-	if (!bHeldItemsInitialised && GetOwner()->HasAuthority())
-	{
-	...
-
-void UEquippedComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-
-	if (GetNetMode() == NM_DedicatedServer && GetOwner()->HasAuthority())
-	{
-	...
-```
+<%(Lightbox image="{{assetRoot}}assets/offloading-project/offloading-statics.png")%>
 
 ### Conclusion
 
@@ -82,7 +43,8 @@ By using offloading, you can scale your CPU heavy tasks by splitting them to run
 Meanwhile, offloading introduces a set of constraints that you need to take care of.  When you set up your feature using offloading properly, you can have significant scaling opportunities.
 
 <br/>------------<br/>
-_2019-07-30 Page added as limited editorial review_
+_2019-08-29 Page updated without editorial review_
+_2019-07-30 Page added without editorial review_
 <br/>
 <br/>
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1142)

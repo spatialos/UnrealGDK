@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Multiple deployments for session-based games
+# [Deprecated] Multiple deployments for session-based games
 ## 3: Build and upload workers 
 
 ### Step 1: Edit the .ini file
@@ -73,4 +73,5 @@ Make a note of the `<assembly_name>` you create, as you will need it later.
 
 
 <br/>------<br/>
+_2019-10-16 Tutorial deprecated_<br/>
 _2019-05-21 Page added with editorial review_

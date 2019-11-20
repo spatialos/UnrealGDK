@@ -156,7 +156,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 <!-- ------ Actor Replication ------ -->
   
    <tr>
-    <td rowspan="6"><b><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors">Actor Replication</a><b></td>
+    <td rowspan="7"><b><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors"><b>Actor Replication<b></a></td>
     <td>RPCs - Ordering</td>
     <td class="supported"></td>
     <td></td>
@@ -164,7 +164,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <tr>
     <td>RPCs - Reliability</td>
     <td class="caveats"></td>
-    <td>RPCs can be unreliable under heavy load. Planned to be resolved in Q3 2019.</td>
+    <td>RPCs can be unreliable under heavy load. This is planned to be resolved in the future.</td>
   </tr>
   <tr>
     <td>Actor Roles</td>
@@ -185,6 +185,13 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td>Startup Actors</td>
     <td class="supported"></td>
     <td></td>
+  </tr>
+  <tr>
+    <td><a href="https://dq8iqaixvew1d.cloudfront.net/en-US/Gameplay/Networking/Actors/Components/index.html#timelines">Replicated Blueprint Timelines</a></td>
+    <td class="unplanned"></td>
+    <td></td>
+  </tr>
+
 
 <!-- ------ Multiplayer Gameplay Features ------ -->
 
@@ -363,12 +370,12 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 
   <tr>
     <td rowspan="2"><b>Unreal Engine Versions<b></td>
-    <td>4.22 Support</td>
+    <td>Unreal Engine 4.22</td>
     <td class="supported"></td>
     <td></td>
   </tr>
   <tr>
-    <td>4.23 Support</td>
+    <td>Unreal Engine 4.23</td>
     <td class="supported"></td>
     <td></td>
   </tr>
@@ -411,6 +418,7 @@ The table for multiserver support is coming soon.
 
 <br/>------<br/>
 _2019-11-08 Added Unreal Engine 4.23 support_</br>
-_2019-08-20 Updated with editorial review: Rescheduled Gameplay Debugger support_</br>
-_2019-07-31 Added support for Dynamic Components, RPCs ordering, and Ability System (0.6.0 release)_</br>
+_2019-10-30 Add replicated blueprint timelines._</br>
+_2019-08-20 Updated with editorial review: Rescheduled Gameplay Debugger support._</br>
+_2019-07-31 Added support for Dynamic Components, RPCs ordering, and Ability System (0.6.0 release)._</br>
 _2019-07-04 Online Subsystem abstraction support pushed out._
