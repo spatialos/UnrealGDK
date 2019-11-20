@@ -28,7 +28,7 @@ env:
   FASTBUILD_BROKERAGE_PATH: "\\\\fastbuild-brokerage.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba"
 
 steps:
-  - label: "build-and-test-GDK-:windows:-ENGINE_COMMIT_HASH_PLACEHOLDER"
+  - label: "build-and-test-:windows:-ENGINE_COMMIT_HASH_PLACEHOLDER-BUILD_STATE_PLACEHOLDER-BUILD_TARGET_SUFFIX_PLACEHOLDER"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
@@ -36,13 +36,15 @@ steps:
       - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
     env:
       ENGINE_COMMIT_HASH: "ENGINE_COMMIT_HASH_PLACEHOLDER"
-      BUILD_CONFIGURATION: "BUILD_CONFIGURATION_PLACEHOLDER"
+      BUILD_TARGET_SUFFIX: "BUILD_TARGET_SUFFIX_PLACEHOLDER"
+      BUILD_STATE: "BUILD_STATE_PLACEHOLDER"
 
-  - label: "build-GDK-:linux:-ENGINE_COMMIT_HASH_PLACEHOLDER"
+  - label: "build-:linux:-ENGINE_COMMIT_HASH_PLACEHOLDER-BUILD_STATE_PLACEHOLDER-BUILD_TARGET_SUFFIX_PLACEHOLDER"
     command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
     env:
       ENGINE_COMMIT_HASH: "ENGINE_COMMIT_HASH_PLACEHOLDER"
-      BUILD_CONFIGURATION: "BUILD_CONFIGURATION_PLACEHOLDER"
+      BUILD_TARGET_SUFFIX: "BUILD_TARGET_SUFFIX_PLACEHOLDER"
+      BUILD_STATE: "BUILD_STATE_PLACEHOLDER"
