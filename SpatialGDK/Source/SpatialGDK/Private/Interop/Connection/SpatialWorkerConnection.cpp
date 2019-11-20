@@ -87,10 +87,10 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 
 	switch (GetConnectionType())
 	{
-	case SpatialConnectionType::Receptionist:
+	case ESpatialConnectionType::Receptionist:
 		ConnectToReceptionist(bInitAsClient);
 		break;
-	case SpatialConnectionType::Locator:
+	case ESpatialConnectionType::Locator:
 		ConnectToLocator();
 		break;
 	}
@@ -226,7 +226,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
-		TCHAR_TO_UTF8(*ReceptionistConfig.ReceptionistHost), ReceptionistConfig.ReceptionistPort,
+		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.ReceptionistPort,
 		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionParams);
 
 	FinishConnecting(ConnectionFuture);
@@ -324,16 +324,17 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 	});
 }
 
-SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
+ESpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 {
-	if (!LocatorConfig.PlayerIdentityToken.IsEmpty())
-	{
-		return SpatialConnectionType::Locator;
-	}
-	else
-	{
-		return SpatialConnectionType::Receptionist;
-	}
+	return ConnectionType;
+}
+
+void USpatialWorkerConnection::SetConnectionType(ESpatialConnectionType InConnectionType)
+{
+	// The locator config may not have been initialized
+	check(!(InConnectionType == ESpatialConnectionType::Locator && LocatorConfig.LocatorHost.IsEmpty()))
+
+	ConnectionType = InConnectionType;
 }
 
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()

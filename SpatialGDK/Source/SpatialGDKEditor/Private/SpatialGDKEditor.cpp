@@ -10,13 +10,14 @@
 #include "Editor.h"
 #include "FileHelpers.h"
 
-#include "AssetRegistryModule.h"
 #include "AssetDataTagMap.h"
+#include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
+#include "Internationalization/Regex.h"
 #include "Misc/ScopedSlowTask.h"
+#include "Settings/ProjectPackagingSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "UObject/StrongObjectPtr.h"
-#include "Settings/ProjectPackagingSettings.h"
 
 using namespace SpatialGDKEditor;
 
@@ -54,10 +55,12 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	FScopedSlowTask Progress(100.f, LOCTEXT("GeneratingSchema", "Generating Schema..."));
 	Progress.MakeDialog(true);
 
+#if ENGINE_MINOR_VERSION <= 22
 	// Force spatial networking so schema layouts are correct
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
-	GeneralProjectSettings->bSpatialNetworking = true;
+	bool bCachedSpatialNetworking = GeneralProjectSettings->UsesSpatialNetworking();
+	GeneralProjectSettings->SetUsesSpatialNetworking(true);
+#endif
 
 	RemoveEditorAssetLoadedCallback();
 
@@ -123,7 +126,9 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 	}
 
-	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
+#if ENGINE_MINOR_VERSION <= 22
+	GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(bCachedSpatialNetworking);
+#endif
 	bSchemaGeneratorRunning = false;
 
 	if (bResult)
@@ -222,7 +227,11 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 
 void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
+#if ENGINE_MINOR_VERSION <= 22
 	LaunchCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
+#else
+	LaunchCloudResult = Async(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
+#endif
 		[this, SuccessCallback, FailureCallback]
 		{
 			if (!LaunchCloudResult.IsReady() || LaunchCloudResult.Get() != true)
@@ -238,7 +247,11 @@ void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, F
 
 void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
+#if ENGINE_MINOR_VERSION <= 22
 	StopCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudStop,
+#else
+	StopCloudResult = Async(EAsyncExecution::Thread, SpatialGDKCloudStop,
+#endif
 		[this, SuccessCallback, FailureCallback]
 		{
 			if (!StopCloudResult.IsReady() || StopCloudResult.Get() != true)

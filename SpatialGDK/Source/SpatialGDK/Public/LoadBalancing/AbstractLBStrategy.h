@@ -34,14 +34,15 @@ public:
 
 	bool IsReady() const { return LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
 
-	void SetLocalVirtualWorkerId(uint32 LocalVirtualWorkerId);
+	void SetLocalVirtualWorkerId(VirtualWorkerId LocalVirtualWorkerId);
+	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; }
 
-	virtual TSet<uint32> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
+	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
 
 	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const { return false; }
-	virtual uint32 WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID; )
+	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID; )
 
 protected:
 
-	uint32 LocalVirtualWorkerId;
+	VirtualWorkerId LocalVirtualWorkerId;
 };

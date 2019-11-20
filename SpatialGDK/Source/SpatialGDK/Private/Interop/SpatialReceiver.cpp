@@ -14,6 +14,8 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
@@ -38,7 +40,7 @@ DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel,
 
 using namespace SpatialGDK;
 
-void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
+void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -46,6 +48,8 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
+	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer;
+	VirtualWorkerTranslator = InVirtualWorkerTranslator;
 	TimerManager = InTimerManager;
 
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
@@ -154,6 +158,13 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		{
 			// This would normally get registered through the channel cleanup, but we don't have one for this entity
 			NetDriver->RegisterDormantEntityId(Op.entity_id);
+		}
+		return;
+	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
+		if (VirtualWorkerTranslator != nullptr)
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
+			VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
 		return;
 	}
@@ -317,6 +328,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	{
 		GlobalStateManager->AuthorityChanged(Op);
 		return;
+	}
+
+	if (LoadBalanceEnforcer)
+	{
+		LoadBalanceEnforcer->AuthorityChanged(Op);
 	}
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));
@@ -529,8 +545,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
 	{
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker. "
-			"Entity id: $lld"), *EntityActor->GetName(), EntityId);
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker. "
+			"Entity id: %lld"), *NetDriver->Connection->GetWorkerId(), *EntityActor->GetName(), EntityId);
 
 		// Assume SimulatedProxy until we've been delegated Authority
 		bool bAuthority = StaticComponentView->GetAuthority(EntityId, Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
@@ -548,6 +564,9 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 	else
 	{
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity has been checked out on the worker which didn't spawn it. "
+			"Entity id: %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
+
 		UClass* Class = UnrealMetadataComp->GetNativeEntityClass();
 		if (Class == nullptr)
 		{
@@ -617,7 +636,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId);
 
+#if ENGINE_MINOR_VERSION <= 22
 		Channel->SetChannelActor(EntityActor);
+#else
+		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
+#endif
 
 		// Apply initial replicated properties.
 		// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
@@ -798,13 +821,9 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 		{
 			PackageMap->RemoveEntityActor(EntityId);
 		}
-		else if (Actor == nullptr)
-		{
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. EntityId: %lld"), EntityId);
-		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. Actor: %s EntityId: %lld"), *Actor->GetName(), EntityId);
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. Actor: %s EntityId: %lld"), *GetNameSafe(Actor), EntityId);
 		}
 	}
 
@@ -1136,8 +1155,19 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-		check(false); // TODO(zoning): Handle updates to the entity's authority intent.
+		if (NetDriver->IsServer())
+		{
+			check(LoadBalanceEnforcer);
+			LoadBalanceEnforcer->OnAuthorityIntentComponentUpdated(Op);
+		}
 		break;
+	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
+		if (VirtualWorkerTranslator != nullptr)
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
+			VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+		}
+		return;
 	}
 
 	if (Op.update.component_id < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
@@ -1553,7 +1583,10 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
 	if (GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCWaitTime < TimeDiff)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing RPC %s::%s with unresolved references after %f seconds of queueing"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), TimeDiff);
+		if ((Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing RPC %s::%s with unresolved references after %f seconds of queueing"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), TimeDiff);
+		}
 		bApplyWithUnresolvedRefs = true;
 	}
 
@@ -1765,6 +1798,12 @@ bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel* Channel)
 	}
 
 	return false;
+}
+
+
+void USpatialReceiver::ClearPendingRPCs(Worker_EntityId EntityId)
+{
+	IncomingRPCs.DropForEntity(EntityId);
 }
 
 void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs)
