@@ -28,9 +28,9 @@ if [ -z "${ENGINE_VERSION}" ]; then
     echo "Generating build steps for each engine version listed in unreal-engine.version"  
     IFS=$'\n'
     for commit_hash in $(cat < ci/unreal-engine.version); do
-        Generate-Build-Configuration-Steps "$commit_hash"
+        generate_build_configuration_steps "$commit_hash"
     done
 else
     echo "Generating steps for the specified engine version: $ENGINE_VERSION" 
-    Generate-Build-Configuration-Steps "$ENGINE_VERSION"
+    generate_build_configuration_steps "$ENGINE_VERSION"
 fi;
