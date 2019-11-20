@@ -68,6 +68,13 @@ bool FWaitForComputationAndCheckResult::Update()
 	return false;
 }
 
+EXAMPLE_SIMPLE_TEST(ALWAYS_FAIL)
+{
+	TestTrue("This test always fails", false);
+	return true;
+}
+
+
 EXAMPLE_SIMPLE_TEST(GIVEN_initial_value_WHEN_performing_background_compuation_THEN_the_result_is_correct)
 {
 	TSharedPtr<ComputationResult> ResultPtr = MakeShared<ComputationResult>();
