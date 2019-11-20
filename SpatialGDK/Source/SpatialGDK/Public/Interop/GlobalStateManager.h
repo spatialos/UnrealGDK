@@ -54,7 +54,7 @@ public:
 
 	FORCEINLINE FString GetDeploymentMapURL() const { return DeploymentMapURL; }
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
-	FORCEINLINE int32 GetSessionId() const { return SessionId; }
+	FORCEINLINE int32 GetSessionId() const { return DeploymentSessionId; }
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 	bool HandlesComponent(const Worker_ComponentId ComponentId) const;
@@ -84,7 +84,7 @@ private:
 	// Deployment Map Component
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers;
-	int32 SessionId = 0;
+	int32 DeploymentSessionId;
 
 	// Startup Actor Manager Component
 	bool bCanBeginPlay;
