@@ -2,12 +2,7 @@
 set -euo pipefail
 
 generate_build_configuration_steps () {
-    echo "debug:"
-    echo "$NIGHTLY_BUILD"
-    echo "${NIGHTLY_BUILD+x}"
-    echo ["$NIGHTLY_BUILD" = "true"]
-    echo "${NIGHTLY_BUILD+x}" = "x"
-    if [ "${NIGHTLY_BUILD+x}" = "x" ] && ["$NIGHTLY_BUILD" = "true"]; then  # if NIGHTLY_BUILD exists AND is equal to "true"
+    if [[ "${NIGHTLY_BUILD+x}" = "x" ]] && [[ "$NIGHTLY_BUILD" = "true" ]]; then  # if NIGHTLY_BUILD exists AND is equal to "true"
         echo "This is a nightly build. Generating the appropriate steps..."
         for build_target_suffix in "" "Editor" "Server" "SimulatedPlayer"; do
             for build_state in "DebugGame" "Development" "Shipping" "Test"; do
@@ -29,7 +24,7 @@ generate_build_configuration_steps () {
 }
 
 # This script generates steps for each engine version listed in unreal-engine.version, based on the gdk_build.template.steps.yaml template
-if [ -z ${ENGINE_VERSION+x} ] || [ -z "${ENGINE_VERSION}" ]; then  # if ENGINE_VERSION doesn't exist OR is empty
+if [[ -z ${ENGINE_VERSION+x} ]] || [[ -z "${ENGINE_VERSION}" ]]; then  # if ENGINE_VERSION doesn't exist OR is empty
     echo "Generating build steps for each engine version listed in unreal-engine.version"  
     IFS=$'\n'
     for commit_hash in $(cat < ci/unreal-engine.version); do
