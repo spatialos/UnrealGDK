@@ -42,11 +42,11 @@ The following tables show the state of support of Unreal Engine features on the 
     <tr>
         <td>Fully supported, available now</td>
         <td class="supported"></td>
-    </tr>    
+    </tr>
     <tr>
         <td>Supported with caveats or workarounds</td>
         <td class="caveats"></td>
-    </tr>    
+    </tr>
     <!-- <tr>
         <td>Q2 - Q3 2019</td>
         <td class="indev"></td>
@@ -54,7 +54,7 @@ The following tables show the state of support of Unreal Engine features on the 
     <tr>
         <td>Currently unplanned</td>
         <td class="unplanned"></td>
-    </tr>   
+    </tr>
     <!-- </tr>
         <td>Not applicable, or not planned to be delivered</td>
         <td class="na"></td>
@@ -342,7 +342,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 
 <!-- ------ Misc ------ -->
 
- <tr>
+  <tr>
     <td rowspan="5"><b>Misc<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Physics">Physics Simulation</a></td>
     <td class="supported"></td>
@@ -352,22 +352,41 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Physics/Tracing">Tracing</a></td>
     <td class="supported"></td>
     <td></td>
-</tr>
+  </tr>
+  <tr>
+    <td><a href="https://docs.unrealengine.com/en-US/Engine/Chaos/ChaosDestruction/">Chaos Destruction</a></td>
+    <td class="unplanned"></td>
+    <td></td>
+  </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Animation">Skeletal Mesh Animation System</a></td>
     <td class="supported"></td>
     <td></td>
-</tr>
+  </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/Engine/Sequencer">Sequence Editor</td>
     <td class="supported"></td>
     <td></td>
-</tr>
+  </tr>
+  <tr>
+    <td><a href="https://docs.unrealengine.com/en-US/Engine/Performance/UnrealInsights/">Unreal Insights</a></td>
+    <td class="unplanned"></td>
+    <td></td>
+  </tr>
+
+<!-- ------ Unreal Engine Verions ------ -->
+
+  <tr>
+    <td rowspan="2"><b>Unreal Engine Versions<b></td>
+    <td>Unreal Engine 4.22</td>
+    <td class="supported"></td>
+    <td></td>
+  </tr>
   <tr>
     <td>Unreal Engine 4.23</td>
     <td class="supported"></td>
     <td></td>
-</tr>
+  </tr>
 
 <!-- ------ Platforms ------ -->
 
@@ -406,6 +425,7 @@ The table for multiserver support is coming soon.
 
 
 <br/>------<br/>
+_2019-11-08 Added Unreal Engine 4.23 support_</br>
 _2019-10-30 Add replicated blueprint timelines._</br>
 _2019-08-20 Updated with editorial review: Rescheduled Gameplay Debugger support._</br>
 _2019-07-31 Added support for Dynamic Components, RPCs ordering, and Ability System (0.6.0 release)._</br>
