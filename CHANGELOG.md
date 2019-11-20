@@ -30,7 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
 - Take into account OverrideSpatialNetworking command line argument as early as possible (LocalDeploymentManager used to query bSpatialNetworking before the command line was parsed).
 - Servers maintain interest in AlwaysRelevant Actors.
-- The default cloud launch configuration is now empty
+- The default cloud launch configuration is now empty.
+- Fixed an crash caused by attmepting to reload dynamic components that had previously been unloaded.
 
 ## [`0.7.0-preview`] - 2019-10-11
 
