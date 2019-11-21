@@ -40,7 +40,8 @@ echo "files: 1"
 echo "$log_file_path"
 echo "$output_dir_absolute"
 
-$run_tests_proc = Start-Process -PassThru -NoNewWindow -Wait $ue_path_absolute -ArgumentList $cmd_args_list
+$run_tests_proc = Start-Process -PassThru -NoNewWindow $ue_path_absolute -ArgumentList $cmd_args_list
+Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
 If ($run_tests_proc.ExitCode -ne 0) {
     echo "files: 2"
     echo "$log_file_path"
