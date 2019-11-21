@@ -36,10 +36,13 @@ $cmd_args_list = @( `
 
 Write-Log "Running $($ue_path_absolute) $($cmd_args_list)"
 
+echo "files: 1"
+echo "$log_file_path"
+echo "$output_dir_absolute"
+
 $run_tests_proc = Start-Process -PassThru -NoNewWindow -Wait $ue_path_absolute -ArgumentList $cmd_args_list
 If ($run_tests_proc.ExitCode -ne 0) {
-    echo "Failed to run tests."
-    echo "files:"
+    echo "files: 2"
     echo "$log_file_path"
     echo "$output_dir_absolute"
     ls "$output_dir_absolute"
@@ -47,7 +50,7 @@ If ($run_tests_proc.ExitCode -ne 0) {
     throw "Failed to run tests."
 }
 
-echo "files:"
+echo "files: 3"
 echo "$log_file_path"
 echo "$output_dir_absolute"
 ls "$output_dir_absolute"
