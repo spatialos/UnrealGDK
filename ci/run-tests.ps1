@@ -34,6 +34,7 @@ $cmd_args_list = @( `
     "-nullRHI" # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
 )
 
+echo "files:"
 echo "$log_file_path"
 echo "$output_dir_absolute"
 ls "$output_dir_absolute"
