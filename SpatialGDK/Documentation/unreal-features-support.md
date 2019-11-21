@@ -320,7 +320,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td rowspan="3"><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling"><b>Travel<b></a></td>
     <td>Server Travel</td>
     <td class="supported"></td>
-    <td>Not supported when used along side zoning or off-loading</td>
+    <td>Not supported when used in conjunction with zoning or offloading</td>
   </tr>
   <tr>
     <td>Client Travel</td>

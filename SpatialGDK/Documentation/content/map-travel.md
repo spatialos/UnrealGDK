@@ -45,7 +45,7 @@ PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false /*bS
 
 ## UWorld::ServerTravel
 
-Server travel is supported on single server worker deployments. For testing in PIE, ensure that you have "Use Single Process" disabled in "Editor Preferences/Level Editor/Play/Multiplayer Options" and set "Editor Multiplayer Mode" to "Play As Client".
+Server travel is supported in single server-worker deployments. If you want to test server travel in Editor, ensure that you have "Use Single Process" disabled in "Editor Preferences/Level Editor/Play/Multiplayer Options" and set "Editor Multiplayer Mode" to "Play As Client".
 
 > Warning: `Multi worker ServerTravel` is on the [roadmap](https://github.com/spatialos/UnrealGDK/projects/1#card-22461878) but is not currently supported.
 
