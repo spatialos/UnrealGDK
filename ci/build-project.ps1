@@ -34,7 +34,7 @@ if (-Not $?) {
 New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugins" -Target "$gdk_home"
 
 Write-Log "Generating project files"
-$proc = Start-Process "$unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe" -Wait -ErrorAction Stop -NoNewWindow -ArgumentList -PassThru @(`
+$proc = Start-Process "$unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
     "-projectfiles", `
     "-project=`"$test_repo_uproject_path`"", `
     "-game", `
@@ -47,7 +47,7 @@ if ($proc.ExitCode -ne 0) {
 
 Write-Log "Building the testing project"
 $build_configuration = $env:BUILD_STATE + (If ("$env:BUILD_TARGET" -eq "") {""} Else {" $env:BUILD_TARGET"})
-$proc = Start-Process "$msbuild_exe" -Wait -ErrorAction Stop -NoNewWindow -ArgumentList -PassThru @(`
+$proc = Start-Process "$msbuild_exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
     "/nologo", `
     "$($test_repo_uproject_path.Replace(".uproject", ".sln"))", `
     "/p:Configuration=`"$build_configuration`";Platform=`"$env:BUILD_PLATFORM`""
