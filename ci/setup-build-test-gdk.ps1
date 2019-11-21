@@ -40,7 +40,7 @@ Start-Event "setup-gdk" "command"
 Start-Process spatial "update","$spatial_cli_version" -Wait -ErrorAction Stop -NoNewWindow
 
 Start-Event "build-project" "command"
-&$PSScriptRoot"\setup-tests.ps1" `
+&$PSScriptRoot"\build-project.ps1" `
     -build_output_dir "$build_home\SpatialGDKBuild" `
     -unreal_path "$unreal_path" `
     -test_repo_branch "$test_repo_branch" `

@@ -40,19 +40,11 @@ if (-Not $?) {
 }
 
 Write-Log "Building the testing project"
-if ("$env:BUILD_TARGET_SUFFIX" -eq "Editor") {
-    Start-Process "$msbuild_exe" "/nologo","$($test_repo_uproject_path.Replace(".uproject", ".sln"))","/p:Configuration=`"Development Editor`";Platform=`"Win64`"" -Wait -ErrorAction Stop -NoNewWindow
-}
-else {
-    Write-Log "Building the testing project"
-    $project_name = [System.IO.Path]::GetFileNameWithoutExtension("$test_repo_uproject_path")
-    Start-Process "$gdk_home/SpatialGDK/Build/Scripts/BuildWorker.bat" -Wait -ErrorAction Stop -NoNewWindow -ArgumentList @(`
-        "$($project_name + $env:BUILD_TARGET_SUFFIX)", `
-        "$env:BUILD_PLATFORM", `
-        "$env:BUILD_STATE", `
-        "$test_repo_uproject_path"
-    )
-}
+Start-Process "$msbuild_exe" -Wait -ErrorAction Stop -NoNewWindow -ArgumentList @(`
+    "/nologo", `
+    "$($test_repo_uproject_path.Replace(".uproject", ".sln"))", `
+    "/p:Configuration=`"$env:BUILD_STATE $env:BUILD_TARGET`";Platform=`"$env:BUILD_PLATFORM`""
+)
 if (-Not $?) {
     throw "Failed to build testing project."
 }
