@@ -268,7 +268,7 @@ namespace Improbable
         private static Operation<Deployment, CreateDeploymentMetadata> CreateSimPlayerDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
             string projectName, string assemblyName, string mainDeploymentName, string simDeploymentName, string simDeploymentJsonPath, string regionCode, int simNumPlayers)
         {
-            var playerAuthServiceClient = PlayerAuthServiceClient.Create(new SpatialOS.Platform.Common.PlatformApiEndpoint());
+            var playerAuthServiceClient = PlayerAuthServiceClient.Create();
 
             // Create development authentication token used by the simulated players.
             var dat = playerAuthServiceClient.CreateDevelopmentAuthenticationToken(
