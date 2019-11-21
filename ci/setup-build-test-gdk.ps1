@@ -56,6 +56,7 @@ Finish-Event "build-project" "command"
 
 # Only run tests on Windows, as we do not have a linux agent - should not matter
 if ($env:BUILD_PLATFORM -eq "Win64" -And $env:BUILD_TARGET -eq "Editor") {
+  try {
   Start-Event "setup-tests" "command"
   &$PSScriptRoot"\setup-tests.ps1" `
     -unreal_path "$unreal_path" `
@@ -76,4 +77,8 @@ if ($env:BUILD_PLATFORM -eq "Win64" -And $env:BUILD_TARGET -eq "Editor") {
   Start-Event "report-tests" "command"
   &$PSScriptRoot"\report-tests.ps1" -test_result_dir "$PSScriptRoot\TestResults"
   Finish-Event "report-tests" "command"
+  }
+  catch {
+    Write-Host "caught an error"
+  }
 }
