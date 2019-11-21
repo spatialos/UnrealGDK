@@ -36,7 +36,7 @@ $cmd_args_list = @( `
 
 Write-Log "Running $($ue_path_absolute) $($cmd_args_list)"
 
-$run_tests_proc = Start-Process -PassThru -Wait -NoNewWindow $ue_path_absolute -ArgumentList $cmd_args_list
+$run_tests_proc = Start-Process $ue_path_absolute -PassThru -Wait -NoNewWindow -ArgumentList $cmd_args_list
 Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
 If ($run_tests_proc.ExitCode -ne 0) {
     throw "Failed to run tests."
