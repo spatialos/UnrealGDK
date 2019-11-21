@@ -146,7 +146,6 @@ Problems with uploading workers?</br>
 <%(/Expandable)%>
 
 ### Step 4: Launch your cloud deployment 
-### (Optional: add simulated players)
 
 The next step is to launch a cloud deployment using the assembly that you just uploaded. You can do this in Unreal Editor or using the SpatialOS CLI's commands. This guide uses Unreal Editor.</br></br>
 As part of this step, you can choose to launch some simulated players with your deployment. Simulated players are game clients mimicking real players of your game. You can use them for testing client connection flow and server-worker load at scale.
@@ -191,16 +190,23 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
   * **Snapshot File**: The absolute filepath to your project's `.snapshot` snapshot file from `C:/`. </br>
   This is: `C:/...<filepath>.../UnrealGDKExampleProject/spatial/snapshots/default.snapshot`. </br></br>
   * **Region**: The real-world geographical location that you want your cloud deployment hosted in. </br>You can change this by selecting a different region from the drop-down list. You might prefer the region you are in.</br></br>
-1. You can also choose to add simulated players via the dialogue box or skip this and move on to item _4._</br></br>
-   Build out the simulated player clients (which will run on Linux in the cloud) using the following command:</br></br>
-  Engine plugin filepath (default):</br>
+1. You can also choose to add simulated players via the dialogue box or skip this and move on to step 4.</br></br>
+   Build out the simulated player clients using the following command.</br>
+  Engine plugin filepath (default):</br></br>
   ```
-  UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
+  UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject
   ```
   Project plugin filepath:</br>
   ```
   <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
   ```
+  <%(#Expandable title="Note: using the `-skipshadercompile` flag")%>
+  By default, an Unreal Linux client build will attempt to re-build all shaders for the OpenGL Shading Language. You may find that when building out your Linux clients, shaders take a long time to build and fail often. It's not necessary to have them built for Linux clients, so you can skip shader compilation by adding the flag `-skipshadercompile` to the above command.
+  <%(/Expandable)%>
+  <%(#Expandable title="Note: disabling game client plugins which don't run on Linux")%>
+  Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like
+  `if (Target.Platform != UnrealTargetPlatform.Linux)`
+  <%(/Expandable)%>
   Then, back in the Editor Deploy window:</br></br>
   * **Add simulated players**: Check the box.</br></br>
   * **Deployment Name**: Enter a name for your simulated player deployment. This labels the deployment in the Console. Make it different to your game deployment name.</br></br>
@@ -227,6 +233,7 @@ There is a summary on when to update schema, how to build and upload workers, an
 
 
 <br/>------<br/>
+_2019-11-14 Page updated without editorial review: added callout for plugins which won't run on Linux, and `-skipshadercompile` option._<br/>
 _2019-10-31 Page updated without editorial review: add missing build step for simulated player clients._<br/>
 _2019-08-14 Page updated with editorial review: updated terms and narrative._<br/>
 _2019-07-31 Page updated with limited editorial review_</br>
