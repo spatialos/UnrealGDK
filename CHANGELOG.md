@@ -6,10 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 - The server no longer crashes, when received RPCs are processed recursively.
+- DeploymentLauncher can parse a .pb.json launch configuration.
 - DeploymentLauncher can launch a Simulated Player deployment independently from the target deployment.
 Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>`
 
 ### Features:
+- Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
+- Added support for the UE4 Network Profile to measure relative size of RPC and Actor replication data.
+- Added a VirtualWorkerTranslation component to be used in future UnrealGDK loadbalancing.
 - Added partial framework for use in future UnrealGDK controlled loadbalancing.
 - Add SpatialToggleMetricsDisplay console command.  bEnableMetricsDisplay must be enabled in order for the display to be available.  You must then must call SpatialToggleMetricsDisplay on each client that wants to view the metrics display.
 - Enabled compression in modular-udp networking stack
@@ -19,6 +23,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added the AllowUnresolvedParameters function flag that disables warnings for processing RPCs with unresolved parameters. This flag can be enabled through Blueprints or by adding a tag to the `UFUNCTION` macro.
 - Improved logging around entity creation.
 - Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK).
+- A warning is shown if a cloud deployment is launched with the `manual_worker_connection_only` flag set to true
 
 ### Bug fixes:
 - Fixed a bug that could caused a name collision in schema for sublevels.
@@ -30,6 +35,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
 - Take into account OverrideSpatialNetworking command line argument as early as possible (LocalDeploymentManager used to query bSpatialNetworking before the command line was parsed).
 - Servers maintain interest in AlwaysRelevant Actors.
+- The default cloud launch configuration is now empty.
+- Fixed an crash caused by attempting to read schema from an unloaded class.
 
 ## [`0.7.0-preview`] - 2019-10-11
 

@@ -388,6 +388,9 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Replicate Actor and Component properties and RPCs
 	// ----------------------------------------------------------
 
+#if USE_NETWORK_PROFILER 
+	const uint32 ActorReplicateStartTime = GNetworkProfiler.IsTrackingEnabled() ? FPlatformTime::Cycles() : 0;
+#endif
 	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
 	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
@@ -577,6 +580,9 @@ int64 USpatialActorChannel::ReplicateActor()
 			UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
 		}
 	}
+#if USE_NETWORK_PROFILER 
+	NETWORK_PROFILER(GNetworkProfiler.TrackReplicateActor(Actor, RepFlags, FPlatformTime::Cycles() - ActorReplicateStartTime, Connection));
+#endif 
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
 	LastUpdateTime = Connection->Driver->Time;

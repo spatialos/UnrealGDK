@@ -367,30 +367,68 @@ namespace Improbable
             var simWorkerConfigJson = File.ReadAllText(simDeploymentJsonPath);
             dynamic simWorkerConfig = JObject.Parse(simWorkerConfigJson);
 
-            for (var i = 0; i < simWorkerConfig.workers.Count; ++i)
+            if (simDeploymentJsonPath.EndsWith(".pb.json"))
             {
-                if (simWorkerConfig.workers[i].worker_type == CoordinatorWorkerName)
+                for (var i = 0; i < simWorkerConfig.worker_flagz.Count; ++i)
                 {
-                    simWorkerConfig.workers[i].flags.Add(devAuthTokenFlag);
-                    simWorkerConfig.workers[i].flags.Add(targetDeploymentFlag);
-                    simWorkerConfig.workers[i].flags.Add(numSimulatedPlayersFlag);
+                    if (simWorkerConfig.worker_flagz[i].worker_type == CoordinatorWorkerName)
+                    {
+                        simWorkerConfig.worker_flagz[i].flagz.Add(devAuthTokenFlag);
+                        simWorkerConfig.worker_flagz[i].flagz.Add(targetDeploymentFlag);
+                        simWorkerConfig.worker_flagz[i].flagz.Add(numSimulatedPlayersFlag);
+                        break;
+                    }
+                }
+
+                for (var i = 0; i < simWorkerConfig.flagz.Count; ++i)
+                {
+                    if (simWorkerConfig.flagz[i].name == "loadbalancer_v2_config_json")
+                    {
+                        string layerConfigJson = simWorkerConfig.flagz[i].value;
+                        dynamic loadBalanceConfig = JObject.Parse(layerConfigJson);
+                        var lbLayerConfigurations = loadBalanceConfig.layerConfigurations;
+                        for (var j = 0; j < lbLayerConfigurations.Count; ++j)
+                        {
+                            if (lbLayerConfigurations[j].layer == CoordinatorWorkerName)
+                            {
+                                var rectangleGrid = lbLayerConfigurations[j].rectangleGrid;
+                                rectangleGrid.cols = simNumPlayers;
+                                rectangleGrid.rows = 1;
+                                break;
+                            }
+                        }
+                        simWorkerConfig.flagz[i].value = Newtonsoft.Json.JsonConvert.SerializeObject(loadBalanceConfig);
+                        break;
+                    }
                 }
             }
-
-            // Specify the number of managed coordinator workers to start by editing
-            // the load balancing options in the launch config. It creates a rectangular
-            // launch config of N cols X 1 row, N being the number of coordinators
-            // to create.
-            // This assumes the launch config contains a rectangular load balancing
-            // layer configuration already for the coordinator worker.
-            var lbLayerConfigurations = simWorkerConfig.load_balancing.layer_configurations;
-            for (var i = 0; i < lbLayerConfigurations.Count; ++i)
+            else // regular non pb.json
             {
-                if (lbLayerConfigurations[i].layer == CoordinatorWorkerName)
+                for (var i = 0; i < simWorkerConfig.workers.Count; ++i)
                 {
-                    var rectangleGrid = lbLayerConfigurations[i].rectangle_grid;
-                    rectangleGrid.cols = simNumPlayers;
-                    rectangleGrid.rows = 1;
+                    if (simWorkerConfig.workers[i].worker_type == CoordinatorWorkerName)
+                    {
+                        simWorkerConfig.workers[i].flags.Add(devAuthTokenFlag);
+                        simWorkerConfig.workers[i].flags.Add(targetDeploymentFlag);
+                        simWorkerConfig.workers[i].flags.Add(numSimulatedPlayersFlag);
+                    }
+                }
+
+                // Specify the number of managed coordinator workers to start by editing
+                // the load balancing options in the launch config. It creates a rectangular
+                // launch config of N cols X 1 row, N being the number of coordinators
+                // to create.
+                // This assumes the launch config contains a rectangular load balancing
+                // layer configuration already for the coordinator worker.
+                var lbLayerConfigurations = simWorkerConfig.load_balancing.layer_configurations;
+                for (var i = 0; i < lbLayerConfigurations.Count; ++i)
+                {
+                    if (lbLayerConfigurations[i].layer == CoordinatorWorkerName)
+                    {
+                        var rectangleGrid = lbLayerConfigurations[i].rectangle_grid;
+                        rectangleGrid.cols = simNumPlayers;
+                        rectangleGrid.rows = 1;
+                    }
                 }
             }
 
