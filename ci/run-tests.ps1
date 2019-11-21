@@ -36,25 +36,11 @@ $cmd_args_list = @( `
 
 Write-Log "Running $($ue_path_absolute) $($cmd_args_list)"
 
-echo "files: 1"
-echo "$log_file_path"
-echo "$output_dir_absolute"
-
-$run_tests_proc = Start-Process -PassThru -NoNewWindow $ue_path_absolute -ArgumentList $cmd_args_list
+$run_tests_proc = Start-Process -PassThru -Wait -NoNewWindow $ue_path_absolute -ArgumentList $cmd_args_list
 Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
 If ($run_tests_proc.ExitCode -ne 0) {
-    echo "files: 2"
-    echo "$log_file_path"
-    echo "$output_dir_absolute"
-    ls "$output_dir_absolute"
-
     throw "Failed to run tests."
 }
-
-echo "files: 3"
-echo "$log_file_path"
-echo "$output_dir_absolute"
-ls "$output_dir_absolute"
 
 & buildkite-agent artifact upload "$log_file_path"
 
