@@ -46,7 +46,7 @@ if ($proc.ExitCode -ne 0) {
 }
 
 Write-Log "Building the testing project"
-$build_configuration = $env:BUILD_STATE + (If ("$env:BUILD_TARGET" -eq "") {""} Else {" $env:BUILD_TARGET"})
+$build_configuration = $env:BUILD_STATE + $(If ("$env:BUILD_TARGET" -eq "") {""} Else {" $env:BUILD_TARGET"})
 $proc = Start-Process "$msbuild_exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
     "/nologo", `
     "$($test_repo_uproject_path.Replace(".uproject", ".sln"))", `
