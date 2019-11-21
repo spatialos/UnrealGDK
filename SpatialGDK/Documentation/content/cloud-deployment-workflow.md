@@ -79,8 +79,12 @@ You can launch a cloud deployment using the Unreal Editor or the SpatialOS CLI. 
     ```
     Project plugin filepath:</br>
     ```
-    <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
+    <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject
     ```
+    <%(#Expandable title="Note: disabling game client plugins which don't run on Linux")%>
+    Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like
+    `if (Target.Platform != UnrealTargetPlatform.Linux)`
+  <%(/Expandable)%>
     Then, back in the Editor Deploy window:</br></br>
 	1. Check the box next to **Add simulated players**.
 	1. In the **Deployment Name** field, enter enter a name for your simulated player  deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
@@ -108,6 +112,7 @@ Where:
 
 <br>
 <br/>------<br/>
+_2019-11-14 Page updated without editorial review: added callout for plugins which won't run on Linux._<br/>
 _2019-10-31 Page updated without editorial review: add missing build step for simulated player clients._<br/>
 _2019-07-31 Page updated with limited editorial review_<br/>
 _2019-07-21 Page updated with limited editorial review_
