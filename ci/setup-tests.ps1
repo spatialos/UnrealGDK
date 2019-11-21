@@ -5,6 +5,11 @@ param(
     [string] $test_repo_path
 )
 
+echo "debug printing:"
+echo "$unreal_path\Engine\Binaries\Win64\UE4Editor.exe"
+ls "$unreal_path\Engine\Binaries\Win64"
+echo "$test_repo_uproject_path"
+
 # Generate schema and snapshots
 Write-Log "Generating snapshot and schema for testing project"
 $commandlet_process = Start-Process "$unreal_path\Engine\Binaries\Win64\UE4Editor.exe" -Wait -PassThru -NoNewWindow -ArgumentList @(`

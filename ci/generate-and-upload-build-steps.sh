@@ -18,7 +18,7 @@ generate_build_configuration_steps () {
 
         # NoEditor and Server builds
         for build_platform in "Win64" "Linux"; do
-            for build_target in "" "Server"; do
+            for build_target in "" "Client" "Server"; do
                 for build_state in "DebugGame" "Development" "Shipping" "Test"; do
                     cat "ci/gdk_build.template.steps.yaml" | \
                     sed "s|ENGINE_COMMIT_HASH_PLACEHOLDER|$1|g" | \

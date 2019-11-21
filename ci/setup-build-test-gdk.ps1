@@ -66,7 +66,7 @@ if ($env:BUILD_PLATFORM -eq "Win64" -And $env:BUILD_TARGET -eq "Editor") {
 
   Start-Event "test-gdk" "command"
   &$PSScriptRoot"\run-tests.ps1" `
-      -unreal_editor_path "$unreal_path\Engine\Binaries\$env:BUILD_PLATFORM\UE4Editor.exe" `
+      -unreal_editor_path "$unreal_path\Engine\Binaries\Win64\UE4Editor.exe" `
       -uproject_path "$build_home\TestProject\$test_repo_relative_uproject_path" `
       -output_dir "$PSScriptRoot\TestResults" `
       -log_file_path "$PSScriptRoot\TestResults\tests.log" `
