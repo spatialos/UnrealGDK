@@ -35,6 +35,10 @@ Finish-Event "symlink-gdk" "command"
 # Run the required setup steps
 Start-Event "setup-gdk" "command"
 &$PSScriptRoot"\setup-gdk.ps1" -gdk_path "$gdk_in_engine" -msbuild_path "$msbuild_exe"
+Finish-Event "setup-gdk" "command"
+
+# Build the GDK plugin
+&$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform) -build_output_dir "$build_home\SpatialGDKBuild" -unreal_path $unreal_path
 
 # Update spatial to compatible version
 $proc = Start-Process spatial "update","$spatial_cli_version" -Wait -ErrorAction Stop -NoNewWindow -PassThru
