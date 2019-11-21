@@ -135,7 +135,9 @@ private:
 
 	TArray<Worker_InterestOverride> CreateComponentInterestForActor(USpatialActorChannel* Channel, bool bIsNetOwned);
 	// RPC Tracking
+#if !UE_BUILD_SHIPPING
 	void TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ESchemaComponentType RPCType);
+#endif
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
