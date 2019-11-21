@@ -34,19 +34,19 @@ $cmd_args_list = @( `
     "-nullRHI" # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
 )
 
-echo "files:"
-echo "$log_file_path"
-echo "$output_dir_absolute"
-ls "$output_dir_absolute"
-
-& buildkite-agent artifact upload "$log_file_path"
-
 Write-Log "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process -PassThru -NoNewWindow -Wait $ue_path_absolute -ArgumentList $cmd_args_list
 If ($run_tests_proc.ExitCode -ne 0) {
     throw "Failed to run tests."
 }
+
+echo "files:"
+echo "$log_file_path"
+echo "$output_dir_absolute"
+ls "$output_dir_absolute"
+
+& buildkite-agent artifact upload "$log_file_path"
 
 # Workaround for UNR-2156 and UNR-2076, where spatiald / runtime processes sometimes never close, or where runtimes are orphaned
 # Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
