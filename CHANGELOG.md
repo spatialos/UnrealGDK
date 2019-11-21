@@ -37,6 +37,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Servers maintain interest in AlwaysRelevant Actors.
 - The default cloud launch configuration is now empty.
 - Fixed an crash caused by attempting to read schema from an unloaded class.
+- Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
+
 
 ## [`0.7.0-preview`] - 2019-10-11
 
