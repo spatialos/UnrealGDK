@@ -34,6 +34,12 @@ $cmd_args_list = @( `
     "-nullRHI" # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
 )
 
+echo "$log_file_path"
+echo "$output_dir_absolute"
+ls "$output_dir_absolute"
+
+& buildkite-agent artifact upload "$log_file_path"
+
 Write-Log "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process -PassThru -NoNewWindow $ue_path_absolute -ArgumentList $cmd_args_list
