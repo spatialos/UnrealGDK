@@ -37,7 +37,10 @@ Start-Event "setup-gdk" "command"
 &$PSScriptRoot"\setup-gdk.ps1" -gdk_path "$gdk_in_engine" -msbuild_path "$msbuild_exe"
 
 # Update spatial to compatible version
-Start-Process spatial "update","$spatial_cli_version" -Wait -ErrorAction Stop -NoNewWindow
+$proc = Start-Process spatial "update","$spatial_cli_version" -Wait -ErrorAction Stop -NoNewWindow -PassThru
+if ($proc.ExitCode -ne 0) {
+  THROW "Failed to update spatial CLI to version $spatial_cli_version"
+}
 
 Start-Event "build-project" "command"
 &$PSScriptRoot"\build-project.ps1" `
