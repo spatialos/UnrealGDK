@@ -58,7 +58,7 @@ Start-Event "build-project" "command"
     -test_repo_path "$build_home\TestProject" `
     -msbuild_exe "$msbuild_exe" `
     -gdk_home "$gdk_home" `
-    -build_platform "$build_platform",
+    -build_platform "$target_platform",
     -build_state "$env:BUILD_STATE",
     -build_target "$env:BUILD_TARGET"
 Finish-Event "build-project" "command"
