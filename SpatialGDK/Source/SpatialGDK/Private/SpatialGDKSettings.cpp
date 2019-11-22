@@ -40,6 +40,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 	, bEnableUnrealLoadBalancer(false)
+	, bUseRPCRingBuffers(false)
+	, DefaultRPCRingBufferSize(8)
+	, MaxRPCRingBufferSize(32)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -91,3 +94,13 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	}
 }
 #endif
+
+uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
+{
+	if (const uint32* Size = RPCRingBufferSizeMap.Find(RPCType))
+	{
+		return *Size;
+	}
+
+	return DefaultRPCRingBufferSize;
+}
