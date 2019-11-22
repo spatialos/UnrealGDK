@@ -40,8 +40,3 @@ $run_tests_proc = Start-Process $ue_path_absolute -PassThru -Wait -NoNewWindow -
 If ($run_tests_proc.ExitCode -ne 0) {
     throw "Failed to run tests."
 }
-
-# Workaround for UNR-2156 and UNR-2076, where spatiald / runtime processes sometimes never close, or where runtimes are orphaned
-# Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
-Start-Process spatial "service","stop" -Wait -ErrorAction Stop -NoNewWindow
-Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue

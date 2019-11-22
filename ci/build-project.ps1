@@ -16,6 +16,11 @@ param(
 # The trailing \ on the destination path is important!
 Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recurse -Container -ErrorAction SilentlyContinue
 
+# Workaround for UNR-2156 and UNR-2076, where spatiald / runtime processes sometimes never close, or where runtimes are orphaned
+# Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
+Start-Process spatial "service","stop" -Wait -ErrorAction Stop -NoNewWindow
+Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
+
 # Clean up testing project (symlinks could be invalid during initial cleanup - leaving the project as a result)
 if (Test-Path $test_repo_path) {
     Write-Log "Removing existing project"

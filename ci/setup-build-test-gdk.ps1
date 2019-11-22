@@ -47,6 +47,7 @@ if ($proc.ExitCode -ne 0) {
   THROW "Failed to update spatial CLI to version $spatial_cli_version"
 }
 
+# Build the testing project
 Start-Event "build-project" "command"
 &$PSScriptRoot"\build-project.ps1" `
     -build_output_dir "$build_home\SpatialGDKBuild" `
