@@ -2,7 +2,7 @@
 
 # SpatialOS concepts: authority and interest
 
-> **Tip:** Before you read this page, you should read [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos), [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components), and [Workers]({{urlRoot}}/content/spatialos-concepts/workers-and-zoning).
+> **Tip:** Before you read this page, you should read [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos), [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components), and [Workers and zoning]({{urlRoot}}/content/spatialos-concepts/workers-and-zoning).
 
 In Unreal’s single-server architecture, authority over an Actor stays with the single server; an Actor’s properties never leave the server’s memory. When you use multiple server-worker instances in your SpatialOS game world (known as [zoning]({{urlRoot}}/content/spatialos-concepts/workers-and-zoning#zoning) - a feature that is currently in pre-alpha), each instance has access only to a part of the game world. This access is governed both by what the worker instance has _authority_ over and what it has _interest_ in.
 
