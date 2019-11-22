@@ -528,7 +528,7 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 	QuerySuccessDelegate.BindUObject(this, &USpatialNetDriver::OnQueryGSMSuccess);
 
 	// Begin querying the state of the GSM so we know the state of AcceptingPlayers.
-	GlobalStateManager->QueryGSM(true, SessionId, QuerySuccessDelegate);
+	GlobalStateManager->QueryGSM(true /*bExpectedAcceptingPlayers*/, SessionId, QuerySuccessDelegate);
 }
 
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
@@ -558,12 +558,20 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		}
 		else
 		{
-			UE_LOG(LogSpatial, Log, TEXT("Trying to call GlobalStateManager->SetAcceptingPlayers(true) when GlobalStateManager is nullptr"),);
+			UE_LOG(LogSpatial, Error, TEXT("Map loaded on server but GlobalStateManager is not properly initialised. Session cannot start, players cannot connect."));
 		}
 	}
-	else if (CanSendPlayerSpawnRequests())
+	else
 	{
-		MakePlayerSpawnRequest();
+		if (CanSendPlayerSpawnRequests())
+		{
+			MakePlayerSpawnRequest();
+		}
+		else
+		{
+			UE_LOG(LogSpatial, Warning, TEXT("Client map finished loading but could not send player spawn request. Will requery the GSM for the correct map to load."));
+			QueryGSMToLoadMap();
+		}
 	}
 
 	bMapLoaded = true;

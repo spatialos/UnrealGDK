@@ -43,8 +43,8 @@ public:
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
 
 	DECLARE_DELEGATE(QuerySuccessDelegate);
-	void QueryGSM(bool AcceptingPlayersToCheck, int32 SessionIdToCheck, const QuerySuccessDelegate& Callback, bool bRetryUntilAcceptingPlayers = true);
-	void RetryQueryGSM(bool AcceptingPlayersToCheck, int32 SessionIdToCheck, const QuerySuccessDelegate& Callback, bool bRetryUntilAcceptingPlayers = true);
+	void QueryGSM(bool AcceptingPlayersToCheck, int32 SessionIdToCheck, const QuerySuccessDelegate& Callback, bool bRetryUntilRecieveExpectedValues = true);
+	void RetryQueryGSM(bool AcceptingPlayersToCheck, int32 SessionIdToCheck, const QuerySuccessDelegate& Callback, bool bRetryUntilRecieveExpectedValues = true);
 	bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers, int32& OutSessionId);
 	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
@@ -84,7 +84,7 @@ private:
 	// Deployment Map Component
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers;
-	int32 DeploymentSessionId;
+	int32 DeploymentSessionId = 0;
 
 	// Startup Actor Manager Component
 	bool bCanBeginPlay;
