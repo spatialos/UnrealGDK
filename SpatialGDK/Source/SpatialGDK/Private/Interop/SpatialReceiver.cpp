@@ -1542,7 +1542,7 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 					Actor = Cast<AActor>(TargetObject->GetOuter());
 					check(Actor);
 				}
-				NetDriver->OnReceivedReliableRPC(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
+				NetDriver->OnReceivedReliableRPC(Actor, FunctionFlagsToRPCType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
 			}
 		}
 
@@ -1833,7 +1833,7 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	ESchemaComponentType Type = RPCInfo.Type;
+	ERPCType Type = RPCInfo.Type;
 
 	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, Type, MoveTemp(InPayload));
 }

@@ -1281,7 +1281,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	{
 		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 		{
-			ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
+			ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCType(Function->FunctionFlags), CallingObject);
 		}
 	}
 
@@ -2056,7 +2056,7 @@ void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate
 	}
 }
 
-uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject)
+uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ERPCType RPCType, UObject* TargetObject)
 {
 	if (!ReliableRPCIdMap.Contains(Actor))
 	{
@@ -2070,7 +2070,7 @@ uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentTy
 		{
 			// We previously used to receive RPCs of this type, now we're about to send one, so we reset the reliable RPC index.
 			// This should only be possible for CrossServer RPCs.
-			check(RPCType == SCHEMA_CrossServerRPC);
+			check(RPCType == ERPCType::CrossServer);
 			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Used to receive reliable CrossServer RPCs from worker %s, now about to send one. The entity must have crossed boundary."),
 				*Actor->GetName(), *TargetObject->GetName(), *RPCIdEntry->WorkerId);
 			RPCIdEntry->WorkerId = FString();
@@ -2086,7 +2086,7 @@ uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentTy
 	return ++ReliableRPCIds[RPCType].RPCId;
 }
 
-void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function)
+void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ERPCType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function)
 {
 	if (!ReliableRPCIdMap.Contains(Actor))
 	{
@@ -2101,7 +2101,7 @@ void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentTyp
 			if (RPCIdEntry->WorkerId.IsEmpty())
 			{
 				// We previously used to send RPCs of this type, now we received one. This should only be possible for CrossServer RPCs.
-				check(RPCType == SCHEMA_CrossServerRPC);
+				check(RPCType == ERPCType::CrossServer);
 				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Used to send reliable CrossServer RPCs, now received one from worker %s. The entity must have crossed boundary."),
 					*Actor->GetName(), *TargetObject->GetName(), *WorkerId);
 			}
@@ -2109,7 +2109,7 @@ void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentTyp
 			{
 				// We received an RPC from a different worker than the one we used to receive RPCs of this type from.
 				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Received a reliable %s RPC from a different worker %s. Previously received from worker %s."),
-					*Actor->GetName(), *TargetObject->GetName(), *RPCSchemaTypeToString(RPCType), *WorkerId, *RPCIdEntry->WorkerId);
+					*Actor->GetName(), *TargetObject->GetName(), *RPCTypeToString(RPCType), *WorkerId, *RPCIdEntry->WorkerId);
 			}
 			RPCIdEntry->WorkerId = WorkerId;
 		}
@@ -2118,17 +2118,17 @@ void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentTyp
 			if (RPCId < RPCIdEntry->RPCId)
 			{
 				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Actor %s: Reliable %s RPC received out of order! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
-					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
+					*Actor->GetName(), *RPCTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
 			}
 			else if (RPCId == RPCIdEntry->RPCId)
 			{
 				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Actor %s: Reliable %s RPC index duplicated! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
-					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
+					*Actor->GetName(), *RPCTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
 			}
 			else
 			{
 				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Actor %s: One or more reliable %s RPCs skipped! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
-					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
+					*Actor->GetName(), *RPCTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
 			}
 		}
 
@@ -2142,7 +2142,7 @@ void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentTyp
 	}
 }
 
-void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType)
+void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ERPCType RPCType)
 {
 	// When we gain authority on an RPC component of an actor that we previously received RPCs for, reset the reliable RPC counter.
 	// This is to account for the case where the actor crosses to another worker, receives a couple of reliable RPCs, and comes back
@@ -2152,7 +2152,7 @@ void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType
 		if (ReliableRPCIds->Contains(RPCType))
 		{
 			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s: Gained authority over %s RPC component. Resetting previous reliable RPC counter."),
-				*Actor->GetName(), *RPCSchemaTypeToString(RPCType));
+				*Actor->GetName(), *RPCTypeToString(RPCType));
 			ReliableRPCIds->Remove(RPCType);
 		}
 	}

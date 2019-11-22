@@ -161,9 +161,9 @@ public:
 	int32 GetConsiderListSize() const { return ConsiderListSize; }
 #endif
 
-	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
-	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
-	void OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType);
+	uint32 GetNextReliableRPCId(AActor* Actor, ERPCType RPCType, UObject* TargetObject);
+	void OnReceivedReliableRPC(AActor* Actor, ERPCType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
+	void OnRPCAuthorityGained(AActor* Actor, ERPCType RPCType);
 
 	struct FReliableRPCId
 	{
@@ -175,7 +175,7 @@ public:
 		FString LastRPCTarget;
 		FString LastRPCName;
 	};
-	using FRPCTypeToReliableRPCIdMap = TMap<ESchemaComponentType, FReliableRPCId>;
+	using FRPCTypeToReliableRPCIdMap = TMap<ERPCType, FReliableRPCId>;
 	// Per actor, maps from RPC type to the reliable RPC index used to detect if reliable RPCs go out of order.
 	TMap<TWeakObjectPtr<AActor>, FRPCTypeToReliableRPCIdMap> ReliableRPCIdMap;
 

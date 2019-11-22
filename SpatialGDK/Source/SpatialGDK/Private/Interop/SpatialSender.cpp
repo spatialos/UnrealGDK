@@ -786,7 +786,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 }
 
 #if !UE_BUILD_SHIPPING
-void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ESchemaComponentType RPCType)
+void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType)
 {
 		NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
 		NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
@@ -822,9 +822,9 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 	switch (RPCInfo.Type)
 	{
-	case SCHEMA_CrossServerRPC:
+	case ERPCType::CrossServer:
 	{
-		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo.Type);
+		Worker_ComponentId ComponentId = RPCTypeToWorkerComponentId(RPCInfo.Type);
 
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
@@ -849,11 +849,11 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 		return ERPCResult::Success;
 	}
-	case SCHEMA_NetMulticastRPC:
-	case SCHEMA_ClientReliableRPC:
-	case SCHEMA_ServerReliableRPC:
-	case SCHEMA_ClientUnreliableRPC:
-	case SCHEMA_ServerUnreliableRPC:
+	case ERPCType::NetMulticast:
+	case ERPCType::ClientReliable:
+	case ERPCType::ServerReliable:
+	case ERPCType::ClientUnreliable:
+	case ERPCType::ServerUnreliable:
 	{
 		FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
 		if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
@@ -861,7 +861,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			return ERPCResult::UnresolvedTargetObject;
 		}
 
-		if (RPCInfo.Type != SCHEMA_NetMulticastRPC && !Channel->IsListening())
+		if (RPCInfo.Type != ERPCType::NetMulticast && !Channel->IsListening())
 		{
 			// If the Entity endpoint is not yet ready to receive RPCs -
 			// treat the corresponding object as unresolved and queue RPC
@@ -872,10 +872,10 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		EntityId = TargetObjectRef.Entity;
 		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo.Type);
+		Worker_ComponentId ComponentId = RPCTypeToWorkerComponentId(RPCInfo.Type);
 
 		bool bCanPackRPC = GetDefault<USpatialGDKSettings>()->bPackRPCs;
-		if (bCanPackRPC && RPCInfo.Type == SCHEMA_NetMulticastRPC)
+		if (bCanPackRPC && RPCInfo.Type == ERPCType::NetMulticast)
 		{
 			bCanPackRPC = false;
 		}
