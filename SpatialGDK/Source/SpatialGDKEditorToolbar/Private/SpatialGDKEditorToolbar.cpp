@@ -45,6 +45,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 : bStopSpatialOnExit(false)
+, bSchemaBuildError(false)
 {
 }
 
@@ -566,6 +567,17 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		return;
 	}
 
+	if (bSchemaBuildError)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Schema did not previously compile correctly, you may be running a stale build."));
+
+		EAppReturnType::Type result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString("Last schema generation failed or failed to run the schema descriptor. Schema will most likely be out of date and cause a crash. Are you sure you want to continue?"));
+		if (result == EAppReturnType::No)
+		{
+			return;
+		}
+	}
+
 	// Get the latest launch config.
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -790,6 +802,8 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
 	LocalDeploymentManager->SetRedeployRequired();
 
+	bSchemaBuildError = false;
+
 	if (SpatialGDKEditorInstance->FullScanRequired())
 	{
 		OnShowTaskStartNotification("Initial Schema Generation");
@@ -801,6 +815,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification("Initial Schema Generation failed");
+			bSchemaBuildError = true;
 		}
 	}
 	else if (bFullScan)
@@ -814,6 +829,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification("Full Schema Generation failed");
+			bSchemaBuildError = true;
 		}
 	}
 	else
@@ -827,6 +843,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification("Incremental Schema Generation failed");
+			bSchemaBuildError = true;
 		}
 	}
 }
