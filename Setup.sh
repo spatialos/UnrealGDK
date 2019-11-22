@@ -54,7 +54,7 @@ mkdir -p "${CORE_SDK_DIR}"/tools
 mkdir -p "${CORE_SDK_DIR}"/worker_sdk
 mkdir -p "${BINARIES_DIR}"/Programs/worker_sdk
 
-if [ -d "${SPATIAL_DIR}" ]; then
+if [[ -d "${SPATIAL_DIR}" ]]; then
     mkdir -p "${SCHEMA_STD_COPY_DIR}"
     mkdir -p "${SCHEMA_COPY_DIR}"
 fi

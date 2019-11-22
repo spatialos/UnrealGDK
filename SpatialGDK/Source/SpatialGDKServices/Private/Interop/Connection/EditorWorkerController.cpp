@@ -2,7 +2,7 @@
 
 #include "Interop/Connection/EditorWorkerController.h"
 
-#include "SpatialGDKServicesModule.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesPrivate.h"
 
 #include "Editor.h"
@@ -74,7 +74,7 @@ struct EditorWorkerController
 				"--replacing_worker_id %s"), *ServicePort, *OldWorker, *NewWorker);
 		uint32 ProcessID = 0;
 		FProcHandle ProcHandle = FPlatformProcess::CreateProc(
-			*FSpatialGDKServicesModule::GetSpatialExe(), *CmdArgs, false, true, true, &ProcessID, 2 /*PriorityModifier*/,
+			*SpatialGDKServicesConstants::SpatialExe, *CmdArgs, false, true, true, &ProcessID, 2 /*PriorityModifier*/,
 			nullptr, nullptr, nullptr);
 
 		return ProcHandle;

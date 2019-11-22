@@ -23,8 +23,6 @@ public:
 
 	static FString GetSpatialOSDirectory(const FString& AppendPath = TEXT(""));
 	static FString GetSpatialGDKPluginDirectory(const FString& AppendPath = TEXT(""));
-	static const FString& GetSpotExe();
-	static const FString& GetSpatialExe();
 	static bool SpatialPreRunChecks();
 
 	FORCEINLINE static FString GetProjectName()

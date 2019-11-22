@@ -28,6 +28,7 @@
 #include "Settings/ProjectPackagingSettings.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "TypeStructure.h"
 #include "UObject/StrongObjectPtr.h"
@@ -735,12 +736,6 @@ bool RunSchemaCompiler()
 	FString PluginDir = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory();
 
 	// Get the schema_compiler path and arguments
-#if PLATFORM_WINDOWS
-    FString SchemaCompilerExe = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe"));
-#elif PLATFORM_MAC
-    FString SchemaCompilerExe = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler"));
-#endif
-
 	FString SchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema"));
 	FString CoreSDKSchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
 	FString SchemaDescriptorDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
@@ -759,12 +754,12 @@ bool RunSchemaCompiler()
 
 	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
 
-	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Starting '%s' with `%s` arguments."), *SchemaCompilerExe, *SchemaCompilerArgs);
+	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Starting '%s' with `%s` arguments."), *SpatialGDKServicesConstants::SchemaCompilerExe, *SchemaCompilerArgs);
 
 	int32 ExitCode = 1;
 	FString SchemaCompilerOut;
 	FString SchemaCompilerErr;
-	FPlatformProcess::ExecProcess(*SchemaCompilerExe, *SchemaCompilerArgs, &ExitCode, &SchemaCompilerOut, &SchemaCompilerErr);
+	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SchemaCompilerExe, *SchemaCompilerArgs, &ExitCode, &SchemaCompilerOut, &SchemaCompilerErr);
 
 	if (ExitCode == 0)
 	{
