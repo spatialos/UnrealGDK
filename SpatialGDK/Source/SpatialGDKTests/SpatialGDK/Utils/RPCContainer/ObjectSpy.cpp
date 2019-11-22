@@ -4,22 +4,22 @@
 
 // If this assertion fails, then TypeToArray and ArrayToType
 // functions have to be updated correspondingly
-static_assert(sizeof(ESchemaComponentType) == sizeof(int32), "");
+static_assert(sizeof(ERPCType) == sizeof(uint8), "");
 
-TArray<uint8> SpyUtils::SchemaTypeToByteArray(ESchemaComponentType Type)
+TArray<uint8> SpyUtils::RPCTypeToByteArray(ERPCType Type)
 {
-	int32 ConvertedType = static_cast<int32>(Type);
-	return TArray<uint8>(reinterpret_cast<uint8*>(&ConvertedType), sizeof(ConvertedType));
+	uint8 ConvertedType = static_cast<uint8>(Type);
+	return TArray<uint8>(&ConvertedType, sizeof(ConvertedType));
 }
 
-ESchemaComponentType SpyUtils::ByteArrayToSchemaType(const TArray<uint8>& Array)
+ERPCType SpyUtils::ByteArrayToRPCType(const TArray<uint8>& Array)
 {
-	return ESchemaComponentType(*reinterpret_cast<const int32*>(&Array[0]));
+	return ERPCType(Array[0]);
 }
 
 FRPCErrorInfo UObjectSpy::ProcessRPC(const FPendingRPCParams& Params)
 {
-	ESchemaComponentType Type = SpyUtils::ByteArrayToSchemaType(Params.Payload.PayloadData);
+	ERPCType Type = SpyUtils::ByteArrayToRPCType(Params.Payload.PayloadData);
 	ProcessedRPCIndices.FindOrAdd(Type).Push(Params.Payload.Index);
 	return FRPCErrorInfo{ nullptr, nullptr, true, ERPCQueueType::Send, ERPCResult::Success };
 }

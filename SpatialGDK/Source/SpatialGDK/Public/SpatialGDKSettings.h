@@ -144,11 +144,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bUseFrameTimeAsLoad;
 
-	// TODO: UNR-1653 Redesign bCheckRPCOrder Tests functionality
-	/** Include an order index with reliable RPCs and warn if they are executed out of order.*/
-	UPROPERTY(config, meta = (ConfigRestartRequired = false))
-	bool bCheckRPCOrder;
-
 	/** Batch entity position updates to be processed on a single frame.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bBatchSpatialPositionUpdates;
