@@ -29,12 +29,11 @@ env:
 
 steps:
   - label: "build-ENGINE_COMMIT_HASH_PLACEHOLDER-BUILD_PLATFORM_PLACEHOLDER-BUILD_TARGET_PLACEHOLDER-BUILD_STATE_PLACEHOLDER"
-    command: "powershell ./ci/setup-build-test-gdk.ps1"
+    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform BUILD_PLATFORM_PLACEHOLDER"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
     env:
       ENGINE_COMMIT_HASH: "ENGINE_COMMIT_HASH_PLACEHOLDER"
-      BUILD_PLATFORM: "BUILD_PLATFORM_PLACEHOLDER"
       BUILD_TARGET: "BUILD_TARGET_PLACEHOLDER"
       BUILD_STATE: "BUILD_STATE_PLACEHOLDER"

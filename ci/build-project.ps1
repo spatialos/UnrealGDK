@@ -6,7 +6,10 @@ param(
     [string] $test_repo_uproject_path,
     [string] $test_repo_path,
     [string] $msbuild_exe,
-    [string] $gdk_home
+    [string] $gdk_home,
+    [string] $build_platform,
+    [string] $build_state,
+    [string] $build_target
 )
 
 # Copy the built files back into the SpatialGDK folder, to have a complete plugin
@@ -46,11 +49,11 @@ if ($proc.ExitCode -ne 0) {
 }
 
 Write-Log "Building the testing project"
-$build_configuration = $env:BUILD_STATE + $(If ("$env:BUILD_TARGET" -eq "") {""} Else {" $env:BUILD_TARGET"})
+$build_configuration = $build_state + $(If ("$build_target" -eq "") {""} Else {" $build_target"})
 $proc = Start-Process "$msbuild_exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
     "/nologo", `
     "$($test_repo_uproject_path.Replace(".uproject", ".sln"))", `
-    "/p:Configuration=`"$build_configuration`";Platform=`"$env:BUILD_PLATFORM`""
+    "/p:Configuration=`"$build_configuration`";Platform=`"$build_platform`""
 )
 if ($proc.ExitCode -ne 0) {
     throw "Failed to build testing project."

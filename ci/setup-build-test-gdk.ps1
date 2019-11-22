@@ -2,6 +2,7 @@ param(
   [string] $gdk_home = (Get-Item "$($PSScriptRoot)").parent.FullName, ## The root of the UnrealGDK repo
   [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production/UnrealEngine",
   [string] $msbuild_exe = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MSBuild.exe",
+  [string] $target_platform = "Win64",
   [string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build. Should ultimately resolve to "C:\b\<number>\".
   [string] $unreal_path = "$build_home\UnrealEngine",
   [string] $test_repo_branch = "master",
@@ -38,7 +39,7 @@ Start-Event "setup-gdk" "command"
 Finish-Event "setup-gdk" "command"
 
 # Build the GDK plugin
-&$PSScriptRoot"\build-gdk.ps1" -target_platform $($env:BUILD_PLATFORM) -build_output_dir "$build_home\SpatialGDKBuild" -unreal_path $unreal_path
+&$PSScriptRoot"\build-gdk.ps1" -target_platform $($target_platform) -build_output_dir "$build_home\SpatialGDKBuild" -unreal_path $unreal_path
 
 # Update spatial to compatible version
 $proc = Start-Process spatial "update","$spatial_cli_version" -Wait -ErrorAction Stop -NoNewWindow -PassThru
@@ -55,11 +56,14 @@ Start-Event "build-project" "command"
     -test_repo_uproject_path "$build_home\TestProject\$test_repo_relative_uproject_path" `
     -test_repo_path "$build_home\TestProject" `
     -msbuild_exe "$msbuild_exe" `
-    -gdk_home "$gdk_home"
+    -gdk_home "$gdk_home" `
+    -build_platform = "$build_platform",
+    -build_state = "$env:BUILD_STATE",
+    -build_target = "$env:BUILD_TARGET"
 Finish-Event "build-project" "command"
 
 # Only run tests on Windows, as we do not have a linux agent - should not matter
-if ($env:BUILD_PLATFORM -eq "Win64" -And $env:BUILD_TARGET -eq "Editor") {
+if ($target_platform -eq "Win64" -And $env:BUILD_TARGET -eq "Editor") {
   Start-Event "setup-tests" "command"
   &$PSScriptRoot"\setup-tests.ps1" `
     -unreal_path "$unreal_path" `
