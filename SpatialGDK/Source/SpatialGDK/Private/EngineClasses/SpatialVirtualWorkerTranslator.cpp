@@ -114,6 +114,10 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 
 		// Insert each into the provided map.
 		VirtualToPhysicalWorkerMapping.Add(VirtualWorkerId, PhysicalWorkerName);
+		if (PhysicalWorkerName == WorkerId)
+		{
+			LocalVirtualWorkerId = VirtualWorkerId;
+		}
 	}
 
 	if (TranslationCount)
