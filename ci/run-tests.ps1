@@ -40,6 +40,6 @@ $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -Argume
 Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
 If ($run_tests_proc.ExitCode -ne 0) {
     echo "Failed to run tests. Attemptig to upload log artifact..."
-    $ buildkite-agent artifact upload "$log_file_path"
+    & buildkite-agent artifact upload "$log_file_path"
     throw "Failed to run tests."
 }
