@@ -211,6 +211,7 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
 	bool bUseRPCRingBuffers;
 
+private:
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "Default RPC Ring Buffer Size"))
 	uint32 DefaultRPCRingBufferSize;
 
@@ -218,9 +219,10 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "RPC Ring Buffer Size Map"))
 	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
 
+public:
+	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
+
 	/** The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and break snapshot compatibility. */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "Max RPC Ring Buffer Size"))
 	uint32 MaxRPCRingBufferSize;
-
-	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
 };
