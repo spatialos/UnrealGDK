@@ -104,6 +104,8 @@ private:
 
 	FString GetOptionalExposedRuntimeIP() const;
 
+	void UpdateMobileClient() const;
+
 	static void ShowCompileLog();
 
 	TSharedPtr<FUICommandList> PluginCommands;

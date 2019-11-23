@@ -9,6 +9,8 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
+#include "HAL/PlatformFilemanager.h"
+#include "IOSRuntimeSettings.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
@@ -205,6 +207,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute),
 		FIsActionChecked(),
 		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible));
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().UpdateMobileClient,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UpdateMobileClient),
+		FCanExecuteAction());
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -245,6 +252,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 #endif
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().UpdateMobileClient);
 	}
 	Builder.EndSection();
 }
@@ -860,6 +868,44 @@ FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
 	{
 		return TEXT("");
 	}
+}
+
+void FSpatialGDKEditorToolbarModule::UpdateMobileClient() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	const UIOSRuntimeSettings* IOSRuntimeSettings = GetDefault<UIOSRuntimeSettings>();
+	const FString ProjectName = FApp::GetProjectName();
+
+	const FString CommandLineArgs = FString::Printf(TEXT( "../../../%s/%s.uproject %s -game -log -workerType UnrealClient"), *ProjectName, *ProjectName, *(SpatialGDKSettings->ExposedRuntimeIP));
+	const FString Filename = FPaths::Combine(*FPaths::ProjectLogDir(), TEXT("ue4commandline.txt"));
+	if(!FFileHelper::SaveStringToFile(CommandLineArgs, *Filename, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to write command line args to file: %s"), *Filename);
+		return;
+	}
+
+	FString DeploymentServerExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
+	FString DeploymentServerArguments = FString::Printf(TEXT("copyfile -bundle \"%s\" -file \"%s\" -file \"/Documents/ue4commandline.txt\""), *(IOSRuntimeSettings->BundleIdentifier), *Filename);
+	FString DeploymentServerOutput;
+	int32 ExitCode;
+
+#if PLATFORM_WINDOWS
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(DeploymentServerExe, DeploymentServerArguments, FPaths::EngineDir(), DeploymentServerOutput, ExitCode);
+#elif PLATFORM_MAC
+	FString MonoExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/ThirdParty/Mono/Mac/bin/mono")));
+	DeploymentServerArguments = FString::Printf(TEXT("%s %s"), *DeploymentServerExe, *DeploymentServerArguments);
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(MonoExe, DeploymentServerArguments, FPaths::EngineDir(), DeploymentServerOutput, ExitCode);
+#endif
+
+	if (ExitCode != 0)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Failed to run %s with error %s."), *DeploymentServerExe, *DeploymentServerOutput);
+		return;
+	}
+
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	PlatformFile.DeleteFile(*Filename);
+	UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Successfully stored command line args on device: %s"), *DeploymentServerOutput);
 }
 
 #undef LOCTEXT_NAMESPACE
