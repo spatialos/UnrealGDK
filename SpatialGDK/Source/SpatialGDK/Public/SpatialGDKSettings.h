@@ -9,7 +9,7 @@
 
 #include "SpatialGDKSettings.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGdkSettings, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
 
 /**
  * Enum that maps Unreal's log verbosity to allow use in settings.
