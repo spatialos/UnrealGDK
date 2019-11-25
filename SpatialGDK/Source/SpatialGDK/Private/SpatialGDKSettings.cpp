@@ -41,6 +41,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 	, bEnableUnrealLoadBalancer(false)
+	, bEnableSchemaValidationOnJoin(true)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
