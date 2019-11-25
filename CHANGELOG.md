@@ -38,6 +38,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Servers maintain interest in AlwaysRelevant Actors.
 - The default cloud launch configuration is now empty.
 - Fixed an crash caused by attempting to read schema from an unloaded class.
+- Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
+
 
 ## [`0.7.0-preview`] - 2019-10-11
 
@@ -84,6 +86,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The initial connection from a worker will attempt to use relevant command line arguments (receptionistHost, locatorHost) to inform the connection. If these are not provided the standard connection flow will be followed. Subsequent connections will not use command line arguments.
 - The command "Open 0.0.0.0" can be used to connect a worker using its command line arguments, simulating initial connection.
 - The command "ConnectToLocator <login> <playerToken>" has been added to allow for explicit connections to deployments.
+- Add SpatialDebugger and associated content.  This tool can be enabled via the SpatialToggleDebugger console command.  Documentation will be added for this soon.
 
 ### Bug fixes:
 - Spatial networking is now always enabled in built assemblies.
