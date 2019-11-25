@@ -85,6 +85,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The initial connection from a worker will attempt to use relevant command line arguments (receptionistHost, locatorHost) to inform the connection. If these are not provided the standard connection flow will be followed. Subsequent connections will not use command line arguments.
 - The command "Open 0.0.0.0" can be used to connect a worker using its command line arguments, simulating initial connection.
 - The command "ConnectToLocator <login> <playerToken>" has been added to allow for explicit connections to deployments.
+- Add SpatialDebugger and associated content.  This tool can be enabled via the SpatialToggleDebugger console command.  Documentation will be added for this soon.
 
 ### Bug fixes:
 - Spatial networking is now always enabled in built assemblies.
