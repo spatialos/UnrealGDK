@@ -117,9 +117,12 @@ namespace SpatialConstants
 	const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID			    = 9993;
 	const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 9992;
 	const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 9991;
-	const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID				= 9990;
-	const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID				= 9989;
-	const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID					= 9987;
+	// Marking the event-based RPC components as legacy while the ring buffer
+	// implementation is under a feature flag.
+	const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY		= 9990;
+	const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY		= 9989;
+	const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID_LEGACY			= 9987;
+
 	const Worker_ComponentId NOT_STREAMED_COMPONENT_ID						= 9986;
 	const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
 	const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
@@ -249,27 +252,27 @@ namespace SpatialConstants
 
 } // ::SpatialConstants
 
-FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentId(ERPCType RPCType)
+FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {
 	switch (RPCType)
 	{
 	case ERPCType::CrossServer:
 	{
-		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 	}
 	case ERPCType::NetMulticast:
 	{
-		return SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
+		return SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY;
 	}
 	case ERPCType::ClientReliable:
 	case ERPCType::ClientUnreliable:
 	{
-		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 	}
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
 	{
-		return SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+		return SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 	}
 	default:
 		checkNoEntry();
