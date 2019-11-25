@@ -7,7 +7,7 @@ generate_build_configuration_steps () {
         echo "This is a nightly build. Generating the appropriate steps..."
         
         # Editor builds (only on Windows)
-        for build_state in "DebugGame" "Development" "Shipping" "Test"; do
+        for build_state in "DebugGame" "Development"; do
             cat "ci/gdk_build.template.steps.yaml" | \
             sed "s|ENGINE_COMMIT_HASH_PLACEHOLDER|$1|g" | \
             sed "s|BUILD_PLATFORM_PLACEHOLDER|Win64|g" | \
