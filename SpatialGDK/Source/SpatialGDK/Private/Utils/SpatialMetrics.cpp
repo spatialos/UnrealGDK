@@ -152,13 +152,13 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 
 		FString SeparatorLine = FString::Printf(TEXT("-------------------+-%s-+------------+------------+---------------+--------------+------------"), *FString::ChrN(MaxRPCNameLen, '-'));
 
-		ESchemaComponentType PrevType = SCHEMA_Invalid;
+		ERPCType PrevType = ERPCType::Invalid;
 		for (RPCStat& Stat : RecentRPCArray)
 		{
 			FString RPCTypeField;
 			if (Stat.Type != PrevType)
 			{
-				RPCTypeField = RPCSchemaTypeToString(Stat.Type);
+				RPCTypeField = RPCTypeToString(Stat.Type);
 				PrevType = Stat.Type;
 				UE_LOG(LogSpatialMetrics, Log, TEXT("%s"), *SeparatorLine);
 			}
@@ -268,7 +268,7 @@ void USpatialMetrics::OnModifySettingCommand(Schema_Object* CommandPayload)
 	SpatialModifySetting(Name, Value);
 }
 
-void USpatialMetrics::TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize)
+void USpatialMetrics::TrackSentRPC(UFunction* Function, ERPCType RPCType, int PayloadSize)
 {
 	if (!bRPCTrackingEnabled)
 	{

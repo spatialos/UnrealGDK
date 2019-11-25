@@ -15,6 +15,7 @@
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Net/NetworkProfiler.h"
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpoint.h"
@@ -662,11 +663,11 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterestForActor(
 	return ComponentInterest;
 }
 
-RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function, int ReliableRPCIndex, void* Params)
+RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function, void* Params)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params, ReliableRPCIndex);
+	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params);
 
 	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 }
@@ -784,6 +785,14 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result };
 }
 
+#if !UE_BUILD_SHIPPING
+void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType)
+{
+		NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
+		NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
+}
+#endif
+
 ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload)
 {
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
@@ -803,7 +812,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Payload);
 #if !UE_BUILD_SHIPPING
-			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
+			TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
 			return ERPCResult::Success;
 		}
@@ -813,9 +822,9 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 	switch (RPCInfo.Type)
 	{
-	case SCHEMA_CrossServerRPC:
+	case ERPCType::CrossServer:
 	{
-		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo.Type);
+		Worker_ComponentId ComponentId = RPCTypeToWorkerComponentId(RPCInfo.Type);
 
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
@@ -823,7 +832,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
 #if !UE_BUILD_SHIPPING
-		NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
+		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
 
 		if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
@@ -840,11 +849,11 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 		return ERPCResult::Success;
 	}
-	case SCHEMA_NetMulticastRPC:
-	case SCHEMA_ClientReliableRPC:
-	case SCHEMA_ServerReliableRPC:
-	case SCHEMA_ClientUnreliableRPC:
-	case SCHEMA_ServerUnreliableRPC:
+	case ERPCType::NetMulticast:
+	case ERPCType::ClientReliable:
+	case ERPCType::ServerReliable:
+	case ERPCType::ClientUnreliable:
+	case ERPCType::ServerUnreliable:
 	{
 		FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
 		if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
@@ -852,7 +861,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			return ERPCResult::UnresolvedTargetObject;
 		}
 
-		if (RPCInfo.Type != SCHEMA_NetMulticastRPC && !Channel->IsListening())
+		if (RPCInfo.Type != ERPCType::NetMulticast && !Channel->IsListening())
 		{
 			// If the Entity endpoint is not yet ready to receive RPCs -
 			// treat the corresponding object as unresolved and queue RPC
@@ -863,10 +872,10 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		EntityId = TargetObjectRef.Entity;
 		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo.Type);
+		Worker_ComponentId ComponentId = RPCTypeToWorkerComponentId(RPCInfo.Type);
 
 		bool bCanPackRPC = GetDefault<USpatialGDKSettings>()->bPackRPCs;
-		if (bCanPackRPC && RPCInfo.Type == SCHEMA_NetMulticastRPC)
+		if (bCanPackRPC && RPCInfo.Type == ERPCType::NetMulticast)
 		{
 			bCanPackRPC = false;
 		}
@@ -899,7 +908,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 #if !UE_BUILD_SHIPPING
 			if (Result == ERPCResult::Success)
 			{
-				NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
+				TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 			}
 #endif // !UE_BUILD_SHIPPING
 			return Result;
@@ -915,7 +924,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 #if !UE_BUILD_SHIPPING
-			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
+			TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
 			return ERPCResult::Success;
 		}
@@ -1043,17 +1052,9 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 	OutgoingRPCs.ProcessRPCs();
 }
 
-FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId) const
+FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters) const
 {
 	FSpatialNetBitWriter PayloadWriter(PackageMap);
-
-	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
-	{
-		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-		{
-			PayloadWriter << ReliableRPCId;
-		}
-	}
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
