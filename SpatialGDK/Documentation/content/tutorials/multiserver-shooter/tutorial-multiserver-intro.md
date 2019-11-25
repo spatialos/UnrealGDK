@@ -4,9 +4,6 @@
 <%(Callout type="warn" message="This tutorial is a preview demonstrating early multiserver zoning functionality in the GDK. Please note we do not recommend development of multiserver projects using server [zoning]({{urlRoot}}/content/glossary#worker) at this time. </br></br>
 For more information on multiserver zoning, see our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) pages.")%>	
 
-
-> This tutorial uses the Example Project from the GDK's [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro).</br>
-
 <br/>
 
 ### What the tutorial covers
