@@ -2,7 +2,6 @@
 
 #include "TestDefinitions.h"
 
-#include "ExpectedGeneratedSchemaFileContents.h"
 #include "SchemaGenObjectStub.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKServicesModule.h"
@@ -33,7 +32,7 @@ TArray<FString> LoadSchemaFileForClassToStringArray(const FString& InSchemaOutpu
 	}
 
 	TArray<FString> FileContent;
-	FFileHelper::LoadFileToStringArray(FileContent, *FPaths::SetExtension(FPaths::Combine(FPaths::Combine(InSchemaOutputFolder, SchemaFileFolder), CurrentClass->GetName()), TEXT(".schema")));
+	FFileHelper::LoadFileToStringArray(FileContent, *FPaths::SetExtension(FPaths::Combine(InSchemaOutputFolder, SchemaFileFolder, CurrentClass->GetName()), TEXT(".schema")));
 
 	return FileContent;
 }
@@ -191,7 +190,7 @@ FString LoadSchemaFileForClass(const FString& InSchemaOutputFolder, const UClass
 	}
 
 	FString FileContent;
-	FFileHelper::LoadFileToString(FileContent, *FPaths::SetExtension(FPaths::Combine(FPaths::Combine(InSchemaOutputFolder, SchemaFileFolder), CurrentClass->GetName()), TEXT(".schema")));
+	FFileHelper::LoadFileToString(FileContent, *FPaths::SetExtension(FPaths::Combine(InSchemaOutputFolder, SchemaFileFolder, CurrentClass->GetName()), TEXT(".schema")));
 
 	return FileContent;
 }
@@ -238,50 +237,34 @@ const TSet<UClass*>& AllTestClassesSet()
 	return TestClassesSet;
 };
 
-TMap<FString, FString> ExpectedContents =
-{
-	TPair<FString, FString>
-		{
-			"SpatialTypeActor",
-			ExpectedFileContent::ASpatialTypeActor
-		},
-	TPair<FString, FString>
-		{
-			"NonSpatialTypeActor",
-			ExpectedFileContent::ANonSpatialTypeActor
-		},
-	TPair<FString, FString>
-		{
-			"SpatialTypeActorComponent",
-			ExpectedFileContent::ASpatialTypeActorComponent
-		},
-	TPair<FString, FString>
-		{
-			"SpatialTypeActorWithActorComponent",
-			ExpectedFileContent::ASpatialTypeActorWithActorComponent
-		},
-	TPair<FString, FString>
-		{
-			"SpatialTypeActorWithMultipleActorComponents",
-			ExpectedFileContent::ASpatialTypeActorWithMultipleActorComponents
-		},
-	TPair<FString, FString>
-		{
-			"SpatialTypeActorWithMultipleObjectComponents",
-			ExpectedFileContent::ASpatialTypeActorWithMultipleObjectComponents
-		}
+FString ExpectedContentsDirectory = TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema");
+TMap<FString, FString> ExpectedContentsFilenames = {
+	{ "SpatialTypeActor", "SpatialTypeActor.schema" },
+	{ "NonSpatialTypeActor", "NonSpatialTypeActor.schema" },
+	{ "SpatialTypeActorComponent", "SpatialTypeActorComponent.schema" },
+	{ "SpatialTypeActorWithActorComponent", "SpatialTypeActorWithActorComponent.schema" },
+	{ "SpatialTypeActorWithMultipleActorComponents", "SpatialTypeActorWithMultipleActorComponents.schema" },
+	{ "SpatialTypeActorWithMultipleObjectComponents", "SpatialTypeActorWithMultipleObjectComponents.schema" }
 };
 
 class SchemaValidator
 {
 public:
+	bool ValidateGeneratedSchemaAgainstExpectedSchema(const FString& GeneratedSchemaContent, const FString& ExpectedSchemaFilename)
+	{
+		FString ExpectedContentFullPath = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(ExpectedContentsDirectory), ExpectedSchemaFilename);
+
+		FString ExpectedContent;
+		FFileHelper::LoadFileToString(ExpectedContent, *ExpectedContentFullPath);
+		ExpectedContent.ReplaceInline(TEXT("{{id}}"), *FString::FromInt(GetNextFreeId()));
+		return (GeneratedSchemaContent.Compare(ExpectedContent) == 0);
+	}
+
 	bool ValidateGeneratedSchemaForClass(const FString& FileContent, const UClass* CurrentClass)
 	{
-		if (FString* ExpectedContentPtr = ExpectedContents.Find(CurrentClass->GetName()))
+		if (FString* ExpectedContentFilenamePtr = ExpectedContentsFilenames.Find(CurrentClass->GetName()))
 		{
-			FString ExpectedContent = *ExpectedContentPtr;
-			ExpectedContent.ReplaceInline(TEXT("{{id}}"), *FString::FromInt(GetNextFreeId()));
-			return (FileContent.Compare(ExpectedContent) == 0);
+			return ValidateGeneratedSchemaAgainstExpectedSchema(FileContent, *ExpectedContentFilenamePtr);
 		}
 		else
 		{
@@ -520,7 +503,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_Actor_classes_WHEN_generated_schema_for_the
 	for (const auto& CurrentClass : Classes)
 	{
 		FString FileContent = LoadSchemaFileForClass(SchemaOutputFolder, CurrentClass);
-		if(!Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass))
+		if (!Validator.ValidateGeneratedSchemaForClass(FileContent, CurrentClass))
 		{
 			bGeneratedSchemaMatchesExpected = false;
 			break;
@@ -823,6 +806,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 		"not_streamed.schema",
 		"relevant.schema",
 		"rpc_components.schema",
+		"rpc_payload.schema",
 		"singleton.schema",
 		"spawndata.schema",
 		"spawner.schema",
@@ -850,7 +834,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 	{
 		bExpectedFilesCopied = false;
 	}
-	for(const auto& FilePath : GDKSchemaFilePaths)
+	for (const auto& FilePath : GDKSchemaFilePaths)
 	{
 		if (!PlatformFile.FileExists(*FPaths::Combine(GDKSchemaCopyDir, FilePath)))
 		{
@@ -865,7 +849,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 	{
 		bExpectedFilesCopied = false;
 	}
-	for(const auto& FilePath : CoreSDKFilePaths)
+	for (const auto& FilePath : CoreSDKFilePaths)
 	{
 		if (!PlatformFile.FileExists(*FPaths::Combine(CoreSDKSchemaCopyDir, FilePath)))
 		{
