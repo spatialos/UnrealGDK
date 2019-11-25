@@ -94,6 +94,13 @@ void SpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChan
 // TODO(harkness): Is this true? I think this will be called once the first time we get authority?
 void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Object)
 {
+	int32 TranslationCount = (int32)Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
+	if (TranslationCount == 0 && VirtualToPhysicalWorkerMapping.Num() > 0)
+	{
+		// TODO: remove this hack
+		return;
+	}
+
 	if (NetDriver != nullptr &&
 		NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{

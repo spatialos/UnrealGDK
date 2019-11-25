@@ -64,6 +64,13 @@ void USpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityI
 	else
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Queueing ACL assignment request for entity %lld on worker %s."), EntityId, *WorkerId);
+		 const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
+		 // Had to add this check to avoid a problem in ProcessQueuedAclAssignmentRequests
+		 if (AuthorityIntentComponent == nullptr)
+		 {
+		 	UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Entity without AuthIntent component will not be queued. EntityId: %lld"), *WorkerId, EntityId);
+		 	return;
+		 }
 		AclWriteAuthAssignmentRequests.Add(WriteAuthAssignmentRequest(EntityId));
 	}
 }
@@ -78,7 +85,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		static const int32 WarnOnAttemptNum = 5;
 		if (Request.ProcessAttempts >= WarnOnAttemptNum)
 		{
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Failed to process WriteAuthAssignmentRequest with EntityID: %lld. Process attempts made: %d"), Request.EntityId, Request.ProcessAttempts);
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Failed to process WriteAuthAssignmentRequest on workerID: %lld with EntityID: %lld. Process attempts made: %d"), *WorkerId, Request.EntityId, Request.ProcessAttempts);
 		}
 
 		Request.ProcessAttempts++;
@@ -97,6 +104,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		{
 			// A virtual worker -> physical worker mapping may not be established yet.
 			// We'll retry on the next Tick().
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("No worker for %d"), LocalWorkerId);
 			continue;
 		}
 
