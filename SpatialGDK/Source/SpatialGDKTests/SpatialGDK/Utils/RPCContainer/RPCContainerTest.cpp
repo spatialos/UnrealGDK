@@ -18,8 +18,8 @@ using namespace SpatialGDK;
 
 namespace
 {
-	ESchemaComponentType AnySchemaComponentType = ESchemaComponentType::SCHEMA_ClientReliableRPC;
-	ESchemaComponentType AnyOtherSchemaComponentType = ESchemaComponentType::SCHEMA_ClientUnreliableRPC;
+	ERPCType AnySchemaComponentType = ERPCType::ClientReliable;
+	ERPCType AnyOtherSchemaComponentType = ERPCType::ClientUnreliable;
 
 	FUnrealObjectRef GenerateObjectRef(UObject* TargetObject)
 	{
@@ -32,10 +32,10 @@ namespace
 		return FreeIndex++;
 	}
 
-	FPendingRPCParams CreateMockParameters(UObject* TargetObject, ESchemaComponentType Type)
+	FPendingRPCParams CreateMockParameters(UObject* TargetObject, ERPCType Type)
 	{
 		// Use PayloadData as a place to store RPC type
-		RPCPayload Payload(0, GeneratePayloadFunctionIndex(), SpyUtils::SchemaTypeToByteArray(Type), nullptr);
+		RPCPayload Payload(0, GeneratePayloadFunctionIndex(), SpyUtils::RPCTypeToByteArray(Type), nullptr);
 		int ReliableRPCIndex = 0;
 
 		FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
@@ -159,7 +159,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	FRPCContainer RPCs;
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectSpy::ProcessRPC));
 
-	TMap<ESchemaComponentType, TArray<uint32>> RPCIndices;
+	TMap<ERPCType, TArray<uint32>> RPCIndices;
 
 	for (int i = 0; i < 4; ++i)
 	{

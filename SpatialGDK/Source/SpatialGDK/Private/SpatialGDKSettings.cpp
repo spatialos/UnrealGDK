@@ -30,7 +30,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableMetricsDisplay(false)
 	, MetricsReportRate(2.0f)
 	, bUseFrameTimeAsLoad(false)
-	, bCheckRPCOrder(false)
 	, bBatchSpatialPositionUpdates(true)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, bEnableServerQBI(true)
@@ -40,6 +39,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableOffloading(false)
 	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
+	, SpatialDebuggerClassPath(TEXT("/SpatialGDK/SpatialDebugger/BP_SpatialDebugger.BP_SpatialDebugger_C"))
 	, bEnableUnrealLoadBalancer(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
