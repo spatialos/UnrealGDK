@@ -70,9 +70,9 @@ void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Dat
 	
 	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
 
-	ApplyAcceptingPlayersUpdate(GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID));
+	bAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
 
-	ApplySessionIdUpdate(Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID));
+	DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
 }
 
 void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentData& Data)
@@ -104,31 +104,12 @@ void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate&
 
 	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID) == 1)
 	{
-		bool bUpdateAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
-		ApplyAcceptingPlayersUpdate(bUpdateAcceptingPlayers);
+		bAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
 	}
 
 	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID) == 1)
 	{
-		ApplySessionIdUpdate(Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID));
-	}
-}
-
-void UGlobalStateManager::ApplySessionIdUpdate(int32 InSessionId)
-{
-	if (DeploymentSessionId != InSessionId)
-	{
-		UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - SessionId: %lld"), InSessionId);
-		DeploymentSessionId = InSessionId;
-	}
-}
-
-void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate)
-{
-	if (bAcceptingPlayersUpdate != bAcceptingPlayers)
-	{
-		UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - AcceptingPlayers: %s"), bAcceptingPlayersUpdate ? TEXT("true") : TEXT("false"));
-		bAcceptingPlayers = bAcceptingPlayersUpdate;
+		DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
 	}
 }
 
@@ -591,7 +572,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 }
 
 // Queries for the GlobalStateManager in the deployment.
-// bRetryUntilAcceptingPlayers will continue querying until the state of AcceptingPlayers and SessionId are the same as the given arguments
+// bRetryUntilRecievedExpectedValues will continue querying until the state of AcceptingPlayers and SessionId are the same as the given arguments
 // This is so clients know when to connect to the deployment.
 void UGlobalStateManager::QueryGSM(bool bExpectedAcceptingPlayers, int32 ExpectedSessionId, const QuerySuccessDelegate& Callback, bool bRetryUntilRecievedExpectedValues /*=true*/)
 {
@@ -626,9 +607,12 @@ void UGlobalStateManager::QueryGSM(bool bExpectedAcceptingPlayers, int32 Expecte
 			int32 QuerySessionId = 0;
 			bool bQueryResponseSuccess = GetAcceptingPlayersAndSessionIdFromQueryResponse(Op, bNewAcceptingPlayers, QuerySessionId);
 
-			if (!bQueryResponseSuccess ||
-				bNewAcceptingPlayers != bExpectedAcceptingPlayers ||
-				QuerySessionId != ExpectedSessionId)
+			if (!bQueryResponseSuccess)
+			{
+				UE_LOG(LogGlobalStateManager, Error, TEXT("Failed to extract AcceptingPlayers and SessionId from GSM query response. Will retry query for GSM."));
+			}
+			else if (bNewAcceptingPlayers != bExpectedAcceptingPlayers ||
+					 QuerySessionId != ExpectedSessionId)
 			{
 				UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager did not match expected query state. Will retry query for GSM."));
 			}

@@ -388,7 +388,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
 
-	// Ideally the GlobalStateManager and StaticComponentView would be create as part of USpatialWorkerConnection::Init
+	// TODO: UNR-2452
+	// Ideally the GlobalStateManager and StaticComponentView would be created as part of USpatialWorkerConnection::Init
 	// however, this causes a crash upon the second instance of running PIE due to a destroyed USpatialNetDriver still being reference.
 	// Why the destroyed USpatialNetDriver is referenced is unknown.
 	if (Connection->GlobalStateManager == nullptr)

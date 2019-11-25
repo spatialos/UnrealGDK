@@ -101,8 +101,6 @@ private:
 	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
-	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
-	void ApplySessionIdUpdate(int32 InSessionId);
 	void ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate);
 
 	void BecomeAuthoritativeOverAllActors();
