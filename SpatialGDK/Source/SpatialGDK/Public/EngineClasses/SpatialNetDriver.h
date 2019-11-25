@@ -19,6 +19,7 @@
 
 #include "SpatialNetDriver.generated.h"
 
+class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class UAbstractLBStrategy;
 class UActorGroupManager;
@@ -117,6 +118,7 @@ public:
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
+	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
@@ -144,6 +146,8 @@ public:
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
+	UPROPERTY()
+	ASpatialDebugger* SpatialDebugger;
 	UPROPERTY()
 	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
 	UPROPERTY()
