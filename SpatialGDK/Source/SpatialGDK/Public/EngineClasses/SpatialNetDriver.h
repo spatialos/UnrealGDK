@@ -165,24 +165,6 @@ public:
 	int32 GetConsiderListSize() const { return ConsiderListSize; }
 #endif
 
-	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
-	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
-	void OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType);
-
-	struct FReliableRPCId
-	{
-		FReliableRPCId() = default;
-		FReliableRPCId(FString InWorkerId, uint32 InRPCId, FString InRPCTarget, FString InRPCName) : WorkerId(InWorkerId), RPCId(InRPCId), LastRPCTarget(InRPCTarget), LastRPCName(InRPCName) {}
-
-		FString WorkerId;
-		uint32 RPCId = 0;
-		FString LastRPCTarget;
-		FString LastRPCName;
-	};
-	using FRPCTypeToReliableRPCIdMap = TMap<ESchemaComponentType, FReliableRPCId>;
-	// Per actor, maps from RPC type to the reliable RPC index used to detect if reliable RPCs go out of order.
-	TMap<TWeakObjectPtr<AActor>, FRPCTypeToReliableRPCIdMap> ReliableRPCIdMap;
-
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
 #if WITH_EDITOR

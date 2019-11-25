@@ -10,13 +10,14 @@
 #include "Editor.h"
 #include "FileHelpers.h"
 
-#include "AssetRegistryModule.h"
 #include "AssetDataTagMap.h"
+#include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
+#include "Internationalization/Regex.h"
 #include "Misc/ScopedSlowTask.h"
+#include "Settings/ProjectPackagingSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "UObject/StrongObjectPtr.h"
-#include "Settings/ProjectPackagingSettings.h"
 
 using namespace SpatialGDKEditor;
 
