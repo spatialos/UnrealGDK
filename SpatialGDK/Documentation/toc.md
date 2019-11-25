@@ -22,23 +22,23 @@
             - [Introduction]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-intro)
             - [1. Set up]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-setup)
             - [2. Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
-        - Multiserver zoning
-            - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
-            - [1: Set up replication]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
-            - [2: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
-            - [3: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
-        - Database sync worker
-            - [Introduction]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-intro)
-            - [1. Set up]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-setup)
-            - [2. Communicating with the Database Sync Worker]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-communicating)
-            - [3. Syncing with the database]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-syncing)
-            - [4. Testing your changes]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-testing)
         - Port your project to SpatialOS
             - [Introduction]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
             - [1. Set up your project]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-setup)
             - [2. Modify and build your project]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-build)
             - [3. Launch a local deployment]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-deployment)
             - [Logs and modifications]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-logs)
+        - \[Experimental\] Multiserver zoning
+            - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
+            - [1: Set up replication]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
+            - [2: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
+            - [3: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
+        -  \[Experimental\] Database sync worker
+            - [Introduction]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-intro)
+            - [1. Set up]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-setup)
+            - [2. Communicating with the Database Sync Worker]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-communicating)
+            - [3. Syncing with the database]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-syncing)
+            - [4. Testing your changes]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-testing)
 - <h3>Concepts and terminology</h3>
     - Technical overview
         - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)

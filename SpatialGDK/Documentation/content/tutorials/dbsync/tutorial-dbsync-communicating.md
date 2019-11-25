@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Database sync worker
+## \[Experimental\] Database sync worker
 
 ## 2. Communicating with the Database Sync Worker
 

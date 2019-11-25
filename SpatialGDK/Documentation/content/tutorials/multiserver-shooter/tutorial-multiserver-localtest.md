@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Multiserver zoning
+# \[Experimental\] Multiserver zoning
 ## 2: Test changes locally
 ### Step 1: Start SpatialOS and start the game
 1. Start SpatialOS: in Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS Local deployment started!`.

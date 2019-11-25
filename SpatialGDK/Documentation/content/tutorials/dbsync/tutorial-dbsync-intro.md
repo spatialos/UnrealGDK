@@ -1,7 +1,11 @@
 # Tutorials and guides
 
-## Database sync worker
-> This tutorial uses the Example Project from the GDK's [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro).</br>
+## \[Experimental\] Database sync worker
+
+<%(Callout type="warn" message="This tutorial is in an experimental stage: it demonstrates how to use the Database Sync Worker Example, which is experimental. 
+
+We may productionise it, but currently there are no plans to do so and no support guarantees for this tutorial and the Database Sync Worker Example. Thanks in advance for your feedback which 
+will help us shape this feature.")%>	
 
 This tutorial takes you through how to integrate the [Database Sync Worker Example](https://github.com/spatialos/database-sync-worker) in a GDK project and use it to store persistent data outside of a SpatialOS deployment.
 
@@ -28,6 +32,7 @@ Additionally, to communicate with the Database Sync Worker, you will be sending 
 </br>
 
 <br/>------<br/>
+_2019-11-25 Page updated with limited editorial review: experimental wording_<br/>
 _2019-07-31 Page added with limited editorial review_
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1248)
 
