@@ -461,7 +461,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(this);
-	PlayerSpawner->Init(this, &TimerManager, ClassInfoManager->SchemaDatabase->Hash);
+	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
 
 	// PackageMap value has been set earlier in USpatialNetConnection::InitBase

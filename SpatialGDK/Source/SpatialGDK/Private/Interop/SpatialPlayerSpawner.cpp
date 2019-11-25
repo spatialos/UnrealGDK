@@ -12,6 +12,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
+#include "Interop/GlobalStateManager.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -20,14 +21,12 @@ DEFINE_LOG_CATEGORY(LogSpatialPlayerSpawner);
 
 using namespace SpatialGDK;
 
-void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, uint32 InSchemaHash)
+void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
 	TimerManager = InTimerManager;
 
 	NumberOfAttempts = 0;
-
-	SchemaHash = InSchemaHash;
 }
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, const char* CallerAttribute, Worker_RequestId RequestId )
@@ -52,7 +51,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 		bool bSimulatedPlayer = GetBoolFromSchema(Payload, 4);
 
 		URLString.Append(TEXT("?workerAttribute=")).Append(Attributes);
-		URLString.Append(TEXT("?schemaHash=")).Append(FString::FromInt(SchemaHash));
+		URLString.Append(TEXT("?schemaHash=")).Append(FString::FromInt(NetDriver->ClassInfoManager->SchemaDatabase->Hash));
 		if (bSimulatedPlayer)
 		{
 			URLString += TEXT("?simulatedPlayer=1");
