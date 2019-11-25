@@ -65,13 +65,13 @@ public:
 	bool bShowLock = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show EntityId for every entity in range"))
-	bool bShowEntityId = true;
+	bool bShowEntityId = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show Actor Name for every entity in range"))
-	bool bShowActorName = true;
+	bool bShowActorName = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
-	bool bAutoStart = true;
+	bool bAutoStart = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Icon"))
 	UTexture2D *AuthTexture;
