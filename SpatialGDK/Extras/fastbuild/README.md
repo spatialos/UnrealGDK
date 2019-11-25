@@ -42,11 +42,11 @@ If you're installing on your workstation, it's recommended to install it in inte
 
 **To install**
 
-  `powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1
+  `powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1`
 
 **To uninstall**
 
-  `powershell -NoProfile -ExecutionPolicy Bypass -File uninstall.ps1
+  `powershell -NoProfile -ExecutionPolicy Bypass -File uninstall.ps1`
 
 # Useful tools
 
