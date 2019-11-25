@@ -12,7 +12,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
-#include "Interop/GlobalStateManager.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
