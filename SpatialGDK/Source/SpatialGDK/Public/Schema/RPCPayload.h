@@ -5,6 +5,7 @@
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
+#include "Utils/SpatialLatencyTracing.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -16,7 +17,11 @@ struct RPCPayload
 {
 	RPCPayload() = delete;
 
-	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data) : Offset(InOffset), Index(InIndex), PayloadData(MoveTemp(Data))
+	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, TraceSpan* InTrace)
+		: Offset(InOffset)
+		, Index(InIndex)
+		, PayloadData(MoveTemp(Data))
+		, Trace(InTrace)
 	{}
 
 	RPCPayload(const Schema_Object* RPCObject)
@@ -41,6 +46,7 @@ struct RPCPayload
 	uint32 Offset;
 	uint32 Index;
 	TArray<uint8> PayloadData;
+	TraceSpan* Trace;
 };
 
 struct RPCsOnEntityCreation : Component

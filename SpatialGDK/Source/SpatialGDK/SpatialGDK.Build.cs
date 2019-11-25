@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Diagnostics;
+using Tools.DotNETCommon;
 using UnrealBuildTool;
 
 public class SpatialGDK : ModuleRules
@@ -91,12 +92,25 @@ public class SpatialGDK : ModuleRules
         string WorkerImportLib = System.String.Format("{0}worker{1}", LibPrefix, ImportLibSuffix);
         string WorkerSharedLib = System.String.Format("{0}worker{1}", LibPrefix, SharedLibSuffix);
 
-        PublicAdditionalLibraries.AddRange(new[] { Path.Combine(WorkerLibraryDir, WorkerImportLib) });
+        PublicAdditionalLibraries.Add(Path.Combine(WorkerLibraryDir, WorkerImportLib));
         PublicLibraryPaths.Add(WorkerLibraryDir);
         RuntimeDependencies.Add(Path.Combine(WorkerLibraryDir, WorkerSharedLib), StagedFileType.NonUFS);
         if (bAddDelayLoad)
         {
             PublicDelayLoadDLLs.Add(WorkerSharedLib);
         }
-	}
+
+        // Detect existance of trace library, if present add preprocessor
+        string TraceLib = Path.Combine(WorkerLibraryDir, "trace_archive.lib");
+        if (File.Exists(TraceLib))
+        {
+            Log.TraceWarning("Detection of trace library found {0}, enabling trace functionality.", TraceLib);
+            PublicDefinitions.Add("TRACE_LIB_ACTIVE");
+            PublicAdditionalLibraries.Add(TraceLib);
+        }
+        else
+        {
+            Log.TraceWarning("Didn't find trace library {0}, disabling trace functionality.", TraceLib);
+        }
+    }
 }
