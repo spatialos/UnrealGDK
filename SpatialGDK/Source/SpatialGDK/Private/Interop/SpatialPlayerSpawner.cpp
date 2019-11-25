@@ -20,12 +20,14 @@ DEFINE_LOG_CATEGORY(LogSpatialPlayerSpawner);
 
 using namespace SpatialGDK;
 
-void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
+void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, uint32 InSchemaHash)
 {
 	NetDriver = InNetDriver;
 	TimerManager = InTimerManager;
 
 	NumberOfAttempts = 0;
+
+	SchemaHash = InSchemaHash;
 }
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, const char* CallerAttribute, Worker_RequestId RequestId )
@@ -50,6 +52,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 		bool bSimulatedPlayer = GetBoolFromSchema(Payload, 4);
 
 		URLString.Append(TEXT("?workerAttribute=")).Append(Attributes);
+		URLString.Append(TEXT("?schemaHash=")).Append(FString::FromInt(SchemaHash));
 		if (bSimulatedPlayer)
 		{
 			URLString += TEXT("?simulatedPlayer=1");

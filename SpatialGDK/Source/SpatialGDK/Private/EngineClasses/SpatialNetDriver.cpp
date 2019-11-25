@@ -2,6 +2,8 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 
+#include <inttypes.h>
+
 #include "Engine/ActorChannel.h"
 #include "Engine/ChildConnection.h"
 #include "Engine/Engine.h"
@@ -10,6 +12,7 @@
 #include "EngineGlobals.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
+#include "Misc/MessageDialog.h"
 #include "Net/DataReplication.h"
 #include "Net/RepLayout.h"
 #include "SocketSubsystem.h"
@@ -458,7 +461,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(this);
-	PlayerSpawner->Init(this, &TimerManager);
+	PlayerSpawner->Init(this, &TimerManager, ClassInfoManager->SchemaDatabase->Hash);
 	SpatialMetrics->Init(this);
 
 	// PackageMap value has been set earlier in USpatialNetConnection::InitBase
@@ -1724,6 +1727,18 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	const TCHAR* WorkerAttributeOption = InUrl.GetOption(TEXT("workerAttribute"), nullptr);
 	check(WorkerAttributeOption);
 	SpatialConnection->WorkerAttribute = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
+
+	// Get the client schema hash
+	const TCHAR* ClientSchemaHash = InUrl.GetOption(TEXT("schemaHash"), nullptr);
+	if (ClientSchemaHash) // Check this against our schema
+	{
+		uint32 ServerHash = FCString::Atoi(ClientSchemaHash + 1); // Trim off = at the start
+		if (ServerHash != ClassInfoManager->SchemaDatabase->Hash)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Schema does not match the server you are joining, this may cause problems. Our hash:%") PRIu32 ", server hash: %" PRIu32, ClassInfoManager->SchemaDatabase->Hash, ServerHash);
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Your schema has does not match the servers, this may cause problems.")));
+		}
+	}
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
 	// Note that in the initial implementation, we carry over no data about the user here (such as a unique player id, or the real IP)
