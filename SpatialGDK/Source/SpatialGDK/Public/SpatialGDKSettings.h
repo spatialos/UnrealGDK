@@ -6,6 +6,7 @@
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
 #include "Utils/ActorGroupManager.h"
+#include "Utils/SpatialDebugger.h"
 
 #include "SpatialGDKSettings.generated.h"
 
@@ -196,6 +197,9 @@ public:
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
+
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta=(MetaClass="SpatialDebugger"))
+	FSoftClassPath SpatialDebuggerClassPath;
 
 	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
