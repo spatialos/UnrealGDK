@@ -23,7 +23,7 @@ Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
 
 # Clean up testing project (symlinks could be invalid during initial cleanup - leaving the project as a result)
 if (Test-Path $test_repo_path) {
-    Write-Log "Removing existing project"
+    Echo "Removing existing project"
     Remove-Item $test_repo_path -Recurse -Force
     if (-Not $?) {
         Throw "Failed to remove existing project at $($test_repo_path)."
@@ -31,7 +31,7 @@ if (Test-Path $test_repo_path) {
 }
 
 # Clone and build the testing project
-Write-Log "Downloading the testing project from $($test_repo_url)"
+Echo "Downloading the testing project from $($test_repo_url)"
 Git clone -b "$test_repo_branch" "$test_repo_url" "$test_repo_path" --depth 1
 if (-Not $?) {
     Throw "Failed to clone testing project from $($test_repo_url)."
@@ -41,7 +41,7 @@ if (-Not $?) {
 # copying the plugin into the project's folder bypasses the issue
 New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugins" -Target "$gdk_home"
 
-Write-Log "Generating project files"
+Echo "Generating project files"
 $proc = Start-Process "$unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
     "-projectfiles", `
     "-project=`"$test_repo_uproject_path`"", `
@@ -53,7 +53,7 @@ if ($proc.ExitCode -ne 0) {
     throw "Failed to generate files for the testing project."
 }
 
-Write-Log "Building the testing project"
+Write-Log "build-testing-project"
 $build_configuration = $build_state + $(If ("$build_target" -eq "") {""} Else {" $build_target"})
 $proc = Start-Process "$msbuild_exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
     "/nologo", `

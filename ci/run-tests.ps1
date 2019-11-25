@@ -34,7 +34,7 @@ $cmd_args_list = @( `
     "-nullRHI" # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
 )
 
-Write-Log "Running $($ue_path_absolute) $($cmd_args_list)"
+Echo "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
 Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id

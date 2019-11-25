@@ -48,7 +48,7 @@ if ($proc.ExitCode -ne 0) {
 }
 
 # Build the testing project
-Start-Event "build-project" "command"
+Start-Event "setup-project" "command"
 &$PSScriptRoot"\build-project.ps1" `
     -build_output_dir "$build_home\SpatialGDKBuild" `
     -unreal_path "$unreal_path" `
@@ -61,7 +61,7 @@ Start-Event "build-project" "command"
     -build_platform "$target_platform" `
     -build_state "$env:BUILD_STATE" `
     -build_target "$env:BUILD_TARGET"
-Finish-Event "build-project" "command"
+Finish-Event "setup-project" "command"
 
 # Only run tests on Windows, as we do not have a linux agent - should not matter
 if ($target_platform -eq "Win64" -And $env:BUILD_TARGET -eq "Editor") {

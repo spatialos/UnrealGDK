@@ -102,7 +102,7 @@ buildkite-agent artifact upload "$test_result_dir\slack_attachment_$env:BUILDKIT
 # Fail this build if any tests failed
 if (-Not $tests_passed) {
     $fail_msg = "$($test_results_obj.failed) tests failed. Logs for these tests are contained in the tests.log artifact."
-    Write-Log $fail_msg
+    Echo $fail_msg
     Throw $fail_msg
 }
-Write-Log "All tests passed!"
+Echo "All tests passed!"
