@@ -571,7 +571,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Schema did not previously compile correctly, you may be running a stale build."));
 
-		EAppReturnType::Type result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString("Last schema generation failed or failed to run the schema descriptor. Schema will most likely be out of date and cause a crash. Are you sure you want to continue?"));
+		EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString("Last schema generation failed or failed to run the schema descriptor. Schema will most likely be out of date, which may lead to undefined behavior. Are you sure you want to continue?"));
 		if (result == EAppReturnType::No)
 		{
 			return;
