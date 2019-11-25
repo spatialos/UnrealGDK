@@ -14,6 +14,7 @@
 #include "GenericPlatform/GenericPlatformFile.h"
 #include "GenericPlatform/GenericPlatformProcess.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Hash/CityHash.h"
 #include "Misc/ConfigCacheIni.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
@@ -401,6 +402,9 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
 	SchemaDatabase->ComponentIdToClassPath = CreateComponentIdToClassPathMap();
 	SchemaDatabase->LevelComponentIds = LevelComponentIds;
+
+	// Generate hash
+	SchemaDatabase->Hash = SchemaDatabase->GenerateHash();
 
 	FAssetRegistryModule::AssetCreated(SchemaDatabase);
 	SchemaDatabase->MarkPackageDirty();

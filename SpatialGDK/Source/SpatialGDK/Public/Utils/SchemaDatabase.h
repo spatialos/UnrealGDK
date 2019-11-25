@@ -100,5 +100,13 @@ public:
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 NextAvailableComponentId;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	uint32 Hash;
+
+#if WITH_EDITOR
+	// Used at build time to 
+	uint32 GenerateHash();
+#endif
 };
 
