@@ -1731,19 +1731,19 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	// Get the client schema hash
 	if (GetDefault<USpatialGDKSettings>()->bEnableSchemaValidationOnJoin)
 	{
-		const TCHAR* ClientSchemaHash = InUrl.GetOption(TEXT("schemaHash"), nullptr);
+		const TCHAR* ClientSchemaHash = InUrl.GetOption(TEXT("schemaDescriptorHash"), nullptr);
 		if (ClientSchemaHash) // Check this against our schema
 		{
 			uint32 ServerHash = FCString::Atoi(ClientSchemaHash + 1); // Trim off = at the start
-			if (ServerHash != ClassInfoManager->SchemaDatabase->Hash)
+			if (ServerHash != ClassInfoManager->SchemaDatabase->SchemaDescriptorHash)
 			{
-				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Your schema hash does not match that of the server, this may cause problems. Our hash:%") PRIu32 ", server hash: %" PRIu32, ClassInfoManager->SchemaDatabase->Hash, ServerHash);
+				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Your schema descriptor hash does not match that of the server, this may cause problems. Our hash:%") PRIu32 ", server hash: %" PRIu32, ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
 				FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("Schema hash does not match that of the servers, this may cause problems.")));
 			}
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Schema validation is enabled but server did not send schemaHash."));
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Schema validation is enabled but server did not send schemaDescriptorHash."));
 		}
 	}
 

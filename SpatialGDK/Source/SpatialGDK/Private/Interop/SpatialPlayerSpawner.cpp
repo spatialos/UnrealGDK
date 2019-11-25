@@ -51,7 +51,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 		bool bSimulatedPlayer = GetBoolFromSchema(Payload, 4);
 
 		URLString.Append(TEXT("?workerAttribute=")).Append(Attributes);
-		URLString.Append(TEXT("?schemaHash=")).Append(FString::FromInt(NetDriver->ClassInfoManager->SchemaDatabase->Hash));
+		URLString.Append(TEXT("?schemaDescriptorHash=")).Append(FString::FromInt(NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash));
 		if (bSimulatedPlayer)
 		{
 			URLString += TEXT("?simulatedPlayer=1");
