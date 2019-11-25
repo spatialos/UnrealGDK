@@ -205,12 +205,16 @@ public:
 
 	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
-		bool bEnableUnrealLoadBalancer;
+	bool bEnableUnrealLoadBalancer;
 
 	/** EXPERIMENTAL: Worker type to assign for load balancing. */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-		FWorkerType LoadBalancingWorkerType;
+	FWorkerType LoadBalancingWorkerType;
 
 	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
 	TSubclassOf<class UAbstractLBStrategy> LoadBalanceStrategy;
+
+	/** Enables warnings for schema mismatch when a client joins a server */
+	UPROPERTY(EditAnywhere, config, Category = "Validation", meta = (ConfigRestartRequired = false))
+	bool bEnableSchemaValidationOnJoin;
 };
