@@ -12,7 +12,7 @@ Follow [these instructions](http://www.fastbuild.org/docs/features/caching.html)
 
 # Cache location (internal to Improbable)
 
-Improbable's fileshare is `\\lonv-file-01` which is set as the default value in the Installation script. To use it, you first need to authorise access to this network drive:
+Improbable's cache location is `\\lonv-file-01` which is set as the default value in the installation script. To use it, you first need to authorise access to this network drive:
 1. Enter `\\lonv-file-01` your Windows Explorer address bar
 1. Authenticate with your Windows username and password (not the PIN). Make sure to set `Remember my credentials` so this works after a restart.
 
