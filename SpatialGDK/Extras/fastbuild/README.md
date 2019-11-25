@@ -14,7 +14,7 @@ Follow [these instructions](http://www.fastbuild.org/docs/features/caching.html)
 
 Improbable's fileshare is `\\lonv-file-01` which is set as the default value in the Installation script. To use it, you first need to authorise access to this network drive:
 1. Enter `\\lonv-file-01` your Windows Explorer address bar
-1. Authenticate with your Windows username and password (not the PIN)
+1. Authenticate with your Windows username and password (not the PIN). Make sure to set `Remember my credentials` so this works after a restart.
 
 # Installation
 
@@ -52,4 +52,3 @@ If you're installing on your workstation, it's recommended to install it in inte
 
 * A Visual Studio plugin for monitoring the status of builds: [FASTBuildMonitor](https://github.com/yass007/FASTBuildMonitor)
 * An alternative, standalone build monitor: [FASTBuild-Dashboard](https://github.com/hillin/FASTBuild-Dashboard)
-
