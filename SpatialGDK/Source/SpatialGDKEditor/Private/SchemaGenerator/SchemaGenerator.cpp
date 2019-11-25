@@ -580,3 +580,75 @@ void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUn
 		}
 	}
 }
+
+FString GetRPCFieldPrefix(ERPCType RPCType)
+{
+	switch (RPCType)
+	{
+	case ERPCType::ClientReliable:
+		return TEXT("server_to_client_reliable");
+	case ERPCType::ClientUnreliable:
+		return TEXT("server_to_client_unreliable");
+	case ERPCType::ServerReliable:
+		return TEXT("client_to_server_reliable");
+	case ERPCType::ServerUnreliable:
+		return TEXT("client_to_server_unreliable");
+	case ERPCType::NetMulticast:
+		return TEXT("multicast");
+	default:
+		checkNoEntry();
+	}
+
+	return FString();
+}
+
+void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_ComponentId ComponentId, TArray<ERPCType> SentRPCTypes, TArray<ERPCType> AckedRPCTypes)
+{
+	Writer.PrintNewLine();
+	Writer.Printf("component Unreal{0}RPCEndpoint {", *EndpointName).Indent();
+	Writer.Printf("id = {0};", ComponentId);
+
+	Schema_FieldId FieldId = 1;
+	for (ERPCType SentRPCType : SentRPCTypes)
+	{
+		uint32 RingBufferSize = GetDefault<USpatialGDKSettings>()->MaxRPCRingBufferSize;
+
+		for (uint32 RingBufferIndex = 0; RingBufferIndex < RingBufferSize; RingBufferIndex++)
+		{
+			Writer.Printf("option<UnrealRPCPayload> {0}_rpc_{1} = {2};", GetRPCFieldPrefix(SentRPCType), RingBufferIndex, FieldId++);
+		}
+		Writer.Printf("uint64 last_sent_{0}_rpc_id = {1};", GetRPCFieldPrefix(SentRPCType), FieldId++);
+	}
+
+	for (ERPCType AckedRPCType : AckedRPCTypes)
+	{
+		Writer.Printf("uint64 last_acked_{0}_rpc_id = {1};", GetRPCFieldPrefix(AckedRPCType), FieldId++);
+	}
+
+	if (ComponentId == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
+	{
+		// CrossServer RPC uses commands, only exists on ServerRPCEndpoint
+		Writer.Print("command Void server_to_server_rpc_command(UnrealRPCPayload);");
+	}
+
+	Writer.Outdent().Print("}");
+}
+
+void GenerateRPCEndpointsSchema(FString SchemaPath)
+{
+	FCodeWriter Writer;
+
+	Writer.Print(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated;)""");
+	Writer.PrintNewLine();
+	Writer.Print("import \"unreal/gdk/core_types.schema\";");
+	Writer.Print("import \"unreal/gdk/rpc_payload.schema\";");
+
+	GenerateRPCEndpoint(Writer, TEXT("Client"), SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, { ERPCType::ServerReliable, ERPCType::ServerUnreliable }, { ERPCType::ClientReliable, ERPCType::ClientUnreliable });
+	GenerateRPCEndpoint(Writer, TEXT("Server"), SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, { ERPCType::ClientReliable, ERPCType::ClientUnreliable }, { ERPCType::ServerReliable, ERPCType::ServerUnreliable });
+	GenerateRPCEndpoint(Writer, TEXT("Multicast"), SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, { ERPCType::NetMulticast }, {});
+
+	Writer.WriteToFile(FString::Printf(TEXT("%srpc_endpoints.schema"), *SchemaPath));
+}

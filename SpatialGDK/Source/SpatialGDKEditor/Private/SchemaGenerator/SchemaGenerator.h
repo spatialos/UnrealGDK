@@ -27,3 +27,6 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 	FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, UClass* ActorClass, int MapIndex, const FActorSpecificSubobjectSchemaData* ExistingSchemaData);
 // Output the includes required by this schema file.
 void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInfo);
+
+// Generates schema for RPC endpoints.
+void GenerateRPCEndpointsSchema(FString SchemaPath);

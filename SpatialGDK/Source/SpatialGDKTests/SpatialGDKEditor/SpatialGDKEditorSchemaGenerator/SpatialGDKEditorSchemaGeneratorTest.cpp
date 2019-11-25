@@ -5,6 +5,7 @@
 #include "SchemaGenObjectStub.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKServicesModule.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/SchemaDatabase.h"
 
 #include "CoreMinimal.h"
@@ -246,6 +247,8 @@ TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActorWithMultipleActorComponents", "SpatialTypeActorWithMultipleActorComponents.schema" },
 	{ "SpatialTypeActorWithMultipleObjectComponents", "SpatialTypeActorWithMultipleObjectComponents.schema" }
 };
+uint32 ExpectedRPCEndpointsRingBufferSize = 32;
+FString ExpectedRPCEndpointsSchemaFilename = "rpc_endpoints.schema";
 
 class SchemaValidator
 {
@@ -289,7 +292,7 @@ public:
 		SpatialGDKEditor::Schema::ResetSchemaGeneratorState();
 		EnableSpatialNetworking();
 	}
-	~SchemaTestFixture()
+	virtual ~SchemaTestFixture()
 	{
 		DeleteTestFolders();
 		ResetSpatialNetworking();
@@ -319,6 +322,35 @@ private:
 	}
 
 	bool bCachedSpatialNetworking = true;
+};
+
+class SchemaRPCEndpointTestFixture : public SchemaTestFixture
+{
+public:
+	SchemaRPCEndpointTestFixture()
+	{
+		SetMaxRPCRingBufferSize();
+	}
+	~SchemaRPCEndpointTestFixture()
+	{
+		ResetMaxRPCRingBufferSize();
+	}
+
+private:
+	void SetMaxRPCRingBufferSize()
+	{
+		USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+		CachedMaxRPCRingBufferSize = SpatialGDKSettings->MaxRPCRingBufferSize;
+		SpatialGDKSettings->MaxRPCRingBufferSize = ExpectedRPCEndpointsRingBufferSize;
+	}
+
+	void ResetMaxRPCRingBufferSize()
+	{
+		USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+		SpatialGDKSettings->MaxRPCRingBufferSize = CachedMaxRPCRingBufferSize;
+	}
+
+	uint32 CachedMaxRPCRingBufferSize;
 };
 
 } // anonymous namespace
@@ -941,6 +973,21 @@ SCHEMA_GENERATOR_TEST(GIVEN_3_level_names_WHEN_generating_schema_for_sublevels_T
 	}
 
 	TestFalse("No duplicate component names generated for equal sublevel map names", bHasDuplicateNames);
+
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_no_schema_exists_WHEN_generating_schema_for_rpc_endpoints_THEN_generated_schema_matches_expected_contents)
+{
+	SchemaRPCEndpointTestFixture Fixture;
+	SchemaValidator Validator;
+
+	SpatialGDKEditor::Schema::GenerateSchemaForRPCEndpoints(SchemaOutputFolder);
+
+	FString FileContent;
+	FFileHelper::LoadFileToString(FileContent, *FPaths::Combine(SchemaOutputFolder, TEXT("rpc_endpoints.schema")));
+
+	TestTrue("Generated RPC endpoints schema matches the expected schema", Validator.ValidateGeneratedSchemaAgainstExpectedSchema(FileContent, ExpectedRPCEndpointsSchemaFilename));
 
 	return true;
 }

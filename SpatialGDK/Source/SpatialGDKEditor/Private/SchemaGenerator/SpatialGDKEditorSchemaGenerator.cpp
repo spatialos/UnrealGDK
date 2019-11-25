@@ -345,6 +345,16 @@ SPATIALGDKEDITOR_API void GenerateSchemaForSublevels(const FString& SchemaOutput
 	Writer.WriteToFile(FString::Printf(TEXT("%sSublevels/sublevels.schema"), *SchemaOutputPath));
 }
 
+SPATIALGDKEDITOR_API void GenerateSchemaForRPCEndpoints()
+{
+	GenerateSchemaForRPCEndpoints(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
+}
+
+SPATIALGDKEDITOR_API void GenerateSchemaForRPCEndpoints(const FString& SchemaOutputPath)
+{
+	GenerateRPCEndpointsSchema(SchemaOutputPath);
+}
+
 FString GenerateIntermediateDirectory()
 {
 	const FString CombinedIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
@@ -788,6 +798,7 @@ bool SpatialGDKGenerateSchema()
 	}
 
 	GenerateSchemaForSublevels();
+	GenerateSchemaForRPCEndpoints();
 
 	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
 	{
