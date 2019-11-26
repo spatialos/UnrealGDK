@@ -21,6 +21,7 @@ DEFINE_LOG_CATEGORY(LogSpatialNetConnection);
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
+	, WorkerId("UnsetWorkerId")
 {
 	InternalAck = 1;
 }
@@ -35,6 +36,8 @@ void USpatialNetConnection::BeginDestroy()
 void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket /*= 0*/, int32 InPacketOverhead /*= 0*/)
 {
 	Super::InitBase(InDriver, InSocket, InURL, InState, InMaxPacket, InPacketOverhead);
+	// Need to find a better way to initialize WorkerId.
+	// WorkerId = Cast<USpatialNetDriver>(InDriver)->Connection->GetWorkerId();
 
 	if (Cast<USpatialNetDriver>(InDriver)->PackageMap == nullptr)
 	{
@@ -114,7 +117,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 	{
 		if (!Cast<USpatialNetDriver>(Driver)->StaticComponentView->HasAuthority(PlayerControllerEntity, SpatialConstants::HEARTBEAT_COMPONENT_ID))
 		{
-			UE_LOG(LogSpatialNetConnection, Warning, TEXT("Quit the game but no authority over Heartbeat component: NetConnection %s, PlayerController entity %lld"), *GetName(), PlayerControllerEntity);
+			UE_LOG(LogSpatialNetConnection, Warning, TEXT("(%s): Quit the game but no authority over Heartbeat component: NetConnection %s, PlayerController entity %lld"), *WorkerId, *GetName(), PlayerControllerEntity);
 			return;
 		}
 
@@ -129,12 +132,14 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 	}
 	else
 	{
-		UE_LOG(LogSpatialNetConnection, Warning, TEXT("Quitting before Heartbeat component has been initialized: NetConnection %s"), *GetName());
+		UE_LOG(LogSpatialNetConnection, Warning, TEXT("(%s): Quitting before Heartbeat component has been initialized: NetConnection %s"), *WorkerId, *GetName());
 	}
 }
 
 void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)
 {
+	UE_LOG(LogSpatialNetConnection, Log, TEXT("(%s) Init Heartbeat component: NetConnection %s, PlayerController entity %lld"), *WorkerId, *GetName(), PlayerControllerEntity);
+
 	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID, TEXT("InitHeartbeat: PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity, InPlayerControllerEntity);
 	PlayerControllerEntity = InPlayerControllerEntity;
 	TimerManager = InTimerManager;

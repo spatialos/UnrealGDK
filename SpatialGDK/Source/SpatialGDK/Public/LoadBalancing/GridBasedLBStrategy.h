@@ -9,6 +9,8 @@
 
 class SpatialVirtualWorkerTranslator;
 
+DECLARE_LOG_CATEGORY_EXTERN(LogGridBasedLBStrategy, Log, All)
+
 /**
  * A load balancing strategy that divides the world into a grid.
  * Divides the load between Rows * Cols number of workers, each handling a
