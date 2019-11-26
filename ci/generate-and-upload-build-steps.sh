@@ -20,7 +20,7 @@ generate_build_configuration_steps () {
         # Editor builds (Test and Shipping build states do not exist for the Editor build target)
         for build_platform in "Win64" "Linux"; do
             for build_state in "DebugGame" "Development"; do
-                upload_build_configuration_step("$1", "$build_platform", "Editor", "$build_state")
+                upload_build_configuration_step "$1" "$build_platform" "Editor" "$build_state"
             done
         done
 
@@ -29,13 +29,13 @@ generate_build_configuration_steps () {
             # Prebuilt engines of native 4.22 and prior do not support Client and Server targets.
             # We use prebuilt engines in CI, but have manually added two Server configurations:
             for build_state in "Development" "Shipping"; do
-                upload_build_configuration_step("$1", "Linux", "Server", "$build_state")
+                upload_build_configuration_step "$1" "Linux" "Server" "$build_state"
             done
 
             # NoEditor builds
             for build_platform in "Win64" "Linux"; do
                 for build_state in "DebugGame" "Development" "Shipping" "Test"; do
-                    upload_build_configuration_step("$1", "$build_platform", "", "$build_state")
+                    upload_build_configuration_step "$1" "$build_platform" "" "$build_state"
                 done
             done
         else {
@@ -43,7 +43,7 @@ generate_build_configuration_steps () {
             for build_platform in "Win64" "Linux"; do
                 for build_target in "" "Client" "Server"; do
                     for build_state in "DebugGame" "Development" "Shipping" "Test"; do
-                        upload_build_configuration_step("$1", "$build_platform", "$build_target", "$build_state")
+                        upload_build_configuration_step "$1" "$build_platform" "$build_target" "$build_state"
                     done
                 done
             done
@@ -53,10 +53,10 @@ generate_build_configuration_steps () {
         echo "This is not a nightly build. Generating appropriate steps..."
         
         # Win64 Development Editor build configuration
-        upload_build_configuration_step("$1", "Win64", "Editor", "Development")
+        upload_build_configuration_step "$1" "Win64" "Editor" "Development"
 
         # Linux Development NoEditor build configuration
-        upload_build_configuration_step("$1", "Linux", "", "Development")
+        upload_build_configuration_step "$1" "Linux" "" "Development"
     }
     fi;
 }
