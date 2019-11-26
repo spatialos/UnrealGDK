@@ -14,7 +14,7 @@ generate_build_configuration_steps () {
     # See https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html for possible configurations 
 
     # if BUILD_ALL_CONFIGURATIONS environment variable exists AND is equal to "true", then...
-    if [[ "${BUILD_ALL_CONFIGURATIONS+x}" = "x" ]] && [[ "$BUILD_ALL_CONFIGURATIONS" = "true" ]]; then
+    if [[ "${BUILD_ALL_CONFIGURATIONS:-false}" = "true" ]]; then
         echo "This is a nightly build. Generating the appropriate steps..."
         
         # Editor builds (Test and Shipping build states do not exist for the Editor build target)
@@ -62,7 +62,7 @@ generate_build_configuration_steps () {
 }
 
 # This script generates steps for each engine version listed in unreal-engine.version, based on the gdk_build.template.steps.yaml template
-if [[ -z ${ENGINE_VERSION+x} ]] || [[ -z "${ENGINE_VERSION}" ]]; then  # if ENGINE_VERSION doesn't exist OR is empty
+if [[ -z ${ENGINE_VERSION:-} ]]; then  # if ENGINE_VERSION doesn't exist OR is empty
     echo "Generating build steps for each engine version listed in unreal-engine.version"  
     IFS=$'\n'
     for commit_hash in $(cat < ci/unreal-engine.version); do
