@@ -15,17 +15,10 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLatencyTracing, Log, All);
 
 class AActor;
 class UFunction;
-class USpatialNetDriver;
 
-//typedef TPair<const AActor*, const UFunction*> TraceKey;
+typedef TPair<const AActor*, const UFunction*> ActorFuncTrack;
 typedef int32 TraceKey;
-//typedef improbable::trace::Span TraceSpan;
-struct TraceSpan
-{
-	AActor* Actor = nullptr;
-	UFunction* Function = nullptr;
-	improbable::trace::Span Trace;
-};
+typedef improbable::trace::Span TraceSpan;
 
 UCLASS()
 class SPATIALGDK_API USpatialLatencyTracing : public UObject
@@ -47,22 +40,29 @@ public:
 	static bool EndLatencyTrace();
 
 	// Internal GDK usage, shouldn't be used by game code
-	static TraceKey CreateTraceKey(const UObject* Obj, const UFunction* Function);
 	static bool IsValidKey(const TraceKey& Key);
-	//static TraceSpan* GetTrace(const TraceKey& Key);
+	static TraceKey GetTraceKey(const UObject* Obj, const UFunction* Function);
 
-	static void AddKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc);
-	static void EndLatencyTrace(const TraceSpan* Trace, const FString& TraceDesc);
+	static void WriteToLatencyTrace(const TraceKey& Key, const FString& TraceDesc);
+	static void EndLatencyTrace(const TraceKey& Key, const FString& TraceDesc);
 
 	static void WriteToSchemaObject(Schema_Object* Obj, const TraceKey& Key);
-	static void ReadFromSchemaObject(Schema_Object* Obj);
+	static TraceKey ReadFromSchemaObject(Schema_Object* Obj);
+
+	static const TraceKey ActiveTraceKey = 0;
+	static const TraceKey InvalidTraceKey = -1;
 
 private:
 
-	static bool CreateTraceKey(const AActor* Actor, const FString& FunctionName, TraceKey& OutKey);
+	static TraceKey CreateNewTraceEntry(const AActor* Actor, const FString& FunctionName);
 	static TraceSpan* GetActiveTrace();
 
+	static void WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc);
+
+	static TMap<ActorFuncTrack, TraceKey> TrackingTraces;
 	static TMap<TraceKey, TraceSpan> TraceMap;
+
+	static FCriticalSection Mutex;
 
 public:
 

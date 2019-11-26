@@ -28,12 +28,15 @@ class UEStream : public std::stringbuf
 using namespace improbable::exporters::trace;
 using namespace improbable::trace;
 
+TMap<ActorFuncTrack, TraceKey> USpatialLatencyTracing::TrackingTraces;
 TMap<TraceKey, TraceSpan> USpatialLatencyTracing::TraceMap;
+FCriticalSection USpatialLatencyTracing::Mutex;
 
 namespace
 {
 	UEStream Stream;
-	TraceKey ActiveTraceKey{ nullptr, nullptr };
+	const TraceKey ActiveTraceKey = 0;
+	const TraceKey InvalidTraceKey = -1;
 }
 
 void USpatialLatencyTracing::RegisterProject(const FString& ProjectId)
@@ -48,37 +51,26 @@ void USpatialLatencyTracing::RegisterProject(const FString& ProjectId)
 
 bool USpatialLatencyTracing::BeginLatencyTrace(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
 {
-	TraceKey Key;
-	if (!CreateTraceKey(Actor, FunctionName, Key))
-	{
-		return false;
-	}
+	FScopeLock Lock(&Mutex);
 
-	if (TraceMap.Find(Key))
+	TraceKey Key = CreateNewTraceEntry(Actor, FunctionName);
+	if (Key == InvalidTraceKey)
 	{
 		return false;
 	}
 
 	TraceSpan NewTrace = Span::StartSpan(TCHAR_TO_UTF8(*TraceDesc), nullptr);
 
-	AddKeyFrameToTrace(&NewTrace, FString::Printf(TEXT("Begin trace : %s"), *FunctionName));
+	WriteKeyFrameToTrace(&NewTrace, FString::Printf(TEXT("Begin trace : %s"), *FunctionName));
 
 	TraceMap.Add(Key, MoveTemp(NewTrace));
+	
 	return true;
 }
 
 bool USpatialLatencyTracing::ContinueLatencyTrace(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
 {
-	TraceKey Key;
-	if (!CreateTraceKey(Actor, FunctionName, Key))
-	{
-		return false;
-	}
-
-	if (TraceMap.Find(Key))
-	{
-		return false;
-	}
+	FScopeLock Lock(&Mutex);
 
 	TraceSpan* ActiveTrace = GetActiveTrace();
 	if (ActiveTrace == nullptr)
@@ -86,8 +78,14 @@ bool USpatialLatencyTracing::ContinueLatencyTrace(const AActor* Actor, const FSt
 		return false;
 	}
 
-	AddKeyFrameToTrace(ActiveTrace, TCHAR_TO_UTF8(*TraceDesc));
-	AddKeyFrameToTrace(ActiveTrace, FString::Printf(TEXT("Continue trace : %s"), *FunctionName));
+	TraceKey Key = CreateNewTraceEntry(Actor, FunctionName);
+	if (Key == InvalidTraceKey)
+	{
+		return false;
+	}
+
+	WriteKeyFrameToTrace(ActiveTrace, TCHAR_TO_UTF8(*TraceDesc));
+	WriteKeyFrameToTrace(ActiveTrace, FString::Printf(TEXT("Continue trace : %s"), *FunctionName));
 
 	TraceMap.Add(Key, MoveTemp(*ActiveTrace));
 	TraceMap.Remove(ActiveTraceKey);
@@ -97,28 +95,20 @@ bool USpatialLatencyTracing::ContinueLatencyTrace(const AActor* Actor, const FSt
 
 bool USpatialLatencyTracing::EndLatencyTrace()
 {
+	FScopeLock Lock(&Mutex);
+
 	TraceSpan* ActiveTrace = GetActiveTrace();
 	if (ActiveTrace == nullptr)
 	{
 		return false;
 	}
 
-	AddKeyFrameToTrace(ActiveTrace, TEXT("End Trace"));
+	WriteKeyFrameToTrace(ActiveTrace, TEXT("End Trace"));
 	ActiveTrace->End();
 
 	TraceMap.Remove(ActiveTraceKey);
 
 	return true;
-}
-
-void USpatialLatencyTracing::EndLatencyTrace(const TraceSpan* Trace, const FString& TraceDesc)
-{
-
-}
-
-TraceKey USpatialLatencyTracing::CreateTraceKey(const UObject* Obj, const UFunction* Function)
-{
-	return TraceKey(Cast<AActor>(Obj), Function);
 }
 
 bool USpatialLatencyTracing::IsValidKey(const TraceKey& Key)
@@ -127,7 +117,104 @@ bool USpatialLatencyTracing::IsValidKey(const TraceKey& Key)
 	return bValid;
 }
 
-void USpatialLatencyTracing::AddKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc)
+TraceKey USpatialLatencyTracing::GetTraceKey(const UObject* Obj, const UFunction* Function)
+{
+	FScopeLock Lock(&Mutex);
+
+	ActorFuncTrack FuncKey{ Cast<AActor>(Obj), Function };
+	TraceKey ReturnKey = InvalidTraceKey;
+	TrackingTraces.RemoveAndCopyValue(FuncKey, ReturnKey);
+	return ReturnKey;
+}
+
+
+void USpatialLatencyTracing::WriteToLatencyTrace(const TraceKey& Key, const FString& TraceDesc)
+{
+	FScopeLock Lock(&Mutex);
+
+	if (TraceSpan* Trace = TraceMap.Find(Key))
+	{
+		WriteKeyFrameToTrace(Trace, TraceDesc);
+	}
+}
+
+void USpatialLatencyTracing::EndLatencyTrace(const TraceKey& Key, const FString& TraceDesc)
+{
+	FScopeLock Lock(&Mutex);
+
+	if (TraceSpan* Trace = TraceMap.Find(Key))
+	{
+		WriteKeyFrameToTrace(Trace, TraceDesc);
+
+		Trace->End();
+		TraceMap.Remove(Key);
+	}
+}
+
+void USpatialLatencyTracing::WriteToSchemaObject(Schema_Object* Obj, const TraceKey& Key)
+{
+	FScopeLock Lock(&Mutex);
+
+	if (TraceSpan* Trace = TraceMap.Find(Key))
+	{
+		const SpanContext& TraceContext = Trace->context();
+		TraceId _TraceId = TraceContext.trace_id();
+		SpanId _SpanId = TraceContext.span_id();
+
+		SpatialGDK::AddBytesToSchema(Obj, SpatialConstants::UNREAL_RPC_TRACE_ID, &_TraceId[0], _TraceId.size());
+		SpatialGDK::AddBytesToSchema(Obj, SpatialConstants::UNREAL_RPC_SPAN_ID, &_SpanId[0], _SpanId.size());
+	}
+}
+
+TraceKey USpatialLatencyTracing::ReadFromSchemaObject(Schema_Object* Obj)
+{
+	FScopeLock Lock(&Mutex);
+
+	check(GetActiveTrace() == nullptr);
+
+	const uint8* TraceBytes = Schema_GetBytes(Obj, SpatialConstants::UNREAL_RPC_TRACE_ID);
+	const uint8* SpanBytes = Schema_GetBytes(Obj, SpatialConstants::UNREAL_RPC_SPAN_ID);
+
+	TraceId _TraceId;
+	memcpy(&_TraceId[0], TraceBytes, sizeof(TraceId));
+
+	SpanId _SpanId;
+	memcpy(&_SpanId[0], SpanBytes, sizeof(SpanId));
+
+	SpanContext DestContext(_TraceId, _SpanId);
+
+	TraceSpan RetrieveTrace = Span::StartSpanWithRemoteParent("Read Trace From Schema Obj", DestContext);
+	TraceMap.Add(ActiveTraceKey, MoveTemp(RetrieveTrace));
+
+	return ActiveTraceKey;
+}
+
+TraceKey USpatialLatencyTracing::CreateNewTraceEntry(const AActor* Actor, const FString& FunctionName)
+{
+	static TraceKey NextTraceKey = 1;
+
+	if (UClass* ActorClass = Actor->GetClass())
+	{
+		if (UFunction* Function = ActorClass->FindFunctionByName(*FunctionName))
+		{
+			ActorFuncTrack Key{ Actor, Function };
+			if (TrackingTraces.Find(Key) == nullptr)
+			{
+				TrackingTraces.Add(Key, NextTraceKey);
+				return NextTraceKey++;
+			}
+		}
+	}
+
+	return InvalidTraceKey;
+}
+
+TraceSpan* USpatialLatencyTracing::GetActiveTrace()
+{
+	return TraceMap.Find(ActiveTraceKey);
+}
+
+void USpatialLatencyTracing::WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc)
 {
 	if (Trace != nullptr)
 	{
@@ -136,60 +223,6 @@ void USpatialLatencyTracing::AddKeyFrameToTrace(const TraceSpan* Trace, const FS
 	}
 }
 
-void USpatialLatencyTracing::WriteToSchemaObject(Schema_Object* Obj, const TraceKey& Key)
-{
-	if (TraceSpan* Trace = TraceMap.Find(Key))
-	{
-		const SpanContext& TraceContext = Trace->context();
-		TraceId _TraceId = TraceContext.trace_id();
-		SpanId _SpanId = TraceContext.span_id();
-
-		SpatialGDK::AddBytesToSchema(Obj, 1, &_TraceId[0], _TraceId.size());
-		SpatialGDK::AddBytesToSchema(Obj, 2, &_SpanId[0], _SpanId.size());
-	}
-}
-
-void USpatialLatencyTracing::ReadFromSchemaObject(Schema_Object* Obj)
-{
-	check(GetActiveTrace() == nullptr);
-
-	uint32 TraceSize = Schema_GetBytesLength(Obj, 1);
-	const uint8* TraceBytes = Schema_GetBytes(Obj, 1);
-	uint32 SpanSize = Schema_GetBytesLength(Obj, 2);
-	const uint8* SpanBytes = Schema_GetBytes(Obj, 2);
-
-	TraceId _TraceId;
-	memcpy(&_TraceId[0], TraceBytes, TraceSize);
-
-	SpanId _SpanId;
-	memcpy(&_SpanId[0], SpanBytes, SpanSize);
-
-	SpanContext DestContext(_TraceId, _SpanId);
-
-	TraceSpan RetrieveTrace = Span::StartSpanWithRemoteParent("Read Trace From Schema Obj", DestContext);
-	TraceMap.Add(ActiveTraceKey, MoveTemp(RetrieveTrace));
-}
-
-bool USpatialLatencyTracing::CreateTraceKey(const AActor* Actor, const FString& FunctionName, TraceKey& OutKey)
-{
-	if (UClass* ActorClass = Actor->GetClass())
-	{
-		if (UFunction* Function = ActorClass->FindFunctionByName(*FunctionName))
-		{
-			OutKey = TraceKey( Actor, Function );
-			return true;
-		}
-	}
-
-	return false;
-}
-
-TraceSpan* USpatialLatencyTracing::GetActiveTrace()
-{
-	return TraceMap.Find(ActiveTraceKey);
-}
-
-
 void USpatialLatencyTracing::SendTestTrace()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, []
@@ -197,23 +230,16 @@ void USpatialLatencyTracing::SendTestTrace()
 		std::cout << "Sending test trace" << std::endl;
 
 		Span RootSpan = Span::StartSpan("Example Span", nullptr);
-		//RootSpan.AddAnnotation("Starting root span");
 
 		{
 			Span SubSpan1 = Span::StartSpan("Sub span 1", &RootSpan);
-			//SubSpan1.AddAnnotation("Starting sub span");
-
 			FPlatformProcess::Sleep(1);
-
 			SubSpan1.End();
 		}
 
 		{
 			Span SubSpan2 = Span::StartSpan("Sub span 2", &RootSpan);
-			//SubSpan2.AddAnnotation("Starting sub span");
-
 			FPlatformProcess::Sleep(1);
-
 			SubSpan2.End();
 		}
 
@@ -230,9 +256,7 @@ void USpatialLatencyTracing::SendTestTrace()
 		{
 			Span SubSpan3 = Span::StartSpanWithRemoteParent("SubSpan 3", DestContext);
 			SubSpan3.AddAnnotation("Starting sub span");
-
 			FPlatformProcess::Sleep(1);
-
 			SubSpan3.End();
 		}
 	});

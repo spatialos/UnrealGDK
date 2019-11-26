@@ -51,8 +51,7 @@ public:
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
 	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData);
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate)
-	void SendComponentUpdateWithTrace(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey& Key);
+	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey& Key = -1);
 	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);

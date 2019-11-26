@@ -1558,6 +1558,12 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	}
 
 	ERPCResult Result = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
+
+	if (Result == ERPCResult::Success)
+	{
+		Params.Payload.FinaliseTrace();
+	}
+
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };
 }
 

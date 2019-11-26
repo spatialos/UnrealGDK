@@ -670,7 +670,7 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, con
 
 	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params);
 
-	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), USpatialLatencyTracing::CreateTraceKey(TargetObject, Function));
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), USpatialLatencyTracing::GetTraceKey(TargetObject, Function));
 }
 
 void USpatialSender::SendComponentInterestForActor(USpatialActorChannel* Channel, Worker_EntityId EntityId, bool bNetOwned)
@@ -923,7 +923,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 			Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
 
-			Connection->SendComponentUpdate(EntityId, &ComponentUpdate, USpatialLatencyTracing::GetTrace(Payload.Trace));
+			Connection->SendComponentUpdate(EntityId, &ComponentUpdate, Payload.Trace);
 #if !UE_BUILD_SHIPPING
 			TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING

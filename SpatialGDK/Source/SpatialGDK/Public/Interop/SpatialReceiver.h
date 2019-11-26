@@ -82,18 +82,6 @@ struct FObjectReferences
 	UProperty*							Property;
 };
 
-struct FPendingIncomingRPC
-{
-	FPendingIncomingRPC(const TSet<FUnrealObjectRef>& InUnresolvedRefs, UObject* InTargetObject, UFunction* InFunction, const SpatialGDK::RPCPayload& InPayload)
-		: UnresolvedRefs(InUnresolvedRefs), TargetObject(InTargetObject), Function(InFunction), Payload(InPayload) {}
-
-	TSet<FUnrealObjectRef> UnresolvedRefs;
-	TWeakObjectPtr<UObject> TargetObject;
-	UFunction* Function;
-	SpatialGDK::RPCPayload Payload;
-	FString SenderWorkerId;
-};
-
 struct FPendingSubobjectAttachment
 {
 	USpatialActorChannel* Channel;
@@ -102,8 +90,6 @@ struct FPendingSubobjectAttachment
 
 	TSet<Worker_ComponentId> PendingAuthorityDelegations;
 };
-
-using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
 DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseOp&);
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, const Worker_ReserveEntityIdsResponseOp&);
@@ -250,7 +236,6 @@ private:
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 
-	TMap<FUnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
 	FRPCContainer IncomingRPCs;
 
 	bool bInCriticalSection;

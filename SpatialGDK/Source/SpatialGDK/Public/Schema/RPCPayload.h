@@ -33,7 +33,7 @@ struct RPCPayload
 		if (Schema_GetObjectCount(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID) > 0)
 		{
 			Schema_Object* TraceData = Schema_IndexObject(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID, 0);
-			USpatialLatencyTracing::ReadFromSchemaObject(TraceData);
+			Trace = USpatialLatencyTracing::ReadFromSchemaObject(TraceData);
 		}
 	}
 
@@ -53,6 +53,14 @@ struct RPCPayload
 		}
 	}
 
+	void FinaliseTrace() const
+	{
+		if (USpatialLatencyTracing::IsValidKey(Trace))
+		{
+			USpatialLatencyTracing::EndLatencyTrace(Trace, TEXT("Unhandled trace - auto destroyed"));
+		}
+	}
+
 	static void WriteToSchemaObject(Schema_Object* RPCObject, uint32 Offset, uint32 Index, const uint8* Data, int32 NumElems)
 	{
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
@@ -63,7 +71,7 @@ struct RPCPayload
 	uint32 Offset;
 	uint32 Index;
 	TArray<uint8> PayloadData;
-	TraceKey Trace;
+	TraceKey Trace = USpatialLatencyTracing::InvalidTraceKey;
 };
 
 struct RPCsOnEntityCreation : Component

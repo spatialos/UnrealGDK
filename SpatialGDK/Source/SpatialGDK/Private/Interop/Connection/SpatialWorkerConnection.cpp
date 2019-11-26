@@ -378,9 +378,10 @@ void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Wor
 	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
 }
 
-void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate)
+void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey& Key)
 {
-	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate);
+	USpatialLatencyTracing::WriteToLatencyTrace(Key, TEXT("Pass update to Worker thread"));
+	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate, Key);
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)

@@ -101,16 +101,25 @@ public class SpatialGDK : ModuleRules
         }
 
         // Detect existance of trace library, if present add preprocessor
-        string TraceLib = Path.Combine(WorkerLibraryDir, "trace_archive.lib");
+        string TraceLib = "";
+        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            TraceLib = Path.Combine(WorkerLibraryDir, "trace_archive.lib");
+        }
+        else if (Target.Platform == UnrealTargetPlatform.Linux)
+        {
+            TraceLib = Path.Combine(WorkerLibraryDir, "libtrace_archive.a");
+        }
+            
         if (File.Exists(TraceLib))
         {
-            Log.TraceWarning("Detection of trace library found {0}, enabling trace functionality.", TraceLib);
+            Log.TraceInformation("Detection of trace library found {0}, enabling trace functionality.", TraceLib);
             PublicDefinitions.Add("TRACE_LIB_ACTIVE");
             PublicAdditionalLibraries.Add(TraceLib);
         }
         else
         {
-            Log.TraceWarning("Didn't find trace library {0}, disabling trace functionality.", TraceLib);
+            Log.TraceInformation("Didn't find trace library {0}, disabling trace functionality.", TraceLib);
         }
     }
 }
