@@ -610,6 +610,8 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 				Message->EntityId,
 				&Message->Update,
 				&DisableLoopback);
+
+			USpatialLatencyTracing::EndLatencyTrace(Message->Trace, TEXT("Sent to Worker SDK"));
 			break;
 		}
 		case EOutgoingMessageType::CommandRequest:

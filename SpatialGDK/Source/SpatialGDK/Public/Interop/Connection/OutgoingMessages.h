@@ -9,6 +9,7 @@
 #include "Templates/UnrealTemplate.h"
 #include "Templates/UniquePtr.h"
 #include "UObject/NameTypes.h"
+#include "Utils/SpatialLatencyTracing.h"
 
 #include <string>
 
@@ -100,14 +101,16 @@ struct FRemoveComponent : FOutgoingMessage
 
 struct FComponentUpdate : FOutgoingMessage
 {
-	FComponentUpdate(Worker_EntityId InEntityId, const Worker_ComponentUpdate& InComponentUpdate)
+	FComponentUpdate(Worker_EntityId InEntityId, const Worker_ComponentUpdate& InComponentUpdate, const TraceKey& InTrace)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentUpdate)
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)
+		, Trace(InTrace)
 	{}
 
 	Worker_EntityId EntityId;
 	Worker_ComponentUpdate Update;
+	TraceKey Trace;
 };
 
 struct FCommandRequest : FOutgoingMessage

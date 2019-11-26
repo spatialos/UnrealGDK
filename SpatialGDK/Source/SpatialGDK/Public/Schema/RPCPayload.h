@@ -17,23 +17,40 @@ struct RPCPayload
 {
 	RPCPayload() = delete;
 
-	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, TraceSpan* InTrace)
+	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, TraceKey InTraceKey)
 		: Offset(InOffset)
 		, Index(InIndex)
 		, PayloadData(MoveTemp(Data))
-		, Trace(InTrace)
+		, Trace(InTraceKey)
 	{}
 
-	RPCPayload(const Schema_Object* RPCObject)
+	RPCPayload(Schema_Object* RPCObject)
 	{
 		Offset = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
 		Index = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);
 		PayloadData = SpatialGDK::GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
+
+		if (Schema_GetObjectCount(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID) > 0)
+		{
+			Schema_Object* TraceData = Schema_IndexObject(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID, 0);
+			USpatialLatencyTracing::ReadFromSchemaObject(TraceData);
+		}
 	}
 
 	int64 CountDataBits() const
 	{
 		return PayloadData.Num() * 8;
+	}
+
+	void WriteToSchemaObject(Schema_Object* RPCObject) const
+	{
+		WriteToSchemaObject(RPCObject, Offset, Index, PayloadData.GetData(), PayloadData.Num());
+
+		if (USpatialLatencyTracing::IsValidKey(Trace))
+		{
+			Schema_Object* TraceData = Schema_AddObject(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
+			USpatialLatencyTracing::WriteToSchemaObject(TraceData, Trace);
+		}
 	}
 
 	static void WriteToSchemaObject(Schema_Object* RPCObject, uint32 Offset, uint32 Index, const uint8* Data, int32 NumElems)
@@ -46,7 +63,7 @@ struct RPCPayload
 	uint32 Offset;
 	uint32 Index;
 	TArray<uint8> PayloadData;
-	TraceSpan* Trace;
+	TraceKey Trace;
 };
 
 struct RPCsOnEntityCreation : Component
