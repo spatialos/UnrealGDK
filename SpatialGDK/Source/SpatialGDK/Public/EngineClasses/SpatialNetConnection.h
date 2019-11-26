@@ -65,4 +65,7 @@ public:
 	// Player lifecycle
 	Worker_EntityId PlayerControllerEntity;
 	FTimerHandle HeartbeatTimer;
+
+	// The WorkerId of this worker, for logging purposes.
+	FString WorkerId;
 };

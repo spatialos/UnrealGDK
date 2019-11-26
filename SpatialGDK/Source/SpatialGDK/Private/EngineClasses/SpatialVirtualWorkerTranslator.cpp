@@ -68,8 +68,6 @@ void SpatialVirtualWorkerTranslator::OnComponentUpdated(const Worker_ComponentUp
 
 void SpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	int i = 0;
-	i++;
 	const bool bAuthoritative = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;
 
 	if (AuthOp.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
@@ -98,6 +96,7 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 		NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) ApplyMappingFromSchema called, but this worker is authoritative, ignoring"), *WorkerId);
+		return;
 	}
 
 	// Resize the map to accept the new data.

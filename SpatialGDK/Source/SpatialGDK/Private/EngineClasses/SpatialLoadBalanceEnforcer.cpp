@@ -48,11 +48,9 @@ void USpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker
 
 void USpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	if (AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID &&
-		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE)
-	{
-		QueueAclAssignmentRequest(AuthOp.entity_id);
-	}
+	// Jen: I think we should not be queueing here. This worker receives this op when it has
+	// been delegated authority for the actor. It shouldn't be possible for the intent and
+	// the ACL to not match at this point.
 }
 
 void USpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId EntityId)
@@ -63,6 +61,13 @@ void USpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityI
 	}
 	else
 	{
+		const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
+		// Had to add this check to avoid a problem in ProcessQueuedAclAssignmentRequests
+		if (AuthorityIntentComponent == nullptr)
+		{
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Entity without AuthIntent component will not be queued. EntityId: %lld"), *WorkerId, EntityId);
+			return;
+		}
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Queueing ACL assignment request for entity %lld on worker %s."), EntityId, *WorkerId);
 		AclWriteAuthAssignmentRequests.Add(WriteAuthAssignmentRequest(EntityId));
 	}

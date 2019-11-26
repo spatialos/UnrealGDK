@@ -2285,16 +2285,22 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 		if (AddComponentOp != nullptr)
 		{
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("(%s): Processing Translation component add to bootstrap SpatialVirtualWorkerTranslator."),
+				*Connection->GetWorkerId());
 			FoundOps.Add(AddComponentOp);
 		}
 
 		if (AuthorityChangedOp != nullptr)
 		{
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("(%s): Processing Translation component authority change to bootstrap SpatialVirtualWorkerTranslator."),
+				*Connection->GetWorkerId());
 			FoundOps.Add(AuthorityChangedOp);
 		}
 
 		if (ComponentUpdateOp != nullptr)
 		{
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("(%s): Processing Translation component update to bootstrap SpatialVirtualWorkerTranslator."),
+				*Connection->GetWorkerId());
 			FoundOps.Add(ComponentUpdateOp);
 		}
 	}

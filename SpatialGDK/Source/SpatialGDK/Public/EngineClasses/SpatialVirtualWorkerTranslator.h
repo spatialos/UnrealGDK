@@ -27,6 +27,7 @@ public:
 
 	void AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds);
 	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; }
+	PhysicalWorkerName GetLocalPhysicalWorkerName() const { return WorkerId; }
 
 	// Returns the name of the worker currently assigned to VirtualWorkerId id or nullptr if there is
 	// no worker assigned.
