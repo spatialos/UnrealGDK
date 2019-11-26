@@ -747,7 +747,9 @@ void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const 
 	for (const Worker_ComponentId& ComponentId : ComponentIds)
 	{
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
-			ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+			ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
+			// TODO: analyze this hack
+			ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID)
 		{
 			continue;
 		}
