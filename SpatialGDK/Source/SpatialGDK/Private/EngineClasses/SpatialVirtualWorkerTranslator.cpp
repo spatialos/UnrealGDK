@@ -109,7 +109,6 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 
 	// Resize the map to accept the new data.
 	VirtualToPhysicalWorkerMapping.Empty();
-	int32 TranslationCount = (int32)Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 	VirtualToPhysicalWorkerMapping.Reserve(TranslationCount);
 
 	for (int32 i = 0; i < TranslationCount; i++)

@@ -104,7 +104,6 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		{
 			// A virtual worker -> physical worker mapping may not be established yet.
 			// We'll retry on the next Tick().
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("No worker for %d"), LocalWorkerId);
 			continue;
 		}
 
