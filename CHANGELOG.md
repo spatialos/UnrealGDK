@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`0.8.0-preview`] - 2019-11-18
 
+### Features:
+- Added two scripts to the UnrealExampleProject: LaunchSimPlayerClient.bat and LaunchSimPlayers.bat. LaunchSimPlayerClient.bat will launch a single SimPlayer client. LaunchSimPlayers.bat will launch 10 SimPlayer clients.
+
 ### Breaking Changes:
 - This is the last GDK version to support Unreal Engine 4.22. You will need to upgrade your project to use Unreal Engine 4.23 (`4.23-SpatialOSUnrealGDK-preview`) in order to continue receiving GDK releases and support.
 - When upgrading to Unreal Engine 4.23 you must:
