@@ -9,7 +9,6 @@
 #include "AbstractLBStrategy.generated.h"
 
 class USpatialNetDriver;
-class SpatialVirtualWorkerTranslator;
 
 /**
  * This class can be used to define a load balancing strategy.
@@ -32,9 +31,11 @@ class SPATIALGDK_API UAbstractLBStrategy : public UObject
 public:
 	UAbstractLBStrategy();
 
-	virtual void Init(const USpatialNetDriver* InNetDriver, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
+	virtual void Init(const USpatialNetDriver* InNetDriver) {}
 
-	bool IsReady() const { return GetLocalVirtualWorkerId() != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
+	bool IsReady() const { return LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
+
+	void SetLocalVirtualWorkerId(VirtualWorkerId LocalVirtualWorkerId);
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
 
@@ -43,7 +44,6 @@ public:
 
 protected:
 
-	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
-
+	VirtualWorkerId LocalVirtualWorkerId;
 	VirtualWorkerId GetLocalVirtualWorkerId() const;
 };
