@@ -16,9 +16,9 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLatencyTracing, Log, All);
 class AActor;
 class UFunction;
 
-typedef TPair<const AActor*, const UFunction*> ActorFuncTrack;
-typedef int32 TraceKey;
-typedef improbable::trace::Span TraceSpan;
+using ActorFuncKey = TPair<const AActor*, const UFunction*>;
+using TraceKey = int32;
+using TraceSpan = improbable::trace::Span;
 
 UCLASS()
 class SPATIALGDK_API USpatialLatencyTracing : public UObject
@@ -46,8 +46,8 @@ public:
 	static void WriteToLatencyTrace(const TraceKey& Key, const FString& TraceDesc);
 	static void EndLatencyTrace(const TraceKey& Key, const FString& TraceDesc);
 
-	static void WriteToSchemaObject(Schema_Object* Obj, const TraceKey& Key);
-	static TraceKey ReadFromSchemaObject(Schema_Object* Obj);
+	static void WriteTraceToSchemaObject(const TraceKey& Key, Schema_Object* Obj);
+	static TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj);
 
 	static const TraceKey ActiveTraceKey = 0;
 	static const TraceKey InvalidTraceKey = -1;
@@ -59,7 +59,7 @@ private:
 
 	static void WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc);
 
-	static TMap<ActorFuncTrack, TraceKey> TrackingTraces;
+	static TMap<ActorFuncKey, TraceKey> TrackingTraces;
 	static TMap<TraceKey, TraceSpan> TraceMap;
 
 	static FCriticalSection Mutex;

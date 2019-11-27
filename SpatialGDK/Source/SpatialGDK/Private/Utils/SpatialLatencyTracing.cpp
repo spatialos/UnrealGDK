@@ -28,15 +28,13 @@ class UEStream : public std::stringbuf
 using namespace improbable::exporters::trace;
 using namespace improbable::trace;
 
-TMap<ActorFuncTrack, TraceKey> USpatialLatencyTracing::TrackingTraces;
+TMap<ActorFuncKey, TraceKey> USpatialLatencyTracing::TrackingTraces;
 TMap<TraceKey, TraceSpan> USpatialLatencyTracing::TraceMap;
 FCriticalSection USpatialLatencyTracing::Mutex;
 
 namespace
 {
 	UEStream Stream;
-	const TraceKey ActiveTraceKey = 0;
-	const TraceKey InvalidTraceKey = -1;
 }
 
 void USpatialLatencyTracing::RegisterProject(const FString& ProjectId)
@@ -121,7 +119,7 @@ TraceKey USpatialLatencyTracing::GetTraceKey(const UObject* Obj, const UFunction
 {
 	FScopeLock Lock(&Mutex);
 
-	ActorFuncTrack FuncKey{ Cast<AActor>(Obj), Function };
+	ActorFuncKey FuncKey{ Cast<AActor>(Obj), Function };
 	TraceKey ReturnKey = InvalidTraceKey;
 	TrackingTraces.RemoveAndCopyValue(FuncKey, ReturnKey);
 	return ReturnKey;
@@ -151,7 +149,7 @@ void USpatialLatencyTracing::EndLatencyTrace(const TraceKey& Key, const FString&
 	}
 }
 
-void USpatialLatencyTracing::WriteToSchemaObject(Schema_Object* Obj, const TraceKey& Key)
+void USpatialLatencyTracing::WriteTraceToSchemaObject(const TraceKey& Key, Schema_Object* Obj)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -166,7 +164,7 @@ void USpatialLatencyTracing::WriteToSchemaObject(Schema_Object* Obj, const Trace
 	}
 }
 
-TraceKey USpatialLatencyTracing::ReadFromSchemaObject(Schema_Object* Obj)
+TraceKey USpatialLatencyTracing::ReadTraceFromSchemaObject(Schema_Object* Obj)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -197,7 +195,7 @@ TraceKey USpatialLatencyTracing::CreateNewTraceEntry(const AActor* Actor, const 
 	{
 		if (UFunction* Function = ActorClass->FindFunctionByName(*FunctionName))
 		{
-			ActorFuncTrack Key{ Actor, Function };
+			ActorFuncKey Key{ Actor, Function };
 			if (TrackingTraces.Find(Key) == nullptr)
 			{
 				TrackingTraces.Add(Key, NextTraceKey);
