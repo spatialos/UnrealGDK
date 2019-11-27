@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 - The server no longer crashes, when received RPCs are processed recursively.
 - DeploymentLauncher can parse a .pb.json launch configuration.
+### Features:
+- Added two scripts to the UnrealExampleProject: LaunchSimPlayerClient.bat and LaunchSimPlayers.bat. LaunchSimPlayerClient.bat will launch a single SimPlayer client. LaunchSimPlayers.bat will launch 10 SimPlayer clients.
+
 
 ### Features:
 - Added partial framework for use in future UnrealGDK controlled loadbalancing.
