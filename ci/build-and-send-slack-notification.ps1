@@ -72,6 +72,7 @@ foreach ($attachment in $attachments) {
     $json_message.attachments += $attachment
 } 
 
-$json_request = $json_message | ConvertTo-Json -Depth 10
+# ConverTo-Json requires a finite depth value to prevent potential non-termination due to ciruclar references (default is 2)
+$json_request = $json_message | ConvertTo-Json -Depth 16
 
 Invoke-WebRequest -UseBasicParsing "$slack_webhook_url" -ContentType "application/json" -Method POST -Body "$json_request"
