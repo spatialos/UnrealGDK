@@ -248,7 +248,7 @@ TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActorWithMultipleObjectComponents", "SpatialTypeActorWithMultipleObjectComponents.schema" }
 };
 uint32 ExpectedRPCEndpointsRingBufferSize = 32;
-FString ExpectedRPCEndpointsSchemaFilename = "rpc_endpoints.schema";
+FString ExpectedRPCEndpointsSchemaFilename = TEXT("rpc_endpoints.schema");
 
 class SchemaValidator
 {
@@ -985,7 +985,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_no_schema_exists_WHEN_generating_schema_for_rpc_endp
 	SpatialGDKEditor::Schema::GenerateSchemaForRPCEndpoints(SchemaOutputFolder);
 
 	FString FileContent;
-	FFileHelper::LoadFileToString(FileContent, *FPaths::Combine(SchemaOutputFolder, TEXT("rpc_endpoints.schema")));
+	FFileHelper::LoadFileToString(FileContent, *FPaths::Combine(SchemaOutputFolder, ExpectedRPCEndpointsSchemaFilename));
 
 	TestTrue("Generated RPC endpoints schema matches the expected schema", Validator.ValidateGeneratedSchemaAgainstExpectedSchema(FileContent, ExpectedRPCEndpointsSchemaFilename));
 
