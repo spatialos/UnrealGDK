@@ -8,15 +8,11 @@
 
 UAbstractLBStrategy::UAbstractLBStrategy()
 	: Super()
+	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 {
 }
 
-void UAbstractLBStrategy::Init(const USpatialNetDriver* InNetDriver, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
+void UAbstractLBStrategy::SetLocalVirtualWorkerId(uint32 InLocalVirtualWorkerId)
 {
-	VirtualWorkerTranslator = InVirtualWorkerTranslator;
-}
-
-VirtualWorkerId UAbstractLBStrategy::GetLocalVirtualWorkerId() const
-{
-	return (VirtualWorkerTranslator != nullptr) ? VirtualWorkerTranslator->GetLocalVirtualWorkerId() : SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	LocalVirtualWorkerId = InLocalVirtualWorkerId;
 }

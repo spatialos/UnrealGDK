@@ -31,7 +31,7 @@ public:
 	UGridBasedLBStrategy();
 
 /* UAbstractLBStrategy Interface */
-	virtual void Init(const USpatialNetDriver* InNetDriver, const SpatialVirtualWorkerTranslator* SpatialVirtualWorkerTranslator) override;
+	virtual void Init(const USpatialNetDriver* InNetDriver) override;
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;
 

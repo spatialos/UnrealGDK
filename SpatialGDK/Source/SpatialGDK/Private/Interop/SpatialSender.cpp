@@ -753,7 +753,8 @@ void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const 
 
 	for (const Worker_ComponentId& ComponentId : ComponentIds)
 	{
-		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID ||
+		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
+			ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID ||
 			ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
 			continue;
@@ -1181,7 +1182,7 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Connection->SendCommandResponse(RequestId, &Response);
 }
 
-// Authority over the ClientRPC Schema component is dictated by the owning connection of a client.
+// Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
 // This function updates the authority of that component as the owning connection can change.
 bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
 {
@@ -1202,6 +1203,7 @@ bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& O
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
 	EntityACL->ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
+	EntityACL->ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
 	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 
 	Connection->SendComponentUpdate(EntityId, &Update);

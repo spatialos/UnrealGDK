@@ -5,6 +5,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
@@ -119,9 +120,12 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 		}
 	}
 
-	if (TranslationCount)
+	if (LocalVirtualWorkerId != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		bIsReady = true;
+
+		// Tell the strategy about the local virtual worker id.
+		NetDriver->LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
 	}
 }
 
@@ -278,6 +282,10 @@ void SpatialVirtualWorkerTranslator::AssignWorker(const PhysicalWorkerName& Name
 	if (Name == WorkerId)
 	{
 		LocalVirtualWorkerId = Id;
+		bIsReady = true;
+
+		// Tell the strategy about the local virtual worker id.
+		NetDriver->LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
 	}
 
 	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Assigned VirtualWorker %d to simulate on Worker %s"), *WorkerId, Id, *Name);

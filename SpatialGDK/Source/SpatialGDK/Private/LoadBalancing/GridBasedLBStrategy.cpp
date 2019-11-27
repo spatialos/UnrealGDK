@@ -16,9 +16,9 @@ UGridBasedLBStrategy::UGridBasedLBStrategy()
 {
 }
 
-void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver, const SpatialVirtualWorkerTranslator* SpatialVirtualWorkerTranslator)
+void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver)
 {
-	Super::Init(InNetDriver, SpatialVirtualWorkerTranslator);
+	Super::Init(InNetDriver);
 
 	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("GridBasedLBStrategy initialized with Rows = %d and Cols = %d."), Rows, Cols);
 
@@ -74,7 +74,7 @@ bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 
 
-	return !IsInside(WorkerCells[GetLocalVirtualWorkerId() - 1], Actor2DLocation);
+	return !IsInside(WorkerCells[LocalVirtualWorkerId - 1], Actor2DLocation);
 }
 
 VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const

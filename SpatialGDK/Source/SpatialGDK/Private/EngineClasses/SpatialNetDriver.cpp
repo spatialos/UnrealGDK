@@ -404,7 +404,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
 		// TODO: Exit cleanly if SpatialSettings->LoadBalanceStrategy is not set.
 		LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
-		LoadBalanceStrategy->Init(this, VirtualWorkerTranslator.Get());
+		LoadBalanceStrategy->Init(this);
 
 		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
 
