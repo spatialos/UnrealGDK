@@ -1559,10 +1559,12 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 
 	ERPCResult Result = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
 
+#if TRACE_LIB_ACTIVE
 	if (Result == ERPCResult::Success)
 	{
-		Params.Payload.FinaliseTrace();
+		USpatialLatencyTracing::EndLatencyTrace(Params.Payload.Trace, TEXT("Unhandled trace - automatically ended"));
 	}
+#endif
 
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };
 }

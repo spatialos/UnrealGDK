@@ -2,12 +2,7 @@
 
 #include "Utils/SpatialLatencyTracing.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
-
-//#ifdef TRACE_LIB_ACTIVE
 #include "Async/Async.h"
-#include "WorkerSDK/improbable/trace.h"
-
 #include "Utils/SchemaUtils.h"
 
 #include <sstream>
@@ -25,12 +20,14 @@ class UEStream : public std::stringbuf
 	}
 };
 
+#if TRACE_LIB_ACTIVE
 using namespace improbable::exporters::trace;
 using namespace improbable::trace;
 
 TMap<ActorFuncKey, TraceKey> USpatialLatencyTracing::TrackingTraces;
 TMap<TraceKey, TraceSpan> USpatialLatencyTracing::TraceMap;
 FCriticalSection USpatialLatencyTracing::Mutex;
+#endif
 
 namespace
 {
@@ -39,16 +36,19 @@ namespace
 
 void USpatialLatencyTracing::RegisterProject(const FString& ProjectId)
 {
+#if TRACE_LIB_ACTIVE
 	StackdriverExporter::Register({ TCHAR_TO_UTF8(*ProjectId) });
 
 	std::cout.rdbuf(&Stream);
 	std::cerr.rdbuf(&Stream);
 
 	StdoutExporter::Register();
+#endif // TRACE_LIB_ACTIVE
 }
 
 bool USpatialLatencyTracing::BeginLatencyTrace(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
 {
+#if TRACE_LIB_ACTIVE
 	FScopeLock Lock(&Mutex);
 
 	TraceKey Key = CreateNewTraceEntry(Actor, FunctionName);
@@ -64,10 +64,14 @@ bool USpatialLatencyTracing::BeginLatencyTrace(const AActor* Actor, const FStrin
 	TraceMap.Add(Key, MoveTemp(NewTrace));
 	
 	return true;
+#else
+	return false;
+#endif // TRACE_LIB_ACTIVE
 }
 
 bool USpatialLatencyTracing::ContinueLatencyTrace(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
 {
+#if TRACE_LIB_ACTIVE
 	FScopeLock Lock(&Mutex);
 
 	TraceSpan* ActiveTrace = GetActiveTrace();
@@ -89,10 +93,14 @@ bool USpatialLatencyTracing::ContinueLatencyTrace(const AActor* Actor, const FSt
 	TraceMap.Remove(ActiveTraceKey);
 
 	return true;
+#else
+	return false;
+#endif // TRACE_LIB_ACTIVE
 }
 
 bool USpatialLatencyTracing::EndLatencyTrace()
 {
+#if TRACE_LIB_ACTIVE
 	FScopeLock Lock(&Mutex);
 
 	TraceSpan* ActiveTrace = GetActiveTrace();
@@ -107,12 +115,16 @@ bool USpatialLatencyTracing::EndLatencyTrace()
 	TraceMap.Remove(ActiveTraceKey);
 
 	return true;
+#else
+	return false;
+#endif // TRACE_LIB_ACTIVE
 }
 
+#if TRACE_LIB_ACTIVE
 bool USpatialLatencyTracing::IsValidKey(const TraceKey& Key)
 {
-	bool bValid = TraceMap.Find(Key);
-	return bValid;
+	FScopeLock Lock(&Mutex);
+	return TraceMap.Find(Key);
 }
 
 TraceKey USpatialLatencyTracing::GetTraceKey(const UObject* Obj, const UFunction* Function)
@@ -124,7 +136,6 @@ TraceKey USpatialLatencyTracing::GetTraceKey(const UObject* Obj, const UFunction
 	TrackingTraces.RemoveAndCopyValue(FuncKey, ReturnKey);
 	return ReturnKey;
 }
-
 
 void USpatialLatencyTracing::WriteToLatencyTrace(const TraceKey& Key, const FString& TraceDesc)
 {
@@ -220,9 +231,11 @@ void USpatialLatencyTracing::WriteKeyFrameToTrace(const TraceSpan* Trace, const 
 		SubTrace.End();
 	}
 }
+#endif // TRACE_LIB_ACTIVE
 
 void USpatialLatencyTracing::SendTestTrace()
 {
+#if TRACE_LIB_ACTIVE
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, []
 	{
 		std::cout << "Sending test trace" << std::endl;
@@ -258,6 +271,5 @@ void USpatialLatencyTracing::SendTestTrace()
 			SubSpan3.End();
 		}
 	});
+#endif // TRACE_LIB_ACTIVE
 }
-
-//#endif // TRACE_LIB_ACTOR

@@ -380,7 +380,9 @@ void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Wor
 
 void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey& Key)
 {
-	USpatialLatencyTracing::WriteToLatencyTrace(Key, TEXT("Pass update to Worker thread"));
+#if TRACE_LIB_ACTIVE
+	USpatialLatencyTracing::WriteToLatencyTrace(Key, TEXT("Moved update to Worker queue"));
+#endif
 	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate, Key);
 }
 
@@ -612,7 +614,9 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 				&Message->Update,
 				&DisableLoopback);
 
+#if TRACE_LIB_ACTIVE
 			USpatialLatencyTracing::EndLatencyTrace(Message->Trace, TEXT("Sent to Worker SDK"));
+#endif
 			break;
 		}
 		case EOutgoingMessageType::CommandRequest:

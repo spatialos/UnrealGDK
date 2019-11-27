@@ -114,12 +114,13 @@ public class SpatialGDK : ModuleRules
         if (File.Exists(TraceLib))
         {
             Log.TraceInformation("Detection of trace library found {0}, enabling trace functionality.", TraceLib);
-            PublicDefinitions.Add("TRACE_LIB_ACTIVE");
+            PublicDefinitions.Add("TRACE_LIB_ACTIVE=1");
             PublicAdditionalLibraries.Add(TraceLib);
         }
         else
         {
             Log.TraceInformation("Didn't find trace library {0}, disabling trace functionality.", TraceLib);
+            PublicDefinitions.Add("TRACE_LIB_ACTIVE=0");
         }
     }
 }
