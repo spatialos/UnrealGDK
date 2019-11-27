@@ -24,8 +24,8 @@ class UEStream : public std::stringbuf
 using namespace improbable::exporters::trace;
 using namespace improbable::trace;
 
-TMap<ActorFuncKey, TraceKey> USpatialLatencyTracing::TrackingTraces;
-TMap<TraceKey, TraceSpan> USpatialLatencyTracing::TraceMap;
+TMap<USpatialLatencyTracing::ActorFuncKey, TraceKey> USpatialLatencyTracing::TrackingTraces;
+TMap<TraceKey, USpatialLatencyTracing::TraceSpan> USpatialLatencyTracing::TraceMap;
 FCriticalSection USpatialLatencyTracing::Mutex;
 #endif
 
@@ -218,7 +218,7 @@ TraceKey USpatialLatencyTracing::CreateNewTraceEntry(const AActor* Actor, const 
 	return InvalidTraceKey;
 }
 
-TraceSpan* USpatialLatencyTracing::GetActiveTrace()
+USpatialLatencyTracing::TraceSpan* USpatialLatencyTracing::GetActiveTrace()
 {
 	return TraceMap.Find(ActiveTraceKey);
 }
