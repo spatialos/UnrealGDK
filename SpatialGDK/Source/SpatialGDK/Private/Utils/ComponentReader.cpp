@@ -265,7 +265,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 
 		ReadStructProperty(ValueDataReader, StructProperty, NetDriver, Data, bHasUnmapped);
 
-		if (bHasUnmapped)
+		if (NewUnresolvedRefs.Num() > 0)
 		{
 			InObjectReferencesMap.Add(Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, ShadowOffset, ParentIndex, Property));
 			UnresolvedRefs.Append(NewUnresolvedRefs);

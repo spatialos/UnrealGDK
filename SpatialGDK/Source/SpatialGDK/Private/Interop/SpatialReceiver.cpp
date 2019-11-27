@@ -83,6 +83,7 @@ void USpatialReceiver::LeaveCriticalSection()
 	for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
 	{
 		ReceiveActor(PendingAddEntity);
+		OnEntityAddedDelegate.Broadcast(PendingAddEntity);
 	}
 
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
@@ -192,6 +193,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
 	RemoveActor(Op.entity_id);
+	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
 }
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
@@ -495,18 +497,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
 		{
 			Sender->SendServerEndpointReadyUpdate(Op.entity_id);
-		}
-	}
-
-	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
-	{
-		ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Op.component_id);
-		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
-			Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID ||
-			Op.component_id == SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
-		{
-			// This will be called multiple times on each RPC component.
-			NetDriver->OnRPCAuthorityGained(Actor, ComponentType);
 		}
 	}
 }
@@ -1525,34 +1515,11 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 	RPCPayload PayloadCopy = Payload;
 	FSpatialNetBitReader PayloadReader(PackageMap, PayloadCopy.PayloadData.GetData(), PayloadCopy.CountDataBits(), UnresolvedRefs);
 
-	int ReliableRPCId = 0;
-	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
-	{
-		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-		{
-			PayloadReader << ReliableRPCId;
-		}
-	}
-
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
 
 	if ((UnresolvedRefs.Num() == 0) || bApplyWithUnresolvedRefs)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
-		{
-			if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-			{
-				AActor* Actor = Cast<AActor>(TargetObject);
-				if (Actor == nullptr)
-				{
-					Actor = Cast<AActor>(TargetObject->GetOuter());
-					check(Actor);
-				}
-				NetDriver->OnReceivedReliableRPC(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
-			}
-		}
-
 		TargetObject->ProcessEvent(Function, Parms);
 		Result = ERPCResult::Success;
 	}
@@ -1840,7 +1807,7 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	ESchemaComponentType Type = RPCInfo.Type;
+	ERPCType Type = RPCInfo.Type;
 
 	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, Type, MoveTemp(InPayload));
 }
