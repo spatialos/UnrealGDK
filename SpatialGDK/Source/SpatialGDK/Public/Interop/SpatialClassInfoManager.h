@@ -31,7 +31,7 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 
 struct FRPCInfo
 {
-	ESchemaComponentType Type;
+	ERPCType Type;
 	uint32 Index;
 };
 
