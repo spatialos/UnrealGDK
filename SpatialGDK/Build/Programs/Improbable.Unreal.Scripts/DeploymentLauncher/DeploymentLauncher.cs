@@ -78,6 +78,7 @@ namespace Improbable
 
             return confirmUploadResponse.Snapshot.Id;
         }
+        
         private static PlatformApiEndpoint GetApiEndpoint(string region)
         {
             if (region == "CN")
