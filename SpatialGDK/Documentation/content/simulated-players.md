@@ -102,6 +102,9 @@ You can launch simulated players as [Play In Editor](https://docs.unrealengine.c
 ![Number of simulated players]({{assetRoot}}assets/screen-grabs/simulated-players/multiplayer-options.png)
 <br>_Image: In the "Multiplayer Options" section, enter the number of simulated players_
 
+An alternative for running Simulated Players locally is to use batch file. Examples are given in the UnrealExampleProject. LaunchSimPlayerClient.bat simply launches a single Simulated Player Client.
+Launch10SimPlayerClients.bat will launch 10 Simulated Player Clients.
+
 ### Cloud deployments
 
 You can scale test your game right from the start by having simulated players connect to your cloud deployment. For more information, see [Launch cloud deployment]({{urlRoot}}/content/cloud-deployment-workflow#launch-cloud-deployment).
