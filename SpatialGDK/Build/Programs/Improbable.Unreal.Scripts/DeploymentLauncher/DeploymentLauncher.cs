@@ -8,6 +8,7 @@ using System.Net;
 using System.Security.Cryptography;
 using Google.LongRunning;
 using Google.Protobuf.WellKnownTypes;
+using Improbable.SpatialOS.Platform.Common;
 using Improbable.SpatialOS.Deployment.V1Alpha1;
 using Improbable.SpatialOS.PlayerAuth.V2Alpha1;
 using Improbable.SpatialOS.Snapshot.V1Alpha1;
@@ -77,6 +78,14 @@ namespace Improbable
 
             return confirmUploadResponse.Snapshot.Id;
         }
+        private static PlatformApiEndpoint GetApiEndpoint(string region)
+        {
+            if(region == "CN")
+            {
+                return new PlatformApiEndpoint("api.cn-production.spatialoschina.com", 443);
+            }
+            return null; // Use default
+        }
 
         private static int CreateDeployment(string[] args)
         {
@@ -109,7 +118,7 @@ namespace Improbable
 
             try
             {
-                var deploymentServiceClient = DeploymentServiceClient.Create();
+                var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(mainDeploymentRegion));
 
                 if (DeploymentExists(deploymentServiceClient, projectName, mainDeploymentName))
                 {
@@ -220,7 +229,7 @@ namespace Improbable
         private static Operation<Deployment, CreateDeploymentMetadata> CreateMainDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
             bool launchSimPlayerDeployment, string projectName, string assemblyName, string mainDeploymentName, string mainDeploymentJsonPath, string mainDeploymentSnapshotPath, string regionCode)
         {
-            var snapshotServiceClient = SnapshotServiceClient.Create();
+            var snapshotServiceClient = SnapshotServiceClient.Create(GetApiEndpoint(regionCode));
 
             // Upload snapshots.
             var mainSnapshotId = UploadSnapshot(snapshotServiceClient, mainDeploymentSnapshotPath, projectName,
@@ -268,7 +277,7 @@ namespace Improbable
         private static Operation<Deployment, CreateDeploymentMetadata> CreateSimPlayerDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
             string projectName, string assemblyName, string mainDeploymentName, string simDeploymentName, string simDeploymentJsonPath, string regionCode, int simNumPlayers)
         {
-            var playerAuthServiceClient = PlayerAuthServiceClient.Create();
+            var playerAuthServiceClient = PlayerAuthServiceClient.Create(GetApiEndpoint(regionCode));
 
             // Create development authentication token used by the simulated players.
             var dat = playerAuthServiceClient.CreateDevelopmentAuthenticationToken(
@@ -356,8 +365,8 @@ namespace Improbable
         private static int StopDeployments(string[] args)
         {
             var projectName = args[1];
-
-            var deploymentServiceClient = DeploymentServiceClient.Create();
+            var regionCode = args[6];
+            var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(regionCode));
 
             if (args.Length == 3)
             {
@@ -407,8 +416,9 @@ namespace Improbable
         private static int ListDeployments(string[] args)
         {
             var projectName = args[1];
+            var regionCode = args[6];
 
-            var deploymentServiceClient = DeploymentServiceClient.Create();
+            var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(regionCode));
             var activeDeployments = ListLaunchedActiveDeployments(deploymentServiceClient, projectName);
 
             foreach (var deployment in activeDeployments)
