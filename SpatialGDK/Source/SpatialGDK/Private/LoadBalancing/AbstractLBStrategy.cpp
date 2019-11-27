@@ -18,5 +18,5 @@ void UAbstractLBStrategy::Init(const USpatialNetDriver* InNetDriver, const Spati
 
 VirtualWorkerId UAbstractLBStrategy::GetLocalVirtualWorkerId() const
 {
-	return VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+	return (VirtualWorkerTranslator != nullptr) ? VirtualWorkerTranslator->GetLocalVirtualWorkerId() : SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 }
