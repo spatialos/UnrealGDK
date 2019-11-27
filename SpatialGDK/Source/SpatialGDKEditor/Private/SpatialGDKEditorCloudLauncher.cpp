@@ -50,7 +50,10 @@ bool SpatialGDKCloudStop()
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	const FString CmdExecutable = TEXT("cmd.exe");
-	const FString LauncherCmdArguments = TEXT("/c DeploymentLauncher.exe stop");
+	const FString LauncherCmdArguments = FString::Printf(
+		TEXT("/c DeploymentLauncher.exe stop %s"),
+		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
+		);
 
 	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
 		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0,

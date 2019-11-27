@@ -365,7 +365,7 @@ namespace Improbable
         private static int StopDeployments(string[] args)
         {
             var projectName = args[1];
-            var regionCode = args[6];
+            var regionCode = args[2];
             var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(regionCode));
 
             if (args.Length == 3)
@@ -416,7 +416,7 @@ namespace Improbable
         private static int ListDeployments(string[] args)
         {
             var projectName = args[1];
-            var regionCode = args[6];
+            var regionCode = args[2];
 
             var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(regionCode));
             var activeDeployments = ListLaunchedActiveDeployments(deploymentServiceClient, projectName);
@@ -472,11 +472,11 @@ namespace Improbable
         {
             Console.WriteLine("Usage:");
             Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> [<sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players>]");
-            Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment. The deployments can be started in different regions ('EU', 'US' and 'AP').");
-            Console.WriteLine("DeploymentLauncher stop <project-name> [deployment-id]");
+            Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment. The deployments can be started in different regions ('EU', 'US' , 'AP' and 'CN').");
+            Console.WriteLine("DeploymentLauncher stop <project-name> <main-deployment-region> [deployment-id]");
             Console.WriteLine("  Stops the specified deployment within the project.");
             Console.WriteLine("  If no deployment id argument is specified, all active deployments started by the deployment launcher in the project will be stopped.");
-            Console.WriteLine("DeploymentLauncher list <project-name>");
+            Console.WriteLine("DeploymentLauncher list <project-name> <main-deployment-region>");
             Console.WriteLine("  Lists all active deployments within the specified project that are started by the deployment launcher.");
         }
 
@@ -484,8 +484,8 @@ namespace Improbable
         {
             if (args.Length == 0 ||
                 args[0] == "create" && (args.Length != 11 && args.Length != 7) ||
-                args[0] == "stop" && (args.Length != 2 && args.Length != 3) ||
-                args[0] == "list" && args.Length != 2)
+                args[0] == "stop" && (args.Length != 3 && args.Length != 4) ||
+                args[0] == "list" && args.Length != 3)
             {
                 ShowUsage();
                 return 1;
