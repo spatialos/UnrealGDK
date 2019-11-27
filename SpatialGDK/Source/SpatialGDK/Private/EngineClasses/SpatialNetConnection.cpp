@@ -129,7 +129,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 	}
 	else
 	{
-		UE_LOG(LogSpatialNetConnection, Warning, TEXT("(%s): Quitting before Heartbeat component has been initialized: NetConnection %s"), *WorkerId, *GetName());
+		UE_LOG(LogSpatialNetConnection, Warning, TEXT("Quitting before Heartbeat component has been initialized: NetConnection %s"), *GetName());
 	}
 }
 
