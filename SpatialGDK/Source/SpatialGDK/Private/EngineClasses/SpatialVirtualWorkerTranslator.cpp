@@ -114,18 +114,12 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 
 		// Insert each into the provided map.
 		VirtualToPhysicalWorkerMapping.Add(VirtualWorkerId, PhysicalWorkerName);
+
+		// When the worker receives an update informing it of its own VirtualWorkerId, declare the Translator to be ready.
 		if (PhysicalWorkerName == WorkerId)
 		{
-			LocalVirtualWorkerId = VirtualWorkerId;
+			SetLoadbalancingReady(VirtualWorkerId);
 		}
-	}
-
-	if (LocalVirtualWorkerId != SpatialConstants::INVALID_COMPONENT_ID)
-	{
-		bIsReady = true;
-
-		// Tell the strategy about the local virtual worker id.
-		NetDriver->LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
 	}
 }
 
@@ -169,7 +163,6 @@ void SpatialVirtualWorkerTranslator::ConstructVirtualWorkerMappingFromQueryRespo
 			}
 		}
 	}
-	bIsReady = true;
 }
 
 // This will be called on the worker authoritative for the translation mapping to push the new version of the map
@@ -281,12 +274,17 @@ void SpatialVirtualWorkerTranslator::AssignWorker(const PhysicalWorkerName& Name
 
 	if (Name == WorkerId)
 	{
-		LocalVirtualWorkerId = Id;
-		bIsReady = true;
-
-		// Tell the strategy about the local virtual worker id.
-		NetDriver->LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
+		SetLoadbalancingReady(Id);
 	}
 
 	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Assigned VirtualWorker %d to simulate on Worker %s"), *WorkerId, Id, *Name);
+}
+
+void SpatialVirtualWorkerTranslator::SetLoadbalancingReady(VirtualWorkerId Id)
+{
+	LocalVirtualWorkerId = Id;
+	bIsReady = true;
+
+	// Tell the strategy about the local virtual worker id.
+	NetDriver->LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
 }

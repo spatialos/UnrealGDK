@@ -3,8 +3,6 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
-#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
 
 UAbstractLBStrategy::UAbstractLBStrategy()
 	: Super()

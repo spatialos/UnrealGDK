@@ -60,12 +60,14 @@ void USpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeO
 			// TODO(zoning): There are still some entities being created without an authority intent component.
 			// For example, the Unreal created worker entities don't have one. Even though those won't be able to
 			// transition, we should have the intent component on them for completeness.
-		 	UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Requested queueing of entity without AuthIntent component. EntityId: %lld"), AuthOp.entity_id);
+		 	UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Requested authority change for entity without AuthorityIntent component. EntityId: %lld"), AuthOp.entity_id);
 			return;
 		}
 
 		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
-		if (OwningWorkerId != nullptr && *OwningWorkerId == WorkerId)
+		if (OwningWorkerId != nullptr &&
+			*OwningWorkerId == WorkerId &&
+			StaticComponentView->GetAuthority(AuthOp.entity_id, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("No need to queue newly authoritative entity %lld because this worker is already authoritative."), AuthOp.entity_id);
 			return;

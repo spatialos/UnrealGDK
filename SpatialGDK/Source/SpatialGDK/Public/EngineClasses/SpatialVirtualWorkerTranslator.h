@@ -72,4 +72,6 @@ private:
 	void SendVirtualWorkerMappingUpdate();
 
 	void AssignWorker(const FString& WorkerId);
+
+	void SetLoadbalancingReady(VirtualWorkerId Id);
 };

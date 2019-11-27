@@ -2116,12 +2116,12 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 {
 	TArray<Worker_Op*> FoundOps;
 
-	Worker_Op* EntityQueryReservationResponseOp = nullptr;
-	FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE, &EntityQueryReservationResponseOp);
+	Worker_Op* EntityQueryResponseOp = nullptr;
+	FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE, &EntityQueryResponseOp);
 
-	if (EntityQueryReservationResponseOp != nullptr)
+	if (EntityQueryResponseOp != nullptr)
 	{
-		FoundOps.Add(EntityQueryReservationResponseOp);
+		FoundOps.Add(EntityQueryResponseOp);
 	}
 
 	// Search for entity id reservation response and process it.  The entity id reservation

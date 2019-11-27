@@ -45,5 +45,4 @@ public:
 protected:
 
 	VirtualWorkerId LocalVirtualWorkerId;
-	VirtualWorkerId GetLocalVirtualWorkerId() const;
 };
