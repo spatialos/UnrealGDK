@@ -20,7 +20,7 @@ void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver, const Spat
 {
 	Super::Init(InNetDriver, SpatialVirtualWorkerTranslator);
 
-	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("(%s) GridBasedLBStrategy initialized with Rows = %d and Cols = %d."), *GetLocalPhysicalWorkerName(), Rows, Cols);
+	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("GridBasedLBStrategy initialized with Rows = %d and Cols = %d."), Rows, Cols);
 
 	for (uint32 i = 1; i <= Rows * Cols; i++)
 	{
@@ -67,7 +67,7 @@ bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
-		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("(%s) GridBasedLBStrategy not ready to relinquish authority for Actor %s."), *GetLocalPhysicalWorkerName(), *AActor::GetDebugName(&Actor));
+		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to relinquish authority for Actor %s."), *AActor::GetDebugName(&Actor));
 		return false;
 	}
 
@@ -81,7 +81,7 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 {
 	if (!IsReady())
 	{
-		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("(%s) GridBasedLBStrategy not ready to decide on authority for Actor %s."), *GetLocalPhysicalWorkerName(), *AActor::GetDebugName(&Actor));
+		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to decide on authority for Actor %s."), *AActor::GetDebugName(&Actor));
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
