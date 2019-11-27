@@ -290,7 +290,7 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 
 void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, APlayerController* PlayerController)
 {
-	UE_LOG(LogSpatialReceiver, Log, TEXT("(%s): HandlePlayerLifecycleAuthority for PlayerController %d."), *NetDriver->Connection->GetWorkerId(), *AActor::GetDebugName(PlayerController));
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("HandlePlayerLifecycleAuthority for PlayerController %d."), *AActor::GetDebugName(PlayerController));
 
 	// Server initializes heartbeat logic based on its authority over the position component,
 	// client does the same for heartbeat component

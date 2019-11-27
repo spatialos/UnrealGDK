@@ -15,7 +15,6 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpoint.h"
@@ -709,11 +708,19 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 	check(NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID));
 
-	UE_LOG(LogSpatialSender, Log, TEXT("(%s) Sending authority update for entity id %d. Virtual worker '%d' should become authoritative over %s"), *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
-
 	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
 	check(AuthorityIntentComponent != nullptr);
+
+	if (AuthorityIntentComponent->VirtualWorkerId == NewAuthoritativeVirtualWorkerId)
+	{
+		// There may be multiple intent updates triggered by a server worker before the Runtime
+		// notifies this worker that the authority has changed. Ignore the extra calls here.
+		return;
+	}
+
 	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
+	UE_LOG(LogSpatialSender, Log, TEXT("(%s) Sending authority intent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
+		*NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
 
 	Worker_ComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
@@ -746,7 +753,8 @@ void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const 
 
 	for (const Worker_ComponentId& ComponentId : ComponentIds)
 	{
-		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
+		if (// ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
+			ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID ||
 			ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
 			continue;

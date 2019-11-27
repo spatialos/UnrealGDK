@@ -31,6 +31,7 @@ void SpatialVirtualWorkerTranslator::AddVirtualWorkerIds(const TSet<VirtualWorke
 	if (bIsReady)
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) SetDesiredVirtualWorkerCount called after the translator is ready, ignoring."), *WorkerId);
+		return;
 	}
 
 	UnassignedVirtualWorkers.Empty();
@@ -84,12 +85,11 @@ void SpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChan
 			QueryForWorkerEntities();
 		}
 	}
-	// TODO(zoning): If authority is received on the ACL component, we may need to update it.
 }
 
 // The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID.
-// This method should only be called on workers who are not authoritative over the mapping.
-// TODO(harkness): Is this true? I think this will be called once the first time we get authority?
+// This method should only be called on workers who are not authoritative over the mapping and also when
+// a worker first becomes authoritative for the mapping.
 void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Object)
 {
 	if (NetDriver != nullptr &&

@@ -20,8 +20,3 @@ VirtualWorkerId UAbstractLBStrategy::GetLocalVirtualWorkerId() const
 {
 	return VirtualWorkerTranslator->GetLocalVirtualWorkerId();
 }
-
-FString UAbstractLBStrategy::GetLocalPhysicalWorkerName() const
-{
-	return VirtualWorkerTranslator->GetLocalPhysicalWorkerName();
-}

@@ -46,5 +46,4 @@ protected:
 	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 	VirtualWorkerId GetLocalVirtualWorkerId() const;
-	FString GetLocalPhysicalWorkerName() const;
 };
