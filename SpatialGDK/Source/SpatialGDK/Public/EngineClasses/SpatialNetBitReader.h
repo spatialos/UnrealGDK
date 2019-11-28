@@ -22,6 +22,8 @@ public:
 
 	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
+	UObject* ReadObject(bool& bUnresolved);
+
 protected:
 	void DeserializeObjectRef(FUnrealObjectRef& ObjectRef);
 
