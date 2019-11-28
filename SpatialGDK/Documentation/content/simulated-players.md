@@ -99,11 +99,19 @@ Once you have copied the file, you'll need to run `spatial build build-config` f
 
 ### Local deployments
 
-You can launch simulated players as [Play In Editor](https://docs.unrealengine.com/en-US/GettingStarted/HowTo/PIE/index.html#playineditor) clients by configuring the “Number of Simulated Players” option (**Edit > Editor Preferences > Level Editor > Play > Multiplayer Options**):
+There are two ways to launch simulated players that connect to local deployments, and you can choose which one to use. 
 
+- **Launch simulated players using the Multiplayer Options window**
+</br>
+  You can launch simulated players as [Play In Editor](https://docs.unrealengine.com/en-US/GettingStarted/HowTo/PIE/index.html#playineditor) clients by configuring the “Number of Simulated Players” option (**Edit > Editor Preferences > Level Editor > Play > Multiplayer Options**):
+  </br></br>
+  ![Number of simulated players]({{assetRoot}}assets/screen-grabs/simulated-players/multiplayer-options.png)
+  <br>_Image: In the "Multiplayer Options" section, enter the number of simulated players_
+  </br></br>
 
-![Number of simulated players]({{assetRoot}}assets/screen-grabs/simulated-players/multiplayer-options.png)
-<br>_Image: In the "Multiplayer Options" section, enter the number of simulated players_
+- **Launch simulated players automatically using batch scripts**
+</br>
+  You can launch simulated players that connect to local deployments using a batch file. The Example Project contains `LaunchSimPlayerClient.bat` which launches a single Simulated Player client, and `Launch10SimPlayerClients.bat` which launches 10. If you use simulated players to test your project locally we recommend using these scripts as inspiration for your own, as they can save you time.
 
 ### Cloud deployments
 
