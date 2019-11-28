@@ -65,8 +65,8 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bWaitingToSpawn(false)
 	, bIsReadyToStart(false)
 	, bMapLoaded(false)
-	, NextRPCIndex(0)
 	, SessionId(0)
+	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
 {
 #if ENGINE_MINOR_VERSION >= 23
