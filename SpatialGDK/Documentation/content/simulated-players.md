@@ -122,5 +122,6 @@ Logs for simulated players are stored as [raw logs](https://docs.improbable.io/r
 
 <br/>
 <br/>------------<br/>
+_2019-11-28 Page updated without editorial review: added automatic sim players launching using b atch scripts._<br/>
 _2019-11-14 Page updated without editorial review: added missing `spatial build build-config` step._<br/>
 _2019-07-31 Page added with limited editorial review._
