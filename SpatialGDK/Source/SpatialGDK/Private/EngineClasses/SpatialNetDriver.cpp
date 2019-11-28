@@ -67,6 +67,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bMapLoaded(false)
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
+	, SessionId(0)
 {
 #if ENGINE_MINOR_VERSION >= 23
 	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
@@ -481,7 +482,7 @@ void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 	GetWorld()->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
 }
 
-bool USpatialNetDriver::CanSendPlayerSpawnRequests()
+bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()
 {
 	return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
 }
@@ -489,7 +490,7 @@ bool USpatialNetDriver::CanSendPlayerSpawnRequests()
 void USpatialNetDriver::OnGSMQuerySuccess()
 {
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
-	if (bWaitingToSpawn && CanSendPlayerSpawnRequests())
+	if (bWaitingToSpawn && ClientCanSendPlayerSpawnRequests())
 	{
 		UWorld* CurrentWorld = GetWorld();
 		const FString& DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
@@ -520,10 +521,6 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 
 void USpatialNetDriver::RetryQueryGSM()
 {
-	// TODO: UNR-656 - TLDR: Hack to get around runtime not giving data on streaming queries unless you have write authority.
-	// There is currently a bug in runtime which prevents clients from being able to have read access on the component via the streaming query.
-	// This means that the clients never actually receive updates or data on the GSM. To get around this we are making timed entity queries to
-	// find the state of the GSM and the accepting players. Remove this work-around when the runtime bug is fixed.
 	float RetryTimerDelay = SpatialConstants::ENTITY_QUERY_RETRY_WAIT_SECONDS;
 
 	// In PIE we want to retry the entity query as soon as possible.
@@ -616,7 +613,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 	else
 	{
-		if (CanSendPlayerSpawnRequests())
+		if (ClientCanSendPlayerSpawnRequests())
 		{
 			MakePlayerSpawnRequest();
 		}
