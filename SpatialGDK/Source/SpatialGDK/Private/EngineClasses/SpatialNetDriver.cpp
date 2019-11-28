@@ -66,8 +66,8 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bIsReadyToStart(false)
 	, bMapLoaded(false)
 	, NextRPCIndex(0)
-	, TimeWhenPositionLastUpdated(0.f)
 	, SessionId(0)
+	, TimeWhenPositionLastUpdated(0.f)
 {
 #if ENGINE_MINOR_VERSION >= 23
 	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
