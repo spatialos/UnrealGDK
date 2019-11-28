@@ -45,9 +45,12 @@ PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false /*bS
 
 ## UWorld::ServerTravel
 
-Server travel is supported in single server-worker deployments. If you want to test server travel in Editor, ensure that you have "Use Single Process" disabled in "Editor Preferences/Level Editor/Play/Multiplayer Options" and set "Editor Multiplayer Mode" to "Play As Client".
+> Warning: Multiserver `ServerTravel` is on the [roadmap](https://github.com/spatialos/UnrealGDK/projects/1#card-22461878) but is not currently supported.
 
-> Warning: `Multi worker ServerTravel` is on the [roadmap](https://github.com/spatialos/UnrealGDK/projects/1#card-22461878) but is not currently supported.
+`Servertravel` is supported in single-server games. To test `ServerTravel` in local deployments, using **Play In Editor**, you need to set up your Editor to use a single process and to play as a client. To do this: 
+
+1. In your Unreal Editor, navigate to **Editor** > **Editor Preferences** > **Level Editor** > **Play** > **Multiplayer Options** and uncheck **Use Single Process** to disable it.
+2. In the same menu, locate  **Editor Multiplayer Mode** and select **Play As Client**.
 
 ## Default connection flows
 #### Play In Editor Clients
