@@ -11,7 +11,6 @@
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
-#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
@@ -1562,7 +1561,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 #if TRACE_LIB_ACTIVE
 	if (Result == ERPCResult::Success)
 	{
-		USpatialLatencyTracing::EndLatencyTrace(Params.Payload.Trace, TEXT("Unhandled trace - automatically ended"));
+		USpatialLatencyTracing::GetTracer(this)->EndLatencyTrace(Params.Payload.Trace, TEXT("Unhandled trace - automatically ended"));
 	}
 #endif
 

@@ -25,6 +25,7 @@ using namespace SpatialGDK;
 void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
 {
 	GameInstance = InGameInstance;
+	check(GameInstance->GetSpatialLatencyTracer());
 }
 
 void USpatialWorkerConnection::FinishDestroy()
@@ -381,7 +382,13 @@ void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Wor
 void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey& Key)
 {
 #if TRACE_LIB_ACTIVE
-	USpatialLatencyTracing::WriteToLatencyTrace(Key, TEXT("Moved update to Worker queue"));
+	if (GameInstance.IsValid())
+	{
+		if (USpatialLatencyTracing* LatencyTracer = GameInstance->GetSpatialLatencyTracer())
+		{
+			LatencyTracer->WriteToLatencyTrace(Key, TEXT("Moved update to Worker queue"));
+		}
+	}
 #endif
 	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate, Key);
 }
@@ -615,7 +622,13 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 				&DisableLoopback);
 
 #if TRACE_LIB_ACTIVE
-			USpatialLatencyTracing::EndLatencyTrace(Message->Trace, TEXT("Sent to Worker SDK"));
+			if (GameInstance.IsValid())
+			{
+				if (USpatialLatencyTracing* LatencyTracer = GameInstance->GetSpatialLatencyTracer())
+				{
+					LatencyTracer->EndLatencyTrace(Message->Trace, TEXT("Sent to Worker SDK"));
+				}
+			}
 #endif
 			break;
 		}

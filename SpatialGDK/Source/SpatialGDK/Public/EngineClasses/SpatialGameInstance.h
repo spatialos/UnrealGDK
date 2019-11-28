@@ -8,6 +8,7 @@
 #include "SpatialGameInstance.generated.h"
 
 class USpatialWorkerConnection;
+class USpatialLatencyTracing;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
@@ -28,6 +29,10 @@ public:
 	//~ Begin UObject Interface
 	virtual bool ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& Ar, UObject* Executor) override;
 	//~ End UObject Interface
+
+	//~ Begin UGameInstance Interface
+	virtual void Init() override;
+	//~ End UGameInstance Interface
 
 	// bResponsibleForSnapshotLoading exists to have persistent knowledge if this worker has authority over the GSM during ServerTravel.
 	bool bResponsibleForSnapshotLoading = false;
@@ -51,6 +56,8 @@ public:
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
 
+	USpatialLatencyTracing* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
+
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.
@@ -66,4 +73,7 @@ private:
 	// If this flag is set to true standalone clients will not attempt to connect to a deployment automatically if a 'loginToken' exists in arguments.
 	UPROPERTY(Config)
 	bool bPreventAutoConnectWithLocator;
+
+	UPROPERTY()
+	USpatialLatencyTracing* SpatialLatencyTracer = nullptr;
 };

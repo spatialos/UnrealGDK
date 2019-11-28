@@ -3,6 +3,8 @@
 #include "Utils/SpatialLatencyTracing.h"
 
 #include "Async/Async.h"
+#include "Engine/World.h"
+#include "EngineClasses/SpatialGameInstance.h"
 #include "Utils/SchemaUtils.h"
 
 #include <sstream>
@@ -21,12 +23,7 @@ class UEStream : public std::stringbuf
 };
 
 #if TRACE_LIB_ACTIVE
-using namespace improbable::exporters::trace;
-using namespace improbable::trace;
-
-TMap<USpatialLatencyTracing::ActorFuncKey, TraceKey> USpatialLatencyTracing::TrackingTraces;
-TMap<TraceKey, USpatialLatencyTracing::TraceSpan> USpatialLatencyTracing::TraceMap;
-FCriticalSection USpatialLatencyTracing::Mutex;
+//using namespace improbable::trace;
 #endif
 
 namespace
@@ -34,9 +31,11 @@ namespace
 	UEStream Stream;
 }
 
-void USpatialLatencyTracing::RegisterProject(const FString& ProjectId)
+void USpatialLatencyTracing::RegisterProject(UObject* WorldContextObject, const FString& ProjectId)
 {
 #if TRACE_LIB_ACTIVE
+	using namespace improbable::exporters::trace;
+
 	StackdriverExporter::Register({ TCHAR_TO_UTF8(*ProjectId) });
 
 	std::cout.rdbuf(&Stream);
@@ -46,78 +45,37 @@ void USpatialLatencyTracing::RegisterProject(const FString& ProjectId)
 #endif // TRACE_LIB_ACTIVE
 }
 
-bool USpatialLatencyTracing::BeginLatencyTrace(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
+bool USpatialLatencyTracing::BeginLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
 {
 #if TRACE_LIB_ACTIVE
-	FScopeLock Lock(&Mutex);
-
-	TraceKey Key = CreateNewTraceEntry(Actor, FunctionName);
-	if (Key == InvalidTraceKey)
+	if (USpatialLatencyTracing* Tracer = GetTracer(WorldContextObject))
 	{
-		return false;
+		return Tracer->BeginLatencyTrace_Internal(Actor, FunctionName, TraceDesc);
 	}
-
-	TraceSpan NewTrace = Span::StartSpan(TCHAR_TO_UTF8(*TraceDesc), nullptr);
-
-	WriteKeyFrameToTrace(&NewTrace, FString::Printf(TEXT("Begin trace : %s"), *FunctionName));
-
-	TraceMap.Add(Key, MoveTemp(NewTrace));
-	
-	return true;
-#else
-	return false;
 #endif // TRACE_LIB_ACTIVE
+	return false;
 }
 
-bool USpatialLatencyTracing::ContinueLatencyTrace(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
+bool USpatialLatencyTracing::ContinueLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
 {
 #if TRACE_LIB_ACTIVE
-	FScopeLock Lock(&Mutex);
-
-	TraceSpan* ActiveTrace = GetActiveTrace();
-	if (ActiveTrace == nullptr)
+	if (USpatialLatencyTracing* Tracer = GetTracer(WorldContextObject))
 	{
-		return false;
+		return Tracer->ContinueLatencyTrace_Internal(Actor, FunctionName, TraceDesc);
 	}
-
-	TraceKey Key = CreateNewTraceEntry(Actor, FunctionName);
-	if (Key == InvalidTraceKey)
-	{
-		return false;
-	}
-
-	WriteKeyFrameToTrace(ActiveTrace, TCHAR_TO_UTF8(*TraceDesc));
-	WriteKeyFrameToTrace(ActiveTrace, FString::Printf(TEXT("Continue trace : %s"), *FunctionName));
-
-	TraceMap.Add(Key, MoveTemp(*ActiveTrace));
-	TraceMap.Remove(ActiveTraceKey);
-
-	return true;
-#else
-	return false;
 #endif // TRACE_LIB_ACTIVE
+	return false;
 }
 
-bool USpatialLatencyTracing::EndLatencyTrace()
+bool USpatialLatencyTracing::EndLatencyTrace(UObject* WorldContextObject)
 {
 #if TRACE_LIB_ACTIVE
-	FScopeLock Lock(&Mutex);
-
-	TraceSpan* ActiveTrace = GetActiveTrace();
-	if (ActiveTrace == nullptr)
+	if (USpatialLatencyTracing* Tracer = GetTracer(WorldContextObject))
 	{
-		return false;
+		return Tracer->EndLatencyTrace_Internal();
 	}
-
-	WriteKeyFrameToTrace(ActiveTrace, TEXT("End Trace"));
-	ActiveTrace->End();
-
-	TraceMap.Remove(ActiveTraceKey);
-
-	return true;
-#else
-	return false;
 #endif // TRACE_LIB_ACTIVE
+	return false;
 }
 
 #if TRACE_LIB_ACTIVE
@@ -166,9 +124,9 @@ void USpatialLatencyTracing::WriteTraceToSchemaObject(const TraceKey& Key, Schem
 
 	if (TraceSpan* Trace = TraceMap.Find(Key))
 	{
-		const SpanContext& TraceContext = Trace->context();
-		TraceId _TraceId = TraceContext.trace_id();
-		SpanId _SpanId = TraceContext.span_id();
+		const improbable::trace::SpanContext& TraceContext = Trace->context();
+		improbable::trace::TraceId _TraceId = TraceContext.trace_id();
+		improbable::trace::SpanId _SpanId = TraceContext.span_id();
 
 		SpatialGDK::AddBytesToSchema(Obj, SpatialConstants::UNREAL_RPC_TRACE_ID, &_TraceId[0], _TraceId.size());
 		SpatialGDK::AddBytesToSchema(Obj, SpatialConstants::UNREAL_RPC_SPAN_ID, &_SpanId[0], _SpanId.size());
@@ -184,18 +142,96 @@ TraceKey USpatialLatencyTracing::ReadTraceFromSchemaObject(Schema_Object* Obj)
 	const uint8* TraceBytes = Schema_GetBytes(Obj, SpatialConstants::UNREAL_RPC_TRACE_ID);
 	const uint8* SpanBytes = Schema_GetBytes(Obj, SpatialConstants::UNREAL_RPC_SPAN_ID);
 
-	TraceId _TraceId;
-	memcpy(&_TraceId[0], TraceBytes, sizeof(TraceId));
+	improbable::trace::TraceId _TraceId;
+	memcpy(&_TraceId[0], TraceBytes, sizeof(improbable::trace::TraceId));
 
-	SpanId _SpanId;
-	memcpy(&_SpanId[0], SpanBytes, sizeof(SpanId));
+	improbable::trace::SpanId _SpanId;
+	memcpy(&_SpanId[0], SpanBytes, sizeof(improbable::trace::SpanId));
 
-	SpanContext DestContext(_TraceId, _SpanId);
+	improbable::trace::SpanContext DestContext(_TraceId, _SpanId);
 
-	TraceSpan RetrieveTrace = Span::StartSpanWithRemoteParent("Read Trace From Schema Obj", DestContext);
+	TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent("Read Trace From Schema Obj", DestContext);
 	TraceMap.Add(ActiveTraceKey, MoveTemp(RetrieveTrace));
 
 	return ActiveTraceKey;
+}
+
+USpatialLatencyTracing* USpatialLatencyTracing::GetTracer(UObject* WorldContextObject)
+{
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull);
+	if (World == nullptr)
+	{
+		World = GWorld;
+	}
+
+	if (USpatialGameInstance* GameInstance = World->GetGameInstance<USpatialGameInstance>())
+	{
+		return GameInstance->GetSpatialLatencyTracer();
+	}
+
+	return nullptr;
+}
+
+bool USpatialLatencyTracing::BeginLatencyTrace_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
+{
+	FScopeLock Lock(&Mutex);
+
+	TraceKey Key = CreateNewTraceEntry(Actor, FunctionName);
+	if (Key == InvalidTraceKey)
+	{
+		return false;
+	}
+
+	TraceSpan NewTrace = improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*TraceDesc), nullptr);
+
+	WriteKeyFrameToTrace(&NewTrace, FString::Printf(TEXT("Begin trace : %s"), *FunctionName));
+
+	TraceMap.Add(Key, MoveTemp(NewTrace));
+
+	return true;
+}
+
+bool USpatialLatencyTracing::ContinueLatencyTrace_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
+{
+	FScopeLock Lock(&Mutex);
+
+	TraceSpan* ActiveTrace = GetActiveTrace();
+	if (ActiveTrace == nullptr)
+	{
+		return false;
+	}
+
+	TraceKey Key = CreateNewTraceEntry(Actor, FunctionName);
+	if (Key == InvalidTraceKey)
+	{
+		return false;
+	}
+
+	WriteKeyFrameToTrace(ActiveTrace, TCHAR_TO_UTF8(*TraceDesc));
+	WriteKeyFrameToTrace(ActiveTrace, FString::Printf(TEXT("Continue trace : %s"), *FunctionName));
+
+	TraceMap.Add(Key, MoveTemp(*ActiveTrace));
+	TraceMap.Remove(ActiveTraceKey);
+
+	return true;
+}
+
+bool USpatialLatencyTracing::EndLatencyTrace_Internal()
+{
+	FScopeLock Lock(&Mutex);
+
+	TraceSpan* ActiveTrace = GetActiveTrace();
+	if (ActiveTrace == nullptr)
+	{
+		return false;
+	}
+
+	WriteKeyFrameToTrace(ActiveTrace, TEXT("End Trace"));
+	ActiveTrace->End();
+
+	TraceMap.Remove(ActiveTraceKey);
+
+	return true;
 }
 
 TraceKey USpatialLatencyTracing::CreateNewTraceEntry(const AActor* Actor, const FString& FunctionName)
@@ -227,8 +263,7 @@ void USpatialLatencyTracing::WriteKeyFrameToTrace(const TraceSpan* Trace, const 
 {
 	if (Trace != nullptr)
 	{
-		Span SubTrace = Span::StartSpan(TCHAR_TO_UTF8(*TraceDesc), Trace);
-		SubTrace.End();
+		improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*TraceDesc), Trace).End();
 	}
 }
 #endif // TRACE_LIB_ACTIVE
@@ -238,6 +273,8 @@ void USpatialLatencyTracing::SendTestTrace()
 #if TRACE_LIB_ACTIVE
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, []
 	{
+		using namespace improbable::trace;
+
 		std::cout << "Sending test trace" << std::endl;
 
 		Span RootSpan = Span::StartSpan("Example Span", nullptr);

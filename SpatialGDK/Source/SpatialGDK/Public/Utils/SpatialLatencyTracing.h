@@ -17,6 +17,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLatencyTracing, Log, All);
 
 class AActor;
 class UFunction;
+class USpatialGameInstance;
 
 using TraceKey = int32;
 
@@ -26,47 +27,55 @@ class SPATIALGDK_API USpatialLatencyTracing : public UObject
 	GENERATED_BODY()
 
 public:
+
 	// Front-end exposed, allows users to register, start, continue, and end traces
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	static void RegisterProject(const FString& ProjectId);
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static void RegisterProject(UObject* WorldContextObject, const FString& ProjectId);
 
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	static bool BeginLatencyTrace(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc);
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool BeginLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc);
 
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	static bool ContinueLatencyTrace(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc);
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool ContinueLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc);
 
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	static bool EndLatencyTrace();
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool EndLatencyTrace(UObject* WorldContextObject);
 
 	static const TraceKey ActiveTraceKey = 0;
 	static const TraceKey InvalidTraceKey = -1;
 
 #if TRACE_LIB_ACTIVE
+
 	// Internal GDK usage, shouldn't be used by game code
-	static bool IsValidKey(const TraceKey& Key);
-	static TraceKey GetTraceKey(const UObject* Obj, const UFunction* Function);
+	static USpatialLatencyTracing* GetTracer(UObject* WorldContextObject);
 
-	static void WriteToLatencyTrace(const TraceKey& Key, const FString& TraceDesc);
-	static void EndLatencyTrace(const TraceKey& Key, const FString& TraceDesc);
+	bool IsValidKey(const TraceKey& Key);
+	TraceKey GetTraceKey(const UObject* Obj, const UFunction* Function);
 
-	static void WriteTraceToSchemaObject(const TraceKey& Key, Schema_Object* Obj);
-	static TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj);
+	void WriteToLatencyTrace(const TraceKey& Key, const FString& TraceDesc);
+	void EndLatencyTrace(const TraceKey& Key, const FString& TraceDesc);
+
+	void WriteTraceToSchemaObject(const TraceKey& Key, Schema_Object* Obj);
+	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj);
 
 private:
 
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
 	using TraceSpan = improbable::trace::Span;
 
-	static TraceKey CreateNewTraceEntry(const AActor* Actor, const FString& FunctionName);
-	static TraceSpan* GetActiveTrace();
+	bool BeginLatencyTrace_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc);
+	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc);
+	bool EndLatencyTrace_Internal();
 
-	static void WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc);
+	TraceKey CreateNewTraceEntry(const AActor* Actor, const FString& FunctionName);
+	TraceSpan* GetActiveTrace();
 
-	static TMap<ActorFuncKey, TraceKey> TrackingTraces;
-	static TMap<TraceKey, TraceSpan> TraceMap;
+	void WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc);
 
-	static FCriticalSection Mutex;
+	TMap<ActorFuncKey, TraceKey> TrackingTraces;
+	TMap<TraceKey, TraceSpan> TraceMap;
+
+	FCriticalSection Mutex;
 
 public:
 

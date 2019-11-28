@@ -16,6 +16,7 @@
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
+#include "Utils/SpatialLatencyTracing.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
@@ -155,6 +156,13 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 	}
 
 	return false;
+}
+
+void USpatialGameInstance::Init()
+{
+	Super::Init();
+
+	SpatialLatencyTracer = NewObject<USpatialLatencyTracing>(this);
 }
 
 void USpatialGameInstance::HandleOnConnected()
