@@ -92,7 +92,9 @@ public:
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
 	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
-	void OnQueryGSMSuccess();
+	void OnGSMQuerySuccess();
+	void RetryQueryGSM();
+	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName);
@@ -207,8 +209,9 @@ private:
 	bool bMapLoaded;
 
 	FString SnapshotToLoad;
+
 	// Client variable which stores the SessionId given to us by the server in the URL options.
-	// Used to compare aginst the GSM SessionId to ensure the the server is ready to spawn players.
+	// Used to compare against the GSM SessionId to ensure the the server is ready to spawn players.
 	int32 SessionId;
 
 	class USpatialGameInstance* GetGameInstance() const;

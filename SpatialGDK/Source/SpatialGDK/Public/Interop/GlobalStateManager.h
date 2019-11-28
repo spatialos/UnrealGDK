@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "TimerManager.h"
 #include "UObject/NoExportTypes.h"
 
 #include "Utils/SchemaUtils.h"
@@ -27,7 +26,7 @@ class SPATIALGDK_API UGlobalStateManager : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
+	void Init(USpatialNetDriver* InNetDriver);
 
 	void ApplySingletonManagerData(const Worker_ComponentData& Data);
 	void ApplyDeploymentMapData(const Worker_ComponentData& Data);
@@ -42,9 +41,8 @@ public:
 	void ExecuteInitialSingletonActorReplication();
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
 
-	DECLARE_DELEGATE(QuerySuccessDelegate);
-	void QueryGSM(bool AcceptingPlayersToCheck, int32 SessionIdToCheck, const QuerySuccessDelegate& Callback, bool bRetryUntilRecieveExpectedValues = true);
-	void RetryQueryGSM(bool AcceptingPlayersToCheck, int32 SessionIdToCheck, const QuerySuccessDelegate& Callback, bool bRetryUntilRecieveExpectedValues = true);
+	DECLARE_DELEGATE_OneParam(QueryDelegate, const Worker_EntityQueryResponseOp&);
+	void QueryGSM(const QueryDelegate& Callback);
 	bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers, int32& OutSessionId);
 	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
@@ -122,8 +120,6 @@ private:
 
 	UPROPERTY()
 	USpatialReceiver* Receiver;
-
-	FTimerManager* TimerManager;
 
 	FDelegateHandle PrePIEEndedHandle;
 };

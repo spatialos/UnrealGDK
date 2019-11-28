@@ -19,7 +19,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Kismet/GameplayStatics.h"
-#include "Runtime/Engine/Public/TimerManager.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
@@ -29,13 +28,12 @@ DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
 using namespace SpatialGDK;
 
-void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
+void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 	Receiver = InNetDriver->Receiver;
-	TimerManager = InTimerManager;
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 #if WITH_EDITOR
@@ -574,7 +572,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 // Queries for the GlobalStateManager in the deployment.
 // bRetryUntilRecievedExpectedValues will continue querying until the state of AcceptingPlayers and SessionId are the same as the given arguments
 // This is so clients know when to connect to the deployment.
-void UGlobalStateManager::QueryGSM(bool bExpectedAcceptingPlayers, int32 ExpectedSessionId, const QuerySuccessDelegate& Callback, bool bRetryUntilRecievedExpectedValues /*=true*/)
+void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 {
 	Worker_ComponentConstraint GSMComponentConstraint{};
 	GSMComponentConstraint.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
@@ -591,7 +589,7 @@ void UGlobalStateManager::QueryGSM(bool bExpectedAcceptingPlayers, int32 Expecte
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
 
 	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this, bExpectedAcceptingPlayers, ExpectedSessionId, Callback, bRetryUntilRecievedExpectedValues](const Worker_EntityQueryResponseOp& Op)
+	GSMQueryDelegate.BindLambda([this, Callback](const Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -603,30 +601,8 @@ void UGlobalStateManager::QueryGSM(bool bExpectedAcceptingPlayers, int32 Expecte
 		}
 		else
 		{
-			bool bNewAcceptingPlayers = false;
-			int32 QuerySessionId = 0;
-			bool bQueryResponseSuccess = GetAcceptingPlayersAndSessionIdFromQueryResponse(Op, bNewAcceptingPlayers, QuerySessionId);
-
-			if (!bQueryResponseSuccess)
-			{
-				UE_LOG(LogGlobalStateManager, Error, TEXT("Failed to extract AcceptingPlayers and SessionId from GSM query response. Will retry query for GSM."));
-			}
-			else if (bNewAcceptingPlayers != bExpectedAcceptingPlayers ||
-					 QuerySessionId != ExpectedSessionId)
-			{
-				UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager did not match expected query state. Will retry query for GSM."));
-			}
-			else
-			{
-				ApplyDeploymentMapDataFromQueryResponse(Op);
-				Callback.ExecuteIfBound();
-				return;
-			}
-		}
-
-		if (bRetryUntilRecievedExpectedValues)
-		{
-			RetryQueryGSM(bExpectedAcceptingPlayers, ExpectedSessionId, Callback, bRetryUntilRecievedExpectedValues);
+			ApplyDeploymentMapDataFromQueryResponse(Op);
+			Callback.ExecuteIfBound(Op);
 		}
 	});
 
@@ -682,30 +658,6 @@ bool UGlobalStateManager::GetAcceptingPlayersAndSessionIdFromQueryResponse(const
 	UE_LOG(LogGlobalStateManager, Warning, TEXT("Entity query response for the GSM did not contain both AcceptingPlayers and SessionId states."));
 
 	return false;
-}
-
-void UGlobalStateManager::RetryQueryGSM(bool bExpectedAcceptingPlayers, int32 ExpectedSessionId, const QuerySuccessDelegate& Callback, bool bRetryUntilRecievedExpectedValues /*=true*/)
-{
-	// TODO: UNR-656 - TLDR: Hack to get around runtime not giving data on streaming queries unless you have write authority.
-	// There is currently a bug in runtime which prevents clients from being able to have read access on the component via the streaming query.
-	// This means that the clients never actually receive updates or data on the GSM. To get around this we are making timed entity queries to
-	// find the state of the GSM and the accepting players. Remove this work-around when the runtime bug is fixed.
-	float RetryTimerDelay = SpatialConstants::ENTITY_QUERY_RETRY_WAIT_SECONDS;
-
-	// In PIE we want to retry the entity query as soon as possible.
-#if WITH_EDITOR
-	RetryTimerDelay = 0.1f;
-#endif
-
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
-	FTimerHandle RetryTimer;
-	TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<UGlobalStateManager>(this), bExpectedAcceptingPlayers, ExpectedSessionId, Callback, bRetryUntilRecievedExpectedValues]()
-	{
-		if (UGlobalStateManager* GSM = WeakThis.Get())
-		{
-			GSM->QueryGSM(bExpectedAcceptingPlayers, ExpectedSessionId, Callback, bRetryUntilRecievedExpectedValues);
-		}
-	}, RetryTimerDelay, false);
 }
 
 void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
