@@ -7,8 +7,8 @@
 
 #include "SpatialGameInstance.generated.h"
 
-class USpatialWorkerConnection;
 class USpatialLatencyTracer;
+class USpatialWorkerConnection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
@@ -44,6 +44,7 @@ public:
 	void DestroySpatialWorkerConnection();
 
 	FORCEINLINE USpatialWorkerConnection* GetSpatialWorkerConnection() { return SpatialConnection; }
+	FORCEINLINE USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
 
 	void HandleOnConnected();
 	void HandleOnConnectionFailed(const FString& Reason);
@@ -55,8 +56,6 @@ public:
 
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
-
-	USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.

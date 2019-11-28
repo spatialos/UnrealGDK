@@ -22,10 +22,6 @@ class UEStream : public std::stringbuf
 	}
 };
 
-#if TRACE_LIB_ACTIVE
-//using namespace improbable::trace;
-#endif
-
 namespace
 {
 	UEStream Stream;
