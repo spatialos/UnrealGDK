@@ -92,8 +92,10 @@ public:
 	// You can check if we connected by calling GetSpatialOS()->IsConnected()
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
-	// When the AcceptingPlayers state on the GSM has changed this method will be called.
-	void OnAcceptingPlayersChanged(bool bAcceptingPlayers);
+	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
+	void OnGSMQuerySuccess();
+	void RetryQueryGSM();
+	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName);
@@ -188,11 +190,15 @@ private:
 	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
 	bool bPersistSpatialConnection;
-	bool bWaitingForAcceptingPlayersToSpawn;
+	bool bWaitingToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
 
 	FString SnapshotToLoad;
+
+	// Client variable which stores the SessionId given to us by the server in the URL options.
+	// Used to compare against the GSM SessionId to ensure the the server is ready to spawn players.
+	int32 SessionId;
 
 	class USpatialGameInstance* GetGameInstance() const;
 
@@ -205,8 +211,6 @@ private:
 	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor);
 
 	void QueryGSMToLoadMap();
-
-	void HandleOngoingServerTravel();
 
 	void HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists);
 	bool FindAndDispatchStartupOpsServer(const TArray<Worker_OpList*>& InOpLists);
@@ -263,4 +267,10 @@ private:
 	void StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist);
 	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
 	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
+
+	void MakePlayerSpawnRequest();
+
+	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
+	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
+	bool ClientCanSendPlayerSpawnRequests();
 };

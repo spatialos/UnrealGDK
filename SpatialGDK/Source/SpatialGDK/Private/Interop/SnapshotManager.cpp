@@ -21,26 +21,19 @@ void USnapshotManager::Init(USpatialNetDriver* InNetDriver)
 }
 
 // WorldWipe will send out an expensive entity query for every entity in the deployment.
-// It does this by having an entity query for all entities that are not the GSM (workaround for not having the ability to make a query for all entities).
-// Once it has the response to this query, it will send deletion requests for all found entities and then one for the GSM itself.
+// It does this by sending an entity query for all entities with the Unreal Metadata Component
+// Once it has the response to this query, it will send deletion requests for all found entities.
 // Should only be triggered by the worker which is authoritative over the GSM.
 void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate& PostWorldWipeDelegate)
 {
-	UE_LOG(LogSnapshotManager, Log, TEXT("World wipe for deployment has been triggered. All entities will be deleted!"));
+	UE_LOG(LogSnapshotManager, Log, TEXT("World wipe for deployment has been triggered. All entities with the UnrealMetaData component will be deleted!"));
 
-	Worker_Constraint GSMConstraint;
-	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
-	GSMConstraint.constraint.entity_id_constraint.entity_id = GlobalStateManager->GlobalStateManagerEntityId;
-
-	Worker_NotConstraint NotGSMConstraint;
-	NotGSMConstraint.constraint = &GSMConstraint;
-
-	Worker_Constraint WorldConstraint;
-	WorldConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_NOT;
-	WorldConstraint.constraint.not_constraint = NotGSMConstraint;
+	Worker_Constraint UnrealMetadataConstraint;
+	UnrealMetadataConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
+	UnrealMetadataConstraint.constraint.component_constraint.component_id = SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 
 	Worker_EntityQuery WorldQuery{};
-	WorldQuery.constraint = WorldConstraint;
+	WorldQuery.constraint = UnrealMetadataConstraint;
 	WorldQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	Worker_RequestId RequestID;
@@ -61,9 +54,6 @@ void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate&
 		{
 			// Send deletion requests for all entities found in the world entity query.
 			DeleteEntities(Op);
-
-			// Also make sure that we kill the GSM.
-			NetDriver->Connection->SendDeleteEntityRequest(GlobalStateManager->GlobalStateManagerEntityId);
 
 			// The world is now ready to finish ServerTravel which means loading in a new map.
 			PostWorldWipeDelegate.ExecuteIfBound();

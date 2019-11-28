@@ -25,6 +25,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Improved logging around entity creation.
 - Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK).
 - A warning is shown if a cloud deployment is launched with the `manual_worker_connection_only` flag set to true
+- Server travel supported for single server game worlds. Does not currently support zoning or off-loading.
 
 ### Bug fixes:
 - Fixed a bug that could caused a name collision in schema for sublevels.

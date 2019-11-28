@@ -135,6 +135,7 @@ namespace SpatialConstants
 
 	const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
 	const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
+	const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID							= 3;
 
 	const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
 
@@ -210,7 +211,7 @@ namespace SpatialConstants
 	const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
 	const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
-	const FString SnapshotURLOption = TEXT("snapshot=");
+	const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
 
 	const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
 	const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");
