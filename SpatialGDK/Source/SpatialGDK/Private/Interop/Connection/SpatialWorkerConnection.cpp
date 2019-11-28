@@ -384,7 +384,7 @@ void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, con
 #if TRACE_LIB_ACTIVE
 	if (GameInstance.IsValid())
 	{
-		if (USpatialLatencyTracing* LatencyTracer = GameInstance->GetSpatialLatencyTracer())
+		if (USpatialLatencyTracer* LatencyTracer = GameInstance->GetSpatialLatencyTracer())
 		{
 			LatencyTracer->WriteToLatencyTrace(Key, TEXT("Moved update to Worker queue"));
 		}
@@ -624,7 +624,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 #if TRACE_LIB_ACTIVE
 			if (GameInstance.IsValid())
 			{
-				if (USpatialLatencyTracing* LatencyTracer = GameInstance->GetSpatialLatencyTracer())
+				if (USpatialLatencyTracer* LatencyTracer = GameInstance->GetSpatialLatencyTracer())
 				{
 					LatencyTracer->EndLatencyTrace(Message->Trace, TEXT("Sent to Worker SDK"));
 				}

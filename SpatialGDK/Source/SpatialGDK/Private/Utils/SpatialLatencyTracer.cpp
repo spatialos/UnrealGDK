@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Utils/SpatialLatencyTracing.h"
+#include "Utils/SpatialLatencyTracer.h"
 
 #include "Async/Async.h"
 #include "Engine/World.h"
@@ -31,7 +31,7 @@ namespace
 	UEStream Stream;
 }
 
-void USpatialLatencyTracing::RegisterProject(UObject* WorldContextObject, const FString& ProjectId)
+void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const FString& ProjectId)
 {
 #if TRACE_LIB_ACTIVE
 	using namespace improbable::exporters::trace;
@@ -45,10 +45,10 @@ void USpatialLatencyTracing::RegisterProject(UObject* WorldContextObject, const 
 #endif // TRACE_LIB_ACTIVE
 }
 
-bool USpatialLatencyTracing::BeginLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
+bool USpatialLatencyTracer::BeginLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
 {
 #if TRACE_LIB_ACTIVE
-	if (USpatialLatencyTracing* Tracer = GetTracer(WorldContextObject))
+	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
 	{
 		return Tracer->BeginLatencyTrace_Internal(Actor, FunctionName, TraceDesc);
 	}
@@ -56,10 +56,10 @@ bool USpatialLatencyTracing::BeginLatencyTrace(UObject* WorldContextObject, cons
 	return false;
 }
 
-bool USpatialLatencyTracing::ContinueLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
+bool USpatialLatencyTracer::ContinueLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
 {
 #if TRACE_LIB_ACTIVE
-	if (USpatialLatencyTracing* Tracer = GetTracer(WorldContextObject))
+	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
 	{
 		return Tracer->ContinueLatencyTrace_Internal(Actor, FunctionName, TraceDesc);
 	}
@@ -67,10 +67,10 @@ bool USpatialLatencyTracing::ContinueLatencyTrace(UObject* WorldContextObject, c
 	return false;
 }
 
-bool USpatialLatencyTracing::EndLatencyTrace(UObject* WorldContextObject)
+bool USpatialLatencyTracer::EndLatencyTrace(UObject* WorldContextObject)
 {
 #if TRACE_LIB_ACTIVE
-	if (USpatialLatencyTracing* Tracer = GetTracer(WorldContextObject))
+	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
 	{
 		return Tracer->EndLatencyTrace_Internal();
 	}
@@ -79,13 +79,13 @@ bool USpatialLatencyTracing::EndLatencyTrace(UObject* WorldContextObject)
 }
 
 #if TRACE_LIB_ACTIVE
-bool USpatialLatencyTracing::IsValidKey(const TraceKey& Key)
+bool USpatialLatencyTracer::IsValidKey(const TraceKey& Key)
 {
 	FScopeLock Lock(&Mutex);
 	return TraceMap.Find(Key);
 }
 
-TraceKey USpatialLatencyTracing::GetTraceKey(const UObject* Obj, const UFunction* Function)
+TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UFunction* Function)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -95,7 +95,7 @@ TraceKey USpatialLatencyTracing::GetTraceKey(const UObject* Obj, const UFunction
 	return ReturnKey;
 }
 
-void USpatialLatencyTracing::WriteToLatencyTrace(const TraceKey& Key, const FString& TraceDesc)
+void USpatialLatencyTracer::WriteToLatencyTrace(const TraceKey& Key, const FString& TraceDesc)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -105,7 +105,7 @@ void USpatialLatencyTracing::WriteToLatencyTrace(const TraceKey& Key, const FStr
 	}
 }
 
-void USpatialLatencyTracing::EndLatencyTrace(const TraceKey& Key, const FString& TraceDesc)
+void USpatialLatencyTracer::EndLatencyTrace(const TraceKey& Key, const FString& TraceDesc)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -118,7 +118,7 @@ void USpatialLatencyTracing::EndLatencyTrace(const TraceKey& Key, const FString&
 	}
 }
 
-void USpatialLatencyTracing::WriteTraceToSchemaObject(const TraceKey& Key, Schema_Object* Obj)
+void USpatialLatencyTracer::WriteTraceToSchemaObject(const TraceKey& Key, Schema_Object* Obj)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -133,7 +133,7 @@ void USpatialLatencyTracing::WriteTraceToSchemaObject(const TraceKey& Key, Schem
 	}
 }
 
-TraceKey USpatialLatencyTracing::ReadTraceFromSchemaObject(Schema_Object* Obj)
+TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -156,7 +156,7 @@ TraceKey USpatialLatencyTracing::ReadTraceFromSchemaObject(Schema_Object* Obj)
 	return ActiveTraceKey;
 }
 
-USpatialLatencyTracing* USpatialLatencyTracing::GetTracer(UObject* WorldContextObject)
+USpatialLatencyTracer* USpatialLatencyTracer::GetTracer(UObject* WorldContextObject)
 {
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull);
 	if (World == nullptr)
@@ -172,7 +172,7 @@ USpatialLatencyTracing* USpatialLatencyTracing::GetTracer(UObject* WorldContextO
 	return nullptr;
 }
 
-bool USpatialLatencyTracing::BeginLatencyTrace_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
+bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -191,7 +191,7 @@ bool USpatialLatencyTracing::BeginLatencyTrace_Internal(const AActor* Actor, con
 	return true;
 }
 
-bool USpatialLatencyTracing::ContinueLatencyTrace_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
+bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -216,7 +216,7 @@ bool USpatialLatencyTracing::ContinueLatencyTrace_Internal(const AActor* Actor, 
 	return true;
 }
 
-bool USpatialLatencyTracing::EndLatencyTrace_Internal()
+bool USpatialLatencyTracer::EndLatencyTrace_Internal()
 {
 	FScopeLock Lock(&Mutex);
 
@@ -234,7 +234,7 @@ bool USpatialLatencyTracing::EndLatencyTrace_Internal()
 	return true;
 }
 
-TraceKey USpatialLatencyTracing::CreateNewTraceEntry(const AActor* Actor, const FString& FunctionName)
+TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& FunctionName)
 {
 	static TraceKey NextTraceKey = 1;
 
@@ -254,12 +254,12 @@ TraceKey USpatialLatencyTracing::CreateNewTraceEntry(const AActor* Actor, const 
 	return InvalidTraceKey;
 }
 
-USpatialLatencyTracing::TraceSpan* USpatialLatencyTracing::GetActiveTrace()
+USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTrace()
 {
 	return TraceMap.Find(ActiveTraceKey);
 }
 
-void USpatialLatencyTracing::WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc)
+void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc)
 {
 	if (Trace != nullptr)
 	{
@@ -268,7 +268,7 @@ void USpatialLatencyTracing::WriteKeyFrameToTrace(const TraceSpan* Trace, const 
 }
 #endif // TRACE_LIB_ACTIVE
 
-void USpatialLatencyTracing::SendTestTrace()
+void USpatialLatencyTracer::SendTestTrace()
 {
 #if TRACE_LIB_ACTIVE
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, []

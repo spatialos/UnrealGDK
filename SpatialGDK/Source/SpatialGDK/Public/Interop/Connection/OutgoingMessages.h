@@ -9,7 +9,7 @@
 #include "Templates/UnrealTemplate.h"
 #include "Templates/UniquePtr.h"
 #include "UObject/NameTypes.h"
-#include "Utils/SpatialLatencyTracing.h"
+#include "Utils/SpatialLatencyTracer.h"
 
 #include <string>
 

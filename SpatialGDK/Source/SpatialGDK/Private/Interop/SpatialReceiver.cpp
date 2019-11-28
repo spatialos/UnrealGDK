@@ -1561,7 +1561,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 #if TRACE_LIB_ACTIVE
 	if (Result == ERPCResult::Success)
 	{
-		USpatialLatencyTracing::GetTracer(this)->EndLatencyTrace(Params.Payload.Trace, TEXT("Unhandled trace - automatically ended"));
+		USpatialLatencyTracer::GetTracer(this)->EndLatencyTrace(Params.Payload.Trace, TEXT("Unhandled trace - automatically ended"));
 	}
 #endif
 

@@ -5,7 +5,7 @@
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
-#include "Utils/SpatialLatencyTracing.h"
+#include "Utils/SpatialLatencyTracer.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -17,7 +17,7 @@ struct RPCPayload
 {
 	RPCPayload() = delete;
 
-	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, TraceKey InTraceKey = USpatialLatencyTracing::InvalidTraceKey)
+	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, TraceKey InTraceKey = USpatialLatencyTracer::InvalidTraceKey)
 		: Offset(InOffset)
 		, Index(InIndex)
 		, PayloadData(MoveTemp(Data))
@@ -31,7 +31,7 @@ struct RPCPayload
 		PayloadData = SpatialGDK::GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
 
 #if TRACE_LIB_ACTIVE
-		if (USpatialLatencyTracing* Tracer = USpatialLatencyTracing::GetTracer(nullptr))
+		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
 		{
 			if (Schema_GetObjectCount(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID) > 0)
 			{
@@ -52,7 +52,7 @@ struct RPCPayload
 		WriteToSchemaObject(RPCObject, Offset, Index, PayloadData.GetData(), PayloadData.Num());
 
 #if TRACE_LIB_ACTIVE
-		if (USpatialLatencyTracing* Tracer = USpatialLatencyTracing::GetTracer(nullptr))
+		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
 		{
 			if (Tracer->IsValidKey(Trace))
 			{
@@ -73,7 +73,7 @@ struct RPCPayload
 	uint32 Offset;
 	uint32 Index;
 	TArray<uint8> PayloadData;
-	TraceKey Trace = USpatialLatencyTracing::InvalidTraceKey;
+	TraceKey Trace = USpatialLatencyTracer::InvalidTraceKey;
 };
 
 struct RPCsOnEntityCreation : Component

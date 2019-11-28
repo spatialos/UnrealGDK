@@ -11,7 +11,7 @@
 #include "WorkerSDK/improbable/trace.h"
 #endif
 
-#include "SpatialLatencyTracing.generated.h"
+#include "SpatialLatencyTracer.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLatencyTracing, Log, All);
 
@@ -22,7 +22,7 @@ class USpatialGameInstance;
 using TraceKey = int32;
 
 UCLASS()
-class SPATIALGDK_API USpatialLatencyTracing : public UObject
+class SPATIALGDK_API USpatialLatencyTracer : public UObject
 {
 	GENERATED_BODY()
 
@@ -47,7 +47,7 @@ public:
 #if TRACE_LIB_ACTIVE
 
 	// Internal GDK usage, shouldn't be used by game code
-	static USpatialLatencyTracing* GetTracer(UObject* WorldContextObject);
+	static USpatialLatencyTracer* GetTracer(UObject* WorldContextObject);
 
 	bool IsValidKey(const TraceKey& Key);
 	TraceKey GetTraceKey(const UObject* Obj, const UFunction* Function);

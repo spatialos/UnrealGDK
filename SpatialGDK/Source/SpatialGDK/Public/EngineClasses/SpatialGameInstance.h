@@ -8,7 +8,7 @@
 #include "SpatialGameInstance.generated.h"
 
 class USpatialWorkerConnection;
-class USpatialLatencyTracing;
+class USpatialLatencyTracer;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
@@ -56,7 +56,7 @@ public:
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
 
-	USpatialLatencyTracing* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
+	USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
@@ -75,5 +75,5 @@ private:
 	bool bPreventAutoConnectWithLocator;
 
 	UPROPERTY()
-	USpatialLatencyTracing* SpatialLatencyTracer = nullptr;
+	USpatialLatencyTracer* SpatialLatencyTracer = nullptr;
 };
