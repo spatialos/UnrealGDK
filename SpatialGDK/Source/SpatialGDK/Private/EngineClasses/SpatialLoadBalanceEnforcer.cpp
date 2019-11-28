@@ -79,12 +79,13 @@ void USpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeO
 // QueueAclAssignmentRequest is called from three places.
 // 1) AuthorityIntent change - Intent is not authoritative on this worker - ACL is authoritative on this worker.
 //    (another worker changed the intent, but this worker is responsible for the ACL, so update it.)
-// 2) ACL change - Intent is unknown - ACL just became authoritative on this worker.
+// 2) ACL change - Intent may be anything - ACL just became authoritative on this worker.
 //    (this worker just became responsible, so check to make sure intent and ACL agree.)
 // 3) AuthorityIntent change - Intent is authoritative on this worker but no longer assigned to this worker - ACL is authoritative on this worker.
 //    (this worker had responsibility for both and is giving up authority.)
 void USpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId EntityId)
 {
+	// TODO(zoning): measure the performance impact of this.
 	if (AclWriteAuthAssignmentRequests.ContainsByPredicate([EntityId](const WriteAuthAssignmentRequest& Request) { return Request.EntityId == EntityId; }))
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("An ACL assignment request already exists for entity %lld on worker %s."), EntityId, *WorkerId);
@@ -117,7 +118,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		{
 			const int32 WarnOnAttemptNum = 5;
 			Request.ProcessAttempts++;
-			if (Request.ProcessAttempts >= WarnOnAttemptNum)
+			if (Request.ProcessAttempts % WarnOnAttemptNum == 0)
 			{
 				UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Failed to process WriteAuthAssignmentRequest because virtual worker mapping is unset for EntityID: %lld. Process attempts made: %d"), Request.EntityId, Request.ProcessAttempts);
 			}

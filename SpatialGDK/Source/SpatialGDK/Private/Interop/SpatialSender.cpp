@@ -15,7 +15,6 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Net/NetworkProfiler.h"
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
@@ -729,7 +728,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 
 	if (NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		// Also notify the translator directly on the worker that sends the component update, as the update will short circuit
+		// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
 		NetDriver->LoadBalanceEnforcer->QueueAclAssignmentRequest(EntityId);
 	}
 }

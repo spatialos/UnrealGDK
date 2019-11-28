@@ -163,6 +163,7 @@ void SpatialVirtualWorkerTranslator::ConstructVirtualWorkerMappingFromQueryRespo
 // to the spatialOS storage.
 void SpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 {
+	// NetDriver is null in tests until we can refactor things.
 	if (NetDriver == nullptr)
 	{
 		return;
@@ -189,6 +190,7 @@ void SpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 
 void SpatialVirtualWorkerTranslator::QueryForWorkerEntities()
 {
+	// NetDriver is null in tests until we can refactor things.
 	if (NetDriver == nullptr)
 	{
 		return;

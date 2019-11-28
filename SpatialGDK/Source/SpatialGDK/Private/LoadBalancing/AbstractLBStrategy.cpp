@@ -10,7 +10,7 @@ UAbstractLBStrategy::UAbstractLBStrategy()
 {
 }
 
-void UAbstractLBStrategy::SetLocalVirtualWorkerId(uint32 InLocalVirtualWorkerId)
+void UAbstractLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId)
 {
 	LocalVirtualWorkerId = InLocalVirtualWorkerId;
 }

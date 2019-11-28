@@ -30,6 +30,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/GridBasedLBStrategy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -411,9 +412,16 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
 		VirtualWorkerTranslator->Init(this);
 
-		// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
-		// TODO: Exit cleanly if SpatialSettings->LoadBalanceStrategy is not set.
-		LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
+		if (SpatialSettings->LoadBalanceStrategy == nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+			LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
+		}
+		else
+		{
+			// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
+			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
+		}
 		LoadBalanceStrategy->Init(this);
 
 		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
@@ -2166,12 +2174,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 		}
 	}
 
-	auto IsVirtualWorkerTranslatorReady = [this]()
-	{
-		return VirtualWorkerTranslator != nullptr ? VirtualWorkerTranslator->IsReady() : true;
-	};
-
-	if (!IsVirtualWorkerTranslatorReady())
+	if (VirtualWorkerTranslator != nullptr && !VirtualWorkerTranslator->IsReady())
 	{
 		Worker_Op* AddComponentOp = nullptr;
 		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, &AddComponentOp);
@@ -2205,7 +2208,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 	if (PackageMap->IsEntityPoolReady() &&
 		GlobalStateManager->IsReadyToCallBeginPlay() &&
-		IsVirtualWorkerTranslatorReady())
+		(VirtualWorkerTranslator == nullptr || VirtualWorkerTranslator->IsReady()))
 	{
 		// Return whether or not we are ready to start
 		return true;
