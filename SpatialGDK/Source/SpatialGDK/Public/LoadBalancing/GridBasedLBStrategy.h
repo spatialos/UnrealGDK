@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+
+#include "CoreMinimal.h"
 
 #include "GridBasedLBStrategy.generated.h"
 

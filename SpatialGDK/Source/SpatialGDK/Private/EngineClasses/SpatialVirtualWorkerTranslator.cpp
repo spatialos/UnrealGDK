@@ -31,7 +31,7 @@ void SpatialVirtualWorkerTranslator::AddVirtualWorkerIds(const TSet<VirtualWorke
 	// flexibility. 
 	if (bIsReady)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) SetDesiredVirtualWorkerCount called after the translator is ready, ignoring."), *WorkerId);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) AddVirtualWorkerIds called after the translator is ready, ignoring."), *WorkerId);
 		return;
 	}
 
@@ -218,7 +218,7 @@ void SpatialVirtualWorkerTranslator::QueryForWorkerEntities()
 	WorkerEntityQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	// Make the query.
-	Worker_RequestId RequestID; 
+	Worker_RequestId RequestID;
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&WorkerEntityQuery);
 	bWorkerEntityQueryInFlight = true;
 

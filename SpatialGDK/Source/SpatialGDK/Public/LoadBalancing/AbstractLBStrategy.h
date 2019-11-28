@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "SpatialConstants.h"
+
+#include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 
 #include "AbstractLBStrategy.generated.h"

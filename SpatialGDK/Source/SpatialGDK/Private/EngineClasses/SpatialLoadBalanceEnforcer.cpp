@@ -115,7 +115,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (OwningWorkerId == nullptr)
 		{
-			static const int32 WarnOnAttemptNum = 5;
+			const int32 WarnOnAttemptNum = 5;
 			Request.ProcessAttempts++;
 			if (Request.ProcessAttempts >= WarnOnAttemptNum)
 			{
