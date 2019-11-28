@@ -298,7 +298,10 @@ private:
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Number of simulated players"))
 		uint32 NumberOfSimulatedPlayers;
-	
+
+	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Running in China"))
+	bool bRunningInChina;
+
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
@@ -453,4 +456,6 @@ public:
 	}
 
 	bool IsDeploymentConfigurationValid() const;
+
+	bool IsRunningInChina() const { return bRunningInChina; }
 };
