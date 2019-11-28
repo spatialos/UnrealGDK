@@ -96,13 +96,19 @@ The [Example Project]({{urlRoot}}/content/get-started/example-project/examplepro
 We recommend that you copy [our example configuration file](https://github.com/spatialos/UnrealGDK/blob/release/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/spatialos.SimulatedPlayerCoordinator.worker.json), and adapt it to your project where necessary. This file contains the arguments that are passed to the simulated player game clients.
 ### Local deployments
 
-You can launch simulated players as [Play In Editor](https://docs.unrealengine.com/en-US/GettingStarted/HowTo/PIE/index.html#playineditor) clients by configuring the “Number of Simulated Players” option (**Edit > Editor Preferences > Level Editor > Play > Multiplayer Options**):
+There are two ways to launch simulated players that connect to local deployments, and you can choose which one to use. 
 
+- **Launch simulated players using the Multiplayer Options window**
+</br>
+  You can launch simulated players as [Play In Editor](https://docs.unrealengine.com/en-US/GettingStarted/HowTo/PIE/index.html#playineditor) clients by configuring the “Number of Simulated Players” option (**Edit > Editor Preferences > Level Editor > Play > Multiplayer Options**):
+  </br></br>
+  ![Number of simulated players]({{assetRoot}}assets/screen-grabs/simulated-players/multiplayer-options.png)
+  <br>_Image: In the "Multiplayer Options" section, enter the number of simulated players_
+  </br></br>
 
-![Number of simulated players]({{assetRoot}}assets/screen-grabs/simulated-players/multiplayer-options.png)
-<br>_Image: In the "Multiplayer Options" section, enter the number of simulated players_
-
-An alternative for running Simulated Players locally is to use batch file. Examples are given in the UnrealExampleProject. LaunchSimPlayerClient.bat simply launches a single Simulated Player Client. Launch10SimPlayerClients.bat will launch 10 Simulated Player Clients.
+- **Launch simulated players automatically using batch scripts**
+</br>
+  You can launch simulated players that connect to local deployments using a batch file. The Example Project contains `LaunchSimPlayerClient.bat` which launches a single Simulated Player client, and `Launch10SimPlayerClients.bat` which launches 10. If you use simulated players to test your project locally we recommend using these scripts as inspiration for your own, as they can save you time.
 
 ### Cloud deployments
 
