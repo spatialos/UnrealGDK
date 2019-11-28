@@ -71,28 +71,45 @@ In File Explorer, navigate to the root directory of your clone of the SpatialOS 
 In the same directory, double-click **GenerateProjectFiles.bat**.
 
 ### Step 5: Clone and install the plugin
-You need to clone the SpatialOS GDK plugin and install it in the UE fork and Example Project directory. You can follow either auto-install or manual-install, we recommend the auto-install. 
+You need to clone the SpatialOS GDK plugin and install it into the UE fork and Example Project directory. We recommend that you follow the auto-install method to reduce the number of manual steps needed  to get set up. The auto-install installs the GDK as an Engine plugin so you won't have to clone the GDK for each new project you set up.
 
-This method will reduce the number of manual steps you have to do to get set up, and will install up the GDK as an Engine plugin rather than a Project plugin. This means you won't have to clone the GDK for each new project you set up.
+There are two branches of the plugin repository and the Example Project: preview and release.  We recommend installing from the default release branch of both, which the auto-install below does for you, and the manual-install guides you to do.  
 
-* **Auto-install** (Recommended) </br>
+<%(#Expandable title="The preview branch")%>
+The preview branch contains features early in development. We do not recommend using the preview branch as it has had minimal testing and it has no documentation. You can find out more about the different branches in the [Versioning]({{urlRoot}}/content/pricing-and-support/versioning-scheme) scheme documentation.
+<%(/Expandable)%>
+
+Once you start working on a game project, we recommend that you update your checked-out branch every two weeks to pick up fixes and changes to the product. You can find out how to keep your branches up to date in the [Keep your GDK up to date]({{urlRoot}}/content/upgrading) documentation. However, to follow this Get started guide, you can simply stay on the current release branch, and you don’t need to update your checked-out version of the branches.
+
+**Note:** As part of auto-install, InstallGDK.bat checks out the release branch of both the plugin repository and Example Project repository. This is what you need now, as part of Get started but note that if you run the script to set up in the future, it will check out the current release branch, even if you have previously checked out the preview branch or checked out an older tagged version of the release branch.
+
+#### Auto-install (Recommended)
 Still in File Explorer, in the root directory of your clone of the SpatialOS Unreal Engine fork, double-click **InstallGDK.bat**. </br>
 This process opens a command line window and runs some scripts - it can take a long time to complete. The command line window closes when the process has finished.
 
-<%(#Expandable title="What does `InstallGDK.bat` do?")%>
+<%(#Expandable title="What does InstallGDK.bat do?")%>
 The script automatically opens a command line window and performs the following:
 
-* Clones the UnrealGDK into your UE fork's `Plugins` directory 
-* Clones the Example Project into your Engine's `Samples` directory.
+* Clones the release branch of the UnrealGDK into your UE fork's `Plugins` directory 
+* Clones the release branch of the Example Project into your Engine's `Samples` directory.
 * Sets up the GDK for use with the Example Project by running `Setup.bat` 
 * Generates Visual Studio solution files for the `UnrealGDKExampleProject`.<br/>
 <%(/Expandable)%>
 
-* **Manual-install**</br>
-See the guide on how to [Manually build the SpatialOS Unreal Engine fork]({{urlRoot}}/content/get-started/manual-engine-build) guide. You do not need to follow _Step 6: Build the fork in Visual Studio_, below.</br></br>
+#### Manual-install
+If you decide not to use the auto-install, you can manually install the GDK as a project plugin by running a set of scripts. Note that the manual-install sets up a project plugin and not an engine plugin, so you will need to run the steps again for each new project you set up.
+
+For further details, see the guide on how to [Manually build the SpatialOS Unreal Engine fork]({{urlRoot}}/content/get-started/manual-engine-build). You do not need to follow _Step 6: Build the fork in Visual Studio_, below.</br></br>
 
 ### Step 6: Build the fork in Visual Studio
-**Note:** You do not need to follow this step if you followed the manual-install instructions.
+
+Once you have followed the steps 1 - 5 on this page, you should have the following on your machine: </br>
+
+* An UnrealEngine fork repository branch ending with -SpatialOSUnrealGDK-release checked out. </br>
+* An UnrealGDK plugin repository release branch checked out. </br>
+* An UnrealGDKEXampleProject Example Project repository release branch checked out.
+
+**Note:** You do not need to follow this step if you followed the manual-install instructions above.
 
 Set up Visual Studio to build Unreal Engine; the build can take up to two hours.
 
@@ -117,6 +134,7 @@ Use as a base for creating your own project running on SpatialOS.
 <br/>
 
 </br>------</br>
+_2019-11-28 Page updated with editorial review: improve discussion of the plugin and example branches._</br>
 _2019-09-27 Page updated without editorial review: clearer explanation of the auto-install flow._</br>
 _2019-08-12 Page updated with editorial review: terminology and page formatting._</br>
 _2019-08-08 Page updated with editorial review: added clarification on SSH key and Linux dependencies._</br>
