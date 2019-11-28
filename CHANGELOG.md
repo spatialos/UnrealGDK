@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DeploymentLauncher can parse a .pb.json launch configuration.
 
 ### Features:
-- In local deployments of the Example Project, you can now launch Simulated Players in one click. Running `LaunchSimPlayerClient.bat` will launch a single Simulated Player client. Running `LaunchSimPlayers.bat` will launch 10.
+- In local deployments of the Example Project you can now launch Simulated Players in one click. Running `LaunchSimPlayerClient.bat` will launch a single Simulated Player client. Running `Launch10SimPlayerClients.bat` will launch 10.
 
 ### Features:
 - Added partial framework for use in future UnrealGDK controlled loadbalancing.
