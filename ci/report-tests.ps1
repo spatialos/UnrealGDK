@@ -48,10 +48,10 @@ $results_json = Get-Content $results_path -Raw
 $test_results_obj = ConvertFrom-Json $results_json
 $tests_passed = $test_results_obj.failed -eq 0
 
-# Upload artifacts to Buildkite, merge all output streams to extract artifact ID in the Slack message generation
-$ErrorActionPreference = "Continue" # For some reason every piece of output being piped is considered an error
-$upload_output = buildkite-agent artifact upload "$test_result_dir\*" *>&1 | %{ "$_" } | Out-String
-$ErrorActionPreference = "Stop" # Restore preference
+# Upload artifacts to Buildkite, capture output to extract artifact ID in the Slack message generation
+# Command format is the results of Powershell weirdness, likely related to the following:
+# https://stackoverflow.com/questions/2095088/error-when-calling-3rd-party-executable-from-powershell-when-using-an-ide
+$upload_output = & cmd /c 'buildkite-agent 2>&1' artifact upload "$test_result_dir\*" | Out-String
 
 # Artifacts are assigned an ID upon upload, so grab IDs from upload process output to build the artifact URLs
 Try {
