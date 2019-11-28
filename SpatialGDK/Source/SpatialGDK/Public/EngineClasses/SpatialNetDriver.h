@@ -19,6 +19,7 @@
 
 #include "SpatialNetDriver.generated.h"
 
+class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class UAbstractLBStrategy;
 class UActorGroupManager;
@@ -91,8 +92,10 @@ public:
 	// You can check if we connected by calling GetSpatialOS()->IsConnected()
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
-	// When the AcceptingPlayers state on the GSM has changed this method will be called.
-	void OnAcceptingPlayersChanged(bool bAcceptingPlayers);
+	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
+	void OnGSMQuerySuccess();
+	void RetryQueryGSM();
+	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName);
@@ -117,6 +120,7 @@ public:
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
+	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
@@ -145,6 +149,8 @@ public:
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 	UPROPERTY()
+	ASpatialDebugger* SpatialDebugger;
+	UPROPERTY()
 	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
@@ -160,24 +166,6 @@ public:
 #if !UE_BUILD_SHIPPING
 	int32 GetConsiderListSize() const { return ConsiderListSize; }
 #endif
-
-	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
-	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
-	void OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType);
-
-	struct FReliableRPCId
-	{
-		FReliableRPCId() = default;
-		FReliableRPCId(FString InWorkerId, uint32 InRPCId, FString InRPCTarget, FString InRPCName) : WorkerId(InWorkerId), RPCId(InRPCId), LastRPCTarget(InRPCTarget), LastRPCName(InRPCName) {}
-
-		FString WorkerId;
-		uint32 RPCId = 0;
-		FString LastRPCTarget;
-		FString LastRPCName;
-	};
-	using FRPCTypeToReliableRPCIdMap = TMap<ESchemaComponentType, FReliableRPCId>;
-	// Per actor, maps from RPC type to the reliable RPC index used to detect if reliable RPCs go out of order.
-	TMap<TWeakObjectPtr<AActor>, FRPCTypeToReliableRPCIdMap> ReliableRPCIdMap;
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
@@ -202,11 +190,15 @@ private:
 	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
 	bool bPersistSpatialConnection;
-	bool bWaitingForAcceptingPlayersToSpawn;
+	bool bWaitingToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
 
 	FString SnapshotToLoad;
+
+	// Client variable which stores the SessionId given to us by the server in the URL options.
+	// Used to compare against the GSM SessionId to ensure the the server is ready to spawn players.
+	int32 SessionId;
 
 	class USpatialGameInstance* GetGameInstance() const;
 
@@ -219,8 +211,6 @@ private:
 	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor);
 
 	void QueryGSMToLoadMap();
-
-	void HandleOngoingServerTravel();
 
 	void HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists);
 	bool FindAndDispatchStartupOpsServer(const TArray<Worker_OpList*>& InOpLists);
@@ -277,4 +267,10 @@ private:
 	void StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist);
 	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
 	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
+
+	void MakePlayerSpawnRequest();
+
+	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
+	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
+	bool ClientCanSendPlayerSpawnRequests();
 };

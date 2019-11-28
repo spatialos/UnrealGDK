@@ -10,6 +10,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "SpatialConstants.generated.h"
+
 enum ESchemaComponentType : int32
 {
 	SCHEMA_Invalid = -1,
@@ -21,58 +23,61 @@ enum ESchemaComponentType : int32
 
 	SCHEMA_Count,
 
-	// RPCs
-	SCHEMA_ClientReliableRPC,
-	SCHEMA_ClientUnreliableRPC,
-	SCHEMA_ServerReliableRPC,
-	SCHEMA_ServerUnreliableRPC,
-	SCHEMA_NetMulticastRPC,
-	SCHEMA_CrossServerRPC,
-
-
 	// Iteration helpers
 	SCHEMA_Begin = SCHEMA_Data,
 };
 
-FORCEINLINE ESchemaComponentType FunctionFlagsToRPCSchemaType(EFunctionFlags FunctionFlags)
+UENUM()
+enum class ERPCType : uint8
+{
+	Invalid,
+	ClientReliable,
+	ClientUnreliable,
+	ServerReliable,
+	ServerUnreliable,
+	NetMulticast,
+	CrossServer
+};
+
+FORCEINLINE ERPCType FunctionFlagsToRPCType(EFunctionFlags FunctionFlags)
 {
 	if (FunctionFlags & FUNC_NetClient)
 	{
-		return SCHEMA_ClientReliableRPC;
+		return ERPCType::ClientReliable;
 	}
 	else if (FunctionFlags & FUNC_NetServer)
 	{
-		return SCHEMA_ServerReliableRPC;
+		return ERPCType::ServerReliable;
 	}
 	else if (FunctionFlags & FUNC_NetMulticast)
 	{
-		return SCHEMA_NetMulticastRPC;
+		return ERPCType::NetMulticast;
 	}
 	else if (FunctionFlags & FUNC_NetCrossServer)
 	{
-		return SCHEMA_CrossServerRPC;
+		return ERPCType::CrossServer;
 	}
 	else
 	{
-		return SCHEMA_Invalid;
+		return ERPCType::Invalid;
 	}
 }
 
-FORCEINLINE FString RPCSchemaTypeToString(ESchemaComponentType RPCType)
+FORCEINLINE FString RPCTypeToString(ERPCType RPCType)
 {
 	switch (RPCType)
 	{
-	case SCHEMA_ClientReliableRPC:
+	case ERPCType::ClientReliable:
 		return TEXT("Client, Reliable");
-	case SCHEMA_ClientUnreliableRPC:
+	case ERPCType::ClientUnreliable:
 		return TEXT("Client, Unreliable");
-	case SCHEMA_ServerReliableRPC:
+	case ERPCType::ServerReliable:
 		return TEXT("Server, Reliable");
-	case SCHEMA_ServerUnreliableRPC:
+	case ERPCType::ServerUnreliable:
 		return TEXT("Server, Unreliable");
-	case SCHEMA_NetMulticastRPC:
+	case ERPCType::NetMulticast:
 		return TEXT("Multicast");
-	case SCHEMA_CrossServerRPC:
+	case ERPCType::CrossServer:
 		return TEXT("CrossServer");
 	}
 
@@ -130,6 +135,7 @@ namespace SpatialConstants
 
 	const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
 	const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
+	const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID							= 3;
 
 	const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
 
@@ -205,7 +211,7 @@ namespace SpatialConstants
 	const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
 	const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
-	const FString SnapshotURLOption = TEXT("snapshot=");
+	const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
 
 	const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
 	const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");
@@ -244,25 +250,25 @@ namespace SpatialConstants
 
 } // ::SpatialConstants
 
-FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)
+FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentId(ERPCType RPCType)
 {
-	switch (SchemaType)
+	switch (RPCType)
 	{
-	case SCHEMA_CrossServerRPC:
+	case ERPCType::CrossServer:
 	{
 		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
 	}
-	case SCHEMA_NetMulticastRPC:
+	case ERPCType::NetMulticast:
 	{
 		return SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
 	}
-	case SCHEMA_ClientReliableRPC:
-	case SCHEMA_ClientUnreliableRPC:
+	case ERPCType::ClientReliable:
+	case ERPCType::ClientUnreliable:
 	{
 		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
 	}
-	case SCHEMA_ServerReliableRPC:
-	case SCHEMA_ServerUnreliableRPC:
+	case ERPCType::ServerReliable:
+	case ERPCType::ServerUnreliable:
 	{
 		return SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
 	}

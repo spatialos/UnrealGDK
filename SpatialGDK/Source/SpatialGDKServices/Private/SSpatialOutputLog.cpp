@@ -252,7 +252,7 @@ void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 {
 	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
-	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) logger=.*\\.(.*) msg=(.*)"));
+	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) logger=(.*\\.)?(.*) msg=(.*)"));
 	FRegexMatcher LogMatcher(LogPattern, LogLine);
 
 	if (!LogMatcher.FindNext())
@@ -262,8 +262,8 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	}
 
 	FString LogLevelText = LogMatcher.GetCaptureGroup(1);
-	FString LogCategory = LogMatcher.GetCaptureGroup(2);
-	FString LogMessage = LogMatcher.GetCaptureGroup(3);
+	FString LogCategory = LogMatcher.GetCaptureGroup(3);
+	FString LogMessage = LogMatcher.GetCaptureGroup(4);
 
 	// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
 	// msg=[WORKER_NAME:WORKER_TYPE] ... e.g. msg=[UnrealWorkerF5C56488482FEDC37B10E382770067E3:UnrealWorker]
