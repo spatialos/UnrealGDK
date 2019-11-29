@@ -25,7 +25,9 @@ public:
 	// Currently that is only the number of virtual workers desired.
 	bool IsReady() const { return bIsReady; }
 
-	void SetDesiredVirtualWorkerCount(uint32 NumberOfVirtualWorkers);
+	void AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds);
+	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; }
+	PhysicalWorkerName GetLocalPhysicalWorkerName() const { return WorkerId; }
 
 	// Returns the name of the worker currently assigned to VirtualWorkerId id or nullptr if there is
 	// no worker assigned.
@@ -35,8 +37,6 @@ public:
 
 	// On receiving a version of the translation state, apply that to the internal mapping.
 	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
-
-	void OnComponentUpdated(const Worker_ComponentUpdateOp& Op);
 
 	// Authority may change on one of two components we care about:
 	// 1) The translation component, in which case this worker is now authoritative on the virtual to physical worker translation.
@@ -56,6 +56,7 @@ private:
 
 	// The WorkerId of this worker, for logging purposes.
 	FString WorkerId;
+	VirtualWorkerId LocalVirtualWorkerId;
 
 	// Serialization and deserialization of the mapping.
 	void ApplyMappingFromSchema(Schema_Object* Object);
@@ -69,4 +70,6 @@ private:
 	void SendVirtualWorkerMappingUpdate();
 
 	void AssignWorker(const FString& WorkerId);
+
+	void UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName Name);
 };
