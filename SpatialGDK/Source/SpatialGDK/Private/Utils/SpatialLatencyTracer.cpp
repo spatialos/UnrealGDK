@@ -16,7 +16,7 @@ class UEStream : public std::stringbuf
 {
 	int sync()
 	{
-		UE_LOG(LogSpatialLatencyTracing, Log, TEXT("%s"), *FString(str().c_str()));
+		UE_LOG(LogSpatialLatencyTracing, Verbose, TEXT("%s"), *FString(str().c_str()));
 		str("");
 		return std::stringbuf::sync();
 	}
@@ -185,6 +185,7 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const AActor* Actor, cons
 	TraceKey Key = CreateNewTraceEntry(Actor, FunctionName);
 	if (Key == InvalidTraceKey)
 	{
+		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Failed to create Actor/Func trace (%s)"), *WorkerId, *TraceDesc);
 		return false;
 	}
 
@@ -205,12 +206,14 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 	TraceSpan* ActiveTrace = GetActiveTrace();
 	if (ActiveTrace == nullptr)
 	{
+		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : No active trace to continue (%s)"), *WorkerId, *TraceDesc);
 		return false;
 	}
 
 	TraceKey Key = CreateNewTraceEntry(Actor, FunctionName);
 	if (Key == InvalidTraceKey)
 	{
+		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Failed to create Actor/Func trace (%s)"), *WorkerId, *TraceDesc);
 		return false;
 	}
 
@@ -230,6 +233,7 @@ bool USpatialLatencyTracer::EndLatencyTrace_Internal()
 	TraceSpan* ActiveTrace = GetActiveTrace();
 	if (ActiveTrace == nullptr)
 	{
+		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : No active trace to end"), *WorkerId);
 		return false;
 	}
 
@@ -255,6 +259,7 @@ TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const F
 				TrackingTraces.Add(Key, NextTraceKey);
 				return NextTraceKey++;
 			}
+			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc already exists for trace"), *WorkerId);
 		}
 	}
 

@@ -25,7 +25,6 @@ using namespace SpatialGDK;
 void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
 {
 	GameInstance = InGameInstance;
-	check(GameInstance->GetSpatialLatencyTracer());
 }
 
 void USpatialWorkerConnection::FinishDestroy()
