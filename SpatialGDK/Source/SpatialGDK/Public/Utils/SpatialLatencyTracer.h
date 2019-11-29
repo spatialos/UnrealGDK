@@ -28,6 +28,28 @@ class SPATIALGDK_API USpatialLatencyTracer : public UObject
 
 public:
 
+	//////////////////////////////////////////////////////////////////////////
+	//
+	// USpatialLatencyTracer allows for tracing of gameplay events across multiple workers, from their user
+	// instigation, to their observed results. Key timings related to these events are logged throughout
+	// the Unreal GDK networking stack.
+	// These timings are logged to Google's Stackdriver (https://cloud.google.com/stackdriver/)
+	//
+	// Setup:
+	// 1. Setup a Google project with access to Stackdriver.
+	// 2. Create and download a service-account certificate
+	// 3. Set GOOGLE_APPLICATION_CREDENTIALS to certificate path
+	// 4. Set GRPC_DEFAULT_SSL_ROOTS_FILE_PATH to your `roots.pem` gRPC path
+	//
+	// Usage:
+	// 1. Register your Google's project id with `RegisterProject`
+	// 2. Start a latency trace using `BeginLatencyTrace` tagging it against an Actor's RPC
+	// 3. During the execution of the tagged RPC either;
+	//		- continue the trace using `ContinueLatencyTrace`, again tagging it against another Actor's RPC
+	//		- or end the trace using `EndLatencyTrace`
+	//
+	//////////////////////////////////////////////////////////////////////////
+
 	// Front-end exposed, allows users to register, start, continue, and end traces
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static void RegisterProject(UObject* WorldContextObject, const FString& ProjectId);
