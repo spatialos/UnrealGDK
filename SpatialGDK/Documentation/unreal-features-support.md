@@ -326,8 +326,8 @@ Support of Unreal features with the GDK in a single server-worker configuration:
  <tr>
     <td rowspan="3"><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling"><b>Travel<b></a></td>
     <td>Server Travel</td>
-    <td class="unplanned"></td>
-    <td>Server Travel is on the <a href="https://github.com/spatialos/UnrealGDK/projects/1#card-22461878"> roadmap</a> but is not currently supported.</td>
+    <td class="supported"></td>
+    <td>Not supported with multiserver zoning or offloading. Multiserver support is on the [roadmap](https://github.com/spatialos/UnrealGDK/projects/1#card-22461878).</td>
   </tr>
   <tr>
     <td>Client Travel</td>
@@ -425,6 +425,7 @@ The table for multiserver support is coming soon.
 
 
 <br/>------<br/>
+_2019-11-26 Updated with editorial review: Server Travel supported_</br>
 _2019-11-08 Added Unreal Engine 4.23 support_</br>
 _2019-10-30 Add replicated blueprint timelines._</br>
 _2019-08-20 Updated with editorial review: Rescheduled Gameplay Debugger support._</br>

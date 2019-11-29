@@ -44,7 +44,13 @@ PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false /*bS
 ```
 
 ## UWorld::ServerTravel
-> Warning: `ServerTravel` is on the [roadmap](https://github.com/spatialos/UnrealGDK/projects/1#card-22461878) but is not currently supported.
+
+> Warning: Multiserver `ServerTravel` is on the [roadmap](https://github.com/spatialos/UnrealGDK/projects/1#card-22461878) but is not currently supported.
+
+`Servertravel` is supported in single-server games. To test `ServerTravel` in local deployments, using **Play In Editor**, you need to set up your Editor to use a single process and to play as a client. To do this: 
+
+1. In your Unreal Editor, navigate to **Editor** > **Editor Preferences** > **Level Editor** > **Play** > **Multiplayer Options** and uncheck **Use Single Process** to disable it.
+2. In the same menu, locate  **Editor Multiplayer Mode** and select **Play As Client**.
 
 ## Default connection flows
 #### Play In Editor Clients
@@ -68,5 +74,6 @@ When launching a client from the SpatialOS Console using the [Launcher](https://
 Please see the [Map Travel URL options]({{urlRoot}}/content/command-line-arguments#map-travel-url-options) section for a list of all URL options that can be used with SpatialOS.
 
 <br/>------<br/>
-_2019-07-31 Page updated with limited editorial review: Updated to match current connection flows. Removed ServerTravel_  
+_2019-11-26 Page updated with limited editorial review: Added single server Server Travel_ </br>
+_2019-07-31 Page updated with limited editorial review: Updated to match current connection flows. Removed ServerTravel_  </br>
 _2019-06-13 Page updated with limited editorial review: Added Locator information_
