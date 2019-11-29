@@ -10,8 +10,14 @@ PROJECT="holocentroid-aimful-6523579"
 DATASET="UnrealGDK"
 TABLE="ci_metrics"
 
-# Fetch Google credentials so that we can upload the metrics to the GCS bucket.
+# Make sure that the gcp secret is always removed
 GCP_SECRET="$(mktemp)"
+function cleanup {
+  rm -rf "$GCP_SECRET"
+}
+trap cleanup EXIT
+
+# Fetch Google credentials so that we can upload the metrics to the GCS bucket.
 imp-ci secrets read --environment=production --buildkite-org=improbable \
     --secret-type=gce-key-pair --secret-name=qa-unreal-gce-service-account \
     --write-to=${GCP_SECRET}
@@ -21,6 +27,3 @@ gcloud auth activate-service-account --key-file "${GCP_SECRET}"
 for json_file in ./test_summaries/*.json; do
     cat "${json_file}" | bq --project_id "${PROJECT}" --dataset_id "${DATASET}" insert "${TABLE}"
 done
-
-# Delete secret
-rm GCP_SECRET
