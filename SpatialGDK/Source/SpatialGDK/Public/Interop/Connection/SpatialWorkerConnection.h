@@ -19,7 +19,9 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
+class UGlobalStateManager;
 class USpatialGameInstance;
+class USpatialStaticComponentView;
 class UWorld;
 
 enum class ESpatialConnectionType
@@ -67,6 +69,12 @@ public:
 
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
+
+	UPROPERTY()
+	USpatialStaticComponentView* StaticComponentView;
+
+	UPROPERTY()
+	UGlobalStateManager* GlobalStateManager;
 
 private:
 	void ConnectToReceptionist(bool bConnectAsClient);

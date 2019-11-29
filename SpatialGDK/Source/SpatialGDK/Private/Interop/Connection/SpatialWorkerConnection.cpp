@@ -8,6 +8,8 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Engine/World.h"
+#include "Interop/GlobalStateManager.h"
+#include "Interop/SpatialStaticComponentView.h"
 #include "UnrealEngine.h"
 #include "Async/Async.h"
 #include "Engine/Engine.h"
@@ -72,7 +74,17 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 {
 	if (bIsConnected)
 	{
-		OnConnectionSuccess();
+		AsyncTask(ENamedThreads::GameThread, [WeakThis = TWeakObjectPtr<USpatialWorkerConnection>(this)]
+			{
+				if (WeakThis.IsValid())
+				{
+					WeakThis->OnConnectionSuccess();
+				}
+				else
+				{
+					UE_LOG(LogSpatialWorkerConnection, Error, TEXT("SpatialWorkerConnection is not valid but was already connected."));
+				}
+			});
 		return;
 	}
 

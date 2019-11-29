@@ -27,7 +27,6 @@ class USpatialNetConnection;
 class USpatialSender;
 class UGlobalStateManager;
 class USpatialLoadBalanceEnforcer;
-class SpatialVirtualWorkerTranslator;
 
 struct PendingAddComponentWrapper
 {
@@ -104,7 +103,7 @@ class USpatialReceiver : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* NetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator, FTimerManager* InTimerManager);
+	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager);
 
 	// Dispatcher Calls
 	void OnCriticalSection(bool InCriticalSection);
@@ -227,8 +226,6 @@ private:
 
 	UPROPERTY()
 	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
-
-	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 	FTimerManager* TimerManager;
 
