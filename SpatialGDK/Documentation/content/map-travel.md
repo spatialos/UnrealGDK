@@ -73,5 +73,5 @@ Please see the [Map Travel URL options]({{urlRoot}}/content/command-line-argumen
 
 <br/>------<br/>
 _2019-11-26 Page updated with limited editorial review: Added single server Server Travel_ 
-_2019-07-31 Page updated with limited editorial review: Updated to match current connection flows. Removed ServerTravel_  
+_2019-07-31 Page updated with limited editorial review: Updated to match current connection flows. Removed ServerTravel_  </br>
 _2019-06-13 Page updated with limited editorial review: Added Locator information_
