@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "Schema/RPCPayload.h"
+#include "Utils/RPCRingBuffer.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -27,7 +28,7 @@ struct EntityRPCType
 	Worker_EntityId EntityId;
 	ERPCType Type;
 
-	inline bool operator==(const EntityRPCType& Other)
+	inline bool operator==(const EntityRPCType& Other) const
 	{
 		return EntityId == Other.EntityId && Type == Other.Type;
 	}
@@ -48,7 +49,7 @@ struct EntityComponentId
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
 
-	inline bool operator==(const EntityComponentId& Other)
+	inline bool operator==(const EntityComponentId& Other) const
 	{
 		return EntityId == Other.EntityId && ComponentId == Other.ComponentId;
 	}
@@ -57,31 +58,6 @@ struct EntityComponentId
 	{
 		return ::GetTypeHash(static_cast<int64>(Value.EntityId)) + 977u * ::GetTypeHash(static_cast<uint32>(Value.ComponentId));
 	}
-};
-
-struct RingBufferDescriptor
-{
-	inline Schema_FieldId GetRingBufferElementFieldId(uint64 RPCId)
-	{
-		return SchemaFieldStart + ((RPCId - 1) % RingBufferSize);
-	}
-
-	inline bool HasCapacity(uint64 LastAckedRPCId, uint64 NewRPCId)
-	{
-		return LastAckedRPCId + RingBufferSize >= NewRPCId;
-	}
-
-	ERPCType Type;
-
-	Worker_ComponentId RingBufferComponentId;
-	uint32 RingBufferSize;
-	Schema_FieldId SchemaFieldStart;
-	Schema_FieldId LastSentFieldId;
-
-	Worker_ComponentId AckComponentId;
-	Schema_FieldId AckFieldId;
-
-	bool bShouldQueueOverflowed;
 };
 
 class SpatialRPCService
@@ -106,32 +82,17 @@ public:
 	// stops retrieving RPCs.
 	void ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
-	/*{
-		switch (ComponentId)
-		{
-		case CLIENT_ENDPOINT:
-			ExtractForType(ClientReliable);
-			ExtractForType(ClientUnreliable);
-
-		}
-	}*/
+	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
 
 private:
-	void InitRingBufferDescriptors();
-	RingBufferDescriptor GetRingBufferDescriptor(ERPCType Type);
-
-	void ExtractRPCsForType(ERPCType Type);
-
 	void AddOverflowedRPC(EntityComponentId EntityComponent, RPCPayload Payload);
 
-	uint64 GetAckFromView(Worker_EntityId EntityId, const RingBufferDescriptor& Descriptor);
-	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, const RingBufferDescriptor& Descriptor);
+	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
+	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, ERPCType Type);
 
 private:
 	ExtractRPCCallbackType ExtractRPCCallback;
 	const USpatialStaticComponentView* View;
-
-	TMap<ERPCType, RingBufferDescriptor> RingBufferDescriptors;
 
 	// This is local, not written into schema.
 	TMap<Worker_EntityId_Key, uint64> LastSeenMulticastRPCIds;

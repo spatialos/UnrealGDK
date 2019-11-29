@@ -319,7 +319,7 @@ FString GetRPCFieldPrefix(ERPCType RPCType)
 void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_ComponentId ComponentId, TArray<ERPCType> SentRPCTypes, TArray<ERPCType> AckedRPCTypes)
 {
 	Writer.PrintNewLine();
-	Writer.Printf("component Unreal{0}RPCEndpoint {", *EndpointName).Indent();
+	Writer.Printf("component Unreal{0} {", *EndpointName).Indent();
 	Writer.Printf("id = {0};", ComponentId);
 
 	Schema_FieldId FieldId = 1;
@@ -339,7 +339,7 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 		Writer.Printf("uint64 last_acked_{0}_rpc_id = {1};", GetRPCFieldPrefix(AckedRPCType), FieldId++);
 	}
 
-	if (ComponentId == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
+	if (ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID)
 	{
 		// CrossServer RPC uses commands, only exists on ServerRPCEndpoint
 		Writer.Print("command Void server_to_server_rpc_command(UnrealRPCPayload);");
@@ -654,9 +654,9 @@ void GenerateRPCEndpointsSchema(FString SchemaPath)
 	Writer.Print("import \"unreal/gdk/core_types.schema\";");
 	Writer.Print("import \"unreal/gdk/rpc_payload.schema\";");
 
-	GenerateRPCEndpoint(Writer, TEXT("Client"), SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, { ERPCType::ServerReliable, ERPCType::ServerUnreliable }, { ERPCType::ClientReliable, ERPCType::ClientUnreliable });
-	GenerateRPCEndpoint(Writer, TEXT("Server"), SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, { ERPCType::ClientReliable, ERPCType::ClientUnreliable }, { ERPCType::ServerReliable, ERPCType::ServerUnreliable });
-	GenerateRPCEndpoint(Writer, TEXT("Multicast"), SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, { ERPCType::NetMulticast }, {});
+	GenerateRPCEndpoint(Writer, TEXT("ClientEndpoint"), SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, { ERPCType::ServerReliable, ERPCType::ServerUnreliable }, { ERPCType::ClientReliable, ERPCType::ClientUnreliable });
+	GenerateRPCEndpoint(Writer, TEXT("ServerEndpoint"), SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID, { ERPCType::ClientReliable, ERPCType::ClientUnreliable }, { ERPCType::ServerReliable, ERPCType::ServerUnreliable });
+	GenerateRPCEndpoint(Writer, TEXT("MulticastRPCs"), SpatialConstants::MULTICAST_RPCS_COMPONENT_ID, { ERPCType::NetMulticast }, {});
 
 	Writer.WriteToFile(FString::Printf(TEXT("%srpc_endpoints.schema"), *SchemaPath));
 }

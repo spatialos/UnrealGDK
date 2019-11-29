@@ -26,9 +26,9 @@ public:
 	template <typename T>
 	T* GetComponentData(Worker_EntityId EntityId) const
 	{
-		if (TMap<Worker_ComponentId, TUniquePtr<SpatialGDK::ComponentStorageBase>>* ComponentStorageMap = EntityComponentMap.Find(EntityId))
+		if (auto* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 		{
-			if (TUniquePtr<SpatialGDK::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
+			if (const TUniquePtr<SpatialGDK::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
 			{
 				return &(static_cast<SpatialGDK::ComponentStorage<T>*>(Component->Get())->Get());
 			}

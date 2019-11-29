@@ -3,15 +3,14 @@
 #include "Interop/SpatialRPCService.h"
 
 #include "Interop/SpatialStaticComponentView.h"
-#include "SpatialGDKSettings.h"
+#include "Schema/ClientEndpoint.h"
+#include "Schema/MulticastRPCs.h"
+#include "Schema/ServerEndpoint.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 
 namespace SpatialGDK
 {
-class ClientEndpoint;
-class ServerEndpoint;
-class MulticastEndpoint;
 
 SpatialRPCService::SpatialRPCService(SpatialRPCService::ExtractRPCCallbackType ExtractRPCCallback, const USpatialStaticComponentView* View)
 	: ExtractRPCCallback(ExtractRPCCallback)
@@ -19,102 +18,9 @@ SpatialRPCService::SpatialRPCService(SpatialRPCService::ExtractRPCCallbackType E
 {
 }
 
-RingBufferDescriptor SpatialRPCService::GetRingBufferDescriptor(ERPCType Type)
-{
-	if (RingBufferDescriptor* Descriptor = RingBufferDescriptors.Find(Type))
-	{
-		return *Descriptor;
-	}
-
-	UE_LOG(LogSpatialRPCService, Error, TEXT(""));
-	return RingBufferDescriptor();
-}
-
-void SpatialRPCService::InitRingBufferDescriptors()
-{
-	// Client endpoint looks like:
-	//   [ Server Reliable RPC Ring Buffer + Last Sent ID, Server Unreliable RPC Ring Buffer + Last Sent ID, Client Reliable Ack, Client Unreliable Ack ]
-	// Server endpoint:
-	//   [ Client Reliable RPC Ring Buffer + Last Sent ID, Client Unreliable RPC Ring Buffer + Last Sent ID, Server Reliable Ack, Server Unreliable Ack ]
-	// Multicast endpoint:
-	//   [ Multicast RPC Ring Buffer + Last Sent ID ]
-	//
-	// I want the descriptors to be defined in this form, but have the opposite mapping: from RPC Type to components and field IDs, e.g.:
-	//
-	// Client Unreliable RPCs: {
-	//   Ring Buffer Component: SERVER_ENDPOINT,
-	//   Ring Buffer Field ID start: Client Reliable Last Sent ID Field ID + 1,
-	//   Ring Buffer size: get from settings,
-	//   Last Sent ID Field ID: Field ID start + Ring Buffer size,
-	//   Ack Component: CLIENT_ENDPOINT,
-	//   Ack Field ID: Client Reliable Ack Field ID + 1,
-	//   Should queue overflowed: false
-	// }
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	RingBufferDescriptors.Empty();
-
-	RingBufferDescriptors.Add(ERPCType::ClientReliable, {
-			ERPCType::ClientReliable,
-			SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, // buffer comp
-			SpatialGDKSettings->GetRPCRingBufferSize(ERPCType::ClientReliable), // buffer size
-			1, // field start
-			1 + SpatialGDKSettings->MaxRPCRingBufferSize, // last sent field id
-			SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, // ack comp
-			SpatialGDKSettings->MaxRPCRingBufferSize * 2 + 2 + 1, // ack field id
-			true // should queue overflowed
-		});
-
-	RingBufferDescriptors.Add(ERPCType::ClientUnreliable, {
-			ERPCType::ClientUnreliable,
-			SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, // buffer comp
-			SpatialGDKSettings->GetRPCRingBufferSize(ERPCType::ClientUnreliable), // buffer size
-			RingBufferDescriptors[ERPCType::ClientReliable].LastSentFieldId + 1, // field start
-			RingBufferDescriptors[ERPCType::ClientReliable].LastSentFieldId + 1 + SpatialGDKSettings->MaxRPCRingBufferSize, // last sent field id
-			SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, // ack comp
-			RingBufferDescriptors[ERPCType::ClientReliable].AckFieldId + 1, // ack field id
-			false // should queue overflowed
-		});
-
-	RingBufferDescriptors.Add(ERPCType::ServerReliable, {
-			ERPCType::ServerReliable,
-			SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, // buffer comp
-			SpatialGDKSettings->GetRPCRingBufferSize(ERPCType::ServerReliable), // buffer size
-			1, // field start
-			1 + SpatialGDKSettings->MaxRPCRingBufferSize, // last sent field id
-			SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, // ack comp
-			SpatialGDKSettings->MaxRPCRingBufferSize * 2 + 2 + 1, // ack field id
-			true // should queue overflowed
-		});
-
-	RingBufferDescriptors.Add(ERPCType::ServerUnreliable, {
-			ERPCType::ServerUnreliable,
-			SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, // buffer comp
-			SpatialGDKSettings->GetRPCRingBufferSize(ERPCType::ServerUnreliable), // buffer size
-			RingBufferDescriptors[ERPCType::ServerReliable].LastSentFieldId + 1, // field start
-			RingBufferDescriptors[ERPCType::ServerReliable].LastSentFieldId + 1 + SpatialGDKSettings->MaxRPCRingBufferSize, // last sent field id
-			SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, // ack comp
-			RingBufferDescriptors[ERPCType::ServerReliable].AckFieldId + 1, // ack field id
-			false // should queue overflowed
-		});
-
-	RingBufferDescriptors.Add(ERPCType::NetMulticast, {
-			ERPCType::NetMulticast,
-			SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, // buffer comp
-			SpatialGDKSettings->GetRPCRingBufferSize(ERPCType::NetMulticast), // buffer size
-			1, // field start
-			1 + SpatialGDKSettings->MaxRPCRingBufferSize, // last sent field id
-			SpatialConstants::INVALID_COMPONENT_ID, // ack comp
-			0, // ack field id
-			false // should queue overflowed
-		});
-
-	// TODO: Tests to make sure these numbers add up.
-}
-
 void SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload)
 {
-	RingBufferDescriptor Descriptor = GetRingBufferDescriptor(Type);
+	RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(Type);
 
 	EntityComponentId EntityComponent = EntityComponentId(EntityId, Descriptor.RingBufferComponentId);
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
@@ -151,7 +57,7 @@ void SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayl
 				return;
 			}
 
-			LastAckedRPCId = GetAckFromView(EntityId, Descriptor);
+			LastAckedRPCId = GetAckFromView(EntityId, Type);
 		}
 	}
 	else
@@ -173,11 +79,13 @@ void SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayl
 	// Check capacity.
 	if (Descriptor.HasCapacity(LastAckedRPCId, NewRPCId))
 	{
-		Schema_Object* RPCObject = Schema_AddObject(EndpointObject, Descriptor.GetRingBufferElementFieldId(NewRPCId));
+		/*Schema_Object* RPCObject = Schema_AddObject(EndpointObject, Descriptor.GetRingBufferElementFieldId(NewRPCId));
 		RPCPayload::WriteToSchemaObject(RPCObject, Payload.Offset, Payload.Index, Payload.PayloadData.GetData(), Payload.PayloadData.Num());
 
 		Schema_ClearField(EndpointObject, Descriptor.LastSentFieldId);
-		Schema_AddUint64(EndpointObject, Descriptor.LastSentFieldId, NewRPCId);
+		Schema_AddUint64(EndpointObject, Descriptor.LastSentFieldId, NewRPCId);*/
+
+		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Descriptor, NewRPCId, MoveTemp(Payload));
 
 		LastSentRPCIds[EntityType] = NewRPCId;
 	}
@@ -213,9 +121,9 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 TArray<Worker_ComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId)
 {
 	static Worker_ComponentId EndpointComponentIds[] = {
-		SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID,
-		SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID,
-		SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID
+		SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::MULTICAST_RPCS_COMPONENT_ID
 	};
 
 	TArray<Worker_ComponentData> Components;
@@ -242,7 +150,80 @@ TArray<Worker_ComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation
 
 void SpatialRPCService::ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
+	switch (ComponentId)
+	{
+	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
+		ExtractRPCsForType(EntityId, ERPCType::ServerReliable);
+		ExtractRPCsForType(EntityId, ERPCType::ServerUnreliable);
+		break;
+	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
+		ExtractRPCsForType(EntityId, ERPCType::ServerReliable);
+		ExtractRPCsForType(EntityId, ERPCType::ServerUnreliable);
+		break;
+	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
+		ExtractRPCsForType(EntityId, ERPCType::NetMulticast);
+		break;
+	}
+}
 
+void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type)
+{
+	uint64 LastSeenRPCId;
+	EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
+
+	if (Type == ERPCType::NetMulticast)
+	{
+		LastSeenRPCId = LastSeenMulticastRPCIds[EntityId];
+	}
+	else
+	{
+		LastSeenRPCId = LastAckedRPCIds[EntityTypePair];
+	}
+
+	const RPCRingBuffer& Buffer = GetBufferFromView(EntityId, Type);
+
+	RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(Type);
+
+	if (Buffer.LastSentRPCId >= LastSeenRPCId)
+	{
+		for (uint64 RPCId = LastSeenRPCId + 1; RPCId <= Buffer.LastSentRPCId; RPCId++)
+		{
+			uint32 ElementIndex = Descriptor.GetRingBufferElementIndex(RPCId);
+			if (Buffer.RingBuffer[ElementIndex].IsSet())
+			{
+				ExtractRPCCallback(EntityId, Type, Buffer.RingBuffer[ElementIndex].GetValue());
+			}
+		}
+	}
+	else
+	{
+		// received RPCs out of order?
+	}
+
+	if (Type == ERPCType::NetMulticast)
+	{
+		LastSeenMulticastRPCIds[EntityId] = Buffer.LastSentRPCId;
+	}
+	else
+	{
+		LastAckedRPCIds[EntityTypePair] = Buffer.LastSentRPCId;
+		EntityComponentId EntityComponentPair = EntityComponentId(EntityId, Descriptor.AckComponentId);
+		if (View->HasComponent(EntityId, Descriptor.AckComponentId))
+		{
+			Schema_ComponentUpdate** ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentPair);
+			if (ComponentUpdatePtr == nullptr)
+			{
+				ComponentUpdatePtr = &PendingComponentUpdatesToSend.Add(EntityComponentPair, Schema_CreateComponentUpdate());
+			}
+			Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(*ComponentUpdatePtr);
+
+			RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Descriptor, Buffer.LastSentRPCId);
+		}
+		else
+		{
+			// Return some error code?
+		}
+	}
 }
 
 void SpatialRPCService::AddOverflowedRPC(EntityComponentId EntityComponent, RPCPayload Payload)
@@ -250,34 +231,47 @@ void SpatialRPCService::AddOverflowedRPC(EntityComponentId EntityComponent, RPCP
 	OverflowedRPCs.FindOrAdd(EntityComponent).Add(Payload);
 }
 
-uint64 SpatialRPCService::GetAckFromView(Worker_EntityId EntityId, const RingBufferDescriptor& Descriptor)
+uint64 SpatialRPCService::GetAckFromView(Worker_EntityId EntityId, ERPCType Type)
 {
-	switch (Descriptor.AckComponentId)
+	switch (Type)
 	{
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-		return View->GetComponentData<ClientEndpoint>(EntityId)->GetAck(Descriptor.Type);
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-		return View->GetComponentData<ServerEndpoint>(EntityId)->GetAck(Descriptor.Type);
-	default:
-		checkNoEntry();
-		return 0;
+	case ERPCType::ClientReliable:
+		return View->GetComponentData<ClientEndpoint>(EntityId)->ReliableRPCAck;
+	case ERPCType::ClientUnreliable:
+		return View->GetComponentData<ClientEndpoint>(EntityId)->UnreliableRPCAck;
+	case ERPCType::ServerReliable:
+		return View->GetComponentData<ServerEndpoint>(EntityId)->ReliableRPCAck;
+	case ERPCType::ServerUnreliable:
+		return View->GetComponentData<ServerEndpoint>(EntityId)->UnreliableRPCAck;
 	}
+
+	checkNoEntry();
+	return 0;
 }
 
-const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId EntityId, const RingBufferDescriptor& Descriptor)
+const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId EntityId, ERPCType Type)
 {
-	switch (Descriptor.AckComponentId)
+	switch (Type)
 	{
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-		return View->GetComponentData<ClientEndpoint>(EntityId)->GetBuffer(Descriptor.Type);
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-		return View->GetComponentData<ServerEndpoint>(EntityId)->GetBuffer(Descriptor.Type);
-	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
-		return View->GetComponentData<MulticastEndpoint>(EntityId)->GetBuffer(Descriptor.Type);
-	default:
-		checkNoEntry();
-		return RPCRingBuffer();
+	// Server sends Client RPCs, so ClientReliable & ClientUnreliable buffers live on ServerEndpoint.
+	case ERPCType::ClientReliable:
+		return View->GetComponentData<ServerEndpoint>(EntityId)->ReliableRPCBuffer;
+	case ERPCType::ClientUnreliable:
+		return View->GetComponentData<ServerEndpoint>(EntityId)->UnreliableRPCBuffer;
+
+	// Client sends Server RPCs, so ServerReliable & ServerUnreliable buffers live on ClientEndpoint.
+	case ERPCType::ServerReliable:
+		return View->GetComponentData<ClientEndpoint>(EntityId)->ReliableRPCBuffer;
+	case ERPCType::ServerUnreliable:
+		return View->GetComponentData<ClientEndpoint>(EntityId)->UnreliableRPCBuffer;
+
+	case ERPCType::NetMulticast:
+		return View->GetComponentData<MulticastRPCs>(EntityId)->MulticastRPCBuffer;
 	}
+
+	checkNoEntry();
+	static RPCRingBuffer DummyBuffer;
+	return DummyBuffer;
 }
 
 } // namespace SpatialGDK
