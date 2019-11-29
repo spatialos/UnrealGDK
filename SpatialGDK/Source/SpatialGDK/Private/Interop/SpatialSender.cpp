@@ -11,7 +11,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
-#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
@@ -63,10 +62,9 @@ FPendingRPC::FPendingRPC(FPendingRPC&& Other)
 {
 }
 
-void USpatialSender::Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator, FTimerManager* InTimerManager)
+void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
-	VirtualWorkerTranslator = InVirtualWorkerTranslator;
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Connection = InNetDriver->Connection;
 	Receiver = InNetDriver->Receiver;
@@ -247,7 +245,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(VirtualWorkerTranslator->GetLocalVirtualWorkerId()));
+		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId()));
 	}
 
 	if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
@@ -767,7 +765,7 @@ void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const 
 		RequirementSet->Add(OwningWorkerAttribute);
 	}
 
-	UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("(%s) Setting Acl WriteAuth for entity %lld to workerid: %s"), *NetDriver->Connection->GetWorkerId(), EntityId, *WorkerId);
+	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) Setting Acl WriteAuth for entity %lld to workerid: %s"), *NetDriver->Connection->GetWorkerId(), EntityId, *WorkerId);
 
 	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);

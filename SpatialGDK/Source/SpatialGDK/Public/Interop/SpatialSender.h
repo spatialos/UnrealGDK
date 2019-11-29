@@ -20,7 +20,6 @@ using namespace SpatialGDK;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
-class SpatialVirtualWorkerTranslator;
 class USpatialActorChannel;
 class USpatialDispatcher;
 class USpatialNetDriver;
@@ -69,7 +68,7 @@ class SPATIALGDK_API USpatialSender : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator, FTimerManager* InTimerManager);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
@@ -160,8 +159,6 @@ private:
 
 	UPROPERTY()
 	UActorGroupManager* ActorGroupManager;
-
-	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 	FTimerManager* TimerManager;
 

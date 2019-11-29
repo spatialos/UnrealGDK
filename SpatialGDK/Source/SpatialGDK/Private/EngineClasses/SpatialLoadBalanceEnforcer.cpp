@@ -88,11 +88,11 @@ void USpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityI
 	// TODO(zoning): measure the performance impact of this.
 	if (AclWriteAuthAssignmentRequests.ContainsByPredicate([EntityId](const WriteAuthAssignmentRequest& Request) { return Request.EntityId == EntityId; }))
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("An ACL assignment request already exists for entity %lld on worker %s."), EntityId, *WorkerId);
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("An ACL assignment request already exists for entity %lld on worker %s."), EntityId, *WorkerId);
 	}
 	else
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Queueing ACL assignment request for entity %lld on worker %s."), EntityId, *WorkerId);
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("Queueing ACL assignment request for entity %lld on worker %s."), EntityId, *WorkerId);
 		AclWriteAuthAssignmentRequests.Add(WriteAuthAssignmentRequest(EntityId));
 	}
 }

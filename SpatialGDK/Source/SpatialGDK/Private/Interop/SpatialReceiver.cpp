@@ -40,7 +40,7 @@ DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel,
 
 using namespace SpatialGDK;
 
-void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator, FTimerManager* InTimerManager)
+void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -49,7 +49,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorker
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
 	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer;
-	VirtualWorkerTranslator = InVirtualWorkerTranslator;
 	TimerManager = InTimerManager;
 
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
@@ -162,10 +161,10 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		if (VirtualWorkerTranslator != nullptr)
+		if (NetDriver->VirtualWorkerTranslator != nullptr)
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
-			VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
 		return;
 	}
@@ -334,9 +333,9 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
-	if (VirtualWorkerTranslator)
+	if (NetDriver->VirtualWorkerTranslator)
 	{
-		VirtualWorkerTranslator->AuthorityChanged(Op);
+		NetDriver->VirtualWorkerTranslator->AuthorityChanged(Op);
 	}
 
 	if (LoadBalanceEnforcer)
@@ -1159,10 +1158,10 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		if (VirtualWorkerTranslator != nullptr)
+		if (NetDriver->VirtualWorkerTranslator != nullptr)
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
-			VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
 		return;
 	}

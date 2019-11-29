@@ -431,8 +431,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
-	Sender->Init(this, VirtualWorkerTranslator.Get(), &TimerManager);
-	Receiver->Init(this, VirtualWorkerTranslator.Get(), &TimerManager);
+	Sender->Init(this, &TimerManager);
+	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
