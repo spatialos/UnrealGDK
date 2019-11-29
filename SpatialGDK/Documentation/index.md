@@ -1,5 +1,3 @@
-https://github.com/spatialos/UnrealGDK/edit/docs-release/SpatialGDK/Documentation/index.md
-
 ![GDK for Unreal Documentation]({{assetRoot}}assets/spatialos-gdkforunreal-header.png)
 
 <%(Callout  message="The SpatialOS GDK for Unreal is in alpha. It can be used to develop games using a single server, and some multiserver functionality is also available, as described below.")%>
