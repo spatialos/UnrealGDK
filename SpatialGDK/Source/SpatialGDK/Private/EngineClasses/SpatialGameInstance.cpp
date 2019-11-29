@@ -169,13 +169,17 @@ void USpatialGameInstance::HandleOnConnected()
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Succesfully connected to SpatialOS"));
 	SpatialWorkerId = SpatialConnection->GetWorkerId();
+#if TRACE_LIB_ACTIVE
 	SpatialLatencyTracer->SetWorkerId(SpatialWorkerId);
+#endif
 	OnConnected.Broadcast();
 }
 
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 {
 	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
-	SpatialLatencyTracer->SetWorkerId(TEXT(""));
+#if TRACE_LIB_ACTIVE
+	SpatialLatencyTracer->ResetWorkerId();
+#endif
 	OnConnectionFailed.Broadcast(Reason);
 }

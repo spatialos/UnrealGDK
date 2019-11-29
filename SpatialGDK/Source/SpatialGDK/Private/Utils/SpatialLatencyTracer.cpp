@@ -27,6 +27,13 @@ namespace
 	UEStream Stream;
 }
 
+USpatialLatencyTracer::USpatialLatencyTracer()
+{
+#if TRACE_LIB_ACTIVE
+	ResetWorkerId();
+#endif
+}
+
 void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const FString& ProjectId)
 {
 #if TRACE_LIB_ACTIVE

@@ -50,6 +50,8 @@ public:
 	//
 	//////////////////////////////////////////////////////////////////////////
 
+	USpatialLatencyTracer();
+
 	// Front-end exposed, allows users to register, start, continue, and end traces
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static void RegisterProject(UObject* WorldContextObject, const FString& ProjectId);
@@ -81,6 +83,7 @@ public:
 	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId);
 
 	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
+	void ResetWorkerId() { WorkerId = TEXT("Undefined"); }
 
 private:
 
@@ -97,11 +100,12 @@ private:
 	void WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc);
 	FString FormatMessage(const FString& Message) const;
 
+
 	FString WorkerId;
+
+	FCriticalSection Mutex; // This mutex is to protect modifications to the containers below
 	TMap<ActorFuncKey, TraceKey> TrackingTraces;
 	TMap<TraceKey, TraceSpan> TraceMap;
-
-	FCriticalSection Mutex;
 
 public:
 
