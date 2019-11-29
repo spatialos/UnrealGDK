@@ -66,15 +66,9 @@ Catch {
 $test_results_url = "https://buildkite.com/organizations/$env:BUILDKITE_ORGANIZATION_SLUG/pipelines/$env:BUILDKITE_PIPELINE_SLUG/builds/$env:BUILDKITE_BUILD_ID/jobs/$env:BUILDKITE_JOB_ID/artifacts/$test_results_id"
 $test_log_url = "https://buildkite.com/organizations/$env:BUILDKITE_ORGANIZATION_SLUG/pipelines/$env:BUILDKITE_PIPELINE_SLUG/builds/$env:BUILDKITE_BUILD_ID/jobs/$env:BUILDKITE_JOB_ID/artifacts/$test_log_id"
 
-# Count the number of SpatialGDK tests in order to report this
-$num_gdk_tests = 0
-Foreach ($test in $test_results_obj.tests) {
-	if ($test.fulltestPath.Contains("SpatialGDK.")) {
-		$num_gdk_tests += 1
-	}
-}
-
 # Build Slack attachment
+$total_tests_succeeded = $test_results_obj.succeeded + $test_results_obj.succeededWithWarnings
+$total_tests_run = $total_tests_succeeded + $test_results_obj.failed
 $slack_attachment = [ordered]@{
     fallback = "Find the test results at $test_results_url"
     color = $(if ($tests_passed) {"good"} else {"danger"})
@@ -84,7 +78,7 @@ $slack_attachment = [ordered]@{
                 short = $true
             }
             @{
-                value = "Passed $($test_results_obj.succeeded + $test_results_obj.succeededWithWarnings) / $num_gdk_tests tests."
+                value = "Passed $total_tests_succeeded / $total_tests_run tests."
                 short = $true
             }
         )
@@ -108,6 +102,14 @@ $slack_attachment | ConvertTo-Json | Set-Content -Path "$test_result_dir\slack_a
 
 buildkite-agent artifact upload "$test_result_dir\slack_attachment_$env:BUILDKITE_STEP_ID.json"
 
+# Count the number of SpatialGDK tests in order to report this
+$num_gdk_tests = 0
+Foreach ($test in $test_results_obj.tests) {
+	if ($test.fulltestPath.Contains("SpatialGDK.")) {
+		$num_gdk_tests += 1
+	}
+}
+
 # Define and upload test summary JSON artifact for longer-term test metric tracking (see upload-test-metrics.sh)
 $test_summary = [pscustomobject]@{
     time = Get-Date -UFormat %s
@@ -121,7 +123,7 @@ $test_summary = [pscustomobject]@{
 }
 $test_summary | ConvertTo-Json -Compress | Set-Content -Path "$test_result_dir\test_summary_$env:BUILDKITE_STEP_ID.json"
 
-buildkite-agent "artifact" "upload" "$test_result_dir\test_summary_$env:BUILDKITE_STEP_ID.json"
+buildkite-agent artifact upload "$test_result_dir\test_summary_$env:BUILDKITE_STEP_ID.json"
 
 # Fail this build if any tests failed
 if (-Not $tests_passed) {

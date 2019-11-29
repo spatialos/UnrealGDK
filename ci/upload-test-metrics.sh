@@ -5,6 +5,11 @@ set -euo pipefail
 mkdir "./test_summaries"
 buildkite-agent artifact download "*test_summary*.json" "./test_summaries"
 
+# Define target upload location
+PROJECT="holocentroid-aimful-6523579"
+DATASET="UnrealGDK"
+TABLE="ci_metrics"
+
 # Fetch Google credentials so that we can upload the metrics to the GCS bucket.
 GCP_SECRET="$(mktemp)"
 imp-ci secrets read --environment=production --buildkite-org=improbable \
@@ -12,11 +17,10 @@ imp-ci secrets read --environment=production --buildkite-org=improbable \
     --write-to=${GCP_SECRET}
 gcloud auth activate-service-account --key-file "${GCP_SECRET}"
 
-# Define target upload location
-PROJECT="holocentroid-aimful-6523579"
-DATASET="UnrealGDK"
-TABLE="ci_metrics"
-
+# Upload metrics
 for json_file in ./test_summaries/*.json; do
-    cat $json_file | bq --project_id "$PROJECT" --dataset_id "$DATASET" insert "$TABLE"
+    cat "${json_file}" | bq --project_id "${PROJECT}" --dataset_id "${DATASET}" insert "${TABLE}"
 done
+
+# Delete secret
+rm GCP_SECRET
