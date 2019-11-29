@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>`
 
 ### Features:
+- In local deployments of the Example Project you can now launch Simulated Players in one click. Running `LaunchSimPlayerClient.bat` will launch a single Simulated Player client. Running `Launch10SimPlayerClients.bat` will launch 10.
 - Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
 - Added support for the UE4 Network Profile to measure relative size of RPC and Actor replication data.
 - Added a VirtualWorkerTranslation component to be used in future UnrealGDK loadbalancing.
@@ -24,6 +25,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Improved logging around entity creation.
 - Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK).
 - A warning is shown if a cloud deployment is launched with the `manual_worker_connection_only` flag set to true
+- Server travel supported for single server game worlds. Does not currently support zoning or off-loading.
 
 ### Bug fixes:
 - Fixed a bug that could caused a name collision in schema for sublevels.
