@@ -125,6 +125,7 @@ Use as a base for creating your own project running on SpatialOS.
 <br/>
 
 </br>------</br>
+_2019-11-29 Page updated with editorial review: added note on repository branch selection._</br>
 _2019-09-27 Page updated without editorial review: clearer explanation of the auto-install flow._</br>
 _2019-08-12 Page updated with editorial review: terminology and page formatting._</br>
 _2019-08-08 Page updated with editorial review: added clarification on SSH key and Linux dependencies._</br>
