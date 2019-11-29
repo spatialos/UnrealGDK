@@ -38,8 +38,6 @@ public:
 	// On receiving a version of the translation state, apply that to the internal mapping.
 	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
 
-	void OnComponentUpdated(const Worker_ComponentUpdateOp& Op);
-
 	// Authority may change on one of two components we care about:
 	// 1) The translation component, in which case this worker is now authoritative on the virtual to physical worker translation.
 	// 2) The ACL component for some entity, in which case this worker is now authoritative for the entity and will be

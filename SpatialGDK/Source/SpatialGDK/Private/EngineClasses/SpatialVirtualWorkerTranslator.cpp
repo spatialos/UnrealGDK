@@ -60,14 +60,6 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 	}
 }
 
-void SpatialVirtualWorkerTranslator::OnComponentUpdated(const Worker_ComponentUpdateOp& Op)
-{
-	if (Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
-	{
-		// TODO(zoning): Check for whether the ACL should be updated.
-	}
-}
-
 void SpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
 	const bool bAuthoritative = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;

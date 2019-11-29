@@ -107,7 +107,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
  		const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
 		if (AuthorityIntentComponent == nullptr)
 		{
-			// TODO(zoning): This is possible if the ACL update lags behind the intent update. Evaluate whether this is a serious problem.
+			// TODO(zoning): Not sure whether this should be possible or not. Remove if we don't see the warning again.
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Entity without AuthIntent component will not be processed. EntityId: %lld"), *WorkerId, Request.EntityId);
 			CompletedRequests.Add(Request.EntityId);
 			return;
@@ -118,6 +118,7 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		{
 			const int32 WarnOnAttemptNum = 5;
 			Request.ProcessAttempts++;
+			// TODO(zoning): Revisit this when we support replacing crashed workers.
 			if (Request.ProcessAttempts % WarnOnAttemptNum == 0)
 			{
 				UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Failed to process WriteAuthAssignmentRequest because virtual worker mapping is unset for EntityID: %lld. Process attempts made: %d"), Request.EntityId, Request.ProcessAttempts);
