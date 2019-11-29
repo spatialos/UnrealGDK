@@ -25,7 +25,7 @@ It only takes a few minutes to set up and includes setting up a GitHub account i
 
 ### Step 2: Clone the fork repository
 
-You can clone the fork repository using the command line, Github Desktop, or another third-party GUI for Git.
+You can clone the fork repository using the command line, GitHub Desktop, or any third-party GUI for Git.
 
 **Note:** When using a third-party GUI, ensure that you’re cloning the latest stable version of the repository by selecting the branch marked **default** in the **Branch** dropdown of the [SpatialOS Unreal Engine fork repository](https://github.com/improbableio/UnrealEngine).
 
