@@ -82,25 +82,36 @@ void AExampleActor::BeginPlay()
 ### Blueprint example
 
 ![Calling Is Simulated Player in Blueprints]({{assetRoot}}assets/screen-grabs/simulated-players/is-simulated-player.png)
-<br>_Image: You can call **Is Simulated Player** from a Blueprint class_
+<br>_Image: You can call **Is Simulated Player** from any Blueprint class, and it will return true if the current process is a simulated player client._
 
 ## Launching simulated player deployments
 
 ### Worker configuration file
 
 To launch a simulated player deployment, you need to provide a [worker configuration file]({{urlRoot}}/content/glossary#worker-configuration-file) with the following name:
-`spatialos.SimulatedPlayerCoordinator.worker.json`
+`spatialos.SimulatedPlayerCoordinator.worker.json`. This will tell SpatialOS how to build, launch, and interact with the simulated player coordinator worker, which will run the simulated players. 
 
 The [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) and [Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro) already include this worker configuration file in the right location, but for new projects you need to add it yourself to the `spatial/workers/<worker>` directory. 
 
-We recommend that you copy [our example configuration file](https://github.com/spatialos/UnrealGDK/blob/release/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/spatialos.SimulatedPlayerCoordinator.worker.json), and adapt it to your project where necessary. This file contains the arguments that are passed to the simulated player game clients.
+We recommend that you copy [our example configuration file](https://github.com/spatialos/UnrealGDK/blob/release/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/spatialos.SimulatedPlayerCoordinator.worker.json), and adapt it to your project where necessary. This file contains the arguments that are passed to the simulated player game clients. For information on customising this configuration file, please visit [this page](https://docs.improbable.io/reference/14.2/shared/project-layout/introduction).
+
+Once you have copied the file, you'll need to run `spatial build build-config` from the `spatial` directory of your project. This will apply this new configuration to your project's executable.
+
 ### Local deployments
 
-You can launch simulated players as [Play In Editor](https://docs.unrealengine.com/en-US/GettingStarted/HowTo/PIE/index.html#playineditor) clients by configuring the “Number of Simulated Players” option (**Edit > Editor Preferences > Level Editor > Play > Multiplayer Options**):
+There are two ways to launch simulated players that connect to local deployments, and you can choose which one to use. 
 
+- **Launch simulated players using the Multiplayer Options window**
+</br>
+  You can launch simulated players as [Play In Editor](https://docs.unrealengine.com/en-US/GettingStarted/HowTo/PIE/index.html#playineditor) clients by configuring the “Number of Simulated Players” option (**Edit > Editor Preferences > Level Editor > Play > Multiplayer Options**):
+  </br></br>
+  ![Number of simulated players]({{assetRoot}}assets/screen-grabs/simulated-players/multiplayer-options.png)
+  <br>_Image: In the "Multiplayer Options" section, enter the number of simulated players_
+  </br></br>
 
-![Number of simulated players]({{assetRoot}}assets/screen-grabs/simulated-players/multiplayer-options.png)
-<br>_Image: In the "Multiplayer Options" section, enter the number of simulated players_
+- **Launch simulated players automatically using batch scripts**
+</br>
+  You can launch simulated players that connect to local deployments using a batch file. The Example Project contains `LaunchSimPlayerClient.bat` which launches a single Simulated Player client, and `Launch10SimPlayerClients.bat` which launches 10. If you use simulated players to test your project locally we recommend using these scripts as inspiration for your own, as they can save you time.
 
 ### Cloud deployments
 
@@ -111,4 +122,5 @@ Logs for simulated players are stored as [raw logs](https://docs.improbable.io/r
 
 <br/>
 <br/>------------<br/>
+_2019-11-14 Page updated without editorial review: added missing `spatial build build-config` step._<br/>
 _2019-07-31 Page added with limited editorial review._

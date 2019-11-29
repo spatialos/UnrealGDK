@@ -13,7 +13,7 @@ For more information on multiserver zoning, see our [development roadmap](https:
 
 
 
-Following this tutorial, you implement cross-server remote procedure calls (RPCs) for simple first-person shooter functionality in the GDK's Example Project. The end result is a multiplayer, cloud-hosted Unreal game running across multiple [server-workers]({{urlRoot}}/content/glossary#server-worker) that players can seamlessly move between and shoot across. It demonstrates multiserver [zoning]({{urlRoot}}/content/glossary##zoning) and looks something like the animation below.</br></br>
+Following this tutorial, you implement cross-server remote procedure calls (RPCs) for simple first-person shooter functionality in the GDK's Example Project. The end result is a multiplayer, cloud-hosted Unreal game running across multiple [server-workers]({{urlRoot}}/content/glossary#server-workers) that players can seamlessly move between and shoot across. It demonstrates multiserver [zoning]({{urlRoot}}/content/glossary##zoning) and looks something like the animation below.</br></br>
 
 ![]({{assetRoot}}assets/tutorial/cross-server-shooting.gif)
 _Image: Example of cross-server shooting using multiserver zoning functionality._ </br></br>

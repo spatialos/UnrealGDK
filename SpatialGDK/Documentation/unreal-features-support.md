@@ -42,11 +42,11 @@ The following tables show the state of support of Unreal Engine features on the 
     <tr>
         <td>Fully supported, available now</td>
         <td class="supported"></td>
-    </tr>    
+    </tr>
     <tr>
         <td>Supported with caveats or workarounds</td>
         <td class="caveats"></td>
-    </tr>    
+    </tr>
     <!-- <tr>
         <td>Q2 - Q3 2019</td>
         <td class="indev"></td>
@@ -54,7 +54,7 @@ The following tables show the state of support of Unreal Engine features on the 
     <tr>
         <td>Currently unplanned</td>
         <td class="unplanned"></td>
-    </tr>   
+    </tr>
     <!-- </tr>
         <td>Not applicable, or not planned to be delivered</td>
         <td class="na"></td>
@@ -164,7 +164,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 <!-- ------ Actor Replication ------ -->
   
    <tr>
-    <td rowspan="6"><b><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors">Actor Replication</a><b></td>
+    <td rowspan="7"><b><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors"><b>Actor Replication<b></a></td>
     <td>RPCs - Ordering</td>
     <td class="supported"></td>
     <td></td>
@@ -172,7 +172,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <tr>
     <td>RPCs - Reliability</td>
     <td class="caveats"></td>
-    <td>RPCs can be unreliable under heavy load. Planned to be resolved in Q3 2019.</td>
+    <td>RPCs can be unreliable under heavy load. This is planned to be resolved in the future.</td>
   </tr>
   <tr>
     <td>Actor Roles</td>
@@ -193,6 +193,13 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td>Startup Actors</td>
     <td class="supported"></td>
     <td></td>
+  </tr>
+  <tr>
+    <td><a href="https://dq8iqaixvew1d.cloudfront.net/en-US/Gameplay/Networking/Actors/Components/index.html#timelines">Replicated Blueprint Timelines</a></td>
+    <td class="unplanned"></td>
+    <td></td>
+  </tr>
+
 
 <!-- ------ Multiplayer Gameplay Features ------ -->
 
@@ -335,7 +342,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 
 <!-- ------ Misc ------ -->
 
- <tr>
+  <tr>
     <td rowspan="5"><b>Misc<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Physics">Physics Simulation</a></td>
     <td class="supported"></td>
@@ -345,22 +352,41 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Physics/Tracing">Tracing</a></td>
     <td class="supported"></td>
     <td></td>
-</tr>
+  </tr>
+  <tr>
+    <td><a href="https://docs.unrealengine.com/en-US/Engine/Chaos/ChaosDestruction/">Chaos Destruction</a></td>
+    <td class="unplanned"></td>
+    <td></td>
+  </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Animation">Skeletal Mesh Animation System</a></td>
     <td class="supported"></td>
     <td></td>
-</tr>
+  </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/Engine/Sequencer">Sequence Editor</td>
     <td class="supported"></td>
     <td></td>
-</tr>
+  </tr>
   <tr>
-    <td>UE4 4.22 Support</td>
+    <td><a href="https://docs.unrealengine.com/en-US/Engine/Performance/UnrealInsights/">Unreal Insights</a></td>
+    <td></td>
+    <td class="unplanned"></td>
+  </tr>
+
+<!-- ------ Unreal Engine Verions ------ -->
+
+  <tr>
+    <td rowspan="2"><b>Unreal Engine Versions<b></td>
+    <td>Unreal Engine 4.22</td>
     <td class="supported"></td>
     <td></td>
-</tr>
+  </tr>
+  <tr>
+    <td>Unreal Engine 4.23</td>
+    <td class="supported"></td>
+    <td></td>
+  </tr>
 
 <!-- ------ Platforms ------ -->
 
@@ -400,6 +426,8 @@ The table for multiserver support is coming soon.
 
 <br/>------<br/>
 _2019-11-26 Updated with editorial review: Server Travel supported_</br>
-_2019-08-20 Updated with editorial review: Rescheduled Gameplay Debugger support_</br>
-_2019-07-31 Added support for Dynamic Components, RPCs ordering, and Ability System (0.6.0 release)_</br>
+_2019-11-08 Added Unreal Engine 4.23 support_</br>
+_2019-10-30 Add replicated blueprint timelines._</br>
+_2019-08-20 Updated with editorial review: Rescheduled Gameplay Debugger support._</br>
+_2019-07-31 Added support for Dynamic Components, RPCs ordering, and Ability System (0.6.0 release)._</br>
 _2019-07-04 Online Subsystem abstraction support pushed out._

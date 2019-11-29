@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Multiple deployments for session-based games
+# [Deprecated] Multiple deployments for session-based games
 ## 5: Launch multiple session-based deployments
 
 ### Step 1: Launch deployments using the Deployment Manager
@@ -59,4 +59,5 @@ Make sure your Deployment Manager repository is in the same parent directory as 
 
 
 <br/>------<br/>
+_2019-10-16 Tutorial deprecated_<br/>
 _2019-05-21 Page added with editorial review_

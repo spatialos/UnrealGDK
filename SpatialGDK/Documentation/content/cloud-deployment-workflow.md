@@ -66,19 +66,34 @@ You can launch a cloud deployment using the Unreal Editor or the SpatialOS CLI. 
     This opens the cloud deployment dialog box.
     <%(Lightbox title ="Cloud Deployment" image="{{assetRoot}}assets/screen-grabs/cloud-deploy.png")%>
     <br/>_Image: The Cloud Deployment settings dialog box_<br/>
-2. Enter your project name. This will be something like `beta_someword_anotherword_000`, and you can find it in the Console.
-3. In the **Assembly Name** field, enter the name you gave your assembly.
-4. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
-5. Leave the Snapshot File field as it is. In the **Launch Config File** field, enter the path to the launch configuration file for this deployment (including the file name).
-6. (Optional) If needed, change the **Region**.
-7. (Optional) Create an additional deployment with [simulated players]({{urlRoot}}/content/simulated-players) that connect to your main game deployment. Simulated players are game clients running in the cloud, mimicking real players of your game from a connection flow and server-worker load perspective. This means they’re useful for scale testing. 
-
-    To create an additional deployment with simulated players, in the **Simulated Players** section:
+1. Enter your project name. This will be something like `beta_someword_anotherword_000`, and you can find it in the Console.
+1. In the **Assembly Name** field, enter the name you gave your assembly.
+1. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
+1. Leave the Snapshot File field as it is. In the **Launch Config File** field, enter the path to the launch configuration file for this deployment (including the file name).
+1. (Optional) If needed, change the **Region**.
+1. (Optional) Create an additional deployment with [simulated players]({{urlRoot}}/content/simulated-players) that connect to your main game deployment. Simulated players are game clients running in the cloud, mimicking real players of your game from a connection flow and server-worker load perspective. This means they’re useful for scale testing. </br></br>
+    Build out the simulated player clients (which will run on Linux in the cloud) using the following command:</br></br>
+    Engine plugin filepath (default):</br>
+    ```
+    UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
+    ```
+    Project plugin filepath:</br>
+    ```
+    <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject
+    ```
+    <%(#Expandable title="Note: using the `-skipshadercompile` flag")%>
+    By default, an Unreal Linux client build will attempt to re-build all shaders for the OpenGL Shading Language. You may find that when building out your Linux clients, shaders take a long time to build and fail often. It's not necessary to have them built for Linux clients, so you can skip shader compilation by adding the flag `-skipshadercompile` to the above command.
+    <%(/Expandable)%>
+    <%(#Expandable title="Note: disabling game client plugins which don't run on Linux")%>
+    Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like
+    `if (Target.Platform != UnrealTargetPlatform.Linux)`
+    <%(/Expandable)%>
+    Then, back in the Editor Deploy window:</br></br>
 	1. Check the box next to **Add simulated players**.
-	2. In the **Deployment Name** field, enter enter a name for your simulated player  deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
-	3. In the **Number of Simulated Players** field, choose the number of simulated players you want to start. 
-	4. (Optional) If needed, change the **Region**.
-8. Click **Launch Deployment**.
+	1. In the **Deployment Name** field, enter enter a name for your simulated player  deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
+	1. In the **Number of Simulated Players** field, choose the number of simulated players you want to start. 
+	1. (Optional) If needed, change the **Region**.</br></br>
+1. Click **Launch Deployment**.
 
 Your deployment(s) won’t launch instantly. A console window is displayed where you can see their progress.
 
@@ -100,5 +115,7 @@ Where:
 
 <br>
 <br/>------<br/>
-_2019-07-31 Page updated with limited editorial review_
-<br>_2019-07-21 Page updated with limited editorial review_
+_2019-11-14 Page updated without editorial review: added callout for plugins which won't run on Linux, and `-skipshadercompile` option._<br/>
+_2019-10-31 Page updated without editorial review: add missing build step for simulated player clients._<br/>
+_2019-07-31 Page updated with limited editorial review_<br/>
+_2019-07-21 Page updated with limited editorial review_
