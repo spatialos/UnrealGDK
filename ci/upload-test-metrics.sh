@@ -13,7 +13,7 @@ TABLE="ci_metrics"
 # Make sure that the gcp secret is always removed
 GCP_SECRET="$(mktemp)"
 function cleanup {
-  rm -rf "$GCP_SECRET"
+  rm -rf "${GCP_SECRET}"
 }
 trap cleanup EXIT
 
