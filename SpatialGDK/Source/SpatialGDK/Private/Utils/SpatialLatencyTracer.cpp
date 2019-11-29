@@ -152,7 +152,8 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, co
 
 		improbable::trace::SpanContext DestContext(_TraceId, _SpanId);
 
-		TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent("Read Trace From Schema Obj", DestContext);
+		FString SpanMsg = FormatMessage(TEXT("Read Trace From Schema Obj"));
+		TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
 		TraceMap.Add(ActiveTraceKey, MoveTemp(RetrieveTrace));
 
 		return ActiveTraceKey;
@@ -187,7 +188,8 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const AActor* Actor, cons
 		return false;
 	}
 
-	TraceSpan NewTrace = improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*TraceDesc), nullptr);
+	FString SpanMsg = FormatMessage(TraceDesc);
+	TraceSpan NewTrace = improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*SpanMsg), nullptr);
 
 	WriteKeyFrameToTrace(&NewTrace, FString::Printf(TEXT("Begin trace : %s"), *FunctionName));
 
@@ -268,9 +270,16 @@ void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const F
 {
 	if (Trace != nullptr)
 	{
-		improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*TraceDesc), Trace).End();
+		FString TraceMsg = FormatMessage(TraceDesc);
+		improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*TraceMsg), Trace).End();
 	}
 }
+
+FString USpatialLatencyTracer::FormatMessage(const FString& Message) const
+{
+	return FString::Printf(TEXT("(%s) : %s"), *WorkerId.Left(18), *Message);
+}
+
 #endif // TRACE_LIB_ACTIVE
 
 void USpatialLatencyTracer::SendTestTrace()

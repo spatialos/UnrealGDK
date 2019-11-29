@@ -80,6 +80,8 @@ public:
 	void WriteTraceToSchemaObject(const TraceKey Key, Schema_Object* Obj, const Schema_FieldId FieldId);
 	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId);
 
+	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
+
 private:
 
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
@@ -93,7 +95,9 @@ private:
 	TraceSpan* GetActiveTrace();
 
 	void WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc);
+	FString FormatMessage(const FString& Message) const;
 
+	FString WorkerId;
 	TMap<ActorFuncKey, TraceKey> TrackingTraces;
 	TMap<TraceKey, TraceSpan> TraceMap;
 
