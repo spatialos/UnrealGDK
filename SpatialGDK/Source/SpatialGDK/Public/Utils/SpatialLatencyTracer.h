@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "SpatialConstants.h"
-#include "Map.h"
+#include "Containers/Map.h"
 
 #if TRACE_LIB_ACTIVE
 #include "WorkerSDK/improbable/trace.h"
