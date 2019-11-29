@@ -379,7 +379,7 @@ void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Wor
 	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
 }
 
-void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey& Key)
+void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key)
 {
 #if TRACE_LIB_ACTIVE
 	if (GameInstance.IsValid())
