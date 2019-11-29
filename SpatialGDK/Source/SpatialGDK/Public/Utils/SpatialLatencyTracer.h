@@ -49,14 +49,14 @@ public:
 	// Internal GDK usage, shouldn't be used by game code
 	static USpatialLatencyTracer* GetTracer(UObject* WorldContextObject);
 
-	bool IsValidKey(const TraceKey& Key);
+	bool IsValidKey(TraceKey Key);
 	TraceKey GetTraceKey(const UObject* Obj, const UFunction* Function);
 
-	void WriteToLatencyTrace(const TraceKey& Key, const FString& TraceDesc);
-	void EndLatencyTrace(const TraceKey& Key, const FString& TraceDesc);
+	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);
+	void EndLatencyTrace(const TraceKey Key, const FString& TraceDesc);
 
-	void WriteTraceToSchemaObject(const TraceKey& Key, Schema_Object* Obj);
-	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj);
+	void WriteTraceToSchemaObject(const TraceKey Key, Schema_Object* Obj, const Schema_FieldId FieldId);
+	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId);
 
 private:
 

@@ -33,11 +33,7 @@ struct RPCPayload
 #if TRACE_LIB_ACTIVE
 		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
 		{
-			if (Schema_GetObjectCount(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID) > 0)
-			{
-				Schema_Object* TraceData = Schema_IndexObject(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID, 0);
-				Trace = Tracer->ReadTraceFromSchemaObject(TraceData);
-			}
+			Trace = Tracer->ReadTraceFromSchemaObject(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
 		}
 #endif
 	}
@@ -54,11 +50,7 @@ struct RPCPayload
 #if TRACE_LIB_ACTIVE
 		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
 		{
-			if (Tracer->IsValidKey(Trace))
-			{
-				Schema_Object* TraceData = Schema_AddObject(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
-				Tracer->WriteTraceToSchemaObject(Trace, TraceData);
-			}
+			Tracer->WriteTraceToSchemaObject(Trace, RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
 		}
 #endif
 	}

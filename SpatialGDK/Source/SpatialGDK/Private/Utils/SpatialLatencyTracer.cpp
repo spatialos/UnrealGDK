@@ -75,7 +75,7 @@ bool USpatialLatencyTracer::EndLatencyTrace(UObject* WorldContextObject)
 }
 
 #if TRACE_LIB_ACTIVE
-bool USpatialLatencyTracer::IsValidKey(const TraceKey& Key)
+bool USpatialLatencyTracer::IsValidKey(const TraceKey Key)
 {
 	FScopeLock Lock(&Mutex);
 	return TraceMap.Find(Key);
@@ -91,7 +91,7 @@ TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UFunction*
 	return ReturnKey;
 }
 
-void USpatialLatencyTracer::WriteToLatencyTrace(const TraceKey& Key, const FString& TraceDesc)
+void USpatialLatencyTracer::WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -101,7 +101,7 @@ void USpatialLatencyTracer::WriteToLatencyTrace(const TraceKey& Key, const FStri
 	}
 }
 
-void USpatialLatencyTracer::EndLatencyTrace(const TraceKey& Key, const FString& TraceDesc)
+void USpatialLatencyTracer::EndLatencyTrace(const TraceKey Key, const FString& TraceDesc)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -114,42 +114,51 @@ void USpatialLatencyTracer::EndLatencyTrace(const TraceKey& Key, const FString& 
 	}
 }
 
-void USpatialLatencyTracer::WriteTraceToSchemaObject(const TraceKey& Key, Schema_Object* Obj)
+void USpatialLatencyTracer::WriteTraceToSchemaObject(const TraceKey Key, Schema_Object* Obj, const Schema_FieldId FieldId)
 {
 	FScopeLock Lock(&Mutex);
 
 	if (TraceSpan* Trace = TraceMap.Find(Key))
 	{
+		Schema_Object* TraceObj = Schema_AddObject(Obj, FieldId);
+
 		const improbable::trace::SpanContext& TraceContext = Trace->context();
 		improbable::trace::TraceId _TraceId = TraceContext.trace_id();
 		improbable::trace::SpanId _SpanId = TraceContext.span_id();
 
-		SpatialGDK::AddBytesToSchema(Obj, SpatialConstants::UNREAL_RPC_TRACE_ID, &_TraceId[0], _TraceId.size());
-		SpatialGDK::AddBytesToSchema(Obj, SpatialConstants::UNREAL_RPC_SPAN_ID, &_SpanId[0], _SpanId.size());
+		SpatialGDK::AddBytesToSchema(TraceObj, SpatialConstants::UNREAL_RPC_TRACE_ID, &_TraceId[0], _TraceId.size());
+		SpatialGDK::AddBytesToSchema(TraceObj, SpatialConstants::UNREAL_RPC_SPAN_ID, &_SpanId[0], _SpanId.size());
 	}
 }
 
-TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj)
+TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId)
 {
 	FScopeLock Lock(&Mutex);
 
 	check(GetActiveTrace() == nullptr);
 
-	const uint8* TraceBytes = Schema_GetBytes(Obj, SpatialConstants::UNREAL_RPC_TRACE_ID);
-	const uint8* SpanBytes = Schema_GetBytes(Obj, SpatialConstants::UNREAL_RPC_SPAN_ID);
+	if (Schema_GetObjectCount(Obj, FieldId) > 0)
+	{
+		Schema_Object* TraceData = Schema_IndexObject(Obj, FieldId, 0);
 
-	improbable::trace::TraceId _TraceId;
-	memcpy(&_TraceId[0], TraceBytes, sizeof(improbable::trace::TraceId));
+		const uint8* TraceBytes = Schema_GetBytes(TraceData, SpatialConstants::UNREAL_RPC_TRACE_ID);
+		const uint8* SpanBytes = Schema_GetBytes(TraceData, SpatialConstants::UNREAL_RPC_SPAN_ID);
 
-	improbable::trace::SpanId _SpanId;
-	memcpy(&_SpanId[0], SpanBytes, sizeof(improbable::trace::SpanId));
+		improbable::trace::TraceId _TraceId;
+		memcpy(&_TraceId[0], TraceBytes, sizeof(improbable::trace::TraceId));
 
-	improbable::trace::SpanContext DestContext(_TraceId, _SpanId);
+		improbable::trace::SpanId _SpanId;
+		memcpy(&_SpanId[0], SpanBytes, sizeof(improbable::trace::SpanId));
 
-	TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent("Read Trace From Schema Obj", DestContext);
-	TraceMap.Add(ActiveTraceKey, MoveTemp(RetrieveTrace));
+		improbable::trace::SpanContext DestContext(_TraceId, _SpanId);
 
-	return ActiveTraceKey;
+		TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent("Read Trace From Schema Obj", DestContext);
+		TraceMap.Add(ActiveTraceKey, MoveTemp(RetrieveTrace));
+
+		return ActiveTraceKey;
+	}
+
+	return InvalidTraceKey;
 }
 
 USpatialLatencyTracer* USpatialLatencyTracer::GetTracer(UObject* WorldContextObject)
