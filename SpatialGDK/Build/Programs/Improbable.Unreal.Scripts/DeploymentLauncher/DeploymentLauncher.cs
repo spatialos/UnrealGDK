@@ -81,9 +81,9 @@ namespace Improbable
         
         private static PlatformApiEndpoint GetApiEndpoint(string region)
         {
-            if (region == "CN")
+            if (region == "CN") 
             {
-                return new PlatformApiEndpoint("api.cn-production.spatialoschina.com", 443);
+                return new PlatformApiEndpoint("platform-cn-production.api.spatialoschina.com", 443);
             }
             return null; // Use default
         }
