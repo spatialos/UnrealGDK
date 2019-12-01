@@ -64,7 +64,12 @@ steps:
 
   - wait: ~
     continue_on_failure: true
-    
+  
+  - label: "upload-test-metrics"
+    if: build.env("NIGHTLY_BUILD") == "true"
+    command: "ci/upload-test-metrics.sh"
+    <<: *script_runner
+  
   - label: "slack-notify"
     if: build.env("SLACK_NOTIFY") == "true" || build.branch == "master"
     commands: "powershell ./ci/build-and-send-slack-notification.ps1"
