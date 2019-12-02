@@ -81,7 +81,7 @@ In the same directory, double-click **GenerateProjectFiles.bat**.
 ### Step 5: Clone and install the plugin
 You need to clone the SpatialOS GDK plugin and install it into the UE fork and Example Project directory. We recommend that you follow the auto-install method to reduce the number of manual steps needed  to get set up. The auto-install installs the GDK as an Engine plugin so you won't have to clone the GDK for each new project you set up.
 
-There are two branches of the plugin repository and the Example Project: preview and release.  We recommend installing from the default release branch of both, which the auto-install below does for you, and the manual-install guides you to do.  
+There are two branches of the plugin repository and the Example Project: preview and release.  We recommend installing from the default release branch of both. The auto-install does this for you, and the manual-install guides you to do this.  
 
 <%(#Expandable title="The preview branch")%>
 The preview branch contains features early in development. We do not recommend using the preview branch as it has had minimal testing and it has no documentation. You can find out more about the different branches in the [Versioning]({{urlRoot}}/content/pricing-and-support/versioning-scheme) scheme documentation.
