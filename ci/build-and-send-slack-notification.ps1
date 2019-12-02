@@ -15,7 +15,7 @@ Get-ChildItem -Recurse "$PSScriptRoot/slack_attachments" -Filter *.json | Foreac
 }
 
 # Build text for slack message
-if ($env:BUILDKITE_NIGHTLY_BUILD -eq "true") {
+if ($env:NIGHTLY_BUILD -eq "true") {
     $build_description = ":night_with_stars: Nightly build of *GDK for Unreal*"
 } else {
     $build_description = "*GDK for Unreal* build by $env:BUILDKITE_BUILD_CREATOR"

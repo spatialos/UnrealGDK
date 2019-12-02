@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- Added %s token to debug strings in GlobalStateManager to display actor class name in log
 - The server no longer crashes, when received RPCs are processed recursively.
 - DeploymentLauncher can parse a .pb.json launch configuration.
 - DeploymentLauncher can launch a Simulated Player deployment independently from the target deployment.
