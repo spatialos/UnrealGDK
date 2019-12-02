@@ -59,7 +59,7 @@ call :MarkStartOfBlock "Setup variables"
     set SPATIAL_DIR=%~dp0..\..\..\spatial
     set DOMAIN_ENVIRONMENT_VAR=
     for %%A in (%*) do (
-        if "%%A"=="/China" set DOMAIN_ENVIRONMENT_VAR=--domain spatialoschina.com --environment cn-production
+        if /I "%%A"=="--china" set DOMAIN_ENVIRONMENT_VAR=--domain spatialoschina.com --environment cn-production
     )
 call :MarkEndOfBlock "Setup variables"
 
