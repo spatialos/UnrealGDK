@@ -316,7 +316,7 @@ FString USpatialLatencyTracer::FormatMessage(const FString& Message) const
 
 #endif // TRACE_LIB_ACTIVE
 
-void USpatialLatencyTracer::SendTestTrace()
+void USpatialLatencyTracer::Debug_SendTestTrace()
 {
 #if TRACE_LIB_ACTIVE
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, []
