@@ -29,11 +29,12 @@ namespace
 		FString DomainEnvironmentStr;
 		if (bIsInChina)
 		{
-			DomainEnvironmentStr = FString::Printf(TEXT("--domain=%s --environment=%s"), TEXT("spatialoschina.com"), TEXT("cn-production"));
+			DomainEnvironmentStr = TEXT("--domain=spatialoschina.com --environment=cn-production");
 		}
 		return DomainEnvironmentStr;
 	}
-}
+} // anonymous namespace
+
 FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
 	, bSpatialServiceRunning(false)
@@ -45,7 +46,6 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 {
 	// Get the project name from the spatialos.json.
 	ProjectName = GetProjectName();
-
 
 #if PLATFORM_WINDOWS
 	// Don't kick off background processes when running commandlets
