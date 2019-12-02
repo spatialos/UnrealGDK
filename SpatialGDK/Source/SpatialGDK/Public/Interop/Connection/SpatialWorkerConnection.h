@@ -70,6 +70,12 @@ public:
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
+	FOnEnqueueMessage OnEnqueueMessage;
+
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
+	FOnDequeueMessage OnDequeueMessage;
+
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 

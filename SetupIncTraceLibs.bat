@@ -13,8 +13,8 @@ call :MarkStartOfBlock "Create folders"
 call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"	
-	spatial package retrieve internal        trace-x86_64-vc140_md-win32                14.3.0-b2454-46b9198-WORKER-SNAPSHOT "%CORE_SDK_DIR%\trace_lib\trace-win32.zip"
-	spatial package retrieve internal        trace-x86_64-gcc510-linux                  14.3.0-b2454-46b9198-WORKER-SNAPSHOT "%CORE_SDK_DIR%\trace_lib\trace-linux.zip"
+	spatial package retrieve internal        trace-dynamic-x86_64-vc140_md-win32        14.3.0-b2647-85717ee-WORKER-SNAPSHOT "%CORE_SDK_DIR%\trace_lib\trace-win32.zip"
+	spatial package retrieve internal        trace-dynamic-x86_64-gcc510-linux          14.3.0-b2647-85717ee-WORKER-SNAPSHOT "%CORE_SDK_DIR%\trace_lib\trace-linux.zip"
 call :MarkEndOfBlock "Retrieve dependencies"
 
 call :MarkStartOfBlock "Unpack dependencies"

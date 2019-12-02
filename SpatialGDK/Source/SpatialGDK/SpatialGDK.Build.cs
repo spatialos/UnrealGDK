@@ -92,34 +92,48 @@ public class SpatialGDK : ModuleRules
         string WorkerImportLib = System.String.Format("{0}worker{1}", LibPrefix, ImportLibSuffix);
         string WorkerSharedLib = System.String.Format("{0}worker{1}", LibPrefix, SharedLibSuffix);
 
-        PublicAdditionalLibraries.Add(Path.Combine(WorkerLibraryDir, WorkerImportLib));
         PublicLibraryPaths.Add(WorkerLibraryDir);
+
+        PublicAdditionalLibraries.Add(Path.Combine(WorkerLibraryDir, WorkerImportLib));
         RuntimeDependencies.Add(Path.Combine(WorkerLibraryDir, WorkerSharedLib), StagedFileType.NonUFS);
         if (bAddDelayLoad)
         {
             PublicDelayLoadDLLs.Add(WorkerSharedLib);
         }
 
-        // Detect existance of trace library, if present add preprocessor
-        string TraceLib = "";
+        // Detect existence of trace library, if present add preprocessor
+        string TraceStaticLibPath = "";
+        string TraceDynamicLib = "";
+        string TraceDynamicLibPath = "";
         if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
         {
-            TraceLib = Path.Combine(WorkerLibraryDir, "trace_archive.lib");
+            TraceStaticLibPath = Path.Combine(WorkerLibraryDir, "trace_dynamic.lib");
+            TraceDynamicLib = "trace_dynamic.dll";
+            TraceDynamicLibPath = Path.Combine(WorkerLibraryDir, TraceDynamicLib);
         }
         else if (Target.Platform == UnrealTargetPlatform.Linux)
         {
-            TraceLib = Path.Combine(WorkerLibraryDir, "libtrace_archive.a");
+            TraceStaticLibPath = Path.Combine(WorkerLibraryDir, "libtrace_dynamic.so");
+            TraceDynamicLib = "trace_dynamic.so";
+            TraceDynamicLibPath = Path.Combine(WorkerLibraryDir, TraceDynamicLib);
         }
-            
-        if (File.Exists(TraceLib))
+
+        if (File.Exists(TraceStaticLibPath) && File.Exists(TraceDynamicLib))
         {
-            Log.TraceInformation("Detection of trace library found {0}, enabling trace functionality.", TraceLib);
+            Log.TraceInformation("Detection of trace libraries found at {0} and {1}, enabling trace functionality.", TraceStaticLibPath, TraceDynamicLibPath);
             PublicDefinitions.Add("TRACE_LIB_ACTIVE=1");
-            PublicAdditionalLibraries.Add(TraceLib);
+
+            PublicAdditionalLibraries.Add(TraceStaticLibPath);
+
+            RuntimeDependencies.Add(TraceDynamicLibPath, StagedFileType.NonUFS);
+            if (bAddDelayLoad)
+            {
+                PublicDelayLoadDLLs.Add(TraceDynamicLib);
+            }
         }
         else
         {
-            Log.TraceInformation("Didn't find trace library {0}, disabling trace functionality.", TraceLib);
+            Log.TraceInformation("Didn't find trace libraries at {0} and {1}, disabling trace functionality.", TraceStaticLibPath, TraceDynamicLibPath);
             PublicDefinitions.Add("TRACE_LIB_ACTIVE=0");
         }
     }

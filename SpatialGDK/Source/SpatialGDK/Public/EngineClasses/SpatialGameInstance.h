@@ -12,8 +12,8 @@ class USpatialWorkerConnection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
-DECLARE_EVENT(USpatialWorkerConnection, FOnConnectedEvent);
-DECLARE_EVENT_OneParam(USpatialWorkerConnection, FOnConnectionFailedEvent, const FString&);
+DECLARE_EVENT(USpatialGameInstance, FOnConnectedEvent);
+DECLARE_EVENT_OneParam(USpatialGameInstance, FOnConnectionFailedEvent, const FString&);
 
 UCLASS(config = Engine)
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance

@@ -5,10 +5,10 @@
 #include "Async/Async.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialGameInstance.h"
+#include "Interop/Connection/OutgoingMessages.h"
 #include "Utils/SchemaUtils.h"
 
 #include <sstream>
-#pragma optimize ("", off)
 
 DEFINE_LOG_CATEGORY(LogSpatialLatencyTracing);
 
@@ -171,6 +171,24 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, co
 	}
 
 	return InvalidTraceKey;
+}
+
+void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage* Message)
+{
+	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
+	{
+		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
+		WriteToLatencyTrace(ComponentUpdate->Trace, TEXT("Moved update to Worker queue"));
+	}
+}
+
+void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage* Message)
+{
+	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
+	{
+		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
+		EndLatencyTrace(ComponentUpdate->Trace, TEXT("Sent to Worker SDK"));
+	}
 }
 
 USpatialLatencyTracer* USpatialLatencyTracer::GetTracer(UObject* WorldContextObject)
@@ -340,5 +358,3 @@ void USpatialLatencyTracer::SendTestTrace()
 	});
 #endif // TRACE_LIB_ACTIVE
 }
-
-#pragma optimize ("", on)

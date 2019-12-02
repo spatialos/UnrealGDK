@@ -19,6 +19,11 @@ class AActor;
 class UFunction;
 class USpatialGameInstance;
 
+namespace SpatialGDK
+{
+	struct FOutgoingMessage;
+}
+
 using TraceKey = int32;
 
 UCLASS()
@@ -93,6 +98,9 @@ public:
 	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
 	void ResetWorkerId() { WorkerId = TEXT("Undefined"); }
 
+	void OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*);
+	void OnDequeueMessage(const SpatialGDK::FOutgoingMessage*);
+
 private:
 
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
@@ -119,6 +127,7 @@ public:
 
 #endif // TRACE_LIB_ACTIVE
 
+	// Used for testing trace functionality, will send a debug trace in three parts from this worker
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	static void SendTestTrace();
+	static void Debug_SendTestTrace();
 };
