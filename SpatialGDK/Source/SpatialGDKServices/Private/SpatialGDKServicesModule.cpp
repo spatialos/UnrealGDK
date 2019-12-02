@@ -11,8 +11,8 @@
 #include "SSpatialOutputLog.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
-#include "SpatialGDKServicesPrivate.h"
 #include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKServicesPrivate.h"
 #include "Widgets/Docking/SDockTab.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKServicesModule"
@@ -58,11 +58,6 @@ FLocalDeploymentManager* FSpatialGDKServicesModule::GetLocalDeploymentManager()
 	return &LocalDeploymentManager;
 }
 
-FString FSpatialGDKServicesModule::GetSpatialOSDirectory(const FString& AppendPath)
-{
-	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/"), AppendPath));
-}
-
 FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& AppendPath)
 {
 	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
@@ -81,7 +76,7 @@ bool FSpatialGDKServicesModule::SpatialPreRunChecks()
 {
 	FString SpatialExistenceCheckResult;
 	int32 ExitCode;
-	ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, TEXT("version"), GetSpatialOSDirectory(), SpatialExistenceCheckResult, ExitCode);
+	ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, TEXT("version"), SpatialGDKServicesConstants::SpatialOSDirectory, SpatialExistenceCheckResult, ExitCode);
 
 	if (ExitCode != 0)
 	{
@@ -144,12 +139,11 @@ void FSpatialGDKServicesModule::ExecuteAndReadOutput(const FString& Executable, 
 FString FSpatialGDKServicesModule::ParseProjectName()
 {
 	FString ProjectNameParsed;
-	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
 
 	FString SpatialFileName = TEXT("spatialos.json");
 	FString SpatialFileResult;
 
-	if (FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialDirectory, SpatialFileName)))
+	if (FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, SpatialFileName)))
 	{
 		TSharedPtr<FJsonObject> JsonParsedSpatialFile;
 		if (ParseJson(SpatialFileResult, JsonParsedSpatialFile))

@@ -92,8 +92,7 @@ void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 	if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
 	{
 		// Watch the worker config directory for changes.
-		const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
-		FString WorkerConfigDirectory = FPaths::Combine(SpatialDirectory, TEXT("workers"));
+		FString WorkerConfigDirectory = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("workers"));
 
 		if (FPaths::DirectoryExists(WorkerConfigDirectory))
 		{
@@ -120,7 +119,7 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 		FString BuildConfigArgs = TEXT("worker build build-config");
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
-		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
+		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, BuildConfigArgs, SpatialGDKServicesConstants::SpatialOSDirectory, WorkerBuildConfigResult, ExitCode);
 
 		if (ExitCode == ExitCodeSuccess)
 		{
@@ -479,7 +478,7 @@ bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
 	FString ServiceStartResult;
 	int32 ExitCode;
 
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStartResult, ExitCode);
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, SpatialServiceStartArgs, SpatialGDKServicesConstants::SpatialOSDirectory, ServiceStartResult, ExitCode);
 
 	bStartingSpatialService = false;
 
@@ -519,7 +518,7 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 	FString ServiceStopResult;
 	int32 ExitCode;
 
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStopResult, ExitCode);
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, SpatialServiceStartArgs, SpatialGDKServicesConstants::SpatialOSDirectory, ServiceStopResult, ExitCode);
 	bStoppingSpatialService = false;
 
 	if (ExitCode == ExitCodeSuccess)
@@ -655,7 +654,7 @@ bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
 	// Get the project file path and ensure it matches the one for the currently running project.
 	if (bParsingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("projectFilePath"), SpatialServiceProjectPath))
 	{
-		FString CurrentProjectSpatialPath = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("spatialos.json"));
+		FString CurrentProjectSpatialPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("spatialos.json"));
 		FPaths::NormalizeDirectoryName(SpatialServiceProjectPath);
 		FPaths::RemoveDuplicateSlashes(SpatialServiceProjectPath);
 

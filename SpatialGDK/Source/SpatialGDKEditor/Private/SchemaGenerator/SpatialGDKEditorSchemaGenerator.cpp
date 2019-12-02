@@ -736,9 +736,9 @@ bool RunSchemaCompiler()
 	FString PluginDir = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory();
 
 	// Get the schema_compiler path and arguments
-	FString SchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema"));
-	FString CoreSDKSchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
-	FString SchemaDescriptorDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
+	FString SchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema"));
+	FString CoreSDKSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
+	FString SchemaDescriptorDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
 	FString SchemaDescriptorOutput = FPaths::Combine(SchemaDescriptorDir, TEXT("schema.descriptor"));
 
 	// The schema_compiler cannot create folders.

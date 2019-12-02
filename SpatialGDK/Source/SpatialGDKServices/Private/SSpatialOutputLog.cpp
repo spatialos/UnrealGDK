@@ -9,6 +9,7 @@
 #include "Misc/FileHelper.h"
 #include "Modules/ModuleManager.h"
 #include "SlateOptMacros.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "Internationalization/Regex.h"
 
@@ -16,7 +17,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialOutputLog);
 
-static const FString LocalDeploymentLogsDir(FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("logs/localdeployment")));
+static const FString LocalDeploymentLogsDir(FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("logs/localdeployment")));
 static const FString LaunchLogFilename(TEXT("launch.log"));
 static const float PollTimeInterval(0.05f);
 

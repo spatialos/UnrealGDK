@@ -18,14 +18,15 @@ namespace SpatialGDKServicesConstants
 	const FString Extension = TEXT("");
 #endif
 
-	const FString CreateExePath(FString path, FString exeName)
+	static inline const FString CreateExePath(FString Path, FString ExecutableName)
 	{
-		FString exeFile = FPaths::SetExtension(exeName, Extension);
-		return FPaths::Combine(path, exeFile);
+		FString ExecutableFile = FPaths::SetExtension(ExecutableName, Extension);
+		return FPaths::Combine(Path, ExecutableFile);
 	}
 
 	const FString GDKProgramPath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs"));
 	const FString SpatialExe = CreateExePath(SpatialPath, TEXT("spatial"));
 	const FString SpotExe = CreateExePath(GDKProgramPath, TEXT("spot"));
 	const FString SchemaCompilerExe = CreateExePath(GDKProgramPath, TEXT("schema_compiler"));
+    const FString SpatialOSDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")));
 }
