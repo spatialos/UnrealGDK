@@ -29,7 +29,7 @@ You can clone the fork repository using the command line, GitHub Desktop, or any
 
 **Note:** Third-party GUIs might ignore the default branch: ensure that you clone the latest stable version of the repository by selecting the branch marked **default** in the **Branch** dropdown of the [SpatialOS Unreal Engine fork repository](https://github.com/improbableio/UnrealEngine).  
 
-![img]({{assetRoot}}assets/screen-grabs/unreal-fork-repo-branch.png)
+<img src="{{assetRoot}}assets/screen-grabs/unreal-fork-repo-branch.png" style="width:250px;">
 
 _Image: The default branch you need to clone._
 
