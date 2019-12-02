@@ -35,5 +35,5 @@ Additionally, to communicate with the Database Sync Worker, you will be sending 
 
 <br/>------<br/>
 _2019-11-25 Page updated without editorial review: experimental wording_<br/>
-_2019-07-31 Page added with limited editorial review_
+_2019-07-31 Page added without editorial review_
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1248)
