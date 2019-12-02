@@ -114,7 +114,7 @@ public class SpatialGDK : ModuleRules
         else if (Target.Platform == UnrealTargetPlatform.Linux)
         {
             TraceStaticLibPath = Path.Combine(WorkerLibraryDir, "libtrace_dynamic.so");
-            TraceDynamicLib = "trace_dynamic.so";
+            TraceDynamicLib = "libtrace_dynamic.so";
             TraceDynamicLibPath = Path.Combine(WorkerLibraryDir, TraceDynamicLib);
         }
 
