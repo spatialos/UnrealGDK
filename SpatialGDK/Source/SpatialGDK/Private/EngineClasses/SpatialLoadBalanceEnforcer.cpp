@@ -46,24 +46,53 @@ void USpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker
 	}
 }
 
+// This is called whenever this worker becomes authoritative for the ACL component on an entity.
+// It is now this worker's responsibility to make sure that the ACL reflects the current intent,
+// which may have been received before this call.
 void USpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
 	if (AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID &&
 		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
+		const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(AuthOp.entity_id);
+		if (AuthorityIntentComponent == nullptr)
+		{
+			// TODO(zoning): There are still some entities being created without an authority intent component.
+			// For example, the Unreal created worker entities don't have one. Even though those won't be able to
+			// transition, we should have the intent component on them for completeness.
+		 	UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Requested authority change for entity without AuthorityIntent component. EntityId: %lld"), AuthOp.entity_id);
+			return;
+		}
+
+		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		if (OwningWorkerId != nullptr &&
+			*OwningWorkerId == WorkerId &&
+			StaticComponentView->GetAuthority(AuthOp.entity_id, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("No need to queue newly authoritative entity %lld because this worker is already authoritative."), AuthOp.entity_id);
+			return;
+		}
 		QueueAclAssignmentRequest(AuthOp.entity_id);
 	}
 }
 
+// QueueAclAssignmentRequest is called from three places.
+// 1) AuthorityIntent change - Intent is not authoritative on this worker - ACL is authoritative on this worker.
+//    (another worker changed the intent, but this worker is responsible for the ACL, so update it.)
+// 2) ACL change - Intent may be anything - ACL just became authoritative on this worker.
+//    (this worker just became responsible, so check to make sure intent and ACL agree.)
+// 3) AuthorityIntent change - Intent is authoritative on this worker but no longer assigned to this worker - ACL is authoritative on this worker.
+//    (this worker had responsibility for both and is giving up authority.)
 void USpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId EntityId)
 {
+	// TODO(zoning): measure the performance impact of this.
 	if (AclWriteAuthAssignmentRequests.ContainsByPredicate([EntityId](const WriteAuthAssignmentRequest& Request) { return Request.EntityId == EntityId; }))
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("An ACL assignment request already exists for entity %lld on worker %s."), EntityId, *WorkerId);
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("An ACL assignment request already exists for entity %lld on worker %s."), EntityId, *WorkerId);
 	}
 	else
 	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Queueing ACL assignment request for entity %lld on worker %s."), EntityId, *WorkerId);
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("Queueing ACL assignment request for entity %lld on worker %s."), EntityId, *WorkerId);
 		AclWriteAuthAssignmentRequests.Add(WriteAuthAssignmentRequest(EntityId));
 	}
 }
@@ -75,26 +104,25 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 
 	for (WriteAuthAssignmentRequest& Request : AclWriteAuthAssignmentRequests)
 	{
-		static const int32 WarnOnAttemptNum = 5;
-		if (Request.ProcessAttempts >= WarnOnAttemptNum)
-		{
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Failed to process WriteAuthAssignmentRequest with EntityID: %lld. Process attempts made: %d"), Request.EntityId, Request.ProcessAttempts);
-		}
-
-		Request.ProcessAttempts++;
-
-		// TODO - if some entities won't have the component we should detect that before queueing the request.
-		// Need to be certain it is invalid to get here before receiving the AuthIntentComponent for an entity, then we can check() on it.
-		const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
+ 		const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
 		if (AuthorityIntentComponent == nullptr)
 		{
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Detected entity without AuthIntent component. EntityId: %lld"), Request.EntityId);
-			continue;
+			// TODO(zoning): Not sure whether this should be possible or not. Remove if we don't see the warning again.
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Entity without AuthIntent component will not be processed. EntityId: %lld"), *WorkerId, Request.EntityId);
+			CompletedRequests.Add(Request.EntityId);
+			return;
 		}
 
 		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (OwningWorkerId == nullptr)
 		{
+			const int32 WarnOnAttemptNum = 5;
+			Request.ProcessAttempts++;
+			// TODO(zoning): Revisit this when we support replacing crashed workers.
+			if (Request.ProcessAttempts % WarnOnAttemptNum == 0)
+			{
+				UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Failed to process WriteAuthAssignmentRequest because virtual worker mapping is unset for EntityID: %lld. Process attempts made: %d"), Request.EntityId, Request.ProcessAttempts);
+			}
 			// A virtual worker -> physical worker mapping may not be established yet.
 			// We'll retry on the next Tick().
 			continue;

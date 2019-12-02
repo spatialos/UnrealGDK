@@ -22,17 +22,6 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_init_is_not_called_THEN_return_not_ready)
 	return true;
 }
 
-VIRTUALWORKERTRANSLATOR_TEST(Given_init_and_set_desired_worker_count_called_THEN_return_ready)
-{
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>();
-	translator->Init(nullptr);
-	translator->SetDesiredVirtualWorkerCount(1);  // unimportant random value.
-
-	TestTrue("Initialized Translator is ready.", translator->IsReady());
-
-	return true;
-}
-
 VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings)
 {
 	// The class is initialized with no data.
