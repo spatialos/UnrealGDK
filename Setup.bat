@@ -57,10 +57,10 @@ call :MarkStartOfBlock "Setup variables"
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
     set SPATIAL_DIR=%~dp0..\..\..\spatial
-	set DOMAIN_ENVIRONMENT_VAR=
-	FOR %%A IN (%*) DO (
-		IF "%%A"=="/China" set DOMAIN_ENVIRONMENT_VAR=--domain spatialoschina.com --environment cn-production
-	)
+    set DOMAIN_ENVIRONMENT_VAR=
+    for %%A in (%*) do (
+        if "%%A"=="/China" set DOMAIN_ENVIRONMENT_VAR=--domain spatialoschina.com --environment cn-production
+    )
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"
@@ -87,7 +87,6 @@ call :MarkStartOfBlock "Create folders"
         md "%SCHEMA_COPY_DIR%"        >nul 2>nul
     )
 call :MarkEndOfBlock "Create folders"
-
 
 call :MarkStartOfBlock "Retrieve dependencies"
     spatial package retrieve tools           schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%       %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"                     

@@ -367,6 +367,7 @@ namespace Improbable
         {
             var projectName = args[1];
             var regionCode = args[2];
+
             var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(regionCode));
 
             if (args.Length == 3)
