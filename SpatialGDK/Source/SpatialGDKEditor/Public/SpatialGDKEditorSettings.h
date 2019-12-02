@@ -202,7 +202,7 @@ struct FSpatialLaunchConfigDescription
 	FWorldLaunchSection World;
 
 	/** Worker-specific configuration parameters. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (TitleProperty = "WorkerTypeName"))
 	TArray<FWorkerTypeLaunchSection> ServerWorkers;
 };
 
