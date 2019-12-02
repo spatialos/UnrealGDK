@@ -8,6 +8,7 @@
 #include "Utils/SchemaUtils.h"
 
 #include <sstream>
+#pragma optimize ("", off)
 
 DEFINE_LOG_CATEGORY(LogSpatialLatencyTracing);
 
@@ -26,6 +27,9 @@ namespace
 {
 	UEStream Stream;
 }
+
+const TraceKey USpatialLatencyTracer::ActiveTraceKey = 0;
+const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
 
 USpatialLatencyTracer::USpatialLatencyTracer()
 {
@@ -336,3 +340,5 @@ void USpatialLatencyTracer::SendTestTrace()
 	});
 #endif // TRACE_LIB_ACTIVE
 }
+
+#pragma optimize ("", on)

@@ -32,7 +32,10 @@ public:
 	//
 	// USpatialLatencyTracer allows for tracing of gameplay events across multiple workers, from their user
 	// instigation, to their observed results. Key timings related to these events are logged throughout
-	// the Unreal GDK networking stack.
+	// the Unreal GDK networking stack. This API makes the assumption that the distributed workers have had
+	// their clocks synced by some time syncing protocol (eg. NTP). To give accurate timings, the trace payload
+	// is embedded directly within the relevant networking component updates.
+	//
 	// These timings are logged to Google's Stackdriver (https://cloud.google.com/stackdriver/)
 	//
 	// Setup:
@@ -53,20 +56,25 @@ public:
 	USpatialLatencyTracer();
 
 	// Front-end exposed, allows users to register, start, continue, and end traces
+
+	// Call with your google project id. This must be called before latency trace calls are made
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static void RegisterProject(UObject* WorldContextObject, const FString& ProjectId);
 
+	// Start a latency trace. This will start the latency timer and attach it to a specific RPC.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool BeginLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc);
 
+	// Hook into an existing latency trace, and pipe the trace to another outgoing networking event
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool ContinueLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc);
 
+	// End a latency trace. This needs to be called within the receiving end of the traced networked event (ie. an rpc)
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool EndLatencyTrace(UObject* WorldContextObject);
 
-	static const TraceKey ActiveTraceKey = 0;
-	static const TraceKey InvalidTraceKey = -1;
+	static const TraceKey ActiveTraceKey;
+	static const TraceKey InvalidTraceKey;
 
 #if TRACE_LIB_ACTIVE
 
