@@ -23,6 +23,8 @@ namespace Improbable
 
         private const string CoordinatorWorkerName = "SimulatedPlayerCoordinator";
 
+        private const string CHINA_ENDPOINT_URL = "platform-cn-production.api.spatialoschina.com";
+
         private static string UploadSnapshot(SnapshotServiceClient client, string snapshotPath, string projectName,
             string deploymentName)
         {
@@ -83,7 +85,7 @@ namespace Improbable
         {
             if (region == "CN") 
             {
-                return new PlatformApiEndpoint("platform-cn-production.api.spatialoschina.com", 443);
+                return new PlatformApiEndpoint(CHINA_ENDPOINT_URL, 443);
             }
             return null; // Use default
         }

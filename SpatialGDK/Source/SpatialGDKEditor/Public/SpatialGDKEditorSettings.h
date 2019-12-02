@@ -457,5 +457,5 @@ public:
 
 	bool IsDeploymentConfigurationValid() const;
 
-	bool IsRunningInChina() const { return bRunningInChina; }
+	FORCEINLINE bool IsRunningInChina() const { return bRunningInChina; }
 };
