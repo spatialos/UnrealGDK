@@ -155,6 +155,8 @@ public:
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
 
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
@@ -177,7 +179,6 @@ public:
 #endif
 
 private:
-	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
