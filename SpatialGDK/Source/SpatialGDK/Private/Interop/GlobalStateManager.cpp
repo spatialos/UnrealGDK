@@ -231,7 +231,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 		// Dynamically spawn singleton actor if we have queued up data - ala USpatialReceiver::ReceiveActor - JIRA: 735
 
 		// No local actor has registered itself as replicatible on this worker
-		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor no actor registered"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor no actor registered for class %s"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -241,7 +241,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	if (Channel != nullptr)
 	{
 		// Channel has already been setup
-		UE_LOG(LogGlobalStateManager, Verbose, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Verbose, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup for %s"), *SingletonActorClass->GetName());
 		return;
 	}
 
