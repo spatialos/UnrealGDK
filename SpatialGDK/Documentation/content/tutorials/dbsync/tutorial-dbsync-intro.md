@@ -7,7 +7,6 @@
 Do not use the feature for game development: we do not support it or its tutorial and we are not actively developing this functionality. See the GDK's [roadmap](https://github.com/spatialos/UnrealGDK/projects/1) on GitHub for information on features in development.")%>
   
 
-We may productionise it, but currently there are no plans to do so and no support guarantees for this tutorial and the Database Sync Worker Example. Thanks in advance for your feedback which 
 	
 
 This tutorial takes you through how to integrate the [Database Sync Worker Example](https://github.com/spatialos/database-sync-worker) in a GDK project and use it to store persistent data outside of a SpatialOS deployment.
