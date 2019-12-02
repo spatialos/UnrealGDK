@@ -2,9 +2,9 @@
 
 ## \[Experimental\] Database sync worker
 
-<%(Callout type="warn" message="The Database Sync Worker Example is experimental and the tutorial is in rough draft and won't be updated. We have made the tutorial and feature available to gather feedback to help us shape the functionality of SpatualOS Online Services.
+<%(Callout type="warn" message="The Database Sync Worker Example is experimental, as is this tutorial. We have made the tutorial and feature available to gather feedback to help us shape this functionality.
 
-Do not use the feature for game development: we do not support it or its tutorial and we are not actively developing this functionality. See the GDK's [roadmap](https://github.com/spatialos/UnrealGDK/projects/1) on GitHub for information on features in development.")%>
+Do not use the feature for production game development: we do not support it or its tutorial and are not committed to further developing this functionality. See the GDK's [roadmap](https://github.com/spatialos/UnrealGDK/projects/1) on GitHub for information on features in development.")%>
   
 
 	
