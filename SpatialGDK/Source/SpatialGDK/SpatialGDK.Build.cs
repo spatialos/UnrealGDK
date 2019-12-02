@@ -118,7 +118,7 @@ public class SpatialGDK : ModuleRules
             TraceDynamicLibPath = Path.Combine(WorkerLibraryDir, TraceDynamicLib);
         }
 
-        if (File.Exists(TraceStaticLibPath) && File.Exists(TraceDynamicLib))
+        if (File.Exists(TraceStaticLibPath) && File.Exists(TraceDynamicLibPath))
         {
             Log.TraceInformation("Detection of trace libraries found at {0} and {1}, enabling trace functionality.", TraceStaticLibPath, TraceDynamicLibPath);
             PublicDefinitions.Add("TRACE_LIB_ACTIVE=1");
