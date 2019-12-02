@@ -2,7 +2,10 @@
 
 ## \[Experimental\] Database sync worker
 
-<%(Callout type="warn" message="This tutorial is in an experimental stage: it demonstrates how to use the Database Sync Worker Example, which is experimental. 
+<%(Callout type="warn" message="The Database Sync Worker Example is experimental and the tutorial is in rough draft and won't be updated. We have made the tutorial and feature available to gather feedback to help us shape the functionality of SpatualOS Online Services.
+
+Do not use the feature for game development: we do not support it or its tutorial and we are not actively developing this functionality. See the GDK's [roadmap](https://github.com/spatialos/UnrealGDK/projects/1) on GitHub for information on features in development.")%>
+  
 
 We may productionise it, but currently there are no plans to do so and no support guarantees for this tutorial and the Database Sync Worker Example. Thanks in advance for your feedback which 
 will help us shape this feature.")%>	
@@ -35,4 +38,3 @@ Additionally, to communicate with the Database Sync Worker, you will be sending 
 _2019-11-25 Page updated with limited editorial review: experimental wording_<br/>
 _2019-07-31 Page added with limited editorial review_
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1248)
-
