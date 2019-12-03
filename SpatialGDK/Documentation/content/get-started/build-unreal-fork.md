@@ -21,9 +21,17 @@ It only takes a few minutes to set up and includes setting up a GitHub account i
 </br>
 </br>
 <img src="{{assetRoot}}assets/github404.png" style=" float: right; margin: 10px; display: block; width: 30%; padding: 20px 20x"/>
-**Note:** You **must** follow this step to use the GDK. If you have not joined the Epic Games organization on GitHub, the [SpatialOS Unreal Engine fork link](https://github.com/improbableio/UnrealEngine) returns a GitHub 404 error and you can't download it.
+**Note:** You **must** follow this step to use the GDK. If you have not joined the Epic Games organization on GitHub, the [SpatialOS Unreal Engine fork repository](https://github.com/improbableio/UnrealEngine) returns a GitHub 404 error and you can't download it.
 
 ### Step 2: Clone the fork repository
+
+You can clone the fork repository using the command line, GitHub Desktop, or any third-party GUI for Git. This guide shows the process for the command line and GitHub Desktop.
+
+**Note:** Third-party GUIs might ignore the default branch: ensure that you clone the latest stable version of the repository by selecting the branch marked **default** in the **Branch** dropdown of the [SpatialOS Unreal Engine fork repository](https://github.com/improbableio/UnrealEngine).  
+
+<img src="{{assetRoot}}assets/screen-grabs/unreal-fork-repo-branch.png" style="width:250px;">
+
+_Image: The default branch you need to clone._
 
 <%(#Expandable title="Using the command line")%>
 
@@ -117,6 +125,8 @@ Use as a base for creating your own project running on SpatialOS.
 <br/>
 
 </br>------</br>
+_2019-11-29 Page updated with editorial review: added note on repository branch selection._</br>
+_2019-11-28 Page updated with editorial review: improve discussion of the plugin and example branches._</br>
 _2019-09-27 Page updated without editorial review: clearer explanation of the auto-install flow._</br>
 _2019-08-12 Page updated with editorial review: terminology and page formatting._</br>
 _2019-08-08 Page updated with editorial review: added clarification on SSH key and Linux dependencies._</br>
