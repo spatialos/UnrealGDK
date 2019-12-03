@@ -432,9 +432,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	if (IsServer() && SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
-		VirtualWorkerTranslator->Init(this);
-
 		if (SpatialSettings->LoadBalanceStrategy == nullptr)
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
@@ -447,6 +444,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		}
 		LoadBalanceStrategy->Init(this);
 
+		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
+		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
 		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
 
 		LoadBalanceEnforcer = NewObject<USpatialLoadBalanceEnforcer>();
