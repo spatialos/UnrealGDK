@@ -42,24 +42,24 @@ if (-Not $?) {
 New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugins" -Target "$gdk_home"
 
 Echo "Generating project files"
-$proc = Start-Process "$unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
+$proc = Start-Process "$unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe" -Wait -ErrorAction Stop -NoNewWindow -ArgumentList @(`
     "-projectfiles", `
     "-project=`"$test_repo_uproject_path`"", `
     "-game", `
     "-engine", `
     "-progress"
 )
-if ($proc.ExitCode -ne 0) {
+if (-Not $?) {
     throw "Failed to generate files for the testing project."
 }
 
 Write-Log "build-testing-project"
 $build_configuration = $build_state + $(If ("$build_target" -eq "") {""} Else {" $build_target"})
-$proc = Start-Process "$msbuild_exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
+$proc = Start-Process "$msbuild_exe" -Wait -ErrorAction Stop -NoNewWindow -ArgumentList @(`
     "/nologo", `
     "$($test_repo_uproject_path.Replace(".uproject", ".sln"))", `
     "/p:Configuration=`"$build_configuration`";Platform=`"$build_platform`""
 )
-if ($proc.ExitCode -ne 0) {
+if (-Not $?) {
     throw "Failed to build testing project."
 }
