@@ -68,9 +68,9 @@ markStartOfBlock "Setup variables"
     SCHEMA_COPY_DIR="$(dirname "$0")/../../../spatial/schema/unreal/gdk"
     SCHEMA_STD_COPY_DIR="$(dirname "$0")/../../../spatial/build/dependencies/schema/standard_library"
     DOMAIN_ENVIRONMENT_VAR=
-	if [[ "$*" == "--china" ]]; then
-		DOMAIN_ENVIRONMENT_VAR=--domain spatialoschina.com --environment cn-production
-	fi
+    if [[ "$*" == "--china" ]]; then
+        DOMAIN_ENVIRONMENT_VAR=--domain spatialoschina.com --environment cn-production
+    fi
 markEndOfBlock "Setup variables"
 
 markStartOfBlock "Clean folders"
