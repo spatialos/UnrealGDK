@@ -19,7 +19,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Kismet/GameplayStatics.h"
-#include "Runtime/Engine/Public/TimerManager.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
@@ -29,13 +28,12 @@ DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
 using namespace SpatialGDK;
 
-void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
+void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 	Receiver = InNetDriver->Receiver;
-	TimerManager = InTimerManager;
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 #if WITH_EDITOR
@@ -47,9 +45,9 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 		bool bRunUnderOneProcess = true;
 		PlayInSettings->GetRunUnderOneProcess(bRunUnderOneProcess);
 
-		if (!bRunUnderOneProcess)
+		if (!bRunUnderOneProcess && !PrePIEEndedHandle.IsValid())
 		{
-			FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::OnPrePIEEnded);
+			PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::OnPrePIEEnded);
 		}
 	}
 #endif // WITH_EDITOR
@@ -68,12 +66,11 @@ void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Dat
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 	
-	// Set the Deployment Map URL.
 	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
 
-	// Set the AcceptingPlayers state.
-	bool bDataAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
-	ApplyAcceptingPlayersUpdate(bDataAcceptingPlayers);
+	bAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
+
+	DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
 }
 
 void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentData& Data)
@@ -105,20 +102,12 @@ void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate&
 
 	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID) == 1)
 	{
-		bool bUpdateAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
-		ApplyAcceptingPlayersUpdate(bUpdateAcceptingPlayers);
+		bAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
 	}
-}
 
-void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate)
-{
-	if (bAcceptingPlayersUpdate != bAcceptingPlayers)
+	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID) == 1)
 	{
-		UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - AcceptingPlayers: %s"), bAcceptingPlayersUpdate ? TEXT("true") : TEXT("false"));
-		bAcceptingPlayers = bAcceptingPlayersUpdate;
-
-		// Tell the SpatialNetDriver that AcceptingPlayers has changed.
-		NetDriver->OnAcceptingPlayersChanged(bAcceptingPlayersUpdate);
+		DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
 	}
 }
 
@@ -126,6 +115,7 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 void UGlobalStateManager::OnPrePIEEnded(bool bValue)
 {
 	SendShutdownMultiProcessRequest();
+	FEditorDelegates::PrePIEEnded.Remove(PrePIEEndedHandle);
 }
 
 void UGlobalStateManager::SendShutdownMultiProcessRequest()
@@ -152,6 +142,8 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 		
 		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server. 
 		SetAcceptingPlayers(false);
+		DeploymentSessionId = 0;
+		SendSessionIdUpdate();
 
 		// If we have multiple servers, they need to be informed of PIE session ending.
 		SendShutdownAdditionalServersEvent();
@@ -239,7 +231,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 		// Dynamically spawn singleton actor if we have queued up data - ala USpatialReceiver::ReceiveActor - JIRA: 735
 
 		// No local actor has registered itself as replicatible on this worker
-		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor no actor registered"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor no actor registered for class %s"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -249,7 +241,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	if (Channel != nullptr)
 	{
 		// Channel has already been setup
-		UE_LOG(LogGlobalStateManager, Verbose, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Verbose, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup for %s"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -504,6 +496,25 @@ bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId)
 	}
 }
 
+void UGlobalStateManager::ResetGSM()
+{
+	UE_LOG(LogGlobalStateManager, Display, TEXT("GlobalStateManager singletons are being reset. Session restarting."));
+
+	SingletonNameToEntityId.Empty();
+	SetAcceptingPlayers(false);
+
+	// Reset the BeginPlay flag so Startup Actors are properly managed.
+	SetCanBeginPlay(false);
+
+	// Reset the Singleton map so Singletons are recreated.
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate();
+	Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
+
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+}
+
 void UGlobalStateManager::BeginDestroy()
 {
 	Super::BeginDestroy();
@@ -559,8 +570,9 @@ void UGlobalStateManager::TriggerBeginPlay()
 }
 
 // Queries for the GlobalStateManager in the deployment.
-// bRetryUntilAcceptingPlayers will continue querying until the state of AcceptingPlayers is true, this is so clients know when to connect to the deployment.
-void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
+// bRetryUntilRecievedExpectedValues will continue querying until the state of AcceptingPlayers and SessionId are the same as the given arguments
+// This is so clients know when to connect to the deployment.
+void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 {
 	Worker_ComponentConstraint GSMComponentConstraint{};
 	GSMComponentConstraint.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
@@ -577,7 +589,7 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
 
 	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this, bRetryUntilAcceptingPlayers](const Worker_EntityQueryResponseOp& Op)
+	GSMQueryDelegate.BindLambda([this, Callback](const Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -589,24 +601,8 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 		}
 		else
 		{
-			bool bNewAcceptingPlayers = GetAcceptingPlayersFromQueryResponse(Op);
-
-			if (!bNewAcceptingPlayers && bRetryUntilAcceptingPlayers)
-			{
-				UE_LOG(LogGlobalStateManager, Log, TEXT("Not yet accepting new players. Will retry query for GSM."));
-				RetryQueryGSM(bRetryUntilAcceptingPlayers);
-			}
-			else
-			{
-				ApplyDeploymentMapDataFromQueryResponse(Op);
-			}
-
-			return;
-		}
-
-		if (bRetryUntilAcceptingPlayers)
-		{
-			RetryQueryGSM(bRetryUntilAcceptingPlayers);
+			ApplyDeploymentMapDataFromQueryResponse(Op);
+			Callback.ExecuteIfBound(Op);
 		}
 	});
 
@@ -625,9 +621,12 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_E
 	}
 }
 
-bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
+bool UGlobalStateManager::GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers, int32& OutSessionId)
 {
 	checkf(Op.result_count == 1, TEXT("There should never be more than one GSM"));
+
+	bool AcceptingPlayersFound = false;
+	bool SessionIdFound = false;
 
 	// Iterate over each component on the GSM until we get the DeploymentMap component.
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
@@ -639,43 +638,48 @@ bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(const Worker_Enti
 
 			if (Schema_GetBoolCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID) == 1)
 			{
-				bool bDataAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
-				return bDataAcceptingPlayers;
+				OutAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
+				AcceptingPlayersFound = true;
+			}
+
+			if (Schema_GetUint32Count(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID) == 1)
+			{
+				OutSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
+				SessionIdFound = true;
+			}
+
+			if (AcceptingPlayersFound && SessionIdFound)
+			{
+				return true;
 			}
 		}
 	}
 
-	UE_LOG(LogGlobalStateManager, Warning, TEXT("Entity query response for the GSM did not contain an AcceptingPlayers state."));
+	UE_LOG(LogGlobalStateManager, Warning, TEXT("Entity query response for the GSM did not contain both AcceptingPlayers and SessionId states."));
 
 	return false;
-}
-
-void UGlobalStateManager::RetryQueryGSM(bool bRetryUntilAcceptingPlayers)
-{
-	// TODO: UNR-656 - TLDR: Hack to get around runtime not giving data on streaming queries unless you have write authority.
-	// There is currently a bug in runtime which prevents clients from being able to have read access on the component via the streaming query.
-	// This means that the clients never actually receive updates or data on the GSM. To get around this we are making timed entity queries to
-	// find the state of the GSM and the accepting players. Remove this work-around when the runtime bug is fixed.
-	float RetryTimerDelay = SpatialConstants::ENTITY_QUERY_RETRY_WAIT_SECONDS;
-
-	// In PIE we want to retry the entity query as soon as possible.
-#if WITH_EDITOR
-	RetryTimerDelay = 0.1f;
-#endif
-
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
-	FTimerHandle RetryTimer;
-	TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<UGlobalStateManager>(this), bRetryUntilAcceptingPlayers]()
-	{
-		if (UGlobalStateManager* GSM = WeakThis.Get())
-		{
-			GSM->QueryGSM(bRetryUntilAcceptingPlayers);
-		}
-	}, RetryTimerDelay, false);
 }
 
 void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 {
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;
+}
+
+void UGlobalStateManager::IncrementSessionID()
+{
+	DeploymentSessionId++;
+	SendSessionIdUpdate();
+}
+
+void UGlobalStateManager::SendSessionIdUpdate()
+{
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate();
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, DeploymentSessionId);
+
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }

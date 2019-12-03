@@ -92,7 +92,8 @@ namespace SpatialConstants
 		INVALID_ENTITY_ID = 0,
 		INITIAL_SPAWNER_ENTITY_ID = 1,
 		INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
-		INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = 3,
+		// TODO(UNR-2213): Decide whether the translator should be on the GSM or separate.
+		INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
 		FIRST_AVAILABLE_ENTITY_ID = 4,
 	};
 
@@ -135,6 +136,7 @@ namespace SpatialConstants
 
 	const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
 	const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
+	const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID							= 3;
 
 	const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
 
@@ -210,7 +212,7 @@ namespace SpatialConstants
 	const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
 	const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
-	const FString SnapshotURLOption = TEXT("snapshot=");
+	const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
 
 	const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
 	const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");

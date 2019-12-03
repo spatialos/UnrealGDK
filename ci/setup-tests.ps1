@@ -12,7 +12,8 @@ $commandlet_process = Start-Process "$unreal_path\Engine\Binaries\Win64\UE4Edito
     "-run=GenerateSchemaAndSnapshots", `
     "-MapPaths=`"$test_repo_map`""
 )
-if ($commandlet_process.ExitCode -ne 0) {
+if (-Not $?) {
+    Write-Log $commandlet_process.
     throw "Failed to generate schema and snapshots."
 }
 
