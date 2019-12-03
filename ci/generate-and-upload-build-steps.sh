@@ -18,10 +18,8 @@ generate_build_configuration_steps () {
         echo "This is a nightly build. Generating the appropriate steps..."
         
         # Editor builds (Test and Shipping build states do not exist for the Editor build target)
-        for build_platform in "Win64" "Linux"; do
-            for build_state in "DebugGame" "Development"; do
-                upload_build_configuration_step "$1" "$build_platform" "Editor" "$build_state"
-            done
+        for build_state in "DebugGame" "Development"; do
+             upload_build_configuration_step "$1" "Win64" "Editor" "$build_state"
         done
 
         # NoEditor, Client and Server builds
