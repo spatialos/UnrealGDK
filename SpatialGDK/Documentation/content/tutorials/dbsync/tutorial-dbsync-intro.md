@@ -1,7 +1,13 @@
 # Tutorials and guides
 
-## Database sync worker
-> This tutorial uses the Example Project from the GDK's [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro).</br>
+## \[Experimental\] Database sync worker
+
+<%(Callout type="warn" message="The Database Sync Worker Example is experimental, as is this tutorial. We have made the tutorial and feature available to gather feedback to help us shape this functionality.
+
+Do not use the feature for production game development: we do not support it or its tutorial and are not committed to further developing this functionality. See the GDK's [roadmap](https://github.com/spatialos/UnrealGDK/projects/1) on GitHub for information on features in development.")%>
+  
+
+	
 
 This tutorial takes you through how to integrate the [Database Sync Worker Example](https://github.com/spatialos/database-sync-worker) in a GDK project and use it to store persistent data outside of a SpatialOS deployment.
 
@@ -28,6 +34,6 @@ Additionally, to communicate with the Database Sync Worker, you will be sending 
 </br>
 
 <br/>------<br/>
-_2019-07-31 Page added with limited editorial review_
+_2019-11-25 Page updated without editorial review: experimental wording_<br/>
+_2019-07-31 Page added without editorial review_
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1248)
-
