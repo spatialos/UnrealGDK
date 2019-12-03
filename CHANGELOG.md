@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 - You can now launch cloud deployments in China by specifying the `CN` region in the Deployment Launcher. 
-- Setup.bat and Setup.sh both accept --China which is required for running spatial commands the CN region. 
+- Setup.bat and Setup.sh both accept --china which is required for running spatial commands the CN region. 
 
 ## [`0.6.2`] - 2019-10-10
 
