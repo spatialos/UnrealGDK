@@ -9,21 +9,13 @@ $all_steps_passed = $true
 Get-ChildItem -Recurse "$PSScriptRoot/slack_attachments" -Filter *.json | Foreach-Object {
     $attachment = Get-Content -Path $_.FullName | Out-String | ConvertFrom-Json
     if ($attachment.color -eq "danger") {
-<<<<<<< HEAD
-        all_steps_passed = $false
-=======
         $all_steps_passed = $false
->>>>>>> master
     }
     $attachments += $attachment
 }
 
 # Build text for slack message
-<<<<<<< HEAD
-if ($env:BUILDKITE_NIGHTLY_BUILD -eq "true") {
-=======
 if ($env:NIGHTLY_BUILD -eq "true") {
->>>>>>> master
     $build_description = ":night_with_stars: Nightly build of *GDK for Unreal*"
 } else {
     $build_description = "*GDK for Unreal* build by $env:BUILDKITE_BUILD_CREATOR"
@@ -80,11 +72,7 @@ foreach ($attachment in $attachments) {
     $json_message.attachments += $attachment
 } 
 
-<<<<<<< HEAD
-$json_request = $json_message | ConvertTo-Json -Depth 10
-=======
 # ConverTo-Json requires a finite depth value to prevent potential non-termination due to ciruclar references (default is 2)
 $json_request = $json_message | ConvertTo-Json -Depth 16
->>>>>>> master
 
 Invoke-WebRequest -UseBasicParsing "$slack_webhook_url" -ContentType "application/json" -Method POST -Body "$json_request"
