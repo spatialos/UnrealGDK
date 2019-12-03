@@ -15,6 +15,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialRPCService, Log, All);
 class USpatialStaticComponentView;
 struct RPCRingBuffer;
 
+DECLARE_DELEGATE_RetVal_ThreeParams(bool, ExtractRPCDelegate, Worker_EntityId, ERPCType, const SpatialGDK::RPCPayload&);
+
 namespace SpatialGDK
 {
 
@@ -60,14 +62,26 @@ struct EntityComponentId
 	}
 };
 
+enum class EPushRPCResult : uint8
+{
+	Success,
+
+	QueueOverflowed,
+	DropOverflowed,
+	AckAuthority
+};
+
 class SpatialRPCService
 {
 public:
-	using ExtractRPCCallbackType = TFunction<bool(Worker_EntityId, ERPCType, const RPCPayload&)>;
+	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View);
 
-	SpatialRPCService(ExtractRPCCallbackType ExtractRPCCallback, const USpatialStaticComponentView* View);
+	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload);
+	EPushRPCResult PushOverflowedRPCs();
 
-	void PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload);
+	// For now, we should drop overflowed RPCs when entity crosses the boundary.
+	// When locking works as intended, we should re-evaluate how this will work (drop after some time?).
+	void ClearOverflowedRPCs(Worker_EntityId EntityId);
 
 	struct UpdateToSend
 	{
@@ -82,16 +96,24 @@ public:
 	// stops retrieving RPCs.
 	void ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
-	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
+	void OnCheckoutEntity(Worker_EntityId EntityId);
+	void OnRemoveEntity(Worker_EntityId EntityId);
+
+	void OnEndpointAuthorityGained(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 private:
-	void AddOverflowedRPC(EntityComponentId EntityComponent, RPCPayload Payload);
+	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload);
+
+	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
+
+	void AddOverflowedRPC(EntityRPCType EntityType, RPCPayload Payload);
 
 	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
 	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, ERPCType Type);
 
 private:
-	ExtractRPCCallbackType ExtractRPCCallback;
+	ExtractRPCDelegate ExtractRPCCallback;
 	const USpatialStaticComponentView* View;
 
 	// This is local, not written into schema.
@@ -104,7 +126,7 @@ private:
 	TMap<EntityComponentId, Schema_ComponentData*> PendingRPCsOnEntityCreation;
 
 	TMap<EntityComponentId, Schema_ComponentUpdate*> PendingComponentUpdatesToSend;
-	TMap<EntityComponentId, TArray<RPCPayload>> OverflowedRPCs;
+	TMap<EntityRPCType, TArray<RPCPayload>> OverflowedRPCs;
 };
 
 } // namespace SpatialGDK

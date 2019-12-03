@@ -12,6 +12,7 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
+#include "Interop/SpatialRPCService.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
@@ -177,6 +178,8 @@ public:
 private:
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
+
+	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TArray<Worker_OpList*> QueuedStartupOpLists;

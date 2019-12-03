@@ -28,6 +28,7 @@
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AlwaysRelevant.h"
@@ -420,9 +421,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		VirtualWorkerTranslator->SetDesiredVirtualWorkerCount(LoadBalanceStrategy->GetVirtualWorkerIds().Num());
 	}
 
+	if (SpatialSettings->bUseRPCRingBuffers)
+	{
+		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView);
+	}
+
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
-	Sender->Init(this, &TimerManager);
-	Receiver->Init(this, VirtualWorkerTranslator.Get(), &TimerManager);
+	Sender->Init(this, &TimerManager, RPCService.Get());
+	Receiver->Init(this, VirtualWorkerTranslator.Get(), &TimerManager, RPCService.Get());
 	GlobalStateManager->Init(this, &TimerManager);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
@@ -1540,6 +1546,8 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
 
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
 	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady())
 	{
 		// Update all clients.
@@ -1563,8 +1571,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		}
 		LastUpdateCount = Updated;
 
-		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
 		{
 			if ((Time - TimeWhenPositionLastUpdated) >= (1.0f / SpatialGDKSettings->PositionUpdateFrequency))
@@ -1578,9 +1584,14 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bPackRPCs && Sender != nullptr)
+	if (SpatialGDKSettings->bPackRPCs && Sender != nullptr)
 	{
 		Sender->FlushPackedRPCs();
+	}
+
+	if (SpatialGDKSettings->bUseRPCRingBuffers && Sender != nullptr)
+	{
+		Sender->FlushRPCService();
 	}
 
 	ProcessPendingDormancy();

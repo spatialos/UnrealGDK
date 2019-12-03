@@ -6,6 +6,7 @@
 
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Interop/SpatialRPCService.h"
 #include "Schema/RPCPayload.h"
 #include "TimerManager.h"
 #include "Utils/RepDataUtils.h"
@@ -68,7 +69,7 @@ class SPATIALGDK_API USpatialSender : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService);
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
@@ -107,6 +108,8 @@ public:
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 
 	void FlushPackedRPCs();
+
+	void FlushRPCService();
 
 	RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function, void* Params);
 	void GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info);
@@ -161,6 +164,8 @@ private:
 	UActorGroupManager* ActorGroupManager;
 
 	FTimerManager* TimerManager;
+
+	SpatialGDK::SpatialRPCService* RPCService;
 
 	FRPCContainer OutgoingRPCs;
 	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
