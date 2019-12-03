@@ -118,7 +118,7 @@ $test_summary = [pscustomobject]@{
     unreal_engine_commit = "$env:ENGINE_COMMIT_HASH"
     passed_all_tests = $tests_passed
     tests_duration_seconds = $test_results_obj.totalDuration
-    num_tests = $test_results_obj.succeeded + $test_results_obj.failed
+    num_tests = $total_tests_run
     num_gdk_tests = $num_gdk_tests
 }
 $test_summary | ConvertTo-Json -Compress | Set-Content -Path "$test_result_dir\test_summary_$env:BUILDKITE_STEP_ID.json"
