@@ -67,7 +67,7 @@ markStartOfBlock "Setup variables"
     BINARIES_DIR="$(dirname "$0")/SpatialGDK/Binaries/ThirdParty/Improbable"
     SCHEMA_COPY_DIR="$(dirname "$0")/../../../spatial/schema/unreal/gdk"
     SCHEMA_STD_COPY_DIR="$(dirname "$0")/../../../spatial/build/dependencies/schema/standard_library"
-	DOMAIN_ENVIRONMENT_VAR=
+    DOMAIN_ENVIRONMENT_VAR=
 	if [[ "$*" == "--China" ]]; then
 		DOMAIN_ENVIRONMENT_VAR=--domain spatialoschina.com --environment cn-production
 	fi
@@ -90,7 +90,7 @@ markStartOfBlock "Create folders"
 markEndOfBlock "Create folders"
 
 markStartOfBlock "Retrieve dependencies"
-    spatial package retrieve tools           schema_compiler-x86_64-win32               $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR		$CORE_SDK_DIR/tools/schema_compiler-x86_64-win32.zip
+    spatial package retrieve tools           schema_compiler-x86_64-win32               $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR    $CORE_SDK_DIR/tools/schema_compiler-x86_64-win32.zip
     spatial package retrieve schema          standard_library                           $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR		$CORE_SDK_DIR/schema/standard_library.zip
     spatial package retrieve worker_sdk      c-dynamic-x86-msvc_md-win32                $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR		$CORE_SDK_DIR/worker_sdk/c-dynamic-x86-msvc_md-win32.zip
     spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32             $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR		$CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-msvc_md-win32.zip
