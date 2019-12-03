@@ -238,8 +238,7 @@ private:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
-	UPROPERTY()
-	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
+	TWeakPtr<USpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 
 	FTimerManager* TimerManager;
 

@@ -338,9 +338,10 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		NetDriver->VirtualWorkerTranslator->AuthorityChanged(Op);
 	}
 
-	if (LoadBalanceEnforcer)
+	TSharedPtr<USpatialLoadBalanceEnforcer>LBEnforcer = LoadBalanceEnforcer.Pin();
+	if (LBEnforcer.IsValid())
 	{
-		LoadBalanceEnforcer->AuthorityChanged(Op);
+		LBEnforcer->AuthorityChanged(Op);
 	}
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));
@@ -1153,8 +1154,9 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		if (NetDriver->IsServer())
 		{
-			check(LoadBalanceEnforcer);
-			LoadBalanceEnforcer->OnAuthorityIntentComponentUpdated(Op);
+			TSharedPtr<USpatialLoadBalanceEnforcer>LBEnforcer = LoadBalanceEnforcer.Pin();
+			check(LBEnforcer.IsValid());
+			LBEnforcer->OnAuthorityIntentComponentUpdated(Op);
 		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:

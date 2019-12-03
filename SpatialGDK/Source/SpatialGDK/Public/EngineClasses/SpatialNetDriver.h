@@ -150,8 +150,9 @@ public:
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 	UPROPERTY()
 	ASpatialDebugger* SpatialDebugger;
-	UPROPERTY()
-	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
+
+	TSharedPtr<USpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
+
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
 

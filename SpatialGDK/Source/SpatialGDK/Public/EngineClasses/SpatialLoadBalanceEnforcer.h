@@ -2,12 +2,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-
 #include <WorkerSDK/improbable/c_worker.h>
-
-#include "SpatialLoadBalanceEnforcer.generated.h"
+#include "CoreMinimal.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
 
@@ -15,12 +11,10 @@ class SpatialVirtualWorkerTranslator;
 class USpatialSender;
 class USpatialStaticComponentView;
 
-UCLASS()
-class USpatialLoadBalanceEnforcer : public UObject
+class USpatialLoadBalanceEnforcer
 {
-	GENERATED_UCLASS_BODY()
-
 public:
+	USpatialLoadBalanceEnforcer();
 
 	void Init(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, USpatialSender* InSpatialSender, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
 	void Tick();

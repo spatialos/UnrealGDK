@@ -12,9 +12,8 @@ DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
 using namespace SpatialGDK;
 
-USpatialLoadBalanceEnforcer::USpatialLoadBalanceEnforcer(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
-	, StaticComponentView(nullptr)
+USpatialLoadBalanceEnforcer::USpatialLoadBalanceEnforcer()
+	: StaticComponentView(nullptr)
 	, Sender(nullptr)
 	, VirtualWorkerTranslator(nullptr)
 {
