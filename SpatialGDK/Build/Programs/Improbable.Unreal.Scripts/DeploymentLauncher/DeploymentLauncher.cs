@@ -1,18 +1,18 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-using System;
+using Google.LongRunning;
+using Google.Protobuf.WellKnownTypes;
+using Improbable.SpatialOS.Deployment.V1Alpha1;
+using Improbable.SpatialOS.Platform.Common;
+using Improbable.SpatialOS.PlayerAuth.V2Alpha1;
+using Improbable.SpatialOS.Snapshot.V1Alpha1;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
-using Google.LongRunning;
-using Google.Protobuf.WellKnownTypes;
-using Improbable.SpatialOS.Platform.Common;
-using Improbable.SpatialOS.Deployment.V1Alpha1;
-using Improbable.SpatialOS.PlayerAuth.V2Alpha1;
-using Improbable.SpatialOS.Snapshot.V1Alpha1;
-using Newtonsoft.Json.Linq;
+using System;
 
 namespace Improbable
 {
@@ -24,6 +24,7 @@ namespace Improbable
         private const string CoordinatorWorkerName = "SimulatedPlayerCoordinator";
 
         private const string CHINA_ENDPOINT_URL = "platform-cn-production.api.spatialoschina.com";
+        private const int CHINA_ENDPOINT_PORT = 443;
 
         private static string UploadSnapshot(SnapshotServiceClient client, string snapshotPath, string projectName,
             string deploymentName)
@@ -85,7 +86,7 @@ namespace Improbable
         {
             if (region == "CN") 
             {
-                return new PlatformApiEndpoint(CHINA_ENDPOINT_URL, 443);
+                return new PlatformApiEndpoint(CHINA_ENDPOINT_URL, CHINA_ENDPOINT_PORT);
             }
             return null; // Use default
         }
