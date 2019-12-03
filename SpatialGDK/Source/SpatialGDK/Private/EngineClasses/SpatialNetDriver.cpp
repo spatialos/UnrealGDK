@@ -408,7 +408,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	StaticComponentView = Connection->StaticComponentView;
 
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
-	SnapshotManager = NewObject<USnapshotManager>();
+	SnapshotManager = MakeShared<USnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();

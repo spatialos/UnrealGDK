@@ -11,19 +11,16 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-#include "SnapshotManager.generated.h"
-
 class UGlobalStateManager;
 class USpatialReceiver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSnapshotManager, Log, All)
 
-UCLASS()
-class SPATIALGDK_API USnapshotManager : public UObject
+class SPATIALGDK_API USnapshotManager
 {
-	GENERATED_BODY()
-
 public:
+	USnapshotManager();
+
 	void Init(USpatialNetDriver* InNetDriver);
 
 	void WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate& Delegate);

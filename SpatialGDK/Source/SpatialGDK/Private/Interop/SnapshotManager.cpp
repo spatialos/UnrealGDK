@@ -13,6 +13,12 @@ DEFINE_LOG_CATEGORY(LogSnapshotManager);
 
 using namespace SpatialGDK;
 
+USnapshotManager::USnapshotManager()
+	: NetDriver(nullptr)
+	, GlobalStateManager(nullptr)
+	, Receiver(nullptr)
+{}
+
 void USnapshotManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;

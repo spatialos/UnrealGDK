@@ -142,8 +142,9 @@ public:
 	USpatialPackageMapClient* PackageMap;
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
-	UPROPERTY()
-	USnapshotManager* SnapshotManager;
+
+	TSharedPtr<USnapshotManager> SnapshotManager;
+
 	UPROPERTY()
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
