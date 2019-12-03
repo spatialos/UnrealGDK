@@ -1230,10 +1230,16 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId)
 	{
 		if (Actor->IsNetStartupActor())
 		{
-			check(StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID) == false);
-			// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
 			Receiver->RemoveActor(EntityId);
-			AddTombstoneToEntity(EntityId);
+			// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
+			if (!StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
+			{
+				AddTombstoneToEntity(EntityId);
+			}
+			else
+			{
+				UE_LOG(LogSpatialSender, Verbose, TEXT("RetireEntity called on already retired entity: %lld (actor: %s)"), EntityId, *Actor->GetName());
+			}
 		}
 		else
 		{
