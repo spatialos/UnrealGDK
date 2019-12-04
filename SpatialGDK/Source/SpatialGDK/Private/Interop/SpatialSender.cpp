@@ -832,7 +832,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 	{
 	case ERPCType::CrossServer:
 	{
-		Worker_ComponentId ComponentId = RPCTypeToWorkerComponentId(RPCInfo.Type);
+		Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentId(RPCInfo.Type);
 
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
@@ -880,7 +880,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		EntityId = TargetObjectRef.Entity;
 		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-		Worker_ComponentId ComponentId = RPCTypeToWorkerComponentId(RPCInfo.Type);
+		Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentId(RPCInfo.Type);
 
 		bool bCanPackRPC = GetDefault<USpatialGDKSettings>()->bPackRPCs;
 		if (bCanPackRPC && RPCInfo.Type == ERPCType::NetMulticast)
