@@ -55,6 +55,19 @@ struct FPendingRPC
 	Schema_EntityId Entity;
 };
 
+#if WITH_EDITOR
+enum EEntityRetireMode : uint8
+{
+	DELETE,
+	TOMBSTONE
+};
+
+struct FEntityRetirementSettings
+{
+	EEntityRetireMode StartupActorRetireMode;
+};
+#endif
+
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
@@ -85,8 +98,11 @@ public:
 	void SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
+#if WITH_EDITOR
+	void RetireEntity(const Worker_EntityId EntityId, const FEntityRetirementSettings& = FEntityRetirementSettings{ EEntityRetireMode::TOMBSTONE });
+#else
 	void RetireEntity(const Worker_EntityId EntityId);
-
+#endif
 	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 

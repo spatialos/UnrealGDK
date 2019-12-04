@@ -170,8 +170,9 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr &&
 			CloseReason != EChannelCloseReason::Dormancy)
 		{
-			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
-			DeleteEntityIfAuthoritative();
+			// TODO - How to handle multiserver entity deletion on PIE shutdown - https://improbableio.atlassian.net/browse/UNR-2506
+			const FEntityRetirementSettings EntityRetirementSettings{ EEntityRetireMode::DELETE };
+			Sender->RetireEntity(EntityId, EntityRetirementSettings);
 		}
 #endif // WITH_EDITOR
 

@@ -1224,11 +1224,20 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
+#if WITH_EDITOR
+void USpatialSender::RetireEntity(const Worker_EntityId EntityId, const FEntityRetirementSettings& EntityRetirementSettings)
+#else
 void USpatialSender::RetireEntity(const Worker_EntityId EntityId)
+#endif
 {
 	if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
+#if WITH_EDITOR
+		if (Actor->IsNetStartupActor() &&
+		EntityRetirementSettings.StartupActorRetireMode == EEntityRetireMode::TOMBSTONE)
+#else
 		if (Actor->IsNetStartupActor())
+#endif
 		{
 			Receiver->RemoveActor(EntityId);
 			// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
