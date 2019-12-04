@@ -124,8 +124,9 @@ public:
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
-	UPROPERTY()
-	USpatialDispatcher* Dispatcher;
+
+	TSharedPtr<USpatialDispatcher> Dispatcher;
+
 	UPROPERTY()
 	USpatialSender* Sender;
 	UPROPERTY()
