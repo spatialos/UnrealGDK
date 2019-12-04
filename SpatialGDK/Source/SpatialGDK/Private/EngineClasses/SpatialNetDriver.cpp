@@ -462,7 +462,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
 	Sender->Init(this, &TimerManager, RPCService.Get());
 	Receiver->Init(this, &TimerManager, RPCService.Get());
-	GlobalStateManager->Init(this, &TimerManager);
+	GlobalStateManager->Init(this);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
