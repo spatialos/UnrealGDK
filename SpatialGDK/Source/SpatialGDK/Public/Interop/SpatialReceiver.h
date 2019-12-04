@@ -26,6 +26,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 class USpatialNetConnection;
 class USpatialSender;
 class UGlobalStateManager;
+class USpatialLoadBalanceEnforcer;
 
 struct PendingAddComponentWrapper
 {
@@ -107,6 +108,9 @@ DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseO
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, const Worker_ReserveEntityIdsResponseOp&);
 DECLARE_DELEGATE_OneParam(CreateEntityDelegate, const Worker_CreateEntityResponseOp&);
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityAddedDelegate, const Worker_EntityId);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityRemovedDelegate, const Worker_EntityId);
+
 UCLASS()
 class USpatialReceiver : public UObject
 {
@@ -153,6 +157,7 @@ public:
 	void RemoveActor(Worker_EntityId EntityId);
 	bool IsPendingOpsOnChannel(USpatialActorChannel* Channel);
 
+	void ClearPendingRPCs(Worker_EntityId EntityId);
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -211,6 +216,9 @@ public:
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
+	FOnEntityAddedDelegate OnEntityAddedDelegate;
+	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
@@ -229,6 +237,9 @@ private:
 
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
+
+	UPROPERTY()
+	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
 
 	FTimerManager* TimerManager;
 

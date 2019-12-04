@@ -40,6 +40,21 @@ bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, UActorGro
 	return true;
 }
 
+bool USpatialClassInfoManager::ValidateOrExit_IsSupportedClass(const FString& PathName)
+{
+	if (!IsSupportedClass(PathName))
+	{
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is marked as SpatialType, and schema has been generated."), *PathName);
+#if !UE_BUILD_SHIPPING
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *PathName);
+		QuitGame();
+#endif //!UE_BUILD_SHIPPING
+		return false;
+	}
+
+	return true;
+}
+
 FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 {
 	FSoftClassPath SoftClassPath(ClassPath);
@@ -52,40 +67,40 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 	return Class;
 }
 
-ESchemaComponentType GetRPCType(UFunction* RemoteFunction)
+ERPCType GetRPCType(UFunction* RemoteFunction)
 {
 	if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetMulticast))
 	{
-		return SCHEMA_NetMulticastRPC;
+		return ERPCType::NetMulticast;
 	}
 	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer))
 	{
-		return SCHEMA_CrossServerRPC;
+		return ERPCType::CrossServer;
 	}
 	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable))
 	{
 		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
 		{
-			return SCHEMA_ClientReliableRPC;
+			return ERPCType::ClientReliable;
 		}
 		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
 		{
-			return SCHEMA_ServerReliableRPC;
+			return ERPCType::ServerReliable;
 		}
 	}
 	else
 	{
 		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
 		{
-			return SCHEMA_ClientUnreliableRPC;
+			return ERPCType::ClientUnreliable;
 		}
 		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
 		{
-			return SCHEMA_ServerUnreliableRPC;
+			return ERPCType::ServerUnreliable;
 		}
 	}
 
-	return SCHEMA_Invalid;
+	return ERPCType::Invalid;
 }
 
 void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
@@ -98,11 +113,8 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	Info->Class = Class;
 
 	// Note: we have to add Class to ClassInfoMap before quitting, as it is expected to be in there by GetOrCreateClassInfoByClass. Therefore the quitting logic cannot be moved higher up.
-	if (!IsSupportedClass(ClassPath))
+	if (!ValidateOrExit_IsSupportedClass(ClassPath))
 	{
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is marked as SpatialType, and schema has been generated."), *ClassPath);
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *ClassPath);
-		QuitGame();
 		return;
 	}
 
@@ -110,8 +122,8 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	for (UFunction* RemoteFunction : RelevantClassFunctions)
 	{
-		ESchemaComponentType RPCType = GetRPCType(RemoteFunction);
-		checkf(RPCType != SCHEMA_Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
+		ERPCType RPCType = GetRPCType(RemoteFunction);
+		checkf(RPCType != ERPCType::Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
 
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
@@ -333,7 +345,17 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 		// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use it to clean up the old entry.
 		ClassInfoMap.Remove(Info->Class);
 
-		// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of LoadClassForComponent).
+		// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of TryCreateClassInfoForComponentId).
+		TryCreateClassInfoForComponentId(ComponentId);
+		TSharedRef<FClassInfo> NewInfo = ComponentToClassInfoMap.FindChecked(ComponentId);
+		if (UClass* NewClass = NewInfo->Class.Get())
+		{
+			return NewClass;
+		}
+		else
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not reload class for component %d!"), ComponentId);
+		}
 	}
 
 	return nullptr;

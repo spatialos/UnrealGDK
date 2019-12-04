@@ -20,6 +20,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/ServerRPCEndpoint.h"
@@ -159,9 +160,9 @@ bool USpatialActorChannel::IsSingletonEntity()
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason)
 {
-#if WITH_EDITOR
 	if (NetDriver != nullptr)
 	{
+#if WITH_EDITOR
 		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
 
 		if (bDeleteDynamicEntities &&
@@ -172,20 +173,26 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 			DeleteEntityIfAuthoritative();
 		}
-	}
-#endif
+#endif // WITH_EDITOR
 
-	if (CloseReason != EChannelCloseReason::Dormancy)
-	{
-		// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects.
-		NetDriver->PackageMap->RemoveEntityActor(EntityId);
-	}
-	else
-	{
-		NetDriver->RegisterDormantEntityId(EntityId);
-	}
+		if (CloseReason != EChannelCloseReason::Dormancy)
+		{
+			// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects.
+			NetDriver->PackageMap->RemoveEntityActor(EntityId);
+		}
+		else
+		{
+			NetDriver->RegisterDormantEntityId(EntityId);
+		}
 
-	NetDriver->RemoveActorChannel(EntityId);
+		if (CloseReason == EChannelCloseReason::Destroyed || CloseReason == EChannelCloseReason::LevelUnloaded)
+		{
+			Receiver->ClearPendingRPCs(EntityId);
+			Sender->ClearPendingRPCs(EntityId);
+		}
+
+		NetDriver->RemoveActorChannel(EntityId);
+	}
 
 	return UActorChannel::CleanUp(bForDestroy, CloseReason);
 }
@@ -381,6 +388,9 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Replicate Actor and Component properties and RPCs
 	// ----------------------------------------------------------
 
+#if USE_NETWORK_PROFILER 
+	const uint32 ActorReplicateStartTime = GNetworkProfiler.IsTrackingEnabled() ? FPlatformTime::Cycles() : 0;
+#endif
 	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
 	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
@@ -388,10 +398,12 @@ int64 USpatialActorChannel::ReplicateActor()
 		PlayerController->SendClientAdjustment();
 	}
 
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
 	// Update SpatialOS position.
 	if (!bCreatingNewEntity)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bBatchSpatialPositionUpdates)
+		if (SpatialGDKSettings->bBatchSpatialPositionUpdates)
 		{
 			Sender->RegisterChannelForPositionUpdate(this);
 		}
@@ -550,6 +562,27 @@ int64 USpatialActorChannel::ReplicateActor()
 			}
 		}
 	}
+
+	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
+		NetDriver->LoadBalanceStrategy != nullptr &&
+		// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
+		// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
+		Actor->HasAuthority() &&
+		NetDriver->LoadBalanceStrategy->ShouldRelinquishAuthority(*Actor))
+	{
+		const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
+		if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+		{
+			Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
+		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
+		}
+	}
+#if USE_NETWORK_PROFILER 
+	NETWORK_PROFILER(GNetworkProfiler.TrackReplicateActor(Actor, RepFlags, FPlatformTime::Cycles() - ActorReplicateStartTime, Connection));
+#endif 
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
 	LastUpdateTime = Connection->Driver->Time;
@@ -1111,7 +1144,7 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 			}
 
 			bool bIsSameRepNotify = RepLayout.Parents[ObjRef.Value.ParentIndex].Property == Property;
-			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1;
+			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1 || Cast<UArrayProperty>(Property) != nullptr;
 			if (bIsSameRepNotify && !bIsArray)
 			{
 				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("RepNotify %s on %s ignored due to unresolved Actor"), *Property->GetName(), *Object->GetName());

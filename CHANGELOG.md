@@ -5,8 +5,17 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- Added %s token to debug strings in GlobalStateManager to display actor class name in log
+- The server no longer crashes, when received RPCs are processed recursively.
+- DeploymentLauncher can parse a .pb.json launch configuration.
+- DeploymentLauncher can launch a Simulated Player deployment independently from the target deployment.
+Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>`
 
 ### Features:
+- In local deployments of the Example Project you can now launch Simulated Players in one click. Running `LaunchSimPlayerClient.bat` will launch a single Simulated Player client. Running `Launch10SimPlayerClients.bat` will launch 10.
+- Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
+- Added support for the UE4 Network Profile to measure relative size of RPC and Actor replication data.
+- Added a VirtualWorkerTranslation component to be used in future UnrealGDK loadbalancing.
 - Added partial framework for use in future UnrealGDK controlled loadbalancing.
 - Add SpatialToggleMetricsDisplay console command.  bEnableMetricsDisplay must be enabled in order for the display to be available.  You must then must call SpatialToggleMetricsDisplay on each client that wants to view the metrics display.
 - Enabled compression in modular-udp networking stack
@@ -17,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved logging around entity creation.
 - Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK).
 - Added a new IExternalSchemaActor interface to allow custom-defined schema components to be added to entities during creation.
+- A warning is shown if a cloud deployment is launched with the `manual_worker_connection_only` flag set to true
+- Server travel supported for single server game worlds. Does not currently support zoning or off-loading.
 
 ### Bug fixes:
 - Fixed a bug that could caused a name collision in schema for sublevels.
@@ -24,6 +35,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replicating a static subobject after it has been deleted on a client no longer results in client attaching a new dynamic subobject.
 - Fixed a bug that caused entity pool reservations to cease after a request times out.
 - Running `BuildWorker.bat` for `SimulatedPlayer` no longer fails if the project path has a space in it.
+- Fixed a crash when starting PIE with out-of-date schema.
+- Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
+- Take into account OverrideSpatialNetworking command line argument as early as possible (LocalDeploymentManager used to query bSpatialNetworking before the command line was parsed).
+- Servers maintain interest in AlwaysRelevant Actors.
+- The default cloud launch configuration is now empty.
+- Fixed an crash caused by attempting to read schema from an unloaded class.
+- Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
+- Fix tombstone-related assert that could fire and bring down the editor.
 
 ## [`0.7.0-preview`] - 2019-10-11
 
@@ -67,6 +86,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The GDK no longer generates schema for all UObject subclasses. Schema generation for Actor, ActorComponent and GameplayAbility subclasses is enabled by default, other classes can be enabled using `SpatialType` UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
 - Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
 - Added the `OverrideSpatialOffloading` command line flag. This allows you to toggle offloading at launch time.
+- The initial connection from a worker will attempt to use relevant command line arguments (receptionistHost, locatorHost) to inform the connection. If these are not provided the standard connection flow will be followed. Subsequent connections will not use command line arguments.
+- The command "Open 0.0.0.0" can be used to connect a worker using its command line arguments, simulating initial connection.
+- The command "ConnectToLocator <login> <playerToken>" has been added to allow for explicit connections to deployments.
+- Add SpatialDebugger and associated content.  This tool can be enabled via the SpatialToggleDebugger console command.  Documentation will be added for this soon.
 
 ### Bug fixes:
 - Spatial networking is now always enabled in built assemblies.
@@ -84,7 +107,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
 - When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
 - Fixed a crash upon checking out an actor with a deleted static subobject.
-- Fixed an issue where launching a cloud deployment with an invalid assembly name or deployment name wouldn't show a helpful error message 
+- Fixed an issue where launching a cloud deployment with an invalid assembly name or deployment name wouldn't show a helpful error message.
+- The command line argument "receptionistHost <URL>" will now not overide connections to "127.0.0.1".
+- The receptionist will now be used for appropriate URLs after connecting to a locator URL.
 
 ## [`0.6.2`] - 2019-10-10
 

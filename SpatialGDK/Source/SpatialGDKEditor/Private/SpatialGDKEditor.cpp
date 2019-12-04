@@ -10,13 +10,14 @@
 #include "Editor.h"
 #include "FileHelpers.h"
 
-#include "AssetRegistryModule.h"
 #include "AssetDataTagMap.h"
+#include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
+#include "Internationalization/Regex.h"
 #include "Misc/ScopedSlowTask.h"
+#include "Settings/ProjectPackagingSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "UObject/StrongObjectPtr.h"
-#include "Settings/ProjectPackagingSettings.h"
 
 using namespace SpatialGDKEditor;
 
@@ -57,8 +58,8 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 #if ENGINE_MINOR_VERSION <= 22
 	// Force spatial networking so schema layouts are correct
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
-	GeneralProjectSettings->bSpatialNetworking = true;
+	bool bCachedSpatialNetworking = GeneralProjectSettings->UsesSpatialNetworking();
+	GeneralProjectSettings->SetUsesSpatialNetworking(true);
 #endif
 
 	RemoveEditorAssetLoadedCallback();
@@ -126,7 +127,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	}
 
 #if ENGINE_MINOR_VERSION <= 22
-	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
+	GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(bCachedSpatialNetworking);
 #endif
 	bSchemaGeneratorRunning = false;
 
@@ -166,10 +167,7 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 			return false;
 		}
 		const FString PackagePath = Data.PackagePath.ToString();
-		if (!PackagePath.StartsWith("/Game"))
-		{
-			return false;
-		}
+
 		for (const auto& Directory : DirectoriesToNeverCook)
 		{
 			if (PackagePath.StartsWith(Directory.Path))

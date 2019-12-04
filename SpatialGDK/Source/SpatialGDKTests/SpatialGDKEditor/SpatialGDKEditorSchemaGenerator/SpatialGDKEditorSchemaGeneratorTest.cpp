@@ -324,14 +324,14 @@ private:
 	void EnableSpatialNetworking()
 	{
 		UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-		bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
-		GeneralProjectSettings->bSpatialNetworking = true;
+		bCachedSpatialNetworking = GeneralProjectSettings->UsesSpatialNetworking();
+		GeneralProjectSettings->SetUsesSpatialNetworking(true);
 	}
 
 	void ResetSpatialNetworking()
 	{
 		UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
+		GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(bCachedSpatialNetworking);
 		bCachedSpatialNetworking = true;
 	}
 
