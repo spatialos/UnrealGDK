@@ -5,6 +5,8 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SpatialActorUtils.h"
 
+DEFINE_LOG_CATEGORY(LogGridBasedLBStrategy);
+
 UGridBasedLBStrategy::UGridBasedLBStrategy()
 	: Super()
 	, Rows(1)
@@ -17,6 +19,8 @@ UGridBasedLBStrategy::UGridBasedLBStrategy()
 void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver)
 {
 	Super::Init(InNetDriver);
+
+	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("GridBasedLBStrategy initialized with Rows = %d and Cols = %d."), Rows, Cols);
 
 	for (uint32 i = 1; i <= Rows * Cols; i++)
 	{
@@ -63,6 +67,7 @@ bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
+		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to relinquish authority for Actor %s."), *AActor::GetDebugName(&Actor));
 		return false;
 	}
 
@@ -76,6 +81,7 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 {
 	if (!IsReady())
 	{
+		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to decide on authority for Actor %s."), *AActor::GetDebugName(&Actor));
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 

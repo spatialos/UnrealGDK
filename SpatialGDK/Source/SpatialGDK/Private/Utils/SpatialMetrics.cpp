@@ -158,7 +158,7 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 			FString RPCTypeField;
 			if (Stat.Type != PrevType)
 			{
-				RPCTypeField = RPCTypeToString(Stat.Type);
+				RPCTypeField = SpatialConstants::RPCTypeToString(Stat.Type);
 				PrevType = Stat.Type;
 				UE_LOG(LogSpatialMetrics, Log, TEXT("%s"), *SeparatorLine);
 			}

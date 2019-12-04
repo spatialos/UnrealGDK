@@ -5,12 +5,14 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- Added %s token to debug strings in GlobalStateManager to display actor class name in log
 - The server no longer crashes, when received RPCs are processed recursively.
 - DeploymentLauncher can parse a .pb.json launch configuration.
 - DeploymentLauncher can launch a Simulated Player deployment independently from the target deployment.
 Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>`
 
 ### Features:
+- In local deployments of the Example Project you can now launch Simulated Players in one click. Running `LaunchSimPlayerClient.bat` will launch a single Simulated Player client. Running `Launch10SimPlayerClients.bat` will launch 10.
 - Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
 - Added support for the UE4 Network Profile to measure relative size of RPC and Actor replication data.
 - Added a VirtualWorkerTranslation component to be used in future UnrealGDK loadbalancing.
@@ -24,6 +26,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Improved logging around entity creation.
 - Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK).
 - A warning is shown if a cloud deployment is launched with the `manual_worker_connection_only` flag set to true
+- Server travel supported for single server game worlds. Does not currently support zoning or off-loading.
 
 ### Bug fixes:
 - Fixed a bug that could caused a name collision in schema for sublevels.
@@ -38,7 +41,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The default cloud launch configuration is now empty.
 - Fixed an crash caused by attempting to read schema from an unloaded class.
 - Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
-
+- Fix tombstone-related assert that could fire and bring down the editor.
 
 ## [`0.7.0-preview`] - 2019-10-11
 

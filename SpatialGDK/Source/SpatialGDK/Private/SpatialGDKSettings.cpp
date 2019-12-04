@@ -10,6 +10,8 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #endif
 
+DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
+
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, EntityPoolInitialReservationCount(3000)
@@ -62,6 +64,49 @@ void USpatialGDKSettings::PostInitProperties()
 	else
 	{
 		FParse::Bool(CommandLine, TEXT("OverrideSpatialOffloading="), bEnableOffloading);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Offloading is %s."), bEnableOffloading ? TEXT("enabled") : TEXT("disabled"));
+
+	if (FParse::Param(CommandLine, TEXT("OverrideServerInterest")))
+	{
+		bEnableServerQBI = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideServerInterest="), bEnableServerQBI);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Server interest is %s."), bEnableServerQBI ? TEXT("enabled") : TEXT("disabled"));
+
+	if (FParse::Param(CommandLine, TEXT("OverrideHandover")))
+	{
+		bEnableHandover = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideHandover="), bEnableHandover);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Handover is %s."), bEnableHandover ? TEXT("enabled") : TEXT("disabled"));
+
+	if (FParse::Param(CommandLine, TEXT("OverrideLoadBalancer")))
+	{
+		bEnableUnrealLoadBalancer = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideLoadBalancer="), bEnableUnrealLoadBalancer);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Unreal load balancing is %s."), bEnableUnrealLoadBalancer ? TEXT("enabled") : TEXT("disabled"));
+
+	if (bEnableUnrealLoadBalancer)
+	{
+		if (bEnableServerQBI == false)
+		{
+			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but server interest is disabled."));
+		}
+		if (bEnableHandover == false)
+		{
+			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
+		}
 	}
 
 #if WITH_EDITOR
