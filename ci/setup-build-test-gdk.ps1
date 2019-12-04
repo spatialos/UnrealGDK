@@ -56,21 +56,14 @@ Finish-Event "setup-project" "command"
 
 # Only run tests on Windows, as we do not have a linux agent - should not matter
 if ($target_platform -eq "Win64" -And $env:BUILD_TARGET -eq "Editor") {
-  Start-Event "setup-tests" "command"
-  &$PSScriptRoot"\setup-tests.ps1" `
-    -unreal_path "$unreal_path" `
-    -test_repo_uproject_path "$build_home\TestProject\$test_repo_relative_uproject_path" `
-    -test_repo_map "$test_repo_map" `
-    -test_repo_path "$build_home\TestProject"
-  Finish-Event "setup-tests" "command"
-
   Start-Event "test-gdk" "command"
   &$PSScriptRoot"\run-tests.ps1" `
       -unreal_editor_path "$unreal_path\Engine\Binaries\Win64\UE4Editor.exe" `
       -uproject_path "$build_home\TestProject\$test_repo_relative_uproject_path" `
-      -output_dir "$PSScriptRoot\TestResults" `
+      -test_repo_path "$build_home\TestProject" `
       -log_file_path "$PSScriptRoot\TestResults\tests.log" `
-      -test_repo_map "$test_repo_map"
+      -test_repo_map "$test_repo_map" `
+      -build_state "$env:BUILD_TARGET"
   Finish-Event "test-gdk" "command"
 
   Start-Event "report-tests" "command"

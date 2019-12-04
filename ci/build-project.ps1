@@ -25,7 +25,7 @@ if (Test-Path $test_repo_path) {
     }
 }
 
-# Clone and build the testing project
+# Clone the testing project
 Echo "Downloading the testing project from $($test_repo_url)"
 Git clone -b "$test_repo_branch" "$test_repo_url" "$test_repo_path" --depth 1
 if (-Not $?) {
@@ -35,6 +35,9 @@ if (-Not $?) {
 # The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
 # copying the plugin into the project's folder bypasses the issue
 New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugins" -Target "$gdk_home"
+
+# Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
+Add-Content -Path "$unreal_path\Engine\Config\BaseEditorSettings.ini" -Value "`r`n[/Script/IntroTutorials.TutorialStateSettings]`r`nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)`r`n"
 
 Echo "Generating project files"
 $proc = Start-Process "$unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`

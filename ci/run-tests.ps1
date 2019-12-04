@@ -1,10 +1,42 @@
 param(
     [string] $unreal_editor_path,
     [string] $uproject_path,
-    [string] $output_dir,
+    [string] $test_repo_path,
     [string] $log_file_path,
-    [string] $test_repo_map
+    [string] $test_repo_map,
+    [string] $build_state
 )
+
+# Generate schema and snapshots
+Echo "Generating snapshot and schema for testing project"
+$args = @(`
+    "$uproject_path", `
+    "-NoShaderCompile", ` # Prevent shader compilation
+    "-game", ` # Run with uncooked content
+    "-nopause", ` # Close the unreal log window automatically on exit
+    "-nosplash", ` # No splash screen
+    "-unattended", ` # Disable anything requiring user feedback
+    "-nullRHI", ` # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+    "-run=GenerateSchemaAndSnapshots", ` # Run the commandlet
+    "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
+)
+if ($build_state -eq "DebugGame"){
+    $args += "-debug"
+}
+$commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList args
+if ($commandlet_process.ExitCode -ne 0) {
+    Write-Log $commandlet_process.
+    throw "Failed to generate schema and snapshots."
+}
+
+# Create the default snapshot
+Copy-Item -Force `
+    -Path "$test_repo_path\spatial\snapshots\$test_repo_map.snapshot" `
+    -Destination "$test_repo_path\spatial\snapshots\default.snapshot"
+
+# Create the TestResults directory if it does not exist, for storing results
+New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorAction SilentlyContinue
+$output_dir = "$PSScriptRoot\TestResults"
 
 # This resolves a path to be absolute, without actually reading the filesystem.
 # This means it works even when the indicated path does not exist, as opposed to the Resolve-Path cmdlet

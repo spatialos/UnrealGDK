@@ -51,7 +51,8 @@ generate_build_configuration_steps () {
         echo "This is not a nightly build. Generating appropriate steps..."
         
         # Win64 Development Editor build configuration
-        upload_build_configuration_step "$1" "Win64" "Editor" "Development"
+        #upload_build_configuration_step "$1" "Win64" "Editor" "Development"
+        upload_build_configuration_step "$1" "Win64" "Editor" "DebugGame"
 
         # Linux Development NoEditor build configuration
         upload_build_configuration_step "$1" "Linux" "" "Development"
