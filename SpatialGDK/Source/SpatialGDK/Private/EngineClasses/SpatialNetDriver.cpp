@@ -456,7 +456,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Sender->Init(this, &TimerManager);
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this);
-	SnapshotManager->Init(this);
+	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this, &TimerManager);
 	SpatialMetrics->Init(this);
 

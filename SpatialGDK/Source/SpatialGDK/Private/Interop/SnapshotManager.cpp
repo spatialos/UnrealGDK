@@ -14,16 +14,16 @@ DEFINE_LOG_CATEGORY(LogSnapshotManager);
 using namespace SpatialGDK;
 
 SpatialSnapshotManager::SpatialSnapshotManager()
-	: NetDriver(nullptr)
+	: Connection(nullptr)
 	, GlobalStateManager(nullptr)
 	, Receiver(nullptr)
 {}
 
-void SpatialSnapshotManager::Init(USpatialNetDriver* InNetDriver)
+void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager, USpatialReceiver* InReceiver)
 {
-	NetDriver = InNetDriver;
-	Receiver = InNetDriver->Receiver;
-	GlobalStateManager = InNetDriver->GlobalStateManager;
+	Connection = InConnection;
+	Receiver = InReceiver;
+	GlobalStateManager = InGlobalStateManager;
 }
 
 // WorldWipe will send out an expensive entity query for every entity in the deployment.
@@ -43,7 +43,8 @@ void SpatialSnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDel
 	WorldQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	Worker_RequestId RequestID;
-	RequestID = NetDriver->Connection->SendEntityQueryRequest(&WorldQuery);
+	check(Connection.IsValid());
+	RequestID = Connection->SendEntityQueryRequest(&WorldQuery);
 
 	EntityQueryDelegate WorldQueryDelegate;
 	WorldQueryDelegate.BindLambda([this, PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op)
@@ -76,7 +77,8 @@ void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& 
 	for (uint32_t i = 0; i < Op.result_count; i++)
 	{
 		UE_LOG(LogSnapshotManager, Verbose, TEXT("Sending delete request for: %i"), Op.results[i].entity_id);
-		NetDriver->Connection->SendDeleteEntityRequest(Op.results[i].entity_id);
+		check(Connection.IsValid());
+		Connection->SendDeleteEntityRequest(Op.results[i].entity_id);
 	}
 }
 
@@ -182,14 +184,16 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 			}
 
 			UE_LOG(LogSnapshotManager, Log, TEXT("Sending entity create request for: %i"), ReservedEntityID);
-			NetDriver->Connection->SendCreateEntityRequest(MoveTemp(EntityToSpawn), &ReservedEntityID);
+			check(Connection.IsValid());
+			Connection->SendCreateEntityRequest(MoveTemp(EntityToSpawn), &ReservedEntityID);
 		}
 
 		GlobalStateManager->SetAcceptingPlayers(true);
 	});
 
 	// Reserve the Entity IDs
-	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToSpawn.Num());
+	check(Connection.IsValid());
+	Worker_RequestId ReserveRequestID = Connection->SendReserveEntityIdsRequest(EntitiesToSpawn.Num());
 
 	// TODO: UNR-654
 	// References to entities that are stored within the snapshot need remapping once we know the new entity IDs.

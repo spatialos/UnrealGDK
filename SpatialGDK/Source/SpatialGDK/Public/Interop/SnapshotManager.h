@@ -21,19 +21,14 @@ class SPATIALGDK_API SpatialSnapshotManager
 public:
 	SpatialSnapshotManager();
 
-	void Init(USpatialNetDriver* InNetDriver);
+	void Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager, USpatialReceiver* InReceiver);
 
 	void WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate& Delegate);
 	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
 	void LoadSnapshot(const FString& SnapshotName);
 
 private:
-	UPROPERTY()
-	USpatialNetDriver* NetDriver;
-
-	UPROPERTY()
-	UGlobalStateManager* GlobalStateManager;
-
-	UPROPERTY()
-	USpatialReceiver* Receiver;
+	TWeakObjectPtr<USpatialWorkerConnection> Connection;
+	TWeakObjectPtr<UGlobalStateManager> GlobalStateManager;
+	TWeakObjectPtr<USpatialReceiver> Receiver;
 };
