@@ -11,6 +11,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/ExternalSchemaActor.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
 #include "Schema/AlwaysRelevant.h"
@@ -79,24 +80,14 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
 
-	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
+	// Determine if this is an Actor that wants to add it's own schema components
+	IExternalSchemaActor* ExternalSchemaActor = Cast<IExternalSchemaActor>(Actor);
 
-	WorkerRequirementSet AnyServerRequirementSet;
-	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
-
-	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
-
-	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { OwningClientAttributeSet };
-	WorkerRequirementSet OwningClientOnlyRequirementSet = { OwningClientAttributeSet };
-
-	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->ServerWorkerTypes)
-	{
-		WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
-
-		AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
-		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
-		AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
-	}
+	FString ClientWorkerAttribute = SpatialActorUtils::GetOwnerWorkerAttribute(Actor);
+	WorkerRequirementSet AnyServerRequirementSet = SpatialActorUtils::GetAnyServerRequirementSet();
+	WorkerRequirementSet AnyServerOrClientRequirementSet = SpatialActorUtils::GetAnyServerOrClientRequirementSet(*Actor);
+	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = SpatialActorUtils::GetAnyServerOrOwningClientRequirementSet(*Actor);
+	WorkerRequirementSet OwningClientOnlyRequirementSet = SpatialActorUtils::GetOwningClientOnlyRequirementSet(*Actor);
 
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
@@ -114,8 +105,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
-	const WorkerAttributeSet WorkerAttribute{ Info.WorkerType.ToString() };
-	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
+	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = SpatialActorUtils::GetAuthoritativeWorkerRequirementSet(*Actor);
 
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
@@ -149,6 +139,12 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	}
 
 	ComponentWriteAcl.Add(SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+
+	// Give the actor a chance to inject writeAcls for manually authored schema components
+	if (ExternalSchemaActor != nullptr)
+	{
+		ExternalSchemaActor->GetWriteAclMap(ComponentWriteAcl);
+	}
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
@@ -254,6 +250,12 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DEBUG_METRICS_COMPONENT_ID));
 #endif // !UE_BUILD_SHIPPING
 		ComponentDatas.Add(Heartbeat().CreateHeartbeatData());
+	}
+
+	// Give the actor a chance to inject initial component data for manually authored schema components
+	if (ExternalSchemaActor != nullptr)
+	{
+		ExternalSchemaActor->GetInitialComponentData(ComponentDatas);
 	}
 
 	ComponentFactory DataFactory(false, NetDriver);
@@ -394,9 +396,7 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 
 void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info)
 {
-	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass());
-	const WorkerAttributeSet WorkerAttribute{ ActorInfo.WorkerType.ToString() };
-	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
+	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = SpatialActorUtils::GetAuthoritativeWorkerRequirementSet(*(Channel->Actor));
 
 	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SpatialCommonTypes.h"
 
 #include "Components/SceneComponent.h"
 #include "Engine/EngineTypes.h"
@@ -10,18 +11,24 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"
 
+class AActor;
+
 namespace SpatialGDK
 {
 
-inline FString GetOwnerWorkerAttribute(AActor* Actor)
+struct SPATIALGDK_API SpatialActorUtils
 {
-	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
-	{
-		return NetConnection->WorkerAttribute;
-	}
+public:
+	static const WorkerRequirementSet GetAuthoritativeWorkerRequirementSet(const AActor& Actor);
+	static const WorkerRequirementSet GetAnyServerRequirementSet();
+	static const WorkerRequirementSet GetAnyServerOrClientRequirementSet(const AActor& Actor);
+	static const WorkerRequirementSet GetAnyServerOrOwningClientRequirementSet(const AActor& Actor);
+	static const WorkerRequirementSet GetOwningClientOnlyRequirementSet(const AActor& Actor);
+	static const FString GetOwnerWorkerAttribute(const AActor* Actor);
 
-	return FString();
-}
+private:
+	static const TSet<FName> GetServerWorkerTypes();
+};
 
 inline FVector GetActorSpatialPosition(const AActor* InActor)
 {
