@@ -23,7 +23,7 @@ namespace Improbable
 
         private const string CoordinatorWorkerName = "SimulatedPlayerCoordinator";
 
-        private const string CHINA_ENDPOINT_URL = "platform-cn-production.api.spatialoschina.com";
+        private const string CHINA_ENDPOINT_URL = "platform.api.spatialoschina.com";
         private const int CHINA_ENDPOINT_PORT = 443;
 
         private static string UploadSnapshot(SnapshotServiceClient client, string snapshotPath, string projectName,
