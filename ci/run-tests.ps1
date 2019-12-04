@@ -9,7 +9,7 @@ param(
 
 # Generate schema and snapshots
 Echo "Generating snapshot and schema for testing project"
-$args = @(`
+$commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
     "$uproject_path", `
     "-NoShaderCompile", ` # Prevent shader compilation
     "-game", ` # Run with uncooked content
@@ -20,10 +20,6 @@ $args = @(`
     "-run=GenerateSchemaAndSnapshots", ` # Run the commandlet
     "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
 )
-if ($build_state -eq "DebugGame"){
-    $args += "-debug"
-}
-$commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList args
 if ($commandlet_process.ExitCode -ne 0) {
     Write-Log $commandlet_process.
     throw "Failed to generate schema and snapshots."
