@@ -16,7 +16,7 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 	UI_COMMAND(OpenSimulatedPlayerConfigurationWindowAction, "Deploy", "Opens a configuration menu for cloud deployments.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StartSpatialService, "Start Service", "Starts the Spatial service daemon.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StopSpatialService, "Stop Service", "Stops the Spatial service daemon.", EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(UpdateMobileClient, "Update mobile package", "Updates your mobile app on your device with the correct runtime ip.", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(UpdateIOSClient, "Update iOS app", "Updates your mobile app on your device with the correct runtime ip.", EUserInterfaceActionType::Button, FInputGesture());
 }
 
 #undef LOCTEXT_NAMESPACE

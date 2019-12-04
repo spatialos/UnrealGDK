@@ -10,6 +10,7 @@
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Interfaces/IProjectManager.h"
 #include "IOSRuntimeSettings.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
@@ -209,9 +210,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible));
 
 	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().UpdateMobileClient,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UpdateMobileClient),
-		FCanExecuteAction());
+		FSpatialGDKEditorToolbarCommands::Get().UpdateIOSClient,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UpdateIOSClient),
+		FCanExecuteAction(),
+		FIsActionChecked(),
+		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UpdateIOSClientIsVisible));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -252,7 +255,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 #endif
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
-		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().UpdateMobileClient);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().UpdateIOSClient);
 	}
 	Builder.EndSection();
 }
@@ -737,6 +740,12 @@ bool FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute() const
 	return !LocalDeploymentManager->IsServiceStopping();
 }
 
+bool FSpatialGDKEditorToolbarModule::UpdateIOSClientIsVisible() const
+{
+	FProjectStatus ProjectStatus;
+	return IProjectManager::Get().QueryStatusForCurrentProject(ProjectStatus) && ProjectStatus.IsTargetPlatformSupported("IOS");
+}
+
 void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent)
 {
 	if (USpatialGDKEditorSettings* Settings = Cast<USpatialGDKEditorSettings>(ObjectBeingModified))
@@ -870,22 +879,24 @@ FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::UpdateMobileClient() const
+void FSpatialGDKEditorToolbarModule::UpdateIOSClient() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const UIOSRuntimeSettings* IOSRuntimeSettings = GetDefault<UIOSRuntimeSettings>();
 	const FString ProjectName = FApp::GetProjectName();
 
-	const FString CommandLineArgs = FString::Printf(TEXT( "../../../%s/%s.uproject %s -game -log -workerType UnrealClient"), *ProjectName, *ProjectName, *(SpatialGDKSettings->ExposedRuntimeIP));
-	const FString Filename = FPaths::Combine(*FPaths::ProjectLogDir(), TEXT("ue4commandline.txt"));
-	if(!FFileHelper::SaveStringToFile(CommandLineArgs, *Filename, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
+	// The project path is based on this: https://github.com/improbableio/UnrealEngine/blob/4.22-SpatialOSUnrealGDK-release/Engine/Source/Programs/AutomationTool/AutomationUtils/DeploymentContext.cs#L408
+	const FString CommandLineArgs = FString::Printf(TEXT( "../../../%s/%s.uproject -game -log -workerType UnrealClient"), *ProjectName, *ProjectName, *(SpatialGDKSettings->ExposedRuntimeIP));
+	const FString CommandLineArgsFile = FPaths::Combine(*FPaths::ProjectLogDir(), TEXT("ue4commandline.txt"));
+
+	if(!FFileHelper::SaveStringToFile(CommandLineArgs, *CommandLineArgsFile, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to write command line args to file: %s"), *Filename);
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("UpdateIOSClient: Failed to write command line args to file: %s"), *CommandLineArgsFile);
 		return;
 	}
 
 	FString DeploymentServerExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
-	FString DeploymentServerArguments = FString::Printf(TEXT("copyfile -bundle \"%s\" -file \"%s\" -file \"/Documents/ue4commandline.txt\""), *(IOSRuntimeSettings->BundleIdentifier), *Filename);
+	FString DeploymentServerArguments = FString::Printf(TEXT("copyfile -bundle \"%s\" -file \"%s\" -file \"/Documents/ue4commandline.txt\""), *(IOSRuntimeSettings->BundleIdentifier), *CommandLineArgsFile);
 	FString DeploymentServerOutput;
 	int32 ExitCode;
 
@@ -897,15 +908,22 @@ void FSpatialGDKEditorToolbarModule::UpdateMobileClient() const
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(MonoExe, DeploymentServerArguments, FPaths::EngineDir(), DeploymentServerOutput, ExitCode);
 #endif
 
+    UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Output: %s. Args: %s %s"), *DeploymentServerOutput, *DeploymentServerExe, *DeploymentServerArguments);
+
 	if (ExitCode != 0)
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Failed to run %s with error %s."), *DeploymentServerExe, *DeploymentServerOutput);
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to update the iOS client."));
 		return;
 	}
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	PlatformFile.DeleteFile(*Filename);
-	UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Successfully stored command line args on device: %s"), *DeploymentServerOutput);
+	if (!PlatformFile.DeleteFile(*CommandLineArgsFile))
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to delete file %s"), *CommandLineArgsFile);
+		return;
+	}
+
+	UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Successfully stored command line args on device: %s"), *DeploymentServerOutput);
 }
 
 #undef LOCTEXT_NAMESPACE
