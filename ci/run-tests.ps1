@@ -9,6 +9,22 @@ param(
 
 # Generate schema and snapshots
 Echo "Generating snapshot and schema for testing project"
+
+$commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
+    "$uproject_path", `
+    "-NoShaderCompile", ` # Prevent shader compilation
+    "-nopause", ` # Close the unreal log window automatically on exit
+    "-nosplash", ` # No splash screen
+    "-unattended", ` # Disable anything requiring user feedback
+    "-nullRHI", ` # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+    "-run=GenerateSchemaAndSnapshots", ` # Run the commandlet
+    "-MapPaths=`"$test_repo_map`"", ` # Which maps to run the commandlet for
+    "-debug" `
+)
+if ($commandlet_process.ExitCode -ne 0) {
+    throw "Failed to generate schema and snapshots."
+}
+
 $args = @(`
     "$uproject_path", `
     "-NoShaderCompile", ` # Prevent shader compilation
@@ -17,11 +33,11 @@ $args = @(`
     "-unattended", ` # Disable anything requiring user feedback
     "-nullRHI", ` # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
     "-run=GenerateSchemaAndSnapshots", ` # Run the commandlet
-    "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
+    "-MapPaths=`"$test_repo_map`"" ` # Which maps to run the commandlet for
 )
 if ($build_state -eq "DebugGame") {
     Echo "The build state is DebugGame. Adding -debug flag to commandlet."
-    $args += "-debug"
+    $args.Add("-debug")
 }
 $commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList $args
 if ($commandlet_process.ExitCode -ne 0) {

@@ -51,7 +51,7 @@ if ($proc.ExitCode -ne 0) {
     throw "Failed to generate files for the testing project."
 }
 
-Write-Log "build-testing-project"
+Echo "Building project"
 $build_configuration = $build_state + $(If ("$build_target" -eq "") {""} Else {" $build_target"})
 $proc = Start-Process "$msbuild_exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
     "/nologo", `
