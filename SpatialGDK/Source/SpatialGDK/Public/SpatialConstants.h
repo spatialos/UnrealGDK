@@ -199,7 +199,7 @@ namespace SpatialConstants
 	const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 
 	const FString LOCATOR_HOST = TEXT("locator.improbable.io");
-	const uint16 LOCATOR_PORT = 444;
+	const uint16 LOCATOR_PORT = 443;
 
 	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 }
