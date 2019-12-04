@@ -24,9 +24,6 @@ enum class ERPCType : uint8
 	CrossServer
 };
 
-namespace SpatialConstants
-{
-
 enum ESchemaComponentType : int32
 {
 	SCHEMA_Invalid = -1,
@@ -41,6 +38,9 @@ enum ESchemaComponentType : int32
 	// Iteration helpers
 	SCHEMA_Begin = SCHEMA_Data,
 };
+
+namespace SpatialConstants
+{
 
 FORCEINLINE FString RPCTypeToString(ERPCType RPCType)
 {
