@@ -1531,7 +1531,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			SpatialMetrics->TickMetrics();
 		}
 
-		if (LoadBalanceEnforcer != nullptr)
+		if (LoadBalanceEnforcer.IsValid())
 		{
 			LoadBalanceEnforcer->Tick();
 		}
