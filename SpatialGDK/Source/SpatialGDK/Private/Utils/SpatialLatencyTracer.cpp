@@ -12,22 +12,31 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialLatencyTracing);
 
-// Stream for piping trace lib output to UE output
-class UEStream : public std::stringbuf
-{
-	int sync() override
-	{
-		UE_LOG(LogSpatialLatencyTracing, Verbose, TEXT("%s"), *FString(str().c_str()));
-		str("");
-		return std::stringbuf::sync();
-	}
-};
-
 namespace
 {
+	// Stream for piping trace lib output to UE output
+	class UEStream : public std::stringbuf
+	{
+		int sync() override
+		{
+			UE_LOG(LogSpatialLatencyTracing, Verbose, TEXT("%s"), *FString(str().c_str()));
+			str("");
+			return std::stringbuf::sync();
+		}
+
+	public:
+		virtual ~UEStream() override
+		{
+			sync();
+		}
+	};
+
 	UEStream Stream;
 }  // anonymous namespace
 
+// This is used to track if there is an active trace within a currently processing network call. The user is
+// able to hook into this active trace, and `continue` it to another network relevant call. If so, the
+// ActiveTrace will be moved to a regular tracked trace with a standard key (see `NextTraceKey`)
 const TraceKey USpatialLatencyTracer::ActiveTraceKey = 0;
 const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
 
