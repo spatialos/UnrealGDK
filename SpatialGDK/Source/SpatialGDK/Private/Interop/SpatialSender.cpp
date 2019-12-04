@@ -896,7 +896,10 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 				{
 					if (const AActor* ConnectionOwner = OwningConnection->OwningActor)
 					{
-						if (!ActorGroupManager->IsSameWorkerType(TargetActor, ConnectionOwner))
+						TSharedPtr<UActorGroupManager> LocalActorGroupManager = ActorGroupManager.Pin();
+						check(LocalActorGroupManager.IsValid());
+
+						if (!LocalActorGroupManager->IsSameWorkerType(TargetActor, ConnectionOwner))
 						{
 							UE_LOG(LogSpatialSender, Verbose, TEXT("RPC %s Cannot be packed as TargetActor (%s) and Connection Owner (%s) are on different worker types."),
 								*Function->GetName(),

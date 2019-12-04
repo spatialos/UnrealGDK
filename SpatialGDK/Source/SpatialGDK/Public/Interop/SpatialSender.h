@@ -157,8 +157,7 @@ private:
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 
-	UPROPERTY()
-	UActorGroupManager* ActorGroupManager;
+	TWeakPtr<UActorGroupManager> ActorGroupManager;
 
 	FTimerManager* TimerManager;
 

@@ -90,7 +90,7 @@ class SPATIALGDK_API USpatialClassInfoManager : public UObject
 
 public:
 
-	bool TryInit(USpatialNetDriver* NetDriver, UActorGroupManager* ActorGroupManager);
+	bool TryInit(USpatialNetDriver* InNetDriver, TSharedPtr<UActorGroupManager> InActorGroupManager);
 
 	// Checks whether a class is supported and quits the game if not. This is to avoid crashing
 	// when running with an out-of-date schema database.
@@ -132,8 +132,7 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	UPROPERTY()
-	UActorGroupManager* ActorGroupManager;
+	TWeakPtr<UActorGroupManager> ActorGroupManager;
 
 	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;

@@ -47,11 +47,8 @@ struct FActorGroupInfo
 	}
 };
 
-UCLASS(Config=SpatialGDKSettings)
-class SPATIALGDK_API UActorGroupManager : public UObject
+class SPATIALGDK_API UActorGroupManager
 {
-	GENERATED_BODY()
-
 private:
 	TMap<TSoftClassPtr<AActor>, FName> ClassPathToActorGroup;
 

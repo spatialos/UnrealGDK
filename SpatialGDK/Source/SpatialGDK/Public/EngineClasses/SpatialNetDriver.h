@@ -130,8 +130,9 @@ public:
 	USpatialSender* Sender;
 	UPROPERTY()
 	USpatialReceiver* Receiver;
-	UPROPERTY()
-	UActorGroupManager* ActorGroupManager;
+
+	TSharedPtr<UActorGroupManager> ActorGroupManager;
+
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 	UPROPERTY()

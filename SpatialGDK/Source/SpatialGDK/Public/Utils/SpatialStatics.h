@@ -11,6 +11,7 @@
 #include "SpatialStatics.generated.h"
 
 class AActor;
+class UActorGroupManager;
 
 // This log category will always log to the spatial runtime and thus also be printed in the SpatialOutput.
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatial, Log, All);
@@ -81,6 +82,6 @@ public:
 
 private:
 
-	static class UActorGroupManager* GetActorGroupManager(const UObject* WorldContext);
+	static TSharedPtr<UActorGroupManager> GetActorGroupManager(const UObject* WorldContext);
 	static FName GetCurrentWorkerType(const UObject* WorldContext);
 };

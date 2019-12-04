@@ -22,7 +22,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, UActorGroupManager* InActorGroupManager)
+bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, TSharedPtr<UActorGroupManager> InActorGroupManager)
 {
 	NetDriver = InNetDriver;
 	ActorGroupManager = InActorGroupManager;
@@ -240,8 +240,11 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 	{
 		if (ActorClass->IsChildOf<AActor>())
 		{
-			Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(ActorClass));
-			Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(ActorClass));
+			TSharedPtr<UActorGroupManager> LocalActorGroupManager = ActorGroupManager.Pin();
+			check(LocalActorGroupManager.IsValid());
+
+			Info->ActorGroup = LocalActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(ActorClass));
+			Info->WorkerType = LocalActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(ActorClass));
 
 			UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
 				*ActorClass->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
