@@ -640,7 +640,17 @@ void USpatialSender::FlushPackedRPCs()
 
 void USpatialSender::FlushRPCService()
 {
-	RPCService->PushOverflowedRPCs();
+	EPushRPCResult Result = RPCService->PushOverflowedRPCs();
+	switch (Result)
+	{
+	case EPushRPCResult::HasAckAuthority:
+		UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::FlushRPCService: Tried to push overflowed RPCs after gaining authority over ack component."));
+		break;
+	case EPushRPCResult::NoRingBufferAuthority:
+		UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::FlushRPCService: Tried to push overflowed RPCs after losing authority over ring buffer component."));
+		break;
+	}
+
 	for (const SpatialRPCService::UpdateToSend& Update : RPCService->GetRPCsAndAcksToSend())
 	{
 		Connection->SendComponentUpdate(Update.EntityId, &Update.Update);

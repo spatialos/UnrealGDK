@@ -354,7 +354,8 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 	}
 	else
 	{
-		// received RPCs out of order?
+		UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::ExtractRPCsForType: Last sent RPC has smaller ID than last seen RPC. Entity: %lld, RPC type: %s, last sent ID: %d, last seen ID: %d"),
+			EntityId, *SpatialConstants::RPCTypeToString(Type), Buffer.LastSentRPCId, LastSeenRPCId);
 	}
 
 	if (Type == ERPCType::NetMulticast)
@@ -364,23 +365,16 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 	else
 	{
 		LastAckedRPCIds[EntityTypePair] = Buffer.LastSentRPCId;
-		Worker_ComponentId AckComponentId = RPCRingBufferUtils::GetAckComponentId(Type);
-		EntityComponentId EntityComponentPair = EntityComponentId(EntityId, AckComponentId);
-		if (View->HasComponent(EntityId, AckComponentId))
-		{
-			Schema_ComponentUpdate** ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentPair);
-			if (ComponentUpdatePtr == nullptr)
-			{
-				ComponentUpdatePtr = &PendingComponentUpdatesToSend.Add(EntityComponentPair, Schema_CreateComponentUpdate());
-			}
-			Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(*ComponentUpdatePtr);
+		EntityComponentId EntityComponentPair = EntityComponentId(EntityId, RPCRingBufferUtils::GetAckComponentId(Type));
 
-			RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, Buffer.LastSentRPCId);
-		}
-		else
+		Schema_ComponentUpdate** ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentPair);
+		if (ComponentUpdatePtr == nullptr)
 		{
-			// Return some error code?
+			ComponentUpdatePtr = &PendingComponentUpdatesToSend.Add(EntityComponentPair, Schema_CreateComponentUpdate());
 		}
+		Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(*ComponentUpdatePtr);
+
+		RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, Buffer.LastSentRPCId);
 	}
 }
 
