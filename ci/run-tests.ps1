@@ -20,11 +20,11 @@ $args = @(`
     "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
 )
 if ($build_state -eq "DebugGame") {
+    Echo "The build state is DebugGame. Adding -debug flag to commandlet."
     $args += "-debug"
 }
 $commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList $args
 if ($commandlet_process.ExitCode -ne 0) {
-    Write-Log $commandlet_process.
     throw "Failed to generate schema and snapshots."
 }
 
