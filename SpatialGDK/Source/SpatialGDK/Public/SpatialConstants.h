@@ -109,6 +109,10 @@ const Worker_ComponentId DORMANT_COMPONENT_ID							= 9981;
 const Worker_ComponentId AUTHORITY_INTENT_COMPONENT_ID                  = 9980;
 const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID        = 9979;
 
+const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID				= 9978;
+const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID				= 9977;
+const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID					= 9976;
+
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
 const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
