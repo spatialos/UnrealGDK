@@ -2282,8 +2282,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 	if (PackageMap->IsEntityPoolReady() &&
 		GlobalStateManager->IsReadyToCallBeginPlay() &&
-		// TODO(Alex): is it correct?
-		(VirtualWorkerTranslator.IsValid() || VirtualWorkerTranslator->IsReady()))
+		(!VirtualWorkerTranslator.IsValid() || VirtualWorkerTranslator->IsReady()))
 	{
 		// Return whether or not we are ready to start
 		return true;
