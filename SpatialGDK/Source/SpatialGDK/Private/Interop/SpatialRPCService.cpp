@@ -50,7 +50,10 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	uint64 LastAckedRPCId;
 	if (View->HasComponent(EntityId, RingBufferComponentId))
 	{
-		check(View->HasAuthority(EntityId, RingBufferComponentId));
+		if (!View->HasAuthority(EntityId, RingBufferComponentId))
+		{
+			return EPushRPCResult::NoRingBufferAuthority;
+		}
 
 		Schema_ComponentUpdate** ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponent);
 		if (ComponentUpdatePtr == nullptr)
@@ -69,7 +72,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 			// We shouldn't have authority over the component that has the acks.
 			if (View->HasAuthority(EntityId, RPCRingBufferUtils::GetAckComponentId(Type)))
 			{
-				return EPushRPCResult::AckAuthority;
+				return EPushRPCResult::HasAckAuthority;
 			}
 
 			LastAckedRPCId = GetAckFromView(EntityId, Type);

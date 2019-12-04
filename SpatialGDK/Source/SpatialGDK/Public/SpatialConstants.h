@@ -266,4 +266,9 @@ FORCEINLINE Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffer
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 }
 
+FORCEINLINE Worker_ComponentId GetCrossServerRPCComponent(bool bUsingRingBuffers)
+{
+	return bUsingRingBuffers ? SERVER_ENDPOINT_COMPONENT_ID : SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
+}
+
 } // ::SpatialConstants
