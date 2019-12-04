@@ -12,7 +12,6 @@ Echo "Generating snapshot and schema for testing project"
 $commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
     "$uproject_path", `
     "-NoShaderCompile", ` # Prevent shader compilation
-    "-game", ` # Run with uncooked content
     "-nopause", ` # Close the unreal log window automatically on exit
     "-nosplash", ` # No splash screen
     "-unattended", ` # Disable anything requiring user feedback
