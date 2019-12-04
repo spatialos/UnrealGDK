@@ -22,7 +22,7 @@ class USpatialGameInstance;
 namespace SpatialGDK
 {
 	struct FOutgoingMessage;
-}
+}  // namespace SpatialGDK
 
 using TraceKey = int32;
 

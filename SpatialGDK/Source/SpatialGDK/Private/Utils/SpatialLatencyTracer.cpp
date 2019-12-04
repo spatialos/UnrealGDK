@@ -15,7 +15,7 @@ DEFINE_LOG_CATEGORY(LogSpatialLatencyTracing);
 // Stream for piping trace lib output to UE output
 class UEStream : public std::stringbuf
 {
-	int sync()
+	int sync() override
 	{
 		UE_LOG(LogSpatialLatencyTracing, Verbose, TEXT("%s"), *FString(str().c_str()));
 		str("");
@@ -26,7 +26,7 @@ class UEStream : public std::stringbuf
 namespace
 {
 	UEStream Stream;
-}
+}  // anonymous namespace
 
 const TraceKey USpatialLatencyTracer::ActiveTraceKey = 0;
 const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
