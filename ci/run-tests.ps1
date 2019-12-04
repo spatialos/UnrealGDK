@@ -17,7 +17,8 @@ $commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNew
     "-unattended", ` # Disable anything requiring user feedback
     "-nullRHI", ` # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
     "-run=GenerateSchemaAndSnapshots", ` # Run the commandlet
-    "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
+    "-MapPaths=`"$test_repo_map`"", ` # Which maps to run the commandlet for
+    "-debug"
 )
 if ($commandlet_process.ExitCode -ne 0) {
     Write-Log $commandlet_process.
