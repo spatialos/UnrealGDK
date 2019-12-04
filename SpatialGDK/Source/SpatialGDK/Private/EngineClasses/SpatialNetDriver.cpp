@@ -449,7 +449,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
 
 		LoadBalanceEnforcer = MakeShared<SpatialLoadBalanceEnforcer>();
-		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator);
+		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator);
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
@@ -1533,7 +1533,10 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (LoadBalanceEnforcer.IsValid())
 		{
-			LoadBalanceEnforcer->Tick();
+			for(const auto& elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
+			{
+				Sender->SetAclWriteAuthority(elem.Key, elem.Value);
+			}
 		}
 	}
 }

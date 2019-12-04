@@ -3,7 +3,6 @@
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/SpatialSender.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
 #include "SpatialCommonTypes.h"
@@ -14,25 +13,17 @@ using namespace SpatialGDK;
 
 SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer()
 	: StaticComponentView(nullptr)
-	, Sender(nullptr)
 	, VirtualWorkerTranslator(nullptr)
 {
 }
 
 void SpatialLoadBalanceEnforcer::Init(const FString &InWorkerId,
 	USpatialStaticComponentView* InStaticComponentView,
-	USpatialSender* InSpatialSender,
 	TSharedPtr<SpatialVirtualWorkerTranslator> InVirtualWorkerTranslator)
 {
 	WorkerId = InWorkerId;
 	StaticComponentView = InStaticComponentView;
-	Sender = InSpatialSender;
 	VirtualWorkerTranslator = InVirtualWorkerTranslator;
-}
-
-void SpatialLoadBalanceEnforcer::Tick()
-{
-	ProcessQueuedAclAssignmentRequests();
 }
 
 void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
@@ -100,8 +91,10 @@ void SpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId
 	}
 }
 
-void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
+TArray<AclWriteAuthorityRequestType> SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 {
+	TArray<AclWriteAuthorityRequestType> PendingRequests;
+
 	TArray<Worker_EntityId> CompletedRequests;
 	CompletedRequests.Reserve(AclWriteAuthAssignmentRequests.Num());
 
@@ -113,7 +106,8 @@ void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 			// TODO(zoning): Not sure whether this should be possible or not. Remove if we don't see the warning again.
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Entity without AuthIntent component will not be processed. EntityId: %lld"), *WorkerId, Request.EntityId);
 			CompletedRequests.Add(Request.EntityId);
-			return;
+			// TODO(Alex): should it be continue?
+			return PendingRequests;
 		}
 
 		TSharedPtr<SpatialVirtualWorkerTranslator> LocalVirtualWorkerTranslator = VirtualWorkerTranslator.Pin();
@@ -133,10 +127,11 @@ void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 			continue;
 		}
 
-		check(Sender.IsValid());
-		Sender->SetAclWriteAuthority(Request.EntityId, *OwningWorkerId);
+		PendingRequests.Push(AclWriteAuthorityRequestType{ Request.EntityId, *OwningWorkerId });
 		CompletedRequests.Add(Request.EntityId);
 	}
 
 	AclWriteAuthAssignmentRequests.RemoveAll([CompletedRequests](const WriteAuthAssignmentRequest& Request) { return CompletedRequests.Contains(Request.EntityId); });
+
+	return PendingRequests;
 }
