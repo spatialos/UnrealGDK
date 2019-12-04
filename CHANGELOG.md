@@ -42,6 +42,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed an crash caused by attempting to read schema from an unloaded class.
 - Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
 - Fix tombstone-related assert that could fire and bring down the editor.
+- Delete entities on PIE shutdown rather than tombstoning.  Additionally, delete all entities on shutdown even if the server isn't authoritative over them.
 
 ## [`0.7.0-preview`] - 2019-10-11
 
