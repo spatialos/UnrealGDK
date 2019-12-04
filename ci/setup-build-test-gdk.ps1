@@ -55,7 +55,7 @@ Start-Event "build-project" "command"
 Finish-Event "build-project" "command"
 
 # Only run tests on Windows, as we do not have a linux agent - should not matter
-if ($target_platform -eq "Win64" -And $env:BUILD_TARGET -eq "Editor" -And $env:BUILD_STATE -eq "Development") {
+if ($target_platform -eq "Win64" -And $env:BUILD_TARGET -eq "Editor") {
   Start-Event "test-gdk" "command"
   &$PSScriptRoot"\run-tests.ps1" `
       -unreal_editor_path "$unreal_path\Engine\Binaries\Win64\UE4Editor.exe" `
@@ -63,7 +63,7 @@ if ($target_platform -eq "Win64" -And $env:BUILD_TARGET -eq "Editor" -And $env:B
       -test_repo_path "$build_home\TestProject" `
       -log_file_path "$PSScriptRoot\TestResults\tests.log" `
       -test_repo_map "$test_repo_map" `
-      -build_state "$env:BUILD_TARGET"
+      -build_state "$env:BUILD_STATE"
   Finish-Event "test-gdk" "command"
 
   Start-Event "report-tests" "command"
