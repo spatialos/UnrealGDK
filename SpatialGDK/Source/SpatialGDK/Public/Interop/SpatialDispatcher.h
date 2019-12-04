@@ -19,7 +19,7 @@ class USpatialMetrics;
 class USpatialReceiver;
 class USpatialStaticComponentView;
 
-class SPATIALGDK_API USpatialDispatcher
+class SPATIALGDK_API SpatialDispatcher
 {
 public:
 	using FCallbackId = uint32;

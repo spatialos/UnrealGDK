@@ -22,14 +22,14 @@
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class UAbstractLBStrategy;
-class UActorGroupManager;
+class SpatialActorGroupManager;
 class UEntityPool;
 class UGlobalStateManager;
-class USnapshotManager;
+class SpatialSnapshotManager;
 class USpatialActorChannel;
 class USpatialClassInfoManager;
-class USpatialDispatcher;
-class USpatialLoadBalanceEnforcer;
+class SpatialDispatcher;
+class SpatialLoadBalanceEnforcer;
 class USpatialMetrics;
 class USpatialNetConnection;
 class USpatialPackageMapClient;
@@ -124,16 +124,10 @@ public:
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
-
-	TSharedPtr<USpatialDispatcher> Dispatcher;
-
 	UPROPERTY()
 	USpatialSender* Sender;
 	UPROPERTY()
 	USpatialReceiver* Receiver;
-
-	TSharedPtr<UActorGroupManager> ActorGroupManager;
-
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 	UPROPERTY()
@@ -144,21 +138,19 @@ public:
 	USpatialPackageMapClient* PackageMap;
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
-
-	TSharedPtr<USnapshotManager> SnapshotManager;
-
 	UPROPERTY()
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 	UPROPERTY()
 	ASpatialDebugger* SpatialDebugger;
-
-	TSharedPtr<USpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
-
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
 
+	TSharedPtr<SpatialDispatcher> Dispatcher;
+	TSharedPtr<SpatialActorGroupManager> ActorGroupManager;
+	TSharedPtr<SpatialSnapshotManager> SnapshotManager;
+	TSharedPtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;

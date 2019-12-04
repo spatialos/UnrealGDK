@@ -59,8 +59,8 @@ DEFINE_STAT(STAT_SpatialActorsChanged);
 
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, LoadBalanceEnforcer(nullptr)
 	, LoadBalanceStrategy(nullptr)
+	, LoadBalanceEnforcer(nullptr)
 	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
@@ -123,7 +123,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	}
 
 	// Initialize ActorGroupManager as it is a depdency of ClassInfoManager (see below)
-	ActorGroupManager = MakeShared<UActorGroupManager>();
+	ActorGroupManager = MakeShared<SpatialActorGroupManager>();
 	ActorGroupManager->Init();
 
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
@@ -387,7 +387,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
 	InitializeSpatialOutputDevice();
 
-	Dispatcher = MakeShared<USpatialDispatcher>();
+	Dispatcher = MakeShared<SpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
 
@@ -408,7 +408,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	StaticComponentView = Connection->StaticComponentView;
 
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
-	SnapshotManager = MakeShared<USnapshotManager>();
+	SnapshotManager = MakeShared<SpatialSnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
@@ -448,7 +448,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
 		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
 
-		LoadBalanceEnforcer = MakeShared<USpatialLoadBalanceEnforcer>();
+		LoadBalanceEnforcer = MakeShared<SpatialLoadBalanceEnforcer>();
 		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator.Get());
 	}
 

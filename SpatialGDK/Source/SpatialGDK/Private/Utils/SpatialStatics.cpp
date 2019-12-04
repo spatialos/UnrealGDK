@@ -17,7 +17,7 @@ bool USpatialStatics::IsSpatialNetworkingEnabled()
     return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
-TSharedPtr<UActorGroupManager> USpatialStatics::GetActorGroupManager(const UObject* WorldContext)
+TSharedPtr<SpatialActorGroupManager> USpatialStatics::GetActorGroupManager(const UObject* WorldContext)
 {
 	if (const UWorld* World = WorldContext->GetWorld())
 	{
@@ -59,7 +59,7 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 
 bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
 {
-	if (TSharedPtr<UActorGroupManager> ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	if (TSharedPtr<SpatialActorGroupManager> ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
 		const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
 		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
@@ -76,7 +76,7 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 
 bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup)
 {
-	if (TSharedPtr<UActorGroupManager> ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	if (TSharedPtr<SpatialActorGroupManager> ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
 		const FName ActorGroupWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(ActorGroup);
 		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
@@ -93,7 +93,7 @@ bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const
 
 FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
 {
-	if (TSharedPtr<UActorGroupManager> ActorGroupManager = GetActorGroupManager(Actor))
+	if (TSharedPtr<SpatialActorGroupManager> ActorGroupManager = GetActorGroupManager(Actor))
 	{
 		UClass* ActorClass = Actor->GetClass();
 		return ActorGroupManager->GetActorGroupForClass(ActorClass);
@@ -104,7 +104,7 @@ FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
 
 FName USpatialStatics::GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
 {
-	if (TSharedPtr<UActorGroupManager> ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	if (TSharedPtr<SpatialActorGroupManager> ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
 		return ActorGroupManager->GetActorGroupForClass(ActorClass);
 	}

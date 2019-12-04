@@ -896,7 +896,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 				{
 					if (const AActor* ConnectionOwner = OwningConnection->OwningActor)
 					{
-						TSharedPtr<UActorGroupManager> LocalActorGroupManager = ActorGroupManager.Pin();
+						TSharedPtr<SpatialActorGroupManager> LocalActorGroupManager = ActorGroupManager.Pin();
 						check(LocalActorGroupManager.IsValid());
 
 						if (!LocalActorGroupManager->IsSameWorkerType(TargetActor, ConnectionOwner))

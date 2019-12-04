@@ -16,10 +16,10 @@ class USpatialReceiver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSnapshotManager, Log, All)
 
-class SPATIALGDK_API USnapshotManager
+class SPATIALGDK_API SpatialSnapshotManager
 {
 public:
-	USnapshotManager();
+	SpatialSnapshotManager();
 
 	void Init(USpatialNetDriver* InNetDriver);
 

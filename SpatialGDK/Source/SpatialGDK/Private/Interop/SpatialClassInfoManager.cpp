@@ -22,7 +22,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, TSharedPtr<UActorGroupManager> InActorGroupManager)
+bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, TSharedPtr<SpatialActorGroupManager> InActorGroupManager)
 {
 	NetDriver = InNetDriver;
 	ActorGroupManager = InActorGroupManager;
@@ -240,7 +240,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 	{
 		if (ActorClass->IsChildOf<AActor>())
 		{
-			TSharedPtr<UActorGroupManager> LocalActorGroupManager = ActorGroupManager.Pin();
+			TSharedPtr<SpatialActorGroupManager> LocalActorGroupManager = ActorGroupManager.Pin();
 			check(LocalActorGroupManager.IsValid());
 
 			Info->ActorGroup = LocalActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(ActorClass));

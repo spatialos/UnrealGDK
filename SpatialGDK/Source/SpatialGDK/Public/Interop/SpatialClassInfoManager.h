@@ -78,7 +78,7 @@ struct FClassInfo
 	FName WorkerType;
 };
 
-class UActorGroupManager;
+class SpatialActorGroupManager;
 class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialClassInfoManager, Log, All)
@@ -90,7 +90,7 @@ class SPATIALGDK_API USpatialClassInfoManager : public UObject
 
 public:
 
-	bool TryInit(USpatialNetDriver* InNetDriver, TSharedPtr<UActorGroupManager> InActorGroupManager);
+	bool TryInit(USpatialNetDriver* InNetDriver, TSharedPtr<SpatialActorGroupManager> InActorGroupManager);
 
 	// Checks whether a class is supported and quits the game if not. This is to avoid crashing
 	// when running with an out-of-date schema database.
@@ -132,7 +132,7 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	TWeakPtr<UActorGroupManager> ActorGroupManager;
+	TWeakPtr<SpatialActorGroupManager> ActorGroupManager;
 
 	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;

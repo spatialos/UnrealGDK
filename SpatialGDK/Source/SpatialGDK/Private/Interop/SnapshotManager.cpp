@@ -13,13 +13,13 @@ DEFINE_LOG_CATEGORY(LogSnapshotManager);
 
 using namespace SpatialGDK;
 
-USnapshotManager::USnapshotManager()
+SpatialSnapshotManager::SpatialSnapshotManager()
 	: NetDriver(nullptr)
 	, GlobalStateManager(nullptr)
 	, Receiver(nullptr)
 {}
 
-void USnapshotManager::Init(USpatialNetDriver* InNetDriver)
+void SpatialSnapshotManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	Receiver = InNetDriver->Receiver;
@@ -30,7 +30,7 @@ void USnapshotManager::Init(USpatialNetDriver* InNetDriver)
 // It does this by sending an entity query for all entities with the Unreal Metadata Component
 // Once it has the response to this query, it will send deletion requests for all found entities.
 // Should only be triggered by the worker which is authoritative over the GSM.
-void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate& PostWorldWipeDelegate)
+void SpatialSnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate& PostWorldWipeDelegate)
 {
 	UE_LOG(LogSnapshotManager, Log, TEXT("World wipe for deployment has been triggered. All entities with the UnrealMetaData component will be deleted!"));
 
@@ -69,7 +69,7 @@ void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate&
 	Receiver->AddEntityQueryDelegate(RequestID, WorldQueryDelegate);
 }
 
-void USnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op)
+void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op)
 {
 	UE_LOG(LogSnapshotManager, Log, TEXT("Deleting %u entities."), Op.result_count);
 
@@ -95,7 +95,7 @@ FString GetSnapshotPath(const FString& SnapshotName)
 
 // LoadSnapshot will take a snapshot name which should be on disk and attempt to read and spawn all of the entities in that snapshot.
 // This should only be called from the worker which has authority over the GSM.
-void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
+void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 {
 	FString SnapshotPath = GetSnapshotPath(SnapshotName);
 

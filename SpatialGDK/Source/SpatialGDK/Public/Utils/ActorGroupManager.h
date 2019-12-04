@@ -47,7 +47,7 @@ struct FActorGroupInfo
 	}
 };
 
-class SPATIALGDK_API UActorGroupManager
+class SPATIALGDK_API SpatialActorGroupManager
 {
 private:
 	TMap<TSoftClassPtr<AActor>, FName> ClassPathToActorGroup;

@@ -11,10 +11,10 @@ class SpatialVirtualWorkerTranslator;
 class USpatialSender;
 class USpatialStaticComponentView;
 
-class USpatialLoadBalanceEnforcer
+class SpatialLoadBalanceEnforcer
 {
 public:
-	USpatialLoadBalanceEnforcer();
+	SpatialLoadBalanceEnforcer();
 
 	void Init(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, USpatialSender* InSpatialSender, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
 	void Tick();
