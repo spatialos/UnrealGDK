@@ -34,13 +34,10 @@ namespace
 	UEStream Stream;
 }  // anonymous namespace
 
-// This is used to track if there is an active trace within a currently processing network call. The user is
-// able to hook into this active trace, and `continue` it to another network relevant call. If so, the
-// ActiveTrace will be moved to a regular tracked trace with a standard key (see `NextTraceKey`)
-const TraceKey USpatialLatencyTracer::ActiveTraceKey = 0;
 const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
 
 USpatialLatencyTracer::USpatialLatencyTracer()
+	: ActiveTraceKey( InvalidTraceKey )
 {
 #if TRACE_LIB_ACTIVE
 	ResetWorkerId();
@@ -94,6 +91,17 @@ bool USpatialLatencyTracer::EndLatencyTrace(UObject* WorldContextObject)
 	return false;
 }
 
+bool USpatialLatencyTracer::IsLatencyTraceActive(UObject* WorldContextObject)
+{
+#if TRACE_LIB_ACTIVE
+	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
+	{
+		return Tracer->IsLatencyTraceActive_Internal();
+	}
+#endif // TRACE_LIB_ACTIVE
+	return false;
+}
+
 #if TRACE_LIB_ACTIVE
 bool USpatialLatencyTracer::IsValidKey(const TraceKey Key)
 {
@@ -109,6 +117,13 @@ TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UFunction*
 	TraceKey ReturnKey = InvalidTraceKey;
 	TrackingTraces.RemoveAndCopyValue(FuncKey, ReturnKey);
 	return ReturnKey;
+}
+
+void USpatialLatencyTracer::MarkActiveLatencyTrace(const TraceKey Key)
+{
+	// We can safely set this to the active trace, even if Key is invalid, as other functionality
+	// is gated on the ActiveTraceKey being present in the TraceMap
+	ActiveTraceKey = Key;
 }
 
 void USpatialLatencyTracer::WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc)
@@ -155,8 +170,6 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, co
 {
 	FScopeLock Lock(&Mutex);
 
-	check(GetActiveTrace() == nullptr);
-
 	if (Schema_GetObjectCount(Obj, FieldId) > 0)
 	{
 		Schema_Object* TraceData = Schema_IndexObject(Obj, FieldId, 0);
@@ -174,9 +187,11 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, co
 
 		FString SpanMsg = FormatMessage(TEXT("Read Trace From Schema Obj"));
 		TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
-		TraceMap.Add(ActiveTraceKey, MoveTemp(RetrieveTrace));
 
-		return ActiveTraceKey;
+		const TraceKey Key = GenerateNewTraceKey();
+		TraceMap.Add(Key, MoveTemp(RetrieveTrace));
+
+		return Key;
 	}
 
 	return InvalidTraceKey;
@@ -260,6 +275,7 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 
 	TraceMap.Add(Key, MoveTemp(*ActiveTrace));
 	TraceMap.Remove(ActiveTraceKey);
+	ActiveTraceKey = InvalidTraceKey;
 
 	return true;
 }
@@ -279,14 +295,18 @@ bool USpatialLatencyTracer::EndLatencyTrace_Internal()
 	ActiveTrace->End();
 
 	TraceMap.Remove(ActiveTraceKey);
+	ActiveTraceKey = InvalidTraceKey;
 
 	return true;
 }
 
+bool USpatialLatencyTracer::IsLatencyTraceActive_Internal()
+{
+	return (ActiveTraceKey != InvalidTraceKey);
+}
+
 TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& FunctionName)
 {
-	static TraceKey NextTraceKey = 1;
-
 	if (UClass* ActorClass = Actor->GetClass())
 	{
 		if (UFunction* Function = ActorClass->FindFunctionByName(*FunctionName))
@@ -294,14 +314,20 @@ TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const F
 			ActorFuncKey Key{ Actor, Function };
 			if (TrackingTraces.Find(Key) == nullptr)
 			{
-				TrackingTraces.Add(Key, NextTraceKey);
-				return NextTraceKey++;
+				const TraceKey _TraceKey = GenerateNewTraceKey();
+				TrackingTraces.Add(Key, _TraceKey);
+				return _TraceKey;
 			}
 			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc already exists for trace"), *WorkerId);
 		}
 	}
 
 	return InvalidTraceKey;
+}
+
+TraceKey USpatialLatencyTracer::GenerateNewTraceKey()
+{
+	return NextTraceKey++;
 }
 
 USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTrace()
