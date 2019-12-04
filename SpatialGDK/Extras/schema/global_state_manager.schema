@@ -19,6 +19,7 @@ component DeploymentMap {
     id = 9994;
     string map_url = 1;
     bool accepting_players = 2;
+    uint32 session_id = 3;
 }
 
 component StartupActorManager {

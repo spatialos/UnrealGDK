@@ -56,7 +56,7 @@ $commandlet_process = Start-Process "$unreal_path\Engine\Binaries\Win64\UE4Edito
     "-MapPaths=`"$test_repo_map`""
 )
 if (-Not $?) {
-    Write-Host $commandlet_process.
+    Write-Log $commandlet_process.
     throw "Failed to generate schema and snapshots."
 }
 

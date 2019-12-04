@@ -160,9 +160,9 @@ bool USpatialActorChannel::IsSingletonEntity()
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason)
 {
-#if WITH_EDITOR
 	if (NetDriver != nullptr)
 	{
+#if WITH_EDITOR
 		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
 
 		if (bDeleteDynamicEntities &&
@@ -173,26 +173,26 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 			DeleteEntityIfAuthoritative();
 		}
-	}
-#endif
+#endif // WITH_EDITOR
 
-	if (CloseReason != EChannelCloseReason::Dormancy)
-	{
-		// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects.
-		NetDriver->PackageMap->RemoveEntityActor(EntityId);
-	}
-	else
-	{
-		NetDriver->RegisterDormantEntityId(EntityId);
-	}
+		if (CloseReason != EChannelCloseReason::Dormancy)
+		{
+			// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects.
+			NetDriver->PackageMap->RemoveEntityActor(EntityId);
+		}
+		else
+		{
+			NetDriver->RegisterDormantEntityId(EntityId);
+		}
 
-	if (CloseReason == EChannelCloseReason::Destroyed || CloseReason == EChannelCloseReason::LevelUnloaded)
-	{
-		Receiver->ClearPendingRPCs(EntityId);
-		Sender->ClearPendingRPCs(EntityId);
-	}
+		if (CloseReason == EChannelCloseReason::Destroyed || CloseReason == EChannelCloseReason::LevelUnloaded)
+		{
+			Receiver->ClearPendingRPCs(EntityId);
+			Sender->ClearPendingRPCs(EntityId);
+		}
 
-	NetDriver->RemoveActorChannel(EntityId);
+		NetDriver->RemoveActorChannel(EntityId);
+	}
 
 	return UActorChannel::CleanUp(bForDestroy, CloseReason);
 }

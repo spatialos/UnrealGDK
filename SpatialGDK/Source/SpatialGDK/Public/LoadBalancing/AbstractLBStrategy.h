@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "SpatialConstants.h"
+
+#include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+
 #include "AbstractLBStrategy.generated.h"
 
 class USpatialNetDriver;
@@ -30,12 +32,11 @@ class SPATIALGDK_API UAbstractLBStrategy : public UObject
 public:
 	UAbstractLBStrategy();
 
-	virtual void Init(const USpatialNetDriver* InNetDriver);
+	virtual void Init(const USpatialNetDriver* InNetDriver) {}
 
 	bool IsReady() const { return LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
 
 	void SetLocalVirtualWorkerId(VirtualWorkerId LocalVirtualWorkerId);
-	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; }
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
 
