@@ -151,7 +151,7 @@ public:
 	TSharedPtr<SpatialActorGroupManager> ActorGroupManager;
 	TSharedPtr<SpatialSnapshotManager> SnapshotManager;
 	TSharedPtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
-	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+	TSharedPtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 

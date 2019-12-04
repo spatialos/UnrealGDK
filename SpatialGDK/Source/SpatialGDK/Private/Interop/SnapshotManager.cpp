@@ -67,6 +67,7 @@ void SpatialSnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDel
 		}
 	});
 
+	check(Receiver.IsValid());
 	Receiver->AddEntityQueryDelegate(RequestID, WorldQueryDelegate);
 }
 
@@ -167,6 +168,8 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 		// Ensure we have the same number of reserved IDs as we have entities to spawn
 		check(EntitiesToSpawn.Num() == Op.number_of_entity_ids);
 
+		check(GlobalStateManager.IsValid());
+
 		for (uint32_t i = 0; i < Op.number_of_entity_ids; i++)
 		{
 			// Get an entity to spawn and a reserved EntityID
@@ -199,5 +202,6 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 	// References to entities that are stored within the snapshot need remapping once we know the new entity IDs.
 
 	// Add the spawn delegate
+	check(Receiver.IsValid());
 	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, SpawnEntitiesDelegate);
 }

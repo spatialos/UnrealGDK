@@ -52,14 +52,10 @@ public:
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 
 private:
-	UPROPERTY()
-	UAbstractLBStrategy* LoadBalanceStrategy;
-	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
-	UPROPERTY()
-	USpatialReceiver* Receiver;
-	UPROPERTY()
-	USpatialWorkerConnection* Connection;
+	TWeakObjectPtr<UAbstractLBStrategy> LoadBalanceStrategy;
+	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
+	TWeakObjectPtr<USpatialReceiver> Receiver;
+	TWeakObjectPtr<USpatialWorkerConnection> Connection;
 
 	TMap<VirtualWorkerId, PhysicalWorkerName>  VirtualToPhysicalWorkerMapping;
 	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;

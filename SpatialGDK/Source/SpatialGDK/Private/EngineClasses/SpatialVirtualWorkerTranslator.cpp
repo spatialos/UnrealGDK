@@ -92,6 +92,7 @@ void SpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChan
 // a worker first becomes authoritative for the mapping.
 void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Object)
 {
+	check(StaticComponentView.IsValid());
 	if (StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) ApplyMappingFromSchema called, but this worker is authoritative, ignoring"), *WorkerId);
@@ -163,6 +164,7 @@ void SpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 {
 	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) SendVirtualWorkerMappingUpdate"), *WorkerId);
 
+	check(StaticComponentView.IsValid());
 	check(StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID));
 
 	// Construct the mapping update based on the local virtual worker to physical worker mapping.
@@ -173,6 +175,7 @@ void SpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 
 	WriteMappingToSchema(UpdateObject);
 
+	check(Connection.IsValid());
 	Connection->SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, &Update);
 
 	// Broadcast locally since we won't receive the ComponentUpdate on this worker.
@@ -186,6 +189,7 @@ void SpatialVirtualWorkerTranslator::QueryForWorkerEntities()
 
 	checkf(!bWorkerEntityQueryInFlight, TEXT("(%s) Trying to query for worker entities while a previous query is still in flight!"), *WorkerId);
 
+	check(StaticComponentView.IsValid());
 	if (!StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Trying QueryForWorkerEntities, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *WorkerId);
@@ -207,12 +211,14 @@ void SpatialVirtualWorkerTranslator::QueryForWorkerEntities()
 
 	// Make the query.
 	Worker_RequestId RequestID;
+	check(Connection.IsValid());
 	RequestID = Connection->SendEntityQueryRequest(&WorkerEntityQuery);
 	bWorkerEntityQueryInFlight = true;
 
 	// Register a method to handle the query response.
 	EntityQueryDelegate WorkerEntityQueryDelegate;
 	WorkerEntityQueryDelegate.BindRaw(this, &SpatialVirtualWorkerTranslator::WorkerEntityQueryDelegate);
+	check(Receiver.IsValid());
 	Receiver->AddEntityQueryDelegate(RequestID, WorkerEntityQueryDelegate);
 }
 
@@ -221,6 +227,7 @@ void SpatialVirtualWorkerTranslator::QueryForWorkerEntities()
 // returned information will be thrown away.
 void SpatialVirtualWorkerTranslator::WorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op)
 {
+	check(StaticComponentView.IsValid());
 	if (!StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Received response to WorkerEntityQuery, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *WorkerId);
@@ -246,6 +253,7 @@ void SpatialVirtualWorkerTranslator::WorkerEntityQueryDelegate(const Worker_Enti
 void SpatialVirtualWorkerTranslator::AssignWorker(const PhysicalWorkerName& Name)
 {
 	check(!UnassignedVirtualWorkers.IsEmpty());
+	check(StaticComponentView.IsValid());
 	check(StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID));
 
 	// Get a VirtualWorkerId from the list of unassigned work.
@@ -267,6 +275,7 @@ void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalW
 		bIsReady = true;
 
 		// Tell the strategy about the local virtual worker id.
+		check(LoadBalanceStrategy.IsValid());
 		LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
 	}
 }

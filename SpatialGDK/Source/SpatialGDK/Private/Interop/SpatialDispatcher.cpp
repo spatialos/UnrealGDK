@@ -22,6 +22,9 @@ void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticCompone
 
 void SpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 {
+	check(Receiver.IsValid());
+	check(StaticComponentView.IsValid());
+
 	for (size_t i = 0; i < OpList->op_count; ++i)
 	{
 		Worker_Op* Op = &OpList->ops[i];
@@ -103,6 +106,7 @@ void SpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			break;
 		case WORKER_OP_TYPE_METRICS:
 #if !UE_BUILD_SHIPPING
+			check(SpatialMetrics.IsValid());
 			SpatialMetrics->HandleWorkerMetrics(Op);
 #endif
 			break;
@@ -129,6 +133,7 @@ void SpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 {
 	Worker_ComponentId ComponentId = SpatialGDK::GetComponentId(Op);
 	check(ComponentId != SpatialConstants::INVALID_COMPONENT_ID);
+	check(StaticComponentView.IsValid());
 
 	switch (Op->op_type)
 	{
