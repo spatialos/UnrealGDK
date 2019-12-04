@@ -20,7 +20,20 @@
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 static const FString SpatialExe(TEXT("spatial.exe"));
-static const FString SpatialServiceVersion(TEXT("20190716.094149.1b6d448edd"));
+static const FString SpatialServiceVersion(TEXT("20191128.003423.475a3c1edb"));
+
+namespace
+{
+	FString GetDomainEnvironmentStr(bool bIsInChina)
+	{
+		FString DomainEnvironmentStr;
+		if (bIsInChina)
+		{
+			DomainEnvironmentStr = TEXT("--domain=spatialoschina.com --environment=cn-production");
+		}
+		return DomainEnvironmentStr;
+	}
+} // anonymous namespace
 
 FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
@@ -55,6 +68,11 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 		});
 	}
 #endif
+}
+
+void FLocalDeploymentManager::SetInChina(bool bChinaEnabled)
+{
+	bIsInChina = bChinaEnabled;
 }
 
 const FString FLocalDeploymentManager::GetSpotExe()
@@ -122,7 +140,7 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
-		FString BuildConfigArgs = TEXT("worker build build-config");
+		FString BuildConfigArgs = FString::Printf(TEXT("worker build build-config %s"), *GetDomainEnvironmentStr(bIsInChina));
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
 		ExecuteAndReadOutput(SpatialExe, BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
@@ -368,7 +386,7 @@ bool FLocalDeploymentManager::TryStartSpatialService()
 
 	bStartingSpatialService = true;
 
-	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s"), *SpatialServiceVersion);
+	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s %s"), *SpatialServiceVersion, *GetDomainEnvironmentStr(bIsInChina));
 	FString ServiceStartResult;
 	int32 ExitCode;
 	ExecuteAndReadOutput(SpatialExe, SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStartResult, ExitCode);
@@ -400,7 +418,7 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 {
 	bStoppingSpatialService = true;
 
-	FString SpatialServiceStartArgs = TEXT("service stop");
+	FString SpatialServiceStartArgs = FString::Printf(TEXT("service stop %s"), *GetDomainEnvironmentStr(bIsInChina));
 	FString ServiceStopResult;
 	int32 ExitCode;
 	ExecuteAndReadOutput(SpatialExe, SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStopResult, ExitCode);
@@ -490,7 +508,7 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 
 bool FLocalDeploymentManager::GetServiceStatus()
 {
-	FString SpatialServiceStatusArgs = TEXT("service status");
+	FString SpatialServiceStatusArgs = FString::Printf(TEXT("service status %s"), *GetDomainEnvironmentStr(bIsInChina));
 	FString ServiceStatusResult;
 	int32 ExitCode;
 	ExecuteAndReadOutput(SpatialExe, SpatialServiceStatusArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStatusResult, ExitCode);
