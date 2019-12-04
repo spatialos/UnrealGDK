@@ -84,19 +84,13 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 		if (ComponentDataPtr == nullptr)
 		{
 			ComponentDataPtr = &PendingRPCsOnEntityCreation.Add(EntityComponent, Schema_CreateComponentData());
+			LastSentRPCIds.Add(EntityType, 0);
 		}
 		EndpointObject = Schema_GetComponentDataFields(*ComponentDataPtr);
 
 		LastAckedRPCId = 0;
 	}
 
-	if (!LastSentRPCIds.Contains(EntityType))
-	{
-		// This is a hack to cover the case where we created an actor and pushing RPCs on it before the entity is created.
-		// Since we add things to LastSentRPCIds when we gain authority over the component, add 0 for the new entity.
-		check(!View->HasComponent(EntityId, Descriptor.RingBufferComponentId));
-		LastSentRPCIds.Add(EntityType, 0);
-	}
 	uint64 NewRPCId = LastSentRPCIds[EntityType] + 1;
 
 	// Check capacity.
@@ -301,6 +295,7 @@ void SpatialRPCService::OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
+		ClearOverflowedRPCs(EntityId);
 		break;
 	}
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
@@ -309,6 +304,7 @@ void SpatialRPCService::OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
+		ClearOverflowedRPCs(EntityId);
 		break;
 	}
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:

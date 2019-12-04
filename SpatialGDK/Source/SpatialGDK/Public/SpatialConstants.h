@@ -254,6 +254,11 @@ namespace SpatialConstants
 
 	const FString ZoningAttribute = DefaultServerWorkerType.ToString();
 
+	FORCEINLINE Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
+	{
+		return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
+	}
+
 } // ::SpatialConstants
 
 FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)

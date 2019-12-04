@@ -369,22 +369,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		}
 	}
 
-	if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID ||
-		Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID ||
-		Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
-	{
-		check(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers);
-
-		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
-		{
-			RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
-		}
-		else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
-		{
-			RPCService->OnEndpointAuthorityLost(Op.entity_id, Op.component_id);
-		}
-	}
-
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
 		HandlePlayerLifecycleAuthority(Op, PlayerController);
@@ -493,7 +477,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	}
 	else
 	{
-		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
+		if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers))
 		{
 			if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 			{
@@ -501,10 +485,30 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			}
 
 			// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
-			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
+			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers))
 			{
 				Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
+		}
+	}
+
+	if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID ||
+		Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID ||
+		Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+	{
+		check(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers);
+
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
+			if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+			{
+				RPCService->ExtractRPCsForEntity(Op.entity_id, Op.component_id);
+			}
+		}
+		else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+		{
+			RPCService->OnEndpointAuthorityLost(Op.entity_id, Op.component_id);
 		}
 	}
 
@@ -1844,7 +1848,6 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	ERPCType Type = RPCInfo.Type;
 
-	UE_LOG(LogTemp, Warning, TEXT("!@# RPC! %s %s"), *TargetObject->GetPathName(), *Function->GetName());
 	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, Type, MoveTemp(InPayload));
 }
 

@@ -71,17 +71,13 @@ enum class EPushRPCResult : uint8
 	AckAuthority
 };
 
-class SpatialRPCService
+class SPATIALGDK_API SpatialRPCService
 {
 public:
 	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View);
 
 	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload);
 	EPushRPCResult PushOverflowedRPCs();
-
-	// For now, we should drop overflowed RPCs when entity crosses the boundary.
-	// When locking works as intended, we should re-evaluate how this will work (drop after some time?).
-	void ClearOverflowedRPCs(Worker_EntityId EntityId);
 
 	struct UpdateToSend
 	{
@@ -103,6 +99,10 @@ public:
 	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 private:
+	// For now, we should drop overflowed RPCs when entity crosses the boundary.
+	// When locking works as intended, we should re-evaluate how this will work (drop after some time?).
+	void ClearOverflowedRPCs(Worker_EntityId EntityId);
+
 	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload);
 
 	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);

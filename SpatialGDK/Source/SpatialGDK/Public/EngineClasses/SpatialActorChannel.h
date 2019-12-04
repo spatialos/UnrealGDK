@@ -11,6 +11,7 @@
 #include "Runtime/Launch/Resources/Version.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
@@ -64,7 +65,7 @@ public:
 			return false;
 		}
 
-		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY);
+		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers));
 	}
 
 	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
@@ -74,7 +75,7 @@ public:
 
 		if (const SpatialGDK::EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId))
 		{
-			if (const WorkerRequirementSet* WorkerRequirementsSet = EntityACL->ComponentWriteAcl.Find(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY))
+			if (const WorkerRequirementSet* WorkerRequirementsSet = EntityACL->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers)))
 			{
 				for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
 				{

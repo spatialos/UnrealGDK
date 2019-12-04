@@ -684,8 +684,16 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterestForActor(
 		FillComponentInterests(SubobjectInfo, bIsNetOwned, ComponentInterest);
 	}
 
-	ComponentInterest.Add({ SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, bIsNetOwned });
-	ComponentInterest.Add({ SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, bIsNetOwned });
+	if (GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers)
+	{
+		ComponentInterest.Add({ SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, bIsNetOwned });
+		ComponentInterest.Add({ SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID, bIsNetOwned });
+	}
+	else
+	{
+		ComponentInterest.Add({ SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, bIsNetOwned });
+		ComponentInterest.Add({ SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, bIsNetOwned });
+	}
 
 	return ComponentInterest;
 }
@@ -773,7 +781,7 @@ void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const 
 	for (const Worker_ComponentId& ComponentId : ComponentIds)
 	{
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
-			ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
+			ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers))
 		{
 			continue;
 		}
@@ -1247,7 +1255,7 @@ bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& O
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
-	EntityACL->ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, OwningClientOnly);
+	EntityACL->ComponentWriteAcl.Add(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers), OwningClientOnly);
 	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 
 	Connection->SendComponentUpdate(EntityId, &Update);
