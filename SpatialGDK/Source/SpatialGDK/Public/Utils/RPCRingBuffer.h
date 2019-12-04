@@ -30,34 +30,28 @@ struct RPCRingBufferDescriptor
 		return SchemaFieldStart + GetRingBufferElementIndex(RPCId);
 	}
 
-	inline bool HasCapacity(uint64 LastAckedRPCId, uint64 NewRPCId) const
-	{
-		return LastAckedRPCId + RingBufferSize >= NewRPCId;
-	}
-
-	ERPCType Type;
-
-	Worker_ComponentId RingBufferComponentId;
 	uint32 RingBufferSize;
 	Schema_FieldId SchemaFieldStart;
-	Schema_FieldId LastSentFieldId;
-
-	Worker_ComponentId AckComponentId;
-	Schema_FieldId AckFieldId;
-
-	bool bShouldQueueOverflowed;
+	Schema_FieldId LastSentRPCFieldId;
 };
 
 namespace RPCRingBufferUtils
 {
 
+Worker_ComponentId GetRingBufferComponentId(ERPCType Type);
 RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type);
+uint32 GetRingBufferSize(ERPCType Type);
 
-void ReadBufferFromSchema(Schema_Object* SchemaObject, const RPCRingBufferDescriptor& Descriptor, RPCRingBuffer& OutBuffer);
-void ReadAckFromSchema(Schema_Object* SchemaObject, const RPCRingBufferDescriptor& Descriptor, uint64& OutAck);
+Worker_ComponentId GetAckComponentId(ERPCType Type);
+Schema_FieldId GetAckFieldId(ERPCType Type);
 
-void WriteRPCToSchema(Schema_Object* SchemaObject, const RPCRingBufferDescriptor& Descriptor, uint64 RPCId, RPCPayload Payload);
-void WriteAckToSchema(Schema_Object* SchemaObject, const RPCRingBufferDescriptor& Descriptor, uint64 Ack);
+bool ShouldQueueOverflowed(ERPCType Type);
+
+void ReadBufferFromSchema(Schema_Object* SchemaObject, ERPCType Type, RPCRingBuffer& OutBuffer);
+void ReadAckFromSchema(Schema_Object* SchemaObject, ERPCType Type, uint64& OutAck);
+
+void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, RPCPayload Payload);
+void WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack);
 
 } // namespace RPCRingBufferUtils
 

@@ -2,8 +2,6 @@
 
 #include "Schema/MulticastRPCs.h"
 
-#include "SpatialGDKSettings.h"
-
 namespace SpatialGDK
 {
 
@@ -20,13 +18,12 @@ void MulticastRPCs::ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 
 void MulticastRPCs::InitBuffers()
 {
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	MulticastRPCBuffer.RingBuffer.SetNum(SpatialGDKSettings->GetRPCRingBufferSize(ERPCType::NetMulticast));
+	MulticastRPCBuffer.RingBuffer.SetNum(RPCRingBufferUtils::GetRingBufferSize(ERPCType::NetMulticast));
 }
 
 void MulticastRPCs::ReadFromSchema(Schema_Object* SchemaObject)
 {
-	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::NetMulticast), MulticastRPCBuffer);
+	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, ERPCType::NetMulticast, MulticastRPCBuffer);
 }
 
 } // namespace SpatialGDK

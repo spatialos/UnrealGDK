@@ -20,10 +20,9 @@ SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, cons
 
 EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload)
 {
-	RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(Type);
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
-	if (Descriptor.bShouldQueueOverflowed && OverflowedRPCs.Contains(EntityType))
+	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && OverflowedRPCs.Contains(EntityType))
 	{
 		// Already has queued RPCs of this type, queue until those are pushed.
 		AddOverflowedRPC(EntityType, Payload);
@@ -42,16 +41,16 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 
 EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload)
 {
-	RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(Type);
+	Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
 
-	EntityComponentId EntityComponent = EntityComponentId(EntityId, Descriptor.RingBufferComponentId);
+	EntityComponentId EntityComponent = EntityComponentId(EntityId, RingBufferComponentId);
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
 	Schema_Object* EndpointObject;
 	uint64 LastAckedRPCId;
-	if (View->HasComponent(EntityId, Descriptor.RingBufferComponentId))
+	if (View->HasComponent(EntityId, RingBufferComponentId))
 	{
-		check(View->HasAuthority(EntityId, Descriptor.RingBufferComponentId));
+		check(View->HasAuthority(EntityId, RingBufferComponentId));
 
 		Schema_ComponentUpdate** ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponent);
 		if (ComponentUpdatePtr == nullptr)
@@ -68,7 +67,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 		else
 		{
 			// We shouldn't have authority over the component that has the acks.
-			if (View->HasAuthority(EntityId, Descriptor.AckComponentId))
+			if (View->HasAuthority(EntityId, RPCRingBufferUtils::GetAckComponentId(Type)))
 			{
 				return EPushRPCResult::AckAuthority;
 			}
@@ -94,16 +93,16 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	uint64 NewRPCId = LastSentRPCIds[EntityType] + 1;
 
 	// Check capacity.
-	if (Descriptor.HasCapacity(LastAckedRPCId, NewRPCId))
+	if (LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) >= NewRPCId)
 	{
-		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Descriptor, NewRPCId, MoveTemp(Payload));
+		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, MoveTemp(Payload));
 
 		LastSentRPCIds[EntityType] = NewRPCId;
 	}
 	else
 	{
 		// Overflowed
-		if (Descriptor.bShouldQueueOverflowed)
+		if (RPCRingBufferUtils::ShouldQueueOverflowed(Type))
 		{
 			return EPushRPCResult::QueueOverflowed;
 		}
@@ -362,8 +361,9 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 	else
 	{
 		LastAckedRPCIds[EntityTypePair] = Buffer.LastSentRPCId;
-		EntityComponentId EntityComponentPair = EntityComponentId(EntityId, Descriptor.AckComponentId);
-		if (View->HasComponent(EntityId, Descriptor.AckComponentId))
+		Worker_ComponentId AckComponentId = RPCRingBufferUtils::GetAckComponentId(Type);
+		EntityComponentId EntityComponentPair = EntityComponentId(EntityId, AckComponentId);
+		if (View->HasComponent(EntityId, AckComponentId))
 		{
 			Schema_ComponentUpdate** ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentPair);
 			if (ComponentUpdatePtr == nullptr)
@@ -372,7 +372,7 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 			}
 			Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(*ComponentUpdatePtr);
 
-			RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Descriptor, Buffer.LastSentRPCId);
+			RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, Buffer.LastSentRPCId);
 		}
 		else
 		{

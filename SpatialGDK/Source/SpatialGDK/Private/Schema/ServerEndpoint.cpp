@@ -2,8 +2,6 @@
 
 #include "Schema/ServerEndpoint.h"
 
-#include "SpatialGDKSettings.h"
-
 namespace SpatialGDK
 {
 
@@ -20,17 +18,16 @@ void ServerEndpoint::ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 
 void ServerEndpoint::InitBuffers()
 {
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	ReliableRPCBuffer.RingBuffer.SetNum(SpatialGDKSettings->GetRPCRingBufferSize(ERPCType::ClientReliable));
-	UnreliableRPCBuffer.RingBuffer.SetNum(SpatialGDKSettings->GetRPCRingBufferSize(ERPCType::ClientUnreliable));
+	ReliableRPCBuffer.RingBuffer.SetNum(RPCRingBufferUtils::GetRingBufferSize(ERPCType::ClientReliable));
+	UnreliableRPCBuffer.RingBuffer.SetNum(RPCRingBufferUtils::GetRingBufferSize(ERPCType::ClientUnreliable));
 }
 
 void ServerEndpoint::ReadFromSchema(Schema_Object* SchemaObject)
 {
-	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::ClientReliable), ReliableRPCBuffer);
-	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::ClientUnreliable), UnreliableRPCBuffer);
-	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::ServerReliable), ReliableRPCAck);
-	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::ServerUnreliable), UnreliableRPCAck);
+	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, ERPCType::ClientReliable, ReliableRPCBuffer);
+	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, ERPCType::ClientUnreliable, UnreliableRPCBuffer);
+	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, ERPCType::ServerReliable, ReliableRPCAck);
+	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, ERPCType::ServerUnreliable, UnreliableRPCAck);
 }
 
 } // namespace SpatialGDK
