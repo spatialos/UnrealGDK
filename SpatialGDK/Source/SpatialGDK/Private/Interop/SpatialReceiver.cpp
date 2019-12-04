@@ -43,7 +43,7 @@ DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel,
 
 using namespace SpatialGDK;
 
-void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService)
+void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -52,7 +52,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorker
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
 	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer;
-	VirtualWorkerTranslator = InVirtualWorkerTranslator;
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
 
@@ -169,10 +168,10 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		if (VirtualWorkerTranslator != nullptr)
+		if (NetDriver->VirtualWorkerTranslator != nullptr)
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
-			VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
 		return;
 	}
@@ -303,6 +302,8 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 
 void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, APlayerController* PlayerController)
 {
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("HandlePlayerLifecycleAuthority for PlayerController %d."), *AActor::GetDebugName(PlayerController));
+
 	// Server initializes heartbeat logic based on its authority over the position component,
 	// client does the same for heartbeat component
 	if ((NetDriver->IsServer() && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID) ||
@@ -341,6 +342,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	{
 		GlobalStateManager->AuthorityChanged(Op);
 		return;
+	}
+
+	if (NetDriver->VirtualWorkerTranslator)
+	{
+		NetDriver->VirtualWorkerTranslator->AuthorityChanged(Op);
 	}
 
 	if (LoadBalanceEnforcer)
@@ -1186,12 +1192,12 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 			check(LoadBalanceEnforcer);
 			LoadBalanceEnforcer->OnAuthorityIntentComponentUpdated(Op);
 		}
-		break;
+		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		if (VirtualWorkerTranslator != nullptr)
+		if (NetDriver->VirtualWorkerTranslator != nullptr)
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
-			VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
 		return;
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
