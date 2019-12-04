@@ -40,7 +40,7 @@ if ($proc.ExitCode -ne 0) {
 }
 
 # Build the testing project
-Start-Event "setup-project" "command"
+Start-Event "build-project" "command"
 &$PSScriptRoot"\build-project.ps1" `
     -unreal_path "$unreal_path" `
     -test_repo_branch "$test_repo_branch" `
@@ -52,7 +52,7 @@ Start-Event "setup-project" "command"
     -build_platform "$target_platform" `
     -build_state "$env:BUILD_STATE" `
     -build_target "$env:BUILD_TARGET"
-Finish-Event "setup-project" "command"
+Finish-Event "build-project" "command"
 
 # Only run tests on Windows, as we do not have a linux agent - should not matter
 if ($target_platform -eq "Win64" -And $env:BUILD_TARGET -eq "Editor" -And $env:BUILD_STATE -eq "Development") {
