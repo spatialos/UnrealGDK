@@ -143,7 +143,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// Give the actor a chance to inject writeAcls for manually authored schema components
 	if (ExternalSchemaActor != nullptr)
 	{
-		ExternalSchemaActor->GetWriteAclMap(ComponentWriteAcl);
+		ComponentWriteAcl.Append(ExternalSchemaActor->GetWriteAclMap());
 	}
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
@@ -255,7 +255,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// Give the actor a chance to inject initial component data for manually authored schema components
 	if (ExternalSchemaActor != nullptr)
 	{
-		ExternalSchemaActor->GetInitialComponentData(ComponentDatas);
+		ComponentDatas.Append(ExternalSchemaActor->GetInitialComponentData());
 	}
 
 	ComponentFactory DataFactory(false, NetDriver);
