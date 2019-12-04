@@ -1,5 +1,4 @@
 param(
-    [string] $build_output_dir,
     [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine", ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
     [string] $test_repo_branch,
     [string] $test_repo_url,
@@ -11,10 +10,6 @@ param(
     [string] $build_state,
     [string] $build_target
 )
-
-# Copy the built files back into the SpatialGDK folder, to have a complete plugin
-# The trailing \ on the destination path is important!
-Copy-Item -Path "$build_output_dir\*" -Destination "$gdk_home\SpatialGDK\" -Recurse -Container -ErrorAction SilentlyContinue
 
 # Workaround for UNR-2156 and UNR-2076, where spatiald / runtime processes sometimes never close, or where runtimes are orphaned
 # Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
