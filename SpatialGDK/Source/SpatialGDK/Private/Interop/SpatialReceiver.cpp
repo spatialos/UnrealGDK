@@ -11,7 +11,6 @@
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
-#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
@@ -1563,7 +1562,21 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		bApplyWithUnresolvedRefs = true;
 	}
 
+#if TRACE_LIB_ACTIVE
+	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(this);
+	Tracer->MarkActiveLatencyTrace(Params.Payload.Trace);
+#endif
+
 	ERPCResult Result = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
+
+#if TRACE_LIB_ACTIVE
+	if (Result == ERPCResult::Success)
+	{
+		Tracer->EndLatencyTrace(Params.Payload.Trace, TEXT("Unhandled trace - automatically ended"));
+	}
+	Tracer->MarkActiveLatencyTrace(USpatialLatencyTracer::InvalidTraceKey);
+#endif
+
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };
 }
 
