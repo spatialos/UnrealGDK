@@ -166,8 +166,8 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 		// Ensure we have the same number of reserved IDs as we have entities to spawn
 		check(EntitiesToSpawn.Num() == Op.number_of_entity_ids);
-
 		check(GlobalStateManager.IsValid());
+		check(Connection.IsValid());
 
 		for (uint32_t i = 0; i < Op.number_of_entity_ids; i++)
 		{
@@ -186,7 +186,6 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 			}
 
 			UE_LOG(LogSnapshotManager, Log, TEXT("Sending entity create request for: %i"), ReservedEntityID);
-			check(Connection.IsValid());
 			Connection->SendCreateEntityRequest(MoveTemp(EntityToSpawn), &ReservedEntityID);
 		}
 
