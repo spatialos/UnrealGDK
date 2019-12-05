@@ -46,7 +46,7 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 	RequestID = Connection->SendEntityQueryRequest(&WorldQuery);
 
 	EntityQueryDelegate WorldQueryDelegate;
-	WorldQueryDelegate.BindLambda([this, PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op)
+	WorldQueryDelegate.BindLambda([Connection = this->Connection, PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -59,7 +59,7 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 		else
 		{
 			// Send deletion requests for all entities found in the world entity query.
-			DeleteEntities(Op);
+			DeleteEntities(Op, Connection);
 
 			// The world is now ready to finish ServerTravel which means loading in a new map.
 			PostWorldWipeDelegate.ExecuteIfBound();
@@ -70,7 +70,7 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 	Receiver->AddEntityQueryDelegate(RequestID, WorldQueryDelegate);
 }
 
-void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op)
+void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op, TWeakObjectPtr<USpatialWorkerConnection> Connection)
 {
 	UE_LOG(LogSnapshotManager, Log, TEXT("Deleting %u entities."), Op.result_count);
 
@@ -160,7 +160,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate SpawnEntitiesDelegate;
-	SpawnEntitiesDelegate.BindLambda([EntitiesToSpawn, this](const Worker_ReserveEntityIdsResponseOp& Op)
+	SpawnEntitiesDelegate.BindLambda([Connection = this->Connection, GlobalStateManager = this->GlobalStateManager, EntitiesToSpawn](const Worker_ReserveEntityIdsResponseOp& Op)
 	{
 		UE_LOG(LogSnapshotManager, Log, TEXT("Creating entities in snapshot, number of entities to spawn: %i"), Op.number_of_entity_ids);
 

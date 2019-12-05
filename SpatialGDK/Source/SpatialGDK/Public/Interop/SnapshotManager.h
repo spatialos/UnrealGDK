@@ -24,10 +24,11 @@ public:
 	void Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager, USpatialReceiver* InReceiver);
 
 	void WorldWipe(const PostWorldWipeDelegate& Delegate);
-	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
 	void LoadSnapshot(const FString& SnapshotName);
 
 private:
+	static void DeleteEntities(const Worker_EntityQueryResponseOp& Op, TWeakObjectPtr<USpatialWorkerConnection> Connection);
+
 	TWeakObjectPtr<USpatialWorkerConnection> Connection;
 	TWeakObjectPtr<UGlobalStateManager> GlobalStateManager;
 	TWeakObjectPtr<USpatialReceiver> Receiver;
