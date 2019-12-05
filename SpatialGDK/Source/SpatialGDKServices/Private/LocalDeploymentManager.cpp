@@ -452,7 +452,6 @@ bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
 	FString SpotProjectInfoArgs = TEXT("alpha service project-info --json");
 	FString SpotProjectInfoResult;
 	FString StdErr;
-	FString SpatialServiceStatusArgs = FString::Printf(TEXT("service status %s"), *GetDomainEnvironmentStr(bIsInChina));
 	FString ServiceStatusResult;
 	int32 ExitCode;
 
