@@ -10,7 +10,10 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslator, Log, All)
 
-class USpatialNetDriver;
+class UAbstractLBStrategy;
+class USpatialStaticComponentView;
+class USpatialReceiver;
+class USpatialWorkerConnection;
 
 typedef FString PhysicalWorkerName;
 
@@ -19,7 +22,11 @@ class SPATIALGDK_API SpatialVirtualWorkerTranslator
 public:
 	SpatialVirtualWorkerTranslator();
 
-	void Init(USpatialNetDriver* InNetDriver);
+	void Init(UAbstractLBStrategy* InLoadBalanceStrategy,
+		USpatialStaticComponentView* InStaticComponentView,
+		USpatialReceiver* InReceiver,
+		USpatialWorkerConnection* InConnection,
+		FString InWorkerId);
 
 	// Returns true if the Translator has received the information needed to map virtual workers to physical workers.
 	// Currently that is only the number of virtual workers desired.
@@ -45,7 +52,10 @@ public:
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 
 private:
-	USpatialNetDriver* NetDriver;
+	TWeakObjectPtr<UAbstractLBStrategy> LoadBalanceStrategy;
+	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
+	TWeakObjectPtr<USpatialReceiver> Receiver;
+	TWeakObjectPtr<USpatialWorkerConnection> Connection;
 
 	TMap<VirtualWorkerId, PhysicalWorkerName>  VirtualToPhysicalWorkerMapping;
 	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
