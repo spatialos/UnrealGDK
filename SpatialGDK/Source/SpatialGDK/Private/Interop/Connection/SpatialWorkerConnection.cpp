@@ -390,9 +390,9 @@ void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Wor
 	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
 }
 
-void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate)
+void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key)
 {
-	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate);
+	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate, Key);
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
@@ -561,6 +561,8 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		TUniquePtr<FOutgoingMessage> OutgoingMessage;
 		OutgoingMessagesQueue.Dequeue(OutgoingMessage);
 
+		OnDequeueMessage.Broadcast(OutgoingMessage.Get());
+
 		static const Worker_UpdateParameters DisableLoopback{ /*loopback*/ WORKER_COMPONENT_UPDATE_LOOPBACK_NONE };
 
 		switch (OutgoingMessage->Type)
@@ -622,6 +624,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 				Message->EntityId,
 				&Message->Update,
 				&DisableLoopback);
+
 			break;
 		}
 		case EOutgoingMessageType::CommandRequest:
@@ -746,5 +749,7 @@ void USpatialWorkerConnection::QueueOutgoingMessage(ArgsType&&... Args)
 {
 	// TODO UNR-1271: As later optimization, we can change the queue to hold a union
 	// of all outgoing message types, rather than having a pointer.
-	OutgoingMessagesQueue.Enqueue(MakeUnique<T>(Forward<ArgsType>(Args)...));
+	auto Message = MakeUnique<T>(Forward<ArgsType>(Args)...);
+	OnEnqueueMessage.Broadcast(Message.Get());
+	OutgoingMessagesQueue.Enqueue(MoveTemp(Message));
 }
