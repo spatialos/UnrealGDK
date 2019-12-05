@@ -11,20 +11,6 @@ param(
     [string] $build_target
 )
 
-# Workaround for UNR-2156 and UNR-2076, where spatiald / runtime processes sometimes never close, or where runtimes are orphaned
-# Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
-Start-Process spatial "service","stop" -Wait -ErrorAction Stop -NoNewWindow
-Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
-
-# Clean up testing project (symlinks could be invalid during initial cleanup - leaving the project as a result)
-if (Test-Path $test_repo_path) {
-    Echo "Removing existing project"
-    Remove-Item $test_repo_path -Recurse -Force
-    if (-Not $?) {
-        Throw "Failed to remove existing project at $($test_repo_path)."
-    }
-}
-
 # Clone the testing project
 Echo "Downloading the testing project from $($test_repo_url)"
 Git clone -b "$test_repo_branch" "$test_repo_url" "$test_repo_path" --depth 1
