@@ -13,7 +13,7 @@ param(
 
 # Clone the testing project
 Echo "Downloading the testing project from $($test_repo_url)"
-Git clone -b "$test_repo_branch" "$test_repo_url" "$test_repo_path" --depth 1
+git clone -b "$test_repo_branch" "$test_repo_url" "$test_repo_path" --depth 1
 if (-Not $?) {
     Throw "Failed to clone testing project from $($test_repo_url)."
 }
