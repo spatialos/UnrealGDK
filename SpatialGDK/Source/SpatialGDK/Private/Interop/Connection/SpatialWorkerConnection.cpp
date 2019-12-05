@@ -24,6 +24,48 @@ DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
 
+FORCEINLINE void ConfigureConnectionParams(Worker_ConnectionParameters& ConnectionParams, const FConnectionConfig& Config)
+{
+	FTCHARToUTF8 WorkerTypeCStr(*Config.WorkerType);
+	ConnectionParams.worker_type = WorkerTypeCStr.Get();
+	ConnectionParams.enable_protocol_logging_at_startup = Config.EnableProtocolLoggingAtStartup;
+
+	FString FinalProtocolLoggingPrefix = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir());
+	if (!Config.ProtocolLoggingPrefix.IsEmpty())
+	{
+		FinalProtocolLoggingPrefix += Config.ProtocolLoggingPrefix;
+	}
+	else
+	{
+		FinalProtocolLoggingPrefix += Config.WorkerId;
+	}
+	FTCHARToUTF8 ProtocolLoggingPrefixCStr(*FinalProtocolLoggingPrefix);
+	ConnectionParams.protocol_logging.log_prefix = ProtocolLoggingPrefixCStr.Get();
+
+	Worker_ComponentVtable DefaultVtable = {};
+	ConnectionParams.component_vtable_count = 0;
+	ConnectionParams.default_component_vtable = &DefaultVtable;
+
+	ConnectionParams.network.connection_type = Config.LinkProtocol;
+	ConnectionParams.network.use_external_ip = Config.UseExternalIp;
+	ConnectionParams.network.tcp.multiplex_level = Config.TcpMultiplexLevel;
+	ConnectionParams.network.tcp.no_delay = Config.TcpNoDelay;
+
+	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
+	Worker_Alpha_CompressionParameters EnableCompressionParams{};
+	ConnectionParams.network.modular_udp.upstream_compression = nullptr;
+	ConnectionParams.network.modular_udp.downstream_compression = &EnableCompressionParams;
+
+	Worker_Alpha_KcpParameters UpstreamParams = *ConnectionParams.network.modular_udp.upstream_kcp;
+	UpstreamParams.update_interval_millis = Config.UdpUpstreamIntervalMS;
+	Worker_Alpha_KcpParameters DownstreamParams = *ConnectionParams.network.modular_udp.downstream_kcp;
+	DownstreamParams.update_interval_millis = Config.UdpDownstreamIntervalMS;
+	ConnectionParams.network.modular_udp.upstream_kcp = &UpstreamParams;
+	ConnectionParams.network.modular_udp.downstream_kcp = &DownstreamParams;
+
+	ConnectionParams.enable_dynamic_components = true;
+}
+
 void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
 {
 	GameInstance = InGameInstance;
@@ -189,63 +231,14 @@ void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
 
 void USpatialWorkerConnection::ConnectToReceptionist()
 {
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	if (ReceptionistConfig.WorkerType.IsEmpty())
-	{
-		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType.ToString() : SpatialConstants::DefaultServerWorkerType.ToString();
-		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
-	}
-
 #if WITH_EDITOR
 	SpatialGDKServices::InitWorkers(bConnectAsClient, GetSpatialNetDriverChecked()->PlayInEditorID, ReceptionistConfig.WorkerId);
 #endif
 
-	if (ReceptionistConfig.WorkerId.IsEmpty())
-	{
-		ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
-	}
+	ReceptionistConfig.PreConnectInit(bConnectAsClient);
 
-	// TODO UNR-1271: Move creation of connection parameters into a function somehow
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
-	FTCHARToUTF8 WorkerTypeCStr(*ReceptionistConfig.WorkerType);
-	ConnectionParams.worker_type = WorkerTypeCStr.Get();
-	ConnectionParams.enable_protocol_logging_at_startup = ReceptionistConfig.EnableProtocolLoggingAtStartup;
-
-	FString FinalProtocolLoggingPrefix;
-	if (!ReceptionistConfig.ProtocolLoggingPrefix.IsEmpty())
-	{
-		FinalProtocolLoggingPrefix = ReceptionistConfig.ProtocolLoggingPrefix;
-	}
-	else
-	{
-		FinalProtocolLoggingPrefix = ReceptionistConfig.WorkerId;
-	}
-	FTCHARToUTF8 ProtocolLoggingPrefixCStr(*FinalProtocolLoggingPrefix);
-	ConnectionParams.protocol_logging.log_prefix = ProtocolLoggingPrefixCStr.Get();
-
-	Worker_ComponentVtable DefaultVtable = {};
-	ConnectionParams.component_vtable_count = 0;
-	ConnectionParams.default_component_vtable = &DefaultVtable;
-
-	ConnectionParams.network.connection_type = ReceptionistConfig.LinkProtocol;
-	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
-	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
-	ConnectionParams.network.tcp.no_delay = (SpatialGDKSettings->bTCPNoDelay ? 1 : 0);
-
-	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
-	Worker_Alpha_CompressionParameters EnableCompressionParams{};
-	ConnectionParams.network.modular_udp.upstream_compression = nullptr;
-	ConnectionParams.network.modular_udp.downstream_compression = &EnableCompressionParams;
-
-	Worker_Alpha_KcpParameters UpstreamParams = *ConnectionParams.network.modular_udp.upstream_kcp;
-	UpstreamParams.update_interval_millis = (bConnectAsClient ? SpatialGDKSettings->UDPClientUpstreamUpdateIntervalMS : SpatialGDKSettings->UDPServerUpstreamUpdateIntervalMS);
-	Worker_Alpha_KcpParameters DownstreamParams = *ConnectionParams.network.modular_udp.downstream_kcp;
-	DownstreamParams.update_interval_millis = (bConnectAsClient ? SpatialGDKSettings->UDPClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UDPServerDownstreamUpdateIntervalMS);
-	ConnectionParams.network.modular_udp.upstream_kcp = &UpstreamParams;
-	ConnectionParams.network.modular_udp.downstream_kcp = &DownstreamParams;
-
-	ConnectionParams.enable_dynamic_components = true;
+	ConfigureConnectionParams(ConnectionParams, ReceptionistConfig);
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
 		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.ReceptionistPort,
@@ -256,18 +249,10 @@ void USpatialWorkerConnection::ConnectToReceptionist()
 
 void USpatialWorkerConnection::ConnectToLocator()
 {
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	LocatorConfig.PreConnectInit(bConnectAsClient);
 
-	if (LocatorConfig.WorkerType.IsEmpty())
-	{
-		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
-		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *LocatorConfig.WorkerType);
-	}
-
-	if (LocatorConfig.WorkerId.IsEmpty())
-	{
-		LocatorConfig.WorkerId = LocatorConfig.WorkerType + FGuid::NewGuid().ToString();
-	}
+	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
+	ConfigureConnectionParams(ConnectionParams, LocatorConfig);
 
 	FTCHARToUTF8 PlayerIdentityTokenCStr(*LocatorConfig.PlayerIdentityToken);
 	FTCHARToUTF8 LoginTokenCStr(*LocatorConfig.LoginToken);
@@ -282,38 +267,6 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 	// Connect to the locator on the default port(0 will choose the default)
 	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), 0, &LocatorParams);
-
-	// TODO UNR-1271: Move creation of connection parameters into a function somehow
-	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
-	FTCHARToUTF8 WorkerTypeCStr(*LocatorConfig.WorkerType);
-	ConnectionParams.worker_type = WorkerTypeCStr.Get();
-	ConnectionParams.enable_protocol_logging_at_startup = LocatorConfig.EnableProtocolLoggingAtStartup;
-
-	Worker_ComponentVtable DefaultVtable = {};
-	ConnectionParams.component_vtable_count = 0;
-	ConnectionParams.default_component_vtable = &DefaultVtable;
-
-	ConnectionParams.network.connection_type = LocatorConfig.LinkProtocol;
-	ConnectionParams.network.use_external_ip = LocatorConfig.UseExternalIp;
-	ConnectionParams.network.tcp.multiplex_level = LocatorConfig.TcpMultiplexLevel;
-	ConnectionParams.network.tcp.no_delay = (SpatialGDKSettings->bTCPNoDelay ? 1 : 0);
-
-	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
-	Worker_Alpha_CompressionParameters EnableCompressionParams{};
-	ConnectionParams.network.modular_udp.upstream_compression = nullptr;
-	ConnectionParams.network.modular_udp.downstream_compression = &EnableCompressionParams;
-
-	Worker_Alpha_KcpParameters UpstreamParams = *ConnectionParams.network.modular_udp.upstream_kcp;
-	UpstreamParams.update_interval_millis = (bConnectAsClient ? SpatialGDKSettings->UDPClientUpstreamUpdateIntervalMS : SpatialGDKSettings->UDPServerUpstreamUpdateIntervalMS);
-	Worker_Alpha_KcpParameters DownstreamParams = *ConnectionParams.network.modular_udp.downstream_kcp;
-	DownstreamParams.update_interval_millis = (bConnectAsClient ? SpatialGDKSettings->UDPClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UDPServerDownstreamUpdateIntervalMS);
-	ConnectionParams.network.modular_udp.upstream_kcp = &UpstreamParams;
-	ConnectionParams.network.modular_udp.downstream_kcp = &DownstreamParams;
-
-	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
-	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
-
-	ConnectionParams.enable_dynamic_components = true;
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);
 
