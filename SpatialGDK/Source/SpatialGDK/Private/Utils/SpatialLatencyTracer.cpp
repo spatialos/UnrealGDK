@@ -37,9 +37,9 @@ namespace
 const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
 
 USpatialLatencyTracer::USpatialLatencyTracer()
-	: ActiveTraceKey( InvalidTraceKey )
 {
 #if TRACE_LIB_ACTIVE
+	ActiveTraceKey = InvalidTraceKey;
 	ResetWorkerId();
 #endif
 }
