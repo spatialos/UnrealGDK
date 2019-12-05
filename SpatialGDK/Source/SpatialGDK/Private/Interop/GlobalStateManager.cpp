@@ -545,7 +545,7 @@ bool UGlobalStateManager::HasAuthority()
 	return NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
 }
 
-bool UGlobalStateManager::HasAuthorityOverComponent(const Worker_ComponentId ComponentId)
+bool UGlobalStateManager::HasAuthorityOverComponent(const Worker_ComponentId ComponentId) const
 {
 	return NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 }
