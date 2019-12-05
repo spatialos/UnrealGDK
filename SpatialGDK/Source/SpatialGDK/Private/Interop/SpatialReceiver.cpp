@@ -338,7 +338,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		NetDriver->VirtualWorkerTranslator->AuthorityChanged(Op);
 	}
 
-	TSharedPtr<SpatialLoadBalanceEnforcer>LBEnforcer = LoadBalanceEnforcer.Pin();
+	TSharedPtr<SpatialLoadBalanceEnforcer> LBEnforcer = LoadBalanceEnforcer.Pin();
 	if (LBEnforcer.IsValid())
 	{
 		LBEnforcer->AuthorityChanged(Op);
