@@ -157,7 +157,7 @@ private:
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 
-	TWeakPtr<SpatialActorGroupManager> ActorGroupManager;
+	SpatialActorGroupManager* ActorGroupManager;
 
 	FTimerManager* TimerManager;
 

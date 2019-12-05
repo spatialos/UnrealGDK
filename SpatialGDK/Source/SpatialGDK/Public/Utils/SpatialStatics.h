@@ -82,6 +82,6 @@ public:
 
 private:
 
-	static TSharedPtr<SpatialActorGroupManager> GetActorGroupManager(const UObject* WorldContext);
+	static SpatialActorGroupManager* GetActorGroupManager(const UObject* WorldContext);
 	static FName GetCurrentWorkerType(const UObject* WorldContext);
 };

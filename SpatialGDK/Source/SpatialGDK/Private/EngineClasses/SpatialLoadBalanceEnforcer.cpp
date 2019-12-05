@@ -22,11 +22,12 @@ SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer()
 void SpatialLoadBalanceEnforcer::Init(const FString &InWorkerId,
 	USpatialStaticComponentView* InStaticComponentView,
 	USpatialSender* InSpatialSender,
-	TSharedPtr<SpatialVirtualWorkerTranslator> InVirtualWorkerTranslator)
+	SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
 {
 	WorkerId = InWorkerId;
 	StaticComponentView = InStaticComponentView;
 	Sender = InSpatialSender;
+	check(InVirtualWorkerTranslator);
 	VirtualWorkerTranslator = InVirtualWorkerTranslator;
 }
 
@@ -65,9 +66,7 @@ void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp
 			return;
 		}
 
-		TSharedPtr<SpatialVirtualWorkerTranslator> LocalVirtualWorkerTranslator = VirtualWorkerTranslator.Pin();
-		check(LocalVirtualWorkerTranslator.IsValid());
-		const FString* OwningWorkerId = LocalVirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (OwningWorkerId != nullptr &&
 			*OwningWorkerId == WorkerId &&
 			StaticComponentView->GetAuthority(AuthOp.entity_id, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
@@ -116,9 +115,7 @@ void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 			return;
 		}
 
-		TSharedPtr<SpatialVirtualWorkerTranslator> LocalVirtualWorkerTranslator = VirtualWorkerTranslator.Pin();
-		check(LocalVirtualWorkerTranslator.IsValid());
-		const FString* OwningWorkerId = LocalVirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (OwningWorkerId == nullptr)
 		{
 			const int32 WarnOnAttemptNum = 5;

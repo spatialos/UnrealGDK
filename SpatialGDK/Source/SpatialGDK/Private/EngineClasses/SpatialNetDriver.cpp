@@ -20,12 +20,9 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
-#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
-#include "Interop/SnapshotManager.h"
 #include "Interop/SpatialClassInfoManager.h"
-#include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -34,7 +31,6 @@
 #include "Schema/AlwaysRelevant.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Utils/ActorGroupManager.h"
 #include "Utils/EntityPool.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
@@ -123,7 +119,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	}
 
 	// Initialize ActorGroupManager as it is a depdency of ClassInfoManager (see below)
-	ActorGroupManager = MakeShared<SpatialActorGroupManager>();
+	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
 	ActorGroupManager->Init();
 
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
@@ -134,7 +130,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 
 	// If it fails to load, don't attempt to connect to spatial.
-	if (!ClassInfoManager->TryInit(this, ActorGroupManager))
+	if (!ClassInfoManager->TryInit(this, ActorGroupManager.Get()))
 	{
 		Error = TEXT("Failed to load Spatial SchemaDatabase! Make sure that schema has been generated for your project");
 		return false;
@@ -387,7 +383,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
 	InitializeSpatialOutputDevice();
 
-	Dispatcher = MakeShared<SpatialDispatcher>();
+	Dispatcher = MakeUnique<SpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
 
@@ -408,7 +404,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	StaticComponentView = Connection->StaticComponentView;
 
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
-	SnapshotManager = MakeShared<SpatialSnapshotManager>();
+	SnapshotManager = MakeUnique<SpatialSnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
@@ -444,12 +440,12 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		}
 		LoadBalanceStrategy->Init(this);
 
-		VirtualWorkerTranslator = MakeShared<SpatialVirtualWorkerTranslator>();
+		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
 		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
 		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
 
-		LoadBalanceEnforcer = MakeShared<SpatialLoadBalanceEnforcer>();
-		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator);
+		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>();
+		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator.Get());
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);

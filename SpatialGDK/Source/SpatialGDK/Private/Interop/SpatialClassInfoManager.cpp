@@ -22,9 +22,10 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, TSharedPtr<SpatialActorGroupManager> InActorGroupManager)
+bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, SpatialActorGroupManager* InActorGroupManager)
 {
 	NetDriver = InNetDriver;
+	check(InActorGroupManager != nullptr);
 	ActorGroupManager = InActorGroupManager;
 
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
@@ -240,11 +241,8 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 	{
 		if (ActorClass->IsChildOf<AActor>())
 		{
-			TSharedPtr<SpatialActorGroupManager> LocalActorGroupManager = ActorGroupManager.Pin();
-			check(LocalActorGroupManager.IsValid());
-
-			Info->ActorGroup = LocalActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(ActorClass));
-			Info->WorkerType = LocalActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(ActorClass));
+			Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(ActorClass));
+			Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(ActorClass));
 
 			UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
 				*ActorClass->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())

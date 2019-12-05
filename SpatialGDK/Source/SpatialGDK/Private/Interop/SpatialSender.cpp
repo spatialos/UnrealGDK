@@ -70,7 +70,8 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
-	ActorGroupManager = InNetDriver->ActorGroupManager;
+	check(InNetDriver->ActorGroupManager.IsValid());
+	ActorGroupManager = InNetDriver->ActorGroupManager.Get();
 	TimerManager = InTimerManager;
 
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
@@ -896,10 +897,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 				{
 					if (const AActor* ConnectionOwner = OwningConnection->OwningActor)
 					{
-						TSharedPtr<SpatialActorGroupManager> LocalActorGroupManager = ActorGroupManager.Pin();
-						check(LocalActorGroupManager.IsValid());
-
-						if (!LocalActorGroupManager->IsSameWorkerType(TargetActor, ConnectionOwner))
+						if (!ActorGroupManager->IsSameWorkerType(TargetActor, ConnectionOwner))
 						{
 							UE_LOG(LogSpatialSender, Verbose, TEXT("RPC %s Cannot be packed as TargetActor (%s) and Connection Owner (%s) are on different worker types."),
 								*Function->GetName(),

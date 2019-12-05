@@ -2,20 +2,27 @@
 
 #pragma once
 
+DECLARE_DELEGATE(PostWorldWipeDelegate);
+
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Interop/Connection/ConnectionConfig.h"
+#include "Interop/SnapshotManager.h"
+#include "Interop/SpatialDispatcher.h"
+#include "Interop/SpatialOutputDevice.h"
+#include "Utils/ActorGroupManager.h"
+
+#include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
+
+#include <WorkerSDK/improbable/c_worker.h>
+
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "IpNetDriver.h"
 #include "OnlineSubsystemNames.h"
 #include "TimerManager.h"
 #include "UObject/CoreOnline.h"
-
-#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/Connection/ConnectionConfig.h"
-#include "Interop/SpatialOutputDevice.h"
-#include "SpatialConstants.h"
-#include "SpatialGDKSettings.h"
-
-#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialNetDriver.generated.h"
 
@@ -46,8 +53,6 @@ DECLARE_STATS_GROUP(TEXT("SpatialNet"), STATGROUP_SpatialNet, STATCAT_Advanced);
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNet,);
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Relevant Actors"), STAT_SpatialActorsRelevant, STATGROUP_SpatialNet,);
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Changed Relevant Actors"), STAT_SpatialActorsChanged, STATGROUP_SpatialNet,);
-
-DECLARE_DELEGATE(PostWorldWipeDelegate);
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
@@ -147,11 +152,11 @@ public:
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
 
-	TSharedPtr<SpatialDispatcher> Dispatcher;
-	TSharedPtr<SpatialActorGroupManager> ActorGroupManager;
-	TSharedPtr<SpatialSnapshotManager> SnapshotManager;
-	TSharedPtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
-	TSharedPtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+	TUniquePtr<SpatialDispatcher> Dispatcher;
+	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
+	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
+	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 

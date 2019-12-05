@@ -16,7 +16,7 @@ class SpatialLoadBalanceEnforcer
 public:
 	SpatialLoadBalanceEnforcer();
 
-	void Init(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, USpatialSender* InSpatialSender, TSharedPtr<SpatialVirtualWorkerTranslator> InVirtualWorkerTranslator);
+	void Init(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, USpatialSender* InSpatialSender, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
 	void Tick();
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
@@ -29,7 +29,7 @@ private:
 	FString WorkerId;
 	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
 	TWeakObjectPtr<USpatialSender> Sender;
-	TWeakPtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 	struct WriteAuthAssignmentRequest
 	{

@@ -48,7 +48,8 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
-	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer;
+	check(!InNetDriver->IsServer() || InNetDriver->LoadBalanceEnforcer.IsValid());
+	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer.Get();
 	TimerManager = InTimerManager;
 
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
@@ -338,10 +339,9 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		NetDriver->VirtualWorkerTranslator->AuthorityChanged(Op);
 	}
 
-	TSharedPtr<SpatialLoadBalanceEnforcer> LBEnforcer = LoadBalanceEnforcer.Pin();
-	if (LBEnforcer.IsValid())
+	if (LoadBalanceEnforcer != nullptr)
 	{
-		LBEnforcer->AuthorityChanged(Op);
+		LoadBalanceEnforcer->AuthorityChanged(Op);
 	}
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));
@@ -1154,9 +1154,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		if (NetDriver->IsServer())
 		{
-			TSharedPtr<SpatialLoadBalanceEnforcer>LBEnforcer = LoadBalanceEnforcer.Pin();
-			check(LBEnforcer.IsValid());
-			LBEnforcer->OnAuthorityIntentComponentUpdated(Op);
+			LoadBalanceEnforcer->OnAuthorityIntentComponentUpdated(Op);
 		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
