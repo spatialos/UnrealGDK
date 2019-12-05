@@ -1,17 +1,18 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-using System;
+using Google.LongRunning;
+using Google.Protobuf.WellKnownTypes;
+using Improbable.SpatialOS.Deployment.V1Alpha1;
+using Improbable.SpatialOS.Platform.Common;
+using Improbable.SpatialOS.PlayerAuth.V2Alpha1;
+using Improbable.SpatialOS.Snapshot.V1Alpha1;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
-using Google.LongRunning;
-using Google.Protobuf.WellKnownTypes;
-using Improbable.SpatialOS.Deployment.V1Alpha1;
-using Improbable.SpatialOS.PlayerAuth.V2Alpha1;
-using Improbable.SpatialOS.Snapshot.V1Alpha1;
-using Newtonsoft.Json.Linq;
+using System;
 
 namespace Improbable
 {
@@ -21,6 +22,9 @@ namespace Improbable
         private const string DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG = "unreal_deployment_launcher";
 
         private const string CoordinatorWorkerName = "SimulatedPlayerCoordinator";
+
+        private const string CHINA_ENDPOINT_URL = "platform.api.spatialoschina.com";
+        private const int CHINA_ENDPOINT_PORT = 443;
 
         private static string UploadSnapshot(SnapshotServiceClient client, string snapshotPath, string projectName,
             string deploymentName)
@@ -77,6 +81,15 @@ namespace Improbable
 
             return confirmUploadResponse.Snapshot.Id;
         }
+        
+        private static PlatformApiEndpoint GetApiEndpoint(string region)
+        {
+            if (region == "CN") 
+            {
+                return new PlatformApiEndpoint(CHINA_ENDPOINT_URL, CHINA_ENDPOINT_PORT);
+            }
+            return null; // Use default
+        }
 
         private static int CreateDeployment(string[] args)
         {
@@ -109,7 +122,7 @@ namespace Improbable
 
             try
             {
-                var deploymentServiceClient = DeploymentServiceClient.Create();
+                var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(mainDeploymentRegion));
 
                 if (DeploymentExists(deploymentServiceClient, projectName, mainDeploymentName))
                 {
@@ -220,7 +233,7 @@ namespace Improbable
         private static Operation<Deployment, CreateDeploymentMetadata> CreateMainDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
             bool launchSimPlayerDeployment, string projectName, string assemblyName, string mainDeploymentName, string mainDeploymentJsonPath, string mainDeploymentSnapshotPath, string regionCode)
         {
-            var snapshotServiceClient = SnapshotServiceClient.Create();
+            var snapshotServiceClient = SnapshotServiceClient.Create(GetApiEndpoint(regionCode));
 
             // Upload snapshots.
             var mainSnapshotId = UploadSnapshot(snapshotServiceClient, mainDeploymentSnapshotPath, projectName,
@@ -268,7 +281,7 @@ namespace Improbable
         private static Operation<Deployment, CreateDeploymentMetadata> CreateSimPlayerDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
             string projectName, string assemblyName, string mainDeploymentName, string simDeploymentName, string simDeploymentJsonPath, string regionCode, int simNumPlayers)
         {
-            var playerAuthServiceClient = PlayerAuthServiceClient.Create();
+            var playerAuthServiceClient = PlayerAuthServiceClient.Create(GetApiEndpoint(regionCode));
 
             // Create development authentication token used by the simulated players.
             var dat = playerAuthServiceClient.CreateDevelopmentAuthenticationToken(
@@ -356,13 +369,14 @@ namespace Improbable
         private static int StopDeployments(string[] args)
         {
             var projectName = args[1];
+            var regionCode = args[2];
 
-            var deploymentServiceClient = DeploymentServiceClient.Create();
+            var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(regionCode));
 
-            if (args.Length == 3)
+            if (args.Length == 4)
             {
                 // Stop only the specified deployment.
-                var deploymentId = args[2];
+                var deploymentId = args[3];
                 StopDeploymentById(deploymentServiceClient, projectName, deploymentId);
 
                 return 0;
@@ -407,8 +421,9 @@ namespace Improbable
         private static int ListDeployments(string[] args)
         {
             var projectName = args[1];
+            var regionCode = args[2];
 
-            var deploymentServiceClient = DeploymentServiceClient.Create();
+            var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(regionCode));
             var activeDeployments = ListLaunchedActiveDeployments(deploymentServiceClient, projectName);
 
             foreach (var deployment in activeDeployments)
@@ -462,11 +477,11 @@ namespace Improbable
         {
             Console.WriteLine("Usage:");
             Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> [<sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players>]");
-            Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment. The deployments can be started in different regions ('EU', 'US' and 'AP').");
-            Console.WriteLine("DeploymentLauncher stop <project-name> [deployment-id]");
+            Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment. The deployments can be started in different regions ('EU', 'US', 'AP' and 'CN').");
+            Console.WriteLine("DeploymentLauncher stop <project-name> <main-deployment-region> [deployment-id]");
             Console.WriteLine("  Stops the specified deployment within the project.");
             Console.WriteLine("  If no deployment id argument is specified, all active deployments started by the deployment launcher in the project will be stopped.");
-            Console.WriteLine("DeploymentLauncher list <project-name>");
+            Console.WriteLine("DeploymentLauncher list <project-name> <main-deployment-region>");
             Console.WriteLine("  Lists all active deployments within the specified project that are started by the deployment launcher.");
         }
 
@@ -474,8 +489,8 @@ namespace Improbable
         {
             if (args.Length == 0 ||
                 args[0] == "create" && (args.Length != 11 && args.Length != 7) ||
-                args[0] == "stop" && (args.Length != 2 && args.Length != 3) ||
-                args[0] == "list" && args.Length != 2)
+                args[0] == "stop" && (args.Length != 3 && args.Length != 4) ||
+                args[0] == "list" && args.Length != 3)
             {
                 ShowUsage();
                 return 1;
