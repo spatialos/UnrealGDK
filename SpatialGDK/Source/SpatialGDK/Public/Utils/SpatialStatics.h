@@ -80,6 +80,13 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject", CallableWithoutWorldContext, Keywords = "log spatial", AdvancedDisplay = "2", DevelopmentOnly), Category = "Utilities|Text")
 	static void PrintTextSpatial(UObject* WorldContextObject, const FText InText = INVTEXT("Hello"), bool bPrintToScreen = true, FLinearColor TextColor = FLinearColor(0.0, 0.66, 1.0), float Duration = 2.f);
 
+	/**
+	 * Returns true if worker flag was found.
+	   Gets value of a worker flag.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool GetWorkerFlag(const UObject* WorldContextObject, const FString& Name, FString& Value);
+
 private:
 
 	static SpatialActorGroupManager* GetActorGroupManager(const UObject* WorldContext);
