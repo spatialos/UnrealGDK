@@ -9,6 +9,7 @@
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -290,9 +291,17 @@ bool USpatialPackageMapClient::IsEntityPoolReady() const
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
 {
 	// Super::SerializeObject is not called here on purpose
-	Ar << Obj;
+	if (Ar.IsSaving())
+	{
+		Ar << Obj;
+		return true;
+	}
 
-	return true;
+	FSpatialNetBitReader& Reader = static_cast<FSpatialNetBitReader&>(Ar);
+	bool bUnresolved = false;
+	Obj = Reader.ReadObject(bUnresolved);
+
+	return !bUnresolved;
 }
 
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)

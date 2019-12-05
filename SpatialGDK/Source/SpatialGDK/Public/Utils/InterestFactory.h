@@ -38,13 +38,13 @@ private:
 
 	void AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
 
-	// Checkout Constraint OR AlwaysInterested Constraint
+	// Checkout Constraint OR AlwaysInterested OR AlwaysRelevant Constraint
 	QueryConstraint CreateSystemDefinedConstraints() const;
 
 	// System Defined Constraints
 	QueryConstraint CreateCheckoutRadiusConstraints() const;
 	QueryConstraint CreateAlwaysInterestedConstraint() const;
-	QueryConstraint CreateAlwaysRelevantConstraint() const;
+	static QueryConstraint CreateAlwaysRelevantConstraint();
 
 	// Only checkout entities that are in loaded sublevels
 	QueryConstraint CreateLevelConstraints() const;

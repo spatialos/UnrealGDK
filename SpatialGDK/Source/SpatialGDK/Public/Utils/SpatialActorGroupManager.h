@@ -1,10 +1,12 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "SpatialConstants.h"
 
-#include "ActorGroupManager.generated.h"
+#include "SpatialActorGroupManager.generated.h"
 
 USTRUCT()
 struct FWorkerType
@@ -45,11 +47,8 @@ struct FActorGroupInfo
 	}
 };
 
-UCLASS(Config=SpatialGDKSettings)
-class SPATIALGDK_API UActorGroupManager : public UObject
+class SPATIALGDK_API SpatialActorGroupManager
 {
-	GENERATED_BODY()
-
 private:
 	TMap<TSoftClassPtr<AActor>, FName> ClassPathToActorGroup;
 

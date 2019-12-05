@@ -13,8 +13,10 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
+#include "Utils/SpatialLatencyTracer.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
@@ -31,7 +33,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 		if (NetDriver == nullptr)
 		{
 			// If Spatial networking is enabled, override the GameNetDriver with the SpatialNetDriver
-			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+			if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 			{
 				if (FNetDriverDefinition* DriverDefinition = GEngine->NetDriverDefinitions.FindByPredicate([](const FNetDriverDefinition& CurDef)
 				{
@@ -57,7 +59,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 		}
 	}
 
-	if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking && !bHasSpatialNetDriver)
+	if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && !bHasSpatialNetDriver)
 	{
 		UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
 										  "Please make sure you set up the net driver definitions as specified in the porting "
@@ -71,6 +73,11 @@ void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 {
 	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
 	SpatialConnection->Init(this);
+
+#if TRACE_LIB_ACTIVE
+	SpatialConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
+	SpatialConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
+#endif
 }
 
 void USpatialGameInstance::DestroySpatialWorkerConnection()
@@ -109,7 +116,7 @@ void USpatialGameInstance::StartGameInstance()
 		{
 			// Initialize a locator configuration which will parse command line arguments.
 			FLocatorConfig LocatorConfig;
-			if (!LocatorConfig.LoginToken.IsEmpty())
+			if (LocatorConfig.TryLoadCommandLineArgs())
 			{
 				// Modify the commandline args to have a Host IP to force a NetDriver to be used.
 				const TCHAR* CommandLineArgs = FCommandLine::Get();
@@ -145,21 +152,39 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 			{
 				return true;
 			}
+
+			if (NetDriver->SpatialDebugger && NetDriver->SpatialDebugger->ProcessConsoleExec(Cmd, Ar, Executor))
+			{
+				return true;
+			}
 		}
 	}
 
 	return false;
 }
 
+void USpatialGameInstance::Init()
+{
+	Super::Init();
+
+	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
+}
+
 void USpatialGameInstance::HandleOnConnected()
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Succesfully connected to SpatialOS"));
 	SpatialWorkerId = SpatialConnection->GetWorkerId();
+#if TRACE_LIB_ACTIVE
+	SpatialLatencyTracer->SetWorkerId(SpatialWorkerId);
+#endif
 	OnConnected.Broadcast();
 }
 
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 {
 	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
+#if TRACE_LIB_ACTIVE
+	SpatialLatencyTracer->ResetWorkerId();
+#endif
 	OnConnectionFailed.Broadcast(Reason);
 }

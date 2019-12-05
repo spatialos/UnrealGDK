@@ -1,8 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Interop/SnapshotManager.h"
+#include "Interop/SpatialSnapshotManager.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
@@ -13,41 +12,46 @@ DEFINE_LOG_CATEGORY(LogSnapshotManager);
 
 using namespace SpatialGDK;
 
-void USnapshotManager::Init(USpatialNetDriver* InNetDriver)
+SpatialSnapshotManager::SpatialSnapshotManager()
+	: Connection(nullptr)
+	, GlobalStateManager(nullptr)
+	, Receiver(nullptr)
+{}
+
+void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager, USpatialReceiver* InReceiver)
 {
-	NetDriver = InNetDriver;
-	Receiver = InNetDriver->Receiver;
-	GlobalStateManager = InNetDriver->GlobalStateManager;
+	check(InConnection != nullptr);
+	Connection = InConnection;
+
+	check(InReceiver != nullptr);
+	Receiver = InReceiver;
+
+	check(InGlobalStateManager != nullptr);
+	GlobalStateManager = InGlobalStateManager;
 }
 
 // WorldWipe will send out an expensive entity query for every entity in the deployment.
-// It does this by having an entity query for all entities that are not the GSM (workaround for not having the ability to make a query for all entities).
-// Once it has the response to this query, it will send deletion requests for all found entities and then one for the GSM itself.
+// It does this by sending an entity query for all entities with the Unreal Metadata Component
+// Once it has the response to this query, it will send deletion requests for all found entities.
 // Should only be triggered by the worker which is authoritative over the GSM.
-void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate& PostWorldWipeDelegate)
+void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWipeDelegate)
 {
-	UE_LOG(LogSnapshotManager, Log, TEXT("World wipe for deployment has been triggered. All entities will be deleted!"));
+	UE_LOG(LogSnapshotManager, Log, TEXT("World wipe for deployment has been triggered. All entities with the UnrealMetaData component will be deleted!"));
 
-	Worker_Constraint GSMConstraint;
-	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
-	GSMConstraint.constraint.entity_id_constraint.entity_id = GlobalStateManager->GlobalStateManagerEntityId;
-
-	Worker_NotConstraint NotGSMConstraint;
-	NotGSMConstraint.constraint = &GSMConstraint;
-
-	Worker_Constraint WorldConstraint;
-	WorldConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_NOT;
-	WorldConstraint.constraint.not_constraint = NotGSMConstraint;
+	Worker_Constraint UnrealMetadataConstraint;
+	UnrealMetadataConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
+	UnrealMetadataConstraint.constraint.component_constraint.component_id = SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 
 	Worker_EntityQuery WorldQuery{};
-	WorldQuery.constraint = WorldConstraint;
+	WorldQuery.constraint = UnrealMetadataConstraint;
 	WorldQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	Worker_RequestId RequestID;
-	RequestID = NetDriver->Connection->SendEntityQueryRequest(&WorldQuery);
+	check(Connection.IsValid());
+	RequestID = Connection->SendEntityQueryRequest(&WorldQuery);
 
 	EntityQueryDelegate WorldQueryDelegate;
-	WorldQueryDelegate.BindLambda([this, PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op)
+	WorldQueryDelegate.BindLambda([Connection = this->Connection, PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -60,27 +64,26 @@ void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate&
 		else
 		{
 			// Send deletion requests for all entities found in the world entity query.
-			DeleteEntities(Op);
-
-			// Also make sure that we kill the GSM.
-			NetDriver->Connection->SendDeleteEntityRequest(GlobalStateManager->GlobalStateManagerEntityId);
+			DeleteEntities(Op, Connection);
 
 			// The world is now ready to finish ServerTravel which means loading in a new map.
 			PostWorldWipeDelegate.ExecuteIfBound();
 		}
 	});
 
+	check(Receiver.IsValid());
 	Receiver->AddEntityQueryDelegate(RequestID, WorldQueryDelegate);
 }
 
-void USnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op)
+void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op, TWeakObjectPtr<USpatialWorkerConnection> Connection)
 {
 	UE_LOG(LogSnapshotManager, Log, TEXT("Deleting %u entities."), Op.result_count);
 
 	for (uint32_t i = 0; i < Op.result_count; i++)
 	{
 		UE_LOG(LogSnapshotManager, Verbose, TEXT("Sending delete request for: %i"), Op.results[i].entity_id);
-		NetDriver->Connection->SendDeleteEntityRequest(Op.results[i].entity_id);
+		check(Connection.IsValid());
+		Connection->SendDeleteEntityRequest(Op.results[i].entity_id);
 	}
 }
 
@@ -99,7 +102,7 @@ FString GetSnapshotPath(const FString& SnapshotName)
 
 // LoadSnapshot will take a snapshot name which should be on disk and attempt to read and spawn all of the entities in that snapshot.
 // This should only be called from the worker which has authority over the GSM.
-void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
+void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 {
 	FString SnapshotPath = GetSnapshotPath(SnapshotName);
 
@@ -162,12 +165,14 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate SpawnEntitiesDelegate;
-	SpawnEntitiesDelegate.BindLambda([EntitiesToSpawn, this](const Worker_ReserveEntityIdsResponseOp& Op)
+	SpawnEntitiesDelegate.BindLambda([Connection = this->Connection, GlobalStateManager = this->GlobalStateManager, EntitiesToSpawn](const Worker_ReserveEntityIdsResponseOp& Op)
 	{
 		UE_LOG(LogSnapshotManager, Log, TEXT("Creating entities in snapshot, number of entities to spawn: %i"), Op.number_of_entity_ids);
 
 		// Ensure we have the same number of reserved IDs as we have entities to spawn
 		check(EntitiesToSpawn.Num() == Op.number_of_entity_ids);
+		check(GlobalStateManager.IsValid());
+		check(Connection.IsValid());
 
 		for (uint32_t i = 0; i < Op.number_of_entity_ids; i++)
 		{
@@ -186,18 +191,20 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 			}
 
 			UE_LOG(LogSnapshotManager, Log, TEXT("Sending entity create request for: %i"), ReservedEntityID);
-			NetDriver->Connection->SendCreateEntityRequest(MoveTemp(EntityToSpawn), &ReservedEntityID);
+			Connection->SendCreateEntityRequest(MoveTemp(EntityToSpawn), &ReservedEntityID);
 		}
 
 		GlobalStateManager->SetAcceptingPlayers(true);
 	});
 
 	// Reserve the Entity IDs
-	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToSpawn.Num());
+	check(Connection.IsValid());
+	Worker_RequestId ReserveRequestID = Connection->SendReserveEntityIdsRequest(EntitiesToSpawn.Num());
 
 	// TODO: UNR-654
 	// References to entities that are stored within the snapshot need remapping once we know the new entity IDs.
 
 	// Add the spawn delegate
+	check(Receiver.IsValid());
 	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, SpawnEntitiesDelegate);
 }

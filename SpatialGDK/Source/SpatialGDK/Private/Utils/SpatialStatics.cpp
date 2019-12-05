@@ -8,22 +8,23 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Utils/ActorGroupManager.h"
+#include "Utils/SpatialActorGroupManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
-    return GetDefault<UGeneralProjectSettings>()->bSpatialNetworking;
+    return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
-UActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* WorldContext)
+SpatialActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* WorldContext)
 {
 	if (const UWorld* World = WorldContext->GetWorld())
 	{
 		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 		{
-			return SpatialNetDriver->ActorGroupManager;
+			check(SpatialNetDriver->ActorGroupManager.IsValid());
+			return SpatialNetDriver->ActorGroupManager.Get();
 		}
 	}
 	return nullptr;
@@ -59,7 +60,7 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 
 bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
 {
-	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
 		const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
 		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
@@ -76,7 +77,7 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 
 bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup)
 {
-	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
 		const FName ActorGroupWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(ActorGroup);
 		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
@@ -93,7 +94,7 @@ bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const
 
 FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
 {
-	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(Actor))
+	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(Actor))
 	{
 		UClass* ActorClass = Actor->GetClass();
 		return ActorGroupManager->GetActorGroupForClass(ActorClass);
@@ -104,7 +105,7 @@ FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
 
 FName USpatialStatics::GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
 {
-	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
 		return ActorGroupManager->GetActorGroupForClass(ActorClass);
 	}

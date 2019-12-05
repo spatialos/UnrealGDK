@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "Containers/Queue.h"
@@ -9,6 +10,7 @@
 #include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialGDKSettings.h"
 #include "UObject/WeakObjectPtr.h"
+#include "Utils/SpatialLatencyTracer.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -17,10 +19,12 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
+class UGlobalStateManager;
 class USpatialGameInstance;
+class USpatialStaticComponentView;
 class UWorld;
 
-enum class SpatialConnectionType
+enum class ESpatialConnectionType
 {
 	Receptionist,
 	LegacyLocator,
@@ -49,7 +53,7 @@ public:
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
 	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData);
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate);
+	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
 	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
@@ -61,8 +65,22 @@ public:
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
+	void SetConnectionType(ESpatialConnectionType InConnectionType);
+
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
+
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
+	FOnEnqueueMessage OnEnqueueMessage;
+
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
+	FOnDequeueMessage OnDequeueMessage;
+
+	UPROPERTY()
+	USpatialStaticComponentView* StaticComponentView;
+
+	UPROPERTY()
+	UGlobalStateManager* GlobalStateManager;
 
 private:
 	void ConnectToReceptionist(bool bConnectAsClient);
@@ -73,7 +91,7 @@ private:
 	void OnPreConnectionFailure(const FString& Reason);
 	void OnConnectionFailure();
 
-	SpatialConnectionType GetConnectionType() const;
+	ESpatialConnectionType GetConnectionType() const;
 
 	void CacheWorkerAttributes();
 
@@ -115,4 +133,6 @@ private:
 
 	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
 	Worker_RequestId NextRequestId = 0;
+
+	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 };

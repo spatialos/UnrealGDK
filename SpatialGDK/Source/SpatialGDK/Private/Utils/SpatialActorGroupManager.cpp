@@ -1,7 +1,9 @@
-#include "Utils/ActorGroupManager.h"
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#include "Utils/SpatialActorGroupManager.h"
 #include "SpatialGDKSettings.h"
 
-void UActorGroupManager::Init()
+void SpatialActorGroupManager::Init()
 {
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
@@ -21,7 +23,7 @@ void UActorGroupManager::Init()
 	}
 }
 
-FName UActorGroupManager::GetActorGroupForClass(const TSubclassOf<AActor> Class)
+FName SpatialActorGroupManager::GetActorGroupForClass(const TSubclassOf<AActor> Class)
 {
 	if (Class == nullptr)
 	{
@@ -51,7 +53,7 @@ FName UActorGroupManager::GetActorGroupForClass(const TSubclassOf<AActor> Class)
 	return SpatialConstants::DefaultActorGroup;
 }
 
-FName UActorGroupManager::GetWorkerTypeForClass(const TSubclassOf<AActor> Class)
+FName SpatialActorGroupManager::GetWorkerTypeForClass(const TSubclassOf<AActor> Class)
 {
 	const FName ActorGroup = GetActorGroupForClass(Class);
 
@@ -63,7 +65,7 @@ FName UActorGroupManager::GetWorkerTypeForClass(const TSubclassOf<AActor> Class)
 	return DefaultWorkerType;
 }
 
-FName UActorGroupManager::GetWorkerTypeForActorGroup(const FName& ActorGroup) const
+FName SpatialActorGroupManager::GetWorkerTypeForActorGroup(const FName& ActorGroup) const
 {
 	if (const FName* WorkerType = ActorGroupToWorkerType.Find(ActorGroup))
 	{
@@ -73,7 +75,7 @@ FName UActorGroupManager::GetWorkerTypeForActorGroup(const FName& ActorGroup) co
 	return DefaultWorkerType;
 }
 
-bool UActorGroupManager::IsSameWorkerType(const AActor* ActorA, const AActor* ActorB)
+bool SpatialActorGroupManager::IsSameWorkerType(const AActor* ActorA, const AActor* ActorB)
 {
 	if (ActorA == nullptr || ActorB == nullptr)
 	{
