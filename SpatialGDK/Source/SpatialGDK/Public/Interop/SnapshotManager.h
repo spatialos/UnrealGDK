@@ -23,7 +23,7 @@ public:
 
 	void Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager, USpatialReceiver* InReceiver);
 
-	void WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate& Delegate);
+	void WorldWipe(const PostWorldWipeDelegate& Delegate);
 	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
 	void LoadSnapshot(const FString& SnapshotName);
 

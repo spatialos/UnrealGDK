@@ -747,7 +747,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	ENetMode NetMode = GameMode->GetNetMode();
 
 	// FinishServerTravel - Allows Unreal to finish it's normal server travel.
-	USpatialNetDriver::PostWorldWipeDelegate FinishServerTravel;
+	PostWorldWipeDelegate FinishServerTravel;
 	FinishServerTravel.BindLambda([World, NetDriver, NewURL, NetMode, bSeamless, bAbsolute]
 	{
 		UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Finishing Server Travel : %s"), *NewURL);
@@ -2136,7 +2136,7 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 	return Channel;
 }
 
-void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe)
+void USpatialNetDriver::WipeWorld(const PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe)
 {
 	SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 }

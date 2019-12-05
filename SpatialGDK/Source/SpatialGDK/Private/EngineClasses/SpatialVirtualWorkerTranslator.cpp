@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
@@ -28,7 +27,6 @@ void SpatialVirtualWorkerTranslator::Init(UAbstractLBStrategy* InLoadBalanceStra
 	Receiver = InReceiver;
 	Connection = InConnection;
 
-	// If this is being run from tests, NetDriver will be null.
 	WorkerId = InWorkerId;
 }
 

@@ -2,7 +2,6 @@
 
 #include "Interop/SnapshotManager.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
@@ -30,7 +29,7 @@ void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGloba
 // It does this by sending an entity query for all entities with the Unreal Metadata Component
 // Once it has the response to this query, it will send deletion requests for all found entities.
 // Should only be triggered by the worker which is authoritative over the GSM.
-void SpatialSnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate& PostWorldWipeDelegate)
+void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWipeDelegate)
 {
 	UE_LOG(LogSnapshotManager, Log, TEXT("World wipe for deployment has been triggered. All entities with the UnrealMetaData component will be deleted!"));
 
