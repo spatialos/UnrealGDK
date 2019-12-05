@@ -21,19 +21,19 @@
 
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
-class UAbstractLBStrategy;
 class SpatialActorGroupManager;
-class UEntityPool;
-class UGlobalStateManager;
-class SpatialSnapshotManager;
-class USpatialActorChannel;
-class USpatialClassInfoManager;
 class SpatialDispatcher;
 class SpatialLoadBalanceEnforcer;
+class SpatialSnapshotManager;
+class UAbstractLBStrategy;
+class UEntityPool;
+class UGlobalStateManager;
+class USpatialActorChannel;
+class USpatialClassInfoManager;
+class USpatialGameInstance;
 class USpatialMetrics;
 class USpatialNetConnection;
 class USpatialPackageMapClient;
-class USpatialGameInstance;
 class USpatialPlayerSpawner;
 class USpatialReceiver;
 class USpatialSender;
