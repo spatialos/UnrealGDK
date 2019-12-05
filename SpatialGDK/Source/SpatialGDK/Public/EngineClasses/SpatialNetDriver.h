@@ -2,8 +2,6 @@
 
 #pragma once
 
-DECLARE_DELEGATE(PostWorldWipeDelegate);
-
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
@@ -28,10 +26,6 @@ DECLARE_DELEGATE(PostWorldWipeDelegate);
 
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
-class SpatialActorGroupManager;
-class SpatialDispatcher;
-class SpatialLoadBalanceEnforcer;
-class SpatialSnapshotManager;
 class UAbstractLBStrategy;
 class UEntityPool;
 class UGlobalStateManager;

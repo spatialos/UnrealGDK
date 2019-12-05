@@ -2,19 +2,20 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SchemaUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "CoreMinimal.h"
+
 class UGlobalStateManager;
 class USpatialReceiver;
+class USpatialWorkerConnection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSnapshotManager, Log, All)
+
+DECLARE_DELEGATE(PostWorldWipeDelegate);
 
 class SPATIALGDK_API SpatialSnapshotManager
 {
