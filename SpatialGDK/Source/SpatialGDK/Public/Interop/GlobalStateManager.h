@@ -62,6 +62,7 @@ public:
 	void BeginDestroy() override;
 
 	bool HasAuthority();
+	bool HasAuthorityOverComponent(const Worker_ComponentId ComponentId) const;
 
 	void TriggerBeginPlay();
 
@@ -95,6 +96,9 @@ public:
 	void OnShutdownComponentUpdate(const Worker_ComponentUpdate& Update);
 	void ReceiveShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
+
+	bool IsInitialSession() { return DeploymentSessionId == 0; }
+
 private:
 	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();

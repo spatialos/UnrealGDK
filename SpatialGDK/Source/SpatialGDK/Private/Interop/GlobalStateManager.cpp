@@ -545,6 +545,11 @@ bool UGlobalStateManager::HasAuthority()
 	return NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
 }
 
+bool UGlobalStateManager::HasAuthorityOverComponent(const Worker_ComponentId ComponentId)
+{
+	return NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+}
+
 void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 {
 	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)

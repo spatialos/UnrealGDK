@@ -615,10 +615,15 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	{
 		if (GlobalStateManager != nullptr)
 		{
-			// Increment the session id, so users don't rejoin the old game.
-			GlobalStateManager->SetCanBeginPlay(true);
-			GlobalStateManager->TriggerBeginPlay();
-			GlobalStateManager->SetAcceptingPlayers(true);
+			if (!GlobalStateManager->IsInitialSession() &&
+				 GlobalStateManager->HasAuthorityOverComponent(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
+			{
+				// Increment the session id, so users don't rejoin the old game.
+				GlobalStateManager->SetCanBeginPlay(true);
+				GlobalStateManager->TriggerBeginPlay();
+				GlobalStateManager->SetAcceptingPlayers(true);
+			}
+
 			GlobalStateManager->IncrementSessionID();
 		}
 		else
