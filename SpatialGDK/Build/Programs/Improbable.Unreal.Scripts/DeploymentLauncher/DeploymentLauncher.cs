@@ -373,10 +373,10 @@ namespace Improbable
 
             var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(regionCode));
 
-            if (args.Length == 3)
+            if (args.Length == 4)
             {
                 // Stop only the specified deployment.
-                var deploymentId = args[2];
+                var deploymentId = args[3];
                 StopDeploymentById(deploymentServiceClient, projectName, deploymentId);
 
                 return 0;
