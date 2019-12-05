@@ -2,12 +2,11 @@
 set -euo pipefail
 
 upload_build_configuration_step() {
-    cat "ci/gdk_build.template.steps.yaml" | \
-    sed "s|ENGINE_COMMIT_HASH_PLACEHOLDER|$1|g" | \
-    sed "s|BUILD_PLATFORM_PLACEHOLDER|$2|g" | \
-    sed "s|BUILD_TARGET_PLACEHOLDER|$3|g" | \
-    sed "s|BUILD_STATE_PLACEHOLDER|$4|g" | \
-    buildkite-agent pipeline upload
+    export ENGINE_COMMIT_HASH=$1
+    export BUILD_PLATFORM=$2
+    export BUILD_TARGET=$3
+    export BUILD_STATE=$4
+    buildkite-agent pipeline upload "ci/gdk_build.template.steps.yaml"
 }
 
 generate_build_configuration_steps () {
