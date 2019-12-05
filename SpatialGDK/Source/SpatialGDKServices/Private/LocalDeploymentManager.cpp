@@ -84,11 +84,6 @@ void FLocalDeploymentManager::SetInChina(bool bChinaEnabled)
 	bIsInChina = bChinaEnabled;
 }
 
-const FString FLocalDeploymentManager::GetSpotExe()
-{
-	return FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe"));
-}
-
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 {
 	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
