@@ -25,9 +25,14 @@ void SpatialLoadBalanceEnforcer::Init(const FString &InWorkerId,
 	SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
 {
 	WorkerId = InWorkerId;
+
+	check(InStaticComponentView != nullptr);
 	StaticComponentView = InStaticComponentView;
+
+	check(InSpatialSender != nullptr);
 	Sender = InSpatialSender;
-	check(InVirtualWorkerTranslator);
+
+	check(InVirtualWorkerTranslator != nullptr);
 	VirtualWorkerTranslator = InVirtualWorkerTranslator;
 }
 

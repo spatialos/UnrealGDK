@@ -15,8 +15,13 @@ DEFINE_LOG_CATEGORY(LogSpatialView);
 
 void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics)
 {
+	check(InReceiver != nullptr);
 	Receiver = InReceiver;
+
+	check(InStaticComponentView != nullptr);
 	StaticComponentView = InStaticComponentView;
+
+	check(InSpatialMetrics != nullptr);
 	SpatialMetrics = InSpatialMetrics;
 }
 

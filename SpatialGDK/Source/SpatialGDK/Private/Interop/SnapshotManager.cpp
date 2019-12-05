@@ -20,8 +20,13 @@ SpatialSnapshotManager::SpatialSnapshotManager()
 
 void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager, USpatialReceiver* InReceiver)
 {
+	check(InConnection != nullptr);
 	Connection = InConnection;
+
+	check(InReceiver != nullptr);
 	Receiver = InReceiver;
+
+	check(InGlobalStateManager != nullptr);
 	GlobalStateManager = InGlobalStateManager;
 }
 

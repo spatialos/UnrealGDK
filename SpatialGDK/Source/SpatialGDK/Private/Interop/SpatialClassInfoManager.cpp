@@ -24,7 +24,9 @@ DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
 bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, SpatialActorGroupManager* InActorGroupManager)
 {
+	check(InNetDriver != nullptr);
 	NetDriver = InNetDriver;
+
 	check(InActorGroupManager != nullptr);
 	ActorGroupManager = InActorGroupManager;
 
