@@ -2,8 +2,6 @@
 
 #include "Interop/SpatialWorkerFlags.h"
 
-TMap<FString, FString> USpatialWorkerFlags::WorkerFlags;
-FOnWorkerFlagsUpdated USpatialWorkerFlags::OnWorkerFlagsUpdated;
 
 bool USpatialWorkerFlags::GetWorkerFlag(const FString& Name, FString& OutValue)
 {

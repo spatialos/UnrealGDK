@@ -41,6 +41,7 @@ class USpatialReceiver;
 class USpatialSender;
 class USpatialStaticComponentView;
 class USpatialWorkerConnection;
+class USpatialWorkerFlags;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -149,11 +150,12 @@ public:
 	UAbstractLBStrategy* LoadBalanceStrategy;
 	UPROPERTY()
 	UAbstractLockingPolicy* LockingPolicy;
+	UPROPERTY()
+	USpatialWorkerFlags* SpatialWorkerFlags;
 
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
-
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 

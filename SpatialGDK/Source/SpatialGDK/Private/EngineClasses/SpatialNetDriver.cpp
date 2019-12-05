@@ -428,6 +428,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	SnapshotManager = MakeUnique<SpatialSnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
+	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 #if !UE_BUILD_SHIPPING
@@ -485,7 +486,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		}
 	}
 
-	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
+	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager);
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this);

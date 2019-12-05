@@ -9,6 +9,7 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
+#include "SpatialWorkerFlags.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -18,13 +19,14 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
 class USpatialMetrics;
 class USpatialReceiver;
 class USpatialStaticComponentView;
+class USpatialWorkerFlags;
 
 class SPATIALGDK_API SpatialDispatcher
 {
 public:
 	using FCallbackId = uint32;
 
-	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics);
+	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags);
 	void ProcessOps(Worker_OpList* OpList);
 
 	// The following 2 methods should *only* be used by the Startup OpList Queueing flow
@@ -66,6 +68,9 @@ private:
 	TWeakObjectPtr<USpatialReceiver> Receiver;
 	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
 	TWeakObjectPtr<USpatialMetrics> SpatialMetrics;
+
+	UPROPERTY()
+	USpatialWorkerFlags* SpatialWorkerFlags;
 
 	// This index is incremented and returned every time an AddOpCallback function is called.
 	// CallbackIds enable you to deregister callbacks using the RemoveOpCallback function. 
