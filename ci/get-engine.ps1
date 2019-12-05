@@ -55,8 +55,8 @@ pushd "$($gdk_home)"
         )
         Finish-Event "download-unreal-engine" "get-unreal-engine"
         if ($gsu_proc.ExitCode -ne 0) {
-            Write-Log "Failed to download Engine artifacts. Error: $($gsu_proc.ExitCode)"
-            Throw "Failed to download Engine artifacts"
+            Write-Log "Failed to download Engine artifact. Error: $($gsu_proc.ExitCode)"
+            Throw "Failed to download Engine artifact. If you're trying to download an Engine artifact more than 60 days old it may have been deleted. You can build it again at https://buildkite.com/improbable/unrealengine-premerge"
         }
 
         Start-Event "unzip-unreal-engine" "get-unreal-engine"
