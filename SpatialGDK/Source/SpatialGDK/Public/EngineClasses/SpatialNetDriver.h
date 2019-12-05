@@ -5,10 +5,10 @@
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
-#include "Interop/SnapshotManager.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialOutputDevice.h"
-#include "Utils/ActorGroupManager.h"
+#include "Interop/SpatialSnapshotManager.h"
+#include "Utils/SpatialActorGroupManager.h"
 
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"

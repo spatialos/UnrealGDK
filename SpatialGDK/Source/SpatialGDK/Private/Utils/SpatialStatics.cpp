@@ -8,7 +8,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Utils/ActorGroupManager.h"
+#include "Utils/SpatialActorGroupManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
 

@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "SpatialConstants.h"
 
-#include "ActorGroupManager.generated.h"
+#include "SpatialActorGroupManager.generated.h"
 
 USTRUCT()
 struct FWorkerType
