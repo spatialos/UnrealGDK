@@ -76,7 +76,7 @@ public:
 	UGlobalStateManager* GlobalStateManager;
 
 private:
-	void ConnectToReceptionist(bool bConnectAsClient);
+	void ConnectToReceptionist();
 	void ConnectToLocator();
 	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 
@@ -114,6 +114,7 @@ private:
 	TWeakObjectPtr<USpatialGameInstance> GameInstance;
 
 	bool bIsConnected;
+	bool bConnectAsClient = false;
 
 	TArray<FString> CachedWorkerAttributes;
 

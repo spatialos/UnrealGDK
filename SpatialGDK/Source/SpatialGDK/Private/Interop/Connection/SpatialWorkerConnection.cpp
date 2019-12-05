@@ -74,6 +74,7 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 {
 	if (bIsConnected)
 	{
+		check(bInitAsClient == bConnectAsClient);
 		AsyncTask(ENamedThreads::GameThread, [WeakThis = TWeakObjectPtr<USpatialWorkerConnection>(this)]
 			{
 				if (WeakThis.IsValid())
@@ -88,6 +89,7 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 		return;
 	}
 
+	bConnectAsClient = bInitAsClient;
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
 	{
@@ -100,7 +102,7 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 	switch (GetConnectionType())
 	{
 	case ESpatialConnectionType::Receptionist:
-		ConnectToReceptionist(bInitAsClient);
+		ConnectToReceptionist();
 		break;
 	case ESpatialConnectionType::Locator:
 		ConnectToLocator();
@@ -185,8 +187,10 @@ void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
 	}
 }
 
-void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
+void USpatialWorkerConnection::ConnectToReceptionist()
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
 	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
 		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType.ToString() : SpatialConstants::DefaultServerWorkerType.ToString();
@@ -227,15 +231,21 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	ConnectionParams.network.connection_type = ReceptionistConfig.LinkProtocol;
 	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
 	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
+	ConnectionParams.network.tcp.no_delay = (SpatialGDKSettings->bTCPNoDelay ? 1 : 0);
 
 	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
-	// TODO: UNR-2212 - Worker SDK 14.1.0 has a bug where upstream and downstream compression are swapped so we set the upstream settings to use compression.
 	Worker_Alpha_CompressionParameters EnableCompressionParams{};
-	ConnectionParams.network.modular_udp.upstream_compression = &EnableCompressionParams;
-	ConnectionParams.network.modular_udp.downstream_compression = nullptr;
+	ConnectionParams.network.modular_udp.upstream_compression = nullptr;
+	ConnectionParams.network.modular_udp.downstream_compression = &EnableCompressionParams;
+
+	Worker_Alpha_KcpParameters UpstreamParams = *ConnectionParams.network.modular_udp.upstream_kcp;
+	UpstreamParams.update_interval_millis = (bConnectAsClient ? SpatialGDKSettings->UDPClientUpstreamUpdateIntervalMS : SpatialGDKSettings->UDPServerUpstreamUpdateIntervalMS);
+	Worker_Alpha_KcpParameters DownstreamParams = *ConnectionParams.network.modular_udp.downstream_kcp;
+	DownstreamParams.update_interval_millis = (bConnectAsClient ? SpatialGDKSettings->UDPClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UDPServerDownstreamUpdateIntervalMS);
+	ConnectionParams.network.modular_udp.upstream_kcp = &UpstreamParams;
+	ConnectionParams.network.modular_udp.downstream_kcp = &DownstreamParams;
 
 	ConnectionParams.enable_dynamic_components = true;
-	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
 		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.ReceptionistPort,
@@ -246,6 +256,8 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 void USpatialWorkerConnection::ConnectToLocator()
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
 	if (LocatorConfig.WorkerType.IsEmpty())
 	{
 		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
@@ -284,18 +296,24 @@ void USpatialWorkerConnection::ConnectToLocator()
 	ConnectionParams.network.connection_type = LocatorConfig.LinkProtocol;
 	ConnectionParams.network.use_external_ip = LocatorConfig.UseExternalIp;
 	ConnectionParams.network.tcp.multiplex_level = LocatorConfig.TcpMultiplexLevel;
+	ConnectionParams.network.tcp.no_delay = (SpatialGDKSettings->bTCPNoDelay ? 1 : 0);
 
 	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
-	// TODO: UNR-2212 - Worker SDK 14.1.0 has a bug where upstream and downstream compression are swapped so we set the upstream settings to use compression.
 	Worker_Alpha_CompressionParameters EnableCompressionParams{};
-	ConnectionParams.network.modular_udp.upstream_compression = &EnableCompressionParams;
-	ConnectionParams.network.modular_udp.downstream_compression = nullptr;
+	ConnectionParams.network.modular_udp.upstream_compression = nullptr;
+	ConnectionParams.network.modular_udp.downstream_compression = &EnableCompressionParams;
+
+	Worker_Alpha_KcpParameters UpstreamParams = *ConnectionParams.network.modular_udp.upstream_kcp;
+	UpstreamParams.update_interval_millis = (bConnectAsClient ? SpatialGDKSettings->UDPClientUpstreamUpdateIntervalMS : SpatialGDKSettings->UDPServerUpstreamUpdateIntervalMS);
+	Worker_Alpha_KcpParameters DownstreamParams = *ConnectionParams.network.modular_udp.downstream_kcp;
+	DownstreamParams.update_interval_millis = (bConnectAsClient ? SpatialGDKSettings->UDPClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UDPServerDownstreamUpdateIntervalMS);
+	ConnectionParams.network.modular_udp.upstream_kcp = &UpstreamParams;
+	ConnectionParams.network.modular_udp.downstream_kcp = &DownstreamParams;
 
 	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
 	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
 
 	ConnectionParams.enable_dynamic_components = true;
-	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);
 

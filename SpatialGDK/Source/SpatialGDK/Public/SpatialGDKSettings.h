@@ -156,7 +156,7 @@ public:
 	uint32 MaxDynamicallyAttachedSubobjectsPerClass;
 
 	/** EXPERIMENTAL - This is a stop-gap until we can better define server interest on system entities.
-	Disabling this is not supported in any type of multi-server environment*/
+	Disabling this is not supported in a zoned-worker environment*/
 	UPROPERTY(config)
 	bool bEnableServerQBI;
 
@@ -205,12 +205,27 @@ public:
 
 	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
-		bool bEnableUnrealLoadBalancer;
+	bool bEnableUnrealLoadBalancer;
 
 	/** EXPERIMENTAL: Worker type to assign for load balancing. */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-		FWorkerType LoadBalancingWorkerType;
+	FWorkerType LoadBalancingWorkerType;
 
-	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
 	TSubclassOf<class UAbstractLBStrategy> LoadBalanceStrategy;
+
+	UPROPERTY(Config)
+	bool bTCPNoDelay;
+
+	UPROPERTY(Config)
+	uint32 UDPServerUpstreamUpdateIntervalMS;
+
+	UPROPERTY(Config)
+	uint32 UDPServerDownstreamUpdateIntervalMS;
+
+	UPROPERTY(Config)
+	uint32 UDPClientUpstreamUpdateIntervalMS;
+
+	UPROPERTY(Config)
+	uint32 UDPClientDownstreamUpdateIntervalMS;
 };
