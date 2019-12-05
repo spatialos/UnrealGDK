@@ -43,13 +43,13 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 	, SpatialDebuggerClassPath(TEXT("/SpatialGDK/SpatialDebugger/BP_SpatialDebugger.BP_SpatialDebugger_C"))
 	, bEnableUnrealLoadBalancer(false)
-	// TODO: these are defaults, not necessary optimal - readdress when we have better idea defaults
-	, bTCPNoDelay(false)	
+	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
+	, bTCPNoDelay(false)
 	, UDPServerUpstreamUpdateIntervalMS(10)
 	, UDPServerDownstreamUpdateIntervalMS(10)
 	, UDPClientUpstreamUpdateIntervalMS(10)
 	, UDPClientDownstreamUpdateIntervalMS(10)
-	// TODO: end
+	// TODO - end
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }

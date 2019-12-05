@@ -214,18 +214,23 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
 	TSubclassOf<class UAbstractLBStrategy> LoadBalanceStrategy;
 
+	/** Only valid on TCP connections - indicates if we should enable TCP_NODELAY - see c_worker.h */
 	UPROPERTY(Config)
 	bool bTCPNoDelay;
 
+	/** Only valid on UDP connections - specifies server upstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UDPServerUpstreamUpdateIntervalMS;
 
+	/** Only valid on UDP connections - specifies server downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UDPServerDownstreamUpdateIntervalMS;
 
+	/** Only valid on UDP connections - specifies client upstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UDPClientUpstreamUpdateIntervalMS;
 
+	/** Only valid on UDP connections - specifies client downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UDPClientDownstreamUpdateIntervalMS;
 };
