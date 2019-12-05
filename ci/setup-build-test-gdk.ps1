@@ -7,8 +7,7 @@ param(
   [string] $test_repo_branch = "master",
   [string] $test_repo_url = "https://github.com/spatialos/UnrealGDKTestGyms.git",
   [string] $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject",
-  [string] $test_repo_map = "EmptyGym",
-  [string] $spatial_cli_version = "20191106.121025.bda19848a2"
+  [string] $test_repo_map = "EmptyGym"
 )
 
 # Allow overriding testing branch via environment variable
@@ -27,12 +26,6 @@ Finish-Event "get-unreal-engine" "command"
 Start-Event "setup-gdk" "command"
 &$PSScriptRoot"\setup-gdk.ps1" -gdk_path "$gdk_in_engine" -msbuild_path "$msbuild_exe"
 Finish-Event "setup-gdk" "command"
-
-# Update spatial to compatible version
-$proc = Start-Process spatial "update","$spatial_cli_version" -Wait -ErrorAction Stop -NoNewWindow -PassThru
-if ($proc.ExitCode -ne 0) {
-  THROW "Failed to update spatial CLI to version $spatial_cli_version"
-}
 
 # Build the testing project
 Start-Event "build-project" "command"
