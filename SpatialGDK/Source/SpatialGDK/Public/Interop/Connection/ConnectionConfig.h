@@ -18,9 +18,10 @@ struct FConnectionConfig
 		, EnableProtocolLoggingAtStartup(false)
 		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_UDP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
+		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
 		, TcpNoDelay(0)
-		, UdpUpstreamIntervalMS(10)
-		, UdpDownstreamIntervalMS(10)
+		, UdpUpstreamIntervalMS(0)
+		, UdpDownstreamIntervalMS(0)
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
@@ -65,10 +66,10 @@ struct FConnectionConfig
 			WorkerId = WorkerType + FGuid::NewGuid().ToString();
 		}
 
-		TcpNoDelay = (SpatialGDKSettings->bTCPNoDelay ? 1 : 0);
+		TcpNoDelay = (SpatialGDKSettings->bTcpNoDelay ? 1 : 0);
 
-		UdpUpstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UDPClientUpstreamUpdateIntervalMS : SpatialGDKSettings->UDPServerUpstreamUpdateIntervalMS);
-		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UDPClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UDPServerDownstreamUpdateIntervalMS);
+		UdpUpstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientUpstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerUpstreamUpdateIntervalMS);
+		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 	}
 
 	FString WorkerId;

@@ -214,23 +214,23 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
 	TSubclassOf<class UAbstractLBStrategy> LoadBalanceStrategy;
 
-	/** Only valid on TCP connections - indicates if we should enable TCP_NODELAY - see c_worker.h */
+	/** Only valid on Tcp connections - indicates if we should enable TCP_NODELAY - see c_worker.h */
 	UPROPERTY(Config)
-	bool bTCPNoDelay;
+	bool bTcpNoDelay;
 
-	/** Only valid on UDP connections - specifies server upstream flush interval - see c_worker.h */
+	/** Only valid on Udp connections - specifies server upstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
-	uint32 UDPServerUpstreamUpdateIntervalMS;
+	uint32 UdpServerUpstreamUpdateIntervalMS;
 
-	/** Only valid on UDP connections - specifies server downstream flush interval - see c_worker.h */
+	/** Only valid on Udp connections - specifies server downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
-	uint32 UDPServerDownstreamUpdateIntervalMS;
+	uint32 UdpServerDownstreamUpdateIntervalMS;
 
-	/** Only valid on UDP connections - specifies client upstream flush interval - see c_worker.h */
+	/** Only valid on Udp connections - specifies client upstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
-	uint32 UDPClientUpstreamUpdateIntervalMS;
+	uint32 UdpClientUpstreamUpdateIntervalMS;
 
-	/** Only valid on UDP connections - specifies client downstream flush interval - see c_worker.h */
+	/** Only valid on Udp connections - specifies client downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
-	uint32 UDPClientDownstreamUpdateIntervalMS;
+	uint32 UdpClientDownstreamUpdateIntervalMS;
 };
