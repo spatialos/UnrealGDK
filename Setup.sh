@@ -32,53 +32,14 @@ if [ -e .git/hooks ]; then
         rm -f .git/hooks/post-merge
     fi
 
-    which spatial > /dev/null
-    if [ $? -eq 1 ]; then
-        echo "Error: Could not find spatial. Please make sure you have it installed and the containing directory added to PATH environment variable."
-        exit 1
-    fi
-markEndOfBlock "Check dependencies"
+    # Add git hook to run Setup.sh when RequireSetup file has been updated.
+    cp "$(pwd)/SpatialGDK/Extras/git/post-merge" "$(pwd)/.git/hooks"
+fi
 
-markStartOfBlock "Setup variables"
-    PINNED_CORE_SDK_VERSION=$(cat ./SpatialGDK/Extras/core-sdk.version)
-    BUILD_DIR="$(dirname "$0")/SpatialGDK/Build"
-    CORE_SDK_DIR="$BUILD_DIR/core_sdk"
-    WORKER_SDK_DIR="$(dirname "$0")/SpatialGDK/Source/SpatialGDK/Public/WorkerSDK"
-    BINARIES_DIR="$(dirname "$0")/SpatialGDK/Binaries/ThirdParty/Improbable"
-    SCHEMA_COPY_DIR="$(dirname "$0")/../../../spatial/schema/unreal/gdk"
-    SCHEMA_STD_COPY_DIR="$(dirname "$0")/../../../spatial/build/dependencies/schema/standard_library"
-    SPATIAL_DIR="$(dirname "$0")/../../../spatial"
-    DOMAIN_ENVIRONMENT_VAR=
-    if [[ "$*" == "--china" ]]; then
-        DOMAIN_ENVIRONMENT_VAR=--domain spatialoschina.com --environment cn-production
-    fi
-markEndOfBlock "Setup variables"
-
-markStartOfBlock "Clean folders"
-    rm -rf $CORE_SDK_DIR           2>/dev/null
-    rm -rf $WORKER_SDK_DIR         2>/dev/null
-    rm -rf $BINARIES_DIR           2>/dev/null
-
-    if [ ! -z "$SPATIAL_DIR" ]; then
-        rm -rf $SCHEMA_STD_COPY_DIR    2>/dev/null
-        rm -rf $SCHEMA_COPY_DIR    2>/dev/null
-    fi
-    
-markEndOfBlock "Clean folders"
-
-markStartOfBlock "Create folders"
-    mkdir -p $WORKER_SDK_DIR          >/dev/null 2>/dev/null
-    mkdir -p $CORE_SDK_DIR/schema     >/dev/null 2>/dev/null
-    mkdir -p $CORE_SDK_DIR/tools      >/dev/null 2>/dev/null
-    mkdir -p $CORE_SDK_DIR/worker_sdk >/dev/null 2>/dev/null
-    mkdir -p $BINARIES_DIR            >/dev/null 2>/dev/null
-    mkdir -p $BINARIES_DIR/Programs/worker_sdk >/dev/null 2>/dev/null
-    
-    if [ ! -z "$SPATIAL_DIR" ]; then
-        mkdir -p $SCHEMA_STD_COPY_DIR     >/dev/null 2>/dev/null
-        rm -rf $SCHEMA_COPY_DIR    2>/dev/null
-    fi
-markEndOfBlock "Create folders"
+echo "Clean folders"
+rm -rf "${CORE_SDK_DIR}"
+rm -rf "${WORKER_SDK_DIR}"
+rm -rf "${BINARIES_DIR}"
 
 markStartOfBlock "Retrieve dependencies"
     spatial package retrieve tools           schema_compiler-x86_64-win32               $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR       $CORE_SDK_DIR/tools/schema_compiler-x86_64-win32.zip
@@ -91,34 +52,9 @@ markStartOfBlock "Retrieve dependencies"
     spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang-ios         $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR       $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
     spatial package retrieve worker_sdk      csharp                                     $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR       $CORE_SDK_DIR/worker_sdk/csharp.zip
 markEndOfBlock "Retrieve dependencies"
-
-markStartOfBlock "Unpack dependencies"
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c_headers.zip                                   -d $BINARIES_DIR/Headers/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86-vc140_md-win32.zip                -d $BINARIES_DIR/Win32/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-vc140_md-win32.zip             -d $BINARIES_DIR/Win64/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc510-linux.zip               -d $BINARIES_DIR/Linux/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang-macos.zip                -d $BINARIES_DIR/Mac/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang-ios.zip          -d $BINARIES_DIR/IOS/
-    unzip -oq $CORE_SDK_DIR/worker_sdk/csharp.zip                                      -d $BINARIES_DIR/Programs/worker_sdk/csharp/
-    unzip -oq $CORE_SDK_DIR/tools/schema_compiler-x86_64-win32.zip                     -d $BINARIES_DIR/Programs/
-    unzip -oq $CORE_SDK_DIR/schema/standard_library.zip                                -d $BINARIES_DIR/Programs/schema/
-
-    cp -R $BINARIES_DIR/Headers/include/ $WORKER_SDK_DIR
-markEndOfBlock "Unpack dependencies"
-
-if [ ! -z "$SPATIAL_DIR" ]; then
-    markStartOfBlock "Copy standard library schema"
-        echo "Copying standard library schemas to $SCHEMA_STD_COPY_DIR"
-        cp -R $BINARIES_DIR/Programs/schema/* $SCHEMA_STD_COPY_DIR
-    markEndOfBlock "Copy standard library schema"
-
-    markStartOfBlock "Copy GDK schema"
-        rm -rf $SCHEMA_COPY_DIR   2>/dev/null
-        mkdir -p $SCHEMA_COPY_DIR >/dev/null 2>/dev/null
-
-        echo "Copying schemas to $SCHEMA_COPY_DIR."
-        cp -R $(dirname %0)/SpatialGDK/Extras/schema/* $SCHEMA_COPY_DIR
-    markEndOfBlock "Copy GDK schema"
+if [ -d "${SPATIAL_DIR}" ]; then
+    rm -rf "${SCHEMA_STD_COPY_DIR}"
+    rm -rf "${SCHEMA_COPY_DIR}"
 fi
 
 echo "Create folders"
