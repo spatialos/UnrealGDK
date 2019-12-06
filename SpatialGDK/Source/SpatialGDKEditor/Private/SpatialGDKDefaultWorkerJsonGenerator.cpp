@@ -3,6 +3,7 @@
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
 
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesConstants.h"
 
 #include "Misc/FileHelper.h"
 
@@ -39,7 +40,7 @@ bool GenerateDefaultWorkerJson(const FString& JsonPath, const FString& WorkerTyp
 
 bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
 {
-	const FString WorkerJsonDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("workers/unreal"));
+	const FString WorkerJsonDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("workers/unreal"));
 	bool bAllJsonsGeneratedSuccessfully = true;
 
 	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
