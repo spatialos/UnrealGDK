@@ -22,7 +22,6 @@ void SpatialVirtualWorkerTranslator::Init(UAbstractLBStrategy* InLoadBalanceStra
 	USpatialWorkerConnection* InConnection,
 	FString InWorkerId)
 {
-	check(InLoadBalanceStrategy != nullptr);
 	LoadBalanceStrategy = InLoadBalanceStrategy;
 
 	check(InStaticComponentView != nullptr);
@@ -280,6 +279,7 @@ void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalW
 		bIsReady = true;
 
 		// Tell the strategy about the local virtual worker id.
+		check(LoadBalanceStrategy != nullptr);
 		check(LoadBalanceStrategy.IsValid());
 		LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
 	}
