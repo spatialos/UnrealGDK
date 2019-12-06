@@ -32,6 +32,7 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/EntityPool.h"
+#include "Utils/ErrorCodeRemapping.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialDebugger.h"
@@ -129,7 +130,7 @@ void USpatialNetDriver::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTo
 			}
 		}
 	}
-	Connection->ConnectToLocator(NetDriver);
+	Connection->ConnectToLocator();
 }
 
 void USpatialNetDriver::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
@@ -370,6 +371,8 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	}
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
+	Connection->BindOnConnectedToSpatialOS(NetDriverOnConnectedToSpatialOS::CreateUObject(this, &USpatialNetDriver::OnConnectedToSpatialOS));
+	Connection->BindOnConnectionFailure(NetDriverOnConnectionFailure::CreateUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed));
 
 	bool bUseReceptionist = true;
 	bool bShouldLoadFromURL = true;
@@ -434,6 +437,17 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	else
 	{
 		Sender->CreateServerWorkerEntity();
+	}
+}
+
+void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString ErrorMessage)
+{
+	if (const USpatialGameInstance * GameInstance = GetGameInstance())
+	{
+		if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+		{
+			GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
+		}
 	}
 }
 
@@ -870,6 +884,8 @@ void USpatialNetDriver::BeginDestroy()
 			}
 
 			Connection = nullptr;
+
+			// TODO(Alex): remove callbacks here?
 		}
 	}
 

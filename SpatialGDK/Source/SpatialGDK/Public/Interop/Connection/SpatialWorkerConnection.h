@@ -31,6 +31,10 @@ enum class ESpatialConnectionType
 	Locator
 };
 
+DECLARE_DELEGATE(NetDriverOnConnectedToSpatialOS)
+DECLARE_DELEGATE_TwoParams(NetDriverOnConnectionFailure, uint8_t, const FString);
+
+
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 {
@@ -82,12 +86,17 @@ public:
 
 	// TODO(Alex): move these to a new class
 	void Connect(bool bConnectAsClient, USpatialNetDriver* NetDriver);
-	void ConnectToLocator(USpatialNetDriver* NetDriver);
-	void ConnectToReceptionist(bool bConnectAsClient, USpatialNetDriver* NetDriver);
-	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture, USpatialNetDriver* NetDriver);
-	void OnConnectionSuccess(USpatialNetDriver* NetDriver);
+	void ConnectToLocator();
+	void ConnectToReceptionist(bool bConnectAsClient, uint32 PlayInEditorID);
+	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
+	void OnConnectionSuccess();
 	void OnPreConnectionFailure(const FString& Reason);
-	void OnConnectionFailure(USpatialNetDriver* NetDriver);
+	void OnConnectionFailure();
+
+	void BindOnConnectedToSpatialOS(const NetDriverOnConnectedToSpatialOS& Function);
+	void BindOnConnectionFailure(const NetDriverOnConnectionFailure& Function);
+	NetDriverOnConnectedToSpatialOS NetDriverOnConnectedCallback;
+	NetDriverOnConnectionFailure NetDriverOnFailureCallback;
 
 private:
 

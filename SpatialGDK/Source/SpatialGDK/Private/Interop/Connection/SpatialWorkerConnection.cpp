@@ -74,12 +74,12 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient, USpatialNetDriver* Ne
 {
 	if (bIsConnected)
 	{
-		AsyncTask(ENamedThreads::GameThread, [WeakNetDriver = TWeakObjectPtr<USpatialNetDriver>(NetDriver), WeakThis = TWeakObjectPtr<USpatialWorkerConnection>(this)]
+		AsyncTask(ENamedThreads::GameThread, [WeakThis = TWeakObjectPtr<USpatialWorkerConnection>(this)]
 			{
-				if (WeakThis.IsValid() && WeakNetDriver.IsValid())
+				if (WeakThis.IsValid())
 				{
 					// TODO(Alex): unsafe?
-					WeakThis->OnConnectionSuccess(WeakNetDriver.Get());
+					WeakThis->OnConnectionSuccess();
 				}
 				else
 				{
@@ -101,15 +101,15 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient, USpatialNetDriver* Ne
 	switch (GetConnectionType())
 	{
 	case ESpatialConnectionType::Receptionist:
-		ConnectToReceptionist(bInitAsClient, NetDriver);
+		ConnectToReceptionist(bInitAsClient, NetDriver->PlayInEditorID);
 		break;
 	case ESpatialConnectionType::Locator:
-		ConnectToLocator(NetDriver);
+		ConnectToLocator();
 		break;
 	}
 }
 
-void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient, USpatialNetDriver* NetDriver)
+void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient, uint32 PlayInEditorID)
 {
 	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
@@ -118,7 +118,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient, USpa
 	}
 
 #if WITH_EDITOR
-	SpatialGDKServices::InitWorkers(bConnectAsClient, NetDriver->PlayInEditorID, ReceptionistConfig.WorkerId);
+	SpatialGDKServices::InitWorkers(bConnectAsClient, PlayInEditorID, ReceptionistConfig.WorkerId);
 #endif
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
@@ -165,10 +165,10 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient, USpa
 		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.ReceptionistPort,
 		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionParams);
 
-	FinishConnecting(ConnectionFuture, NetDriver);
+	FinishConnecting(ConnectionFuture);
 }
 
-void USpatialWorkerConnection::ConnectToLocator(USpatialNetDriver* NetDriver)
+void USpatialWorkerConnection::ConnectToLocator()
 {
 	if (LocatorConfig.WorkerType.IsEmpty())
 	{
@@ -223,19 +223,19 @@ void USpatialWorkerConnection::ConnectToLocator(USpatialNetDriver* NetDriver)
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);
 
-	FinishConnecting(ConnectionFuture, NetDriver);
+	FinishConnecting(ConnectionFuture);
 }
 
-void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture, USpatialNetDriver* NetDriver)
+void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture)
 {
 	TWeakObjectPtr<USpatialWorkerConnection> WeakSpatialWorkerConnection(this);
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WeakNetDriver = TWeakObjectPtr<USpatialNetDriver>(NetDriver), ConnectionFuture, WeakSpatialWorkerConnection]
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialWorkerConnection]
 	{
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [WeakNetDriver, WeakSpatialWorkerConnection, NewCAPIWorkerConnection]
+		AsyncTask(ENamedThreads::GameThread, [WeakSpatialWorkerConnection, NewCAPIWorkerConnection]
 		{
 			USpatialWorkerConnection* SpatialWorkerConnection = WeakSpatialWorkerConnection.Get();
 
@@ -249,14 +249,13 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
 			{
 				SpatialWorkerConnection->CacheWorkerAttributes();
-				check(WeakNetDriver.IsValid());
 				// TODO(Alex): unsafe?
-				SpatialWorkerConnection->OnConnectionSuccess(WeakNetDriver.Get());
+				SpatialWorkerConnection->OnConnectionSuccess();
 			}
 			else
 			{
 				// TODO: Try to reconnect - UNR-576
-				SpatialWorkerConnection->OnConnectionFailure(WeakNetDriver.Get());
+				SpatialWorkerConnection->OnConnectionFailure();
 			}
 		});
 	});
@@ -385,7 +384,7 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	}
 }
 
-void USpatialWorkerConnection::OnConnectionSuccess(USpatialNetDriver* NetDriver)
+void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
 
@@ -394,7 +393,7 @@ void USpatialWorkerConnection::OnConnectionSuccess(USpatialNetDriver* NetDriver)
 		InitializeOpsProcessingThread();
 	}
 
-	NetDriver->OnConnectedToSpatialOS();
+	NetDriverOnConnectedCallback.ExecuteIfBound();
 	GameInstance->HandleOnConnected();
 }
 
@@ -404,7 +403,7 @@ void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
 	GameInstance->HandleOnConnectionFailed(Reason);
 }
 
-void USpatialWorkerConnection::OnConnectionFailure(USpatialNetDriver* NetDriver)
+void USpatialWorkerConnection::OnConnectionFailure()
 {
 	bIsConnected = false;
 
@@ -413,8 +412,19 @@ void USpatialWorkerConnection::OnConnectionFailure(USpatialNetDriver* NetDriver)
 		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
 		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
 
-		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), NetDriver, ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
+		NetDriverOnFailureCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
+		//GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), NetDriver, ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
 	}
+}
+
+void USpatialWorkerConnection::BindOnConnectedToSpatialOS(const NetDriverOnConnectedToSpatialOS& Function)
+{
+	NetDriverOnConnectedCallback = Function;
+}
+
+void USpatialWorkerConnection::BindOnConnectionFailure(const NetDriverOnConnectionFailure& Function)
+{
+	NetDriverOnFailureCallback = Function;
 }
 
 bool USpatialWorkerConnection::Init()
