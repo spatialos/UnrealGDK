@@ -74,6 +74,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 	LocalDeploymentManager->SetAutoDeploy(GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment);
+	LocalDeploymentManager->SetInChina(GetDefault<USpatialGDKEditorSettings>()->IsRunningInChina());
 
 	// Bind the play button delegate to starting a local spatial deployment.
 	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment)
