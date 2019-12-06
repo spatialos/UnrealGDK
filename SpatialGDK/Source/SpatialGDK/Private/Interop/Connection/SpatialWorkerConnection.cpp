@@ -6,7 +6,6 @@
 #endif
 
 #include "EngineClasses/SpatialGameInstance.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Engine/World.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
@@ -16,7 +15,6 @@
 #include "Engine/World.h"
 #include "Misc/Paths.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
 
@@ -70,7 +68,7 @@ void USpatialWorkerConnection::DestroyConnection()
 	KeepRunning.AtomicSet(true);
 }
 
-void USpatialWorkerConnection::Connect(bool bInitAsClient)
+void USpatialWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID)
 {
 	if (bIsConnected)
 	{
@@ -100,12 +98,28 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 	switch (GetConnectionType())
 	{
 	case ESpatialConnectionType::Receptionist:
-		ConnectToReceptionist(bInitAsClient);
+		ConnectToReceptionist(bInitAsClient, PlayInEditorID);
 		break;
 	case ESpatialConnectionType::Locator:
 		ConnectToLocator();
 		break;
 	}
+}
+
+void USpatialWorkerConnection::BindOnConnectionToSpatialOSSucceeded(const OnConnectionToSpatialOSSucceededDelegate& Function)
+{
+	OnConnectedCallback = Function;
+}
+
+void USpatialWorkerConnection::BindOnConnectionToSpatialOSFailed(const OnConnectionToSpatialOSFailedDelegate& Function)
+{
+	OnFailedToConnectCallback = Function;
+}
+
+void USpatialWorkerConnection::UnbindCallbacks()
+{
+	OnConnectedCallback.Unbind();
+	OnFailedToConnectCallback.Unbind();
 }
 
 void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
@@ -185,7 +199,7 @@ void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
 	}
 }
 
-void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
+void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient, uint32 PlayInEditorID)
 {
 	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
@@ -194,7 +208,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	}
 
 #if WITH_EDITOR
-	SpatialGDKServices::InitWorkers(bConnectAsClient, GetSpatialNetDriverChecked()->PlayInEditorID, ReceptionistConfig.WorkerId);
+	SpatialGDKServices::InitWorkers(bConnectAsClient, PlayInEditorID, ReceptionistConfig.WorkerId);
 #endif
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
@@ -459,22 +473,6 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	}
 }
 
-USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
-{
-	UNetDriver* NetDriver = GameInstance->GetWorld()->GetNetDriver();
-
-	// On the client, the world might not be completely set up.
-	// in this case we can use the PendingNetGame to get the NetDriver
-	if (NetDriver == nullptr)
-	{
-		NetDriver = GameInstance->GetWorldContext()->PendingNetGame->GetNetDriver();
-	}
-
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
-	checkf(SpatialNetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
-	return SpatialNetDriver;
-}
-
 void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
@@ -484,7 +482,7 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 		InitializeOpsProcessingThread();
 	}
 
-	GetSpatialNetDriverChecked()->OnConnectedToSpatialOS();
+	OnConnectedCallback.ExecuteIfBound();
 	GameInstance->HandleOnConnected();
 }
 
@@ -503,7 +501,7 @@ void USpatialWorkerConnection::OnConnectionFailure()
 		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
 		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
 
-		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
+		OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 	}
 }
 

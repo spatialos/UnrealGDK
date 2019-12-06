@@ -31,6 +31,9 @@ enum class ESpatialConnectionType
 	Locator
 };
 
+DECLARE_DELEGATE(OnConnectionToSpatialOSSucceededDelegate)
+DECLARE_DELEGATE_TwoParams(OnConnectionToSpatialOSFailedDelegate, uint8_t, const FString);
+
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 {
@@ -42,7 +45,10 @@ public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 
-	void Connect(bool bConnectAsClient);
+	void Connect(bool bConnectAsClient, uint32 PlayInEditorID);
+	void BindOnConnectionToSpatialOSSucceeded(const OnConnectionToSpatialOSSucceededDelegate& Function);
+	void BindOnConnectionToSpatialOSFailed(const OnConnectionToSpatialOSFailedDelegate& Function);
+	void UnbindCallbacks();
 
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
@@ -83,19 +89,20 @@ public:
 	UGlobalStateManager* GlobalStateManager;
 
 private:
-	void ConnectToReceptionist(bool bConnectAsClient);
-	void ConnectToLocator();
+	void ConnectToReceptionist(bool bConnectAsClient, uint32 PlayInEditorID);
+	void ConnectToLocator();	
 	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 
 	void OnConnectionSuccess();
 	void OnPreConnectionFailure(const FString& Reason);
 	void OnConnectionFailure();
 
+	OnConnectionToSpatialOSSucceededDelegate OnConnectedCallback;
+	OnConnectionToSpatialOSFailedDelegate OnFailedToConnectCallback;
+
 	ESpatialConnectionType GetConnectionType() const;
 
 	void CacheWorkerAttributes();
-
-	class USpatialNetDriver* GetSpatialNetDriverChecked() const;
 
 	// Begin FRunnable Interface
 	virtual bool Init() override;
