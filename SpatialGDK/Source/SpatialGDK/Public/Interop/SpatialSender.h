@@ -21,13 +21,13 @@ using namespace SpatialGDK;
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
 class USpatialActorChannel;
-class USpatialDispatcher;
+class SpatialDispatcher;
 class USpatialNetDriver;
 class USpatialPackageMapClient;
 class USpatialReceiver;
 class USpatialStaticComponentView;
 class USpatialClassInfoManager;
-class UActorGroupManager;
+class SpatialActorGroupManager;
 class USpatialWorkerConnection;
 
 struct FReliableRPCForRetry
@@ -157,8 +157,7 @@ private:
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 
-	UPROPERTY()
-	UActorGroupManager* ActorGroupManager;
+	SpatialActorGroupManager* ActorGroupManager;
 
 	FTimerManager* TimerManager;
 

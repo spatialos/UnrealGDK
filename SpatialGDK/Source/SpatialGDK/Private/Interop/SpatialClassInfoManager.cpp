@@ -17,14 +17,17 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Utils/ActorGroupManager.h"
+#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, UActorGroupManager* InActorGroupManager)
+bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, SpatialActorGroupManager* InActorGroupManager)
 {
+	check(InNetDriver != nullptr);
 	NetDriver = InNetDriver;
+
+	check(InActorGroupManager != nullptr);
 	ActorGroupManager = InActorGroupManager;
 
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
