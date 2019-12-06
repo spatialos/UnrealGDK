@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 
-## [`0.7.1-preview`] - 2019-12-05
+## [`0.7.1-preview`] - 2019-12-06
 
 ### Bug fixes: 
 - The C++ Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
