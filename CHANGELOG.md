@@ -42,6 +42,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed an crash caused by attempting to read schema from an unloaded class.
 - Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
 - Fix tombstone-related assert that could fire and bring down the editor.
+- Actors placed in the level with bNetLoadOnClient=false can now be reloaded once all references are deleted.
 
 ## [`0.7.0-preview`] - 2019-10-11
 
