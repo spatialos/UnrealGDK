@@ -18,7 +18,9 @@ BINARIES_DIR="$(pwd)/SpatialGDK/Binaries/ThirdParty/Improbable"
 SCHEMA_COPY_DIR="$(pwd)/../../../spatial/schema/unreal/gdk"
 SCHEMA_STD_COPY_DIR="$(pwd)/../../../spatial/build/dependencies/schema/standard_library"
 SPATIAL_DIR="$(pwd)/../../../spatial"
-
+if [[ "$*" == "--china" ]]; then
+    DOMAIN_ENVIRONMENT_VAR="--domain spatialoschina.com --environment cn-production"
+fi
 
 echo "Setup the git hooks"
 if [ -e .git/hooks ]; then
@@ -41,17 +43,6 @@ rm -rf "${CORE_SDK_DIR}"
 rm -rf "${WORKER_SDK_DIR}"
 rm -rf "${BINARIES_DIR}"
 
-markStartOfBlock "Retrieve dependencies"
-    spatial package retrieve tools           schema_compiler-x86_64-win32               $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR       $CORE_SDK_DIR/tools/schema_compiler-x86_64-win32.zip
-    spatial package retrieve schema          standard_library                           $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR       $CORE_SDK_DIR/schema/standard_library.zip
-    spatial package retrieve worker_sdk      c_headers                                  $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR       $CORE_SDK_DIR/worker_sdk/c_headers.zip
-    spatial package retrieve worker_sdk      c-dynamic-x86-vc140_md-win32               $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86-vc140_md-win32.zip
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-vc140_md-win32            $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-vc140_md-win32.zip
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc510-linux              $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc510-linux.zip
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-clang-macos               $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang-macos.zip
-    spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang-ios         $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR       $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
-    spatial package retrieve worker_sdk      csharp                                     $PINNED_CORE_SDK_VERSION       $DOMAIN_ENVIRONMENT_VAR       $CORE_SDK_DIR/worker_sdk/csharp.zip
-markEndOfBlock "Retrieve dependencies"
 if [ -d "${SPATIAL_DIR}" ]; then
     rm -rf "${SCHEMA_STD_COPY_DIR}"
     rm -rf "${SCHEMA_COPY_DIR}"
@@ -70,12 +61,12 @@ if [ -d "${SPATIAL_DIR}" ]; then
 fi
 
 echo "Retrieve dependencies"
-spatial package retrieve tools       schema_compiler-x86_64-macos        "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip
-spatial package retrieve schema      standard_library                    "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/schema/standard_library.zip
-spatial package retrieve worker_sdk  c_headers                           "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip
-spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos        "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip
-spatial package retrieve worker_sdk  c-static-fullylinked-arm-clang-ios  "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
-spatial package retrieve worker_sdk  csharp                              "${PINNED_CORE_SDK_VERSION}"  "${CORE_SDK_DIR}"/worker_sdk/csharp.zip
+spatial package retrieve tools       schema_compiler-x86_64-macos        "${PINNED_CORE_SDK_VERSION}"  ${DOMAIN_ENVIRONMENT_VAR}  "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip
+spatial package retrieve schema      standard_library                    "${PINNED_CORE_SDK_VERSION}"  ${DOMAIN_ENVIRONMENT_VAR}  "${CORE_SDK_DIR}"/schema/standard_library.zip
+spatial package retrieve worker_sdk  c_headers                           "${PINNED_CORE_SDK_VERSION}"  ${DOMAIN_ENVIRONMENT_VAR}  "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip
+spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos        "${PINNED_CORE_SDK_VERSION}"  ${DOMAIN_ENVIRONMENT_VAR}  "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip
+spatial package retrieve worker_sdk  c-static-fullylinked-arm-clang-ios  "${PINNED_CORE_SDK_VERSION}"  ${DOMAIN_ENVIRONMENT_VAR}  "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
+spatial package retrieve worker_sdk  csharp                              "${PINNED_CORE_SDK_VERSION}"  ${DOMAIN_ENVIRONMENT_VAR}  "${CORE_SDK_DIR}"/worker_sdk/csharp.zip
 
 echo "Unpack dependencies"
 unzip -oq "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip            -d "${BINARIES_DIR}"/Programs/
