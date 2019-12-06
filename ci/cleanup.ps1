@@ -1,5 +1,5 @@
 param (
-    [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine" ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
+    [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine", ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
     [string] $project_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\TestProject" ## This should ultimately resolve to "C:\b\<number>\TestProject".
 )
 
