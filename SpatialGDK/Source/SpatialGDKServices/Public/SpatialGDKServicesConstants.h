@@ -11,7 +11,7 @@ namespace SpatialGDKServicesConstants
 	const FString SpatialPath = TEXT("");
 	const FString Extension = TEXT("exe");
 #elif PLATFORM_MAC
-	// This is currently hardcoded and we expect users to have spatial either installed or symlinked to this path.
+	// UNR-2518: This is currently hardcoded and we expect users to have spatial either installed or symlinked to this path.
 	// If they haven't, it is necessary to symlink it to /usr/local/bin. At some point we should expose this via
 	// the Unreal UI, however right now the SpatialGDKServices module is unable to see these.
 	const FString SpatialPath = TEXT("/usr/local/bin");
