@@ -384,18 +384,21 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 			EntityId, *SpatialConstants::RPCTypeToString(Type), Buffer.LastSentRPCId, LastSeenRPCId);
 	}
 
-	if (Type == ERPCType::NetMulticast)
+	if (LastProcessedRPCId > LastSeenRPCId)
 	{
-		LastSeenMulticastRPCIds[EntityId] = LastProcessedRPCId;
-	}
-	else if (LastProcessedRPCId > LastSeenRPCId)
-	{
-		LastAckedRPCIds[EntityTypePair] = LastProcessedRPCId;
-		EntityComponentId EntityComponentPair = EntityComponentId(EntityId, RPCRingBufferUtils::GetAckComponentId(Type));
+		if (Type == ERPCType::NetMulticast)
+		{
+			LastSeenMulticastRPCIds[EntityId] = LastProcessedRPCId;
+		}
+		else
+		{
+			LastAckedRPCIds[EntityTypePair] = LastProcessedRPCId;
+			EntityComponentId EntityComponentPair = EntityComponentId(EntityId, RPCRingBufferUtils::GetAckComponentId(Type));
 
-		Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
+			Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
 
-		RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, LastProcessedRPCId);
+			RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, LastProcessedRPCId);
+		}
 	}
 }
 
