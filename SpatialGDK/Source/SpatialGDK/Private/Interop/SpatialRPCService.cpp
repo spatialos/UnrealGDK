@@ -87,7 +87,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	// Check capacity.
 	if (LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) >= NewRPCId)
 	{
-		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, MoveTemp(Payload));
+		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, Payload);
 
 		LastSentRPCIds.Add(EntityType, NewRPCId);
 	}
@@ -206,6 +206,11 @@ TArray<Worker_ComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation
 			if (EndpointComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 			{
 				RPCRingBufferUtils::MoveLastSentIdToInitiallyPresentCount(Schema_GetComponentDataFields(*ComponentData), LastSentRPCIds[EntityRPCType(EntityId, ERPCType::NetMulticast)]);
+			}
+
+			if (EndpointComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID)
+			{
+				UE_LOG(LogSpatialRPCService, Error, TEXT("SpatialRPCService::GetRPCComponentsOnEntityCreation: Initial RPCs present on ClientEndpoint! EntityId: %lld"), EntityId);
 			}
 
 			Component.schema_type = *ComponentData;
@@ -360,7 +365,17 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 	uint64 LastProcessedRPCId = LastSeenRPCId;
 	if (Buffer.LastSentRPCId >= LastSeenRPCId)
 	{
-		for (uint64 RPCId = LastSeenRPCId + 1; RPCId <= Buffer.LastSentRPCId; RPCId++)
+		uint64 FirstRPCIdToRead = LastSeenRPCId + 1;
+
+		uint32 BufferSize = RPCRingBufferUtils::GetRingBufferSize(Type);
+		if (Buffer.LastSentRPCId > LastSeenRPCId + BufferSize)
+		{
+			UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::ExtractRPCsForType: RPCs were overwritten without being processed! Entity: %lld, RPC type: %s, last seen RPC ID: %d, last sent ID: %d, buffer size: %d"),
+				EntityId, *SpatialConstants::RPCTypeToString(Type), LastSeenRPCId, Buffer.LastSentRPCId, BufferSize);
+			FirstRPCIdToRead = Buffer.LastSentRPCId - BufferSize + 1;
+		}
+
+		for (uint64 RPCId = FirstRPCIdToRead; RPCId <= Buffer.LastSentRPCId; RPCId++)
 		{
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
@@ -446,7 +461,7 @@ const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId Entity
 	}
 
 	checkNoEntry();
-	static const RPCRingBuffer DummyBuffer;
+	static const RPCRingBuffer DummyBuffer(ERPCType::Invalid);
 	return DummyBuffer;
 }
 

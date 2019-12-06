@@ -14,17 +14,14 @@ namespace SpatialGDK
 
 struct RPCRingBuffer
 {
+	RPCRingBuffer(ERPCType InType);
+
 	const TOptional<RPCPayload>& GetRingBufferElement(uint64 RPCId) const
 	{
-		if (RingBuffer.Num() == 0)
-		{
-			checkNoEntry();
-			static const TOptional<RPCPayload> DummyElement;
-			return DummyElement;
-		}
 		return RingBuffer[(RPCId - 1) % RingBuffer.Num()];
 	}
 
+	ERPCType Type;
 	TArray<TOptional<RPCPayload>> RingBuffer;
 	uint64 LastSentRPCId = 0;
 };
@@ -60,10 +57,10 @@ Schema_FieldId GetInitiallyPresentMulticastRPCsCountFieldId();
 
 bool ShouldQueueOverflowed(ERPCType Type);
 
-void ReadBufferFromSchema(Schema_Object* SchemaObject, ERPCType Type, RPCRingBuffer& OutBuffer);
+void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer);
 void ReadAckFromSchema(Schema_Object* SchemaObject, ERPCType Type, uint64& OutAck);
 
-void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, RPCPayload Payload);
+void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, const RPCPayload& Payload);
 void WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack);
 
 void MoveLastSentIdToInitiallyPresentCount(Schema_Object* SchemaObject, uint64 LastSentId);

@@ -6,8 +6,8 @@ namespace SpatialGDK
 {
 
 MulticastRPCs::MulticastRPCs(const Worker_ComponentData& Data)
+	: MulticastRPCBuffer(ERPCType::NetMulticast)
 {
-	MulticastRPCBuffer.RingBuffer.SetNum(RPCRingBufferUtils::GetRingBufferSize(ERPCType::NetMulticast));
 	ReadFromSchema(Schema_GetComponentDataFields(Data.schema_type));
 }
 
@@ -18,7 +18,7 @@ void MulticastRPCs::ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 
 void MulticastRPCs::ReadFromSchema(Schema_Object* SchemaObject)
 {
-	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, ERPCType::NetMulticast, MulticastRPCBuffer);
+	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, MulticastRPCBuffer);
 
 	// This is a special field that is set when creating a MulticastRPCs component with initial RPCs.
 	// The server that first gains authority over the component will set last sent RPC ID to be equal

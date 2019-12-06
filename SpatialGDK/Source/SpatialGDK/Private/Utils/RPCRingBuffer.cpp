@@ -7,6 +7,12 @@
 namespace SpatialGDK
 {
 
+RPCRingBuffer::RPCRingBuffer(ERPCType InType)
+	: Type(InType)
+{
+	RingBuffer.SetNum(RPCRingBufferUtils::GetRingBufferSize(Type));
+}
+
 namespace RPCRingBufferUtils
 {
 
@@ -127,9 +133,9 @@ bool ShouldQueueOverflowed(ERPCType Type)
 	}
 }
 
-void ReadBufferFromSchema(Schema_Object* SchemaObject, ERPCType Type, RPCRingBuffer& OutBuffer)
+void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer)
 {
-	RPCRingBufferDescriptor Descriptor = GetRingBufferDescriptor(Type);
+	RPCRingBufferDescriptor Descriptor = GetRingBufferDescriptor(OutBuffer.Type);
 
 	for (uint32 RingBufferIndex = 0; RingBufferIndex < Descriptor.RingBufferSize; RingBufferIndex++)
 	{
@@ -156,7 +162,7 @@ void ReadAckFromSchema(Schema_Object* SchemaObject, ERPCType Type, uint64& OutAc
 	}
 }
 
-void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, RPCPayload Payload)
+void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, const RPCPayload& Payload)
 {
 	RPCRingBufferDescriptor Descriptor = GetRingBufferDescriptor(Type);
 

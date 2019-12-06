@@ -6,9 +6,9 @@ namespace SpatialGDK
 {
 
 ClientEndpoint::ClientEndpoint(const Worker_ComponentData& Data)
+	: ReliableRPCBuffer(ERPCType::ServerReliable)
+	, UnreliableRPCBuffer(ERPCType::ServerUnreliable)
 {
-	ReliableRPCBuffer.RingBuffer.SetNum(RPCRingBufferUtils::GetRingBufferSize(ERPCType::ServerReliable));
-	UnreliableRPCBuffer.RingBuffer.SetNum(RPCRingBufferUtils::GetRingBufferSize(ERPCType::ServerUnreliable));
 	ReadFromSchema(Schema_GetComponentDataFields(Data.schema_type));
 }
 
@@ -19,8 +19,8 @@ void ClientEndpoint::ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 
 void ClientEndpoint::ReadFromSchema(Schema_Object* SchemaObject)
 {
-	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, ERPCType::ServerReliable, ReliableRPCBuffer);
-	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, ERPCType::ServerUnreliable, UnreliableRPCBuffer);
+	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, ReliableRPCBuffer);
+	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, UnreliableRPCBuffer);
 	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, ERPCType::ClientReliable, ReliableRPCAck);
 	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, ERPCType::ClientUnreliable, UnreliableRPCAck);
 }

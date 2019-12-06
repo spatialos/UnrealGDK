@@ -1373,6 +1373,12 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 
 void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 {
+	if (!GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers)
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::HandleRPC: Received component update on ring buffer component but ring buffers not enabled! Entity: %lld, Component: %d"), Op.entity_id, Op.update.component_id);
+		return;
+	}
+
 	RPCService->ExtractRPCsForEntity(Op.entity_id, Op.update.component_id);
 }
 
