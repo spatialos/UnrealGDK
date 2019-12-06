@@ -47,7 +47,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
-	check(!InNetDriver->IsServer() || InNetDriver->LoadBalanceEnforcer.IsValid());
 	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer.Get();
 	TimerManager = InTimerManager;
 
@@ -1151,7 +1150,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-		if (NetDriver->IsServer())
+		if (NetDriver->IsServer() && (LoadBalanceEnforcer != nullptr))
 		{
 			LoadBalanceEnforcer->OnAuthorityIntentComponentUpdated(Op);
 		}
