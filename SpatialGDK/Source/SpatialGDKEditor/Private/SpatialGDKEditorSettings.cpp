@@ -259,7 +259,7 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 
 	if (IsManualWorkerConnectionSet(GetPrimaryLaunchConfigPath()))
 	{
-		if ((!FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("AllowManualWorkerConnection", "Chosen launch configuration will not automatically launch servers. Do you want to continue?"))) == EAppReturnType::Yes)
+		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("AllowManualWorkerConnection", "Chosen launch configuration will not automatically launch servers. Do you want to continue?")) != EAppReturnType::Yes)
 		{
 			return false;
 		}
