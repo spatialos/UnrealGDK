@@ -56,7 +56,6 @@ steps:
 
   - label: "generate-pipeline-steps"
     commands:
-      - "chmod -R +rwx ci" # give the Linux user access to everything in the ci directory
       - "ci/generate-and-upload-build-steps.sh"
     env:
         ENGINE_VERSION: "${ENGINE_VERSION}"
