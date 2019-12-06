@@ -85,7 +85,9 @@ struct UnrealMetadata : Component
 		{
 			Class = FindObject<UClass>(nullptr, *ClassPath, false);
 		}
-		else
+
+		// It's possible we were unable to load a stably named actor as all references have been deleted.
+		if (!Class)
 		{
 			Class = LoadObject<UClass>(nullptr, *ClassPath);
 		}
