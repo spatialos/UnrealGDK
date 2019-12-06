@@ -337,6 +337,8 @@ void SpatialRPCService::OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker
 	}
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 	{
+		// Set last seen to last sent, so we don't process own RPCs after crossing the boundary.
+		LastSeenMulticastRPCIds.Add(EntityId, LastSentRPCIds[EntityRPCType(EntityId, ERPCType::NetMulticast)]);
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::NetMulticast));
 		break;
 	}
