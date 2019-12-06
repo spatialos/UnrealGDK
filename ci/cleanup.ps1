@@ -19,7 +19,7 @@ Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
 
 # Clean up testing project
 if (Test-Path $project_path) {
-    Write-Host "Removing existing project"
+    Write-Output "Removing existing project"
     Remove-Item $project_path -Recurse -Force
     if (-Not $?) {
         Throw "Failed to remove existing project at $($project_path)."

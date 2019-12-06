@@ -12,7 +12,7 @@ param(
 )
 
 # Clone the testing project
-Echo "Downloading the testing project from $($test_repo_url)"
+Write-Output "Downloading the testing project from $($test_repo_url)"
 git clone -b "$test_repo_branch" "$test_repo_url" "$test_repo_path" --depth 1
 if (-Not $?) {
     Throw "Failed to clone testing project from $($test_repo_url)."
@@ -25,7 +25,7 @@ New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugin
 # Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
 Add-Content -Path "$unreal_path\Engine\Config\BaseEditorSettings.ini" -Value "`r`n[/Script/IntroTutorials.TutorialStateSettings]`r`nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)`r`n"
 
-Echo "Generating project files"
+Write-Output "Generating project files"
 $proc = Start-Process "$unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
     "-projectfiles", `
     "-project=`"$test_repo_uproject_path`"", `
@@ -37,7 +37,7 @@ if ($proc.ExitCode -ne 0) {
     throw "Failed to generate files for the testing project."
 }
 
-Echo "Building project"
+Write-Output "Building project"
 $build_configuration = $build_state + $(If ("$build_target" -eq "") {""} Else {" $build_target"})
 $proc = Start-Process "$msbuild_exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
     "/nologo", `
