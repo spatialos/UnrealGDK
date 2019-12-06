@@ -17,6 +17,9 @@ if (Test-Path env:TEST_REPO_BRANCH) {
 
 . "$PSScriptRoot\common.ps1"
 
+# Guard against other runs not cleaning up after themselves
+. &$PSScriptRoot"\cleanup.ps1"
+
 # Download Unreal Engine
 Start-Event "get-unreal-engine" "command"
 &$PSScriptRoot"\get-engine.ps1" -unreal_path "$unreal_path"
