@@ -11,24 +11,13 @@ DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
 using namespace SpatialGDK;
 
-TUniquePtr<SpatialLoadBalanceEnforcer> SpatialLoadBalanceEnforcer::CreateSpatialLoadBalanceEnforcer(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
-{
-	check(InStaticComponentView != nullptr);
-	check(InVirtualWorkerTranslator != nullptr);
-
-	if (InStaticComponentView == nullptr || InVirtualWorkerTranslator == nullptr)
-	{
-		return nullptr;
-	}
-
-	return TUniquePtr<SpatialLoadBalanceEnforcer>(new SpatialLoadBalanceEnforcer(InWorkerId, InStaticComponentView, InVirtualWorkerTranslator));
-}
-
 SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
 	: WorkerId(InWorkerId)
 	, StaticComponentView(InStaticComponentView)
 	, VirtualWorkerTranslator(InVirtualWorkerTranslator)
 {
+	check(InStaticComponentView != nullptr);
+	check(InVirtualWorkerTranslator != nullptr);
 }
 
 void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
@@ -106,7 +95,6 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 			// TODO(zoning): Not sure whether this should be possible or not. Remove if we don't see the warning again.
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Entity without AuthIntent component will not be processed. EntityId: %lld"), *WorkerId, Request.EntityId);
 			CompletedRequests.Add(Request.EntityId);
-			// TODO(Alex): should it be continue?
 			return PendingRequests;
 		}
 

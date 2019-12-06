@@ -444,8 +444,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
 		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
 
-		LoadBalanceEnforcer = SpatialLoadBalanceEnforcer::CreateSpatialLoadBalanceEnforcer(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
-		check(LoadBalanceEnforcer);
+		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);

@@ -20,7 +20,7 @@ public:
 		FString OwningWorkerId;
 	};
 
-	static TUniquePtr<SpatialLoadBalanceEnforcer> CreateSpatialLoadBalanceEnforcer(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
+	SpatialLoadBalanceEnforcer(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);	
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
 	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
@@ -30,8 +30,6 @@ public:
 	TArray<AclWriteAuthorityRequest> ProcessQueuedAclAssignmentRequests();
 
 private:
-
-	SpatialLoadBalanceEnforcer(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);	
 
 	FString WorkerId;
 	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
