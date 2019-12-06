@@ -7,6 +7,7 @@
 #include "Misc/Paths.h"
 #include "SpatialConstants.h"
 #include "UObject/Package.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 
 #include "SpatialGDKEditorSettings.generated.h"
@@ -345,7 +346,7 @@ public:
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
 		return SpatialOSLaunchConfig.FilePath.IsEmpty()
-			? FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("default_launch.json"))
+			? FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("default_launch.json"))
 			: SpatialOSLaunchConfig.FilePath;
 	}
 
@@ -375,12 +376,12 @@ public:
 
 	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("snapshots")));
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("snapshots"));
 	}
 
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/generated/")));
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/generated/"));
 	}
 
 	FORCEINLINE FString GetSpatialOSCommandLineLaunchFlags() const

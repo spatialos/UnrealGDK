@@ -26,6 +26,7 @@
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKSimulatedPlayerDeployment.h"
@@ -240,7 +241,9 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+#if PLATFORM_WINDOWS
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+#endif
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 	}
@@ -263,7 +266,9 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+#if PLATFORM_WINDOWS
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+#endif
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 }
@@ -840,8 +845,8 @@ bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated() const
 
 bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
 {
-	FString DescriptorPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("build/assembly/schema/schema.descriptor"));
-	FString GdkFolderPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("schema/unreal/gdk"));
+	FString DescriptorPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema/schema.descriptor"));
+	FString GdkFolderPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
 	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();
 }
 
