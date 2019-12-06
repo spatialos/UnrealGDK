@@ -640,16 +640,7 @@ void USpatialSender::FlushPackedRPCs()
 
 void USpatialSender::FlushRPCService()
 {
-	EPushRPCResult Result = RPCService->PushOverflowedRPCs();
-	switch (Result)
-	{
-	case EPushRPCResult::HasAckAuthority:
-		UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::FlushRPCService: Tried to push overflowed RPCs after gaining authority over ack component."));
-		break;
-	case EPushRPCResult::NoRingBufferAuthority:
-		UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::FlushRPCService: Tried to push overflowed RPCs after losing authority over ring buffer component."));
-		break;
-	}
+	RPCService->PushOverflowedRPCs();
 
 	for (const SpatialRPCService::UpdateToSend& Update : RPCService->GetRPCsAndAcksToSend())
 	{
@@ -937,7 +928,8 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 				UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::SendRPCInternal: Worker has authority over ack component for RPC it is sending. RPC will not be sent. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 				break;
 			case EPushRPCResult::NoRingBufferAuthority:
-				UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::SendRPCInternal: Failed to send RPC because the worker does not have authority over ring buffer component. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+				// TODO: Change engine logic that calls Client RPCs from non-auth servers and change this to error. UNR-2517
+				UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRPCInternal: Failed to send RPC because the worker does not have authority over ring buffer component. Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 				break;
 			}
 

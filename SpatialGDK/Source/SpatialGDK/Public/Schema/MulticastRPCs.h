@@ -21,9 +21,9 @@ struct MulticastRPCs : Component
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
 
 	RPCRingBuffer MulticastRPCBuffer;
+	uint32 InitiallyPresentMulticastRPCsCount = 0;
 
 private:
-	void InitBuffers();
 	void ReadFromSchema(Schema_Object* SchemaObject);
 };
 

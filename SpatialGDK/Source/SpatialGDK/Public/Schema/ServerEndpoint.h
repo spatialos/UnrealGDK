@@ -26,7 +26,6 @@ struct ServerEndpoint : Component
 	uint64 UnreliableRPCAck = 0;
 
 private:
-	void InitBuffers();
 	void ReadFromSchema(Schema_Object* SchemaObject);
 };
 

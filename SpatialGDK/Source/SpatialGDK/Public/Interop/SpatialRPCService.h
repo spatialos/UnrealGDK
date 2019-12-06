@@ -30,14 +30,14 @@ struct EntityRPCType
 	Worker_EntityId EntityId;
 	ERPCType Type;
 
-	inline bool operator==(const EntityRPCType& Other) const
+	friend bool operator==(const EntityRPCType& Lhs, const EntityRPCType& Rhs)
 	{
-		return EntityId == Other.EntityId && Type == Other.Type;
+		return Lhs.EntityId == Rhs.EntityId && Lhs.Type == Rhs.Type;
 	}
 
-	friend inline uint32 GetTypeHash(EntityRPCType Value)
+	friend uint32 GetTypeHash(EntityRPCType Value)
 	{
-		return ::GetTypeHash(static_cast<int64>(Value.EntityId)) + 977u * ::GetTypeHash(static_cast<uint32>(Value.Type));
+		return HashCombine(::GetTypeHash(static_cast<int64>(Value.EntityId)), ::GetTypeHash(static_cast<uint32>(Value.Type)));
 	}
 };
 
@@ -51,14 +51,14 @@ struct EntityComponentId
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
 
-	inline bool operator==(const EntityComponentId& Other) const
+	friend bool operator==(const EntityComponentId& Lhs, const EntityComponentId& Rhs)
 	{
-		return EntityId == Other.EntityId && ComponentId == Other.ComponentId;
+		return Lhs.EntityId == Rhs.EntityId && Lhs.ComponentId == Rhs.ComponentId;
 	}
 
-	friend inline uint32 GetTypeHash(EntityComponentId Value)
+	friend uint32 GetTypeHash(EntityComponentId Value)
 	{
-		return ::GetTypeHash(static_cast<int64>(Value.EntityId)) + 977u * ::GetTypeHash(static_cast<uint32>(Value.ComponentId));
+		return HashCombine(::GetTypeHash(static_cast<int64>(Value.EntityId)), ::GetTypeHash(static_cast<uint32>(Value.ComponentId)));
 	}
 };
 
@@ -78,7 +78,7 @@ public:
 	SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View);
 
 	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload);
-	EPushRPCResult PushOverflowedRPCs();
+	void PushOverflowedRPCs();
 
 	struct UpdateToSend
 	{
@@ -104,14 +104,17 @@ private:
 	// When locking works as intended, we should re-evaluate how this will work (drop after some time?).
 	void ClearOverflowedRPCs(Worker_EntityId EntityId);
 
-	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload);
+	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload);
 
 	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
 
-	void AddOverflowedRPC(EntityRPCType EntityType, RPCPayload Payload);
+	void AddOverflowedRPC(EntityRPCType EntityType, RPCPayload&& Payload);
 
 	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
 	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, ERPCType Type);
+
+	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair);
+	Schema_ComponentData* GetOrCreateComponentData(EntityComponentId EntityComponentIdPair);
 
 private:
 	ExtractRPCDelegate ExtractRPCCallback;

@@ -34,6 +34,14 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 	Descriptor.RingBufferSize = GetRingBufferSize(Type);
 
 	uint32 MaxRingBufferSize = GetDefault<USpatialGDKSettings>()->MaxRPCRingBufferSize;
+	// In schema, the client and server endpoints will first have a
+	//   Reliable ring buffer, starting from 1 and containing MaxRingBufferSize elements, then
+	//   Last sent reliable RPC,
+	//   Unreliable ring buffer, containing MaxRingBufferSize elements,
+	//   Last sent unreliable RPC,
+	//   followed by reliable and unreliable RPC acks.
+	// MulticastRPCs component will only have one buffer that looks like the reliable buffer above.
+	// The numbers below are based on this structure, and have to match the component generated in SchemaGenerator (GenerateRPCEndpointsSchema).
 	switch (Type)
 	{
 	case ERPCType::ClientReliable:
@@ -93,6 +101,13 @@ Schema_FieldId GetAckFieldId(ERPCType Type)
 		checkNoEntry();
 		return 0;
 	}
+}
+
+Schema_FieldId GetInitiallyPresentMulticastRPCsCountFieldId()
+{
+	uint32 MaxRingBufferSize = GetDefault<USpatialGDKSettings>()->MaxRPCRingBufferSize;
+	// This field directly follows the ring buffer + last sent id.
+	return 1 + MaxRingBufferSize + 1;
 }
 
 bool ShouldQueueOverflowed(ERPCType Type)
@@ -158,6 +173,17 @@ void WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack)
 
 	Schema_ClearField(SchemaObject, AckFieldId);
 	Schema_AddUint64(SchemaObject, AckFieldId, Ack);
+}
+
+void MoveLastSentIdToInitiallyPresentCount(Schema_Object* SchemaObject, uint64 LastSentId)
+{
+	// This is a special field that is set when creating a MulticastRPCs component with initial RPCs.
+	// Last sent RPC Id is cleared so the clients don't ignore the initial RPCs.
+	// The server that first gains authority over the component will set last sent RPC ID to be equal
+	// to the initial count so the clients that already checked out this entity can execute initial RPCs.
+	RPCRingBufferDescriptor Descriptor = GetRingBufferDescriptor(ERPCType::NetMulticast);
+	Schema_ClearField(SchemaObject, Descriptor.LastSentRPCFieldId);
+	Schema_AddUint32(SchemaObject, GetInitiallyPresentMulticastRPCsCountFieldId(), static_cast<uint32>(LastSentId));
 }
 
 } // namespace RPCRingBufferUtils

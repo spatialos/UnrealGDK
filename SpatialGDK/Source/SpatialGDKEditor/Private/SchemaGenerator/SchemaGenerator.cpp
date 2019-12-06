@@ -339,6 +339,13 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 		Writer.Printf("uint64 last_acked_{0}_rpc_id = {1};", GetRPCFieldPrefix(AckedRPCType), FieldId++);
 	}
 
+	if (ComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+	{
+		// This counter is used to let clients execute initial multicast RPCs when entity is just getting created,
+		// while ignoring existing multicast RPCs when an entity enters the interest range.
+		Writer.Printf("uint32 initially_present_multicast_rpc_count = {0};", FieldId++);
+	}
+
 	if (ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID)
 	{
 		// CrossServer RPC uses commands, only exists on ServerRPCEndpoint

@@ -491,7 +491,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			}
 
 			// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
-			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers))
+			if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
 			{
 				Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
@@ -502,19 +502,24 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID ||
 		Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{
-		check(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers);
-
-		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		if (GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers)
 		{
-			RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
-			if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				RPCService->ExtractRPCsForEntity(Op.entity_id, Op.component_id);
+				RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
+				if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+				{
+					RPCService->ExtractRPCsForEntity(Op.entity_id, Op.component_id);
+				}
+			}
+			else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+			{
+				RPCService->OnEndpointAuthorityLost(Op.entity_id, Op.component_id);
 			}
 		}
-		else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+		else
 		{
-			RPCService->OnEndpointAuthorityLost(Op.entity_id, Op.component_id);
+			UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::HandleActorAuthority: Gained authority over ring buffer endpoint but ring buffers not enabled! Entity: %lld, Component: %d"), Op.entity_id, Op.component_id);
 		}
 	}
 
