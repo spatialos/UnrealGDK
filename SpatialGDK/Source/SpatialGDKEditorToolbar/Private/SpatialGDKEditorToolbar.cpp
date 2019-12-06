@@ -212,7 +212,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().UpdateIOSClient,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UpdateIOSClient),
-		FCanExecuteAction(),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UpdateIOSClientIsVisible),
 		FIsActionChecked(),
 		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UpdateIOSClientIsVisible));
 }
@@ -902,7 +902,7 @@ void FSpatialGDKEditorToolbarModule::UpdateIOSClient() const
 	int32 ExitCode;
 
 #if PLATFORM_WINDOWS
-	FPlatformProcess::ExecProcess(*DeploymentServerExe, *DeploymentServerArguments &ExitCode, &DeploymentServerOutput, &StdErr);
+	FPlatformProcess::ExecProcess(*DeploymentServerExe, *DeploymentServerArguments, &ExitCode, &DeploymentServerOutput, &StdErr);
 #elif PLATFORM_MAC
 	FString MonoExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/ThirdParty/Mono/Mac/bin/mono")));
 	DeploymentServerArguments = FString::Printf(TEXT("%s %s"), *DeploymentServerExe, *DeploymentServerArguments);
