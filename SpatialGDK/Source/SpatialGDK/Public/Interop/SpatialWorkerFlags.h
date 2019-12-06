@@ -37,5 +37,5 @@ private:
 
 	static TMap<FString, FString> WorkerFlags;
 
-	friend class USpatialDispatcher;
+	friend class SpatialDispatcher;
 };

@@ -1,6 +1,8 @@
 @echo off
 
-setlocal
+if not defined NO_SET_LOCAL (
+    setlocal
+)
 
 pushd "%~dp0"
 

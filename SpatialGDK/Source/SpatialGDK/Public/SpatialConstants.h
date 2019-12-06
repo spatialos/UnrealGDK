@@ -149,8 +149,12 @@ const Schema_FieldId UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID		= 6;
 const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID						= 1;
 const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_INDEX_ID					= 2;
 const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID					= 3;
+const Schema_FieldId UNREAL_RPC_PAYLOAD_TRACE_ID						= 4;
 // UnrealPackedRPCPayload additional Field ID
-const Schema_FieldId UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID				= 4;
+const Schema_FieldId UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID				= 5;
+
+const Schema_FieldId UNREAL_RPC_TRACE_ID								= 1;
+const Schema_FieldId UNREAL_RPC_SPAN_ID									= 2;
 
 // Unreal(Client|Server|Multicast)RPCEndpoint Field IDs
 const Schema_FieldId UNREAL_RPC_ENDPOINT_READY_ID 						= 1;
