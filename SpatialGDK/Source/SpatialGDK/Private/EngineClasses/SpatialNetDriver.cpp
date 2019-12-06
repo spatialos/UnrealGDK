@@ -76,6 +76,88 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 #endif
 }
 
+void USpatialNetDriver::StartDevelopmentAuth(USpatialNetDriver* NetDriver, FString DevAuthToken, const FLocatorConfig& LocatorConfig)
+{
+	Worker_Alpha_PlayerIdentityTokenRequest PITParams{};
+	FTCHARToUTF8 DAToken(*DevAuthToken);
+	FTCHARToUTF8 PlayerId(*SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
+	PITParams.development_authentication_token = DAToken.Get();
+	PITParams.player_id = PlayerId.Get();
+	PITParams.display_name = "";
+	PITParams.metadata = "";
+	PITParams.use_insecure_connection = false;
+
+	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &PITParams))
+	{
+		Worker_Alpha_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, NetDriver, &USpatialNetDriver::OnPlayerIdentityToken);
+	}
+}
+
+void USpatialNetDriver::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
+{
+	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to get login token, StatusCode: %d, Error: %s"), LoginTokens->status.code, UTF8_TO_TCHAR(LoginTokens->status.detail));
+		return;
+	}
+
+	if (LoginTokens->login_token_count == 0)
+	{
+		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No deployment found to connect to. Did you add the 'dev_login' tag to the deployment you want to connect to?"));
+		return;
+	}
+
+	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
+	//USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
+	USpatialNetDriver* NetDriver = static_cast<USpatialNetDriver*>(UserData);
+	USpatialWorkerConnection* Connection = NetDriver->Connection;
+	const FString& DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
+	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
+	if (DeploymentToConnect.IsEmpty())
+	{
+		Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
+	}
+	else
+	{
+		for (uint32 i = 0; i < LoginTokens->login_token_count; i++)
+		{
+			FString DeploymentName = FString(LoginTokens->login_tokens[i].deployment_name);
+			if (DeploymentToConnect.Compare(DeploymentName) == 0)
+			{
+				Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
+				break;
+			}
+		}
+	}
+	Connection->ConnectToLocator(NetDriver);
+}
+
+void USpatialNetDriver::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
+{
+	if (PIToken->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to get PlayerIdentityToken, StatusCode: %d, Error: %s"), PIToken->status.code, UTF8_TO_TCHAR(PIToken->status.detail));
+		return;
+	}
+
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully received PIToken: %s"), UTF8_TO_TCHAR(PIToken->player_identity_token));
+	//USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
+	USpatialNetDriver* NetDriver = static_cast<USpatialNetDriver*>(UserData);
+	USpatialWorkerConnection* Connection = NetDriver->Connection;
+
+	Connection->LocatorConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
+	Worker_Alpha_LoginTokensRequest LTParams{};
+	LTParams.player_identity_token = PIToken->player_identity_token;
+	FTCHARToUTF8 WorkerType(*Connection->LocatorConfig.WorkerType);
+	LTParams.worker_type = WorkerType.Get();
+	LTParams.use_insecure_connection = false;
+
+	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*Connection->LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
+	{
+		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, NetDriver, &USpatialNetDriver::OnLoginTokens);
+	}
+}
+
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
 {
 	if (!Super::InitBase(bInitAsClient, InNotify, URL, bReuseAddressAndPort, Error))
@@ -330,7 +412,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	FinishSetupConnectionConfig(URL, bUseReceptionist);
 
-	Connection->Connect(bConnectAsClient);
+	Connection->Connect(bConnectAsClient, this);
 }
 
 void USpatialNetDriver::OnConnectedToSpatialOS()

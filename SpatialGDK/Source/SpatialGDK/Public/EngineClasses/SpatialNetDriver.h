@@ -57,6 +57,10 @@ public:
 
 	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
 
+	static void StartDevelopmentAuth(USpatialNetDriver* NetDriver, FString DevAuthToken, const FLocatorConfig& LocatorConfig);
+	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
+	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
+
 	// Begin UObject Interface
 	virtual void BeginDestroy() override;
 	virtual void PostInitProperties() override;

@@ -42,8 +42,6 @@ public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 
-	void Connect(bool bConnectAsClient);
-
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
 	// Worker Connection Interface
@@ -82,20 +80,20 @@ public:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
-private:
-	void ConnectToReceptionist(bool bConnectAsClient);
-	void ConnectToLocator();
-	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
-
-	void OnConnectionSuccess();
+	// TODO(Alex): move these to a new class
+	void Connect(bool bConnectAsClient, USpatialNetDriver* NetDriver);
+	void ConnectToLocator(USpatialNetDriver* NetDriver);
+	void ConnectToReceptionist(bool bConnectAsClient, USpatialNetDriver* NetDriver);
+	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture, USpatialNetDriver* NetDriver);
+	void OnConnectionSuccess(USpatialNetDriver* NetDriver);
 	void OnPreConnectionFailure(const FString& Reason);
-	void OnConnectionFailure();
+	void OnConnectionFailure(USpatialNetDriver* NetDriver);
+
+private:
 
 	ESpatialConnectionType GetConnectionType() const;
 
 	void CacheWorkerAttributes();
-
-	class USpatialNetDriver* GetSpatialNetDriverChecked() const;
 
 	// Begin FRunnable Interface
 	virtual bool Init() override;
@@ -106,10 +104,6 @@ private:
 	void InitializeOpsProcessingThread();
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
-
-	void StartDevelopmentAuth(FString DevAuthToken);
-	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
-	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
 	template <typename T, typename... ArgsType>
 	void QueueOutgoingMessage(ArgsType&&... Args);
