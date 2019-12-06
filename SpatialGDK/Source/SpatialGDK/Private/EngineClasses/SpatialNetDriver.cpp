@@ -289,8 +289,8 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	}
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
-	Connection->BindOnConnectionToSpatialOSSucceeded(OnConnectionToSpatialOSSucceededDelegate::CreateUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSSucceeded));
-	Connection->BindOnConnectionToSpatialOSFailed(OnConnectionToSpatialOSFailedDelegate::CreateUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed));
+	Connection->OnConnectedCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSSucceeded);
+	Connection->OnFailedToConnectCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed);
 
 	bool bUseReceptionist = true;
 	bool bShouldLoadFromURL = true;
@@ -358,7 +358,7 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 	}
 }
 
-void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString ErrorMessage)
+void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage)
 {
 	if (const USpatialGameInstance * GameInstance = GetGameInstance())
 	{
@@ -800,7 +800,6 @@ void USpatialNetDriver::BeginDestroy()
 			{
 				Cast<USpatialGameInstance>(LocalWorld->GetGameInstance())->DestroySpatialWorkerConnection();
 			}
-			Connection->UnbindCallbacks();
 			Connection = nullptr;
 		}
 	}

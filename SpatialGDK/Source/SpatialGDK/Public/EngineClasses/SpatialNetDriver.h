@@ -81,7 +81,7 @@ public:
 	virtual void OnOwnerUpdated(AActor* Actor);
 
 	void OnConnectionToSpatialOSSucceeded();
-	void OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString ErrorMessage);
+	void OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
 
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);

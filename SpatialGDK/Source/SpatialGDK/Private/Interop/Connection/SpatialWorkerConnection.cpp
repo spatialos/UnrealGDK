@@ -106,22 +106,6 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID
 	}
 }
 
-void USpatialWorkerConnection::BindOnConnectionToSpatialOSSucceeded(const OnConnectionToSpatialOSSucceededDelegate& Function)
-{
-	OnConnectedCallback = Function;
-}
-
-void USpatialWorkerConnection::BindOnConnectionToSpatialOSFailed(const OnConnectionToSpatialOSFailedDelegate& Function)
-{
-	OnFailedToConnectCallback = Function;
-}
-
-void USpatialWorkerConnection::UnbindCallbacks()
-{
-	OnConnectedCallback.Unbind();
-	OnFailedToConnectCallback.Unbind();
-}
-
 void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
 {
 	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)

@@ -31,9 +31,6 @@ enum class ESpatialConnectionType
 	Locator
 };
 
-DECLARE_DELEGATE(OnConnectionToSpatialOSSucceededDelegate)
-DECLARE_DELEGATE_TwoParams(OnConnectionToSpatialOSFailedDelegate, uint8_t, const FString);
-
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 {
@@ -46,9 +43,6 @@ public:
 	void DestroyConnection();
 
 	void Connect(bool bConnectAsClient, uint32 PlayInEditorID);
-	void BindOnConnectionToSpatialOSSucceeded(const OnConnectionToSpatialOSSucceededDelegate& Function);
-	void BindOnConnectionToSpatialOSFailed(const OnConnectionToSpatialOSFailedDelegate& Function);
-	void UnbindCallbacks();
 
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
@@ -82,6 +76,12 @@ public:
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnDequeueMessage OnDequeueMessage;
 
+	DECLARE_DELEGATE(OnConnectionToSpatialOSSucceededDelegate)
+	OnConnectionToSpatialOSSucceededDelegate OnConnectedCallback;
+
+	DECLARE_DELEGATE_TwoParams(OnConnectionToSpatialOSFailedDelegate, uint8_t, const FString&);
+	OnConnectionToSpatialOSFailedDelegate OnFailedToConnectCallback;
+
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
@@ -90,15 +90,12 @@ public:
 
 private:
 	void ConnectToReceptionist(bool bConnectAsClient, uint32 PlayInEditorID);
-	void ConnectToLocator();	
+	void ConnectToLocator();
 	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 
 	void OnConnectionSuccess();
 	void OnPreConnectionFailure(const FString& Reason);
 	void OnConnectionFailure();
-
-	OnConnectionToSpatialOSSucceededDelegate OnConnectedCallback;
-	OnConnectionToSpatialOSFailedDelegate OnFailedToConnectCallback;
 
 	ESpatialConnectionType GetConnectionType() const;
 
