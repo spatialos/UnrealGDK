@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`0.7.1-preview`] - 2019-12-06
 
 ### Bug fixes: 
-- The C++ Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
+- The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
 
 ### Internal:
 Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
