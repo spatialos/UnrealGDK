@@ -47,7 +47,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 ## [`0.7.1`] - 2019-12-05
 
 ### Bug fixes: 
-- The C++ Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
+- The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
 
 ### Internal:
 Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
