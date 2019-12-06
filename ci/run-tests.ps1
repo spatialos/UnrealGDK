@@ -27,9 +27,6 @@ $commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNew
     "-run=GenerateSchemaAndSnapshots", ` # Run the commandlet
     "-MapPaths=`"$test_repo_map`"" ` # Which maps to run the commandlet for
 )
-if ($commandlet_process.ExitCode -ne 0) {
-    throw "Failed to generate schema and snapshots."
-}
 
 # Create the default snapshot
 Copy-Item -Force `
