@@ -8,14 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`0.7.0-preview`] - 2019-10-11
 
-### New Known Issue:
-- MSVC v14.23 removes `typeinfo.h` and replaces it with `typeinfo`. This change causes errors when building the Unreal Engine. This issue affects Visual Studio 2019 users. Until [this proposed fix](https://github.com/EpicGames/UnrealEngine/pull/6226) is accepted by Epic Games, you can work around the issue by:
+### New Known Issues:
+- MSVC v14.23 removes `typeinfo.h` and replaces it with `typeinfo`. This change causes errors when building the Unreal Engine. This issue **only affects Visual Studio 2019** users. You can work around the issue by:
 1. Open Visual Studio Installer.
 1. Select "Modify" on your Visual Studio 2019 installation.
-1. Select the "Individual components" tab.
-1. Uncheck "MSVC v142 - VS 2019 C++ x64/x86 build tools (**v14.22**)".
-1. Check "MSVC v142 - VS 2019 C++ x64/x86 build tools (**v14.23**)".
-1. Select "Modify" to confirm your changes.
+1. In the Installation details section uncheck all workloads and components until only **Visual Studio code editor** remains.
+1. Select the following items in the Workloads tab:
+* **Universal Windows Platform development**
+* **.NET desktop development**
+* You must also select the **.NET Framework 4.6.2 development tools** component in the Installation details section.
+* **Desktop development with C++**
+* You must then deselect **MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.23)**, which was added as part of the **Desktop development with C++** Workload. You will be notified that: "If you continue, we'll remove the componenet and any items liseted above that depend on it." Select remove to confirm your decision.
+* Lastly, add **MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.22)** from the Individual components tab.
+5. Select "Modify" to confirm your changes.
 
 ### Breaking Changes:
 - If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you now need to enable generating schema for them using `SpatialType` UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
