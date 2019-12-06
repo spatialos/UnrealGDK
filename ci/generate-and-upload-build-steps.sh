@@ -15,7 +15,15 @@ generate_build_configuration_steps () {
 
     # if BUILD_ALL_CONFIGURATIONS environment variable exists AND is equal to "true", then...
     if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
-        echo "This is a nightly build. Generating the appropriate steps..."
+        echo "Building for all supported configurations. Generating appropriate steps..."
+        
+        # Win64 Development Editor build configuration
+        upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development"
+
+        # Linux Development NoEditor build configuration
+        upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
+    else
+        echo "Building for specified subset of supported configurations. Generating the appropriate steps..."
         
         # Editor builds (Test and Shipping build states do not exist for the Editor build target)
         for build_state in "DebugGame" "Development"; do
@@ -46,14 +54,6 @@ generate_build_configuration_steps () {
                 done
             done
         fi
-    else
-        echo "This is not a nightly build. Generating appropriate steps..."
-        
-        # Win64 Development Editor build configuration
-        upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development"
-
-        # Linux Development NoEditor build configuration
-        upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
     fi;
 }
 
