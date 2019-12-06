@@ -81,13 +81,13 @@ struct UnrealMetadata : Component
 #endif
 		UClass* Class = nullptr;
 
-		if (StablyNamedRef.IsSet())
+		// Unfortunately StablyNameRef doesn't mean NameStableForNetworking as we add a StablyNameRef for every startup actor (see USpatialSender::CreateEntity)
+		// TODO: UNR-2537 Investigate why FindObject can be used the first time the actor comes into view for a client but not subsequent loads.
+		if (StablyNamedRef.IsSet() && bNetStartup.IsSet() && bNetStartup.GetValue())
 		{
 			Class = FindObject<UClass>(nullptr, *ClassPath, false);
 		}
-
-		// It's possible we were unable to load a stably named actor as all references have been deleted.
-		if (!Class)
+		else
 		{
 			Class = LoadObject<UClass>(nullptr, *ClassPath);
 		}
