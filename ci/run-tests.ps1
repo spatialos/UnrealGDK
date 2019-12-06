@@ -6,6 +6,15 @@ param(
     [string] $test_repo_map
 )
 
+# This resolves a path to be absolute, without actually reading the filesystem.
+# This means it works even when the indicated path does not exist, as opposed to the Resolve-Path cmdlet
+function Force-ResolvePath {
+    param (
+        [string] $path
+    )
+    return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($path)
+}
+
 # Generate schema and snapshots
 Echo "Generating snapshot and schema for testing project"
 $commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
@@ -30,15 +39,6 @@ Copy-Item -Force `
 # Create the TestResults directory if it does not exist, for storing results
 New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorAction SilentlyContinue
 $output_dir = "$PSScriptRoot\TestResults"
-
-# This resolves a path to be absolute, without actually reading the filesystem.
-# This means it works even when the indicated path does not exist, as opposed to the Resolve-Path cmdlet
-function Force-ResolvePath {
-    param (
-        [string] $path
-    )
-    return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($path)
-}
 
 # We want absolute paths since paths given to the unreal editor are interpreted as relative to the UE4Editor binary
 # Absolute paths are more reliable
