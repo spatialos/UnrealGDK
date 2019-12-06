@@ -44,7 +44,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
 - Fix tombstone-related assert that could fire and bring down the editor.
 
-## [`0.7.1`] - 2019-12-05
+## [`0.7.1-preview`] - 2019-12-06
 
 ### Bug fixes: 
 - The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
