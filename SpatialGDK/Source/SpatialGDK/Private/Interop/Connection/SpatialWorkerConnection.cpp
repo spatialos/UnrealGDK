@@ -283,7 +283,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 
 	// Connect to the locator on the default port(0 will choose the default)
-	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), 0, &LocatorParams);
+	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LocatorParams);
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionConfig.Params);
 

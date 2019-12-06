@@ -24,7 +24,20 @@ DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 #define LOCTEXT_NAMESPACE "FLocalDeploymentManager"
 
-static const FString SpatialServiceVersion(TEXT("20190930.180414.3b04a59226"));
+static const FString SpatialServiceVersion(TEXT("20191128.003423.475a3c1edb"));
+
+namespace
+{
+	FString GetDomainEnvironmentStr(bool bIsInChina)
+	{
+		FString DomainEnvironmentStr;
+		if (bIsInChina)
+		{
+			DomainEnvironmentStr = TEXT("--domain=spatialoschina.com --environment=cn-production");
+		}
+		return DomainEnvironmentStr;
+	}
+} // anonymous namespace
 
 FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
@@ -86,6 +99,11 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 	}
 }
 
+void FLocalDeploymentManager::SetInChina(bool bChinaEnabled)
+{
+	bIsInChina = bChinaEnabled;
+}
+
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 {
 	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
@@ -116,7 +134,7 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
-		FString BuildConfigArgs = TEXT("worker build build-config");
+		FString BuildConfigArgs = FString::Printf(TEXT("worker build build-config %s"), *GetDomainEnvironmentStr(bIsInChina));
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
 		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, BuildConfigArgs, SpatialGDKServicesConstants::SpatialOSDirectory, WorkerBuildConfigResult, ExitCode);
@@ -466,7 +484,7 @@ bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
 
 	bStartingSpatialService = true;
 
-	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s"), *SpatialServiceVersion);
+	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s %s"), *SpatialServiceVersion, *GetDomainEnvironmentStr(bIsInChina));
 
 	// Pass exposed runtime IP if one has been specified
 	if (!RuntimeIPToExpose.IsEmpty())
@@ -514,7 +532,7 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 
 	bStoppingSpatialService = true;
 
-	FString SpatialServiceStartArgs = TEXT("service stop");
+	FString SpatialServiceStartArgs = FString::Printf(TEXT("service stop %s"), *GetDomainEnvironmentStr(bIsInChina));
 	FString ServiceStopResult;
 	int32 ExitCode;
 
