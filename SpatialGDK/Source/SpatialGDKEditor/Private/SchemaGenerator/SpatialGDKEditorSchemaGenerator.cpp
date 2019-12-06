@@ -28,6 +28,7 @@
 #include "Settings/ProjectPackagingSettings.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "TypeStructure.h"
 #include "UObject/StrongObjectPtr.h"
@@ -785,12 +786,12 @@ bool RunSchemaCompiler()
 
 	FString SchemaCompilerArgs = FString::Printf(TEXT("%s %s"), *SchemaCompilerBaseArgs, *AdditionalSchemaCompilerArgs);
 
-	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Starting '%s' with `%s` arguments."), *SchemaCompilerExe, *SchemaCompilerArgs);
+	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Starting '%s' with `%s` arguments."), *SpatialGDKServicesConstants::SchemaCompilerExe, *SchemaCompilerArgs);
 
 	int32 ExitCode = 1;
 	FString SchemaCompilerOut;
 	FString SchemaCompilerErr;
-	FPlatformProcess::ExecProcess(*SchemaCompilerExe, *SchemaCompilerArgs, &ExitCode, &SchemaCompilerOut, &SchemaCompilerErr);
+	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SchemaCompilerExe, *SchemaCompilerArgs, &ExitCode, &SchemaCompilerOut, &SchemaCompilerErr);
 
 	if (ExitCode == 0)
 	{
