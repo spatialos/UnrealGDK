@@ -36,7 +36,7 @@ generate_build_configuration_steps () {
                     upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "${build_platform}" "" "${build_state}"
                 done
             done
-        else {
+        else
             # Generate all possible builds for non-Editor build targets
             for build_platform in "Win64" "Linux"; do
                 for build_target in "" "Client" "Server"; do
@@ -45,9 +45,8 @@ generate_build_configuration_steps () {
                     done
                 done
             done
-        }
         fi
-    else {
+    else
         echo "This is not a nightly build. Generating appropriate steps..."
         
         # Win64 Development Editor build configuration
@@ -55,7 +54,6 @@ generate_build_configuration_steps () {
 
         # Linux Development NoEditor build configuration
         upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
-    }
     fi;
 }
 
