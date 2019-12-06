@@ -14,7 +14,7 @@ generate_build_configuration_steps () {
     ENGINE_COMMIT_HASH=$1
 
     # if BUILD_ALL_CONFIGURATIONS environment variable exists AND is equal to "true", then...
-    if [[ -z "${BUILD_ALL_CONFIGURATIONS}" ]]; then
+    if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
         echo "This is a nightly build. Generating the appropriate steps..."
         
         # Editor builds (Test and Shipping build states do not exist for the Editor build target)
