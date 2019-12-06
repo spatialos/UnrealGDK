@@ -1,6 +1,8 @@
 @echo off
 
-setlocal
+if not defined NO_SET_LOCAL (
+    setlocal
+)
 
 pushd "%~dp0"
 
@@ -81,6 +83,7 @@ call :MarkStartOfBlock "Create folders"
     md "%CORE_SDK_DIR%\tools"        >nul 2>nul
     md "%CORE_SDK_DIR%\worker_sdk"   >nul 2>nul
     md "%BINARIES_DIR%"              >nul 2>nul
+    md "%BINARIES_DIR%\Programs"     >nul 2>nul
 
     if exist "%SPATIAL_DIR%" (
         md "%SCHEMA_STD_COPY_DIR%"    >nul 2>nul

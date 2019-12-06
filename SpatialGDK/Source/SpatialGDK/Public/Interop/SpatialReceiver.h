@@ -26,6 +26,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 class USpatialNetConnection;
 class USpatialSender;
 class UGlobalStateManager;
+class SpatialLoadBalanceEnforcer;
 
 struct PendingAddComponentWrapper
 {
@@ -80,18 +81,6 @@ struct FObjectReferences
 	UProperty*							Property;
 };
 
-struct FPendingIncomingRPC
-{
-	FPendingIncomingRPC(const TSet<FUnrealObjectRef>& InUnresolvedRefs, UObject* InTargetObject, UFunction* InFunction, const SpatialGDK::RPCPayload& InPayload)
-		: UnresolvedRefs(InUnresolvedRefs), TargetObject(InTargetObject), Function(InFunction), Payload(InPayload) {}
-
-	TSet<FUnrealObjectRef> UnresolvedRefs;
-	TWeakObjectPtr<UObject> TargetObject;
-	UFunction* Function;
-	SpatialGDK::RPCPayload Payload;
-	FString SenderWorkerId;
-};
-
 struct FPendingSubobjectAttachment
 {
 	USpatialActorChannel* Channel;
@@ -101,11 +90,12 @@ struct FPendingSubobjectAttachment
 	TSet<Worker_ComponentId> PendingAuthorityDelegations;
 };
 
-using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
-
 DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseOp&);
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, const Worker_ReserveEntityIdsResponseOp&);
 DECLARE_DELEGATE_OneParam(CreateEntityDelegate, const Worker_CreateEntityResponseOp&);
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityAddedDelegate, const Worker_EntityId);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityRemovedDelegate, const Worker_EntityId);
 
 UCLASS()
 class USpatialReceiver : public UObject
@@ -153,6 +143,7 @@ public:
 	void RemoveActor(Worker_EntityId EntityId);
 	bool IsPendingOpsOnChannel(USpatialActorChannel* Channel);
 
+	void ClearPendingRPCs(Worker_EntityId EntityId);
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -175,7 +166,7 @@ private:
 	void ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, const Worker_ComponentData& Data);
 	// This is called for AddComponentOps not in a critical section, which means they are not a part of the initial entity creation.
 	void HandleIndividualAddComponent(const Worker_AddComponentOp& Op);
-	void AttachDynamicSubobject(Worker_EntityId EntityId, const FClassInfo& Info);
+	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 
@@ -211,6 +202,9 @@ public:
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
+	FOnEntityAddedDelegate OnEntityAddedDelegate;
+	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
@@ -230,13 +224,14 @@ private:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
+	SpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
+
 	FTimerManager* TimerManager;
 
 	// TODO: Figure out how to remove entries when Channel/Actor gets deleted - UNR:100
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 
-	TMap<FUnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
 	FRPCContainer IncomingRPCs;
 
 	bool bInCriticalSection;

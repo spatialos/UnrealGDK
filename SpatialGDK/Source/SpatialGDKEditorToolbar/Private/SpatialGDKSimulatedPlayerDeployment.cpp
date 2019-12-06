@@ -10,6 +10,7 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "Templates/SharedPointer.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "Textures/SlateIcon.h"
 #include "Widgets/Input/SButton.h"
@@ -209,9 +210,9 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.BrowseButtonImage(FEditorStyle::GetBrush("PropertyWindow.Button_Ellipsis"))
 									.BrowseButtonStyle(FEditorStyle::Get(), "HoverHintOnly")
 									.BrowseButtonToolTip(FText::FromString(FString(TEXT("Path to the launch configuration file."))))
-									.BrowseDirectory(FSpatialGDKServicesModule::GetSpatialOSDirectory())
+									.BrowseDirectory(SpatialGDKServicesConstants::SpatialOSDirectory)
 									.BrowseTitle(FText::FromString(FString(TEXT("File picker..."))))
-									.FilePath_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryLanchConfigPath)
+									.FilePath_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryLaunchConfigPath)
 									.FileTypeFilter(TEXT("Launch configuration files (*.json)|*.json"))
 									.OnPathPicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked)
 								]
@@ -501,7 +502,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 	}
 
 	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
-		FNotificationInfo Info(FText::FromString(TEXT("Starting simulated player deployment...")));
+		FNotificationInfo Info(FText::FromString(TEXT("Starting cloud deployment...")));
 		Info.bUseSuccessFailIcons = true;
 		Info.bFireAndForget = false;
 

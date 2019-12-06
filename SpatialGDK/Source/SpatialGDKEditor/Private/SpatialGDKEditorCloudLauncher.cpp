@@ -17,7 +17,7 @@ bool SpatialGDKCloudLaunch()
 		*FSpatialGDKServicesModule::GetProjectName(),
 		*SpatialGDKSettings->GetAssemblyName(),
 		*SpatialGDKSettings->GetPrimaryDeploymentName(),
-		*SpatialGDKSettings->GetPrimaryLanchConfigPath(),
+		*SpatialGDKSettings->GetPrimaryLaunchConfigPath(),
 		*SpatialGDKSettings->GetSnapshotPath(),
 		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
 	);

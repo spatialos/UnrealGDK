@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -6,9 +7,12 @@
 #include "Misc/Paths.h"
 #include "SpatialConstants.h"
 #include "UObject/Package.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 
 #include "SpatialGDKEditorSettings.generated.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEditorSettings, Log, All);
 
 USTRUCT()
 struct FWorldLaunchSection
@@ -25,23 +29,23 @@ struct FWorldLaunchSection
 	}
 
 	/** The size of the simulation, in meters, for the auto-generated launch configuration file. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Simulation dimensions in meters"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Simulation dimensions in meters"))
 	FIntPoint Dimensions;
 
 	/** The size of the grid squares that the world is divided into, in “world units” (an arbitrary unit that worker instances can interpret as they choose). */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Chunk edge length in meters"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Chunk edge length in meters"))
 	int32 ChunkEdgeLengthMeters;
 
 	/** The frequency in seconds to write snapshots of the simulated world. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Snapshot write period in seconds"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Snapshot write period in seconds"))
 	int32 SnapshotWritePeriodSeconds;
 
 	/** Legacy non-worker flag configurations. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	TMap<FString, FString> LegacyFlags;
 
 	/** Legacy JVM configurations. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Legacy Java parameters"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Legacy Java parameters"))
 	TMap<FString, FString> LegacyJavaParams;
 };
 
@@ -60,23 +64,23 @@ struct FWorkerPermissionsSection
 	}
 
 	/** Gives all permissions to a worker instance. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "All"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "All"))
 	bool bAllPermissions;
 
 	/** Enables a worker instance to create new entities. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity creation"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", DisplayName = "Allow entity creation"))
 	bool bAllowEntityCreation;
 
 	/** Enables a worker instance to delete entities. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity deletion"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", DisplayName = "Allow entity deletion"))
 	bool bAllowEntityDeletion;
 
 	/** Controls which components can be returned from entity queries that the worker instance performs. If an entity query specifies other components to be returned, the query will fail. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity query"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", DisplayName = "Allow entity query"))
 	bool bAllowEntityQuery;
 
 	/** Specifies which components can be returned in the query result. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Component queries"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", DisplayName = "Component queries"))
 	TArray<FString> Components;
 };
 
@@ -92,11 +96,11 @@ struct FLoginRateLimitSection
 	}
 
 	/** The duration for which worker connection requests will be limited. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	FString Duration;
 
 	/** The connection request limit for the duration. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, ClampMin = "1", UIMin = "1"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ClampMin = "1", UIMin = "1"))
 	int32 RequestsPerDuration;
 };
 
@@ -119,43 +123,43 @@ struct FWorkerTypeLaunchSection
 	}
 
 	/** The name of the worker type, defined in the filename of its spatialos.<worker_type>.worker.json file. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	FName WorkerTypeName;
 
 	/** Defines the worker instance's permissions. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	FWorkerPermissionsSection WorkerPermissions;
 
 	/** Defines the maximum number of worker instances that can connect. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Max connection capacity limit (0 = unlimited capacity)", ClampMin = "0", UIMin = "0"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Max connection capacity limit (0 = unlimited capacity)", ClampMin = "0", UIMin = "0"))
 	int32 MaxConnectionCapacityLimit;
 
 	/** Enable connection rate limiting. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Login rate limit enabled"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Login rate limit enabled"))
 	bool bLoginRateLimitEnabled;
 
 	/** Login rate limiting configuration. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "bLoginRateLimitEnabled", ConfigRestartRequired = false))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "bLoginRateLimitEnabled"))
 	FLoginRateLimitSection LoginRateLimit;
 
 	/** Number of columns in the rectangle grid load balancing config. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Rectangle grid column count", ClampMin = "1", UIMin = "1"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Rectangle grid column count", ClampMin = "1", UIMin = "1"))
 	int32 Columns;
 
 	/** Number of rows in the rectangle grid load balancing config. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Rectangle grid row count", ClampMin = "1", UIMin = "1"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Rectangle grid row count", ClampMin = "1", UIMin = "1"))
 	int32 Rows;
 
 	/** Number of instances to launch when playing in editor. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Instances to launch in editor", ClampMin = "0", UIMin = "0"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Instances to launch in editor", ClampMin = "0", UIMin = "0"))
 	int32 NumEditorInstances;
 
 	/** Flags defined for a worker instance. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Flags"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Flags"))
 	TMap<FString, FString> Flags;
 
 	/** Determines if the worker instance is launched manually or by SpatialOS. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Manual worker connection only"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Manual worker connection only"))
 	bool bManualWorkerConnectionOnly;
 };
 
@@ -191,15 +195,15 @@ struct FSpatialLaunchConfigDescription
 	}
 
 	/** Deployment template. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	FString Template;
 
 	/** Configuration for the simulated world. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	FWorldLaunchSection World;
 
 	/** Worker-specific configuration parameters. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	TArray<FWorkerTypeLaunchSection> ServerWorkers;
 };
 
@@ -249,72 +253,80 @@ private:
 
 public:
 	/** If checked, show the Spatial service button on the GDK toolbar which can be used to turn the Spatial service on and off. */
-	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Show Spatial service button"))
+	UPROPERTY(EditAnywhere, config, Category = "General", meta = (DisplayName = "Show Spatial service button"))
 	bool bShowSpatialServiceButton;
 
 	/** Select to delete all a server-worker instance’s dynamically-spawned entities when the server-worker instance shuts down. If NOT selected, a new server-worker instance has all of these entities from the former server-worker instance’s session. */
-	UPROPERTY(EditAnywhere, config, Category = "Play in editor settings", meta = (ConfigRestartRequired = false, DisplayName = "Delete dynamically spawned entities"))
+	UPROPERTY(EditAnywhere, config, Category = "Play in editor settings", meta = (DisplayName = "Delete dynamically spawned entities"))
 	bool bDeleteDynamicEntities;
 
 	/** Select the check box for the GDK to auto-generate a launch configuration file for your game when you launch a deployment session. If NOT selected, you must specify a launch configuration `.json` file. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Auto-generate launch configuration file"))
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-generate launch configuration file"))
 	bool bGenerateDefaultLaunchConfig;
 
 private:
 	/** If you are not using auto-generate launch configuration file, specify a launch configuration `.json` file and location here.  */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "!bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration file path"))
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "!bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file path"))
 	FFilePath SpatialOSLaunchConfig;
 
 public:
+	/** Expose the runtime on a particular IP address when it is running on this machine. Changes are applied on next local deployment startup. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Expose local runtime"))
+	bool bExposeRuntimeIP;
+
+	/** If the runtime is set to be exposed, specify on which IP address it should be reachable. Changes are applied on next local deployment startup. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bExposeRuntimeIP", DisplayName = "Exposed local runtime IP address"))
+	FString ExposedRuntimeIP;
+
 	/** Select the check box to stop your game’s local deployment when you shut down Unreal Editor. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Stop local deployment on exit"))
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop local deployment on exit"))
 	bool bStopSpatialOnExit;
 
 	/** Start a local SpatialOS deployment when clicking 'Play'. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Auto-start local deployment"))
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-start local deployment"))
 	bool bAutoStartLocalDeployment;
 
 private:
 	/** Name of your SpatialOS snapshot file that will be generated. */
-	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot to save"))
+	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (DisplayName = "Snapshot to save"))
 	FString SpatialOSSnapshotToSave;
 
 	/** Name of your SpatialOS snapshot file that will be loaded during deployment. */
-	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot to load"))
+	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (DisplayName = "Snapshot to load"))
 	FString SpatialOSSnapshotToLoad;
 
 	/** Add flags to the `spatial local launch` command; they alter the deployment’s behavior. Select the trash icon to remove all the flags.*/
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Command line flags for local launch"))
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Command line flags for local launch"))
 	TArray<FString> SpatialOSCommandLineLaunchFlags;
 
 private:
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (ConfigRestartRequired = false, DisplayName = "Assembly name"))
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Assembly name"))
 		FString AssemblyName;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (ConfigRestartRequired = false, DisplayName = "Deployment name"))
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment name"))
 		FString PrimaryDeploymentName;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (ConfigRestartRequired = false, DisplayName = "Cloud launch configuration path"))
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Cloud launch configuration path"))
 		FFilePath PrimaryLaunchConfigPath;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot path"))
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Snapshot path"))
 		FFilePath SnapshotPath;
 
-	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (ConfigRestartRequired = false, DisplayName = "Region"))
+	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
 
 	const FString SimulatedPlayerLaunchConfigPath;
 
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Region"))
+	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
 
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (ConfigRestartRequired = false, DisplayName = "Include simulated players"))
+	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (DisplayName = "Include simulated players"))
 		bool bSimulatedPlayersIsEnabled;
 
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Deployment name"))
+	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Deployment name"))
 		FString SimulatedPlayerDeploymentName;
 
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Number of simulated players"))
+	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Number of simulated players"))
 		uint32 NumberOfSimulatedPlayers;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
@@ -324,16 +336,17 @@ private:
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
+	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath);
 
 public:
 	/** If you have selected **Auto-generate launch configuration file**, you can change the default options in the file from the drop-down menu. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration file options"))
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file options"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
 		return SpatialOSLaunchConfig.FilePath.IsEmpty()
-			? FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("default_launch.json"))
+			? FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("default_launch.json"))
 			: SpatialOSLaunchConfig.FilePath;
 	}
 
@@ -363,12 +376,12 @@ public:
 
 	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("snapshots")));
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("snapshots"));
 	}
 
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/generated/")));
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/generated/"));
 	}
 
 	FORCEINLINE FString GetSpatialOSCommandLineLaunchFlags() const
@@ -397,12 +410,10 @@ public:
 	}
 
 	void SetPrimaryLaunchConfigPath(const FString& Path);
-	FORCEINLINE FString GetPrimaryLanchConfigPath() const
+	FORCEINLINE FString GetPrimaryLaunchConfigPath() const
 	{
-		const USpatialGDKEditorSettings* SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-		return PrimaryLaunchConfigPath.FilePath.IsEmpty()
-			? SpatialEditorSettings->GetSpatialOSLaunchConfig()
-			: PrimaryLaunchConfigPath.FilePath;
+
+		return PrimaryLaunchConfigPath.FilePath;
 	}
 
 	void SetSnapshotPath(const FString& Path);

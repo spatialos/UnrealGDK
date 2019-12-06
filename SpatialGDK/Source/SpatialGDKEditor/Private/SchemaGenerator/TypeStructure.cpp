@@ -255,8 +255,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	// Based on inspection in InitFromObjectClass, the RepLayout will always replicate object properties using NetGUIDs, regardless of
 	// ownership. However, the rep layout will recurse into structs and allocate rep handles for their properties, unless the condition
 	// "Struct->StructFlags & STRUCT_NetSerializeNative" is true. In this case, the entire struct is replicated as a whole.
+#if ENGINE_MINOR_VERSION <= 22
 	FRepLayout RepLayout;
 	RepLayout.InitFromObjectClass(Class);
+#else
+	TSharedPtr<FRepLayout> RepLayoutPtr = FRepLayout::CreateFromClass(Class, nullptr/*ServerConnection*/, ECreateRepLayoutFlags::None);
+	FRepLayout& RepLayout = *RepLayoutPtr.Get();
+#endif
 	for (int CmdIndex = 0; CmdIndex < RepLayout.Cmds.Num(); ++CmdIndex)
 	{
 		FRepLayoutCmd& Cmd = RepLayout.Cmds[CmdIndex];

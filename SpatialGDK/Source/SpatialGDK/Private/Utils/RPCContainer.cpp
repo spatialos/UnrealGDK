@@ -82,7 +82,7 @@ namespace
 	}
 }
 
-FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ESchemaComponentType InType, RPCPayload&& InPayload)
+FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload)
 	: ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
 	, Timestamp(FDateTime::Now())
@@ -90,7 +90,7 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 {
 }
 
-void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ESchemaComponentType Type, RPCPayload&& Payload)
+void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload)
 {
 	FPendingRPCParams Params {TargetObjectRef, Type, MoveTemp(Payload)};
 
@@ -126,10 +126,18 @@ void FRPCContainer::ProcessRPCs(FArrayOfParams& RPCList)
 
 void FRPCContainer::ProcessRPCs()
 {
+	if (bAlreadyProcessingRPCs)
+	{
+		UE_LOG(LogRPCContainer, Log, TEXT("Calling ProcessRPCs recursively, ignoring the call"));
+		return;
+	}
+
+	bAlreadyProcessingRPCs = true;
+
 	for (auto& RPCs : QueuedRPCs)
 	{
 		FRPCMap& MapOfQueues = RPCs.Value;
-		for(auto It = MapOfQueues.CreateIterator(); It; ++It)
+		for (auto It = MapOfQueues.CreateIterator(); It; ++It)
 		{
 			FArrayOfParams& RPCList = It.Value();
 			ProcessRPCs(RPCList);
@@ -139,9 +147,19 @@ void FRPCContainer::ProcessRPCs()
 			}
 		}
 	}
+
+	bAlreadyProcessingRPCs = false;
 }
 
-bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const
+void FRPCContainer::DropForEntity(const Worker_EntityId& EntityId)
+{
+	for (auto& RpcMap : QueuedRPCs)
+	{
+		RpcMap.Value.Remove(EntityId);
+	}
+}
+
+bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ERPCType Type) const
 {
 	if(const FRPCMap* MapOfQueues = QueuedRPCs.Find(Type))
 	{

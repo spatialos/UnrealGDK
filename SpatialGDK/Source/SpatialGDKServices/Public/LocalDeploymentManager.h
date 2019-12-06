@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "Async/Future.h"
@@ -18,13 +19,18 @@ public:
 	FLocalDeploymentManager();
 
 	void SPATIALGDKSERVICES_API SetInChina(bool IsInChina);
+	void SPATIALGDKSERVICES_API Init(FString RuntimeIPToExpose);
 
 	void SPATIALGDKSERVICES_API RefreshServiceStatus();
 
-	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName);
+	bool CheckIfPortIsBound(int32 Port);
+	bool KillProcessBlockingPort(int32 Port);
+	bool LocalDeploymentPreRunChecks();
+
+	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose);
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 
-	bool SPATIALGDKSERVICES_API TryStartSpatialService();
+	bool SPATIALGDKSERVICES_API TryStartSpatialService(FString RuntimeIPToExpose);
 	bool SPATIALGDKSERVICES_API TryStopSpatialService();
 
 	bool SPATIALGDKSERVICES_API GetLocalDeploymentStatus();
@@ -61,9 +67,12 @@ private:
 
 	static const int32 ExitCodeSuccess = 0;
 	static const int32 ExitCodeNotRunning = 4;
+	static const int32 RequiredRuntimePort = 5301;
 
 	// This is the frequency at which check the 'spatial service status' to ensure we have the correct state as the user can change spatial service outside of the editor.
 	static const int32 RefreshFrequency = 3;
+
+	bool bLocalDeploymentManagerEnabled = true;
 
 	bool bLocalDeploymentRunning;
 	bool bSpatialServiceRunning;
@@ -74,6 +83,8 @@ private:
 
 	bool bStartingSpatialService;
 	bool bStoppingSpatialService;
+
+	FString ExposedRuntimeIP;
 
 	FString LocalRunningDeploymentID;
 

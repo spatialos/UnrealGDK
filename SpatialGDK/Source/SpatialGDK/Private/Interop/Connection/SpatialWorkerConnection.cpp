@@ -8,6 +8,8 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Engine/World.h"
+#include "Interop/GlobalStateManager.h"
+#include "Interop/SpatialStaticComponentView.h"
 #include "UnrealEngine.h"
 #include "Async/Async.h"
 #include "Engine/Engine.h"
@@ -72,7 +74,17 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 {
 	if (bIsConnected)
 	{
-		OnConnectionSuccess();
+		AsyncTask(ENamedThreads::GameThread, [WeakThis = TWeakObjectPtr<USpatialWorkerConnection>(this)]
+			{
+				if (WeakThis.IsValid())
+				{
+					WeakThis->OnConnectionSuccess();
+				}
+				else
+				{
+					UE_LOG(LogSpatialWorkerConnection, Error, TEXT("SpatialWorkerConnection is not valid but was already connected."));
+				}
+			});
 		return;
 	}
 
@@ -87,10 +99,10 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 
 	switch (GetConnectionType())
 	{
-	case SpatialConnectionType::Receptionist:
+	case ESpatialConnectionType::Receptionist:
 		ConnectToReceptionist(bInitAsClient);
 		break;
-	case SpatialConnectionType::Locator:
+	case ESpatialConnectionType::Locator:
 		ConnectToLocator();
 		break;
 	}
@@ -216,11 +228,17 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
 	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
 
+	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
+	// TODO: UNR-2212 - Worker SDK 14.1.0 has a bug where upstream and downstream compression are swapped so we set the upstream settings to use compression.
+	Worker_Alpha_CompressionParameters EnableCompressionParams{};
+	ConnectionParams.network.modular_udp.upstream_compression = &EnableCompressionParams;
+	ConnectionParams.network.modular_udp.downstream_compression = nullptr;
+
 	ConnectionParams.enable_dynamic_components = true;
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
-		TCHAR_TO_UTF8(*ReceptionistConfig.ReceptionistHost), ReceptionistConfig.ReceptionistPort,
+		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.ReceptionistPort,
 		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionParams);
 
 	FinishConnecting(ConnectionFuture);
@@ -268,10 +286,10 @@ void USpatialWorkerConnection::ConnectToLocator()
 	ConnectionParams.network.tcp.multiplex_level = LocatorConfig.TcpMultiplexLevel;
 
 	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
-	// Worker SDK 14.1.0 has a bug where upstream and downstream compression are swapped so we set the upstream settings to use compression.
+	// TODO: UNR-2212 - Worker SDK 14.1.0 has a bug where upstream and downstream compression are swapped so we set the upstream settings to use compression.
 	Worker_Alpha_CompressionParameters EnableCompressionParams{};
 	ConnectionParams.network.modular_udp.upstream_compression = &EnableCompressionParams;
-	ConnectionParams.network.modular_udp.downstream_compression  = nullptr;
+	ConnectionParams.network.modular_udp.downstream_compression = nullptr;
 
 	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
 	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
@@ -318,16 +336,17 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 	});
 }
 
-SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
+ESpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 {
-	if (!LocatorConfig.PlayerIdentityToken.IsEmpty())
-	{
-		return SpatialConnectionType::Locator;
-	}
-	else
-	{
-		return SpatialConnectionType::Receptionist;
-	}
+	return ConnectionType;
+}
+
+void USpatialWorkerConnection::SetConnectionType(ESpatialConnectionType InConnectionType)
+{
+	// The locator config may not have been initialized
+	check(!(InConnectionType == ESpatialConnectionType::Locator && LocatorConfig.LocatorHost.IsEmpty()))
+
+	ConnectionType = InConnectionType;
 }
 
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
@@ -371,9 +390,9 @@ void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Wor
 	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
 }
 
-void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate)
+void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key)
 {
-	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate);
+	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate, Key);
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
@@ -542,6 +561,8 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		TUniquePtr<FOutgoingMessage> OutgoingMessage;
 		OutgoingMessagesQueue.Dequeue(OutgoingMessage);
 
+		OnDequeueMessage.Broadcast(OutgoingMessage.Get());
+
 		static const Worker_UpdateParameters DisableLoopback{ /*loopback*/ WORKER_COMPONENT_UPDATE_LOOPBACK_NONE };
 
 		switch (OutgoingMessage->Type)
@@ -603,6 +624,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 				Message->EntityId,
 				&Message->Update,
 				&DisableLoopback);
+
 			break;
 		}
 		case EOutgoingMessageType::CommandRequest:
@@ -727,5 +749,7 @@ void USpatialWorkerConnection::QueueOutgoingMessage(ArgsType&&... Args)
 {
 	// TODO UNR-1271: As later optimization, we can change the queue to hold a union
 	// of all outgoing message types, rather than having a pointer.
-	OutgoingMessagesQueue.Enqueue(MakeUnique<T>(Forward<ArgsType>(Args)...));
+	auto Message = MakeUnique<T>(Forward<ArgsType>(Args)...);
+	OnEnqueueMessage.Broadcast(Message.Get());
+	OutgoingMessagesQueue.Enqueue(MoveTemp(Message));
 }
