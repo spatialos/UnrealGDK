@@ -229,7 +229,12 @@ namespace SpatialConstants
 	const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 
 	const FString LOCATOR_HOST = TEXT("locator.improbable.io");
-	const uint16 LOCATOR_PORT  = 444;
+	const uint16 LOCATOR_PORT  = 443;
+
+	// URL that can be used to reconnect using the command line arguments.
+	const FString RECONNECT_USING_COMMANDLINE_ARGUMENTS = TEXT("0.0.0.0");
+	const FString URL_LOGIN_OPTION = TEXT("login=");
+	const FString URL_PLAYER_IDENTITY_OPTION = TEXT("playeridentity=");
 
 	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 

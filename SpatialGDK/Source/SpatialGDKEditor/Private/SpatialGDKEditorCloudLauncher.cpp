@@ -66,6 +66,11 @@ bool SpatialGDKCloudStop()
 	int32 OutCode = 0;
 	FString OutString;
 	FString OutErr;
+	const FString CmdExecutable = TEXT("cmd.exe");
+	const FString LauncherCmdArguments = FString::Printf(
+		TEXT("/c DeploymentLauncher.exe stop %s"),
+		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
+		);
 
 	bool bSuccess = FPlatformProcess::ExecProcess(*LauncherExe, *LauncherStopArguments, &OutCode, &OutString, &OutErr);
 	if (OutCode != 0)
