@@ -1,9 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
+
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/SpatialSender.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
 #include "SpatialCommonTypes.h"
@@ -12,38 +11,28 @@ DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
 using namespace SpatialGDK;
 
-SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer()
-	: StaticComponentView(nullptr)
-	, Sender(nullptr)
-	, VirtualWorkerTranslator(nullptr)
+TUniquePtr<SpatialLoadBalanceEnforcer> SpatialLoadBalanceEnforcer::CreateSpatialLoadBalanceEnforcer(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
 {
-}
-
-void SpatialLoadBalanceEnforcer::Init(const FString &InWorkerId,
-	USpatialStaticComponentView* InStaticComponentView,
-	USpatialSender* InSpatialSender,
-	SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
-{
-	WorkerId = InWorkerId;
-
 	check(InStaticComponentView != nullptr);
-	StaticComponentView = InStaticComponentView;
-
-	check(InSpatialSender != nullptr);
-	Sender = InSpatialSender;
-
 	check(InVirtualWorkerTranslator != nullptr);
-	VirtualWorkerTranslator = InVirtualWorkerTranslator;
+
+	if (InStaticComponentView == nullptr || InVirtualWorkerTranslator == nullptr)
+	{
+		return nullptr;
+	}
+
+	return TUniquePtr<SpatialLoadBalanceEnforcer>(new SpatialLoadBalanceEnforcer(InWorkerId, InStaticComponentView, InVirtualWorkerTranslator));
 }
 
-void SpatialLoadBalanceEnforcer::Tick()
+SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
+	: WorkerId(InWorkerId)
+	, StaticComponentView(InStaticComponentView)
+	, VirtualWorkerTranslator(InVirtualWorkerTranslator)
 {
-	ProcessQueuedAclAssignmentRequests();
 }
 
 void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
-	check(StaticComponentView.IsValid())
 	check(Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	if (StaticComponentView->GetAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -56,8 +45,6 @@ void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_
 // which may have been received before this call.
 void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	check(StaticComponentView.IsValid())
-
 	if (AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID &&
 		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -104,8 +91,10 @@ void SpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId
 	}
 }
 
-void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
+TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 {
+	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> PendingRequests;
+
 	TArray<Worker_EntityId> CompletedRequests;
 	CompletedRequests.Reserve(AclWriteAuthAssignmentRequests.Num());
 
@@ -117,7 +106,8 @@ void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 			// TODO(zoning): Not sure whether this should be possible or not. Remove if we don't see the warning again.
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Entity without AuthIntent component will not be processed. EntityId: %lld"), *WorkerId, Request.EntityId);
 			CompletedRequests.Add(Request.EntityId);
-			return;
+			// TODO(Alex): should it be continue?
+			return PendingRequests;
 		}
 
 		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
@@ -135,10 +125,11 @@ void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 			continue;
 		}
 
-		check(Sender.IsValid());
-		Sender->SetAclWriteAuthority(Request.EntityId, *OwningWorkerId);
+		PendingRequests.Push(AclWriteAuthorityRequest{ Request.EntityId, *OwningWorkerId });
 		CompletedRequests.Add(Request.EntityId);
 	}
 
 	AclWriteAuthAssignmentRequests.RemoveAll([CompletedRequests](const WriteAuthAssignmentRequest& Request) { return CompletedRequests.Contains(Request.EntityId); });
+
+	return PendingRequests;
 }

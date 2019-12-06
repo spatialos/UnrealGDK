@@ -444,8 +444,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
 		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
 
-		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>();
-		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator.Get());
+		LoadBalanceEnforcer = SpatialLoadBalanceEnforcer::CreateSpatialLoadBalanceEnforcer(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+		check(LoadBalanceEnforcer);
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
@@ -1529,7 +1529,10 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (LoadBalanceEnforcer.IsValid())
 		{
-			LoadBalanceEnforcer->Tick();
+			for(const auto& elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
+			{
+				Sender->SetAclWriteAuthority(elem.EntityId, elem.OwningWorkerId);
+			}
 		}
 	}
 }
