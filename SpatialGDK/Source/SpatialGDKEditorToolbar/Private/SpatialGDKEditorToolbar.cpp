@@ -886,7 +886,7 @@ void FSpatialGDKEditorToolbarModule::UpdateIOSClient() const
 	const FString ProjectName = FApp::GetProjectName();
 
 	// The project path is based on this: https://github.com/improbableio/UnrealEngine/blob/4.22-SpatialOSUnrealGDK-release/Engine/Source/Programs/AutomationTool/AutomationUtils/DeploymentContext.cs#L408
-	const FString CommandLineArgs = FString::Printf(TEXT( "../../../%s/%s.uproject -game -log -workerType UnrealClient"), *ProjectName, *ProjectName, *(SpatialGDKSettings->ExposedRuntimeIP));
+	const FString CommandLineArgs = FString::Printf(TEXT( "../../../%s/%s.uproject %s -game -log -workerType %s"), *ProjectName, *ProjectName, *(SpatialGDKSettings->ExposedRuntimeIP), *SpatialConstants::DefaultClientWorkerType.ToString());
 	const FString CommandLineArgsFile = FPaths::Combine(*FPaths::ProjectLogDir(), TEXT("ue4commandline.txt"));
 
 	if(!FFileHelper::SaveStringToFile(CommandLineArgs, *CommandLineArgsFile, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
@@ -898,17 +898,18 @@ void FSpatialGDKEditorToolbarModule::UpdateIOSClient() const
 	FString DeploymentServerExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
 	FString DeploymentServerArguments = FString::Printf(TEXT("copyfile -bundle \"%s\" -file \"%s\" -file \"/Documents/ue4commandline.txt\""), *(IOSRuntimeSettings->BundleIdentifier), *CommandLineArgsFile);
 	FString DeploymentServerOutput;
+	FString StdErr;
 	int32 ExitCode;
 
 #if PLATFORM_WINDOWS
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(DeploymentServerExe, DeploymentServerArguments, FPaths::EngineDir(), DeploymentServerOutput, ExitCode);
+	FPlatformProcess::ExecProcess(*DeploymentServerExe, *DeploymentServerArguments &ExitCode, &DeploymentServerOutput, &StdErr);
 #elif PLATFORM_MAC
 	FString MonoExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/ThirdParty/Mono/Mac/bin/mono")));
 	DeploymentServerArguments = FString::Printf(TEXT("%s %s"), *DeploymentServerExe, *DeploymentServerArguments);
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(MonoExe, DeploymentServerArguments, FPaths::EngineDir(), DeploymentServerOutput, ExitCode);
+	FPlatformProcess::ExecProcess(*MonoExe, *DeploymentServerArguments, &ExitCode, &DeploymentServerOutput, &StdErr);
 #endif
 
-    UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Output: %s. Args: %s %s"), *DeploymentServerOutput, *DeploymentServerExe, *DeploymentServerArguments);
+	UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Output: %s. Args: %s %s"), *DeploymentServerOutput, *DeploymentServerExe, *DeploymentServerArguments);
 
 	if (ExitCode != 0)
 	{
