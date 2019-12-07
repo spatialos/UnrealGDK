@@ -18,7 +18,10 @@ BINARIES_DIR="$(pwd)/SpatialGDK/Binaries/ThirdParty/Improbable"
 SCHEMA_COPY_DIR="$(pwd)/../../../spatial/schema/unreal/gdk"
 SCHEMA_STD_COPY_DIR="$(pwd)/../../../spatial/build/dependencies/schema/standard_library"
 SPATIAL_DIR="$(pwd)/../../../spatial"
-
+DOMAIN_ENVIRONMENT_VAR=
+if [[ "$*" == "--china" ]]; then
+    DOMAIN_ENVIRONMENT_VAR=--domain spatialoschina.com --environment cn-production
+fi
 
 echo "Setup the git hooks"
 if [ -e .git/hooks ]; then
