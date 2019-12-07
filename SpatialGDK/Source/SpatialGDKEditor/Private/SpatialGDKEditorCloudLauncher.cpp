@@ -61,16 +61,14 @@ bool SpatialGDKCloudStop()
 
 	// TODO: UNR-2435 - Add a Stop Deployment button and fix the code below:
 	// get and provide deployment-id to stop the deployment as one of the LauncherStopArguments
-	const FString LauncherStopArguments = TEXT("stop");
+	const FString LauncherStopArguments = FString::Printf(
+		TEXT("stop %s"),
+		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
+		);
 
 	int32 OutCode = 0;
 	FString OutString;
 	FString OutErr;
-	const FString CmdExecutable = TEXT("cmd.exe");
-	const FString LauncherCmdArguments = FString::Printf(
-		TEXT("/c DeploymentLauncher.exe stop %s"),
-		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
-		);
 
 	bool bSuccess = FPlatformProcess::ExecProcess(*LauncherExe, *LauncherStopArguments, &OutCode, &OutString, &OutErr);
 	if (OutCode != 0)
