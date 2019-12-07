@@ -65,8 +65,6 @@ spatial package retrieve worker_sdk  c_headers                           "${PINN
 spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos        "${PINNED_CORE_SDK_VERSION}"   $DOMAIN_ENVIRONMENT_VAR   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip
 spatial package retrieve worker_sdk  c-static-fullylinked-arm-clang-ios  "${PINNED_CORE_SDK_VERSION}"   $DOMAIN_ENVIRONMENT_VAR   "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
 spatial package retrieve worker_sdk  csharp                              "${PINNED_CORE_SDK_VERSION}"   $DOMAIN_ENVIRONMENT_VAR   "${CORE_SDK_DIR}"/worker_sdk/csharp.zip
-spatial package retrieve spot        spot-macos                          "${PINNED_SPOT_VERSION}"       $DOMAIN_ENVIRONMENT_VAR   "${BINARIES_DIR}"/Programs/spot
-chmod +x "${BINARIES_DIR}"/Programs/spot
 
 echo "Unpack dependencies"
 unzip -oq "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip            -d "${BINARIES_DIR}"/Programs/
