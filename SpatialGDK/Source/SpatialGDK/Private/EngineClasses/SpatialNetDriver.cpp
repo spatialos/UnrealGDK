@@ -624,7 +624,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 				GlobalStateManager->SetAcceptingPlayers(true);
 			}
 
-			GlobalStateManager->IncrementSessionID();
+			//GlobalStateManager->IncrementSessionID();
 		}
 		else
 		{
