@@ -153,11 +153,6 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	}
 }
 
-bool USpatialActorChannel::IsSingletonEntity()
-{
-	return NetDriver->GlobalStateManager->IsSingletonEntity(EntityId);
-}
-
 bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason)
 {
 	if (NetDriver != nullptr)
