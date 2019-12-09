@@ -59,9 +59,14 @@ bool SpatialGDKCloudStop()
 	UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("Function not available"));
 	return false;
 
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+
 	// TODO: UNR-2435 - Add a Stop Deployment button and fix the code below:
 	// get and provide deployment-id to stop the deployment as one of the LauncherStopArguments
-	const FString LauncherStopArguments = TEXT("stop");
+	const FString LauncherStopArguments = FString::Printf(
+		TEXT("stop %s"),
+		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
+		);
 
 	int32 OutCode = 0;
 	FString OutString;
