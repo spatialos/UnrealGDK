@@ -12,6 +12,7 @@ Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
 if (Test-Path "$unreal_path") {
     (Get-Item "$unreal_path").Delete()
 }
+
 $gdk_in_test_repo = "$project_path\Game\Plugins\UnrealGDK"
 if (Test-Path "$gdk_in_test_repo") {
     (Get-Item "$gdk_in_test_repo").Delete()
