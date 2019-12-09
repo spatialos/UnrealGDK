@@ -333,7 +333,11 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	FinishSetupConnectionConfig(URL, bUseReceptionist);
 
+#if WITH_EDITOR
 	Connection->Connect(bConnectAsClient, PlayInEditorID);
+#else
+	Connection->Connect(bConnectAsClient, 0);
+#endif
 }
 
 void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
