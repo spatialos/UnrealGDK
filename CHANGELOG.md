@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- The GDK now uses SpatialOS `14.2.1`.
 - Added %s token to debug strings in GlobalStateManager to display actor class name in log
 - The server no longer crashes, when received RPCs are processed recursively.
 - DeploymentLauncher can parse a .pb.json launch configuration.
@@ -22,12 +23,14 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
 - A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
+- The `GenerateSchema`, `GenerateSchemaAndSnapshots`, and `CookAndGenerateSchema` commandlets can be invoked with the `-AdditionalSchemaCompilerArguments="..."` command line switch to output additional compiled schema formats. If no such switch is provided, only the schema descriptor will be produced. This switch's value should be a subset of the arguments that can be passed to the schema compiler directly (e.g., `--bundle_out="path/to/bundle.sb"`). A full list of possibles values is available via the [schema compiler documentation](https://docs.improbable.io/reference/14.2/shared/schema/introduction#schema-compiler-cli-reference)
 - Added the AllowUnresolvedParameters function flag that disables warnings for processing RPCs with unresolved parameters. This flag can be enabled through Blueprints or by adding a tag to the `UFUNCTION` macro.
 - Improved logging around entity creation.
 - Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK).
 - A warning is shown if a cloud deployment is launched with the `manual_worker_connection_only` flag set to true
 - Server travel supported for single server game worlds. Does not currently support zoning or off-loading.
 - Enabled the SpatialOS toolbar for MacOS.
+- Added a menu item to push additional arguments for iOS devices.
 
 ### Bug fixes:
 - Fixed a bug that could caused a name collision in schema for sublevels.
@@ -44,6 +47,17 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
 - Fix tombstone-related assert that could fire and bring down the editor.
 - Actors placed in the level with bNetLoadOnClient=false can now be reloaded once all references are deleted.
+
+## [`0.7.1-preview`] - 2019-12-06
+
+### Bug fixes: 
+- The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
+
+### Internal:
+Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
+- The GDK is now compatible with the `CN` launch region. When Improbable's online services are fully working in China, they will work with this version of the GDK. You will be able to create SpatialOS Deployments in China by specifying the `CN` region in the Deployment Launcher.
+- `Setup.bat` and `Setup.sh` both accept the `--china` flag, which will be required in order to run SpatialOS CLI commands in the `CN` region.
+- **SpatialOS GDK for Unreal** > **Editor Settings** now contains a **Region Settings** section. You will be required to set **Region where services are located** to `CN` in order to create SpatialOS Deployments in China.
 
 ## [`0.7.0-preview`] - 2019-10-11
 
