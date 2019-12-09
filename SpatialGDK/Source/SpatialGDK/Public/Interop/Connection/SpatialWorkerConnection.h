@@ -89,7 +89,7 @@ public:
 	UGlobalStateManager* GlobalStateManager;
 
 private:
-	void ConnectToReceptionist(bool bConnectAsClient, uint32 PlayInEditorID);
+	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator();
 	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 
@@ -125,6 +125,7 @@ private:
 	TWeakObjectPtr<USpatialGameInstance> GameInstance;
 
 	bool bIsConnected;
+	bool bConnectAsClient = false;
 
 	TArray<FString> CachedWorkerAttributes;
 
