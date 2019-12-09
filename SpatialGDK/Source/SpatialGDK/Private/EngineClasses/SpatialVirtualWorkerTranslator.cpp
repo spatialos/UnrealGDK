@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
@@ -12,17 +11,30 @@
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
 SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator()
-	: NetDriver(nullptr)
-	, bWorkerEntityQueryInFlight(false)
+	: bWorkerEntityQueryInFlight(false)
 	, bIsReady(false)
 	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 {}
 
-void SpatialVirtualWorkerTranslator::Init(USpatialNetDriver* InNetDriver)
+void SpatialVirtualWorkerTranslator::Init(UAbstractLBStrategy* InLoadBalanceStrategy,
+	USpatialStaticComponentView* InStaticComponentView,
+	USpatialReceiver* InReceiver,
+	USpatialWorkerConnection* InConnection,
+	FString InWorkerId)
 {
-	NetDriver = InNetDriver;
-	// If this is being run from tests, NetDriver will be null.
-	WorkerId = (NetDriver != nullptr) ? NetDriver->Connection->GetWorkerId() : "InvalidWorkerId";
+	check(InLoadBalanceStrategy != nullptr);
+	LoadBalanceStrategy = InLoadBalanceStrategy;
+
+	check(InStaticComponentView != nullptr);
+	StaticComponentView = InStaticComponentView;
+
+	check(InReceiver != nullptr);
+	Receiver = InReceiver;
+
+	check(InConnection != nullptr);
+	Connection = InConnection;
+
+	WorkerId = InWorkerId;
 }
 
 void SpatialVirtualWorkerTranslator::AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds)
@@ -85,8 +97,8 @@ void SpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChan
 // a worker first becomes authoritative for the mapping.
 void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Object)
 {
-	if (NetDriver != nullptr &&
-		NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
+	// StaticComponentView may be null in tests
+	if (StaticComponentView.IsValid() && StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) ApplyMappingFromSchema called, but this worker is authoritative, ignoring"), *WorkerId);
 		return;
@@ -155,15 +167,10 @@ void SpatialVirtualWorkerTranslator::ConstructVirtualWorkerMappingFromQueryRespo
 // to the spatialOS storage.
 void SpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 {
-	// NetDriver is null in tests until we can refactor things.
-	if (NetDriver == nullptr)
-	{
-		return;
-	}
-
 	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) SendVirtualWorkerMappingUpdate"), *WorkerId);
 
-	check(NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID));
+	check(StaticComponentView.IsValid());
+	check(StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID));
 
 	// Construct the mapping update based on the local virtual worker to physical worker mapping.
 	Worker_ComponentUpdate Update = {};
@@ -173,7 +180,8 @@ void SpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 
 	WriteMappingToSchema(UpdateObject);
 
-	NetDriver->Connection->SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, &Update);
+	check(Connection.IsValid());
+	Connection->SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, &Update);
 
 	// Broadcast locally since we won't receive the ComponentUpdate on this worker.
 	// This is disabled until the Enforcer is available to update ACLs.
@@ -182,17 +190,12 @@ void SpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 
 void SpatialVirtualWorkerTranslator::QueryForWorkerEntities()
 {
-	// NetDriver is null in tests until we can refactor things.
-	if (NetDriver == nullptr)
-	{
-		return;
-	}
-
 	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Sending query for WorkerEntities"), *WorkerId);
 
 	checkf(!bWorkerEntityQueryInFlight, TEXT("(%s) Trying to query for worker entities while a previous query is still in flight!"), *WorkerId);
 
-	if (!NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
+	check(StaticComponentView.IsValid());
+	if (!StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Trying QueryForWorkerEntities, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *WorkerId);
 		return;
@@ -213,13 +216,15 @@ void SpatialVirtualWorkerTranslator::QueryForWorkerEntities()
 
 	// Make the query.
 	Worker_RequestId RequestID;
-	RequestID = NetDriver->Connection->SendEntityQueryRequest(&WorkerEntityQuery);
+	check(Connection.IsValid());
+	RequestID = Connection->SendEntityQueryRequest(&WorkerEntityQuery);
 	bWorkerEntityQueryInFlight = true;
 
 	// Register a method to handle the query response.
 	EntityQueryDelegate WorkerEntityQueryDelegate;
 	WorkerEntityQueryDelegate.BindRaw(this, &SpatialVirtualWorkerTranslator::WorkerEntityQueryDelegate);
-	NetDriver->Receiver->AddEntityQueryDelegate(RequestID, WorkerEntityQueryDelegate);
+	check(Receiver.IsValid());
+	Receiver->AddEntityQueryDelegate(RequestID, WorkerEntityQueryDelegate);
 }
 
 // This method allows the translator to deal with the returned list of connection entities when they are received.
@@ -227,7 +232,8 @@ void SpatialVirtualWorkerTranslator::QueryForWorkerEntities()
 // returned information will be thrown away.
 void SpatialVirtualWorkerTranslator::WorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op)
 {
-	if (!NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
+	check(StaticComponentView.IsValid());
+	if (!StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Received response to WorkerEntityQuery, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *WorkerId);
 	}
@@ -252,7 +258,8 @@ void SpatialVirtualWorkerTranslator::WorkerEntityQueryDelegate(const Worker_Enti
 void SpatialVirtualWorkerTranslator::AssignWorker(const PhysicalWorkerName& Name)
 {
 	check(!UnassignedVirtualWorkers.IsEmpty());
-	check(NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID));
+	check(StaticComponentView.IsValid());
+	check(StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID));
 
 	// Get a VirtualWorkerId from the list of unassigned work.
 	VirtualWorkerId Id;
@@ -273,6 +280,7 @@ void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalW
 		bIsReady = true;
 
 		// Tell the strategy about the local virtual worker id.
-		NetDriver->LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
+		check(LoadBalanceStrategy.IsValid());
+		LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
 	}
 }

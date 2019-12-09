@@ -16,6 +16,7 @@
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
+#include "Utils/SpatialLatencyTracer.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
@@ -72,6 +73,11 @@ void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 {
 	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
 	SpatialConnection->Init(this);
+
+#if TRACE_LIB_ACTIVE
+	SpatialConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
+	SpatialConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
+#endif
 }
 
 void USpatialGameInstance::DestroySpatialWorkerConnection()
@@ -157,15 +163,28 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 	return false;
 }
 
+void USpatialGameInstance::Init()
+{
+	Super::Init();
+
+	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
+}
+
 void USpatialGameInstance::HandleOnConnected()
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Succesfully connected to SpatialOS"));
 	SpatialWorkerId = SpatialConnection->GetWorkerId();
+#if TRACE_LIB_ACTIVE
+	SpatialLatencyTracer->SetWorkerId(SpatialWorkerId);
+#endif
 	OnConnected.Broadcast();
 }
 
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 {
 	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
+#if TRACE_LIB_ACTIVE
+	SpatialLatencyTracer->ResetWorkerId();
+#endif
 	OnConnectionFailed.Broadcast(Reason);
 }
