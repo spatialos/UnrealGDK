@@ -31,25 +31,30 @@ The [Get started]({{urlRoot}}/content/get-started/introduction) guide takes you 
 
 * a Starter Template project that you can use as a basis for your own projects.
 * the Example Project running in the cloud, as well as running locally on your computer. The Example Project gives an overview of the GDK and using SpatialOS, and is the basis of our tutorials.
+<br/><br/>
 
-* Want to learn more about how the GDK works and how it fits into your game stack? 
-<br/>**Read the [Technical overview]({{urlRoot}}/content/technical-overview/gdk-principles)**. 
-<br/>
-<br/>
-* Unfamiliar with SpatialOS? Need to  find out about the concepts behind it?
-<br/> **Read the [SpatialOS concept docs]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos)**.
+**Want to learn more about how the GDK works and how it fits into your game stack?**    
+
+Read the [Technical overview]({{urlRoot}}/content/technical-overview/gdk-principles). 
 <br/>
 <br/>
 
-* Want to tell us more about your game ideas or ask questions about making games on SpatialOS?<br/>
-**Join the community on our <a href="https://forums.improbable.io" data-track-link="Join Forums Clicked|product=Docs" target="_blank">forums</a>, or on <a href="https://discordapp.com/invite/vAT7RSU" data-track-link="Join Discord Clicked|product=Docs|platform=Win|label=Win" target="_blank">Discord</a>.**
+**Unfamiliar with SpatialOS? Need to find out about the concepts behind it?**   
+
+Read the [SpatialOS concept docs]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos).
+<br/>
+<br/>
+
+**Want to tell us more about your game ideas or ask questions about making games on SpatialOS?**   
+
+Join the community on our <a href="https://forums.improbable.io" data-track-link="Join Forums Clicked|product=Docs" target="_blank">forums</a>, or on <a href="https://discordapp.com/invite/vAT7RSU" data-track-link="Join Discord Clicked|product=Docs|platform=Win|label=Win" target="_blank">Discord</a>.
 <br/>
 <br/>
 
 #### **> Next:** [Get started]({{urlRoot}}/content/get-started/introduction.md)
 
-</br>------</br>
-_2019-11-28 Page updated with editorial review: removed duplicate content</br>
+</br>------</br>    
+_2019-11-28 Page updated with editorial review: removed duplicate content_</br>
 _2019-10-18 Page updated with editorial review: removed mention of the deprecated tutorial - multiple deployments for session-based games_</br>
 _2019-08-09 Page updated with editorial review_</br>
 _2019-08-08 Page updated with editorial review: renamed "multiserver shooter tutorial" to "multiserver zoning tutorial"_ </br>
