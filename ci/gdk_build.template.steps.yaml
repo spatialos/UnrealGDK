@@ -13,7 +13,7 @@ common: &common
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-2019-11-11-bk3891-f17bd2c787d2fe1c}" ## revert to new queue once windows baking issues have been resolved...
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-2019-12-09-bk5048-463be4a9c3324065}" ## revert to new queue once windows baking issues have been resolved...
     - "boot_disk_size_gb=500"
   retry:
     automatic:
