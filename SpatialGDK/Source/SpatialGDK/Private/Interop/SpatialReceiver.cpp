@@ -11,7 +11,6 @@
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
-#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
@@ -40,7 +39,7 @@ DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel,
 
 using namespace SpatialGDK;
 
-void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator, FTimerManager* InTimerManager)
+void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -48,8 +47,7 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialVirtualWorker
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
-	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer;
-	VirtualWorkerTranslator = InVirtualWorkerTranslator;
+	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer.Get();
 	TimerManager = InTimerManager;
 
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
@@ -83,6 +81,7 @@ void USpatialReceiver::LeaveCriticalSection()
 	for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
 	{
 		ReceiveActor(PendingAddEntity);
+		OnEntityAddedDelegate.Broadcast(PendingAddEntity);
 	}
 
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
@@ -161,10 +160,10 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		if (VirtualWorkerTranslator != nullptr)
+		if (NetDriver->VirtualWorkerTranslator.IsValid())
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
-			VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
 		return;
 	}
@@ -192,6 +191,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
 	RemoveActor(Op.entity_id);
+	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
 }
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
@@ -290,6 +290,8 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 
 void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, APlayerController* PlayerController)
 {
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("HandlePlayerLifecycleAuthority for PlayerController %d."), *AActor::GetDebugName(PlayerController));
+
 	// Server initializes heartbeat logic based on its authority over the position component,
 	// client does the same for heartbeat component
 	if ((NetDriver->IsServer() && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID) ||
@@ -330,7 +332,12 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
-	if (LoadBalanceEnforcer)
+	if (NetDriver->VirtualWorkerTranslator)
+	{
+		NetDriver->VirtualWorkerTranslator->AuthorityChanged(Op);
+	}
+
+	if (LoadBalanceEnforcer != nullptr)
 	{
 		LoadBalanceEnforcer->AuthorityChanged(Op);
 	}
@@ -488,18 +495,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
 		{
 			Sender->SendServerEndpointReadyUpdate(Op.entity_id);
-		}
-	}
-
-	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
-	{
-		ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Op.component_id);
-		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
-			Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID ||
-			Op.component_id == SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
-		{
-			// This will be called multiple times on each RPC component.
-			NetDriver->OnRPCAuthorityGained(Actor, ComponentType);
 		}
 	}
 }
@@ -1155,17 +1150,16 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-		if (NetDriver->IsServer())
+		if (NetDriver->IsServer() && (LoadBalanceEnforcer != nullptr))
 		{
-			check(LoadBalanceEnforcer);
 			LoadBalanceEnforcer->OnAuthorityIntentComponentUpdated(Op);
 		}
-		break;
+		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		if (VirtualWorkerTranslator != nullptr)
+		if (NetDriver->VirtualWorkerTranslator.IsValid())
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
-			VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
 		return;
 	}
@@ -1518,34 +1512,11 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 	RPCPayload PayloadCopy = Payload;
 	FSpatialNetBitReader PayloadReader(PackageMap, PayloadCopy.PayloadData.GetData(), PayloadCopy.CountDataBits(), UnresolvedRefs);
 
-	int ReliableRPCId = 0;
-	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
-	{
-		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-		{
-			PayloadReader << ReliableRPCId;
-		}
-	}
-
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
 
 	if ((UnresolvedRefs.Num() == 0) || bApplyWithUnresolvedRefs)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
-		{
-			if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-			{
-				AActor* Actor = Cast<AActor>(TargetObject);
-				if (Actor == nullptr)
-				{
-					Actor = Cast<AActor>(TargetObject->GetOuter());
-					check(Actor);
-				}
-				NetDriver->OnReceivedReliableRPC(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
-			}
-		}
-
 		TargetObject->ProcessEvent(Function, Parms);
 		Result = ERPCResult::Success;
 	}
@@ -1590,7 +1561,21 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		bApplyWithUnresolvedRefs = true;
 	}
 
+#if TRACE_LIB_ACTIVE
+	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(this);
+	Tracer->MarkActiveLatencyTrace(Params.Payload.Trace);
+#endif
+
 	ERPCResult Result = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
+
+#if TRACE_LIB_ACTIVE
+	if (Result == ERPCResult::Success)
+	{
+		Tracer->EndLatencyTrace(Params.Payload.Trace, TEXT("Unhandled trace - automatically ended"));
+	}
+	Tracer->MarkActiveLatencyTrace(USpatialLatencyTracer::InvalidTraceKey);
+#endif
+
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };
 }
 
@@ -1833,7 +1818,7 @@ void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarge
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	ESchemaComponentType Type = RPCInfo.Type;
+	ERPCType Type = RPCInfo.Type;
 
 	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, Type, MoveTemp(InPayload));
 }

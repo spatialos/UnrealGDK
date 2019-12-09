@@ -10,6 +10,8 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #endif
 
+DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
+
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, EntityPoolInitialReservationCount(3000)
@@ -30,7 +32,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableMetricsDisplay(false)
 	, MetricsReportRate(2.0f)
 	, bUseFrameTimeAsLoad(false)
-	, bCheckRPCOrder(false)
 	, bBatchSpatialPositionUpdates(true)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, bEnableServerQBI(true)
@@ -40,7 +41,15 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableOffloading(false)
 	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
+	, SpatialDebuggerClassPath(TEXT("/SpatialGDK/SpatialDebugger/BP_SpatialDebugger.BP_SpatialDebugger_C"))
 	, bEnableUnrealLoadBalancer(false)
+	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
+	, bTcpNoDelay(false)
+	, UdpServerUpstreamUpdateIntervalMS(10)
+	, UdpServerDownstreamUpdateIntervalMS(10)
+	, UdpClientUpstreamUpdateIntervalMS(10)
+	, UdpClientDownstreamUpdateIntervalMS(10)
+	// TODO - end
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -59,6 +68,49 @@ void USpatialGDKSettings::PostInitProperties()
 	else
 	{
 		FParse::Bool(CommandLine, TEXT("OverrideSpatialOffloading="), bEnableOffloading);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Offloading is %s."), bEnableOffloading ? TEXT("enabled") : TEXT("disabled"));
+
+	if (FParse::Param(CommandLine, TEXT("OverrideServerInterest")))
+	{
+		bEnableServerQBI = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideServerInterest="), bEnableServerQBI);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Server interest is %s."), bEnableServerQBI ? TEXT("enabled") : TEXT("disabled"));
+
+	if (FParse::Param(CommandLine, TEXT("OverrideHandover")))
+	{
+		bEnableHandover = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideHandover="), bEnableHandover);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Handover is %s."), bEnableHandover ? TEXT("enabled") : TEXT("disabled"));
+
+	if (FParse::Param(CommandLine, TEXT("OverrideLoadBalancer")))
+	{
+		bEnableUnrealLoadBalancer = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideLoadBalancer="), bEnableUnrealLoadBalancer);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Unreal load balancing is %s."), bEnableUnrealLoadBalancer ? TEXT("enabled") : TEXT("disabled"));
+
+	if (bEnableUnrealLoadBalancer)
+	{
+		if (bEnableServerQBI == false)
+		{
+			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but server interest is disabled."));
+		}
+		if (bEnableHandover == false)
+		{
+			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
+		}
 	}
 
 #if WITH_EDITOR
@@ -92,3 +144,4 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	}
 }
 #endif
+

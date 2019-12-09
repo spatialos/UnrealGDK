@@ -17,7 +17,7 @@ class USpatialWorkerConnection;
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialMetrics, Log, All);
 
 UCLASS()
-class USpatialMetrics : public UObject
+class SPATIALGDK_API USpatialMetrics : public UObject
 {
 	GENERATED_BODY()
 
@@ -43,7 +43,7 @@ public:
 	void SpatialModifySetting(const FString& Name, float Value);
 	void OnModifySettingCommand(Schema_Object* CommandPayload);
 
-	void TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize);
+	void TrackSentRPC(UFunction* Function, ERPCType RPCType, int PayloadSize);
 
 	void HandleWorkerMetrics(Worker_Op* Op);
 
@@ -70,7 +70,7 @@ private:
 	// tracking on the server.
 	struct RPCStat
 	{
-		ESchemaComponentType Type;
+		ERPCType Type;
 		FString Name;
 		int Calls;
 		int TotalPayload;

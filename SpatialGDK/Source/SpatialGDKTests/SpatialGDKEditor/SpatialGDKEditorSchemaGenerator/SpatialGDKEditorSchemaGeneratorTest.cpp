@@ -5,6 +5,7 @@
 #include "ExpectedGeneratedSchemaFileContents.h"
 #include "SchemaGenObjectStub.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "Utils/SchemaDatabase.h"
 
@@ -19,7 +20,7 @@
 
 namespace
 {
-const FString SchemaOutputFolder = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("Tests/"));
+const FString SchemaOutputFolder = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("Tests/"));
 const FString SchemaDatabaseFileName = TEXT("Spatial/Tests/SchemaDatabase");
 const FString DatabaseOutputFile = TEXT("/Game/Spatial/Tests/SchemaDatabase");
 
@@ -811,8 +812,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 	SchemaTestFixture Fixture;
 
 	// GIVEN
-	FString GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("/Tests/schema/unreal/gdk"));
-	FString CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("/Tests/build/dependencies/schema/standard_library"));
+	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("/Tests/schema/unreal/gdk"));
+	FString CoreSDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("/Tests/build/dependencies/schema/standard_library"));
 	TArray<FString> GDKSchemaFilePaths =
 	{
 		"authority_intent.schema",

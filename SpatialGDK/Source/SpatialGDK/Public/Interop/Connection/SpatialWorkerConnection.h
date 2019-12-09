@@ -10,6 +10,7 @@
 #include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialGDKSettings.h"
 #include "UObject/WeakObjectPtr.h"
+#include "Utils/SpatialLatencyTracer.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -18,7 +19,9 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
+class UGlobalStateManager;
 class USpatialGameInstance;
+class USpatialStaticComponentView;
 class UWorld;
 
 enum class ESpatialConnectionType
@@ -50,7 +53,7 @@ public:
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
 	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData);
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate);
+	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
 	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
@@ -67,8 +70,20 @@ public:
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
+	FOnEnqueueMessage OnEnqueueMessage;
+
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
+	FOnDequeueMessage OnDequeueMessage;
+
+	UPROPERTY()
+	USpatialStaticComponentView* StaticComponentView;
+
+	UPROPERTY()
+	UGlobalStateManager* GlobalStateManager;
+
 private:
-	void ConnectToReceptionist(bool bConnectAsClient);
+	void ConnectToReceptionist();
 	void ConnectToLocator();
 	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 
@@ -106,6 +121,7 @@ private:
 	TWeakObjectPtr<USpatialGameInstance> GameInstance;
 
 	bool bIsConnected;
+	bool bConnectAsClient = false;
 
 	TArray<FString> CachedWorkerAttributes;
 

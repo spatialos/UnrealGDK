@@ -17,14 +17,17 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Utils/ActorGroupManager.h"
+#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, UActorGroupManager* InActorGroupManager)
+bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, SpatialActorGroupManager* InActorGroupManager)
 {
+	check(InNetDriver != nullptr);
 	NetDriver = InNetDriver;
+
+	check(InActorGroupManager != nullptr);
 	ActorGroupManager = InActorGroupManager;
 
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
@@ -67,40 +70,40 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 	return Class;
 }
 
-ESchemaComponentType GetRPCType(UFunction* RemoteFunction)
+ERPCType GetRPCType(UFunction* RemoteFunction)
 {
 	if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetMulticast))
 	{
-		return SCHEMA_NetMulticastRPC;
+		return ERPCType::NetMulticast;
 	}
 	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer))
 	{
-		return SCHEMA_CrossServerRPC;
+		return ERPCType::CrossServer;
 	}
 	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable))
 	{
 		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
 		{
-			return SCHEMA_ClientReliableRPC;
+			return ERPCType::ClientReliable;
 		}
 		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
 		{
-			return SCHEMA_ServerReliableRPC;
+			return ERPCType::ServerReliable;
 		}
 	}
 	else
 	{
 		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
 		{
-			return SCHEMA_ClientUnreliableRPC;
+			return ERPCType::ClientUnreliable;
 		}
 		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
 		{
-			return SCHEMA_ServerUnreliableRPC;
+			return ERPCType::ServerUnreliable;
 		}
 	}
 
-	return SCHEMA_Invalid;
+	return ERPCType::Invalid;
 }
 
 void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
@@ -122,8 +125,8 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	for (UFunction* RemoteFunction : RelevantClassFunctions)
 	{
-		ESchemaComponentType RPCType = GetRPCType(RemoteFunction);
-		checkf(RPCType != SCHEMA_Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
+		ERPCType RPCType = GetRPCType(RemoteFunction);
+		checkf(RPCType != ERPCType::Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
 
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;

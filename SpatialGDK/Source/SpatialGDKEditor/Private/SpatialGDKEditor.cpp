@@ -17,6 +17,7 @@
 #include "Misc/ScopedSlowTask.h"
 #include "Settings/ProjectPackagingSettings.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesConstants.h"
 #include "UObject/StrongObjectPtr.h"
 
 using namespace SpatialGDKEditor;
@@ -99,8 +100,8 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	if (bFullScan)
 	{
 		// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
-		FString GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
-		FString CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
+		FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
+		FString CoreSDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
 		Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
 		Schema::DeleteGeneratedSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
 		Schema::CreateGeneratedSchemaFolder();
@@ -167,10 +168,7 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 			return false;
 		}
 		const FString PackagePath = Data.PackagePath.ToString();
-		if (!PackagePath.StartsWith("/Game"))
-		{
-			return false;
-		}
+
 		for (const auto& Directory : DirectoriesToNeverCook)
 		{
 			if (PackagePath.StartsWith(Directory.Path))

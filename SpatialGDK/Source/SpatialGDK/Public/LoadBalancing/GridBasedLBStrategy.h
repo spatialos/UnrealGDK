@@ -2,9 +2,15 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+
+#include "CoreMinimal.h"
+
 #include "GridBasedLBStrategy.generated.h"
+
+class SpatialVirtualWorkerTranslator;
+
+DECLARE_LOG_CATEGORY_EXTERN(LogGridBasedLBStrategy, Log, All)
 
 /**
  * A load balancing strategy that divides the world into a grid.
@@ -26,9 +32,9 @@ public:
 	UGridBasedLBStrategy();
 
 /* UAbstractLBStrategy Interface */
-	virtual void Init(const class USpatialNetDriver* InNetDriver) override;
+	virtual void Init(const USpatialNetDriver* InNetDriver) override;
 
-	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const;
+	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;
 
 	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;

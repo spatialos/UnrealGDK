@@ -26,8 +26,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 class USpatialNetConnection;
 class USpatialSender;
 class UGlobalStateManager;
-class USpatialLoadBalanceEnforcer;
-class SpatialVirtualWorkerTranslator;
+class SpatialLoadBalanceEnforcer;
 
 struct PendingAddComponentWrapper
 {
@@ -82,18 +81,6 @@ struct FObjectReferences
 	UProperty*							Property;
 };
 
-struct FPendingIncomingRPC
-{
-	FPendingIncomingRPC(const TSet<FUnrealObjectRef>& InUnresolvedRefs, UObject* InTargetObject, UFunction* InFunction, const SpatialGDK::RPCPayload& InPayload)
-		: UnresolvedRefs(InUnresolvedRefs), TargetObject(InTargetObject), Function(InFunction), Payload(InPayload) {}
-
-	TSet<FUnrealObjectRef> UnresolvedRefs;
-	TWeakObjectPtr<UObject> TargetObject;
-	UFunction* Function;
-	SpatialGDK::RPCPayload Payload;
-	FString SenderWorkerId;
-};
-
 struct FPendingSubobjectAttachment
 {
 	USpatialActorChannel* Channel;
@@ -103,11 +90,12 @@ struct FPendingSubobjectAttachment
 	TSet<Worker_ComponentId> PendingAuthorityDelegations;
 };
 
-using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
-
 DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseOp&);
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, const Worker_ReserveEntityIdsResponseOp&);
 DECLARE_DELEGATE_OneParam(CreateEntityDelegate, const Worker_CreateEntityResponseOp&);
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityAddedDelegate, const Worker_EntityId);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityRemovedDelegate, const Worker_EntityId);
 
 UCLASS()
 class USpatialReceiver : public UObject
@@ -115,7 +103,7 @@ class USpatialReceiver : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* NetDriver, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator, FTimerManager* InTimerManager);
+	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager);
 
 	// Dispatcher Calls
 	void OnCriticalSection(bool InCriticalSection);
@@ -214,6 +202,9 @@ public:
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
+	FOnEntityAddedDelegate OnEntityAddedDelegate;
+	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
@@ -233,10 +224,7 @@ private:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
-	UPROPERTY()
-	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
-
-	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
+	SpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
 
 	FTimerManager* TimerManager;
 
@@ -244,7 +232,6 @@ private:
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 
-	TMap<FUnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
 	FRPCContainer IncomingRPCs;
 
 	bool bInCriticalSection;
