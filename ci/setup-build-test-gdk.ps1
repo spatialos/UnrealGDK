@@ -18,21 +18,21 @@ if (Test-Path env:TEST_REPO_BRANCH) {
 . "$PSScriptRoot\common.ps1"
 
 # Guard against other runs not cleaning up after themselves
-&$PSScriptRoot"\cleanup.ps1"
+& $PSScriptRoot"\cleanup.ps1"
 
 # Download Unreal Engine
 Start-Event "get-unreal-engine" "command"
-&$PSScriptRoot"\get-engine.ps1" -unreal_path "$unreal_path"
+& $PSScriptRoot"\get-engine.ps1" -unreal_path "$unreal_path"
 Finish-Event "get-unreal-engine" "command"
 
 # Run the required setup steps
 Start-Event "setup-gdk" "command"
-&$PSScriptRoot"\setup-gdk.ps1" -gdk_path "$gdk_in_engine" -msbuild_path "$msbuild_exe"
+& $PSScriptRoot"\setup-gdk.ps1" -gdk_path "$gdk_in_engine" -msbuild_path "$msbuild_exe"
 Finish-Event "setup-gdk" "command"
 
 # Build the testing project
 Start-Event "build-project" "command"
-&$PSScriptRoot"\build-project.ps1" `
+& $PSScriptRoot"\build-project.ps1" `
     -unreal_path "$unreal_path" `
     -test_repo_branch "$test_repo_branch" `
     -test_repo_url "$test_repo_url" `
@@ -48,7 +48,7 @@ Finish-Event "build-project" "command"
 # Only run tests on Windows, as we do not have a linux agent - should not matter
 if ($env:BUILD_PLATFORM -eq "Win64" -And $env:BUILD_TARGET -eq "Editor" -And $env:BUILD_STATE -eq "Development") {
   Start-Event "test-gdk" "command"
-  &$PSScriptRoot"\run-tests.ps1" `
+  & $PSScriptRoot"\run-tests.ps1" `
       -unreal_editor_path "$unreal_path\Engine\Binaries\Win64\UE4Editor.exe" `
       -uproject_path "$build_home\TestProject\$test_repo_relative_uproject_path" `
       -test_repo_path "$build_home\TestProject" `
@@ -57,6 +57,6 @@ if ($env:BUILD_PLATFORM -eq "Win64" -And $env:BUILD_TARGET -eq "Editor" -And $en
   Finish-Event "test-gdk" "command"
 
   Start-Event "report-tests" "command"
-  &$PSScriptRoot"\report-tests.ps1" -test_result_dir "$PSScriptRoot\TestResults" -target_platform "$env:BUILD_PLATFORM"
+  & $PSScriptRoot"\report-tests.ps1" -test_result_dir "$PSScriptRoot\TestResults" -target_platform "$env:BUILD_PLATFORM"
   Finish-Event "report-tests" "command"
 }
