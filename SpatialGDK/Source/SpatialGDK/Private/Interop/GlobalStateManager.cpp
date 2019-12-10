@@ -424,6 +424,9 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	// Set the map URL on the GSM.
 	AddStringToSchema(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID, NetDriver->GetWorld()->URL.Map);
 
+	// Set the schame on the GSM
+	Schema_AddUint32(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH, NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
+
 	// Component updates are short circuited so we set the updated state here and then send the component update.
 	bAcceptingPlayers = bInAcceptingPlayers;
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
@@ -705,6 +708,6 @@ void UGlobalStateManager::SendSessionIdUpdate()
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, DeploymentSessionId);
-
+	
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
