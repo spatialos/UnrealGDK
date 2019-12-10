@@ -51,7 +51,7 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 	{
 		for (TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>::TIterator It = EntityActorMapping.CreateIterator(); It; ++It)
 		{
-			if (It->Value.Get() == nullptr)
+			if (!It->Value.IsValid())
 			{
 				It.RemoveCurrent();
 			}
