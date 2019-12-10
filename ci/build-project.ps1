@@ -26,24 +26,22 @@ New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugin
 Add-Content -Path "$unreal_path\Engine\Config\BaseEditorSettings.ini" -Value "`r`n[/Script/IntroTutorials.TutorialStateSettings]`r`nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)`r`n"
 
 Write-Output "Generating project files"
-$proc = Start-Process "$unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
-    "-projectfiles", `
-    "-project=`"$test_repo_uproject_path`"", `
-    "-game", `
-    "-engine", `
+& "$unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe" `
+    "-projectfiles" `
+    "-project=`"$test_repo_uproject_path`"" `
+    "-game" `
+    "-engine" `
     "-progress"
-)
-if ($proc.ExitCode -ne 0) {
+if ($lastExitCode -ne 0) {
     throw "Failed to generate files for the testing project."
 }
 
 Write-Output "Building project"
 $build_configuration = $build_state + $(If ("$build_target" -eq "") {""} Else {" $build_target"})
-$proc = Start-Process "$msbuild_exe" -Wait -ErrorAction Stop -NoNewWindow -PassThru -ArgumentList @(`
-    "/nologo", `
-    "$($test_repo_uproject_path.Replace(".uproject", ".sln"))", `
+& "$msbuild_exe" `
+    "/nologo" `
+    "$($test_repo_uproject_path.Replace(".uproject", ".sln"))" `
     "/p:Configuration=`"$build_configuration`";Platform=`"$build_platform`""
-)
-if ($proc.ExitCode -ne 0) {
+if ($lastExitCode -ne 0) {
     throw "Failed to build testing project."
 }
