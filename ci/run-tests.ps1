@@ -43,7 +43,7 @@ $ue_path_absolute = Force-ResolvePath $unreal_editor_path
 $uproject_path_absolute = Force-ResolvePath $uproject_path
 $output_dir_absolute = Force-ResolvePath $output_dir
 
-$test_args = @( `
+$cmd_args_list = @( `
     "`"$uproject_path_absolute`"", ` # We need some project to run tests in, but for unit tests the exact project shouldn't matter
     "`"$test_repo_map`"", ` # The map to run tests in
     "-ExecCmds=`"Automation RunTests SpatialGDK; Quit`"", ` # Run all tests. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
@@ -53,7 +53,10 @@ $test_args = @( `
     "-nopause", ` # Close the unreal log window automatically on exit
     "-nosplash", ` # No splash screen
     "-unattended", ` # Disable anything requiring user feedback
-    "-nullRHI" ` # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+    "-nullRHI" # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
 )
-Echo "Running $($ue_path_absolute) $($test_args)"
-& $ue_path_absolute $test_args
+
+Echo "Running $($ue_path_absolute) $($cmd_args_list)"
+
+$run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
+Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
