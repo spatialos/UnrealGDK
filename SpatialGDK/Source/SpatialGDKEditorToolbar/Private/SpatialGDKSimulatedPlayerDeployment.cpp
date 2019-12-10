@@ -11,6 +11,7 @@
 #include "Templates/SharedPointer.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKEditorToolbar.h"
 #include "SpatialGDKServicesModule.h"
 #include "Textures/SlateIcon.h"
 #include "Widgets/Input/SButton.h"
@@ -490,40 +491,42 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	if (!SpatialGDKSettings->IsDeploymentConfigurationValid()) {
-		FNotificationInfo Info(FText::FromString(TEXT("Deployment configuration is not valid.")));
-		Info.bUseSuccessFailIcons = true;
-		Info.ExpireDuration = 3.0f;
+	FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 
-		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+	if (!SpatialGDKSettings->IsDeploymentConfigurationValid())
+	{
+		if (ToolbarPtr)
+		{
+			ToolbarPtr->OnShowFailedNotification(TEXT("Deployment configuration is not valid."));
+		}
 
 		return FReply::Handled();
 	}
 
-	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
-		FNotificationInfo Info(FText::FromString(TEXT("Starting cloud deployment...")));
-		Info.bUseSuccessFailIcons = true;
-		Info.bFireAndForget = false;
-
-		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-
-		NotificationItem->SetCompletionState(SNotificationItem::CS_Pending);
+	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
+	{
+		if (ToolbarPtr)
+		{
+			ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
+		}
 
 		SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
-			FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("Successfully initiated launching of the cloud deployment.")));
-				NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
-				NotificationItem->SetExpireDuration(7.5f);
-				NotificationItem->ExpireAndFadeout();
+			FSimpleDelegate::CreateLambda([]()
+			{
+				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				{
+					ToolbarPtr->OnShowSuccessNotification("Successfully launched cloud deployment.");
+				}
 			}),
-			FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("Failed to launch the DeploymentLauncher script properly.")));
-				NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-				NotificationItem->SetExpireDuration(7.5f);
-				NotificationItem->ExpireAndFadeout();
-			})
-		);
+
+			FSimpleDelegate::CreateLambda([]()
+			{
+				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				{
+					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment.");
+				}
+			}));
+
 		return FReply::Handled();
 	}
 
@@ -546,24 +549,28 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnRefreshClicked()
 FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 {
 	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
-		FNotificationInfo Info(FText::FromString(TEXT("Stopping cloud deployment ...")));
-		Info.bUseSuccessFailIcons = true;
-		Info.bFireAndForget = false;
 
-		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-
-		NotificationItem->SetCompletionState(SNotificationItem::CS_Pending);
+		if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+		{
+			ToolbarPtr->OnShowTaskStartNotification("Stopping cloud deployment ...");
+		}
 
 		SpatialGDKEditorSharedPtr->StopCloudDeployment(
-				FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("Successfully launched the stop cloud deployments command.")));
-				NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
+			FSimpleDelegate::CreateLambda([]()
+			{
+				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				{
+					ToolbarPtr->OnShowSuccessNotification("Successfully stopped cloud deployment.");
+				}
 			}),
-				FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("Failed to launch the DeploymentLauncher script properly.")));
-				NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-			})
-		);
+
+			FSimpleDelegate::CreateLambda([]()
+			{
+				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				{
+					ToolbarPtr->OnShowFailedNotification("Failed to stop cloud deployment.");
+				}
+			}));
 	}
 	return FReply::Handled();
 }
