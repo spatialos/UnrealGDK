@@ -16,7 +16,8 @@ function Force-ResolvePath {
 }
 
 # Generate schema and snapshots
-$gen_args = @( `
+Echo "Generating snapshot and schema for testing project"
+$commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
     "$uproject_path", `
     "-NoShaderCompile", ` # Prevent shader compilation
     "-nopause", ` # Close the unreal log window automatically on exit
@@ -26,8 +27,6 @@ $gen_args = @( `
     "-run=GenerateSchemaAndSnapshots", ` # Run the commandlet
     "-MapPaths=`"$test_repo_map`"" ` # Which maps to run the commandlet for
 )
-Echo "Generating snapshot and schema for testing project"
-& "$unreal_editor_path" $gen_args
 
 # Create the default snapshot
 Copy-Item -Force `
