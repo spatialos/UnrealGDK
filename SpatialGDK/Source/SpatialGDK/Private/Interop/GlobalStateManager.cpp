@@ -690,5 +690,6 @@ void UGlobalStateManager::SendSessionIdUpdate()
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, DeploymentSessionId);
+
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
