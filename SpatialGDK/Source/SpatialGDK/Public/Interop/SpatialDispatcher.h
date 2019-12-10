@@ -13,19 +13,14 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-#include "SpatialDispatcher.generated.h"
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
 
 class USpatialMetrics;
 class USpatialReceiver;
 class USpatialStaticComponentView;
 
-UCLASS()
-class SPATIALGDK_API USpatialDispatcher : public UObject
+class SPATIALGDK_API SpatialDispatcher
 {
-	GENERATED_BODY()
-
 public:
 	using FCallbackId = uint32;
 
@@ -68,14 +63,9 @@ private:
 	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
 
-	UPROPERTY()
-	USpatialReceiver* Receiver;
-
-	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
-
-	UPROPERTY()
-	USpatialMetrics* SpatialMetrics;
+	TWeakObjectPtr<USpatialReceiver> Receiver;
+	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
+	TWeakObjectPtr<USpatialMetrics> SpatialMetrics;
 
 	// This index is incremented and returned every time an AddOpCallback function is called.
 	// CallbackIds enable you to deregister callbacks using the RemoveOpCallback function. 
