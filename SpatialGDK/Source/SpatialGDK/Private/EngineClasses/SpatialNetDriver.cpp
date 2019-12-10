@@ -10,6 +10,7 @@
 #include "EngineGlobals.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
+#include "Misc/MessageDialog.h"
 #include "Net/DataReplication.h"
 #include "Net/RepLayout.h"
 #include "SocketSubsystem.h"
@@ -504,6 +505,22 @@ bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()
 
 void USpatialNetDriver::OnGSMQuerySuccess()
 {
+	// Are we running with the same schema hash as the server?
+#if !(UE_BUILD_SHIPPING)
+	if (GetDefault<USpatialGDKSettings>()->bEnableSchemaValidationOnJoin)
+	{
+		uint32 ServerHash = GlobalStateManager->GetSchemaHash();
+		if (ClassInfoManager->SchemaDatabase->SchemaDescriptorHash != ServerHash)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Your schema hash does match the server, this may cause problems. Our hash: %lu server hash: %lu"), (unsigned long)ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, (unsigned long)ServerHash);
+			if (FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Schema hash does not match the server, this may cause problems. Are you sure you want to continue?"))) == EAppReturnType::No)
+			{
+				FGenericPlatformMisc::RequestExit(false);
+			}
+		}
+	}
+#endif
+
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
 	if (bWaitingToSpawn && ClientCanSendPlayerSpawnRequests())
 	{

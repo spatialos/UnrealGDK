@@ -114,6 +114,7 @@ const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
 const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID							= 3;
+const Schema_FieldId DEPLOYMENT_MAP_SCHEMA_HASH							= 4;
 
 const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
 

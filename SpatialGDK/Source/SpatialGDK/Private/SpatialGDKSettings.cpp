@@ -50,6 +50,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, UdpClientUpstreamUpdateIntervalMS(10)
 	, UdpClientDownstreamUpdateIntervalMS(10)
 	// TODO - end
+	, bEnableSchemaValidationOnJoin(true)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
