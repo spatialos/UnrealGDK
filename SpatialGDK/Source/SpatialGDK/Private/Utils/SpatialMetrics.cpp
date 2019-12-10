@@ -26,11 +26,11 @@ void USpatialMetrics::Init(USpatialWorkerConnection* InConnection,
 	RPCTrackingStartTime = 0.0f;
 }
 
-void USpatialMetrics::TickMetrics(float DriverTime)
+void USpatialMetrics::TickMetrics(float NetDriverTime)
 {
 	FramesSinceLastReport++;
 
-	TimeSinceLastReport = DriverTime - TimeOfLastReport;
+	TimeSinceLastReport = NetDriverTime - TimeOfLastReport;
 
 	// Check that there has been a sufficient amount of time since the last report.
 	if (TimeSinceLastReport > 0.f && TimeSinceLastReport < TimeBetweenMetricsReports)
@@ -49,7 +49,7 @@ void USpatialMetrics::TickMetrics(float DriverTime)
 	DynamicFPSMetrics.GaugeMetrics.Add(DynamicFPSGauge);
 	DynamicFPSMetrics.Load = WorkerLoad;
 
-	TimeOfLastReport = DriverTime;
+	TimeOfLastReport = NetDriverTime;
 	FramesSinceLastReport = 0;
 
 	Connection->SendMetrics(DynamicFPSMetrics);

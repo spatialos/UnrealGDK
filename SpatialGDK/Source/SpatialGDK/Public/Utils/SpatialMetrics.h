@@ -24,7 +24,7 @@ public:
 	void Init(USpatialWorkerConnection* Connection,
 		float MaxServerTickRate, bool bIsServer);
 
-	void TickMetrics(float DriverTime);
+	void TickMetrics(float NetDriverTime);
 
 	double CalculateLoad() const;
 

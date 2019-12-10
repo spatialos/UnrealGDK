@@ -2377,5 +2377,11 @@ void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
 
 FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 {
-	return PackageMap->GetUnrealObjectRefFromObject(Cast<APlayerController>(GetSpatialOSNetConnection()->OwningActor));
+	USpatialNetConnection* NetConnection = GetSpatialOSNetConnection();
+	APlayerController* PlayerController = NetConnection ? Cast<APlayerController>(NetConnection->OwningActor) : nullptr;
+	if (PackageMap && PlayerController)
+	{
+		return PackageMap->GetUnrealObjectRefFromObject(PlayerController);
+	}
+	return FUnrealObjectRef::NULL_OBJECT_REF;
 }
