@@ -16,16 +16,18 @@ function Force-ResolvePath {
 }
 
 # Generate schema and snapshots
+$gen_args = @( `
+    "$uproject_path", `
+    "-NoShaderCompile", ` # Prevent shader compilation
+    "-nopause", ` # Close the unreal log window automatically on exit
+    "-nosplash", ` # No splash screen
+    "-unattended", ` # Disable anything requiring user feedback
+    "-nullRHI", ` # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+    "-run=GenerateSchemaAndSnapshots", ` # Run the commandlet
+    "-MapPaths=`"$test_repo_map`"" ` # Which maps to run the commandlet for
+)
 Echo "Generating snapshot and schema for testing project"
-& "$unreal_editor_path" `
-    "$uproject_path" `
-    "-NoShaderCompile" ` # Prevent shader compilation
-    "-nopause" ` # Close the unreal log window automatically on exit
-    "-nosplash" ` # No splash screen
-    "-unattended" ` # Disable anything requiring user feedback
-    "-nullRHI" ` # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
-    "-run=GenerateSchemaAndSnapshots" ` # Run the commandlet
-    "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
+& "$unreal_editor_path" $gen_args
 
 # Create the default snapshot
 Copy-Item -Force `
@@ -42,16 +44,17 @@ $ue_path_absolute = Force-ResolvePath $unreal_editor_path
 $uproject_path_absolute = Force-ResolvePath $uproject_path
 $output_dir_absolute = Force-ResolvePath $output_dir
 
-Echo "Running $($ue_path_absolute) $($cmd_args_list)"
-
-& $ue_path_absolute `
-    "`"$uproject_path_absolute`"" ` # We need some project to run tests in, but for unit tests the exact project shouldn't matter
-    "`"$test_repo_map`"" ` # The map to run tests in
-    "-ExecCmds=`"Automation RunTests SpatialGDK; Quit`"" ` # Run all tests. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
-    "-TestExit=`"Automation Test Queue Empty`"" ` # When to close the editor
-    "-ReportOutputPath=`"$($output_dir_absolute)`"" ` # Output folder for test results. If it doesn't exist, gets created. If it does, all contents get deleted before new results get placed there.
-    "-ABSLOG=`"$($log_file_path)`"" ` # Sets the path for the log file produced during this run.
-    "-nopause" ` # Close the unreal log window automatically on exit
-    "-nosplash" ` # No splash screen
-    "-unattended" ` # Disable anything requiring user feedback
-    "-nullRHI" # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+$test_args = @( `
+    "`"$uproject_path_absolute`"", ` # We need some project to run tests in, but for unit tests the exact project shouldn't matter
+    "`"$test_repo_map`"", ` # The map to run tests in
+    "-ExecCmds=`"Automation RunTests SpatialGDK; Quit`"", ` # Run all tests. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
+    "-TestExit=`"Automation Test Queue Empty`"", ` # When to close the editor
+    "-ReportOutputPath=`"$($output_dir_absolute)`"", ` # Output folder for test results. If it doesn't exist, gets created. If it does, all contents get deleted before new results get placed there.
+    "-ABSLOG=`"$($log_file_path)`"", ` # Sets the path for the log file produced during this run.
+    "-nopause", ` # Close the unreal log window automatically on exit
+    "-nosplash", ` # No splash screen
+    "-unattended", ` # Disable anything requiring user feedback
+    "-nullRHI" ` # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+)
+Echo "Running $($ue_path_absolute) $($test_args)"
+& $ue_path_absolute $test_args
