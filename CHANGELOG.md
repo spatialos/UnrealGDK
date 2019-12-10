@@ -48,6 +48,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
 - Fix tombstone-related assert that could fire and bring down the editor.
 - Actors placed in the level with bNetLoadOnClient=false that go out of view will now be reloaded if they come back into view.
+- Fix crash in SpatialDebugger caused by dereference of invalid weak pointer
 
 ## [`0.7.1-preview`] - 2019-12-06
 
