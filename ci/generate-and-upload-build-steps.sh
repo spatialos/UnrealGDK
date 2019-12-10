@@ -13,7 +13,7 @@ generate_build_configuration_steps () {
     # See https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html for possible configurations 
     ENGINE_COMMIT_HASH="${1}"
 
-    # if BUILD_ALL_CONFIGURATIONS environment variable exists AND is equal to "true", then...
+    # if BUILD_ALL_CONFIGURATIONS environment variable exists, then...
     if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
         echo "Building for all supported configurations. Generating appropriate steps..."
         
