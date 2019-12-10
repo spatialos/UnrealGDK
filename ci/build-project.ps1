@@ -1,5 +1,5 @@
 param(
-    [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine", ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
+    [string] $unreal_path,
     [string] $test_repo_branch,
     [string] $test_repo_url,
     [string] $test_repo_uproject_path,

@@ -1,3 +1,5 @@
+# This script is used directly as part of the UnrealGDKExampleProject CI, so providing default values may be strictly necessary
+
 param(
     # Note: this directory is outside the build directory and will not get automatically cleaned up from agents unless agents are restarted.
     [string] $engine_cache_directory = "$($pwd.drive.root)UnrealEngine-Cache",
