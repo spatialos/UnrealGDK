@@ -11,7 +11,7 @@ if [$(cat ci/unreal-engine.version) = ""]; then
             
     echo "${ERROR_MSG}" | buildkite-agent annotate --context "check-version-file" --style error
 
-    printf '%s\n' "${ERROR_MSG}" >&2
+    echo "${ERROR_MSG}" >&2
     exit 1
 fi;
 
@@ -45,7 +45,7 @@ if [[ $IS_PROTECTED -eq 1 ]]; then
             
             echo $ERROR_MSG | buildkite-agent annotate --context "check-version-file" --style error
 
-            printf '%s\n' "${ERROR_MSG}" >&2
+            echo "${ERROR_MSG}" >&2
             exit 1
         fi
     done
