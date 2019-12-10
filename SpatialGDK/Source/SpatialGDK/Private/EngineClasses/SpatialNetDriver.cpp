@@ -619,7 +619,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	if (IsServer())
 	{
 		if (GlobalStateManager != nullptr &&
-			!GlobalStateManager->IsReadyToCallBeginPlay() &&
+			!GlobalStateManager->GetCanBeginPlay() &&
 			StaticComponentView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
 		{
 			// ServerTravel - Increment the session id, so users don't rejoin the old game.
@@ -2220,7 +2220,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	}
 
 	// Search for StartupActorManager ops we need and process them
-	if (!GlobalStateManager->IsReadyToCallBeginPlay())
+	if (!GlobalStateManager->GetCanBeginPlay())
 	{
 		Worker_Op* AddComponentOp = nullptr;
 		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AddComponentOp);
@@ -2280,7 +2280,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	SelectiveProcessOps(FoundOps);
 
 	if (PackageMap->IsEntityPoolReady() &&
-		GlobalStateManager->IsReadyToCallBeginPlay() &&
+		GlobalStateManager->GetCanBeginPlay() &&
 		(VirtualWorkerTranslator == nullptr || VirtualWorkerTranslator->IsReady()))
 	{
 		// Return whether or not we are ready to start
