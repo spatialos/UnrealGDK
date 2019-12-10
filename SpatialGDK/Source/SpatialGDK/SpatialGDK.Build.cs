@@ -92,11 +92,11 @@ public class SpatialGDK : ModuleRules
         string WorkerImportLib = System.String.Format("{0}worker{1}", LibPrefix, ImportLibSuffix);
         string WorkerSharedLib = System.String.Format("{0}worker{1}", LibPrefix, SharedLibSuffix);
 
-        // Might need to make this a PublicSystemLibraries/PublicSystemLibraryPaths'
-        //PublicLibraryPaths.Add(WorkerLibraryDir);
-
         PublicAdditionalLibraries.Add(Path.Combine(WorkerLibraryDir, WorkerImportLib));
+
+        PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
         RuntimeDependencies.Add(Path.Combine(WorkerLibraryDir, WorkerSharedLib), StagedFileType.NonUFS);
+
         if (bAddDelayLoad)
         {
             PublicDelayLoadDLLs.Add(WorkerSharedLib);

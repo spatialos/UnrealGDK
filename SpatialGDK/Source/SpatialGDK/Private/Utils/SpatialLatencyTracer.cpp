@@ -31,7 +31,7 @@ namespace
 		}
 	};
 
-	UEStream Stream;
+	UEStream UStream;
 }  // anonymous namespace
 
 const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
@@ -51,8 +51,8 @@ void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const F
 
 	StackdriverExporter::Register({ TCHAR_TO_UTF8(*ProjectId) });
 
-	std::cout.rdbuf(&Stream);
-	std::cerr.rdbuf(&Stream);
+	std::cout.rdbuf(&UStream);
+	std::cerr.rdbuf(&UStream);
 
 	StdoutExporter::Register();
 #endif // TRACE_LIB_ACTIVE
