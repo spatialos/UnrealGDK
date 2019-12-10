@@ -7,9 +7,9 @@ public class SpatialGDKTests : ModuleRules
 	public SpatialGDKTests(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-		bFasterWithoutUnity = true;
+        bUseUnity = false;
 
-		PrivateDependencyModuleNames.AddRange(
+        PrivateDependencyModuleNames.AddRange(
 			new string[] {
 				"SpatialGDK",
 				"SpatialGDKEditor",

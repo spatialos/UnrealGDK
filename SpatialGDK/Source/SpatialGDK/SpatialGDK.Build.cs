@@ -14,7 +14,7 @@ public class SpatialGDK : ModuleRules
     public SpatialGDK(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-        bFasterWithoutUnity = true;
+        bUseUnity = false;
 
         PrivateIncludePaths.Add("SpatialGDK/Private");
 
@@ -92,7 +92,8 @@ public class SpatialGDK : ModuleRules
         string WorkerImportLib = System.String.Format("{0}worker{1}", LibPrefix, ImportLibSuffix);
         string WorkerSharedLib = System.String.Format("{0}worker{1}", LibPrefix, SharedLibSuffix);
 
-        PublicLibraryPaths.Add(WorkerLibraryDir);
+        // Might need to make this a PublicSystemLibraries/PublicSystemLibraryPaths'
+        //PublicLibraryPaths.Add(WorkerLibraryDir);
 
         PublicAdditionalLibraries.Add(Path.Combine(WorkerLibraryDir, WorkerImportLib));
         RuntimeDependencies.Add(Path.Combine(WorkerLibraryDir, WorkerSharedLib), StagedFileType.NonUFS);

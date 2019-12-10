@@ -7,7 +7,7 @@ public class SpatialGDKEditorToolbar : ModuleRules
     public SpatialGDKEditorToolbar(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-        bFasterWithoutUnity = true;
+        bUseUnity = false;
 
         PrivateIncludePaths.Add("SpatialGDKEditorToolbar/Private");
 

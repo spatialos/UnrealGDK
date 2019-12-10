@@ -7,7 +7,7 @@ public class SpatialGDKEditor : ModuleRules
 	public SpatialGDKEditor(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        bFasterWithoutUnity = true;
+        bUseUnity = false;
 
         PrivateDependencyModuleNames.AddRange(
 			new string[] {
