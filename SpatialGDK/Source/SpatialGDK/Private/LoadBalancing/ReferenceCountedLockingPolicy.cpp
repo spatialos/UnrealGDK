@@ -1,29 +1,23 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "LoadBalancing/ReferenceCountedLockingPolicy.h"
-#include "GameFramework/Actor.h"
+#include "ReferenceCountedLockingPolicy.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
 
-DEFINE_LOG_CATEGORY(LogReferenceCountedLockingPolicy);
+#include "GameFramework/Actor.h"
 
-ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(const AActor* Actor)
-{
-	check(Actor != nullptr);
-	check(CanAcquireLock(Actor))
-	++ActorToReferenceCount.FindOrAdd(Actor);
-	TokenToNameAndActor.Emplace(NextToken, LockNameAndActor{ FString(), Actor });
-	UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Acquiring migration lock. Actor: %s. Locks held: %d."), *Actor->GetName(), *ActorToReferenceCount.Find(Actor));
-	return NextToken++;
-}
+DEFINE_LOG_CATEGORY(LogReferenceCountedLockingPolicy);
 
 ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(const AActor* Actor, FString DebugString)
 {
 	check(Actor != nullptr);
-	check(CanAcquireLock(Actor))
+	if (!CanAcquireLock(Actor)) {
+		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Called AcquireLock when CanAcquireLock returned false. Actor: %s."), *Actor->GetName());
+		return SpatialConstants::INVALID_ACTOR_LOCK_TOKEN;
+	}
 	++ActorToReferenceCount.FindOrAdd(Actor);
 	UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Acquiring migration lock. "
 		"Actor: %s. Lock name: %s. Token %d: Locks held: %d."), *Actor->GetName(), *DebugString, NextToken, *ActorToReferenceCount.Find(Actor));
@@ -33,6 +27,7 @@ ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(const AActor* Actor, 
 
 bool UReferenceCountedLockingPolicy::CanAcquireLock(const AActor* Actor) const
 {
+	check(Actor != nullptr);
 	const auto* NetDriver = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver());
 	const auto EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 
@@ -65,7 +60,7 @@ void UReferenceCountedLockingPolicy::ReleaseLock(ActorLockToken Token)
 		auto& Count = CountIt.Value();
 		if (Count == 1)
 		{
-			UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Actor migration no longer lock. Actor: %s"), *Actor->GetName(), *Name);
+			UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Actor migration no longer locked. Actor: %s"), *Actor->GetName(), *Name);
 			CountIt.RemoveCurrent();
 		}
 		else
