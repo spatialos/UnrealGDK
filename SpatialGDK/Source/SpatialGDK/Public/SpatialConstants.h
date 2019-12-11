@@ -173,6 +173,7 @@ const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
 // AuthorityIntent codes and Field IDs.
 const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
 const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID							= 0;
+const ActorLockToken INVALID_ACTOR_LOCK_TOKEN							= 0;
 
 // VirtualWorkerTranslation Field IDs.
 const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
