@@ -538,6 +538,14 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
 			RedirectURL.Host = LastURL.Host;
 			RedirectURL.Port = LastURL.Port;
+
+			// Usually the LastURL options are added to the RedirectURL in the FURL constructor.
+			// However this is not the case when TravelType = TRAVEL_Absolute so we must do it explicitly here.
+			if (WorldContext.TravelType == ETravelType::TRAVEL_Absolute)
+			{
+				RedirectURL.Op.Append(LastURL.Op);
+			}
+
 			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
 
 			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
