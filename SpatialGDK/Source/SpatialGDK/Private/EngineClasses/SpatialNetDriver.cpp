@@ -32,6 +32,7 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/EntityPool.h"
+#include "Utils/ErrorCodeRemapping.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialDebugger.h"
@@ -124,7 +125,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
 	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
-	// from OnConnectedToSpatialOS callback which could be executed with the async
+	// from OnConnectionToSpatialOSSucceeded callback which could be executed with the async
 	// loading thread suspended (e.g. when resuming rendering thread), in which
 	// case we'll crash upon trying to load SchemaDatabase.
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
@@ -288,6 +289,8 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	}
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
+	Connection->OnConnectedCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSSucceeded);
+	Connection->OnFailedToConnectCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed);
 
 	bool bUseReceptionist = true;
 	bool bShouldLoadFromURL = true;
@@ -330,10 +333,14 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	FinishSetupConnectionConfig(URL, bUseReceptionist);
 
-	Connection->Connect(bConnectAsClient);
+#if WITH_EDITOR
+	Connection->Connect(bConnectAsClient, PlayInEditorID);
+#else
+	Connection->Connect(bConnectAsClient, 0);
+#endif
 }
 
-void USpatialNetDriver::OnConnectedToSpatialOS()
+void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 {
 	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
 	// There may be more than one of these connections in the future for different replication conditions.
@@ -352,6 +359,17 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	else
 	{
 		Sender->CreateServerWorkerEntity();
+	}
+}
+
+void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage)
+{
+	if (const USpatialGameInstance* GameInstance = GetGameInstance())
+	{
+		if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+		{
+			GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
+		}
 	}
 }
 
@@ -521,6 +539,14 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
 			RedirectURL.Host = LastURL.Host;
 			RedirectURL.Port = LastURL.Port;
+
+			// Usually the LastURL options are added to the RedirectURL in the FURL constructor.
+			// However this is not the case when TravelType = TRAVEL_Absolute so we must do it explicitly here.
+			if (WorldContext.TravelType == ETravelType::TRAVEL_Absolute)
+			{
+				RedirectURL.Op.Append(LastURL.Op);
+			}
+
 			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
 
 			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
@@ -786,7 +812,6 @@ void USpatialNetDriver::BeginDestroy()
 			{
 				Cast<USpatialGameInstance>(LocalWorld->GetGameInstance())->DestroySpatialWorkerConnection();
 			}
-
 			Connection = nullptr;
 		}
 	}

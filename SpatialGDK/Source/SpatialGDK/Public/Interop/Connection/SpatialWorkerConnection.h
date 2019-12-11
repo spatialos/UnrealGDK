@@ -42,7 +42,7 @@ public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 
-	void Connect(bool bConnectAsClient);
+	void Connect(bool bConnectAsClient, uint32 PlayInEditorID);
 
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
@@ -76,6 +76,12 @@ public:
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnDequeueMessage OnDequeueMessage;
 
+	DECLARE_DELEGATE(OnConnectionToSpatialOSSucceededDelegate)
+	OnConnectionToSpatialOSSucceededDelegate OnConnectedCallback;
+
+	DECLARE_DELEGATE_TwoParams(OnConnectionToSpatialOSFailedDelegate, uint8_t, const FString&);
+	OnConnectionToSpatialOSFailedDelegate OnFailedToConnectCallback;
+
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
@@ -83,7 +89,7 @@ public:
 	UGlobalStateManager* GlobalStateManager;
 
 private:
-	void ConnectToReceptionist();
+	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator();
 	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 
@@ -94,8 +100,6 @@ private:
 	ESpatialConnectionType GetConnectionType() const;
 
 	void CacheWorkerAttributes();
-
-	class USpatialNetDriver* GetSpatialNetDriverChecked() const;
 
 	// Begin FRunnable Interface
 	virtual bool Init() override;
