@@ -1519,19 +1519,39 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
 
+	AActor* OwningActor = Cast<AActor>(TargetObject);
+	UObject* SubObject = nullptr;
+
+	if (OwningActor == nullptr)
+	{
+		SubObject = TargetObject;
+		OwningActor = Cast<AActor>(TargetObject->GetOuter());
+		check(OwningActor);
+	}
+
+
+	if (NetDriver->ShouldForwardFunction(OwningActor, Function, Parms))
+	{
+		FWorldContext* const Context = GEngine->GetWorldContextFromWorld(NetDriver->GetWorld());
+		if (Context != nullptr)
+		{
+			for (FNamedNetDriver& Driver : Context->ActiveNetDrivers)
+			{
+				if (Driver.NetDriver != nullptr && (Driver.NetDriver != Cast<UNetDriver>(NetDriver)) && NetDriver->ShouldReplicateFunction(OwningActor, Function))
+				{
+					Driver.NetDriver->ProcessRemoteFunction(OwningActor, Function, Parms, nullptr, nullptr, SubObject);
+				}
+			}
+		}
+	}
+
 	if ((UnresolvedRefs.Num() == 0) || bApplyWithUnresolvedRefs)
 	{
 		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 		{
 			if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 			{
-				AActor* Actor = Cast<AActor>(TargetObject);
-				if (Actor == nullptr)
-				{
-					Actor = Cast<AActor>(TargetObject->GetOuter());
-					check(Actor);
-				}
-				NetDriver->OnReceivedReliableRPC(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
+				NetDriver->OnReceivedReliableRPC(OwningActor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
 			}
 		}
 
