@@ -4,8 +4,8 @@
 
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
-#include "Interop/SpatialWorkerFlags.h"
 #include "GeneralProjectSettings.h"
+#include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -44,13 +44,13 @@ FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
 	return NAME_None;
 }
 
-bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& InString, FString& OutString)
+const bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& InString, FString& OutString)
 {
 	if (const UWorld* World = WorldContext->GetWorld())
 	{
 		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 		{
-			if (USpatialWorkerFlags* SpatialWorkerFlags = SpatialNetDriver->SpatialWorkerFlags) {
+			if (const USpatialWorkerFlags* SpatialWorkerFlags = SpatialNetDriver->SpatialWorkerFlags) {
 		
 					return SpatialWorkerFlags->GetWorkerFlag(InString, OutString);
 			}

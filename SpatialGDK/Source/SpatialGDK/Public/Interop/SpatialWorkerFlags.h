@@ -19,7 +19,7 @@ public:
 	 * @param OutValue - Value of worker flag
 	 * @return - If worker flag was found.
 	 */
-	bool GetWorkerFlag(const FString& Name, FString& OutValue);
+	bool GetWorkerFlag(const FString& Name, FString& OutValue) const;
 
 	FOnWorkerFlagsUpdated& GetOnWorkerFlagsUpdated();
 	

@@ -3,9 +3,9 @@
 #include "Interop/SpatialWorkerFlags.h"
 
 
-bool USpatialWorkerFlags::GetWorkerFlag(const FString& Name, FString& OutValue)
+bool USpatialWorkerFlags::GetWorkerFlag(const FString& Name, FString& OutValue) const
 {
-	if (FString* ValuePtr = WorkerFlags.Find(Name))
+	if (const FString* ValuePtr = WorkerFlags.Find(Name))
 	{
 		OutValue = *ValuePtr;
 		return true;

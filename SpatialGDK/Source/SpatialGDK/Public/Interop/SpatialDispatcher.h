@@ -9,7 +9,6 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
-#include "SpatialWorkerFlags.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
