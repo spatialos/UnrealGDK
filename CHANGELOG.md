@@ -32,6 +32,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Server travel supported for single server game worlds. Does not currently support zoning or off-loading.
 - Enabled the SpatialOS toolbar for MacOS.
 - Added a menu item to push additional arguments for iOS devices.
+- Improved workflow around schema generation issues and launching local builds. A warning will now show if attempting to run a local deployment after a schema error.
 
 ### Bug fixes:
 - Fixed a bug that could caused a name collision in schema for sublevels.
