@@ -39,6 +39,7 @@
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
+#include "LoadBalancing/ReferenceCountedLockingPolicy.h"
 
 #if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"
@@ -459,6 +460,16 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 				LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
 			}
 			LoadBalanceStrategy->Init(this);
+		}
+
+		if (SpatialSettings->LockingPolicy == nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
+			LockingPolicy = NewObject<UReferenceCountedLockingPolicy>(this);
+		}
+		else
+		{
+			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, SpatialSettings->LockingPolicy);
 		}
 
 		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
