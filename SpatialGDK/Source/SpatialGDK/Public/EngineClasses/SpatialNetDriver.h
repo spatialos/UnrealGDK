@@ -80,7 +80,8 @@ public:
 
 	virtual void OnOwnerUpdated(AActor* Actor);
 
-	void OnConnectedToSpatialOS();
+	void OnConnectionToSpatialOSSucceeded();
+	void OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
 
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
@@ -146,11 +147,10 @@ public:
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
 
-	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
-	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
@@ -174,6 +174,8 @@ public:
 #endif
 
 private:
+	TUniquePtr<SpatialDispatcher> Dispatcher;
+	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
@@ -233,9 +235,6 @@ private:
 	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn);
 
 	void ProcessPendingDormancy();
-
-	friend USpatialNetConnection;
-	friend USpatialWorkerConnection;
 
 	// This index is incremented and assigned to every new RPC in ProcessRemoteFunction.
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs

@@ -6,7 +6,6 @@
 #endif
 
 #include "EngineClasses/SpatialGameInstance.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Engine/World.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
@@ -16,13 +15,73 @@
 #include "Engine/World.h"
 #include "Misc/Paths.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
+
+struct ConfigureConnection
+{
+	ConfigureConnection(const FConnectionConfig& InConfig)
+		: Config(InConfig)
+		, Params()
+		, WorkerType(*Config.WorkerType)
+		, ProtocolLogPrefix(*FormatProtocolPrefix())
+	{
+		Params = Worker_DefaultConnectionParameters();
+
+		Params.worker_type = WorkerType.Get();
+
+		Params.enable_protocol_logging_at_startup = Config.EnableProtocolLoggingAtStartup;
+		Params.protocol_logging.log_prefix = ProtocolLogPrefix.Get();
+
+		Params.component_vtable_count = 0;
+		Params.default_component_vtable = &DefaultVtable;
+
+		Params.network.connection_type = Config.LinkProtocol;
+		Params.network.use_external_ip = Config.UseExternalIp;
+		Params.network.tcp.multiplex_level = Config.TcpMultiplexLevel;
+		Params.network.tcp.no_delay = Config.TcpNoDelay;
+
+		// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
+		Params.network.modular_udp.upstream_compression = nullptr;
+		Params.network.modular_udp.downstream_compression = &EnableCompressionParams;
+
+		UpstreamParams = *Params.network.modular_udp.upstream_kcp;
+		UpstreamParams.update_interval_millis = Config.UdpUpstreamIntervalMS;
+		DownstreamParams = *Params.network.modular_udp.downstream_kcp;
+		DownstreamParams.update_interval_millis = Config.UdpDownstreamIntervalMS;
+		Params.network.modular_udp.upstream_kcp = &UpstreamParams;
+		Params.network.modular_udp.downstream_kcp = &DownstreamParams;
+
+		Params.enable_dynamic_components = true;
+	}
+
+	FString FormatProtocolPrefix() const
+	{
+		FString FinalProtocolLoggingPrefix = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir());
+		if (!Config.ProtocolLoggingPrefix.IsEmpty())
+		{
+			FinalProtocolLoggingPrefix += Config.ProtocolLoggingPrefix;
+		}
+		else
+		{
+			FinalProtocolLoggingPrefix += Config.WorkerId;
+		}
+		return FinalProtocolLoggingPrefix;
+	}
+
+	const FConnectionConfig& Config;
+	Worker_ConnectionParameters Params;
+	FTCHARToUTF8 WorkerType;
+	FTCHARToUTF8 ProtocolLogPrefix;
+	Worker_ComponentVtable DefaultVtable{};
+	Worker_Alpha_CompressionParameters EnableCompressionParams{};
+	Worker_Alpha_KcpParameters UpstreamParams{};
+	Worker_Alpha_KcpParameters DownstreamParams{};
+};
 
 void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
 {
@@ -70,10 +129,11 @@ void USpatialWorkerConnection::DestroyConnection()
 	KeepRunning.AtomicSet(true);
 }
 
-void USpatialWorkerConnection::Connect(bool bInitAsClient)
+void USpatialWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID)
 {
 	if (bIsConnected)
 	{
+		check(bInitAsClient == bConnectAsClient);
 		AsyncTask(ENamedThreads::GameThread, [WeakThis = TWeakObjectPtr<USpatialWorkerConnection>(this)]
 			{
 				if (WeakThis.IsValid())
@@ -88,6 +148,7 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 		return;
 	}
 
+	bConnectAsClient = bInitAsClient;
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
 	{
@@ -100,7 +161,7 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 	switch (GetConnectionType())
 	{
 	case ESpatialConnectionType::Receptionist:
-		ConnectToReceptionist(bInitAsClient);
+		ConnectToReceptionist(PlayInEditorID);
 		break;
 	case ESpatialConnectionType::Locator:
 		ConnectToLocator();
@@ -185,77 +246,28 @@ void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
 	}
 }
 
-void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
+void USpatialWorkerConnection::ConnectToReceptionist(uint32 PlayInEditorID)
 {
-	if (ReceptionistConfig.WorkerType.IsEmpty())
-	{
-		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType.ToString() : SpatialConstants::DefaultServerWorkerType.ToString();
-		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
-	}
-
 #if WITH_EDITOR
-	SpatialGDKServices::InitWorkers(bConnectAsClient, GetSpatialNetDriverChecked()->PlayInEditorID, ReceptionistConfig.WorkerId);
+	SpatialGDKServices::InitWorkers(bConnectAsClient, PlayInEditorID, ReceptionistConfig.WorkerId);
 #endif
 
-	if (ReceptionistConfig.WorkerId.IsEmpty())
-	{
-		ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
-	}
+	ReceptionistConfig.PreConnectInit(bConnectAsClient);
 
-	// TODO UNR-1271: Move creation of connection parameters into a function somehow
-	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
-	FTCHARToUTF8 WorkerTypeCStr(*ReceptionistConfig.WorkerType);
-	ConnectionParams.worker_type = WorkerTypeCStr.Get();
-	ConnectionParams.enable_protocol_logging_at_startup = ReceptionistConfig.EnableProtocolLoggingAtStartup;
-
-	FString FinalProtocolLoggingPrefix;
-	if (!ReceptionistConfig.ProtocolLoggingPrefix.IsEmpty())
-	{
-		FinalProtocolLoggingPrefix = ReceptionistConfig.ProtocolLoggingPrefix;
-	}
-	else
-	{
-		FinalProtocolLoggingPrefix = ReceptionistConfig.WorkerId;
-	}
-	FTCHARToUTF8 ProtocolLoggingPrefixCStr(*FinalProtocolLoggingPrefix);
-	ConnectionParams.protocol_logging.log_prefix = ProtocolLoggingPrefixCStr.Get();
-
-	Worker_ComponentVtable DefaultVtable = {};
-	ConnectionParams.component_vtable_count = 0;
-	ConnectionParams.default_component_vtable = &DefaultVtable;
-
-	ConnectionParams.network.connection_type = ReceptionistConfig.LinkProtocol;
-	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
-	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
-
-	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
-	// TODO: UNR-2212 - Worker SDK 14.1.0 has a bug where upstream and downstream compression are swapped so we set the upstream settings to use compression.
-	Worker_Alpha_CompressionParameters EnableCompressionParams{};
-	ConnectionParams.network.modular_udp.upstream_compression = &EnableCompressionParams;
-	ConnectionParams.network.modular_udp.downstream_compression = nullptr;
-
-	ConnectionParams.enable_dynamic_components = true;
-	// end TODO
+	ConfigureConnection ConnectionConfig(ReceptionistConfig);
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
 		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.ReceptionistPort,
-		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionParams);
+		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionConfig.Params);
 
 	FinishConnecting(ConnectionFuture);
 }
 
 void USpatialWorkerConnection::ConnectToLocator()
 {
-	if (LocatorConfig.WorkerType.IsEmpty())
-	{
-		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
-		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *LocatorConfig.WorkerType);
-	}
+	LocatorConfig.PreConnectInit(bConnectAsClient);
 
-	if (LocatorConfig.WorkerId.IsEmpty())
-	{
-		LocatorConfig.WorkerId = LocatorConfig.WorkerType + FGuid::NewGuid().ToString();
-	}
+	ConfigureConnection ConnectionConfig(LocatorConfig);
 
 	FTCHARToUTF8 PlayerIdentityTokenCStr(*LocatorConfig.PlayerIdentityToken);
 	FTCHARToUTF8 LoginTokenCStr(*LocatorConfig.LoginToken);
@@ -269,35 +281,9 @@ void USpatialWorkerConnection::ConnectToLocator()
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 
 	// Connect to the locator on the default port(0 will choose the default)
-	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), 0, &LocatorParams);
+	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LocatorParams);
 
-	// TODO UNR-1271: Move creation of connection parameters into a function somehow
-	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
-	FTCHARToUTF8 WorkerTypeCStr(*LocatorConfig.WorkerType);
-	ConnectionParams.worker_type = WorkerTypeCStr.Get();
-	ConnectionParams.enable_protocol_logging_at_startup = LocatorConfig.EnableProtocolLoggingAtStartup;
-
-	Worker_ComponentVtable DefaultVtable = {};
-	ConnectionParams.component_vtable_count = 0;
-	ConnectionParams.default_component_vtable = &DefaultVtable;
-
-	ConnectionParams.network.connection_type = LocatorConfig.LinkProtocol;
-	ConnectionParams.network.use_external_ip = LocatorConfig.UseExternalIp;
-	ConnectionParams.network.tcp.multiplex_level = LocatorConfig.TcpMultiplexLevel;
-
-	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
-	// TODO: UNR-2212 - Worker SDK 14.1.0 has a bug where upstream and downstream compression are swapped so we set the upstream settings to use compression.
-	Worker_Alpha_CompressionParameters EnableCompressionParams{};
-	ConnectionParams.network.modular_udp.upstream_compression = &EnableCompressionParams;
-	ConnectionParams.network.modular_udp.downstream_compression = nullptr;
-
-	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
-	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
-
-	ConnectionParams.enable_dynamic_components = true;
-	// end TODO
-
-	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);
+	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionConfig.Params);
 
 	FinishConnecting(ConnectionFuture);
 }
@@ -459,22 +445,6 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	}
 }
 
-USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
-{
-	UNetDriver* NetDriver = GameInstance->GetWorld()->GetNetDriver();
-
-	// On the client, the world might not be completely set up.
-	// in this case we can use the PendingNetGame to get the NetDriver
-	if (NetDriver == nullptr)
-	{
-		NetDriver = GameInstance->GetWorldContext()->PendingNetGame->GetNetDriver();
-	}
-
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
-	checkf(SpatialNetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
-	return SpatialNetDriver;
-}
-
 void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
@@ -484,7 +454,7 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 		InitializeOpsProcessingThread();
 	}
 
-	GetSpatialNetDriverChecked()->OnConnectedToSpatialOS();
+	OnConnectedCallback.ExecuteIfBound();
 	GameInstance->HandleOnConnected();
 }
 
@@ -503,7 +473,7 @@ void USpatialWorkerConnection::OnConnectionFailure()
 		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
 		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
 
-		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
+		OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 	}
 }
 

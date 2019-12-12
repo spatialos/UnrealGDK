@@ -221,7 +221,7 @@ const FString LOCATOR_HOST = TEXT("locator.improbable.io");
 const FString RECONNECT_USING_COMMANDLINE_ARGUMENTS = TEXT("0.0.0.0");
 const FString URL_LOGIN_OPTION = TEXT("login=");
 const FString URL_PLAYER_IDENTITY_OPTION = TEXT("playeridentity=");
-const uint16 LOCATOR_PORT  = 444;
+const uint16 LOCATOR_PORT  = 443;
 
 const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
