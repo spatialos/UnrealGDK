@@ -4,7 +4,12 @@ The aim of the GDK is to seamlessly support all native Unreal Engine features, m
 
 The following tables show the state of support of Unreal Engine features on the GDK, along with any caveats or workaround you should be aware of. 
 
-<%(Callout  message="The timelines below aim to provide our latest best estimates on our feature delivery to help you plan your project. They should not be taken as commitments and are subject to change based upon feedback, changing requirements, and technical constraints.")%>
+[block:callout]
+{
+  "type": "info",
+  "body": "The timelines below aim to provide our latest best estimates on our feature delivery to help you plan your project. They should not be taken as commitments and are subject to change based upon feedback, changing requirements, and technical constraints."
+}
+[/block]
 
 <style type="text/css">
     th {

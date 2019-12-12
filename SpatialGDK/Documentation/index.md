@@ -1,6 +1,11 @@
 ![GDK for Unreal Documentation]({{assetRoot}}assets/spatialos-gdkforunreal-header.png)
 
-<%(Callout  message="The SpatialOS GDK for Unreal is in alpha. You can use it to develop games using a single server; some multiserver functionality is also available, as described below.")%>
+[block:callout]
+{
+  "type": "info",
+  "body": "The SpatialOS GDK for Unreal is in alpha. You can use it to develop games using a single server; some multiserver functionality is also available, as described below."
+}
+[/block]
 
 The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine fork and plugin with associated projects; it provides features of SpatialOS, within the familiar workflows and APIs of Unreal. 
 
@@ -22,7 +27,12 @@ Multiserver functionality is available through either:
 * server **offloading** (available in alpha), in which Unreal server functionality is split between multiple servers and those servers compute different functionality across the whole game world, or 
 * server **zoning** (available in pre-alpha), in which the game world is split into several geographical areas and each area has a dedicated Unreal server computing all the functionality for it.
 
-<%(Callout  message="We do not currently recommend development using multiserver zoning functionality. For more information on multiserver zoning availability, see the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) page.")%>
+[block:callout]
+{
+  "type": "info",
+  "body": "We do not currently recommend development using multiserver zoning functionality. For more information on multiserver zoning availability, see the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) page."
+}
+[/block]
 
 
 ## Find out more
