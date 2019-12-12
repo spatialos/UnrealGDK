@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- Minor spelling fix to connection log message
 - The GDK now uses SpatialOS `14.2.1`.
 - Added %s token to debug strings in GlobalStateManager to display actor class name in log
 - The server no longer crashes, when received RPCs are processed recursively.
@@ -31,6 +32,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Server travel supported for single server game worlds. Does not currently support zoning or off-loading.
 - Enabled the SpatialOS toolbar for MacOS.
 - Added a menu item to push additional arguments for iOS devices.
+- Improved workflow around schema generation issues and launching local builds. A warning will now show if attempting to run a local deployment after a schema error.
 
 ### Bug fixes:
 - Fixed a bug that could caused a name collision in schema for sublevels.
@@ -47,6 +49,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
 - Fix tombstone-related assert that could fire and bring down the editor.
 - Actors placed in the level with bNetLoadOnClient=false that go out of view will now be reloaded if they come back into view.
+- Fix crash in SpatialDebugger caused by dereference of invalid weak pointer
 
 ## [`0.7.1-preview`] - 2019-12-06
 
