@@ -16,6 +16,7 @@
 #include "Misc/Paths.h"
 
 #include "SpatialGDKSettings.h"
+#include "SpatialCommonTypes.h"
 #include "Utils/ErrorCodeRemapping.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
@@ -418,9 +419,9 @@ void USpatialWorkerConnection::SendMetrics(const SpatialMetrics& Metrics)
 	QueueOutgoingMessage<FMetrics>(Metrics);
 }
 
-FString USpatialWorkerConnection::GetWorkerId() const
+PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const
 {
-	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
+	return PhysicalWorkerName(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
 }
 
 const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const

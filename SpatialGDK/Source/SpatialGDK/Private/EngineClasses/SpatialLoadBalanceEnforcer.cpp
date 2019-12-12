@@ -19,7 +19,7 @@ SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer()
 {
 }
 
-void SpatialLoadBalanceEnforcer::Init(const FString &InWorkerId,
+void SpatialLoadBalanceEnforcer::Init(const PhysicalWorkerName &InWorkerId,
 	USpatialStaticComponentView* InStaticComponentView,
 	USpatialSender* InSpatialSender,
 	SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
@@ -71,7 +71,7 @@ void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp
 			return;
 		}
 
-		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (OwningWorkerId != nullptr &&
 			*OwningWorkerId == WorkerId &&
 			StaticComponentView->GetAuthority(AuthOp.entity_id, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
@@ -120,7 +120,7 @@ void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 			return;
 		}
 
-		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (OwningWorkerId == nullptr)
 		{
 			const int32 WarnOnAttemptNum = 5;

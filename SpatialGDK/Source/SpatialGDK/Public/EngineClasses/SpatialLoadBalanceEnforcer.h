@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "SpatialCommonTypes.h"
+
 #include <WorkerSDK/improbable/c_worker.h>
 #include "CoreMinimal.h"
 
@@ -16,7 +18,7 @@ class SpatialLoadBalanceEnforcer
 public:
 	SpatialLoadBalanceEnforcer();
 
-	void Init(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, USpatialSender* InSpatialSender, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
+	void Init(const PhysicalWorkerName &InWorkerId, USpatialStaticComponentView* InStaticComponentView, USpatialSender* InSpatialSender, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
 	void Tick();
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
@@ -26,7 +28,7 @@ public:
 
 private:
 
-	FString WorkerId;
+	PhysicalWorkerName WorkerId;
 	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
 	TWeakObjectPtr<USpatialSender> Sender;
 	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;

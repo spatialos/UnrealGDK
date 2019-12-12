@@ -738,7 +738,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	}
 }
 
-void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId)
+void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const PhysicalWorkerName& WorkerId)
 {
 	check(NetDriver);
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
