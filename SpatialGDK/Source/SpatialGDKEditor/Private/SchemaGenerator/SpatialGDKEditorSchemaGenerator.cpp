@@ -425,7 +425,7 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 			return false;
 		}
 
-		SchemaDatabase->SchemaDescriptorHash = CityHash32((const char*)ByteArray.Get(), FileSize);
+		SchemaDatabase->SchemaDescriptorHash = CityHash32(reinterpret_cast<const char*>(ByteArray.Get()), FileSize);
 	}
 
 	FAssetRegistryModule::AssetCreated(SchemaDatabase);

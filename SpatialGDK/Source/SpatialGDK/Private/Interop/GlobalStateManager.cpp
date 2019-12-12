@@ -427,7 +427,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	// Set the AcceptingPlayers state on the GSM
 	Schema_AddBool(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID, static_cast<uint8_t>(bInAcceptingPlayers));
 
-	// Set the schame on the GSM
+	// Set the schema hash on the GSM
 	Schema_AddUint32(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH, NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
 
 	// Component updates are short circuited so we set the updated state here and then send the component update.
