@@ -61,7 +61,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_bound_delegate_WHEN_a_worker_flag_updates_THEN_b
 	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 	SpatialWorkerFlags->BindToOnWorkerFlagsUpdated(workerFlagDelegate);
 
-	//add test flag
+	// Add test flag
 	Worker_FlagUpdateOp opAddFlag = Create_Worker_FlagUpdateOp("test", "10");
 	SpatialWorkerFlags->ApplyWorkerFlagUpdate(opAddFlag);
 
