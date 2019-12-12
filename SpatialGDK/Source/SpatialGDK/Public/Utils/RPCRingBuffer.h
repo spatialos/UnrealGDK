@@ -46,7 +46,7 @@ struct RPCRingBufferDescriptor
 namespace RPCRingBufferUtils
 {
 
-Worker_ComponentId GetRingBufferComponentId(ERPCType Type);
+SPATIALGDK_API Worker_ComponentId GetRingBufferComponentId(ERPCType Type);
 RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type);
 uint32 GetRingBufferSize(ERPCType Type);
 
@@ -60,8 +60,8 @@ bool ShouldQueueOverflowed(ERPCType Type);
 void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer);
 void ReadAckFromSchema(Schema_Object* SchemaObject, ERPCType Type, uint64& OutAck);
 
-void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, const RPCPayload& Payload);
-void WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack);
+SPATIALGDK_API void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, const RPCPayload& Payload);
+SPATIALGDK_API void WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack);
 
 void MoveLastSentIdToInitiallyPresentCount(Schema_Object* SchemaObject, uint64 LastSentId);
 

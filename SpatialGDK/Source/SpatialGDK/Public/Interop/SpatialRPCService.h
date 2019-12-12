@@ -41,7 +41,7 @@ struct EntityRPCType
 	}
 };
 
-struct EntityComponentId
+struct SPATIALGDK_API EntityComponentId
 {
 	EntityComponentId(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 		: EntityId(EntityId)
