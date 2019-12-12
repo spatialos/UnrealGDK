@@ -2,10 +2,12 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+
+#include "Interop/SpatialStaticComponentView.h"
 #include "SpatialCommonTypes.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
-#include "CoreMinimal.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
 
