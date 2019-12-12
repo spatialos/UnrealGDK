@@ -16,7 +16,6 @@
 #include "Misc/Paths.h"
 
 #include "SpatialGDKSettings.h"
-#include "SpatialCommonTypes.h"
 #include "Utils/ErrorCodeRemapping.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
