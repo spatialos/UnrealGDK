@@ -52,7 +52,6 @@ bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& 
 		{
 			if (const USpatialWorkerFlags* SpatialWorkerFlags = SpatialNetDriver->SpatialWorkerFlags) 
 			{
-		
 					return SpatialWorkerFlags->GetWorkerFlag(InString, OutString);
 			}
 		}
