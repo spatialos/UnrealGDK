@@ -39,14 +39,21 @@ Copy all of the files and directories below to your `<ProjectRoot>`:
 
    Your project's directory structure should now resemble:
 
-```
-   \<ProjectRoot>\<GameRoot>\
+[block:code]
+{
+  "codes": [
+  {
+      "code": "   \<ProjectRoot>\<GameRoot>\
    \<ProjectRoot>\spatial\
    \<ProjectRoot>\LaunchClient.bat 
    \<ProjectRoot>\LaunchServer.bat
    \<ProjectRoot>\ProjectPaths.bat
-   Etc…
-```
+   Etc…",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 **Note**: You must place the `spatial` directory in the directory above your `<GameRoot>`.
 <br/>

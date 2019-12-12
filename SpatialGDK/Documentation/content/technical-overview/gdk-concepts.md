@@ -57,10 +57,16 @@ You set up a cross-server RPC in the same way as you would set up any other RPC 
 
 Here’s an example of what one might look like:
 
-```
-UFUNCTION(CrossServer)
-void TakeDamage(int Damage);
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "UFUNCTION(CrossServer) \n void TakeDamage(int Damage);",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 For more information, see the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs).
 

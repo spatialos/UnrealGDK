@@ -27,8 +27,11 @@ You can specify the simulated player character class either in your C++ GameMode
 
 For example, in C++:
 
-```
-ATP_SpatialGDKGameMode::ATP_SpatialGDKGameMode()
+[block:code]
+{
+  "codes": [
+  {
+      "code": "ATP_SpatialGDKGameMode::ATP_SpatialGDKGameMode()
 {
 	// Set default pawn class to our Blueprint character.
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/StarterProject/Characters/PlayerCharacter_BP"));
@@ -42,8 +45,12 @@ ATP_SpatialGDKGameMode::ATP_SpatialGDKGameMode()
 	{
 		SimulatedPawnClass = SimulatedPawnBPClass.Class;
 	}
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 ### 2. Set `IsSimulated` to `true` for that class
 In the Unreal Editor, within your simulated player character class's Class Defaults, set the property `IsSimulated` to `true`.
@@ -63,8 +70,11 @@ To do this, you can use a Blueprint function library that exposes the `IsSimulat
 
 ### C++ example
 
-```cpp
-#include "SimulatedPlayer.h"
+[block:code]
+{
+  "codes": [
+  {
+      "code": "#include "SimulatedPlayer.h"
 
 
 void AExampleActor::BeginPlay()
@@ -76,8 +86,12 @@ void AExampleActor::BeginPlay()
         // Execute simulated player related logic here.
         // ...
     }
+}",
+      "language": "cplusplus"
+    }
+  ]
 }
-```
+[/block]
 
 ### Blueprint example
 

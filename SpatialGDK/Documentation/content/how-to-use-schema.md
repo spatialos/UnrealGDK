@@ -50,9 +50,15 @@ You can generate schema via the command line using an Unreal commandlet. This me
 
 To generate schema via the command line, run the following command:
 
-```
-<Path to UE4Editor.exe> <Path to your game's .uproject file> -run=GenerateSchemaAndSnapshots -MapPaths=<MapName1;MapName2;MapName3>
-```
+[block:code]
+{
+  "codes": [
+  {
+      : "text"
+    }
+  ]
+}
+[/block]
 
 This command generates schema using a full scan for all classes that have replicated properties or RPCs, and generates individual [snapshots]({{urlRoot}}/content/glossary#snapshot) (`<MapName>.snapshot`) for each map. Any specified map paths that end in `/` are interpreted as a directory, and snapshots are generated for each .umap found under these paths.
 

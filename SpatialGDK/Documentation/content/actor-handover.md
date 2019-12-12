@@ -22,10 +22,16 @@ To facilitate an Actor’s property handover between server-workers, follow the 
 
 1.  If your property is defined in a native C++ class, mark the property field with a `Handover` specifier in the `UPROPERTY` macro, as shown in the example below.<br/><br/>
 
-    ```
-    UPROPERTY(Handover)
-    float MyServerSideVariable;
-    ```
+    [block:code]
+{
+  "codes": [
+  {
+      "code": "    UPROPERTY(Handover)\n\tfloat MyServerSideVariable;",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 1. Alternatively, if your property is defined in a Blueprint class, in the Blueprint Editor, set the **Variable**'s  **Replication** setting to `Handover` . <br/><br/>
 ![Blueprint Editor]({{assetRoot}}assets/screen-grabs/handover-blueprint.png)

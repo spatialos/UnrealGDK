@@ -26,9 +26,16 @@ For the Database Sync Worker to allow the UnrealWorker access to the database, t
 
 Open [pgAdmin 4](https://www.pgadmin.org/) (or an equivalent client for Postgres databases)  and in the `items` table, run the following query:
 
-```
-INSERT INTO items (name, count, path) VALUES ('UnrealWorker', 1, 'profiles.UnrealWorker')
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "INSERT INTO items (name, count, path) VALUES ('UnrealWorker', 1, 'profiles.UnrealWorker')",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 ### 3. Launch configuration
 

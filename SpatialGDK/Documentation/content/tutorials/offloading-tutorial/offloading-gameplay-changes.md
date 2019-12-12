@@ -9,10 +9,16 @@ When using offloading, there are a few changes to gameplay logic that you need t
 ### RPCs
 
 Sending an RPC to an Actor that is owned by a different server require using [Cross-server RPCs]({{urlRoot}}/content/technical-overview/gdk-concepts#cross-server-rpcs). This can be done in code using a custom function paramter.
-```
-UFUNCTION(CrossServer, Reliable)
-void TakeDamageCrossServer(float Damage, const struct FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "UFUNCTION(CrossServer, Reliable) \n void TakeDamageCrossServer(float Damage, const struct FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser);",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 Or in Blueprints using the custom replication setting
 
 

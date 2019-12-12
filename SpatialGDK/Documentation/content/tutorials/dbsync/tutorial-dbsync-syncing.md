@@ -6,8 +6,11 @@
 
 In `DeathmatchScoreComponent.h`, declare all the functions that you are calling from the `GDKShooterSpatialGameInstance` in the callbacks:
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 #include "ExternalSchemaCodegen/improbable/database_sync/DatabaseSyncService.h"
 #include "GDKShooterSpatialGameInstance.h"
 #include "DeathmatchScoreComponent.generated.h"
@@ -20,41 +23,62 @@ In `DeathmatchScoreComponent.h`, declare all the functions that you are calling 
 	void GetItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::ResponseOp& Op);
 	void CreateItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Create::ResponseOp& Op);
 	void IncrementResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Increment::ResponseOp& Op);
-...
-```
+...",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 And the internal ones that will encapsulate the code to do the requests:
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
     UPROPERTY()
 		TMap<FString, int32> PlayerScoreMap;
 
 	void RequestGetItem(const FString &Path);
 	void RequestCreateItem(const FString &Name, int64 Count, const FString &Path);
 	void RequestIncrement(const FString &Path, int64 Count);
-...
-```
+...",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 Because you will be sending Commands that can fail or timeout, and you might need to do retries, you need to store a list of “in-flight commands".
 
 In this example, you will be sending 3 types of requests to the Database Sync Worker, so declare the maps to store them:
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
     void RequestIncrement(const FString &Path, int64 Count);
 
     TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::Request> GetItemRequests;
     TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Create::Request> CreateItemRequests;
     TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request> IncrementRequests;
-...
-```
+...",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 Each request has a unique Id (per worker) which you can use as the key for the maps.
 
 Finally, because the Database Sync Worker stores the data in a hierarchical way, you will be using some helper functions to deal with the “paths”. Also, store a reference to the `GameInstance` that you will use to send the commands:
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 	TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request> IncrementRequests;
 
 	void UpdateScoreFromPath(const FString &Path, int64 NewCount);
@@ -62,8 +86,12 @@ Finally, because the Database Sync Worker stores the data in a hierarchical way,
 
 	UGDKShooterSpatialGameInstance* GameInstance = nullptr;
 
-};
-```
+};",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 ### 1. Requesting information from the database
 
 With everything declared, it is time to start getting values from the database.
@@ -74,8 +102,11 @@ To do so, implement the `RequestGetItem` function in `DeathmatchScoreComponent.c
 
 You can create this structure in the way that fits your game the best, having inventories for players and NPCs. For more information about this, check out the Database Sync Worker's reference documentation [on Github](https://github.com/spatialos/database-sync-worker).
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 #include "ExternalSchemaCodegen/improbable/database_sync/CommandErrors.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialNetDriver.h"
@@ -101,8 +132,12 @@ void UDeathmatchScoreComponent::RequestGetItem(const FString &Path)
 
 	GetItemRequests.Add(requestId, Request);
 
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 This creates a new request of the specific command you will be sending and then send the command to SpatialOS that will notify the Database Sync Worker, which will read the database and return the value stored. You then have to handle the response defining the `GetItemResponse` you declared before.
 
@@ -112,8 +147,11 @@ Otherwise, you will have to see what the error was and deal with it appropriatel
 
 If the command times out, you may want to send it again (in this example, for simplicity, you will retry for timeouts and simply log errors otherwise).
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 void UDeathmatchScoreComponent::GetItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::ResponseOp& Op)
 {
 	if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_SUCCESS)
@@ -145,15 +183,22 @@ void UDeathmatchScoreComponent::GetItemResponse(const ::improbable::database_syn
 		UE_LOG(LogTemp, Error, TEXT("GetItem Request failed with Error %d : %s"), Op.StatusCode, Op.Message);
 	}
 }
-...
-```
+...",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 ### 2. Writing to the database
 
 Because the database starts empty, when a player joins and you try to get their scores, you will find that there is no such info stored. To create it, use the `Create` command in the `RequestCreateItem` function defined previously:
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 void UDeathmatchScoreComponent::RequestCreateItem(const FString &Name, int64 Count, const FString &Path)
 {
 	FString workerId = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->GetWorkerId();
@@ -166,14 +211,21 @@ void UDeathmatchScoreComponent::RequestCreateItem(const FString &Name, int64 Cou
 
 	CreateItemRequests.Add(requestId, Request);
 }
-...
-```
+...",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 This function is very similar to the previous one but creates a different type of request.
 
 In this and the previous step you are using the helper functions to deal with paths, so it would be a good time to define them.
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 void UDeathmatchScoreComponent::UpdateScoreFromPath(const FString &Path, int64 NewCount)
 {
 	FString workingPath = *Path;
@@ -233,15 +285,22 @@ void UDeathmatchScoreComponent::RequestCreateItemFromPath(const FString &Path)
 
 	UE_LOG(LogTemp, Log, TEXT("Request to create item from unexpected path : %s"), *Path);
 }
-...
-```
+...",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 For simplicity, you assume the path is going to be correct and if something happens, you will simply log an error.
 
 As with the `GetItem` request, you need to listen to the answer, being sure to remove it from the list of pending create requests, or retrying if there were errors. (In this tutorial, for simplicity, we always retry, but you should consider a retry limit and appropriate error handling for your project).
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 void UDeathmatchScoreComponent::CreateItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Create::ResponseOp& Op)
 {
 	if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_SUCCESS)
@@ -261,8 +320,12 @@ void UDeathmatchScoreComponent::CreateItemResponse(const ::improbable::database_
 		UE_LOG(LogTemp, Error, TEXT("CreateItem Request failed with Error %d : %s"), Op.StatusCode, Op.Message);
 	}
 }
-...
-```
+...",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 In this example, there is never a need to delete information, but there is a command for it. Take a look at the full Database Sync Worker API [here](https://github.com/spatialos/database-sync-worker/blob/master/README.md#interacting-with-the-database) to see what it offers.
 
@@ -270,8 +333,11 @@ In this example, there is never a need to delete information, but there is a com
 
 Once you have created the information for the players, you will need to update it accordingly. In this example, that is when a player kills another or dies. Because both of those operations always increase a value, you will only be using the `Increment` command.
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 void UDeathmatchScoreComponent::RequestIncrement(const FString &Path, int64 Count)
 {
 
@@ -283,13 +349,20 @@ void UDeathmatchScoreComponent::RequestIncrement(const FString &Path, int64 Coun
 
 	IncrementRequests.Add(requestId, Request);
 }
-...
-```
+...",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 As previously, you need to be sure that the Command has worked or retry it hasn't:
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 void UDeathmatchScoreComponent::IncrementResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Increment::ResponseOp& Op)
 {
 	if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_SUCCESS)
@@ -309,15 +382,22 @@ void UDeathmatchScoreComponent::IncrementResponse(const ::improbable::database_s
 		UE_LOG(LogTemp, Error, TEXT("Increment Request failed with Error %d : %s"), Op.StatusCode, Op.Message);
 	}
 }
-...
-```
+...",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 ### 4. Receiving database changes
 
 When the database is changed externally, i.e from a manual operation, or an external service allocating players items, your UnrealWorker will receive an event with the path to the items that have been changed. You will then need to update your local copies of it, as you would do if you had requested the information through a `GetItem` command:
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 void UDeathmatchScoreComponent::ItemUpdateEvent(const ::improbable::database_sync::DatabaseSyncService::ComponentUpdateOp& Op)
 {
 	for (int32 i = 0; i < Op.Update.GetPathsUpdatedList().Num(); i++)
@@ -328,15 +408,22 @@ void UDeathmatchScoreComponent::ItemUpdateEvent(const ::improbable::database_syn
 		}
 	}
 }
-...
-```
+...",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 ### 5. Updating the game logic
 
 With all the internal functions created, the only step left is to use them in the game logic. This means requesting the information of a player when they join the game, requesting the creation of it if it doesn’t exist, and updating it every time a player kills another or dies.
 
-```
-void UDeathmatchScoreComponent::RecordNewPlayer(APlayerState* PlayerState)
+[block:code]
+{
+  "codes": [
+  {
+      "code": "void UDeathmatchScoreComponent::RecordNewPlayer(APlayerState* PlayerState)
 {
 	if (GameInstance == nullptr)
 	{
@@ -389,9 +476,12 @@ void UDeathmatchScoreComponent::RecordKill(const FString Killer, const FString V
 			RequestIncrement(DBPaths::kPlayersRoot + Victim + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeDeaths, 1); // Store this value in persistent storage
 		}
 	}
+}",
+      "language": "text"
+    }
+  ]
 }
-
-```
+[/block]
 
 With all these changes made, let's run the project and test our changes in game.
 

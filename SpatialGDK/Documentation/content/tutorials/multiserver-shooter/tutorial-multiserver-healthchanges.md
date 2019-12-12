@@ -13,10 +13,16 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 1. In your IDE, open `UnrealGDKExampleProject\Game\Source\GDKShooter\Public\Characters\Components\HealthComponent.h`.
 1. Navigate to the declaration of the `CurrentHealth` variable, and add the UProperty specifiers `ReplicatedUsing = OnRep_CurrentHealth`. The UProperty should now look like this:
 
-```
-    UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_CurrentHealth, Category = "Health")
-    float CurrentHealth; 
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "    UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_CurrentHealth, Category =\"Health\") \n float CurrentHealth; ",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
     You have now marked this property for replication using the `OnRep_CurrentHealth` function that you’ll implement in the next section.
     
@@ -25,33 +31,54 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 1. In your IDE, open `UnrealGDKExampleProject\Game\Source\GDKShooter\Private\Characters\Components\HealthComponent.cpp`.
 1. Navigate to the `GetLifetimeReplicatedProps` function (which is implementd around line 182), and insert the following snippet:
 
-```
-    // Only replicate health to the owning client.
-    DOREPLIFETIME(UHealthComponent, CurrentHealth);
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "    // Only replicate health to the owning client. \n DOREPLIFETIME(UHealthComponent, CurrentHealth);",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
     Finally, you need to implement the `OnRep_CurrentHealth` function so that the player health UI gets updated when the `CurrentHealth` variable is replicated:
 
 1. In your IDE, open `UnrealGDKExampleProject\Game\Source\GDKShooter\Public\Characters\Components\HealthComponent.h`.
 1. In the public scope of the class, insert the following snippet:
 
-    ```	
+    [block:code]
+{
+  "codes": [
+  {
+      "code": "	
         UFUNCTION()
-        void OnRep_CurrentHealth();
-    ```
+        void OnRep_CurrentHealth();\n",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 1. In your IDE, open `UnrealGDKExampleProject\Game\Source\GDKShooter\Private\Characters\Components\HealthComponent.cpp` and insert the following snippet:
 
-```
-    void UHealthComponent::OnRep_CurrentHealth()
+[block:code]
+{
+  "codes": [
+  {
+      "code": "    void UHealthComponent::OnRep_CurrentHealth()
     {
 	    HealthUpdated.Broadcast(CurrentHealth, MaxHealth);
 	    if (CurrentHealth <= 0.f)
 	    {
 		    Death.Broadcast();
 	    }
+    }",
+      "language": "text"
     }
-```
+  ]
+}
+[/block]
 
 </br>
 Notice that the workflow you just used mirrors that of native Unreal.

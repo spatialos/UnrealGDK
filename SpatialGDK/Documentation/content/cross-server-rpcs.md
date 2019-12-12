@@ -27,20 +27,32 @@ To set up a cross-server RPC, follow the same instructions as you would for [mar
 
 1. Add a `CrossServer` tag to the `UFUNCTION` macro of the RPC function that you want to be cross-server on your Actor (`MyActor` in this example).
 
-    ```
-    UFUNCTION(CrossServer, Reliable, WithValidation)
-    void MyCrossServerRPC();
-    ```
+    [block:code]
+{
+  "codes": [
+  {
+      "code": "\tUFUNCTION(CrossServer, Reliable, WithValidation)\n\tvoid MyCrossServerRPC();",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
     Note: `WithValidation` is optional.
 
 1. Add the related function implementations:
-    ```
-    void MyActor::MyCrossServerRPC_Implementation()
+    [block:code]
+{
+  "codes": [
+  {
+      "code": "    void MyActor::MyCrossServerRPC_Implementation()
     {
         // Implementation goes here...
+    }\n",s+ "language": "text"
     }
-   ```
+  ]
+}
+[/block]
    Note: You may need to implement the `MyCrossServerRPC_Validation()` if you used the `WithValidation` attribute.
 
 1. Invoke the `CrossServer` RPC function as you would with any other function.

@@ -16,13 +16,20 @@
 
 **描述**：使用生成的私钥设置 iOS 构建时，您可能会在 Unreal 编辑器中收到以下错误消息：
 
-```
-@ WARNING: UNPROTECTED PRIVATE KEY FILE! @
+[block:code]
+{
+  "codes": [
+  {
+      "code": "@ WARNING: UNPROTECTED PRIVATE KEY FILE! @
 
 Permissions 0660 for '/cygdrive/C/Users/<username>/AppData/Roaming/Unreal Engine/UnrealBuildTool/SSHKeys/<ip>/<username>/RemoteToolChainPrivate.key' are too open.
 
-It is recommended that your private key files are NOT accessible by others. This private key will be ignored.
-```
+It is recommended that your private key files are NOT accessible by others. This private key will be ignored.",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 **解决方案**：要解决此问题，请完成以下步骤以使用 Cygwin 更改私钥的权限：
 
@@ -41,18 +48,31 @@ It is recommended that your private key files are NOT accessible by others. This
 3. 运行以下命令导航到包含私钥的文件夹，其中 `ip` 是用于设置远程构建的 Mac 的 IP 地址：
    `cd /cygdrive/C/Users/<Windows username>/AppData/Roaming/Unreal Engine/UnrealBuildTool/SSHKeys/<ip>/<Mac username>/`
 4. 运行以下命令降级私钥的权限：
-   ```
-   chgrp Users RemoteToolChainPrivate.key
-   chmod 600 RemoteToolChainPrivate.key
-   ```
+   [block:code]
+{
+  "codes": [
+  {
+      "code": "   chgrp Users RemoteToolChainPrivate.key \n chmod 600 RemoteToolChainPrivate.key\n",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 ### Identity file not accessible
 
 **描述**：在您解决 **权限过于开放** 的问题后，您可能会收到以下错误消息：
 
-```
-Packaging (iOS):   Warning: Identity file /cygdrive/C/Users/<username>/AppData/Roaming/Unreal Engine/UnrealBuildTool/SSHKeys/<ip>/<username>/RemoteToolChainPrivate.key not accessible: No such file or directory.
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "Packaging (iOS):   Warning: Identity file /cygdrive/C/Users/<username>/AppData/Roaming/Unreal Engine/UnrealBuildTool/SSHKeys/<ip>/<username>/RemoteToolChainPrivate.key not accessible: No such file or directory.",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 **说明**：发生错误是因为您安装了 Windows 本机版本的 SSH（通常是Git），并且 SSH 无法识别Cygwin 路径。要检查 Cygwin 的 `ssh.exe` 是否作为第一项列出，运行  `where ssh`。
 

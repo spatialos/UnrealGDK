@@ -20,10 +20,16 @@ The Receptionist is a SpatialOS service which allows you to connect to a deploym
 
 To connect to a deployment using `ClientTravel` and the receptionist flow, simply call `APlayerController::ClientTravel` with the receptionist IP of the host machine and the port the SpatialOS deployment is running on. For example:
 
-```
-FString TravelURL = TEXT("127.0.0.1:7777");
-PlayerController->ClientTravel(TravelURL, TRAVEL_Absolute, false /*bSeamless*/);
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "FString TravelURL = TEXT(\"127.0.0.1:7777\"); \n PlayerController->ClientTravel(TravelURL, TRAVEL_Absolute, false /*bSeamless*/);",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 #### Using Locator - Cloud Deployments
 The Locator is a SpatialOS service which allows you to connect to cloud deployments. 
@@ -33,15 +39,16 @@ The Locator is a SpatialOS service which allows you to connect to cloud deployme
 Using the locator flow is very similar to using the receptionist, except with different URL options. You must add the `locator` option, and specify the appropriate options.  The `locator` workflow makes use of the new [Authentication flow](https://docs.improbable.io/reference/latest/shared/auth/integrate-authentication-platform-sdk).
 
 **Locator**: Add the options `locator`, `playeridentity` and `login`. For more information about the options, see [Map Travel URL options]({{urlRoot}}/content/command-line-arguments#map-travel-url-options).
-```
-FURL TravelURL;
-TravelURL.Host = TEXT("locator.improbable.io");
-TravelURL.AddOption(TEXT("locator"));
-TravelURL.AddOption(TEXT("playeridentity=MY_PLAYER_IDENTITY_TOKEN"));
-TravelURL.AddOption(TEXT("login=MY_LOGIN_TOKEN"));
-
-PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false /*bSeamless*/);
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": " FURL TravelURL; \n TravelURL.Host = TEXT(\"locator.improbable.io\"); \n TravelURL.AddOption(TEXT(\"locator\")); \n TravelURL.AddOption(TEXT(\"playeridentity=MY_PLAYER_IDENTITY_TOKEN\")); \n TravelURL.AddOption(TEXT(\"login=MY_LOGIN_TOKEN\")); \n PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false /*bSeamless*/);",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 ## UWorld::ServerTravel
 > Warning: `ServerTravel` is on the [roadmap](https://github.com/spatialos/UnrealGDK/projects/1#card-22461878) but is not currently supported.

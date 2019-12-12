@@ -32,9 +32,16 @@ SpatialOS 为客户端提供了一种连接到云部署的方法，而无需开�
     `spatial project auth dev-auth-token create --description="my description" --lifetime="24h10m20s"`
 
 以下示例显示了返回结果，其中包含 ID，到期时间和 `TokenSecret`：
-```
-{"developmentAuthenticationToken":{"id":"0a51b04c-ab74-4276-88c5-4e2aa148509e","projectName":"beta_glucose_purple_754","description":"my description","creationTime":"2019-07-11T10:40:36.469942565Z","expirationTime":"2019-07-12T10:50:56.469942565Z"},"tokenSecret":"MGE1MWIwNGMtYWI3NC00Mjc2LTg4YzUtNGUyYWExNDg1MDllOjo0MGQyNzk0NC04YWMyLTRjMjQtOTc2MC03MGM3OTY3OTA0MDM="}
-```
+[block:code]
+{
+  "codes": [
+    {
+      "code": "{\"developmentAuthenticationToken\":{\"id\":\"0a51b04c-ab74-4276-88c5-4e2aa148509e\",\"projectName\":\"beta_glucose_purple_754\",\"description\":\"my description\",\"creationTime\":\"2019-07-11T10:40:36.469942565Z\",\"expirationTime\":\"2019-07-12T10:50:56.469942565Z\"},\"tokenSecret\":\"MGE1MWIwNGMtYWI3NC00Mjc2LTg4YzUtNGUyYWExNDg1MDllOjo0MGQyNzk0NC04YWMyLTRjMjQtOTc2MC03MGM3OTY3OTA0MDM=\"}",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 ### 启用云开发工作流程
 

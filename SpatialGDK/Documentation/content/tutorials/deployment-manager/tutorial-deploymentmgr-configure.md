@@ -27,18 +27,16 @@ When you signed up for SpatialOS, your account was automatically given a Spatial
 
 Your `spatialos.json` file should look like this: 
 
-```
+[block:code]
 {
-    "configurationVersion": "0.1",
-    "projectName": "beta_nuts_double_379",
-    "schemaDescriptor": "../tmp/schema.descriptor",
-    "clientWorkers": [
-    ],
-    "serverWorkers": [
-      "deployment_manager.json"
-    ]
-  }
-```
+  "codes": [
+    {
+      "code": "  {\n    \"configurationVersion\": \"0.1\",\n    \"projectName\": \"beta_nuts_double_379\",\n    \"schemaDescriptor\": \"../tmp/schema.descriptor\",\n    \"clientWorkers\": [\n    ],\n    \"serverWorkers\": [\n      \"deployment_manager.json\"\n    ]\n  }",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 Where `beta_nuts_double_379` is your SpatialOS cloud project name. 
 
@@ -78,19 +76,16 @@ In the `config.json`, you need to change the following lines:
 
 Your `config.json` file should look like this:
 
-```
+[block:code]
 {
-  "TokenLifetimeDays": 7,
-  "ClientType": "UnrealClient",
-  "MaxNumberOfClients": 100,
-  "DeploymentPrefix": "session",
-  "NumberOfDeployments": 2,
-  "AssemblyName": "<assembly_name>",
-  "DeploymentTags": [ "dev_login", "ttl_1_hours" ],
-  "RegionCode": "EU",
-  "DeploymentIntervalSeconds": 5
+  "codes": [
+    {
+      "code": " \"TokenLifetimeDays\": 7,\n  \"ClientType\": \"UnrealClient\",\n  \"MaxNumberOfClients\": 100,\n  \"DeploymentPrefix\": \"session\",\n  \"NumberOfDeployments\": 2,\n  \"AssemblyName\": \"<assembly_name>\",\n  \"DeploymentTags\": [ \"dev_login\", \"ttl_1_hours\" ],\n  \"RegionCode\": \"EU\",\n  \"DeploymentIntervalSeconds\": 5",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 When you are done, save and close your `config.json` file. 
 </br>

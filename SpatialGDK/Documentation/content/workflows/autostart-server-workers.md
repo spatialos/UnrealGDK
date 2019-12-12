@@ -32,9 +32,16 @@ When you are using a local deployment, you don’t usually need to build your pr
 
 To do this, in a terminal window, use the following command from the root folder of your project (where `<YourGame>` is the name of your Unreal project:
 
-```
-Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourGame>Editor Win64 Development <YourGame>.uproject
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourGame>Editor Win64 Development <YourGame>.uproject",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 This creates a zip file at: `spatial/build/assembly/worker/UnrealEditor@Windows.zip` which contains the file, `StartEditor.bat`.
 
@@ -63,8 +70,11 @@ If you are using a launch configuration which you have manually defined in a fil
 
 **Example launch configuration `.json` file**</br>
 
-```
-"load_balancing": {
+[block:code]
+{
+  "codes": [
+  {
+      "code": ""load_balancing": {
     "layer_configurations": [
       {
           "layer": "UnrealWorker",
@@ -77,10 +87,12 @@ If you are using a launch configuration which you have manually defined in a fil
         }
       }
     ]
-  }
-
-
-```
+  }\n",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 ## 3. Generate schema and a snapshot
 
 Generate schema and a snapshot as you would before any deployment launch.

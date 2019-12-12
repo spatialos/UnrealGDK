@@ -28,25 +28,39 @@ Like other Unreal class specifiers, you specify the `SpatialType` and descriptor
 
 For example;
 
-```
-UCLASS(SpatialType)
+[block:code]
+{
+  "codes": [
+  {
+      "code": "UCLASS(SpatialType)
 class AMyReplicatingActor : public AActor
 {
   GENERATED_BODY()
   ...
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 To add `SpatialType` descriptors, use the following format;
 
-```
-UCLASS(SpatialType=Singleton)
+[block:code]
+{
+  "codes": [
+  {
+      "code": "UCLASS(SpatialType=Singleton)
 class AMySingleton : public AActor
 {
   GENERATED_BODY()
   ...
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 ### Adding the specifier and descriptors to your Unreal Blueprint class
 You can also tag your Blueprint classes with the `SpatialType` tag and descriptors. To do this,

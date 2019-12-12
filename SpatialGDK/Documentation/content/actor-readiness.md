@@ -36,13 +36,20 @@ The PlayerController’s reference to its Pawn has a [replication notify (Unreal
 
 For example:
 
-```
-void AMyContoller::OnRep_Pawn()
+[block:code]
+{
+  "codes": [
+  {
+      "code": "void AMyContoller::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
 	// Interact with the Pawn
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 #### When can an object that my Actor refers to be used on the client-worker instance?
 
@@ -50,12 +57,19 @@ For any replicated reference to an object, you can use [replication notifies (Un
 
 For example:
 
-```
-UPROPERTY(ReplicatedUsing=OnRep_MyActorReference);
+[block:code]
+{
+  "codes": [
+  {
+      "code": "UPROPERTY(ReplicatedUsing=OnRep_MyActorReference);
 AActor* MyActorReference;
 UFUNCTION()
-void OnRep_MyActorReference();
-```
+void OnRep_MyActorReference();",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 #### When has my HUD been created on the client-worker instance?
 

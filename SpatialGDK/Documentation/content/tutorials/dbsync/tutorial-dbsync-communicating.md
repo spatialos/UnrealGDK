@@ -16,8 +16,11 @@ Create a reference to the `ExternalSchemaInterface` and expose it, since you wil
 
 This means modifying `GDKShooterSpatialGameInstance.h` as such:
 
-```
-#include "GDKShooter/ExternalSchemaCodegen/ExternalSchemaInterface.h"
+[block:code]
+{
+  "codes": [
+  {
+      "code": "#include "GDKShooter/ExternalSchemaCodegen/ExternalSchemaInterface.h"
 #include "GDKShooterSpatialGameInstance.generated.h"
 
 …
@@ -35,13 +38,20 @@ public:
 protected:
 
 	ExternalSchemaInterface* ExternalSchema;
-};
-```
+};",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 Then, in `GDKShooterSpatialGameInstance.cpp`, add a callback for the `OnConnected` event, like this:
 
-```
-#include "GDKShooterSpatialGameInstance.h"
+[block:code]
+{
+  "codes": [
+  {
+      "code": "#include "GDKShooterSpatialGameInstance.h"
 #include "Editor.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "ExternalSchemaCodegen/improbable/database_sync/DatabaseSyncService.h"
@@ -61,8 +71,12 @@ void UGDKShooterSpatialGameInstance::Init()
 
 		ExternalSchema = new ExternalSchemaInterface(NetDriver->Connection, NetDriver->Dispatcher);
 });
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 ### 1. OnAddComponent
 
@@ -70,8 +84,11 @@ You want to listen for when the UnrealWorker receives the `DatabaseSyncService` 
 
 Again, you will be using this elsewhere, so be sure to expose it by adding this in `GDKShooterSpatialGameInstance.h`:
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 	Worker_EntityId GetHierarchyServiceId()
 	{
 		return HierarchyServiceId;
@@ -83,13 +100,20 @@ protected:
 
 	Worker_EntityId HierarchyServiceId = 0;
 
-};
-```
+};",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 Then, on `GDKShooterSpatialGameInstance.cpp`, add a callback for the `OnAddComponent` event for when the `DatabaseSyncService` is checked out by the UnrealWorker, like this:
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 		ExternalSchema = new ExternalSchemaInterface(NetDriver->Connection, NetDriver->Dispatcher);
 
 		// Listen to the callback for HierarchyService component to be added to an entity to get the EntityId of the service to send commands to it.
@@ -98,8 +122,12 @@ Then, on `GDKShooterSpatialGameInstance.cpp`, add a callback for the `OnAddCompo
 			HierarchyServiceId = Op.EntityId;
 		});
 });
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 ### 2. Database permissions
 
@@ -109,8 +137,11 @@ To do so, you need to send the Command `AssociatePathWithClient` to the Database
 
 You will need the `WorkerId` of the Worker that is going to be accessing that data, which you can get from the Connection in `GDKShooterSpatialGameInstance.cpp` as such:
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 			HierarchyServiceId = Op.EntityId;
 			//It can do this by sending the associate_path_with_client command to DBSync in order to allow it.For example, associate_path_with_client(profiles.player1->workerId:Client - {0e61a845 - e978 - 4e5f - b314 - cc6bf1929171}).
 			USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
@@ -123,8 +154,12 @@ You will need the `WorkerId` of the Worker that is going to be accessing that da
 			::improbable::database_sync::DatabaseSyncService::Commands::AssociatePathWithClient::Request Request(TEXT("profiles.UnrealWorker"), workerId);
 
 			ExternalSchema->SendCommandRequest(HierarchyServiceId, Request);
-		});
-```
+		});",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 ### 3. Command responses
 
@@ -132,8 +167,11 @@ You will be sending commands to the `DatabaseSyncService`, so you need to listen
 
 Because in this example everything that you will be writing/reading from the database is score from the deathmatch game, you will be adding the logic to deal with the responses in that component later on. For now, just add these callbacks in `GDKShooterSpatialGameInstance.cpp` that will call the functions on the component.
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 ExternalSchema->SendCommandRequest(HierarchyServiceId, *Request);
 		});
 
@@ -155,15 +193,22 @@ ExternalSchema->SendCommandRequest(HierarchyServiceId, *Request);
 			UDeathmatchScoreComponent* Deathmatch = Cast<UDeathmatchScoreComponent>(GetWorld()->GetGameState()->GetComponentByClass(UDeathmatchScoreComponent::StaticClass()));
 			Deathmatch->IncrementResponse(Op);
 		});
-	});
-```
+	});",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 ### 4. OnComponentUpdate
 
 A key feature of the Database Sync Worker is that it allows you to externally modify the database and changed values will be replicated to your game, so you will also need to listen to updates from the `DatabaseSyncService` component by adding this to `GDKShooterSpatialGameInstance.cpp`:
 
-```
-...
+[block:code]
+{
+  "codes": [
+  {
+      "code": "...
 			Deathmatch->IncrementResponse(Op);
 		});
 
@@ -174,8 +219,12 @@ A key feature of the Database Sync Worker is that it allows you to externally mo
 			Deathmatch->ItemUpdateEvent(Op);
 		});
 
-	});
-```
+	});",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 So far, you have brought the Database Sync Worker into your project, generated code to communicate with it from the Example Project using schema, and you have registered to listen to the worker responses. Now is time to actually use the worker to sync with the database.
 

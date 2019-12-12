@@ -46,10 +46,16 @@
     1. 打开终端，导航到 `<ProjectRoot>/spatial`。
     2. 运行以下命令。如果您尚未登录 SpatialOS，可能会提示您登录 SpatialOS 帐户。
 
-   ```
-   spatial worker build build-config
-   spatial local launch --runtime_ip=<Your Mac's LAN IP>
-   ```
+   [block:code]
+{
+  "codes": [
+  {
+      "code": "   spatial worker build build-config \n spatial local launch --runtime_ip=<Your Mac's LAN IP>\n",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 5. 在 **[Unreal toolbar](https://docs.improbable.io/unreal/latest/content/unreal-editor-interface/toolbars#unreal-toolbar)** 中，单击 **Play** 在本地运行您的游戏。
 
 <br/>

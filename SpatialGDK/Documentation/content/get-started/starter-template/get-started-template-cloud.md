@@ -80,25 +80,53 @@ For now, you need to build server-workers and client-workers, so if you haven't 
   1. Run the `BuildProject.bat` command to build a server-worker using the filepath and flags below. </br>
   The filepath you use depends on whether you have the `UnrealGDK` plugin set up as an *engine* plugin or as a *project* plugin. If you followed the default setup instructions which use the `InstallGDK.bat` script, you have it set up as an *engine* plugin. <br/></br>
       * Engine plugin filepath (default):</br>
-      ```
-      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject
-      ```
+      [block:code]
+{
+  "codes": [
+  {
+      "code": "      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject\n",
+      "language": "text"
+    }
+  ]
+}
+[/block]
       </br>
       * Project plugin filepath:</br>
-      ```
-      <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject
-      ```
+      [block:code]
+{
+  "codes": [
+  {
+      "code": "      <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject",
+      "language": "text"
+    }
+  ]
+}
+[/block]
       </br></br>
   1. Now run the `BuildProject.bat` command to build a client-worker: <br/><br/>
       * Engine plugin filepath (default):</br>
-      ```
-      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject
-      ```
+      [block:code]
+{
+  "codes": [
+  {
+      "code": "UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
+      "language": "text"
+    }
+  ]
+}
+[/block]
       <br/>
       * Project plugin filepath:</br>
-      ```
-        <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject
-      ```
+      [block:code]
+{
+  "codes": [
+  {
+      "code": "<YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
+      "language": "text"
+    }
+  ]
+}
+[/block]
       <br/><br/>
 
 Whichever way you built workers, you now have one (or two) built-out worker assemblies as `.zip` files in your `<ProjectRoot>\spatial\build\assembly\worker\` directory. `BuildProject.bat` creates one `.zip` file in this directory every time you run it.
@@ -134,9 +162,16 @@ To do this:
  `spatial cloud upload myassembly` 
  </br></br>(Remember to replace `myassembly` with a name for your assembly - for example: `mygdktemplateassembly1`). </br></br>
  The upload command looks like this:</br>
-```
-spatial cloud upload mygdktemplateassembly1
-``` 
+[block:code]
+{
+  "codes": [
+  {
+      "code": "spatial cloud upload mygdktemplateassembly1",
+      "language": "text"
+    }
+  ]
+}
+[/block] 
 </br>
 
 #### Troubleshooting
@@ -192,13 +227,27 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
 1. You can also choose to add simulated players via the dialogue box or skip this and move on to step 4.</br></br>
    Build out the simulated player clients using the following command.</br>
   Engine plugin filepath (default):</br></br>
-  ```
-  UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject
-  ```
+  [block:code]
+{
+  "codes": [
+  {
+      "code": "UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject",
+      "language": "text"
+    }
+  ]
+}
+[/block]
   Project plugin filepath:</br>
-  ```
-  <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject 
-  ```
+  [block:code]
+{
+  "codes": [
+  {
+      "code": "  <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject ",
+      "language": "text"
+    }
+  ]
+}
+[/block]
   <%(#Expandable title="Note: disabling game client plugins which don't run on Linux")%>
   Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like
   `if (Target.Platform != UnrealTargetPlatform.Linux)`

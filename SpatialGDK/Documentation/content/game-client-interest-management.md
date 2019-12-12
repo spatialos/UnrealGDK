@@ -100,10 +100,16 @@ You set up an `AlwaysInterested` `UPROPERTY` on a game client’s PlayerControll
 
 For example, you might want a game client to always receive updates about a team base:
 
-```
-UPROPERTY(Replicated, AlwaysInterested)
-AActor* TeamBase
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "UPROPERTY(Replicated, AlwaysInterested) \n AActor* TeamBase",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 If TeamBase is a valid Actor reference, then the game client receives updates about that Actor, regardless of TeamBase’s position in the game world.
 

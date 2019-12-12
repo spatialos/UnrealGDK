@@ -20,8 +20,11 @@ To use the GDK and SpatialOS networking, you must add the SpatialGDK [module](ht
 
 For example:  
 
-```
-   PublicDependencyModuleNames.AddRange(
+[block:code]
+{
+  "codes": [
+  {
+      "code": "   PublicDependencyModuleNames.AddRange(
                new string[] {
                    "Core",
                    "CoreUObject",
@@ -33,8 +36,12 @@ For example:
                    "GameplayTasks",
                    "SpatialGDK",
                }
-           );
-```
+           );",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 ## Step 2: Build your project
 
@@ -64,23 +71,35 @@ Make your `GameInstance` inherit from `SpatialGameInstance`.  <br/>
 
   For example:
 
-  ```cpp
-  #include "CoreMinimal.h"
-  #include "SpatialGameInstance.h"
-  #include "YourProjectGameInstance.generated.h"
-  ```
+  [block:code]
+{
+  "codes": [
+  {
+      "code": " #include\"CoreMinimal.\" \n #include\"SpatialGameInstance.\" \n #include\"YourProjectGameInstance.generated.\"\n",
+      "language": "cplusplus"
+    }
+  ]
+}
+[/block]
 
   Then, under `UCLASS()`, change the parent class from `UGameInstance` to `USpatialGameInstance`:
 
   For example:  
 
-  ```cpp
-  UCLASS()
+  [block:code]
+{
+  "codes": [
+  {
+      "code": "  UCLASS()
   class YOURPROJECT_API UYourProjectGameInstance : public USpatialGameInstance
   {
       GENERATED_BODY()
-  };
-  ```
+  };\n",
+      "language": "cplusplus"
+    }
+  ]
+}
+[/block]
 
 - If your `GameInstance` is a Blueprint class, you need to open and edit it in the Blueprint Editor: 
 
@@ -92,10 +111,16 @@ Make your `GameInstance` inherit from `SpatialGameInstance`.  <br/>
 ## Step 4: Modify your project to support SpatialOS cloud deployments
 Before you launch a cloud deployment, you need to make sure that `spatial` directory gets [cooked](https://docs.unrealengine.com/en-US/Engine/Deployment/Cooking) when you build your workers. To do this, open DefaultGame.ini (located in <ProjectRoot>\<GameRoot>\Config\DefaultGame.ini) configuration file in a text editor, and add the following two lines at the end of the file:
 
-```
-[/Script/UnrealEd.ProjectPackagingSettings]
-+DirectoriesToAlwaysCook=(Path="Spatial")
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "[/Script/UnrealEd.ProjectPackagingSettings] \n +DirectoriesToAlwaysCook=(Path\"Spatial\")",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
   
  #### **> Next:** [3. Launch a local deployment]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-deployment)

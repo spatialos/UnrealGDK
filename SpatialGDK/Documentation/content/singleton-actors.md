@@ -34,23 +34,37 @@ Before you begin, ensure that you have an Actor, which can be either an [Unreal 
 1. Open your C++ Class in any text editor.
 2. Tag the C++ Class with the relevant attribute(s), depending on what type of Singleton Actor you want it to be:
    * **Public Singleton Actor**: tag it with the `SpatialType=Singleton` class attribute. The following code snippet shows how to tag a C++ Class as a Public Singleton Actor:
-     ```
-     UCLASS(SpatialType=Singleton)
+     [block:code]
+{
+  "codes": [
+  {
+      "code": "     UCLASS(SpatialType=Singleton)
      class AScoreBoard : public AActor
      {
        GENERATED_BODY()
        ...
-     }
-     ```
+     }\n",
+      "language": "text"
+    }
+  ]
+}
+[/block]
    * **Private Singleton Actor**: tag it with the `SpatialType=(Singleton, ServerOnly)` class attributes. The following code snippet shows how to tag a C++ Class as a Private Singleton Actor:
-     ```
-     UCLASS(SpatialType=(Singleton, ServerOnly))
+     [block:code]
+{
+  "codes": [
+  {
+      "code": "     UCLASS(SpatialType=(Singleton, ServerOnly))
      class AScoreBoard : public AActor
      {
        GENERATED_BODY()
        ...
-     }
-     ``` 
+     }\n",
+      "language": "text"
+    }
+  ]
+}
+[/block] 
 
 ### Unreal Blueprint Class
 

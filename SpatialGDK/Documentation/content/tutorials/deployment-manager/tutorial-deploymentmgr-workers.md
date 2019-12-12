@@ -9,10 +9,16 @@ Before you build your [assembly]({{urlRoot}}/content/glossary#assembly), you nee
 1. In File Explorer, navigate to `UnrealGDKExampleProject\Game\Config` and open `DefaultEngine.ini` in a text editor.
 1. In your text editor, search for `bPreventAutoConnectWithLocator=False` and change this value to `True`. This setting forces your game client to stay offline after being launched until you select a deployment or select Quick Join in the game. Your changes should look like this:
     
-    ```
-    [/Script/SpatialGDK.SpatialGameInstance]
-    bPreventAutoConnectWithLocator=True
-    ```
+    [block:code]
+{
+  "codes": [
+  {
+      "code": "    [/Script/SpatialGDK.SpatialGameInstance] \n bPreventAutoConnectWithLocator=True\n",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 1. Save and close `DefaultEngine.ini` once you have made your changes. 
 
 > **Note**: You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers, the command will fail.

@@ -71,22 +71,33 @@ There are basic example in the _Examples_ section below. For more examples of ho
 
 You can customize snapshot generation by creating a class derived from the GDK `USnapshotGenerationTemplate` base class, and implementing the method below. You have the responsibility of incrementing the `NextEntityId` reference. If you don’t, snapshot generation will fail by attempting to add multiple entities to the snapshot with the same ID.
 
-```  
+[block:code]
+{
+  "codes": [
+  {
+      "code": "  
   /** Write to the snapshot generation output stream.
     * @param OutputStream the output stream for the snapshot being created.
     * @param NextEntityId the next available entity ID in the snapshot, this reference should be incremented appropriately.
     * @return bool the success of writing to the snapshot output stream, this is returned to the overall snapshot generation.
     **/
-bool WriteToSnapshotOutput(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextEntityId);
-```
+bool WriteToSnapshotOutput(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextEntityId);",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 There is a basic example in the _Examples_ section below. For more examples of how to deserialize see the SpatialOS documentation on  [serialization in the Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/serialization).
 
 ### Examples
 Below is a simple example schema file which a non-Unreal server-worker type could use to track player statistics:
 
-```
-package improbable.testing;
+[block:code]
+{
+  "codes": [
+  {
+      "code": "package improbable.testing;
 
 type UnrealRequest {
     string some_request_string = 1;
@@ -104,8 +115,12 @@ component TestComponent {
 component OtherTestComponent {
     id = 1338;
     uint32 other_counter = 1;
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 #### Using the code generator example
 
@@ -119,28 +134,45 @@ To send or receive network operations, you need to instantiate the `ExternalSche
 
 To send component updates or command requests / responses, you can call any of the overrides for `SendComponentUpdate`, `SendCommandRequest` or `SendCommandResponse`, for example:
 
-```
-auto Update = new ::improbable::testing::TestComponent::Update(20 /* counter field */);
+[block:code]
+{
+  "codes": [
+  {
+      "code": "auto Update = new ::improbable::testing::TestComponent::Update(20 /* counter field */);
 // further edit Update using constructor pattern methods, e.g. (void)Update->SetCounter(30);
-ExternalSchema->SendComponentUpdate(30 /* entity_id */, Update);
-```
+ExternalSchema->SendComponentUpdate(30 /* entity_id */, Update);",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 where `ExternalSchema` has the type: `ExternalSchemaInterface*`.
 
 To register callbacks to receive network operations, you can call any of the overrides for `OnAddComponent`, `OnComponentUpdate`, `OnAuthorityChange`, `OnRemoveComponent`, `OnCommandRequest` or `OnCommandResponse`, for example:
 
-```
-ExternalSchema->OnComponentUpdate([&](const ::improbable::testing::TestComponent::ComponentUpdateOp& Op) {
+[block:code]
+{
+  "codes": [
+  {
+      "code": "ExternalSchema->OnComponentUpdate([&](const ::improbable::testing::TestComponent::ComponentUpdateOp& Op) {
     // access via Op.Update.get_counter();
-});
-```
+});",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 If you want to ensure that the SpatialOS worker connection registers your callbacks to receive the initial network operations, you need to register the callbacks inside your game instance's `OnConnected` event callback.
 
 For example, the following code instantiates the `ExternalSchema` member of type `ExternalSchemaInterface` on the `UTPSGameInstance`:
 
-```
-void UTPSGameInstance::Init()
+[block:code]
+{
+  "codes": [
+  {
+      "code": "void UTPSGameInstance::Init()
 {
     OnConnected.AddLambda([this]() {
         // On the client the world may not be completely set up, if so we can use the PendingNetGame
@@ -154,15 +186,22 @@ void UTPSGameInstance::Init()
 
         // register callbacks here
    });
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 #### Manual (de)serialization examples
 
 You could serialize and send a component update in your Unreal project code in the following way:
 
-```
-void SendSomeUpdate(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId)
+[block:code]
+{
+  "codes": [
+  {
+      "code": "void SendSomeUpdate(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId)
 {
     Worker_ComponentUpdate Update = {};
     Update.component_id = ComponentId;
@@ -170,13 +209,20 @@ void SendSomeUpdate(Worker_EntityId TargetEntityId, Worker_ComponentId Component
     Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Update.schema_type);
     Schema_AddInt32(FieldsObject, 1, 123456);
     Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendComponentUpdate(TargetEntityId, &Update);
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 You could serialize and send a command response in your Unreal project code in the following way:
 
-```
-Worker_RequestId SendSomeCommandResponse(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId, Schema_FieldId CommandId) {
+[block:code]
+{
+  "codes": [
+  {
+      "code": "Worker_RequestId SendSomeCommandResponse(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId, Schema_FieldId CommandId) {
     Worker_CommandResponse Response = {};
     Response.component_id = ComponentId;
     Response.schema_type = Schema_CreateCommandResponse(ComponentId, CommandId);
@@ -184,12 +230,19 @@ Worker_RequestId SendSomeCommandResponse(Worker_EntityId TargetEntityId, Worker_
     const char* Text = "Hello World.";
     Schema_AddBytes(ResponseObject, 1, (const uint8_t*)Text, sizeof(char) * strlen(Text));
     Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendCommandResponse(TargetEntityId, &Response);
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 You could receive and deserialize a component update and command request in your Unreal project code in the following way:
-```
-void UTPSGameInstance::Init()
+[block:code]
+{
+  "codes": [
+  {
+      "code": "void UTPSGameInstance::Init()
 {
     // OnConnected is an event declared in USpatialGameInstance
     OnConnected.AddLambda([this]() {
@@ -230,15 +283,22 @@ void UTPSGameInstance::Init()
             Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->SendCommandResponse(Op.request_id, &Response);
         });
     });
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 #### Adding to snapshot example
 
 You could add a new entity with the given component in your Unreal project code in the following way:
 
-```
-UCLASS()
+[block:code]
+{
+  "codes": [
+  {
+      "code": "UCLASS()
 class UTestEntitySnapshotGeneration : public USnapshotGenerationTemplate
 {
 	GENERATED_BODY()
@@ -294,8 +354,12 @@ public:
 
 		return bSuccess;
 	}
-};
-```
+};",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 <br/>------------<br/>
 

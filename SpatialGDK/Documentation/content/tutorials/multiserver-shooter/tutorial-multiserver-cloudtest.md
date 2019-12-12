@@ -22,25 +22,53 @@ GDK projects default to using Spatial networking. However, if you have reset the
 1. Run the `BuildProject.bat` command to build a server-worker using the filepath and flags below. </br>
 The filepath you use depends on whether you have the `UnrealGDK` plugin set up as an *engine* plugin or as a *project* plugin. If you followed the default setup instructions which use the `InstallGDK.bat` script, you have it set up as an *engine* plugin. <br/></br>
       * Engine plugin filepath (default):</br>
-      ```
-      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
-      ```
+      [block:code]
+{
+  "codes": [
+  {
+      "code": "      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject\n",
+      "language": "text"
+    }
+  ]
+}
+[/block]
       </br>
       * Project plugin filepath:</br>
-      ```
-      UnrealGDKExampleProject\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
-      ```
+      [block:code]
+{
+  "codes": [
+  {
+      "code": "      UnrealGDKExampleProject\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject\n",
+      "language": "text"
+    }
+  ]
+}
+[/block]
       </br></br>
   1. Now run the `BuildProject.bat` command to build a client-worker: <br/><br/>
       * Engine plugin filepath (default):</br>
-      ```
-      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
-      ```
+      [block:code]
+{
+  "codes": [
+  {
+      "code": "      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject\n",
+      "language": "text"
+    }
+  ]
+}
+[/block]
       <br/>
       * Project plugin filepath:</br>
-      ```
-        UnrealGDKExampleProject\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
-      ```
+      [block:code]
+{
+  "codes": [
+  {
+      "code": "        UnrealGDKExampleProject\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject\n",
+      "language": "text"
+    }
+  ]
+}
+[/block]
       <br/><br/>
 
 ### Step 2: Upload your game
@@ -50,9 +78,16 @@ The filepath you use depends on whether you have the `UnrealGDK` plugin set up a
     ![]({{assetRoot}}assets/tutorial/project-name.png)
 1. In a terminal window, change directory to `UnrealGDKExampleProject\spatial\` and run `spatial cloud upload <assembly_name>`, where `<assembly_name>` is a name of your choice (for example `myassembly`). A valid upload command looks like this:
 
-```
-spatial cloud upload myassembly
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "spatial cloud upload myassembly",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 > **Note:** Depending on your network speed it may take a little while (1-10 minutes) to upload your assembly.
 
@@ -70,9 +105,16 @@ When launching a cloud deployment you must provide three parameters:
 1. In a  terminal window, in the same directory you used to upload your game, run: `spatial cloud launch --snapshot=snapshots/default.snapshot <assembly_name> two_worker_test.json <deployment_name>` 
     <br/>where `assembly_name` is the name you gave the assembly in the previous step and `deployment_name` is a name of your choice. A valid launch command would look like this:
 
-```
-spatial cloud launch --snapshot=snapshots/default.snapshot myassembly two_worker_test.json mydeployment
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "spatial cloud launch --snapshot=snapshots/default.snapshot myassembly two_worker_test.json mydeployment",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 > **Note:** This command defaults to deploying to clusters located in the US. If you’re in Europe, add the `--cluster_region=eu` flag for lower latency.
 

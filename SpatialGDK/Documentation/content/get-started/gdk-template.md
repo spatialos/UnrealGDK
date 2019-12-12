@@ -193,15 +193,29 @@ Double click BuildProject.bat. This opens a command line window and automaticall
 In a terminal window, navigate to the `<ProjectRoot>` directory.
 Build a server-worker assembly by running the following command: 
 
-```
-Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProjectServer Linux Development YourProject.uproject
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProjectServer Linux Development YourProject.uproject",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 Build a client-worker assembly by running the following command: 
 
-```
-Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 <%(/Expandable)%>
 
@@ -221,9 +235,16 @@ You must replace `<assembly_name>` with a name for your assembly (for example: `
 
 A valid upload command looks like this:
 
-```
-spatial cloud upload myassembly
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "spatial cloud upload myassembly",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 #### Step 4: Launch your cloud deployment
 The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. You can only do this through the SpatialOS command-line interface (also known as the “CLI”).
@@ -251,9 +272,16 @@ You can find out more about the launch configuration file in the [glossary]({{ur
 
 1. In a  terminal window, navigate to `<ProjectRoot>\spatial\` and run the following command
 
-```
-spatial cloud launch --snapshot=snapshots\default.snapshot <assembly_name> one_worker_test.json <deployment_name>
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "spatial cloud launch --snapshot=snapshots\default.snapshot <assembly_name> one_worker_test.json <deployment_name>",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 Where:
 
@@ -264,9 +292,16 @@ Where:
 
 A valid launch command looks like this: 
 
-```
-spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker_test.json mydeployment
-```
+[block:code]
+{
+  "codes": [
+  {
+      "code": "spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker_test.json mydeployment",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
 ### 7. Play your game
 

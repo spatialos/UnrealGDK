@@ -30,18 +30,27 @@ To damage a player on a different server, the actor shooting the bullet must sen
 1. In your IDE, open `UnrealGDKExampleProject\Game\Source\GDKShooter\Public\Characters\GDKCharacter.h`.
 1. Under line 91, add this snippet:
 
-    ```
-    UFUNCTION(CrossServer, Reliable)
-    void TakeDamageCrossServer(float Damage, const struct FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
-    ```
+    [block:code]
+{
+  "codes": [
+  {
+      "code": "    UFUNCTION(CrossServer, Reliable) \n void TakeDamageCrossServer(float Damage, const struct FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser);\n",
+      "language": "text"
+    }
+  ]
+}
+[/block]
 
     This snippet creates a new `UFUNCTION` marked with the function tags [CrossServer]({{urlRoot}}/content/cross-server-rpcs) and [Reliable (Unreal documentation)](https://wiki.unrealengine.com/Replication#Reliable_vs_Unreliable_Function_Call_Replication). The CrossServer tag forces this function to be executed as a cross-server RPC.
 
 1. In your IDE, open `UnrealGDKExampleProject\Game\Source\GDKShooter\Private\Characters\GDKCharacter.cpp`.
 1. Replace the `TakeDamage` function (lines 158-163) with this snippet:
 
-```
-float AGDKCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+[block:code]
+{
+  "codes": [
+  {
+      "code": "float AGDKCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	TakeDamageCrossServer(Damage, DamageEvent, EventInstigator, DamageCauser);
 	return Damage;
@@ -51,8 +60,12 @@ void AGDKCharacter::TakeDamageCrossServer_Implementation(float Damage, const FDa
 {
 	float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 	HealthComponent->TakeDamage(ActualDamage, DamageEvent, EventInstigator, DamageCauser);
+}",
+      "language": "text"
+    }
+  ]
 }
-```
+[/block]
 
 This snippet implements the functionality that was previously contained within `TakeDamage` as a cross-server RPC called `TakeDamageCrossServer`.
 
