@@ -152,7 +152,7 @@ void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer)
 	}
 }
 
-void ReadAckFromSchema(Schema_Object* SchemaObject, ERPCType Type, uint64& OutAck)
+void ReadAckFromSchema(const Schema_Object* SchemaObject, ERPCType Type, uint64& OutAck)
 {
 	Schema_FieldId AckFieldId = GetAckFieldId(Type);
 
