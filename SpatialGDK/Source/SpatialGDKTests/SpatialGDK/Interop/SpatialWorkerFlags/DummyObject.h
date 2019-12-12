@@ -13,7 +13,8 @@ class UDummyObject : public UObject
 public:
 
 	UFUNCTION()
-	void SetFlagUpdated(FString flagName, FString flagValue);
+	void SetFlagUpdated(const FString& flagName, const FString& flagValue);
 
 	bool isFlagUpdated = false;
+	int  timesUpdated = 0;
 }; 

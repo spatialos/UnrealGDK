@@ -2,9 +2,10 @@
 
 #include "DummyObject.h"
 
-void  UDummyObject::SetFlagUpdated(FString flagName, FString flagValue)
+void  UDummyObject::SetFlagUpdated(const FString& flagName, const FString& flagValue)
 {
 	isFlagUpdated = true;
+	timesUpdated++;
 
 	return;
 }

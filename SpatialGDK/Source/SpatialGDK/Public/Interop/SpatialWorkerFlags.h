@@ -5,8 +5,8 @@
 #include <WorkerSDK/improbable/c_worker.h>
 #include "SpatialWorkerFlags.generated.h"
 
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnWorkerFlagsUpdatedBP, FString, FlagName, FString, FlagValue);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWorkerFlagsUpdated, FString, FlagName, FString, FlagValue);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnWorkerFlagsUpdatedBP, const FString&, FlagName, const FString&, FlagValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWorkerFlagsUpdated, const FString&, FlagName, const FString&, FlagValue);
 
 UCLASS()
 class SPATIALGDK_API USpatialWorkerFlags : public UObject
