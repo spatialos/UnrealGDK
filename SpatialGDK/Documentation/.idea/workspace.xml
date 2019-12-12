@@ -3,36 +3,25 @@
   <component name="ChangeListManager">
     <list default="true" id="b9449316-2fda-4a0a-b7b9-ad7920f6f134" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/actor-handover.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/actor-handover.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/actor-readiness.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/actor-readiness.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/content/cloud-deployment-workflow.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/cloud-deployment-workflow.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/cross-server-rpcs.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/cross-server-rpcs.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/game-client-interest-management.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/game-client-interest-management.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/build-unreal-fork.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/build-unreal-fork.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-cloud-deployment.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-cloud-deployment.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-local-deployment.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-local-deployment.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-manual-setup.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-manual-setup.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-play.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-play.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-setup.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-setup.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/content/get-started/gdk-template.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/gdk-template.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/content/get-started/starter-template/get-started-template-cloud.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/starter-template/get-started-template-cloud.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/how-to-use-schema.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/how-to-use-schema.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/map-travel.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/map-travel.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/mobile/ios/zh/3-set-up-macos-environment.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/mobile/ios/zh/3-set-up-macos-environment.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/mobile/ios/zh/3-set-up-windows-environment.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/mobile/ios/zh/3-set-up-windows-environment.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/mobile/ios/zh/5-connect-to-cloud-deployment.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/mobile/ios/zh/5-connect-to-cloud-deployment.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/simulated-players.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/simulated-players.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/singleton-actors.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/singleton-actors.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/spatial-type.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/spatial-type.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/technical-overview/gdk-concepts.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/technical-overview/gdk-concepts.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-communicating.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-communicating.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-syncing.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-syncing.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-testing.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-testing.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/starter-template/get-started-template-local.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/starter-template/get-started-template-local.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/starter-template/get-started-template-play.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/starter-template/get-started-template-play.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/starter-template/get-started-template-setup.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/starter-template/get-started-template-setup.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-play.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-play.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/offloading-tutorial/offloading-gameplay-changes.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/offloading-tutorial/offloading-gameplay-changes.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-build.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-build.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-setup.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-setup.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/workers/non-unreal-server-worker-types.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/workers/non-unreal-server-worker-types.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/workflows/autostart-server-workers.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/workflows/autostart-server-workers.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-deployment.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-deployment.md" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />

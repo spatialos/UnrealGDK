@@ -85,26 +85,35 @@ Before you launch a deployment (local or cloud) you must generate [schema]({{url
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
-<%(#Expandable title="What is Schema?")%>
+<button class="collapsible">What is Schema?</button>
+<div>
+
 
 Schema is a set of definitions which represent your game’s objects in SpatialOS as entities. Schema is defined in .schema files and written in schemalang by the GDK.</br>
 Select **Schema** from the GDK toolbar and the GDK generates schema files and their contents for you, so you do not have to write or edit schema files manually.
 
 You can find out more about schema, including how to generate it from the command line, making schema work with source control, and how to exclude certain directories from schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)
 
-<%(/Expandable)%>
 
-<%(#Expandable title="What is an entity?")%>
+</div>
+
+<button class="collapsible">What is an entity?</button>
+<div>
+
 An entity is the SpatialOS equivalent of  an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)
-<%(/Expandable)%>
 
-<%(#Expandable title="What is  a snapshot?")%>
+</div>
+
+<button class="collapsible">What is  a snapshot?</button>
+<div>
+
 
 A snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores the current state of each entity’s component data. You start each deployment with a snapshot; if it’s a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.
 
 You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).
 
-<%(/Expandable)%>
+
+</div>
 
 To launch a local deployment:
 
@@ -135,9 +144,12 @@ To launch a local deployment:
 2. When you're done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
     _Image: On the GDK toolbar in the Unreal Editor select **Stop**_<br/>
 
-  <%(#Expandable title="What is the Inspector?")%> The Inspector is a browser-based tool that you use to explore the internal state of a game's SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. <br/>
+  <button class="collapsible">What is the Inspector?</button>
+<div>
+ The Inspector is a browser-based tool that you use to explore the internal state of a game's SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. <br/>
   The Inspector we are using here is looking at a local deployment running on your computer and not in the cloud, so we use a local URL for the Inspector as it's also running locally on your computer. When running locally, the Inspector automatically downloads and caches the latest Inspector client from the internet. When you use the Inspector in a cloud deployment, you access the Inspector through the Console via the web at https://console.improbable.io.
-  <%(/Expandable)%>
+  
+</div>
 
 > **TIP:** Check out the [local deployment workflow page]({{urlRoot}}/content/local-deployment-workflow) for a reference diagram of this workflow.
 
@@ -156,13 +168,16 @@ When you signed up for SpatialOS, your account was automatically associated with
 1. In File Explorer, navigate to the `<YourProject>/spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 1. Replace the `name` field with the project name shown in the Console. This tells SpatialOS which SpatialOS project you intend to upload to.
 
-<%(#Expandable title="What is the Console?")%>
+<button class="collapsible">What is the Console?</button>
+<div>
+
 
 The Console is a web-based tool for managing cloud deployments. It gives you access to information about your games’ SpatialOS project names, the SpatialOS assemblies you have uploaded, the internal state of any games you have running (via the Inspector), as well as logs and metrics. 
 
 You can find out more about the Console in the [Glossary]({{urlRoot}}/content/glossary#console).
 
-<%(/Expandable)%>
+
+</div>
 
 #### Step 2: Build your workers
 
@@ -183,13 +198,18 @@ For example:
  * `Linux` to build server-workers to run on SpatialOS cloud servers.
  <!--TODO: Add link to doc on this when it's done here: https://improbableio.atlassian.net/browse/DOC-361 -->
 
-<%(#Expandable title="Build your workers using `BuildProject.bat`")%>
+<button class="collapsible">Build your workers using `BuildProject.bat`</button>
+<div>
+
 To build your workers using the BuildProject.bat script: 
 In File Explorer, navigate to the `<ProjectRoot>` directory.
 Double click BuildProject.bat. This opens a command line window and automatically creates your client and server workers. 
-<%(/Expandable)%>
 
-<%(#Expandable title="Build your workers  manually using the command line")%>
+</div>
+
+<button class="collapsible">Build your workers  manually using the command line</button>
+<div>
+
 In a terminal window, navigate to the `<ProjectRoot>` directory.
 Build a server-worker assembly by running the following command: 
 
@@ -217,12 +237,16 @@ Build a client-worker assembly by running the following command:
 }
 [/block]
 
-<%(/Expandable)%>
+
+</div>
 
 **Troubleshooting**
-<%(#Expandable title="BuildProject.bat can’t find the path specified")%>
+<button class="collapsible">BuildProject.bat can’t find the path specified</button>
+<div>
+
 If you receive the error `The system cannot find the path specified. Builds failed.`, open `ProjectPaths.bat` in a text editor and ensure that `PROJECT_PATH` and `GAME_NAME` are correct. `PROJECT_PATH` needs to be the name of your Unreal project folder (usually Game). `GAME_NAME` needs to be the same name as your Unreal Project `.uproject` file.  
-<%(/Expandable)%>
+
+</div>
 
 #### Step 3: Upload your workers
 
@@ -249,12 +273,15 @@ A valid upload command looks like this:
 #### Step 4: Launch your cloud deployment
 The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. You can only do this through the SpatialOS command-line interface (also known as the “CLI”).
 
-<%(#Expandable title="What is the CLI?")%>
+<button class="collapsible">What is the CLI?</button>
+<div>
+
 
 The SpatilOS command-line tool (CLI) provides a set of commands that you use to interact with a SpatialOS project. Among other functions, you use it to deploy your game. You installed the CLI in step 1, when you set up your dependencies and installed SpatialOS.
 
 Find out more in the [glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
-<%(/Expandable)%>
+
+</div>
 
 When launching a cloud deployment you must provide four parameters:
 
@@ -263,12 +290,15 @@ When launching a cloud deployment you must provide four parameters:
 * **A launch configuration file** - defines the SpatialOS game world and load balancing configuration.
 * **A name for your deployment** -  labels the deployment in the Console.
 
-<%(#Expandable title="What is a launch configuration file?")%>
+<button class="collapsible">What is a launch configuration file?</button>
+<div>
+
 
 Use this file to list the settings of a deployment. These include: how big the SpatialOS game world is, which worker types SpatialOS must use in the deployment, which worker types can create and delete Actors, and your game template. You installed the Launcher in step 1, when you set up your dependencies and installed SpatialOS.
 
 You can find out more about the launch configuration file in the [glossary]({{urlRoot}}/content/glossary#launch-configuration).
-<%(/Expandable)%>
+
+</div>
 
 1. In a  terminal window, navigate to `<ProjectRoot>\spatial\` and run the following command
 
@@ -312,12 +342,15 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
 
 In the Console, Select **Launch** on the left of the page, and then select the **Launch** button that appears in the centre of the page to open the SpatialOS Launcher. The Launcher automatically downloads the game client for this deployment and runs it on your local machine.
 
-<%(#Expandable title="What is the SpatialOS Launcher?")%>
+<button class="collapsible">What is the SpatialOS Launcher?</button>
+<div>
+
 
 The Launcher is a distribution tool which downloads and launches game clients for your deployment. You access the Launcher from the Console; use the Console to create a URL to give end-users access to a game client for your game.
 
 Find out more in the [glossary](({{urlRoot}}/content/glossary#launcher).
-<%(/Expandable)%>
+
+</div>
 <br/>
 ![]({{assetRoot}}assets/tutorial/launch.png)<br/>
 _Image: The SpatialOS console launch window_

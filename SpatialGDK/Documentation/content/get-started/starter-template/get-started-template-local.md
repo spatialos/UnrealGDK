@@ -9,15 +9,21 @@ There are two types of deployment: local and cloud.
 
 - A **local deployment** is for testing only. A local deployment runs your game simulation in your Unreal Editor. 
 </br>Your game simulation with its own instance of the SpatialOS Runtime, runs on your development machine. You can run multiple clients in a local deployment - they are useful for fast development iteration.
-<%(#Expandable title="What is the SpatialOS Runtime?")%>
+<button class="collapsible">What is the SpatialOS Runtime?</button>
+<div>
+
 There is a Runtime instance for every game simulation. A Runtime instance holds the canononical store of all a game's SpatialOS-relevant object data in the SpatialOS entity database. It handles server and client connections, and coordinates each server and client's write and read access to the entity database.
-<%(/Expandable)%>
+
+</div>
 
 - A **cloud deployment** runs on remote networked nodes. A node is a single machine used as server hardware. </br>
 The cloud is where your game simulation runs when you release it, so you always deploy your released game to the cloud but you can also use a cloud deployment during development to share it with test users and run it at scale. You share your game with test users through the SpatialOS Launcher. (You'll use the Launcher in a later step of this guide.)</br>
-<%(#Expandable title="What is the SpatialOS Launcher?")%>
+<button class="collapsible">What is the SpatialOS Launcher?</button>
+<div>
+
 The Launcher is a distribution tool which downloads and launches game clients for your deployment. You installed the Launcher when you [installed SpatialOS on your machine]({{urlRoot}}/content/get-started/dependencies#step-3-software). You access the Launcher from the Console; use it to create a URL to give end-users access to a game client for your game. </br>Find out more in the [glossary]({{urlRoot}}/content/glossary#launcher).
-<%(/Expandable)%>
+
+</div>
 
 Use local deployments for small-scale tests with multiple clients, to quickly test and iterate on changes to your project. For large-scale tests with several players, use a cloud deployment.
 
@@ -30,25 +36,34 @@ Before you launch a deployment (local or cloud) you must generate schema and a s
 1. Select **Snapshot** to generate a snapshot.<br/><br/>
    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 
-<%(#Expandable title="What is Schema?")%>
+<button class="collapsible">What is Schema?</button>
+<div>
+
 
 Schema is a set of definitions which represent your game’s objects in SpatialOS as entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
 
 You can find out more about schema, including how to generate it from the command line, making schema work with source control, and how to exclude certain directories from schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)
 
-<%(/Expandable)%>
 
-<%(#Expandable title="What is an entity?")%>
+</div>
+
+<button class="collapsible">What is an entity?</button>
+<div>
+
 An entity is the SpatialOS equivalent of  an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)
-<%(/Expandable)%>
 
-<%(#Expandable title="What is  a snapshot?")%>
+</div>
+
+<button class="collapsible">What is  a snapshot?</button>
+<div>
+
 
 A snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores the current state of each entity’s component data. You start each deployment with a snapshot; if it’s a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.
 
 You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).
 
-<%(/Expandable)%>
+
+</div>
 
 ### Step 2: Launch and play
 
@@ -56,7 +71,9 @@ This step shows you how to start one game server and two game clients in a local
 In SpatialOS, game servers are called "server-workers" and game clients are called "client-workers".  
 
 
-<%(#Expandable title="More about server-workers and client-workers")%>
+<button class="collapsible">More about server-workers and client-workers</button>
+<div>
+
 A server-worker is your game's server-side code, it's the equivalent of a "server" in native Unreal networking.
 
 You can think of client-workers as game clients as they are essentially the same. 
@@ -67,7 +84,8 @@ You can have different types of server-workers doing different tasks, depending 
 
 You usually only have one type of client-worker in your game but you can have many instances of a client-worker, each representing a game player. The Starter Template has one client-worker type.
 
-<%(/Expandable)%>
+
+</div>
 
 To launch a local deployment in your Unreal Editor, set up the networking and run the game:
 
@@ -105,11 +123,14 @@ When your game is running, you can see how it is running by looking at the Inspe
     ![]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)<br/>
     _Image: GDK toolbar's **Inspector** button_
 
-    <%(#Expandable title="What are the Console and the Inspector?")%>
+    <button class="collapsible">What are the Console and the Inspector?</button>
+<div>
+
 The **Console** is a web-based tool for managing cloud deployments. It gives you access to information about your games’ SpatialOS project names, the SpatialOS assemblies you have uploaded, the internal state of any games you have running (via the Inspector), as well as logs and metrics. </br>
 The **Inspector** is part of the Console. You can use it to explore the internal state of a SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. <br/><br/>
 You can find out more about the Inspector and the Console in the [Glossary]({{urlRoot}}/content/glossary#console).
-<%(/Expandable)%>
+
+</div>
 
     Selecting **Inspector** opens the Inspector in your browser:</br></br>
     ![]({{assetRoot}}assets/set-up-template/template-two-client-inspector.png)<br/>
@@ -139,11 +160,14 @@ To do this:
 
 2. To test your changes, select **Play** on the Unreal toolbar; this starts your game's clients and server-worker instances.
 
-<%(#Expandable title="Local deployment workflow summary")%>
+<button class="collapsible">Local deployment workflow summary</button>
+<div>
+
 There is a summary on the [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow) page. It is the same as the one here.
  <%(Lightbox image="https://docs.google.com/drawings/d/e/2PACX-1vQCTOucXKMkDJ3-Vpg17_tpUS7IxOXD6Mps-FzWe2tQl3vw5alQPngCnw339cFy3u2NvrcBxhYASKsS/pub?w=710&h=1033")%>
 
-<%(/Expandable)%>
+
+</div>
 
 ### Step 5: Stop your deployment
 

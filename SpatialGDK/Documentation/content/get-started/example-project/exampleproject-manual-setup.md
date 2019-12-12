@@ -25,7 +25,9 @@ If you have already signed up, make sure you are logged into [Improbable.io](htt
 
 ### Step 2: Clone the Example Project repository
 
-<%(#Expandable title="Using the command line")%>
+<button class="collapsible">Using the command line</button>
+<div>
+
 
 1. Open a command line  window and navigate to a suitable directory to clone the repository to.
 2. Run either of these commands to clone the example project repository:
@@ -35,9 +37,12 @@ If you have already signed up, make sure you are logged into [Improbable.io](htt
 | HTTPS | `git clone https://github.com/spatialos/UnrealGDKExampleProject.git` |
 | SSH   | `git clone git@github.com:spatialos/UnrealGDKExampleProject.git` |
 
-<%(/Expandable)%>
 
-<%(#Expandable title="Using Github Desktop")%>
+</div>
+
+<button class="collapsible">Using Github Desktop</button>
+<div>
+
 
 1. In GitHub Desktop, select **File** >  **Clone  Repository**.<br/>
 1. In the Clone a repository window, select **URL.**<br/>
@@ -46,7 +51,8 @@ If you have already signed up, make sure you are logged into [Improbable.io](htt
 1. Select **Clone**. <br/>
 ![img]({{assetRoot}}assets/screen-grabs/github-desktop.png)<br/>
 _Image: The Github Desktop Clone a repository window_<br/>
-<%(/Expandable)%>
+
+</div>
 
 > **TIP:** Clone the Example project into your root directory to avoid file path length errors. For example: `C:\GitHub\UnrealGDKExampleProject`.
 

@@ -46,11 +46,14 @@ If you can see these three deployments, then you have successfully launched mult
 
 **Troubleshooting**</br>
 
-<%(#Expandable title="The PowerShell Cannot find path '\UnrealGDKExampleProject\spatial\one_worker_test.json' because it does not exist.")%>
+<button class="collapsible">The PowerShell Cannot find path '\UnrealGDKExampleProject\spatial\one_worker_test.json' because it does not exist.</button>
+<div>
+
 
 Make sure your Deployment Manager repository is in the same parent directory as your Example Project repository. If it is not, you have to edit the file paths in these Powershell commands to point to wherever your Example Project `one_worker_test.json` and `default.snapshot` files are located. 
 
-<%(/Expandable)%>
+
+</div>
 
 </br>
 </br>

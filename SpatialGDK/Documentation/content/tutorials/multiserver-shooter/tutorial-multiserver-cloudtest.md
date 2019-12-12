@@ -7,9 +7,12 @@
 When you build your workers, you create an assembly. They’re `.zip` files that contain all the files that the SpatialOS Runtime uses when your run your game in the cloud. </br>
 To do this you run a batch file,  `BuildWorker.bat`. You can add different flags to the script but, for now, run the script twice, once with a flag for server-workers and once with a flag for cloud-workers:</br>
 
-  <%(#Expandable title="What flags are there?")%>
+  <button class="collapsible">What flags are there?</button>
+<div>
+
 During development, you might want to, for example:</br> * cook a headless standalone version of the game ready for upload to the SpatialOS cloud as a simulated player cloud deployment, or </br> * cook a stand-alone version of the game to test it as a game client.</br> The optional flags give you this functionality and more.</br></br> See the [Helper script]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts) documentation for details of all the options and how to use them.
-<%(/Expandable)%>
+
+</div>
 
 To build workers:
 

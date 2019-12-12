@@ -33,7 +33,9 @@ You can clone the fork repository using the command line, GitHub Desktop, or any
 
 _Image: The default branch you need to clone._
 
-<%(#Expandable title="Using the command line")%>
+<button class="collapsible">Using the command line</button>
+<div>
+
 
 1. Open a command line window and navigate to a suitable directory to clone the repository to.
 1. Run either of these commands to clone the example project repository:
@@ -43,9 +45,12 @@ _Image: The default branch you need to clone._
 | HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git` |
 | SSH |`git clone git@github.com:improbableio/UnrealEngine.git`|
 
-<%(/Expandable)%>
 
-<%(#Expandable title="Using Github Desktop")%>
+</div>
+
+<button class="collapsible">Using Github Desktop</button>
+<div>
+
 
 1. In GitHub Desktop, select **File** >  **Clone  Repository**.<br/>
 1. In the Clone a repository window, select **URL.**<br/>
@@ -53,7 +58,8 @@ _Image: The default branch you need to clone._
 1. In the **Local Path** field, enter a suitable directory path for this repository, or select **Choose…** to select a directory using File Explorer. <br/>
 1. Select **Clone**. <br/>
 ![img]({{assetRoot}}assets/screen-grabs/github-desktop.png)<br/>
-<%(/Expandable)%>
+
+</div>
 
 > **Tip:** Clone the Unreal Engine fork into your root directory to avoid file path length errors. For example: `C:\Dev\UnrealEngine`.
 
@@ -83,9 +89,12 @@ You need to clone the SpatialOS GDK plugin and install it into the UE fork and E
 
 There are two branches of the plugin repository and the Example Project: preview and release.  We recommend installing from the default release branch of both. The auto-install does this for you, and the manual-install guides you to do this.  
 
-<%(#Expandable title="The preview branch")%>
+<button class="collapsible">The preview branch</button>
+<div>
+
 The preview branch contains features early in development. We do not recommend using the preview branch as it has had minimal testing and it has no documentation. You can find out more about the different branches in the [Versioning]({{urlRoot}}/content/pricing-and-support/versioning-scheme) scheme documentation.
-<%(/Expandable)%>
+
+</div>
 
 Once you start working on a game project, we recommend that you update your checked-out branch every two weeks to pick up fixes and changes to the product. You can find out how to keep your branches up to date in the [Keep your GDK up to date]({{urlRoot}}/content/upgrading) documentation. However, to follow this Get started guide, you can simply stay on the current release branch, and you don’t need to update your checked-out version of the branches.
 
@@ -95,14 +104,17 @@ Once you start working on a game project, we recommend that you update your chec
 Still in File Explorer, in the root directory of your clone of the SpatialOS Unreal Engine fork, double-click **InstallGDK.bat**. </br>
 This process opens a command line window and runs some scripts - it can take a long time to complete. The command line window closes when the process has finished.
 
-<%(#Expandable title="What does InstallGDK.bat do?")%>
+<button class="collapsible">What does InstallGDK.bat do?</button>
+<div>
+
 The script automatically opens a command line window and performs the following:
 
 * Clones the release branch of the UnrealGDK into your UE fork's `Plugins` directory 
 * Clones the release branch of the Example Project into your Engine's `Samples` directory.
 * Sets up the GDK for use with the Example Project by running `Setup.bat` 
 * Generates Visual Studio solution files for the `UnrealGDKExampleProject`.<br/>
-<%(/Expandable)%>
+
+</div>
 
 #### Manual-install
 If you decide not to use the auto-install, you can manually install the GDK as a project plugin by running a set of scripts. Note that the manual-install sets up a project plugin and not an engine plugin, so you will need to run the steps again for each new project you set up.

@@ -29,7 +29,9 @@ Before you build your [assembly]({{urlRoot}}/content/glossary#assembly), you nee
 
 There are two ways to build workers for your assembly, you can either:
 
-<%(#Expandable title="Build your workers using `BuildProject.bat`")%>
+<button class="collapsible">Build your workers using `BuildProject.bat`</button>
+<div>
+
 
 1. In File Explorer, navigate to the `UnrealGDKExampleProject` directory.
 
@@ -37,11 +39,14 @@ There are two ways to build workers for your assembly, you can either:
 
 This script automatically builds both the [server-workers]({{urlRoot}}/content/glossary#server-workers) and [client-workers]({{urlRoot}}/content/glossary#client-workers) required to run your game in the cloud. It then compresses your workers and saves them as `.zip` files to the `UnrealGDKExampleProject\spatial\build\assembly\worker` directory. Use this script if you want to build server-workers and client-workers at the same time.
 
-<%(/Expandable)%>
+
+</div>
 
 or
 
-<%(#Expandable title="Build your workers using terminal commands")%>
+<button class="collapsible">Build your workers using terminal commands</button>
+<div>
+
 
 1. In a terminal window, navigate to the `UnrealGDKExampleProject` directory.
 
@@ -50,18 +55,22 @@ or
 
 Use the command line when you want to build your [server-workers]({{urlRoot}}/content/glossary#server-workers) and [client-workers]({{urlRoot}}/content/glossary#client-workers) separately, or, if you want to build different worker configurations.
 
-<%(/Expandable)%>
+
+</div>
 
 **Note:** Building your workers can take a long time, regardless of which method you use. 
 
 **Troubleshooting**</br>
 
 
-<%(#Expandable title="BuildProject.bat can’t find the path specified")%>
+<button class="collapsible">BuildProject.bat can’t find the path specified</button>
+<div>
+
 
 If you receive the error `The system cannot find the path specified. Builds failed.`, open the `ProjectPaths.bat` file in a text editor and ensure that `PROJECT_PATH` and `GAME_NAME` are correct. `PROJECT_PATH` needs to be the name of your Unreal project folder (usually “Game”). `GAME_NAME` needs to be the same name as your Unreal Project `.uproject` file.  
 
-<%(/Expandable)%>
+
+</div>
 
 ### Step 3: Upload your assembly
 

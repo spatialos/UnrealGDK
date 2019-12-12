@@ -5,12 +5,15 @@
 
 To get playing, you use SpatialOS Launcher to set up clients for users. You then share the clients with users via a dedicated URL.
 
-<%(#Expandable title="Reminder: What is the SpatialOS Launcher?")%>
+<button class="collapsible">Reminder: What is the SpatialOS Launcher?</button>
+<div>
+
 
 The Launcher is a distribution tool which downloads and launches game clients for your deployment. You installed the Launcher when you [installed SpatialOS on your machine]({{urlRoot}}/content/get-started/dependencies#step-3-software). You access the Launcher from the Console; use it to create a URL to give end-users access to a game client for your game.
 </br></br>
 Find out more in the [glossary]({{urlRoot}}/content/glossary#launcher).
-<%(/Expandable)%>
+
+</div>
 
 ### Step 1: Set up a game client using the Launcher
 
