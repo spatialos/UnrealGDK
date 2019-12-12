@@ -49,6 +49,14 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 
 	if (!NetDriver->IsServer())
 	{
+		for (TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>::TIterator It = EntityActorMapping.CreateIterator(); It; ++It)
+		{
+			if (!It->Value.IsValid())
+			{
+				It.RemoveCurrent();
+			}
+		}
+
 		// Since we have no guarantee on the order we'll receive the PC/Pawn/PlayerState
 		// over the wire, we check here once per tick (currently 1 Hz tick rate) to setup our local pointers.
 		// Note that we can capture the PC in OnEntityAdded() since we know we will only receive one of those.

@@ -7,6 +7,7 @@
 #include "Misc/Paths.h"
 #include "SpatialConstants.h"
 #include "UObject/Package.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 
 #include "SpatialGDKEditorSettings.generated.h"
@@ -217,6 +218,17 @@ namespace ERegionCode
 		US = 1,
 		EU,
 		AP,
+		CN
+	};
+}
+
+UENUM()
+namespace EServicesRegion
+{
+	enum Type
+	{
+		Default,
+		CN
 	};
 }
 
@@ -316,7 +328,10 @@ private:
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Number of simulated players"))
 		uint32 NumberOfSimulatedPlayers;
-	
+
+	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
+	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
+
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
@@ -331,7 +346,7 @@ public:
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
 		return SpatialOSLaunchConfig.FilePath.IsEmpty()
-			? FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("default_launch.json"))
+			? FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("default_launch.json"))
 			: SpatialOSLaunchConfig.FilePath;
 	}
 
@@ -361,12 +376,12 @@ public:
 
 	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("snapshots")));
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("snapshots"));
 	}
 
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/generated/")));
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/generated/"));
 	}
 
 	FORCEINLINE FString GetSpatialOSCommandLineLaunchFlags() const
@@ -465,4 +480,6 @@ public:
 	}
 
 	bool IsDeploymentConfigurationValid() const;
+
+	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
 };

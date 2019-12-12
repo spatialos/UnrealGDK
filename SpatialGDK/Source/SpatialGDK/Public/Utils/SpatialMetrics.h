@@ -17,7 +17,7 @@ class USpatialWorkerConnection;
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialMetrics, Log, All);
 
 UCLASS()
-class USpatialMetrics : public UObject
+class SPATIALGDK_API USpatialMetrics : public UObject
 {
 	GENERATED_BODY()
 

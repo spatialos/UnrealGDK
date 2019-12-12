@@ -7,12 +7,13 @@
 
 #include "SpatialGameInstance.generated.h"
 
+class USpatialLatencyTracer;
 class USpatialWorkerConnection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
-DECLARE_EVENT(USpatialWorkerConnection, FOnConnectedEvent);
-DECLARE_EVENT_OneParam(USpatialWorkerConnection, FOnConnectionFailedEvent, const FString&);
+DECLARE_EVENT(USpatialGameInstance, FOnConnectedEvent);
+DECLARE_EVENT_OneParam(USpatialGameInstance, FOnConnectionFailedEvent, const FString&);
 
 UCLASS(config = Engine)
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
@@ -29,6 +30,10 @@ public:
 	virtual bool ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& Ar, UObject* Executor) override;
 	//~ End UObject Interface
 
+	//~ Begin UGameInstance Interface
+	virtual void Init() override;
+	//~ End UGameInstance Interface
+
 	// The SpatialWorkerConnection must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
 	void CreateNewSpatialWorkerConnection();
 
@@ -36,6 +41,7 @@ public:
 	void DestroySpatialWorkerConnection();
 
 	FORCEINLINE USpatialWorkerConnection* GetSpatialWorkerConnection() { return SpatialConnection; }
+	FORCEINLINE USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
 
 	void HandleOnConnected();
 	void HandleOnConnectionFailed(const FString& Reason);
@@ -63,4 +69,7 @@ private:
 	// If this flag is set to true standalone clients will not attempt to connect to a deployment automatically if a 'loginToken' exists in arguments.
 	UPROPERTY(Config)
 	bool bPreventAutoConnectWithLocator;
+
+	UPROPERTY()
+	USpatialLatencyTracer* SpatialLatencyTracer = nullptr;
 };

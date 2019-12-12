@@ -71,6 +71,8 @@ private:
 	bool StopSpatialServiceIsVisible() const;
 	bool StopSpatialServiceCanExecute() const;
 
+	bool UpdateIOSClientIsVisible() const;
+
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
@@ -104,11 +106,15 @@ private:
 
 	FString GetOptionalExposedRuntimeIP() const;
 
+	void UpdateIOSClient() const;
+
 	static void ShowCompileLog();
 
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	bool bStopSpatialOnExit;
+
+	bool bSchemaBuildError;
 
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 

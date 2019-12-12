@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "IPropertyTypeCustomization.h"
-#include "Utils/ActorGroupManager.h"
 
 class FWorkerTypeCustomization : public IPropertyTypeCustomization
 {

@@ -2,6 +2,19 @@
 
 #pragma once
 
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Interop/Connection/ConnectionConfig.h"
+#include "Interop/SpatialDispatcher.h"
+#include "Interop/SpatialOutputDevice.h"
+#include "Interop/SpatialSnapshotManager.h"
+#include "Utils/SpatialActorGroupManager.h"
+
+#include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
+
+#include <WorkerSDK/improbable/c_worker.h>
+
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "IpNetDriver.h"
@@ -9,31 +22,19 @@
 #include "TimerManager.h"
 #include "UObject/CoreOnline.h"
 
-#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/Connection/ConnectionConfig.h"
-#include "Interop/SpatialOutputDevice.h"
-#include "SpatialConstants.h"
-#include "SpatialGDKSettings.h"
-
-#include <WorkerSDK/improbable/c_worker.h>
-
 #include "SpatialNetDriver.generated.h"
 
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class UAbstractLBStrategy;
-class UActorGroupManager;
 class UEntityPool;
 class UGlobalStateManager;
-class USnapshotManager;
 class USpatialActorChannel;
 class USpatialClassInfoManager;
-class USpatialDispatcher;
-class USpatialLoadBalanceEnforcer;
+class USpatialGameInstance;
 class USpatialMetrics;
 class USpatialNetConnection;
 class USpatialPackageMapClient;
-class USpatialGameInstance;
 class USpatialPlayerSpawner;
 class USpatialReceiver;
 class USpatialSender;
@@ -79,7 +80,8 @@ public:
 
 	virtual void OnOwnerUpdated(AActor* Actor);
 
-	void OnConnectedToSpatialOS();
+	void OnConnectionToSpatialOSSucceeded();
+	void OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
 
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
@@ -115,9 +117,7 @@ public:
 	void UnregisterDormantEntityId(Worker_EntityId EntityId);
 	bool IsDormantEntity(Worker_EntityId EntityId) const;
 
-	DECLARE_DELEGATE(PostWorldWipeDelegate);
-
-	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
+	void WipeWorld(const PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
@@ -125,13 +125,9 @@ public:
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
 	UPROPERTY()
-	USpatialDispatcher* Dispatcher;
-	UPROPERTY()
 	USpatialSender* Sender;
 	UPROPERTY()
 	USpatialReceiver* Receiver;
-	UPROPERTY()
-	UActorGroupManager* ActorGroupManager;
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 	UPROPERTY()
@@ -143,18 +139,18 @@ public:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 	UPROPERTY()
-	USnapshotManager* SnapshotManager;
-	UPROPERTY()
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 	UPROPERTY()
 	ASpatialDebugger* SpatialDebugger;
 	UPROPERTY()
-	USpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
-	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
 
+	TUniquePtr<SpatialDispatcher> Dispatcher;
+	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
+	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
+	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
