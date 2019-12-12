@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # Set up Visual Studio for worker debugging
 
 To debug workers from Visual Studio, you need to set up the commands in VS to start up a local SpatialOS deployment in Unreal Editor for you, running in the background. Once you have set this up, you can run server-workers and game clients direct from Visual Studio, without switching to the Editor.

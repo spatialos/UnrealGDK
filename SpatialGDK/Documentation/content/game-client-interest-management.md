@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # Game client interest management
 
 The GDK uses [interest]({{urlRoot}}/content/glossary#interest) to control the information that [game clients]({{urlRoot}}/content/glossary#client-workers) receive about the world around them.

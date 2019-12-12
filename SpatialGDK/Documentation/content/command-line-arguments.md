@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # Command line arguments
 In the SpatialOS GDK for Unreal, you can use GDK-specific command line arguments to customize how the GDK runs. For example, you can specify how a worker instance connects to a [deployment]({{urlRoot}}/content/glossary#deployment) or choose which [network stack](https://docs.improbable.io/reference/latest/shared/worker-configuration/network-configuration#choosing-a-network-stack) a worker instance uses to communicate with the SpatialOS [Runtime]({{urlRoot}}/content/glossary#spatialos-runtime).
 

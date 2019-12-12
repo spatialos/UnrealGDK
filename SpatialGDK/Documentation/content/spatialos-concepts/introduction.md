@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # SpatialOS concepts: introduction
 
 The SpatialOS concepts section is a 10-minute read outlining the key concepts you need to understand when working with SpatialOS. Each page builds on content in the previous pages, so we recommend reading them in order.

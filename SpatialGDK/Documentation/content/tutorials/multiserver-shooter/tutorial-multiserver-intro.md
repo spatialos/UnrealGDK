@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # Tutorials and guides
 ## \[Experimental\] Multiserver zoning
 [block:callout]

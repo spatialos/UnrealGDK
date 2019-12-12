@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # Keep your GDK up to date
 
 To use the SpatialOS GDK for Unreal, you need software from two git repositories:<br>

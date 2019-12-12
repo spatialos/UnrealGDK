@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 # Actor readiness
 Before executing any logic that requires or affects a replicated Actor, you must ensure that the Actor is _ready_. What constitutes an Actor’s “readiness” depends on what you want to do with the Actor. When using the GDK, you must define your own validity checks to signal that an Actor is ready.

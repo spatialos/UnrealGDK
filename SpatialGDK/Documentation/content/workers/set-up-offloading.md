@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 # Set up your game feature for offloading
 

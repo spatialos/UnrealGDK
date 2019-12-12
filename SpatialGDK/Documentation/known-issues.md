@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # Known issues
 
 For the current state of support of Unreal features, including any workarounds for features which are not fully supported yet, see the [Unreal features support page]({{urlRoot}}/unreal-features-support).

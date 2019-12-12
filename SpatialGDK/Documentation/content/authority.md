@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # How to set up authority
 
 > **Tip:** Before you read this page, you should read [Authority and interest]({{urlRoot}}/content/spatialos-concepts/authority-and-interest) for an explanation of what we mean by authority in SpatialOS. 

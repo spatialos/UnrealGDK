@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 # SpatialOS concepts: authority and interest
 

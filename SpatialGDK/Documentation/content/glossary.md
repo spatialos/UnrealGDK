@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 # Glossary
 This glossary covers:

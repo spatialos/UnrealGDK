@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 # Actor group ownership helpers
 

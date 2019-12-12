@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 # Multiserver offloading
 

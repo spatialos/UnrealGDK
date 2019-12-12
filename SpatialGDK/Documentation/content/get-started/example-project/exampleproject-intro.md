@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # Get started
 ## 3 - Set up a project: The Example Project 
 

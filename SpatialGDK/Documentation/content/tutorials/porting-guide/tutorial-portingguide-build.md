@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 # Port your project to SpatialOS
 

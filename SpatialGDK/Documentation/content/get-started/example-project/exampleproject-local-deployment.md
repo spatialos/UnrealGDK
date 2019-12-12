@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # The Example Project
 
 ## 2.  Launch a local deployment

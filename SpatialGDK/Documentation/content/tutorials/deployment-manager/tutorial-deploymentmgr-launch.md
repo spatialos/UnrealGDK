@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # [Deprecated] Multiple deployments for session-based games
 ## 5: Launch multiple session-based deployments
 

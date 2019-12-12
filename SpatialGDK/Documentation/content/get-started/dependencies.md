@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # Get started
 ## 1 - Get the dependencies
 

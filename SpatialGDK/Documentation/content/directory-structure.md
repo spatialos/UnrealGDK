@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # Directory structure
 The table below lists the contents of your clone of the Unreal Engine fork repository after running `Setup.bat` to build Unreal engine as part of [Get started]({{urlRoot}}/content/get-started/build-unreal-fork).
 

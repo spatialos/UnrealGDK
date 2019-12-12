@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 # \[Experimental\] Multiserver zoning
 ## 3: Test changes in the cloud

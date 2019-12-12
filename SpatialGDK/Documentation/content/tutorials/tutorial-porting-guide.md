@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # Tutorials and guides	
 ## Port your project to SpatialOS
 

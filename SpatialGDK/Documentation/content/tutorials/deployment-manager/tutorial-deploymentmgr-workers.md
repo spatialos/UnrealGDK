@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # [Deprecated] Multiple deployments for session-based games
 ## 3: Build and upload workers 
 

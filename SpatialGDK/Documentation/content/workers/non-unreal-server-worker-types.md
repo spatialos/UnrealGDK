@@ -1,5 +1,5 @@
 # Non-Unreal server-worker types
-<%(TOC)%>
+
 
 By default, the GDK for Unreal uses a single Unreal server-worker type to handle all server-side computation. However, you can set up additional server-worker types that do not use Unreal or the GDK.
 

@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # SpatialOS concepts: schema and snapshots
 
 ## Schema

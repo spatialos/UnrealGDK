@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 # Helper scripts
 

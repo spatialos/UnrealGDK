@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # Actor handover between server-workers
 
 Actor handover (`handover`) is a `UPROPERTY` specifier. It allows games built in Unreal (which uses single-server architecture) to take advantage of [zoning]({{urlRoot}}/content/glossary#zoning), which is one of the GDK's options for multiserver development.

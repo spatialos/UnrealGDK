@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 > This page assumes that you’re familiar with Unreal Engine, but not with SpatialOS.
 

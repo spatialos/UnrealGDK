@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 ## \[Experimental\] Database sync worker
 

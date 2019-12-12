@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # SpatialOS concepts: what is SpatialOS?
 
 SpatialOS is a platform-as-a-service that runs and manages online games in the cloud.

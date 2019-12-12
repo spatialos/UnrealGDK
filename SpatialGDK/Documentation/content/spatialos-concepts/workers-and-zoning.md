@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 # SpatialOS concepts: workers and zoning
 

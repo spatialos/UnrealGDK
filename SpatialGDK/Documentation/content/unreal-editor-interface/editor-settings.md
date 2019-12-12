@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # SpatialOS Editor Settings panel
 In the [Project Settings](https://docs.unrealengine.com/en-us/Engine/UI/ProjectSettings) editor, you can use the SpatialOS Editor Settings panel to change the default settings for local deployments, schema generation, and snapshot generation. For example, you might want to use the panel to extend the size of your [game world]({{urlRoot}}/content/glossary#game-world).
 

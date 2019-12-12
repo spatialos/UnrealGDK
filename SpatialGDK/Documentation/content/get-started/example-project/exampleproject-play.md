@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 # The Example Project 
 ## 4: Play the game

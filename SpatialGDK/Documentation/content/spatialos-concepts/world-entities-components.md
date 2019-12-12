@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # SpatialOS concepts: world, entities, components
 
 > **Tip:** Before you read this page, you should read [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos)

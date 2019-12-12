@@ -1,5 +1,5 @@
 
-<%(TOC)%>
+
 
 # [Deprecated] Multiple deployments for session-based games
 ## 2: Generate an authentication token

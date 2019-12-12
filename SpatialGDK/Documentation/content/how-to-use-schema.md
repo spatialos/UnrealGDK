@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 
 # How to use schema
 

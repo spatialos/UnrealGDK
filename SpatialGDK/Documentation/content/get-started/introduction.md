@@ -1,5 +1,5 @@
 
-<%(TOC)%>
+
 
 # Get started
 ## Introduction

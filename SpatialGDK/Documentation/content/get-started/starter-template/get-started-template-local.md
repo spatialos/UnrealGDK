@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # The Starter Template
 
 ## 2.  Launch a local deployment

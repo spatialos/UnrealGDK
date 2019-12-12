@@ -1,4 +1,4 @@
-<%(TOC)%>
+
 # Singleton Actors
 
 You can use a Singleton Actor to define a single source of truth for operations or data, or both, across a game world that uses zoning. You can have only one instance of an [entity]({{urlRoot}}/content/glossary#entity) that represents a Singleton Actor per game world.
