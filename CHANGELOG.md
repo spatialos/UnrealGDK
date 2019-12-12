@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 
-## [`0.6.4`] - 2019-12-12
+## [`0.6.4`] - 2019-12-13
 ### Bug fixes: 
 - The Inspector button in the SpatialOS GDK for Unreal toolbar now opens the correct URL.
 
