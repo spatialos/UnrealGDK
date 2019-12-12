@@ -2,12 +2,15 @@
 
 #pragma once
 
+#include "SpatialCommonTypes.h"
 #include "Containers/UnrealString.h"
 #include "Math/Color.h"
 #include "Math/UnrealMathUtility.h"
 #include "Misc/Char.h"
 
-// Mimicking Inspector V2 colouring from platform/js/console/src/inspector-v2/styles/colors.ts
+#include "cstring"
+
+// Mimicking Inspector V2 coloring from platform/js/console/src/inspector-v2/styles/colors.ts
 
 namespace SpatialGDK
 {
@@ -25,7 +28,7 @@ namespace SpatialGDK
 			return Hash % FMath::Abs(Max - Min) + Min;
 		}
 
-		FColor HLAtoRGB(double Hue, double Saturation, double Lightness)
+		FColor HSLtoRGB(double Hue, double Saturation, double Lightness)
 		{
 			// const[h, s, l] = hsl;
 			// Must be fractions of 1
@@ -74,32 +77,41 @@ namespace SpatialGDK
 
 			return FColor{ static_cast<uint8>(r), static_cast<uint8>(g), static_cast<uint8>(b) };
 		}
+
+		int64 DJBReverseHash(const PhysicalWorkerName& WorkerName) {
+			const int32 StringLength = WorkerName.Len();
+			int64 Hash = 5381;
+			for (int32 i = StringLength - 1; i > 0; --i) {
+				// We're mimicking the Inspector logic which is in JS. In JavaScript,
+				// a number is stored as a 64-bit floating point number but the bit-wise
+				// operation is performed on a 32-bit binary number i.e. to perform a
+				// bit-operation JavaScript converts the number into a 32-bit binary
+				// number (signed) and perform the operation and convert back the result
+				// to a 64-bit number.
+				// Ideally, this would just be ((static_cast<int32>(Hash)) << 5) but left
+				// shifting a signed int with overflow is undefined so we have to memcpy
+				// to an unsigned.
+				uint64 BitShiftingScratchRegister;
+				std::memcpy(&BitShiftingScratchRegister, &Hash, sizeof(int64));
+				int32 BitShiftedHash = static_cast<int32>((BitShiftingScratchRegister << 5) & 0xFFFFFFFF);
+				Hash = BitShiftedHash + Hash + static_cast<int32>(WorkerName[i]);
+			}
+			return FMath::Abs(Hash);
+		}
 	}
 
 	// Argument expected in the form: UnrealWorker1a2s3d4f...
-	FColor GetColourForWorkerId(const FString& WorkerId)
+	FColor GetColorForWorkerName(const PhysicalWorkerName& WorkerName)
 	{
-		// DJB Reverse Hash
-		const int32 StringLength = WorkerId.Len();
-		int64 Hash = 5381;
-		for (int32 i = StringLength - 1; i > 0; --i) {
-			// We're mimicking the Inspector logic which is in JS. In JavaScript,
-			// a number is stored as a 64-bit floating point number but the bit-wise
-			// operation is performed on a 32-bit binary number i.e. to perform a
-			// bit-operation JavaScript converts the number into a 32-bit binary
-			// number (signed) and perform the operation and convert back the result
-			// to a 64-bit number.
-			Hash = ((static_cast<int32>(Hash)) << 5) + Hash + static_cast<int32>(WorkerId[i]);
-		}
-		Hash = FMath::Abs(Hash);
+		int64 Hash = DJBReverseHash(WorkerName);
 
-		const double Lightness = SpatialGDK::GenerateValueFromThresholds(Hash, MIN_LIGHTNESS, MAX_LIGHTNESS);
-		const double Saturation = SpatialGDK::GenerateValueFromThresholds(Hash, MIN_SATURATION, MAX_SATURATION);
+		const double Lightness = GenerateValueFromThresholds(Hash, MIN_LIGHTNESS, MAX_LIGHTNESS);
+		const double Saturation = GenerateValueFromThresholds(Hash, MIN_SATURATION, MAX_SATURATION);
 		// Provides additional color variance for potentially sequential hashes
 		auto abs = FMath::Abs((double)Hash / Saturation + Lightness);
 		Hash = FMath::FloorToInt(abs);
-		const double Hue = SpatialGDK::GenerateValueFromThresholds(Hash, MIN_HUE, MAX_HUE);
+		const double Hue = GenerateValueFromThresholds(Hash, MIN_HUE, MAX_HUE);
 
-		return SpatialGDK::HLAtoRGB(Hue, Saturation, Lightness);
+		return SpatialGDK::HSLtoRGB(Hue, Saturation, Lightness);
 	}
 }

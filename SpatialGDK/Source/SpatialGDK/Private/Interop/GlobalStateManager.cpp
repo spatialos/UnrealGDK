@@ -601,7 +601,10 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 		}
 		else
 		{
-			ApplyVirtualWorkerMappingFromQueryResponse(Op);
+			if (NetDriver->VirtualWorkerTranslator != nullptr)
+			{
+				ApplyVirtualWorkerMappingFromQueryResponse(Op);
+			}
 			ApplyDeploymentMapDataFromQueryResponse(Op);
 			Callback.ExecuteIfBound(Op);
 		}

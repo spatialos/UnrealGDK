@@ -91,7 +91,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
 	FVector WorldSpaceActorTagOffset = FVector(0.0f, 0.0f, 200.0f);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Color used for any server id / virtual worker id that doesn't map into the ServerColors array"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Color used for any server with an unresolved name"))
 	FColor InvalidServerTintColor = FColor::Magenta;
 
 private:
@@ -110,6 +110,7 @@ private:
 
 	FColor GetServerWorkerColor(const Worker_EntityId EntityId) const;
 	FColor GetVirtualWorkerColor(const Worker_EntityId EntityId) const;
+	const FString& GetAuthoritativeWorkerFromACL(const Worker_EntityId EntityId) const;
 
 	bool GetLockStatus(const Worker_EntityId EntityId);
 

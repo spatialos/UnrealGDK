@@ -341,36 +341,46 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 FColor ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId) const
 {
 	check(NetDriver != nullptr && !NetDriver->IsServer());
+	if (!NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
+	{
+		UE_LOG(LogSpatialDebugger, Error, TEXT("Trying to get virtual worker color for entity with no AuthorityIntent component."));
+		return InvalidServerTintColor;
+	}
 	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
-	check(AuthorityIntentComponent != nullptr);
 	const int32 VirtualWorkerId = AuthorityIntentComponent->VirtualWorkerId;
-	const FString* PhysicalWorkerId = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(VirtualWorkerId);
-	if (PhysicalWorkerId == nullptr) {
+	const PhysicalWorkerName* PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(VirtualWorkerId);
+	if (PhysicalWorkerName == nullptr) {
 		// This can happen if the client hasn't yet received the VirtualWorkerTranslator mapping
 		return InvalidServerTintColor;
 	}
-	return SpatialGDK::GetColourForWorkerId(*PhysicalWorkerId);
+	return SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName);
 }
 
 FColor ASpatialDebugger::GetServerWorkerColor(const Worker_EntityId EntityId) const
 {
 	check(NetDriver != nullptr && !NetDriver->IsServer());
 
+	const PhysicalWorkerName& AuthoritativeWorkerFromACL = GetAuthoritativeWorkerFromACL(EntityId);
+
+	const FString WorkerNamePrefix = FString{ "workerId:" };
+	if (!AuthoritativeWorkerFromACL.StartsWith(*WorkerNamePrefix)) {
+		// The ACL entry is not an explicit worker ID, this may happen at startup when it's just
+		// the UnrealWorker attribute, just return invalid for now.
+		return InvalidServerTintColor;
+	}
+	return SpatialGDK::GetColorForWorkerName(AuthoritativeWorkerFromACL.RightChop(WorkerNamePrefix.Len()));
+}
+
+const PhysicalWorkerName& ASpatialDebugger::GetAuthoritativeWorkerFromACL(const Worker_EntityId EntityId) const
+{
 	const SpatialGDK::EntityAcl* AclData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId);
-	const WorkerRequirementSet* WriteAcl = AclData->ComponentWriteAcl.Find(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
+	const WorkerRequirementSet* WriteAcl = AclData->ComponentWriteAcl.Find(SpatialConstants::POSITION_COMPONENT_ID);
 
 	check(WriteAcl != nullptr);
 	check(WriteAcl->Num() == 1);
 	check((*WriteAcl)[0].Num() == 1);
 
-	const FString& AuthoritativeACLEntry = (*WriteAcl)[0][0];
-	const FString WorkerIdPrefx = FString{ "workerId:" };
-	if (!AuthoritativeACLEntry.StartsWith(*WorkerIdPrefx)) {
-		// The ACL entry is not an explicit worker ID, this may happen at startup when it's just
-		// the UnrealWorker attribute, just return invalid for now.
-		return InvalidServerTintColor;
-	}
-	return SpatialGDK::GetColourForWorkerId(AuthoritativeACLEntry.RightChop(WorkerIdPrefx.Len()));
+	return (*WriteAcl)[0][0];
 }
 
 // TODO: Implement once this functionality is available https://improbableio.atlassian.net/browse/UNR-2361.
