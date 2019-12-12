@@ -18,7 +18,12 @@ To access the **SpatialOS Editor Settings** panel in the Unreal Editor, use eith
 
 Note that the default SpatialOS editor settings for your project are saved in the `DefaultSpatialGDKEditorSettings.ini file` in the `<GameRoot>\Config\` directory, which you can edit with any text editor.
 
-<%(Callout type="tip" message="Each setting is documented with a tooltip which appears when you hover over it in the editor.")%>
+[block:callout]
+{
+  "type": "tip",
+  "body": "Each setting is documented with a tooltip which appears when you hover over it in the editor."
+}
+[/block]
 
 ## Example use cases
 

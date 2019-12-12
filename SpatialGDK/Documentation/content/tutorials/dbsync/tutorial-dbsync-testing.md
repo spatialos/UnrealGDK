@@ -34,7 +34,12 @@ INSERT INTO items (name, count, path) VALUES ('UnrealWorker', 1, 'profiles.Unrea
 
 Next, build the project from Visual Studio and be sure everything compiles correctly.
 
-<%(Callout type="tip" message="If you have any issues, you can compare your code to a final working version of the tutorial in the `feature/dbsync_worker_tutorial_finish` branch of the Example Project.")%>
+[block:callout]
+{
+  "type": "tip",
+  "body": "If you have any issues, you can compare your code to a final working version of the tutorial in the `feature/dbsync_worker_tutorial_finish` branch of the Example Project."
+}
+[/block]
 
 The default Example Project launch configuration only starts UnrealWorkers. The launch configuration now also needs to start the Database Sync Worker you added. We provide a launch config that does this, but you can learn more about how to change those config files [here](https://docs.improbable.io/reference/latest/shared/project-layout/launch-config#launch-configuration-file).
 

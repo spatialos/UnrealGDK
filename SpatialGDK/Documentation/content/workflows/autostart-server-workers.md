@@ -21,7 +21,12 @@ You only need to set up your server-worker type in your project once. There are 
 
 ## 1. Build your server worker
 
-<%(Callout type="warn" message="Note: you must close the Unreal Editor before building your server worker. If the Editor is open when you try to build your worker the command will fail.")%>
+[block:callout]
+{
+  "type": "warn",
+  "body": "Note: you must close the Unreal Editor before building your server worker. If the Editor is open when you try to build your worker the command will fail."
+}
+[/block]
 
 When you are using a local deployment, you don’t usually need to build your project’s server-worker, but to set up the project so the Editor launches a server-worker instance automatically when you are debugging from Visual Studio, you need to build the server-worker once, using a specific flag.
 

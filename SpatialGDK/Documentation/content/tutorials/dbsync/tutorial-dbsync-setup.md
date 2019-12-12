@@ -8,7 +8,12 @@ To use this tutorial, you must install [Postgresql 11.x](https://www.postgresql.
 
 You can download it from [here](https://postgresql.org/download/windows). Once downloaded, set its password to `DO_NOT_USE_IN_PRODUCTION`.
 
-<%(Callout type="tip" message="If you install a Postgresql version lower than 11, you may see an error similar to `ERROR:  record old is not assigned yet` when trying to modify the database. If this happens, uninstall Postgresql and re-install a 11.x version.")%>
+[block:callout]
+{
+  "type": "tip",
+  "body": "If you install a Postgresql version lower than 11, you may see an error similar to `ERROR:  record old is not assigned yet` when trying to modify the database. If this happens, uninstall Postgresql and re-install a 11.x version."
+}
+[/block]
 
 ### 2. Set up the Example Project
 
@@ -18,7 +23,12 @@ For this tutorial, you will use the `feature/dbsync_worker_tutorial_start` branc
 
 Then, open the Visual Studio solution and build the project.
 
-<%(Callout type="tip" message="If you just want to see the final result, you can find the completed source version of this tutorial in the `feature/dbsync_worker_tutorial_finish` branch of the Example Project. While the game code will be complete, _**you must still follow the remaining steps on this page.**_")%>
+[block:callout]
+{
+  "type": "tip",
+  "body": "If you just want to see the final result, you can find the completed source version of this tutorial in the `feature/dbsync_worker_tutorial_finish` branch of the Example Project. While the game code will be complete, _**you must still follow the remaining steps on this page.**_"
+}
+[/block]
 
 Once built, open the project in the Unreal Editor, generate Schema, create a Snapshot and start a deployment with a couple of players in `New Editor Window`.
 

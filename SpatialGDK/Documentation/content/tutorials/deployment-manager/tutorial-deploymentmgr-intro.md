@@ -1,9 +1,14 @@
 # Tutorials and guides
 ## [Deprecated] Multiple deployments for session-based games
 
-<%(Callout type="alert" message="This tutorial is deprecated. To manage a game with multiple deployments, 
+[block:callout]
+{
+  "type": "alert",
+  "body": "This tutorial is deprecated. To manage a game with multiple deployments, 
 please use the [deployment pool module](https://docs.improbable.io/metagame/latest/content/configuration-examples/deployment-pool/overview) of the SpatialOS Online Services. 
-")%>
+"
+}
+[/block]
 
 > This tutorial uses the Example Project from the GDK's [setup guide]({{urlRoot}}/content/get-started/example-project/exampleproject-intro).</br>
 

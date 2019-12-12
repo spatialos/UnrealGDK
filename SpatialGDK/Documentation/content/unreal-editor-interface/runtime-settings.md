@@ -16,7 +16,12 @@ Before you launch your game in a [cloud deployment]({{urlRoot}}/content/glossary
 
 <%(Lightbox image="{{assetRoot}}assets/editor-settings/runtime-settings.png")%> 
 
-<%(Callout type="tip" message="Each setting is documented with a tooltip which appears when you hover over it in the editor.")%>
+[block:callout]
+{
+  "type": "tip",
+  "body": "Each setting is documented with a tooltip which appears when you hover over it in the editor."
+}
+[/block]
 
 ## Example use cases
 

@@ -2,7 +2,12 @@
 # Tutorials and guides	
 ## Port your project to SpatialOS
 
-<%(Callout type="warn" message="Please be aware of the [GDK's support level of different Unreal features]({{urlRoot}}/unreal-features-support). If you need to port your game, please contact us via our [forums](https://forums.improbable.io/), or [Discord](https://discord.gg/vAT7RSU) so we can best support you.")%>
+[block:callout]
+{
+  "type": "warn",
+  "body": "Please be aware of the [GDK's support level of different Unreal features]({{urlRoot}}/unreal-features-support). If you need to port your game, please contact us via our [forums](https://forums.improbable.io/), or [Discord](https://discord.gg/vAT7RSU) so we can best support you."
+}
+[/block]
 
 This guide shows you how to port your own Unreal project to the GDK; you will modify your project to make it compatible with the GDK and SpatialOS, and you will launch a local deployment to test your project.
 

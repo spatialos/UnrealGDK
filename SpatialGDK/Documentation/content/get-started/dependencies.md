@@ -41,7 +41,12 @@ To build the GDK for Unreal you need the following software installed on your ma
     - **Desktop development with C++**<br>
     - **Game development with C++**, including the optional **Unreal Engine installer** component.
 
-<%(Callout type="warn" message="Make sure you install Visual Studio 2017. The GDK does not currently support any other version.")%>
+[block:callout]
+{
+  "type": "warn",
+  "body": "Make sure you install Visual Studio 2017. The GDK does not currently support any other version."
+}
+[/block]
 
 - [**Linux Cross-Compilation toolchain**](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html)
     - You need to download and install Unreal's Linux Cross-Compilation toolchain in order to build Linux server-workers using your Windows machine. Use the Unreal documentation link above to install `-v13 clang-7.0.1-based`, the appropriate toolchain for Unreal Engine 4.22.
