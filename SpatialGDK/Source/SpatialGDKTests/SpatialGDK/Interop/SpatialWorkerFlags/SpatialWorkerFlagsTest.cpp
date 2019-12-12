@@ -43,7 +43,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_flagUpdate_op_WHEN_removing_a_worker_flag_THEN_f
 	FString OutValue;
 	TestTrue("Flag added in the WorkerFlags map: ", SpatialWorkerFlags->GetWorkerFlag("test", OutValue));
 
-	//remove test flag
+	// Remove test flag
 	Worker_FlagUpdateOp opRemoveFlag = Create_Worker_FlagUpdateOp("test", nullptr);
 	SpatialWorkerFlags->ApplyWorkerFlagUpdate(opRemoveFlag);
 
