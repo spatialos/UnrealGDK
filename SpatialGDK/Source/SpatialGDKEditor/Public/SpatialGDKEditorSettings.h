@@ -6,8 +6,8 @@
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
 #include "SpatialConstants.h"
-#include "UObject/Package.h"
 #include "SpatialGDKServicesModule.h"
+#include "UObject/Package.h"
 
 #include "SpatialGDKEditorSettings.generated.h"
 
@@ -18,10 +18,10 @@ struct FWorldLaunchSection
 {
 	GENERATED_BODY()
 
-	FWorldLaunchSection()
-		: Dimensions(2000, 2000)
-		, ChunkEdgeLengthMeters(50)
-		, SnapshotWritePeriodSeconds(0)
+	FWorldLaunchSection() :
+		Dimensions(2000, 2000),
+		ChunkEdgeLengthMeters(50),
+		SnapshotWritePeriodSeconds(0)
 	{
 		LegacyFlags.Add(TEXT("bridge_qos_max_timeout"), TEXT("0"));
 		LegacyFlags.Add(TEXT("bridge_soft_handover_enabled"), TEXT("false"));
@@ -53,12 +53,12 @@ struct FWorkerPermissionsSection
 {
 	GENERATED_BODY()
 
-	FWorkerPermissionsSection()
-		: bAllPermissions(true)
-		, bAllowEntityCreation(true)
-		, bAllowEntityDeletion(true)
-		, bAllowEntityQuery(true)
-		, Components()
+	FWorkerPermissionsSection() :
+		bAllPermissions(true),
+		bAllowEntityCreation(true),
+		bAllowEntityDeletion(true),
+		bAllowEntityQuery(true),
+		Components()
 	{
 	}
 
@@ -88,9 +88,9 @@ struct FLoginRateLimitSection
 {
 	GENERATED_BODY()
 
-	FLoginRateLimitSection()
-		: Duration()
-		, RequestsPerDuration(0)
+	FLoginRateLimitSection() :
+		Duration(),
+		RequestsPerDuration(0)
 	{
 	}
 
@@ -108,16 +108,16 @@ struct FWorkerTypeLaunchSection
 {
 	GENERATED_BODY()
 
-	FWorkerTypeLaunchSection()
-		: WorkerTypeName()
-		, WorkerPermissions()
-		, MaxConnectionCapacityLimit(0)
-		, bLoginRateLimitEnabled(false)
-		, LoginRateLimit()
-		, Columns(1)
-		, Rows(1)
-		, NumEditorInstances(1)
-		, bManualWorkerConnectionOnly(true)
+	FWorkerTypeLaunchSection() :
+		WorkerTypeName(),
+		WorkerPermissions(),
+		MaxConnectionCapacityLimit(0),
+		bLoginRateLimitEnabled(false),
+		LoginRateLimit(),
+		Columns(1),
+		Rows(1),
+		NumEditorInstances(1),
+		bManualWorkerConnectionOnly(true)
 	{
 	}
 
@@ -149,8 +149,11 @@ struct FWorkerTypeLaunchSection
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Rectangle grid row count", ClampMin = "1", UIMin = "1"))
 	int32 Rows;
 
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Get number of instances to launch from load balancing strategy"))
+	bool bNumInstancesFromStrategy;
+
 	/** Number of instances to launch when playing in editor. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Instances to launch in editor", ClampMin = "0", UIMin = "0"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Instances to launch in editor", EditCondition = "!bNumInstancesFromStrategy", ClampMin = "0", UIMin = "0"))
 	int32 NumEditorInstances;
 
 	/** Flags defined for a worker instance. */
@@ -167,9 +170,9 @@ struct FSpatialLaunchConfigDescription
 {
 	GENERATED_BODY()
 
-	FSpatialLaunchConfigDescription()
-		: Template(TEXT("w2_r0500_e5"))
-		, World()
+	FSpatialLaunchConfigDescription() :
+		Template(TEXT("w2_r0500_e5")),
+		World()
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
 		UnrealWorkerDefaultSetting.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
@@ -180,9 +183,9 @@ struct FSpatialLaunchConfigDescription
 		ServerWorkers.Add(UnrealWorkerDefaultSetting);
 	}
 
-	FSpatialLaunchConfigDescription(const FName& WorkerTypeName)
-		: Template(TEXT("w2_r0500_e5"))
-		, World()
+	FSpatialLaunchConfigDescription(const FName& WorkerTypeName) :
+		Template(TEXT("w2_r0500_e5")),
+		World()
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
 		UnrealWorkerDefaultSetting.WorkerTypeName = WorkerTypeName;
@@ -212,12 +215,12 @@ struct FSpatialLaunchConfigDescription
 UENUM()
 namespace ERegionCode
 {
-	enum Type
-	{
-		US = 1,
-		EU,
-		AP,
-	};
+enum Type
+{
+	US = 1,
+	EU,
+	AP,
+};
 }
 
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig)
@@ -232,7 +235,6 @@ public:
 	virtual void PostInitProperties() override;
 
 private:
-
 	/** Set WorkerTypes in runtime settings. */
 	void SetRuntimeWorkerTypes();
 
@@ -289,34 +291,34 @@ private:
 
 private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Assembly name"))
-		FString AssemblyName;
+	FString AssemblyName;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Deployment name"))
-		FString PrimaryDeploymentName;
+	FString PrimaryDeploymentName;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Cloud launch configuration path"))
-		FFilePath PrimaryLaunchConfigPath;
+	FFilePath PrimaryLaunchConfigPath;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Snapshot path"))
-		FFilePath SnapshotPath;
+	FFilePath SnapshotPath;
 
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (DisplayName = "Region"))
-		TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
+	TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
 
 	const FString SimulatedPlayerLaunchConfigPath;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Region"))
-		TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
+	TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (DisplayName = "Include simulated players"))
-		bool bSimulatedPlayersIsEnabled;
+	bool bSimulatedPlayersIsEnabled;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Deployment name"))
-		FString SimulatedPlayerDeploymentName;
+	FString SimulatedPlayerDeploymentName;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Number of simulated players"))
-		uint32 NumberOfSimulatedPlayers;
-	
+	uint32 NumberOfSimulatedPlayers;
+
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
@@ -331,15 +333,15 @@ public:
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
 		return SpatialOSLaunchConfig.FilePath.IsEmpty()
-			? FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("default_launch.json"))
-			: SpatialOSLaunchConfig.FilePath;
+				   ? FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("default_launch.json"))
+				   : SpatialOSLaunchConfig.FilePath;
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotToSave() const
 	{
 		return SpatialOSSnapshotToSave.IsEmpty()
-			? FString(TEXT("default.snapshot"))
-			: SpatialOSSnapshotToSave;
+				   ? FString(TEXT("default.snapshot"))
+				   : SpatialOSSnapshotToSave;
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotToSavePath() const
@@ -350,8 +352,8 @@ public:
 	FORCEINLINE FString GetSpatialOSSnapshotToLoad() const
 	{
 		return SpatialOSSnapshotToLoad.IsEmpty()
-			? FString(TEXT("default.snapshot"))
-			: SpatialOSSnapshotToLoad;
+				   ? FString(TEXT("default.snapshot"))
+				   : SpatialOSSnapshotToLoad;
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotToLoadPath() const
@@ -397,7 +399,6 @@ public:
 	void SetPrimaryLaunchConfigPath(const FString& Path);
 	FORCEINLINE FString GetPrimaryLaunchConfigPath() const
 	{
-
 		return PrimaryLaunchConfigPath.FilePath;
 	}
 
@@ -406,8 +407,8 @@ public:
 	{
 		const USpatialGDKEditorSettings* SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 		return SnapshotPath.FilePath.IsEmpty()
-			? SpatialEditorSettings->GetSpatialOSSnapshotToSavePath()
-			: SnapshotPath.FilePath;
+				   ? SpatialEditorSettings->GetSpatialOSSnapshotToSavePath()
+				   : SnapshotPath.FilePath;
 	}
 
 	void SetPrimaryRegionCode(const ERegionCode::Type RegionCode);

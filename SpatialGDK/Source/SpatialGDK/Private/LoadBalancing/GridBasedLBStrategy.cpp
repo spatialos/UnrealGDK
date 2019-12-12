@@ -103,3 +103,8 @@ bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location
 	return Location.X >= Box.Min.X && Location.Y >= Box.Min.Y
 		&& Location.X < Box.Max.X && Location.Y < Box.Max.Y;
 }
+
+int32 UGridBasedLBStrategy::GetNumberOfWorkersToSpawn() const
+{
+	return Rows * Cols;
+}

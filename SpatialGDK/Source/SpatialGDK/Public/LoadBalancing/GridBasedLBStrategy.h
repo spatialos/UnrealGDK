@@ -38,6 +38,8 @@ public:
 
 	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
+
+	virtual int32 GetNumberOfWorkersToSpawn() const override;
 /* End UAbstractLBStrategy Interface */
 
 protected:

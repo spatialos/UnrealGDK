@@ -2,31 +2,33 @@
 
 #include "SpatialGDKEditorSettings.h"
 
-#include "Internationalization/Regex.h"
 #include "ISettingsModule.h"
+#include "Internationalization/Regex.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
 #include "Settings/LevelEditorPlaySettings.h"
-#include "Templates/SharedPointer.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Templates/SharedPointer.h"
+
+#include "LoadBalancing/AbstractLBStrategy.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 #define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
 
-USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
-	, bShowSpatialServiceButton(false)
-	, bDeleteDynamicEntities(true)
-	, bGenerateDefaultLaunchConfig(true)
-	, bExposeRuntimeIP(false)
-	, ExposedRuntimeIP(TEXT(""))
-	, bStopSpatialOnExit(false)
-	, bAutoStartLocalDeployment(true)
-	, PrimaryDeploymentRegionCode(ERegionCode::US)
-	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
-	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
+USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer) :
+	Super(ObjectInitializer),
+	bShowSpatialServiceButton(false),
+	bDeleteDynamicEntities(true),
+	bGenerateDefaultLaunchConfig(true),
+	bExposeRuntimeIP(false),
+	ExposedRuntimeIP(TEXT("")),
+	bStopSpatialOnExit(false),
+	bAutoStartLocalDeployment(true),
+	PrimaryDeploymentRegionCode(ERegionCode::US),
+	SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json"))),
+	SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
@@ -97,7 +99,28 @@ void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
 	PlayInSettings->WorkerTypesToLaunch.Empty(LaunchConfigDesc.ServerWorkers.Num());
 	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
 	{
-		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
+		int NumInstances = 1;
+		if (WorkerLaunch.bNumInstancesFromStrategy)
+		{
+			const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+			if (SpatialSettings->bEnableUnrealLoadBalancer)
+			{
+				if (SpatialSettings->LoadBalanceStrategy)
+				{
+					UAbstractLBStrategy* LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
+					NumInstances = LoadBalanceStrategy->GetNumberOfWorkersToSpawn();
+				}
+				else
+				{
+					UE_LOG(LogSpatialEditorSettings, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Will spawn 1 worker."));
+				}
+			}
+		}
+		else
+		{
+			NumInstances = WorkerLaunch.NumEditorInstances;
+		}
+		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, NumInstances);
 	}
 }
 
