@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 
+## [`0.6.4`] - 2019-12-12
+### Bug fixes: 
+- The Inspector button in the SpatialOS GDK for Unreal toolbar now opens the correct URL.
+
 ## [`0.6.3`] - 2019-12-05
 ### Bug fixes: 
 - The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
