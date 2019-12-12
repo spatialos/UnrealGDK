@@ -20,7 +20,7 @@ void SpatialVirtualWorkerTranslator::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	// If this is being run from tests, NetDriver will be null.
-	WorkerId = (NetDriver != nullptr) ? NetDriver->Connection->GetWorkerId() : "InvalidWorkerId";
+	WorkerId = (NetDriver != nullptr && NetDriver->Connection != nullptr) ? NetDriver->Connection->GetWorkerId() : "InvalidWorkerId";
 }
 
 void SpatialVirtualWorkerTranslator::SetDesiredVirtualWorkerCount(uint32 NumberOfVirtualWorkers)
