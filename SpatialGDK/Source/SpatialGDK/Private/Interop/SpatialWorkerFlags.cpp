@@ -2,7 +2,6 @@
 
 #include "Interop/SpatialWorkerFlags.h"
 
-
 bool USpatialWorkerFlags::GetWorkerFlag(const FString& Name, FString& OutValue) const
 {
 	if (const FString* ValuePtr = WorkerFlags.Find(Name))
