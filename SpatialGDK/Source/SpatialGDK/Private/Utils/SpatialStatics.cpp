@@ -44,7 +44,7 @@ FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
 	return NAME_None;
 }
 
-const bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& InString, FString& OutString)
+bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& InString, FString& OutString)
 {
 	if (const UWorld* World = WorldContext->GetWorld())
 	{

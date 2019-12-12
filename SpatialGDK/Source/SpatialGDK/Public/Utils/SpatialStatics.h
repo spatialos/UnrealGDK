@@ -85,7 +85,7 @@ public:
 	 * Gets value of a worker flag.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static const bool GetWorkerFlag(const UObject* WorldContextObject, const FString& Name, FString& Value);
+	static bool GetWorkerFlag(const UObject* WorldContextObject, const FString& Name, FString& Value);
 
 private:
 

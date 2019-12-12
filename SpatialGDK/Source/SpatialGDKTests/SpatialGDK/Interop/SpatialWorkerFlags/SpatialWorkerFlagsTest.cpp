@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#include "Interop/SpatialWorkerFlags.h"
 #include "DummyObject.h"
+#include "Interop/SpatialWorkerFlags.h"
 
 #include "TestDefinitions.h"
 
