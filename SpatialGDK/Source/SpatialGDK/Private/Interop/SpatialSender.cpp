@@ -83,24 +83,11 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
 
-	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
-
-	WorkerRequirementSet AnyServerRequirementSet;
-	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
-
-	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
-
-	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { OwningClientAttributeSet };
-	WorkerRequirementSet OwningClientOnlyRequirementSet = { OwningClientAttributeSet };
-
-	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->ServerWorkerTypes)
-	{
-		WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
-
-		AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
-		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
-		AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
-	}
+	FString ClientWorkerAttribute = SpatialActorUtils::GetOwnerWorkerAttribute(Actor);
+	WorkerRequirementSet AnyServerRequirementSet = SpatialActorUtils::GetAnyServerRequirementSet();
+	WorkerRequirementSet AnyServerOrClientRequirementSet = SpatialActorUtils::GetAnyServerOrClientRequirementSet(*Actor);
+	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = SpatialActorUtils::GetAnyServerOrOwningClientRequirementSet(*Actor);
+	WorkerRequirementSet OwningClientOnlyRequirementSet = SpatialActorUtils::GetOwningClientOnlyRequirementSet(*Actor);
 
 	// Add Zoning Attribute if we are using the load balancer.
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
@@ -128,8 +115,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
-	const WorkerAttributeSet WorkerAttribute{ Info.WorkerType.ToString() };
-	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
+	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = SpatialActorUtils::GetAuthoritativeWorkerRequirementSet(*Actor);
 
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
@@ -424,9 +410,7 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 
 void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info)
 {
-	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass());
-	const WorkerAttributeSet WorkerAttribute{ ActorInfo.WorkerType.ToString() };
-	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
+	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = SpatialActorUtils::GetAuthoritativeWorkerRequirementSet(*(Channel->Actor));
 
 	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
 
