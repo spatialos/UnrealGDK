@@ -472,7 +472,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this, &TimerManager);
-	SpatialMetrics->Init(this);
+	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
+	SpatialMetrics->ControllerRefProvider.BindUObject(this, &USpatialNetDriver::GetCurrentPlayerControllerRef);
 
 	// PackageMap value has been set earlier in USpatialNetConnection::InitBase
 	// Making sure the value is the same
@@ -1549,7 +1550,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
 		{
-			SpatialMetrics->TickMetrics();
+			SpatialMetrics->TickMetrics(Time);
 		}
 
 		if (LoadBalanceEnforcer.IsValid())
@@ -2380,4 +2381,19 @@ void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
 	}
 
 	SpatialDebugger = InSpatialDebugger;
+}
+
+FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
+{
+	if (USpatialNetConnection* NetConnection = GetSpatialOSNetConnection())
+	{
+		if (APlayerController* PlayerController = Cast<APlayerController>(NetConnection->OwningActor))
+		{
+			if (PackageMap)
+			{
+				return PackageMap->GetUnrealObjectRefFromObject(PlayerController);
+			}
+		}
+	}
+	return FUnrealObjectRef::NULL_OBJECT_REF;
 }
