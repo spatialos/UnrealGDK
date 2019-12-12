@@ -22,7 +22,7 @@ namespace
 SPATIALWORKERFLAGS_TEST(GIVEN_a_flagUpdate_op_WHEN_adding_a_worker_flag_THEN_flag_added)
 {
 	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
-	//add test flag
+	// Add test flag
 	Worker_FlagUpdateOp opAddFlag = Create_Worker_FlagUpdateOp("test", "10");
 	SpatialWorkerFlags->ApplyWorkerFlagUpdate(opAddFlag);
 
@@ -93,4 +93,3 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_bound_delegate_WHEN_unbind_the_delegate_THEN_bou
 
 	return true;
 }
-
