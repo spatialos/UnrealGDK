@@ -81,7 +81,7 @@ public:
 	static void PrintTextSpatial(UObject* WorldContextObject, const FText InText = INVTEXT("Hello"), bool bPrintToScreen = true, FLinearColor TextColor = FLinearColor(0.0, 0.66, 1.0), float Duration = 2.f);
 
 	/**
-	 * Returns true if worker flag was found.
+	 * Returns true if worker flag with the given name was found.
 	 * Gets value of a worker flag.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
