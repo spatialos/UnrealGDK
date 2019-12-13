@@ -156,7 +156,10 @@ public:
 	void SetReceptionistHost(const FString& host)
 	{
 		ReceptionistHost = host;
-		UseExternalIp = ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0;
+		if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
+		{
+			UseExternalIp = true;
+		}
 	}
 
 	FString GetReceptionistHost() const { return ReceptionistHost; }
