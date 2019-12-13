@@ -23,7 +23,7 @@ namespace SpatialGDK
 		const int32 MIN_LIGHTNESS = 25;
 		const int32 MAX_LIGHTNESS = 60;
 
-		double GenerateValueFromThresholds(int64 Hash, int32 Min, int32 Max)
+		int64 GenerateValueFromThresholds(int64 Hash, int32 Min, int32 Max)
 		{
 			return Hash % FMath::Abs(Max - Min) + Min;
 		}
