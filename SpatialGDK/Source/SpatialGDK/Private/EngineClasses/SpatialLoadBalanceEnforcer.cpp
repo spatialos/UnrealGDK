@@ -98,8 +98,8 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 			continue;
 		}
 
-		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
-		if (OwningWorkerId == nullptr)
+		const FString* DestinationWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		if (DestinationWorkerId == nullptr)
 		{
 			const int32 WarnOnAttemptNum = 5;
 			Request.ProcessAttempts++;
@@ -113,7 +113,16 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 			continue;
 		}
 
-		PendingRequests.Push(AclWriteAuthorityRequest{ Request.EntityId, *OwningWorkerId });
+		check(Sender.IsValid());
+		if (StaticComponentView->HasAuthority(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+		{
+			PendingRequests.Push(AclWriteAuthorityRequest{ Request.EntityId, *OwningWorkerId });
+		}
+		else
+		{
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Failed to update the EntityACL to match the authority intent; this worker does not have authority over the EntityACL."
+				" Source worker ID: %s. Entity ID %lld. Desination worker ID: %s."), *WorkerId, Request.EntityId, **DestinationWorkerId);
+		}
 		CompletedRequests.Add(Request.EntityId);
 	}
 
