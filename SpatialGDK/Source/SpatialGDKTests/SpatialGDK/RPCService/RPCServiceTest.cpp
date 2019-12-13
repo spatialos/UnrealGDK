@@ -414,7 +414,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_unreliabl
 
 	TArray<SpatialGDK::SpatialRPCService::UpdateToSend> UpdateToSendArray = RPCService.GetRPCsAndAcksToSend();
 
-	bTestPassed = true;
+	bool bTestPassed = true;
 	if (UpdateToSendArray.Num() != EntityPayloads.Num())
 	{
 		bTestPassed = false;
