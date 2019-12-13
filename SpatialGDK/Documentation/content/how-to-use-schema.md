@@ -54,7 +54,8 @@ To generate schema via the command line, run the following command:
 {
   "codes": [
   {
-      : "text"
+    "code": "<Path to UE4Editor.exe> <Path to your game's .uproject file> -run=GenerateSchemaAndSnapshots -MapPaths=<MapName1;MapName2;MapName3>",
+     "language": "text"
     }
   ]
 }
