@@ -18,7 +18,7 @@ namespace
 
 		return Op;
 	}
-}
+}  // anonymous namespace
 
 SPATIALWORKERFLAGS_TEST(GIVEN_a_flagUpdate_op_WHEN_adding_a_worker_flag_THEN_flag_added)
 {
