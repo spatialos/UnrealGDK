@@ -50,6 +50,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fix tombstone-related assert that could fire and bring down the editor.
 - Actors placed in the level with bNetLoadOnClient=false that go out of view will now be reloaded if they come back into view.
 - Fix crash in SpatialDebugger caused by dereference of invalid weak pointer
+- Fixed connection error when using spatial cloud connect external
 
 ## [`0.7.1-preview`] - 2019-12-06
 
