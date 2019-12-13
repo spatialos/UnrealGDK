@@ -2,9 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b9449316-2fda-4a0a-b7b9-ad7920f6f134" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/content/simulated-players.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/simulated-players.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-communicating.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-communicating.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-syncing.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-syncing.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-build.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-build.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/content/workers/non-unreal-server-worker-types.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/workers/non-unreal-server-worker-types.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/content/workflows/autostart-server-workers.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/workflows/autostart-server-workers.md" afterDir="false" />
     </list>
@@ -13,6 +16,20 @@
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DatabaseView">
+    <option name="SHOW_INTERMEDIATE" value="true" />
+    <option name="GROUP_DATA_SOURCES" value="true" />
+    <option name="GROUP_SCHEMA" value="true" />
+    <option name="GROUP_CONTENTS" value="false" />
+    <option name="SORT_POSITIONED" value="false" />
+    <option name="SHOW_EMPTY_GROUPS" value="false" />
+    <option name="AUTO_SCROLL_FROM_SOURCE" value="false" />
+    <option name="HIDDEN_KINDS">
+      <set />
+    </option>
+    <expand />
+    <select />
   </component>
   <component name="GOROOT" path="/usr/local/Cellar/go/1.13.4/libexec" />
   <component name="Git.Settings">

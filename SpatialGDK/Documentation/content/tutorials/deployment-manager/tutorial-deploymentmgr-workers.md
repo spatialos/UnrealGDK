@@ -13,7 +13,7 @@ Before you build your [assembly]({{urlRoot}}/content/glossary#assembly), you nee
 {
   "codes": [
   {
-      "code": "    \[/Script/SpatialGDK.SpatialGameInstance\] \n bPreventAutoConnectWithLocator=True\n",
+      "code": "    [/Script/SpatialGDK.SpatialGameInstance] \n bPreventAutoConnectWithLocator=True\n",
       "language": "text"
     }
   ]

@@ -24,7 +24,7 @@ For example:
 {
   "codes": [
   {
-      "code": "   PublicDependencyModuleNames.AddRange( \n            new string\[\] {\n                \"Core\",\n                \"CoreUObject\",\n                \"Engine\",\n                \"OnlineSubsystem\",\n                \"OnlineSubsystemUtils\",   \n                \"AssetRegistry\",\n                \"AIModule\",\n                \"GameplayTasks\",\n                \"SpatialGDK\",\n            }\n        );",
+      "code": "   PublicDependencyModuleNames.AddRange( \n            new string[] {\n                \"Core\",\n                \"CoreUObject\",\n                \"Engine\",\n                \"OnlineSubsystem\",\n                \"OnlineSubsystemUtils\",   \n                \"AssetRegistry\",\n                \"AIModule\",\n                \"GameplayTasks\",\n                \"SpatialGDK\",\n            }\n        );",
       "language": "text"
     }
   ]
@@ -99,7 +99,7 @@ Before you launch a cloud deployment, you need to make sure that `spatial` direc
 {
   "codes": [
   {
-      "code": "[/Script/UnrealEd.ProjectPackagingSettings\] \n +DirectoriesToAlwaysCook=(Path\"Spatial\")",
+      "code": "[/Script/UnrealEd.ProjectPackagingSettings] \n +DirectoriesToAlwaysCook=(Path\"Spatial\")",
       "language": "text"
     }
   ]
