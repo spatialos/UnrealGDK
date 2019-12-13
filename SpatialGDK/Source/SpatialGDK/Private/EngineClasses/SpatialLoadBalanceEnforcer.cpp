@@ -12,33 +12,38 @@ DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
 using namespace SpatialGDK;
 
-USpatialLoadBalanceEnforcer::USpatialLoadBalanceEnforcer(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
-	, StaticComponentView(nullptr)
+SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer()
+	: StaticComponentView(nullptr)
 	, Sender(nullptr)
 	, VirtualWorkerTranslator(nullptr)
 {
 }
 
-void USpatialLoadBalanceEnforcer::Init(const FString &InWorkerId,
+void SpatialLoadBalanceEnforcer::Init(const FString &InWorkerId,
 	USpatialStaticComponentView* InStaticComponentView,
 	USpatialSender* InSpatialSender,
 	SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
 {
 	WorkerId = InWorkerId;
+
+	check(InStaticComponentView != nullptr);
 	StaticComponentView = InStaticComponentView;
+
+	check(InSpatialSender != nullptr);
 	Sender = InSpatialSender;
+
+	check(InVirtualWorkerTranslator != nullptr);
 	VirtualWorkerTranslator = InVirtualWorkerTranslator;
 }
 
-void USpatialLoadBalanceEnforcer::Tick()
+void SpatialLoadBalanceEnforcer::Tick()
 {
 	ProcessQueuedAclAssignmentRequests();
 }
 
-void USpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
+void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
-	check(StaticComponentView != nullptr)
+	check(StaticComponentView.IsValid())
 	check(Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	if (StaticComponentView->GetAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -49,8 +54,10 @@ void USpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker
 // This is called whenever this worker becomes authoritative for the ACL component on an entity.
 // It is now this worker's responsibility to make sure that the ACL reflects the current intent,
 // which may have been received before this call.
-void USpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
+void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
+	check(StaticComponentView.IsValid())
+
 	if (AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID &&
 		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -83,7 +90,7 @@ void USpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeO
 //    (this worker just became responsible, so check to make sure intent and ACL agree.)
 // 3) AuthorityIntent change - Intent is authoritative on this worker but no longer assigned to this worker - ACL is authoritative on this worker.
 //    (this worker had responsibility for both and is giving up authority.)
-void USpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId EntityId)
+void SpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId EntityId)
 {
 	// TODO(zoning): measure the performance impact of this.
 	if (AclWriteAuthAssignmentRequests.ContainsByPredicate([EntityId](const WriteAuthAssignmentRequest& Request) { return Request.EntityId == EntityId; }))
@@ -97,7 +104,7 @@ void USpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityI
 	}
 }
 
-void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
+void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 {
 	TArray<Worker_EntityId> CompletedRequests;
 	CompletedRequests.Reserve(AclWriteAuthAssignmentRequests.Num());
@@ -110,11 +117,11 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 			// TODO(zoning): Not sure whether this should be possible or not. Remove if we don't see the warning again.
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Entity without AuthIntent component will not be processed. EntityId: %lld"), *WorkerId, Request.EntityId);
 			CompletedRequests.Add(Request.EntityId);
-			return;
+			continue;
 		}
 
-		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
-		if (OwningWorkerId == nullptr)
+		const FString* DestinationWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		if (DestinationWorkerId == nullptr)
 		{
 			const int32 WarnOnAttemptNum = 5;
 			Request.ProcessAttempts++;
@@ -128,7 +135,16 @@ void USpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 			continue;
 		}
 
-		Sender->SetAclWriteAuthority(Request.EntityId, *OwningWorkerId);
+		check(Sender.IsValid());
+		if (StaticComponentView->HasAuthority(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+		{
+			Sender->SetAclWriteAuthority(Request.EntityId, *DestinationWorkerId);
+		}
+		else
+		{
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Failed to update the EntityACL to match the authority intent; this worker does not have authority over the EntityACL."
+				" Source worker ID: %s. Entity ID %lld. Desination worker ID: %s."), *WorkerId, Request.EntityId, **DestinationWorkerId);
+		}
 		CompletedRequests.Add(Request.EntityId);
 	}
 

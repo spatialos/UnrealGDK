@@ -11,7 +11,6 @@
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
-#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
@@ -48,7 +47,7 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
-	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer;
+	LoadBalanceEnforcer = InNetDriver->LoadBalanceEnforcer.Get();
 	TimerManager = InTimerManager;
 
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
@@ -161,7 +160,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		if (NetDriver->VirtualWorkerTranslator != nullptr)
+		if (NetDriver->VirtualWorkerTranslator.IsValid())
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
 			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
@@ -338,7 +337,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		NetDriver->VirtualWorkerTranslator->AuthorityChanged(Op);
 	}
 
-	if (LoadBalanceEnforcer)
+	if (LoadBalanceEnforcer != nullptr)
 	{
 		LoadBalanceEnforcer->AuthorityChanged(Op);
 	}
@@ -1151,14 +1150,13 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-		if (NetDriver->IsServer())
+		if (NetDriver->IsServer() && (LoadBalanceEnforcer != nullptr))
 		{
-			check(LoadBalanceEnforcer);
 			LoadBalanceEnforcer->OnAuthorityIntentComponentUpdated(Op);
 		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		if (NetDriver->VirtualWorkerTranslator != nullptr)
+		if (NetDriver->VirtualWorkerTranslator.IsValid())
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
 			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
@@ -1563,7 +1561,21 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		bApplyWithUnresolvedRefs = true;
 	}
 
+#if TRACE_LIB_ACTIVE
+	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(this);
+	Tracer->MarkActiveLatencyTrace(Params.Payload.Trace);
+#endif
+
 	ERPCResult Result = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
+
+#if TRACE_LIB_ACTIVE
+	if (Result == ERPCResult::Success)
+	{
+		Tracer->EndLatencyTrace(Params.Payload.Trace, TEXT("Unhandled trace - automatically ended"));
+	}
+	Tracer->MarkActiveLatencyTrace(USpatialLatencyTracer::InvalidTraceKey);
+#endif
+
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };
 }
 
