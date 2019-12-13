@@ -28,6 +28,7 @@
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
+#include "LoadBalancing/ReferenceCountedLockingPolicy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -39,7 +40,6 @@
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
-#include "LoadBalancing/ReferenceCountedLockingPolicy.h"
 
 #if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"

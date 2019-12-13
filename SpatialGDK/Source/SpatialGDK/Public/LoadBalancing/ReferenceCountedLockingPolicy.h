@@ -17,9 +17,7 @@ class SPATIALGDK_API UReferenceCountedLockingPolicy : public UAbstractLockingPol
 	GENERATED_BODY()
 
 public:
-	virtual bool CanAcquireLock(const AActor* Actor) const override;
-
-	virtual ActorLockToken AcquireLock(const AActor* Actor, FString DebugString = "") override;
+	virtual ActorLockToken AcquireLock(AActor* Actor, FString DebugString = "") override;
 
 	// This should only be called during the lifetime of the locked actor
 	virtual void ReleaseLock(ActorLockToken Token) override;
@@ -27,13 +25,25 @@ public:
 	virtual bool IsLocked(const AActor* Actor) const override;
 
 private:
+	struct LockingState
+	{
+		int32 LockCount;
+		
+		TFunction<void()> UnbindActorDeletionDelegateFunc;
+	};
+
 	struct LockNameAndActor
 	{
 		FString LockName;
 		const AActor* Actor;
 	};
 
-	TMap<const AActor*, int32> ActorToReferenceCount;
+	UFUNCTION()
+	void OnLockedActorDeleted(AActor* DestroyedActor);
+
+	bool CanAcquireLock(AActor* Actor) const;
+
+	TMap<const AActor*, LockingState> ActorToLockingState;
 	TMap<ActorLockToken, LockNameAndActor> TokenToNameAndActor;
 
 	ActorLockToken NextToken = 1;
