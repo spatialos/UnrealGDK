@@ -22,13 +22,13 @@ using namespace SpatialGDK;
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
 class USpatialActorChannel;
-class USpatialDispatcher;
+class SpatialDispatcher;
 class USpatialNetDriver;
 class USpatialPackageMapClient;
 class USpatialReceiver;
 class USpatialStaticComponentView;
 class USpatialClassInfoManager;
-class UActorGroupManager;
+class SpatialActorGroupManager;
 class USpatialWorkerConnection;
 
 struct FReliableRPCForRetry
@@ -77,7 +77,7 @@ public:
 	void SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
-	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId);
+	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& DestinationWorkerId);
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	ERPCResult SendRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
@@ -160,8 +160,7 @@ private:
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 
-	UPROPERTY()
-	UActorGroupManager* ActorGroupManager;
+	SpatialActorGroupManager* ActorGroupManager;
 
 	FTimerManager* TimerManager;
 

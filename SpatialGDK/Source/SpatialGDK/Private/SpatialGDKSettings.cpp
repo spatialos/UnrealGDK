@@ -46,6 +46,13 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseRPCRingBuffers(false)
 	, DefaultRPCRingBufferSize(8)
 	, MaxRPCRingBufferSize(32)
+	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
+	, bTcpNoDelay(false)
+	, UdpServerUpstreamUpdateIntervalMS(10)
+	, UdpServerDownstreamUpdateIntervalMS(10)
+	, UdpClientUpstreamUpdateIntervalMS(10)
+	, UdpClientDownstreamUpdateIntervalMS(10)
+	// TODO - end
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }

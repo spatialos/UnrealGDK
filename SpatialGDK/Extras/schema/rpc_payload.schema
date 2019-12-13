@@ -1,15 +1,22 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
+type TracePayload {
+    bytes trace_id = 1;
+    bytes span_id = 2;
+}
+
 type UnrealRPCPayload {
     uint32 offset = 1;
     uint32 rpc_index = 2;
     bytes rpc_payload = 3;
+    option<TracePayload> rpc_trace = 4;
 }
 
 type UnrealPackedRPCPayload {
     uint32 offset = 1;
     uint32 rpc_index = 2;
     bytes rpc_payload = 3;
-    EntityId entity = 4;
+    option<TracePayload> rpc_trace = 4;
+    EntityId entity = 5;
 }
