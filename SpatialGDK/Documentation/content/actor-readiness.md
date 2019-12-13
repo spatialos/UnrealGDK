@@ -40,7 +40,7 @@ For example:
 {
   "codes": [
   {
-      "code": "void AMyContoller::OnRep_Pawn()\n{\n	Super::OnRep_Pawn();\n	// Interact with the Pawn\n}",
+      "code": "void AMyContoller::OnRep_Pawn()\n{\n\tSuper::OnRep_Pawn();\n\t// Interact with the Pawn\n}",
       "language": "text"
     }
   ]

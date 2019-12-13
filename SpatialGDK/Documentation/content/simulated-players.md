@@ -31,7 +31,7 @@ For example, in C++:
 {
   "codes": [
   {
-      "code": "ATP_SpatialGDKGameMode::ATP_SpatialGDKGameMode()\n{\n	// Set default pawn class to our Blueprint character.\n	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/StarterProject/Characters/PlayerCharacter_BP"));\n	static ConstructorHelpers::FClassFinder<APawn> SimulatedPawnBPClass(TEXT("/Game/StarterProject/Characters/SimulatedPlayers/SimulatedPlayerCharacter_BP"));\n\n	if (PlayerPawnBPClass.Class != NULL)\n	{\n		DefaultPawnClass = PlayerPawnBPClass.Class;\n	}\n	if (SimulatedPawnBPClass.Class != NULL)\n	{\n		SimulatedPawnClass = SimulatedPawnBPClass.Class;\n	}\n}",
+      "code": "ATP_SpatialGDKGameMode::ATP_SpatialGDKGameMode()\n{\n\t// Set default pawn class to our Blueprint character.\n\tstatic ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/StarterProject/Characters/PlayerCharacter_BP"));\n\tstatic ConstructorHelpers::FClassFinder<APawn> SimulatedPawnBPClass(TEXT("/Game/StarterProject/Characters/SimulatedPlayers/SimulatedPlayerCharacter_BP"));\n\n\tif (PlayerPawnBPClass.Class != NULL)\n\t{\n\t\tDefaultPawnClass = PlayerPawnBPClass.Class;\n\t}\n\tif (SimulatedPawnBPClass.Class != NULL)\n\t{\n\t\tSimulatedPawnClass = SimulatedPawnBPClass.Class;\n\t}\n}",
       "language": "text"
     }
   ]

@@ -1,24 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b9449316-2fda-4a0a-b7b9-ad7920f6f134" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/actor-readiness.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/actor-readiness.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/cross-server-rpcs.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/cross-server-rpcs.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/mobile/ios/zh/3-set-up-windows-environment.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/mobile/ios/zh/3-set-up-windows-environment.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/simulated-players.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/simulated-players.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/singleton-actors.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/singleton-actors.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/spatial-type.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/spatial-type.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-communicating.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-communicating.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-syncing.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/dbsync/tutorial-dbsync-syncing.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-build.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-build.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-setup.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-setup.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/workers/non-unreal-server-worker-types.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/workers/non-unreal-server-worker-types.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/workflows/autostart-server-workers.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/workflows/autostart-server-workers.md" afterDir="false" />
-    </list>
+    <list default="true" id="b9449316-2fda-4a0a-b7b9-ad7920f6f134" name="Default Changelist" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,6 +31,9 @@
         </RuleState>
       </list>
     </option>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="showServicesTree" value="false" />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
