@@ -1,10 +1,10 @@
+#include "LoadBalancing/ReferenceCountedLockingPolicy.h"
 #include "TestDefinitions.h"
+
 #include "Engine/Engine.h"
 #include "GameFramework/GameStateBase.h"
-#include "Tests/AutomationCommon.h"
 #include "GameFramework/DefaultPawn.h"
-
-#include "LoadBalancing/ReferenceCountedLockingPolicy.h"
+#include "Tests/AutomationCommon.h"
 
 #define REFERENCECOUNTEDLOCKINGPOLICY_TEST(TestName) \
 	GDK_TEST(Core, UReferenceCountedLockingPolicy, TestName)

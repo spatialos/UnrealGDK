@@ -78,7 +78,7 @@ void UReferenceCountedLockingPolicy::ReleaseLock(ActorLockToken Token)
 		LockingState& ActorLockingState = CountIt.Value();
 		if (ActorLockingState.LockCount == 1)
 		{
-			UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Actor migration no longer locked. Actor: %s"), *Actor->GetName(), *Name);
+			UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Actor migration no longer locked. Actor: %s"), *Actor->GetName());
 			ActorLockingState.UnbindActorDeletionDelegateFunc();
 			CountIt.RemoveCurrent();
 		}
@@ -90,8 +90,12 @@ void UReferenceCountedLockingPolicy::ReleaseLock(ActorLockToken Token)
 }
 
 bool UReferenceCountedLockingPolicy::IsLocked(const AActor* Actor) const
+{
+	if (Actor == nullptr)
 	{
-	check(Actor != nullptr);
+		UE_LOG(LogReferenceCountedLockingPolicy, Warning, TEXT("IsLocked called for nullptr"));
+		return false;
+	}
 	return ActorToLockingState.Contains(Actor);
 }
 
