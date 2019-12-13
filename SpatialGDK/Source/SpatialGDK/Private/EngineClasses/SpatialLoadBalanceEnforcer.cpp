@@ -113,10 +113,9 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 			continue;
 		}
 
-		check(Sender.IsValid());
 		if (StaticComponentView->HasAuthority(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 		{
-			PendingRequests.Push(AclWriteAuthorityRequest{ Request.EntityId, *OwningWorkerId });
+			PendingRequests.Push(AclWriteAuthorityRequest{ Request.EntityId, *DestinationWorkerId });
 		}
 		else
 		{
