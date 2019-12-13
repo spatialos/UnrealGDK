@@ -419,13 +419,15 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_unreliabl
 	{
 		bTestPassed = false;
 	}
-
-	for (int i = 0; i < EntityPayloads.Num(); ++i)
+	else
 	{
-		if (!CompareUpdateToSendAndEntityPayload(UpdateToSendArray[i], EntityPayloads[i], ERPCType::ServerUnreliable, 1))
+		for (int i = 0; i < EntityPayloads.Num(); ++i)
 		{
-			bTestPassed = false;
-			break;
+			if (!CompareUpdateToSendAndEntityPayload(UpdateToSendArray[i], EntityPayloads[i], ERPCType::ServerUnreliable, 1))
+			{
+				bTestPassed = false;
+				break;
+			}
 		}
 	}
 
