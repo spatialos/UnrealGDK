@@ -10,12 +10,12 @@ If you do not clone the Deployment Manager into the parent directory of your Exa
 
 [block:html]
 {
-  "html": "<button class="collapsible">Using a terminal</button>\n\n<div>\n\n1. Open a terminal window and navigate to the parent directory of your Example Project repository. \n1. Run either of these commands to clone the Deployment Manager repository:\n\n|       |                                                              |\n| ----- | ------------------------------------------------------------ |\n| HTTPS | `git clone https://github.com/spatialos/deployment-manager.git`|\n| SSH   | `git clone git@github.com:spatialos/deployment-manager.git`|\n\n</div>"
+  "html": "<button class=\"collapsible\">Using a terminal</button>\n\n<div>\n\n1. Open a terminal window and navigate to the parent directory of your Example Project repository. \n1. Run either of these commands to clone the Deployment Manager repository:\n\n|       |                                                              |\n| ----- | ------------------------------------------------------------ |\n| HTTPS | `git clone https://github.com/spatialos/deployment-manager.git`|\n| SSH   | `git clone git@github.com:spatialos/deployment-manager.git`|\n\n</div>"
 }
 [/block]
 
 
-<button class="collapsible">Using Github Desktop</button>
+<button class=\"collapsible\">Using Github Desktop</button>
 <div>
 
 

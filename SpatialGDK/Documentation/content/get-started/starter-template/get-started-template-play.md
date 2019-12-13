@@ -5,7 +5,7 @@
 
 To get playing, you use SpatialOS Launcher to set up clients for users. You then share the clients with users via a dedicated URL.
 
-<button class="collapsible">Reminder: What is the SpatialOS Launcher?</button>
+<button class=\"collapsible\">Reminder: What is the SpatialOS Launcher?</button>
 <div>
 
 

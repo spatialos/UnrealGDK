@@ -49,7 +49,7 @@ When you open the project in Unreal Editor, you will see there are additional op
 
 <%(Lightbox title="Toolbars" image="{{assetRoot}}assets/screen-grabs/toolbar/unreal-and-gdk-toolbar.png")%>
 
-<button class="collapsible">What's in the toolbar?</button>
+<button class=\"collapsible\">What's in the toolbar?</button>
 <div>
 
 Find out more about the SpatialOS version of the Unreal Editor toolbar: </br>* [Toolbars]({{urlRoot}}/content/unreal-editor-interface/toolbars) </br> * [Editor Settings panel]({{urlRoot}}/content/unreal-editor-interface/editor-settings) </br> * [SpatialOS Runtime Settings panel]({{urlRoot}}/content/unreal-editor-interface/runtime-settings)

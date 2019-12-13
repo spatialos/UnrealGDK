@@ -85,7 +85,7 @@ Before you launch a deployment (local or cloud) you must generate [schema]({{url
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
-<button class="collapsible">What is Schema?</button>
+<button class=\"collapsible\">What is Schema?</button>
 <div>
 
 
@@ -99,14 +99,14 @@ You can find out more about schema, including how to generate it from the comman
 
 [block:html]
 {
-  "html": "<button class="collapsible">What is an entity?</button>\n\n<div>\n\nAn entity is the SpatialOS equivalent of  an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)\n\n</div>"
+  "html": "<button class=\"collapsible\">What is an entity?</button>\n\n<div>\n\nAn entity is the SpatialOS equivalent of  an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)\n\n</div>"
 }
 [/block]
 
 
 [block:html]
 {
-  "html": "<button class="collapsible">What is  a snapshot?</button>\n\n<div>\n\nA snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores the current state of each entity’s component data. You start each deployment with a snapshot; if it’s a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.\n\nYou can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).\n\n</div>"
+  "html": "<button class=\"collapsible\">What is  a snapshot?</button>\n\n<div>\n\nA snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores the current state of each entity’s component data. You start each deployment with a snapshot; if it’s a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.\n\nYou can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).\n\n</div>"
 }
 [/block]
 
@@ -140,7 +140,7 @@ To launch a local deployment:
 2. When you're done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
     _Image: On the GDK toolbar in the Unreal Editor select **Stop**_<br/>
 
-  <button class="collapsible">What is the Inspector?</button>
+  <button class=\"collapsible\">What is the Inspector?</button>
 <div>
  The Inspector is a browser-based tool that you use to explore the internal state of a game's SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. <br/>
   The Inspector we are using here is looking at a local deployment running on your computer and not in the cloud, so we use a local URL for the Inspector as it's also running locally on your computer. When running locally, the Inspector automatically downloads and caches the latest Inspector client from the internet. When you use the Inspector in a cloud deployment, you access the Inspector through the Console via the web at https://console.improbable.io.
@@ -166,7 +166,7 @@ When you signed up for SpatialOS, your account was automatically associated with
 
 [block:html]
 {
-  "html": "<button class="collapsible">What is the Console?</button>\n<div>\n\nThe Console is a web-based tool for managing cloud deployments. It gives you access to information about your games’ SpatialOS project names, the SpatialOS assemblies you have uploaded, the internal state of any games you have running (via the Inspector), as well as logs and metrics. \n\nYou can find out more about the Console in the [Glossary]({{urlRoot}}/content/glossary#console).\n\n</div>"
+  "html": "<button class=\"collapsible\">What is the Console?</button>\n<div>\n\nThe Console is a web-based tool for managing cloud deployments. It gives you access to information about your games’ SpatialOS project names, the SpatialOS assemblies you have uploaded, the internal state of any games you have running (via the Inspector), as well as logs and metrics. \n\nYou can find out more about the Console in the [Glossary]({{urlRoot}}/content/glossary#console).\n\n</div>"
 }
 [/block]
 
@@ -190,7 +190,7 @@ For example:
  * `Linux` to build server-workers to run on SpatialOS cloud servers.
  <!--TODO: Add link to doc on this when it's done here: https://improbableio.atlassian.net/browse/DOC-361 -->
 
-<button class="collapsible">Build your workers using `BuildProject.bat`</button>
+<button class=\"collapsible\">Build your workers using `BuildProject.bat`</button>
 <div>
 
 To build your workers using the BuildProject.bat script: 
@@ -199,7 +199,7 @@ Double click BuildProject.bat. This opens a command line window and automaticall
 
 </div>
 
-<button class="collapsible">Build your workers  manually using the command line</button>
+<button class=\"collapsible\">Build your workers  manually using the command line</button>
 <div>
 
 In a terminal window, navigate to the `<ProjectRoot>` directory.
@@ -235,7 +235,7 @@ Build a client-worker assembly by running the following command:
 **Troubleshooting**
 [block:html]
 {
-  "html": "<button class="collapsible">BuildProject.bat can’t find the path specified</button>\n<div>\n\nIf you receive the error `The system cannot find the path specified. Builds failed.`, open `ProjectPaths.bat` in a text editor and ensure that `PROJECT_PATH` and `GAME_NAME` are correct. `PROJECT_PATH` needs to be the name of your Unreal project folder (usually Game). `GAME_NAME` needs to be the same name as your Unreal Project `.uproject` file.  \n\n</div>"
+  "html": "<button class=\"collapsible\">BuildProject.bat can’t find the path specified</button>\n<div>\n\nIf you receive the error `The system cannot find the path specified. Builds failed.`, open `ProjectPaths.bat` in a text editor and ensure that `PROJECT_PATH` and `GAME_NAME` are correct. `PROJECT_PATH` needs to be the name of your Unreal project folder (usually Game). `GAME_NAME` needs to be the same name as your Unreal Project `.uproject` file.  \n\n</div>"
 }
 [/block]
 
@@ -267,7 +267,7 @@ The next step is to launch a cloud deployment using the worker assemblies that y
 
 [block:html]
 {
-  "html": "<button class="collapsible">What is the CLI?</button>\n<div>\n\nThe SpatilOS command-line tool (CLI) provides a set of commands that you use to interact with a SpatialOS project. Among other functions, you use it to deploy your game. You installed the CLI in step 1, when you set up your dependencies and installed SpatialOS.\n\nFind out more in the [glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).\n\n</div>"
+  "html": "<button class=\"collapsible\">What is the CLI?</button>\n<div>\n\nThe SpatilOS command-line tool (CLI) provides a set of commands that you use to interact with a SpatialOS project. Among other functions, you use it to deploy your game. You installed the CLI in step 1, when you set up your dependencies and installed SpatialOS.\n\nFind out more in the [glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).\n\n</div>"
 }
 [/block]
 
@@ -281,7 +281,7 @@ When launching a cloud deployment you must provide four parameters:
 
 [block:html]
 {
-  "html": "<button class="collapsible">What is a launch configuration file?</button>\n<div>\n\n\nUse this file to list the settings of a deployment. These include: how big the SpatialOS game world is, which worker types SpatialOS must use in the deployment, which worker types can create and delete Actors, and your game template. You installed the Launcher in step 1, when you set up your dependencies and installed SpatialOS.\n\nYou can find out more about the launch configuration file in the [glossary]({{urlRoot}}/content/glossary#launch-configuration).\n\n</div>"
+  "html": "<button class=\"collapsible\">What is a launch configuration file?</button>\n<div>\n\n\nUse this file to list the settings of a deployment. These include: how big the SpatialOS game world is, which worker types SpatialOS must use in the deployment, which worker types can create and delete Actors, and your game template. You installed the Launcher in step 1, when you set up your dependencies and installed SpatialOS.\n\nYou can find out more about the launch configuration file in the [glossary]({{urlRoot}}/content/glossary#launch-configuration).\n\n</div>"
 }
 [/block]
 
@@ -330,7 +330,7 @@ In the Console, Select **Launch** on the left of the page, and then select the *
 
 [block:html]
 {
-  "html": "<button class="collapsible">What is the SpatialOS Launcher?</button>\n<div>\n\n\nThe Launcher is a distribution tool which downloads and launches game clients for your deployment. You access the Launcher from the Console; use the Console to create a URL to give end-users access to a game client for your game.\n\nFind out more in the [glossary](({{urlRoot}}/content/glossary#launcher).\n\n</div>"
+  "html": "<button class=\"collapsible\">What is the SpatialOS Launcher?</button>\n<div>\n\n\nThe Launcher is a distribution tool which downloads and launches game clients for your deployment. You access the Launcher from the Console; use the Console to create a URL to give end-users access to a game client for your game.\n\nFind out more in the [glossary](({{urlRoot}}/content/glossary#launcher).\n\n</div>"
 }
 [/block]
 

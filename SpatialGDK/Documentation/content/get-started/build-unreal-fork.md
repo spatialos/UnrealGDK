@@ -35,12 +35,12 @@ _Image: The default branch you need to clone._
 
 [block:html]
 {
-  "html": "<button class="collapsible">Using the command line</button>\n<div>\n\n\n1. Open a command line window and navigate to a suitable directory to clone the repository to.\n1. Run either of these commands to clone the example project repository:\n\n|  |  |\n| ----- | ------------------------------------------------------------ |\n| HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git` |\n| SSH |`git clone git@github.com:improbableio/UnrealEngine.git`|\n</div>"
+  "html": "<button class=\"collapsible\">Using the command line</button>\n<div>\n\n\n1. Open a command line window and navigate to a suitable directory to clone the repository to.\n1. Run either of these commands to clone the example project repository:\n\n|  |  |\n| ----- | ------------------------------------------------------------ |\n| HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git` |\n| SSH |`git clone git@github.com:improbableio/UnrealEngine.git`|\n</div>"
 }
 [/block]
 
 
-<button class="collapsible">Using Github Desktop</button>
+<button class=\"collapsible\">Using Github Desktop</button>
 <div>
 
 
@@ -83,7 +83,7 @@ There are two branches of the plugin repository and the Example Project: preview
 
 [block:html]
 {
-  "html": "<button class="collapsible">The preview branch</button>\n<div>\nThe preview branch contains features early in development. We do not recommend using the preview branch as it has had minimal testing and it has no documentation. You can find out more about the different branches in the [Versioning]({{urlRoot}}/content/pricing-and-support/versioning-scheme) scheme documentation.\n\n</div>"
+  "html": "<button class=\"collapsible\">The preview branch</button>\n<div>\nThe preview branch contains features early in development. We do not recommend using the preview branch as it has had minimal testing and it has no documentation. You can find out more about the different branches in the [Versioning]({{urlRoot}}/content/pricing-and-support/versioning-scheme) scheme documentation.\n\n</div>"
 }
 [/block]
 
@@ -96,7 +96,7 @@ Once you start working on a game project, we recommend that you update your chec
 Still in File Explorer, in the root directory of your clone of the SpatialOS Unreal Engine fork, double-click **InstallGDK.bat**. </br>
 This process opens a command line window and runs some scripts - it can take a long time to complete. The command line window closes when the process has finished.
 
-<button class="collapsible">What does InstallGDK.bat do?</button>
+<button class=\"collapsible\">What does InstallGDK.bat do?</button>
 <div>
 
 The script automatically opens a command line window and performs the following:

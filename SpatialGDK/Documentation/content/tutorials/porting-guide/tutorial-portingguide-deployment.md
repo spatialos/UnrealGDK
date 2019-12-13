@@ -25,21 +25,21 @@ Before you launch a local deployment, you must:
 
 [block:html]
 {
-  "html": "<button class="collapsible">What is Schema?</button>\n<div>\n\n\nSchema is a set of definitions which represent your game’s objects in SpatialOS as entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.\n\nYou can find out more about schema, including how to generate it from the command line, making schema work with source control, and how to exclude certain directories from schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)\n\n\n</div>"
+  "html": "<button class=\"collapsible\">What is Schema?</button>\n<div>\n\n\nSchema is a set of definitions which represent your game’s objects in SpatialOS as entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.\n\nYou can find out more about schema, including how to generate it from the command line, making schema work with source control, and how to exclude certain directories from schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)\n\n\n</div>"
 }
 [/block]
 
 
 [block:html]
 {
-  "html": "<button class="collapsible">What is an entity?</button>\n<div>\n\nAn entity is the SpatialOS equivalent of an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)\n\n</div>"
+  "html": "<button class=\"collapsible\">What is an entity?</button>\n<div>\n\nAn entity is the SpatialOS equivalent of an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)\n\n</div>"
 }
 [/block]
 
 
 [block:html]
 {
-  "html": "<button class="collapsible">What is  a snapshot?</button>\n<div>\n\n\nA snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores the current state of each entity’s component data. You start each deployment with a snapshot; if it’s a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.\n\nYou can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).\n\n\n</div>"
+  "html": "<button class=\"collapsible\">What is  a snapshot?</button>\n<div>\n\n\nA snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores the current state of each entity’s component data. You start each deployment with a snapshot; if it’s a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.\n\nYou can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).\n\n\n</div>"
 }
 [/block]
 

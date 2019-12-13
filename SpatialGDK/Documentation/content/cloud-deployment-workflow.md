@@ -132,7 +132,7 @@ You can launch a cloud deployment using the Unreal Editor or the SpatialOS CLI. 
 [/block]
 [block:html]
 {
-  "html": "<button class="collapsible">Note: disabling game client plugins which don't run on Linux</button>\n<div>\n\n\nSimulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like\n`if (Target.Platform != UnrealTargetPlatform.Linux)`\n </div>"
+  "html": "<button class=\"collapsible\">Note: disabling game client plugins which don't run on Linux</button>\n<div>\n\n\nSimulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like\n`if (Target.Platform != UnrealTargetPlatform.Linux)`\n </div>"
 }
 [/block]
 

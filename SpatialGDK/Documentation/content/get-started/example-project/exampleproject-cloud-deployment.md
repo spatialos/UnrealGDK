@@ -11,7 +11,7 @@ Before launching a cloud deployment, as well as generating schema and a snapshot
 
 [block:html]
 {
-  "html": "<button class="collapsible">Build-out workers - what does it mean?</button>\n<div>\n\n\nYou prepare both your server-workers and client-workers for upload to the cloud by building their assemblies from the code in their `.uproject` files. We call this “building workers”, and the resulting worker assemblies "built-out workers".\n</div>"
+  "html": "<button class=\"collapsible\">Build-out workers - what does it mean?</button>\n<div>\n\n\nYou prepare both your server-workers and client-workers for upload to the cloud by building their assemblies from the code in their `.uproject` files. We call this “building workers”, and the resulting worker assemblies "built-out workers".\n</div>"
 }
 [/block]
 
@@ -22,7 +22,7 @@ As you already generated schema and a snapshot for the Example Project when you 
 **Hosting cost**</br>
 Everyone who signs up for SpatialOS automatically has free cloud deployment hosting via the free tier, so you can use free tier hosting for this Example project.
 
-<button class="collapsible">What is the free tier?</button>
+<button class=\"collapsible\">What is the free tier?</button>
 <div>
 
 
@@ -42,7 +42,7 @@ When you signed up for SpatialOS, your account was automatically associated with
 1. Find the cloud project name by going to the Console at [https://console.improbable.io](https://console.improbable.io). The name should look something like `beta_randomword_anotherword_randomnumber`. In the example below, it’s `beta_yankee_hawaii_621`. <br/><br/>
    <%(Lightbox image="{{assetRoot}}assets/set-up-template/template-project-page.png")%>
    _Image: The SpatialOS Console with a cloud project name highlighted._</br>
-<button class="collapsible">What is the Console?</button>
+<button class=\"collapsible\">What is the Console?</button>
 <div>
 
 
@@ -75,7 +75,7 @@ Problems building workers? See the [Troubleshooting](#troubleshooting) guide bel
     </br></br>
 - **Build workers manually using the command line - with optional flags** </br></br>
   Run the `BuildProject.bat` script with added flags from the command line when you want to build your server-workers and client-workers separately,  or, if you want to build different worker configurations. </br>
-  <button class="collapsible">What flags are there?</button>
+  <button class=\"collapsible\">What flags are there?</button>
 <div>
 
 During development, you might want to, for example:</br> * cook a headless standalone version of the game ready for upload to the SpatialOS cloud as a simulated player cloud deployment, or </br> * cook a stand-alone version of the game to test it as a game client.</br> The optional flags give you this functionality and more.</br></br> See the [Helper script]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts) documentation for details of all the options and how to use them.
@@ -140,7 +140,7 @@ Whichever way you built workers, you now have one (or two) built-out worker asse
 
 #### Troubleshooting
 Problems with building workers?</br>
-<button class="collapsible">Have you changed the Spatial networking switch?</button>
+<button class=\"collapsible\">Have you changed the Spatial networking switch?</button>
 <div>
 
 You might need to reset the Spatial networking checkbox.</br>  
@@ -151,7 +151,7 @@ In addition to this guide, there is information on the switch in reference docum
 
 </div>
 
-<button class="collapsible">BuildProject.bat can’t find the filepath specified.</button>
+<button class=\"collapsible\">BuildProject.bat can’t find the filepath specified.</button>
 <div>
 
 If you receive the error `The system cannot find the path specified. Builds failed.` you need to update its filepaths. </br>
@@ -191,7 +191,7 @@ A valid upload command looks like this:
 
 #### Troubleshooting
 Problems with uploading workers?</br>
-<button class="collapsible">No upload progress</button>
+<button class=\"collapsible\">No upload progress</button>
 <div>
 
 * Uploading may be taking a long time due to your connection speed. </br> As the full upload size is around ~800 MB, this step can take a long time on slower connections (that is: slower than 5 Mbps). </br> 
@@ -206,7 +206,7 @@ As part of this step, you can choose to launch some simulated players with your 
 
 > **Tip:** You can use the CLI's commands individually from the command line or use them for continuous integration by setting up automated commands to build workers and launch cloud deployments. 
 
-<button class="collapsible">How do I use the SpatialOS CLI?</button>
+<button class=\"collapsible\">How do I use the SpatialOS CLI?</button>
 <div>
 
 The SpatialOS CLI has a set of commands for managing and developing SpatialOS projects. You installed the CLI when you installed SpatialOS as part of _Get Started: 1 - Get the dependencies_. </br> </br>
@@ -238,7 +238,7 @@ This opens the Cloud Deployment dialog box.<br/><br/>
 (In the example dialog box shown, it's `mydeployment` but it can be whatever you choose and contain any alpha-numeric characters.)</br></br>
   * **Launch Config File**: The absolute filepath the your Unreal project's `.json` launch configuration file from `C:/`. </br>
   For this guide, use `C:/...<filepath>.../UnrealGDKExampleProject/spatial/one_worker_test.json`.
-  <button class="collapsible">What's the launch configuration file?</button>
+  <button class=\"collapsible\">What's the launch configuration file?</button>
 <div>
 
 This `.json` file contains the configuration parameters for starting a deployment, including:</br> * the game template - defines the compute resources your deployment needs (see the documentation on [game templates and pricing](https://docs.improbable.io/reference/latest/shared/pricing-and-support/pricing-details#introduction-to-game-templates)).</br> * `dimensionsInWorldUnits` - defines the size of your SpatialOS game world in X and Y.</br> * worker types - lists the worker type names you have set up for your project. For this project; an Unreal server-worker `UnrealWorker` and an Unreal client-worker `UnrealClient`.
@@ -276,7 +276,7 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
 [/block]
   [block:html]
 {
-  "html": "<button class="collapsible">Note: disabling game client plugins which don't run on Linux</button>\n<div>\n\n\n  Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like\n  `if (Target.Platform != UnrealTargetPlatform.Linux)`\n  </div>"
+  "html": "<button class=\"collapsible\">Note: disabling game client plugins which don't run on Linux</button>\n<div>\n\n\n  Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like\n  `if (Target.Platform != UnrealTargetPlatform.Linux)`\n  </div>"
 }
 [/block]
 
@@ -285,7 +285,7 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
   * **Deployment Name**: Enter a name for your simulated player deployment. This labels the deployment in the Console. Make it different to your game deployment name.</br></br>
   * **Number of Simulated Players**: Choose the number of simulated players you want to start. </br></br>
   * **Region**: The real-world geographical location that you want your simulated players cloud deployment hosted in. 
-<button class="collapsible">Tell me more about developing with simulated players</button>
+<button class=\"collapsible\">Tell me more about developing with simulated players</button>
 <div>
 
 There is a basic implementation of simulated players included with the Starter Template. You can find out more about setting up simulated players by: </br></br> *  Exploring the source code (look for `SimulatedPlayerCharacter_BP`).</br>*  Trying them out by deploying simulated players with this project.</br>*  Checking out the [simulated players]({{urlRoot}}/content/simulated-players) documentation. 
@@ -296,7 +296,7 @@ When your deployment(s) have launched, you can open the Console at [console.impr
 
 > **Tip:** You can set default values for all the fields in the cloud deployment dialog box, using the Cloud section of the [SpatialOS Editor Settings panel]({{urlRoot}}/content/unreal-editor-interface/editor-settings).
 
-<button class="collapsible">Cloud deployment workflow summary</button>
+<button class=\"collapsible\">Cloud deployment workflow summary</button>
 <div>
 
 There is a summary on when to update schema, how to build and upload workers, and how to launch your game  on the [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow) page. It is the same as the one here.
