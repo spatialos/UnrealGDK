@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "Interop/SpatialSender.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "SpatialCommonTypes.h"
 
@@ -12,8 +13,6 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
 
 class SpatialVirtualWorkerTranslator;
-class USpatialSender;
-class USpatialStaticComponentView;
 
 class SpatialLoadBalanceEnforcer
 {
