@@ -32,6 +32,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Server travel supported for single server game worlds. Does not currently support zoning or off-loading.
 - Enabled the SpatialOS toolbar for MacOS.
 - Added a menu item to push additional arguments for iOS devices.
+- Improved workflow around schema generation issues and launching local builds. A warning will now show if attempting to run a local deployment after a schema error.
 
 ### Bug fixes:
 - Fixed a bug that could caused a name collision in schema for sublevels.
@@ -48,6 +49,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
 - Fix tombstone-related assert that could fire and bring down the editor.
 - Actors placed in the level with bNetLoadOnClient=false that go out of view will now be reloaded if they come back into view.
+- Fix crash in SpatialDebugger caused by dereference of invalid weak pointer
 
 ## [`0.7.1-preview`] - 2019-12-06
 

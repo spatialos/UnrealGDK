@@ -147,11 +147,10 @@ public:
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
 
-	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
-	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
@@ -175,6 +174,8 @@ public:
 #endif
 
 private:
+	TUniquePtr<SpatialDispatcher> Dispatcher;
+	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
@@ -235,9 +236,6 @@ private:
 
 	void ProcessPendingDormancy();
 
-	friend USpatialNetConnection;
-	friend USpatialWorkerConnection;
-
 	// This index is incremented and assigned to every new RPC in ProcessRemoteFunction.
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs
 	// in the correct order, if needed.
@@ -266,6 +264,8 @@ private:
 	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
 
 	void MakePlayerSpawnRequest();
+
+	FUnrealObjectRef GetCurrentPlayerControllerRef();
 
 	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
 	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.

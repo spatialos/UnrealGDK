@@ -114,6 +114,8 @@ private:
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	bool bStopSpatialOnExit;
 
+	bool bSchemaBuildError;
+
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 
 	// Sounds used for execution of tasks.
