@@ -6,7 +6,7 @@
 #include "Schema/RPCPayload.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "TestDefinitions.h"
+#include "Tests/TestDefinitions.h"
 #include "Utils/RPCRingBuffer.h"
 
 #define RPC_SERVICE_TEST(TestName) \
@@ -370,7 +370,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_overflow_client_
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload);
 	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::DropOverflowed);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTtrueestPassed;
+	return true;
 }
 
 RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_multicast_rpcs_to_the_service_THEN_result_success)
@@ -462,7 +462,7 @@ RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_multicast_rpcs_t
 	Worker_ComponentData ComponentData = GetComponentDataOnEntityCreationFromRPCService(RPCService, RPCTestEntityId_1, ERPCType::NetMulticast);
 	const Schema_Object* SchemaObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 	uint32 InitiallyPresent = Schema_GetUint32(SchemaObject, SpatialGDK::RPCRingBufferUtils::GetInitiallyPresentMulticastRPCsCountFieldId());
-	bool bTestPassed = (InitiallyPresent == RPCsToSend);
+	bool bTestPassed = (InitiallyPresent == 5);
 
 	TestTrue("Entity creation multi-cast test returned expected results", bTestPassed);
 	return true;
