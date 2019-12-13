@@ -84,7 +84,7 @@ namespace SpatialGDK
 			for (int32 i = StringLength - 1; i > 0; --i) {
 				// We're mimicking the Inspector logic which is in JS. In JavaScript,
 				// a number is stored as a 64-bit floating point number but the bit-wise
-				// operation is performed on a 32-bit binary number i.e. to perform a
+				// operation is performed on a 32-bit integer i.e. to perform a
 				// bit-operation JavaScript converts the number into a 32-bit binary
 				// number (signed) and perform the operation and convert back the result
 				// to a 64-bit number.
