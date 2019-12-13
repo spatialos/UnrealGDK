@@ -12,7 +12,7 @@
 #include "Interop/SpatialStaticComponentView.h"
 #include "Kismet/GameplayStatics.h"
 #include "Schema/AuthorityIntent.h"
-#include "Utils/InspectionColours.h"
+#include "Utils/InspectionColors.h"
 
 using namespace SpatialGDK;
 

@@ -279,7 +279,6 @@ void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalW
 		bIsReady = true;
 
 		// Tell the strategy about the local virtual worker id.
-		check(LoadBalanceStrategy != nullptr);
 		check(LoadBalanceStrategy.IsValid());
 		LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
 	}
