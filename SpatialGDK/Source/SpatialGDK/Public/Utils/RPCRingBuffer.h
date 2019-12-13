@@ -47,7 +47,7 @@ namespace RPCRingBufferUtils
 {
 
 SPATIALGDK_API Worker_ComponentId GetRingBufferComponentId(ERPCType Type);
-RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type);
+SPATIALGDK_API RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type);
 uint32 GetRingBufferSize(ERPCType Type);
 
 Worker_ComponentId GetAckComponentId(ERPCType Type);
