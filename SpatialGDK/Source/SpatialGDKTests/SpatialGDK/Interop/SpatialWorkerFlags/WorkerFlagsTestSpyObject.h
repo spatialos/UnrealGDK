@@ -3,11 +3,11 @@
 
 #include "Interop/SpatialWorkerFlags.h"
 
-#include "DummyObject.generated.h"
+#include "WorkerFlagsTestSpyObject.generated.h"
 
 
 UCLASS()
-class UDummyObject : public UObject
+class UWorkerFlagsTestSpyObject : public UObject
 {
 	GENERATED_BODY()
 public:
@@ -15,6 +15,9 @@ public:
 	UFUNCTION()
 	void SetFlagUpdated(const FString& flagName, const FString& flagValue);
 
-	bool isFlagUpdated = false;
+	int getTimesFlagUpdated() const;
+
+private:
+
 	int  timesUpdated = 0;
 }; 

@@ -1,8 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#include "DummyObject.h"
+
 #include "Interop/SpatialWorkerFlags.h"
 
 #include "TestDefinitions.h"
+#include "WorkerFlagsTestSpyObject.h"
 
 #define SPATIALWORKERFLAGS_TEST(TestName) \
 	GDK_TEST(Core, SpatialWorkerFlags, TestName)
@@ -54,9 +55,9 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_flagUpdate_op_WHEN_removing_a_worker_flag_THEN_f
 
 SPATIALWORKERFLAGS_TEST(GIVEN_a_bound_delegate_WHEN_a_worker_flag_updates_THEN_bound_function_invoked)
 {
-	UDummyObject* DummyObj = NewObject<UDummyObject>();
+	UWorkerFlagsTestSpyObject* SpyObj = NewObject<UWorkerFlagsTestSpyObject>();
 	FOnWorkerFlagsUpdatedBP workerFlagDelegate;
-	workerFlagDelegate.BindDynamic(DummyObj, &UDummyObject::SetFlagUpdated);
+	workerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetFlagUpdated);
 
 	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 	SpatialWorkerFlags->BindToOnWorkerFlagsUpdated(workerFlagDelegate);
@@ -65,16 +66,16 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_bound_delegate_WHEN_a_worker_flag_updates_THEN_b
 	Worker_FlagUpdateOp opAddFlag = Create_Worker_FlagUpdateOp("test", "10");
 	SpatialWorkerFlags->ApplyWorkerFlagUpdate(opAddFlag);
 
-	TestTrue("Delegate Function was called", DummyObj->isFlagUpdated);
+	TestTrue("Delegate Function was called", SpyObj->getTimesFlagUpdated() == 1);
 
 	return true;
 }
 
 SPATIALWORKERFLAGS_TEST(GIVEN_a_bound_delegate_WHEN_unbind_the_delegate_THEN_bound_function_is_not_invoked)
 {
-	UDummyObject* DummyObj = NewObject<UDummyObject>();
+	UWorkerFlagsTestSpyObject* SpyObj = NewObject<UWorkerFlagsTestSpyObject>();
 	FOnWorkerFlagsUpdatedBP workerFlagDelegate;
-	workerFlagDelegate.BindDynamic(DummyObj, &UDummyObject::SetFlagUpdated);
+	workerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetFlagUpdated);
 
 	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 	SpatialWorkerFlags->BindToOnWorkerFlagsUpdated(workerFlagDelegate);
@@ -82,14 +83,14 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_bound_delegate_WHEN_unbind_the_delegate_THEN_bou
 	Worker_FlagUpdateOp opAddFlag = Create_Worker_FlagUpdateOp("test", "10");
 	SpatialWorkerFlags->ApplyWorkerFlagUpdate(opAddFlag);
 
-	TestTrue("Delegate Function was called", DummyObj->isFlagUpdated);
+	TestTrue("Delegate Function was called", SpyObj->getTimesFlagUpdated() == 1);
 
 	SpatialWorkerFlags->UnbindFromOnWorkerFlagsUpdated(workerFlagDelegate);
 
 	//update test flag
 	SpatialWorkerFlags->ApplyWorkerFlagUpdate(opAddFlag);
 
-	TestTrue("Delegate Function was called only once", DummyObj->timesUpdated == 1);
+	TestTrue("Delegate Function was called only once", SpyObj->getTimesFlagUpdated() == 1);
 
 	return true;
 }

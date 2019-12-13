@@ -44,7 +44,7 @@ FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
 	return NAME_None;
 }
 
-bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& InString, FString& OutString)
+bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& InFlagName, FString& OutFlagValue)
 {
 	if (const UWorld* World = WorldContext->GetWorld())
 	{
@@ -52,7 +52,7 @@ bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& 
 		{
 			if (const USpatialWorkerFlags* SpatialWorkerFlags = SpatialNetDriver->SpatialWorkerFlags) 
 			{
-					return SpatialWorkerFlags->GetWorkerFlag(InString, OutString);
+				return SpatialWorkerFlags->GetWorkerFlag(InFlagName, OutFlagValue);
 			}
 		}
 	}

@@ -15,11 +15,11 @@ class SPATIALGDK_API USpatialWorkerFlags : public UObject
 
 public:
 	/** Gets value of a worker flag. Must be connected to SpatialOS to properly work.
-	 * @param Name - Name of worker flag
-	 * @param OutValue - Value of worker flag
+	 * @param InFlagName - Name of worker flag
+	 * @param OutFlagValue - Value of worker flag
 	 * @return - If worker flag was found.
 	 */
-	bool GetWorkerFlag(const FString& Name, FString& OutValue) const;
+	bool GetWorkerFlag(const FString& InFlagName, FString& OutFlagValue) const;
 
 	FOnWorkerFlagsUpdated& GetOnWorkerFlagsUpdated();
 	
