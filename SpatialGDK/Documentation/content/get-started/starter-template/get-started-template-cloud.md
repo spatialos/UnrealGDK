@@ -11,14 +11,7 @@ Before launching a cloud deployment, as well as generating schema and a snapshot
 
 [block:html]
 {
-  "html": "<button class="collapsible">Built-out workers - what does it mean?</button>
-<div>
-
-
-You prepare both your server-workers and client-workers for upload to the cloud by building their assemblies from the code in their `.uproject` files. We call this “building workers”, and the resulting assemblies "built workers".
-
-
-</div>"
+  "html": "<button class="collapsible">Built-out workers - what does it mean?</button><div>\n\n\n\n\n\nYou prepare both your server-workers and client-workers for upload to the cloud by building their assemblies from the code in their `.uproject` files. We call this “building workers”, and the resulting assemblies "built workers".\n\n\n\n</div>"
 }
 [/block]
 
@@ -282,13 +275,7 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
 [/block]
   [block:html]
 {
-  "html": "<button class="collapsible">Note: disabling game client plugins which don't run on Linux</button>
-<div>
-
-  Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like
-  `if (Target.Platform != UnrealTargetPlatform.Linux)`
-  
-</div>"
+  "html": "<button class="collapsible">Note: disabling game client plugins which don't run on Linux</button><div>\n\n\n\n  Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like\n\n  `if (Target.Platform != UnrealTargetPlatform.Linux)`\n\n  </div>"
 }
 [/block]
 

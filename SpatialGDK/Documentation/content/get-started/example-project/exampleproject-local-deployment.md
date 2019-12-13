@@ -11,12 +11,7 @@ There are two types of deployment: local and cloud.
 </br>Your game simulation with its own instance of the SpatialOS Runtime, runs on your development machine. You can run multiple clients in a local deployment - they are useful for fast development iteration.
 [block:html]
 {
-  "html": "<button class="collapsible">What is the SpatialOS Runtime?</button>
-<div>
-
-There is a Runtime instance for every game simulation. A Runtime instance holds the canononical store of all a game's SpatialOS-relevant object data in the SpatialOS entity database. It handles server and client connections, and coordinates each server and client's write and read access to the entity database.
-
-</div>"
+  "html": "<button class="collapsible">What is the SpatialOS Runtime?</button>\n\n<div>\n\n\n\nThere is a Runtime instance for every game simulation. A Runtime instance holds the canononical store of all a game's SpatialOS-relevant object data in the SpatialOS entity database. It handles server and client connections, and coordinates each server and client's write and read access to the entity database.\n\n</div>"
 }
 [/block]
 
@@ -58,28 +53,14 @@ You can find out more about schema, including how to generate it from the comman
 
 [block:html]
 {
-  "html": "<button class="collapsible">What is an entity?</button>
-<div>
-
-An entity is the SpatialOS equivalent of an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)
-
-</div>"
+  "html": "<button class="collapsible">What is an entity?</button>\n\n<div>\n\nAn entity is the SpatialOS equivalent of an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)\n\n</div>"
 }
 [/block]
 
 
 [block:html]
 {
-  "html": "<button class="collapsible">What is  a snapshot?</button>
-<div>
-
-
-A snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores the current state of each entity’s component data. You start each deployment with a snapshot; if it’s a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.
-
-You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).
-
-
-</div>"
+  "html": "<button class="collapsible">What is  a snapshot?</button><div>\n\n\n\nA snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores the current state of each entity’s component data. You start each deployment with a snapshot; if it’s a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.\n\nYou can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).\n\n\n\n</div>"
 }
 [/block]
 
@@ -92,21 +73,7 @@ In SpatialOS, game servers are called "server-workers" and game clients are call
 
 [block:html]
 {
-  "html": "<button class="collapsible">More about server-workers and client-workers</button>
-<div>
-
-A server-worker is your game's server-side code. It's the equivalent of a "server" in native Unreal networking.
-
-You can think of client-workers as game clients as they are essentially the same. 
-
-Both server-workers and client-workers are programs that compute a SpatialOS game world: they send updates to and receive updates from the entity database in the SpatialOS Runtime.
-
-You can have different types of server-workers doing different tasks, depending how you have set up your game. You can also set up your game to have more than one instance of a server-worker type. This guide using the Example Project sets up one instance of one server-worker type; a main Unreal server-worker.
-
-You usually only have one type of client-worker in your game but you can have many instances of a client-worker, each representing a game player. The Starter Template has one client-worker type.
-
-
-</div>"
+  "html": "<button class="collapsible">More about server-workers and client-workers</button>\n\n<div>\n\nA server-worker is your game's server-side code. It's the equivalent of a "server" in native Unreal networking.\n\nYou can think of client-workers as game clients as they are essentially the same. \n\nBoth server-workers and client-workers are programs that compute a SpatialOS game world: they send updates to and receive updates from the entity database in the SpatialOS Runtime.\n\nYou can have different types of server-workers doing different tasks, depending how you have set up your game. You can also set up your game to have more than one instance of a server-worker type. This guide using the Example Project sets up one instance of one server-worker type; a main Unreal server-worker.\n\nYou usually only have one type of client-worker in your game but you can have many instances of a client-worker, each representing a game player. The Starter Template has one client-worker type.\n\n\n\n</div>"
 }
 [/block]
 

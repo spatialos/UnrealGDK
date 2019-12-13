@@ -35,20 +35,7 @@ _Image: The default branch you need to clone._
 
 [block:html]
 {
-  "html": "<button class="collapsible">Using the command line</button>
-<div>
-
-
-1. Open a command line window and navigate to a suitable directory to clone the repository to.
-1. Run either of these commands to clone the example project repository:
-
-|  |  |
-| ----- | ------------------------------------------------------------ |
-| HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git` |
-| SSH |`git clone git@github.com:improbableio/UnrealEngine.git`|
-
-
-</div>"
+  "html": "<button class="collapsible">Using the command line</button>\n<div>\n\n\n1. Open a command line window and navigate to a suitable directory to clone the repository to.\n1. Run either of these commands to clone the example project repository:\n\n|  |  |\n| ----- | ------------------------------------------------------------ |\n| HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git` |\n| SSH |`git clone git@github.com:improbableio/UnrealEngine.git`|\n</div>"
 }
 [/block]
 
@@ -96,12 +83,7 @@ There are two branches of the plugin repository and the Example Project: preview
 
 [block:html]
 {
-  "html": "<button class="collapsible">The preview branch</button>
-<div>
-
-The preview branch contains features early in development. We do not recommend using the preview branch as it has had minimal testing and it has no documentation. You can find out more about the different branches in the [Versioning]({{urlRoot}}/content/pricing-and-support/versioning-scheme) scheme documentation.
-
-</div>"
+  "html": "<button class="collapsible">The preview branch</button>\n<div>\nThe preview branch contains features early in development. We do not recommend using the preview branch as it has had minimal testing and it has no documentation. You can find out more about the different branches in the [Versioning]({{urlRoot}}/content/pricing-and-support/versioning-scheme) scheme documentation.\n\n</div>"
 }
 [/block]
 

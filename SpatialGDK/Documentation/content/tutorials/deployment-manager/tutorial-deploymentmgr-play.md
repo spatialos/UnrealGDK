@@ -19,24 +19,7 @@ Select **QUICK JOIN** to join one of your sessions or select **BROWSE...** to ch
 
 [block:html]
 {
-  "html": "<button class="collapsible">I can see my deployments in my game client, but I can’t join any of them</button>
-<div>
-
-
-If you can see your deployments when you select **BROWSE**  but the **QUICK JOIN** button is greyed out, you might need to add the `status_lobby` tag to the deployments. 
-
-To do this:
-
-1. Open the Console.
-1. Select the deployment you need to tag from the deployment list.
-1. On the right-hand side of the screen, under **Details**, select **+ add tag.**
-1. Enter `status_lobby` as the tag name. 
-5. Repeat this for each running deployment. 
-
-When you have done this, re-launch your game client and you should be able to join any of the deployments, provided the number of players has not exceeded the maximum.
-
-
-</div>"
+  "html": "<button class="collapsible">I can see my deployments in my game client, but I can’t join any of them</button><div>\n\n\nIf you can see your deployments when you select **BROWSE**  but the **QUICK JOIN** button is greyed out, you might need to add the `status_lobby` tag to the deployments. \n\nTo do this:\n\n1. Open the Console.\n1. Select the deployment you need to tag from the deployment list.\n1. On the right-hand side of the screen, under **Details**, select **+ add tag.**\n1. Enter `status_lobby` as the tag name. \n5. Repeat this for each running deployment.\n \nWhen you have done this, re-launch your game client and you should be able to join any of the deployments, provided the number of players has not exceeded the maximum.\n\n</div>"
 }
 [/block]
 
