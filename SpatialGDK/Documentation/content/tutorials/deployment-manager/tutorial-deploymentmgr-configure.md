@@ -31,7 +31,7 @@ Your `spatialos.json` file should look like this:
 {
   "codes": [
     {
-      "code": "  {\n    \"configurationVersion\": \"0.1\",\n    \"projectName\": \"beta_nuts_double_379\",\n    \"schemaDescriptor\": \"../tmp/schema.descriptor\",\n    \"clientWorkers\": [\n    ],\n    \"serverWorkers\": [\n      \"deployment_manager.json\"\n    ]\n  }",
+      "code": "  {\n    \"configurationVersion\": \"0.1\",\n    \"projectName\": \"beta_nuts_double_379\",\n    \"schemaDescriptor\": \"../tmp/schema.descriptor\",\n    \"clientWorkers\": \[\n    \],\n    \"serverWorkers\": \[\n      \"deployment_manager.json\"\n    \]\n  }",
       "language": "text"
     }
   ]
@@ -80,7 +80,7 @@ Your `config.json` file should look like this:
 {
   "codes": [
     {
-      "code": " \"TokenLifetimeDays\": 7,\n  \"ClientType\": \"UnrealClient\",\n  \"MaxNumberOfClients\": 100,\n  \"DeploymentPrefix\": \"session\",\n  \"NumberOfDeployments\": 2,\n  \"AssemblyName\": \"<assembly_name>\",\n  \"DeploymentTags\": [ \"dev_login\", \"ttl_1_hours\" ],\n  \"RegionCode\": \"EU\",\n  \"DeploymentIntervalSeconds\": 5",
+      "code": " \"TokenLifetimeDays\": 7,\n  \"ClientType\": \"UnrealClient\",\n  \"MaxNumberOfClients\": 100,\n  \"DeploymentPrefix\": \"session\",\n  \"NumberOfDeployments\": 2,\n  \"AssemblyName\": \"<assembly_name>\",\n  \"DeploymentTags\": \[ \"dev_login\", \"ttl_1_hours\" \],\n  \"RegionCode\": \"EU\",\n  \"DeploymentIntervalSeconds\": 5",
       "language": "text"
     }
   ]

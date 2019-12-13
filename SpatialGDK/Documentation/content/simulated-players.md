@@ -31,7 +31,7 @@ For example, in C++:
 {
   "codes": [
   {
-      "code": "ATP_SpatialGDKGameMode::ATP_SpatialGDKGameMode()\n{\n\t// Set default pawn class to our Blueprint character.\n\tstatic ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/StarterProject/Characters/PlayerCharacter_BP"));\n\tstatic ConstructorHelpers::FClassFinder<APawn> SimulatedPawnBPClass(TEXT("/Game/StarterProject/Characters/SimulatedPlayers/SimulatedPlayerCharacter_BP"));\n\n\tif (PlayerPawnBPClass.Class != NULL)\n\t{\n\t\tDefaultPawnClass = PlayerPawnBPClass.Class;\n\t}\n\tif (SimulatedPawnBPClass.Class != NULL)\n\t{\n\t\tSimulatedPawnClass = SimulatedPawnBPClass.Class;\n\t}\n}",
+      "code": "ATP_SpatialGDKGameMode::ATP_SpatialGDKGameMode()\n{\n\t// Set default pawn class to our Blueprint character.\n\tstatic ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT(\"/Game/StarterProject/Characters/PlayerCharacter_BP\"));\n\tstatic ConstructorHelpers::FClassFinder<APawn> SimulatedPawnBPClass(TEXT(\"/Game/StarterProject/Characters/SimulatedPlayers/SimulatedPlayerCharacter_BP\"));\n\n\tif (PlayerPawnBPClass.Class != NULL)\n\t{\n\t\tDefaultPawnClass = PlayerPawnBPClass.Class;\n\t}\n\tif (SimulatedPawnBPClass.Class != NULL)\n\t{\n\t\tSimulatedPawnClass = SimulatedPawnBPClass.Class;\n\t}\n}",
       "language": "text"
     }
   ]
@@ -60,7 +60,7 @@ To do this, you can use a Blueprint function library that exposes the `IsSimulat
 {
   "codes": [
   {
-      "code": "#include "SimulatedPlayer.h"\n\n\nvoid AExampleActor::BeginPlay()\n{\n    Super::BeginPlay();\n\n    if (USimulatedPlayer::IsSimulatedPlayer(this))\n    {\n        // Execute simulated player related logic here.\n        // ...\n    }\n}",
+      "code": "#include \"SimulatedPlayer.h\"\n\n\nvoid AExampleActor::BeginPlay()\n{\n    Super::BeginPlay();\n\n    if (USimulatedPlayer::IsSimulatedPlayer(this))\n    {\n        // Execute simulated player related logic here.\n        // ...\n    }\n}",
       "language": "cplusplus"
     }
   ]
