@@ -206,106 +206,106 @@ namespace
 	}
 } // anonymous namespace
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_client_reliable_rpcs_to_the_service_THEN_check_success)
+RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_client_reliable_rpcs_to_the_service_THEN_success)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientReliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::Success;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::Success);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_client_unreliable_rpcs_to_the_service_THEN_check_success)
+RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_client_unreliable_rpcs_to_the_service_THEN_result_success)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::Success;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::Success);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_server_reliable_rpcs_to_the_service_THEN_check_no_buffer_authority)
+RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_server_reliable_rpcs_to_the_service_THEN_result_no_buffer_authority)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerReliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::NoRingBufferAuthority;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::NoRingBufferAuthority);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_server_unreliable_rpcs_to_the_service_THEN_check_no_buffer_authority)
+RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_server_unreliable_rpcs_to_the_service_THEN_result_no_buffer_authority)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::NoRingBufferAuthority;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::NoRingBufferAuthority);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_client_reliable_rpcs_to_the_service_THEN_check_no_buffer_authority)
+RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_client_reliable_rpcs_to_the_service_THEN_result_no_buffer_authority)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, CLIENT_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientReliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::NoRingBufferAuthority;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::NoRingBufferAuthority);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_client_unreliable_rpcs_to_the_service_THEN_check_no_buffer_authority)
+RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_client_unreliable_rpcs_to_the_service_THEN_result_no_buffer_authority)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, CLIENT_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::NoRingBufferAuthority;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::NoRingBufferAuthority);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_reliable_rpcs_to_the_service_THEN_check_success)
+RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_reliable_rpcs_to_the_service_THEN_result_success)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, CLIENT_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerReliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::Success;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::Success);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_unreliable_rpcs_to_the_service_THEN_check_success)
+RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_unreliable_rpcs_to_the_service_THEN_result_success)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, CLIENT_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::Success;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::Success);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_multicast_rpcs_to_the_service_THEN_check_success)
+RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_multicast_rpcs_to_the_service_THEN_result_success)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, CLIENT_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
 	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::NoRingBufferAuthority;
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_multicast_rpcs_to_the_service_THEN_check_success)
+RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_multicast_rpcs_to_the_service_THEN_result_success)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::Success;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::Success);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_and_client_endpoint_WHEN_push_rpcs_to_the_service_THEN_check_push_results)
+RPC_SERVICE_TEST(GIVEN_authority_over_server_and_client_endpoint_WHEN_push_rpcs_to_the_service_THEN_result_has_ack_authority)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AND_CLIENT_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientReliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::HasAckAuthority;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::HasAckAuthority);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_client_reliable_rpcs_to_the_service_THEN_check_push_results)
+RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_client_reliable_rpcs_to_the_service_THEN_result_queue_overflowed)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH);
 
@@ -317,12 +317,12 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_client_
 	}
 
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientReliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::QueueOverflowed;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::QueueOverflowed);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_client_unreliable_rpcs_to_the_service_THEN_check_push_results)
+RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_client_unreliable_rpcs_to_the_service_THEN_result_drop_overflow)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH);
 
@@ -334,12 +334,12 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_client_
 	}
 
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::DropOverflowed;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::DropOverflowed);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_overflow_client_reliable_rpcs_to_the_service_THEN_check_push_results)
+RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_overflow_client_reliable_rpcs_to_the_service_THEN_result_queue_overflowed)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, CLIENT_AUTH);
 
@@ -351,12 +351,12 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_overflow_client_
 	}
 
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerReliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::QueueOverflowed;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::QueueOverflowed);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_overflow_client_unreliable_rpcs_to_the_service_THEN_check_push_results)
+RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_overflow_client_unreliable_rpcs_to_the_service_THEN_result_drop_overflow)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, CLIENT_AUTH);
 
@@ -368,12 +368,12 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_overflow_client_
 	}
 
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::DropOverflowed;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::DropOverflowed);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return bTtrueestPassed;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_multicast_rpcs_to_the_service_THEN_check_push_results)
+RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_multicast_rpcs_to_the_service_THEN_result_success)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH);
 
@@ -385,12 +385,12 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_multica
 	}
 
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
-	bool bTestPassed = Result == SpatialGDK::EPushRPCResult::Success;
+	bool bTestPassed = (Result == SpatialGDK::EPushRPCResult::Success);
 	TestTrue("Push RPC returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_unreliable_rpcs_to_the_service_THEN_check_payloads_are_writen_correctly_to_component_updates)
+RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_unreliable_rpcs_to_the_service_THEN_payloads_are_writen_correctly_to_component_updates)
 {
 	TArray<EntityPayload> EntityPayloads;
 	EntityPayloads.Add(EntityPayload(RPCTestEntityId_1, SimplePayload));
@@ -432,10 +432,10 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_unreliabl
 	}
 
 	TestTrue("UpdateToSend have expected payloads", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_client_reliable_rpcs_to_the_service_THEN_check_component_data)
+RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_client_reliable_rpcs_to_the_service_THEN_component_data_matches_payload)
 {
 	// Create RPCService with empty component view
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({}, INVALID);
@@ -445,30 +445,30 @@ RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_client_reliable_
 	Worker_ComponentData ComponentData = GetComponentDataOnEntityCreationFromRPCService(RPCService, RPCTestEntityId_1, ERPCType::ClientReliable);
 	bool bTestPassed = CompareComponentDataAndEntityPayload(ComponentData, EntityPayload(RPCTestEntityId_1, SimplePayload), ERPCType::ClientReliable, 1);
 	TestTrue("Entity creation test returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_multicast_rpcs_to_the_service_THEN_check_component_data)
+RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_multicast_rpcs_to_the_service_THEN_initially_preset_set)
 {
 	// Create RPCService with empty component view
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({}, INVALID);
 
-	const static int RPCsToSend = 5;
-	for (int i = 0; i < RPCsToSend; ++i)
-	{
-		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
-	}
+	RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
+	RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
+	RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
+	RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
+	RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
 
 	Worker_ComponentData ComponentData = GetComponentDataOnEntityCreationFromRPCService(RPCService, RPCTestEntityId_1, ERPCType::NetMulticast);
 	const Schema_Object* SchemaObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 	uint32 InitiallyPresent = Schema_GetUint32(SchemaObject, SpatialGDK::RPCRingBufferUtils::GetInitiallyPresentMulticastRPCsCountFieldId());
-	bool bTestPassed = InitiallyPresent == RPCsToSend;
+	bool bTestPassed = (InitiallyPresent == RPCsToSend);
 
 	TestTrue("Entity creation multi-cast test returned expected results", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_server_reliable_rpcs_to_the_service_THEN_check_component_data)
+RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_server_reliable_rpcs_to_the_service_THEN_extracted_payloads_match_pushed_payloads)
 {
 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
 
@@ -506,10 +506,10 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_server_reliable_
 
 	bool bTestPassed = bAttemptedRPCExtraction && bPayloadsMatch;
 	TestTrue("Extracted RPCs match expected payloads", bTestPassed);
-	return bTestPassed;
+	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_return_false_from_extract_callback_THEN_check_rpcs_persist_on_component)
+RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_return_false_from_extract_callback_THEN_some_rpcs_persist_on_component)
 {
 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
 
@@ -536,7 +536,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_return_false_from_ext
 	const static int8 MaxRPCsToProccess = 2;
 	int8 RPCsToProccess = MaxRPCsToProccess;
 	ExtractRPCDelegate RPCDelegate = ExtractRPCDelegate::CreateLambda([&RPCsToProccess](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) {
-		bool bKeepProcessing = RPCsToProccess != 0;
+		bool bKeepProcessing = (RPCsToProccess != 0);
 		if (bKeepProcessing)
 		{
 			RPCsToProccess--;
@@ -552,10 +552,10 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_return_false_from_ext
 
 	bool bTestPassed = false;
 	SpatialGDK::SpatialRPCService::UpdateToSend* Update = UpdateToSendArray.FindByPredicate([](const SpatialGDK::SpatialRPCService::UpdateToSend& Update){
-		return Update.Update.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
+		return (Update.Update.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
 	});
 
-	if (Update)
+	if (Update != nullptr)
 	{
 		const Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update->Update.schema_type);
 		uint64 Ack = 0;
@@ -564,5 +564,5 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_return_false_from_ext
 	}
 
 	TestTrue("Returning false in extraction callback correctly stopped processing RPCs", bTestPassed);
-	return bTestPassed;
+	return true;
 }
