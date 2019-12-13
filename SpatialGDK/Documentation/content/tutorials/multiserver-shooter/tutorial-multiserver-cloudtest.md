@@ -29,7 +29,7 @@ The filepath you use depends on whether you have the `UnrealGDK` plugin set up a
 {
   "codes": [
   {
-      "code": "      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject\n",
+      "code": "      UnrealEngine\\Engine\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject\n",
       "language": "text"
     }
   ]
@@ -41,7 +41,7 @@ The filepath you use depends on whether you have the `UnrealGDK` plugin set up a
 {
   "codes": [
   {
-      "code": "      UnrealGDKExampleProject\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject\n",
+      "code": "      UnrealGDKExampleProject\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject\n",
       "language": "text"
     }
   ]
@@ -54,7 +54,7 @@ The filepath you use depends on whether you have the `UnrealGDK` plugin set up a
 {
   "codes": [
   {
-      "code": "      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject\n",
+      "code": "      UnrealEngine\\Engine\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject\n",
       "language": "text"
     }
   ]
@@ -66,7 +66,7 @@ The filepath you use depends on whether you have the `UnrealGDK` plugin set up a
 {
   "codes": [
   {
-      "code": "        UnrealGDKExampleProject\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject\n",
+      "code": "        UnrealGDKExampleProject\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject\n",
       "language": "text"
     }
   ]

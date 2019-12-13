@@ -9,12 +9,17 @@ There are two types of deployment: local and cloud.
 
 - A **local deployment** is for testing only. A local deployment runs your game simulation in your Unreal Editor. 
 </br>Your game simulation with its own instance of the SpatialOS Runtime, runs on your development machine. You can run multiple clients in a local deployment - they are useful for fast development iteration.
-<button class="collapsible">What is the SpatialOS Runtime?</button>
+[block:html]
+{
+  "html": "<button class="collapsible">What is the SpatialOS Runtime?</button>
 <div>
 
 There is a Runtime instance for every game simulation. A Runtime instance holds the canononical store of all a game's SpatialOS-relevant object data in the SpatialOS entity database. It handles server and client connections, and coordinates each server and client's write and read access to the entity database.
 
-</div>
+</div>"
+}
+[/block]
+
 
 - A **cloud deployment** runs on remote networked nodes. A node is a single machine used as server hardware. </br>
 The cloud is where your game simulation runs when you release it, so you always deploy your released game to the cloud but you can also use a cloud deployment during development to share it with test users and run it at scale. You share your game with test users through the SpatialOS Launcher. (You'll use the Launcher in a later step of this guide.)
@@ -51,14 +56,21 @@ You can find out more about schema, including how to generate it from the comman
 
 </div>
 
-<button class="collapsible">What is an entity?</button>
+[block:html]
+{
+  "html": "<button class="collapsible">What is an entity?</button>
 <div>
 
 An entity is the SpatialOS equivalent of an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)
 
-</div>
+</div>"
+}
+[/block]
 
-<button class="collapsible">What is  a snapshot?</button>
+
+[block:html]
+{
+  "html": "<button class="collapsible">What is  a snapshot?</button>
 <div>
 
 
@@ -67,7 +79,10 @@ A snapshot is a representation of the state of a SpatialOS world at a given poin
 You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).
 
 
-</div>
+</div>"
+}
+[/block]
+
 
 ### Step 2: Launch and play
 
@@ -75,7 +90,9 @@ This step shows you how to start one game server and two game clients in a local
 In SpatialOS, game servers are called "server-workers" and game clients are called "client-workers".  
 
 
-<button class="collapsible">More about server-workers and client-workers</button>
+[block:html]
+{
+  "html": "<button class="collapsible">More about server-workers and client-workers</button>
 <div>
 
 A server-worker is your game's server-side code. It's the equivalent of a "server" in native Unreal networking.
@@ -89,7 +106,10 @@ You can have different types of server-workers doing different tasks, depending 
 You usually only have one type of client-worker in your game but you can have many instances of a client-worker, each representing a game player. The Starter Template has one client-worker type.
 
 
-</div>
+</div>"
+}
+[/block]
+
 
 To launch a local deployment in your Unreal Editor, set up the networking and run the game:
 

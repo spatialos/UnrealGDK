@@ -9,14 +9,19 @@ Before launching a cloud deployment, as well as generating schema and a snapshot
 * Prepare the game’s server-workers and client-workers by building workers.
 * Upload the built-out worker assemblies to the cloud.
 
-<button class="collapsible">Built-out workers - what does it mean?</button>
+[block:html]
+{
+  "html": "<button class="collapsible">Built-out workers - what does it mean?</button>
 <div>
 
 
 You prepare both your server-workers and client-workers for upload to the cloud by building their assemblies from the code in their `.uproject` files. We call this “building workers”, and the resulting assemblies "built workers".
 
 
-</div>
+</div>"
+}
+[/block]
+
 
 
 **Schema and snapshot**</br>
@@ -96,7 +101,7 @@ For now, you need to build server-workers and client-workers, so if you haven't 
 {
   "codes": [
   {
-      "code": "      UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject\n",
+      "code": "      UnrealEngine\\Engine\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject\n",
       "language": "text"
     }
   ]
@@ -108,7 +113,7 @@ For now, you need to build server-workers and client-workers, so if you haven't 
 {
   "codes": [
   {
-      "code": "      <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject",
+      "code": "      <YourProject>\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject",
       "language": "text"
     }
   ]
@@ -121,7 +126,7 @@ For now, you need to build server-workers and client-workers, so if you haven't 
 {
   "codes": [
   {
-      "code": "UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
+      "code": "UnrealEngine\\Engine\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
       "language": "text"
     }
   ]
@@ -133,7 +138,7 @@ For now, you need to build server-workers and client-workers, so if you haven't 
 {
   "codes": [
   {
-      "code": "<YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
+      "code": "<YourProject>\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
       "language": "text"
     }
   ]
@@ -258,7 +263,7 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
 {
   "codes": [
   {
-      "code": "UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject",
+      "code": "UnrealEngine\\Engine\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject",
       "language": "text"
     }
   ]
@@ -269,19 +274,24 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
 {
   "codes": [
   {
-      "code": "  <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject ",
+      "code": "  <YourProject>\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject ",
       "language": "text"
     }
   ]
 }
 [/block]
-  <button class="collapsible">Note: disabling game client plugins which don't run on Linux</button>
+  [block:html]
+{
+  "html": "<button class="collapsible">Note: disabling game client plugins which don't run on Linux</button>
 <div>
 
   Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like
   `if (Target.Platform != UnrealTargetPlatform.Linux)`
   
-</div>
+</div>"
+}
+[/block]
+
   Then, back in the Editor Deploy window:</br></br>
   * **Add simulated players**: Check the box.</br></br>
   * **Deployment Name**: Enter a name for your simulated player deployment. This labels the deployment in the Console. Make it different to your game deployment name.</br></br>

@@ -25,7 +25,9 @@ If you have already signed up, make sure you are logged into [Improbable.io](htt
 
 ### Step 2: Clone the Example Project repository
 
-<button class="collapsible">Using the command line</button>
+[block:html]
+{
+  "html": "<button class="collapsible">Using the command line</button>
 <div>
 
 
@@ -38,7 +40,10 @@ If you have already signed up, make sure you are logged into [Improbable.io](htt
 | SSH   | `git clone git@github.com:spatialos/UnrealGDKExampleProject.git` |
 
 
-</div>
+</div>"
+}
+[/block]
+
 
 <button class="collapsible">Using Github Desktop</button>
 <div>

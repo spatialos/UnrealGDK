@@ -36,7 +36,7 @@ To do this, in a terminal window, use the following command from the root folder
 {
   "codes": [
   {
-      "code": "Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourGame>Editor Win64 Development <YourGame>.uproject",
+      "code": "Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourGame>Editor Win64 Development <YourGame>.uproject",
       "language": "text"
     }
   ]

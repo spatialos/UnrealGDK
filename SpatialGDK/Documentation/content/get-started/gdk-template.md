@@ -97,14 +97,21 @@ You can find out more about schema, including how to generate it from the comman
 
 </div>
 
-<button class="collapsible">What is an entity?</button>
+[block:html]
+{
+  "html": "<button class="collapsible">What is an entity?</button>
 <div>
 
 An entity is the SpatialOS equivalent of  an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)
 
-</div>
+</div>"
+}
+[/block]
 
-<button class="collapsible">What is  a snapshot?</button>
+
+[block:html]
+{
+  "html": "<button class="collapsible">What is  a snapshot?</button>
 <div>
 
 
@@ -113,7 +120,10 @@ A snapshot is a representation of the state of a SpatialOS world at a given poin
 You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).
 
 
-</div>
+</div>"
+}
+[/block]
+
 
 To launch a local deployment:
 
@@ -168,7 +178,9 @@ When you signed up for SpatialOS, your account was automatically associated with
 1. In File Explorer, navigate to the `<YourProject>/spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 1. Replace the `name` field with the project name shown in the Console. This tells SpatialOS which SpatialOS project you intend to upload to.
 
-<button class="collapsible">What is the Console?</button>
+[block:html]
+{
+  "html": "<button class="collapsible">What is the Console?</button>
 <div>
 
 
@@ -177,7 +189,10 @@ The Console is a web-based tool for managing cloud deployments. It gives you acc
 You can find out more about the Console in the [Glossary]({{urlRoot}}/content/glossary#console).
 
 
-</div>
+</div>"
+}
+[/block]
+
 
 #### Step 2: Build your workers
 
@@ -217,7 +232,7 @@ Build a server-worker assembly by running the following command:
 {
   "codes": [
   {
-      "code": "Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProjectServer Linux Development YourProject.uproject",
+      "code": "Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat YourProjectServer Linux Development YourProject.uproject",
       "language": "text"
     }
   ]
@@ -230,7 +245,7 @@ Build a client-worker assembly by running the following command:
 {
   "codes": [
   {
-      "code": "Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
+      "code": "Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
       "language": "text"
     }
   ]
@@ -241,12 +256,17 @@ Build a client-worker assembly by running the following command:
 </div>
 
 **Troubleshooting**
-<button class="collapsible">BuildProject.bat can’t find the path specified</button>
+[block:html]
+{
+  "html": "<button class="collapsible">BuildProject.bat can’t find the path specified</button>
 <div>
 
 If you receive the error `The system cannot find the path specified. Builds failed.`, open `ProjectPaths.bat` in a text editor and ensure that `PROJECT_PATH` and `GAME_NAME` are correct. `PROJECT_PATH` needs to be the name of your Unreal project folder (usually Game). `GAME_NAME` needs to be the same name as your Unreal Project `.uproject` file.  
 
-</div>
+</div>"
+}
+[/block]
+
 
 #### Step 3: Upload your workers
 
@@ -273,7 +293,9 @@ A valid upload command looks like this:
 #### Step 4: Launch your cloud deployment
 The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. You can only do this through the SpatialOS command-line interface (also known as the “CLI”).
 
-<button class="collapsible">What is the CLI?</button>
+[block:html]
+{
+  "html": "<button class="collapsible">What is the CLI?</button>
 <div>
 
 
@@ -281,7 +303,10 @@ The SpatilOS command-line tool (CLI) provides a set of commands that you use to 
 
 Find out more in the [glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
 
-</div>
+</div>"
+}
+[/block]
+
 
 When launching a cloud deployment you must provide four parameters:
 
@@ -290,7 +315,9 @@ When launching a cloud deployment you must provide four parameters:
 * **A launch configuration file** - defines the SpatialOS game world and load balancing configuration.
 * **A name for your deployment** -  labels the deployment in the Console.
 
-<button class="collapsible">What is a launch configuration file?</button>
+[block:html]
+{
+  "html": "<button class="collapsible">What is a launch configuration file?</button>
 <div>
 
 
@@ -298,7 +325,10 @@ Use this file to list the settings of a deployment. These include: how big the S
 
 You can find out more about the launch configuration file in the [glossary]({{urlRoot}}/content/glossary#launch-configuration).
 
-</div>
+</div>"
+}
+[/block]
+
 
 1. In a  terminal window, navigate to `<ProjectRoot>\spatial\` and run the following command
 
@@ -306,7 +336,7 @@ You can find out more about the launch configuration file in the [glossary]({{ur
 {
   "codes": [
   {
-      "code": "spatial cloud launch --snapshot=snapshots\default.snapshot <assembly_name> one_worker_test.json <deployment_name>",
+      "code": "spatial cloud launch --snapshot=snapshots\\default.snapshot <assembly_name> one_worker_test.json <deployment_name>",
       "language": "text"
     }
   ]
@@ -342,7 +372,9 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
 
 In the Console, Select **Launch** on the left of the page, and then select the **Launch** button that appears in the centre of the page to open the SpatialOS Launcher. The Launcher automatically downloads the game client for this deployment and runs it on your local machine.
 
-<button class="collapsible">What is the SpatialOS Launcher?</button>
+[block:html]
+{
+  "html": "<button class="collapsible">What is the SpatialOS Launcher?</button>
 <div>
 
 
@@ -350,7 +382,10 @@ The Launcher is a distribution tool which downloads and launches game clients fo
 
 Find out more in the [glossary](({{urlRoot}}/content/glossary#launcher).
 
-</div>
+</div>"
+}
+[/block]
+
 <br/>
 ![]({{assetRoot}}assets/tutorial/launch.png)<br/>
 _Image: The SpatialOS console launch window_

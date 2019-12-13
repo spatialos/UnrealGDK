@@ -9,7 +9,9 @@
 ### Step 1: Generate a token
 To ensure that game clients are able to see all available deployments and can connect to them, you must generate a development authentication token and update your project’s code with the generated token. 
 
-<button class="collapsible">What is development authentication?</button>
+[block:html]
+{
+  "html": "<button class="collapsible">What is development authentication?</button>
 <div>
 
 While developing your game you may want to test game clients using connection authentication before you set up your own authentication and login servers. To facilitate this, Improbable hosts a development authentication service and a development login service for early-stage game development. This development authentication workflow provides you with a long-lived `DevelopmentAuthenticationToken` that you can hardcode into your game client.
@@ -17,7 +19,10 @@ While developing your game you may want to test game clients using connection au
 You should only use development authentication and login for testing during development of your game.You can find out more about the development authentication workflow in the [development authentication documentation](https://docs.improbable.io/reference/latest/shared/auth/development-authentication). 
 
 
-</div>
+</div>"
+}
+[/block]
+
 
 To generate a development authentication token: 
 

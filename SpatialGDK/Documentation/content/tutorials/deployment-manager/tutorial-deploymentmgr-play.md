@@ -17,7 +17,9 @@ Select **QUICK JOIN** to join one of your sessions or select **BROWSE...** to ch
 
 **Troubleshooting**</br>
 
-<button class="collapsible">I can see my deployments in my game client, but I can’t join any of them</button>
+[block:html]
+{
+  "html": "<button class="collapsible">I can see my deployments in my game client, but I can’t join any of them</button>
 <div>
 
 
@@ -34,7 +36,10 @@ To do this:
 When you have done this, re-launch your game client and you should be able to join any of the deployments, provided the number of players has not exceeded the maximum.
 
 
-</div>
+</div>"
+}
+[/block]
+
 
 <%(Lightbox image="{{assetRoot}}assets/deployment-manager/deploymentmgr-startscreen.png")%></br>
 _Image: The Example Project start screen._

@@ -8,7 +8,9 @@ Clone the Deployment Manager repository into the parent directory of your Exampl
 
 If you do not clone the Deployment Manager into the parent directory of your Example Project repository then you will have to edit a number of .bat scripts later on in this tutorial.
 
-<button class="collapsible">Using a terminal</button>
+[block:html]
+{
+  "html": "<button class="collapsible">Using a terminal</button>
 <div>
 
 
@@ -21,7 +23,10 @@ If you do not clone the Deployment Manager into the parent directory of your Exa
 | SSH   | `git clone git@github.com:spatialos/deployment-manager.git`|
 
 
-</div>
+</div>"
+}
+[/block]
+
 
 <button class="collapsible">Using Github Desktop</button>
 <div>

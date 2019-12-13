@@ -19,7 +19,7 @@ Engine plugin filepath (default):</br>
 {
   "codes": [
   {
-      "code": "UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject",
+      "code": "UnrealEngine\\Engine\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject",
       "language": "text"
     }
   ]
@@ -31,7 +31,7 @@ Project plugin filepath:</br>
 {
   "codes": [
   {
-      "code": "<YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject",
+      "code": "<YourProject>\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject",
       "language": "text"
     }
   ]
@@ -51,7 +51,7 @@ Engine plugin filepath (default):</br>
 {
   "codes": [
   {
-      "code": "UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
+      "code": "UnrealEngine\\Engine\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
       "language": "text"
     }
   ]
@@ -63,7 +63,7 @@ Project plugin filepath:</br>
 {
   "codes": [
   {
-      "code": "<YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
+      "code": "<YourProject>\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject",
       "language": "text"
     }
   ]
@@ -113,7 +113,7 @@ You can launch a cloud deployment using the Unreal Editor or the SpatialOS CLI. 
 {
   "codes": [
   {
-      "code": "    UnrealEngine\Engine\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject \n",
+      "code": "    UnrealEngine\\Engine\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject \n",
       "language": "text"
     }
   ]
@@ -124,19 +124,24 @@ You can launch a cloud deployment using the Unreal Editor or the SpatialOS CLI. 
 {
   "codes": [
   {
-      "code": "    <YourProject>\Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject\n",
+      "code": "    <YourProject>\\Game\\Plugins\\UnrealGDK\\SpatialGDK\\Build\\Scripts\\BuildWorker.bat <YourProject>SimulatedPlayer Linux Development <YourProject>.uproject\n",
       "language": "text"
     }
   ]
 }
 [/block]
-<button class="collapsible">Note: disabling game client plugins which don't run on Linux</button>
+[block:html]
+{
+  "html": "<button class="collapsible">Note: disabling game client plugins which don't run on Linux</button>
 <div>
 
     Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like
     `if (Target.Platform != UnrealTargetPlatform.Linux)`
   
-</div>
+</div>"
+}
+[/block]
+
     Then, back in the Editor Deploy window:</br></br>
 	1. Check the box next to **Add simulated players**.
 	1. In the **Deployment Name** field, enter enter a name for your simulated player  deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).

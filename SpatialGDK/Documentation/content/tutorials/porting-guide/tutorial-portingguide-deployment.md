@@ -23,7 +23,9 @@ Before you launch a local deployment, you must:
 * generate schema (which creates entities)
 * generate a snapshot
 
-<button class="collapsible">What is Schema?</button>
+[block:html]
+{
+  "html": "<button class="collapsible">What is Schema?</button>
 <div>
 
 
@@ -32,16 +34,26 @@ Schema is a set of definitions which represent your game’s objects in SpatialO
 You can find out more about schema, including how to generate it from the command line, making schema work with source control, and how to exclude certain directories from schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)
 
 
-</div>
+</div>"
+}
+[/block]
 
-<button class="collapsible">What is an entity?</button>
+
+[block:html]
+{
+  "html": "<button class="collapsible">What is an entity?</button>
 <div>
 
 An entity is the SpatialOS equivalent of an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)
 
-</div>
+</div>"
+}
+[/block]
 
-<button class="collapsible">What is  a snapshot?</button>
+
+[block:html]
+{
+  "html": "<button class="collapsible">What is  a snapshot?</button>
 <div>
 
 
@@ -50,7 +62,10 @@ A snapshot is a representation of the state of a SpatialOS world at a given poin
 You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).
 
 
-</div>
+</div>"
+}
+[/block]
+
 
 To launch a local deployment:
 
