@@ -25,10 +25,9 @@ public:
 	virtual bool IsLocked(const AActor* Actor) const override;
 
 private:
-	struct LockingState
+	struct MigrationLockElement
 	{
 		int32 LockCount;
-		
 		TFunction<void()> UnbindActorDeletionDelegateFunc;
 	};
 
@@ -43,7 +42,7 @@ private:
 
 	bool CanAcquireLock(AActor* Actor) const;
 
-	TMap<const AActor*, LockingState> ActorToLockingState;
+	TMap<const AActor*, MigrationLockElement> ActorToLockingState;
 	TMap<ActorLockToken, LockNameAndActor> TokenToNameAndActor;
 
 	ActorLockToken NextToken = 1;

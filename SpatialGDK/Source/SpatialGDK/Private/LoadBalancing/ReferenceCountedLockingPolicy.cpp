@@ -18,7 +18,7 @@ bool UReferenceCountedLockingPolicy::CanAcquireLock(AActor* Actor) const
 
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("CanAcquireLock called for actor without corresponding entity ID. Actor: %s"), *Actor->GetName());
+		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Failed to lock actor without corresponding entity ID. Actor: %s"), *Actor->GetName());
 		return false;
 	}
 
@@ -43,15 +43,17 @@ ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(AActor* Actor, FStrin
 		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Called AcquireLock when CanAcquireLock returned false. Actor: %s."), *GetNameSafe(Actor));
 		return SpatialConstants::INVALID_ACTOR_LOCK_TOKEN;
 	}
-	LockingState* ActorLockingState = ActorToLockingState.Find(Actor);
+	MigrationLockElement* ActorLockingState = ActorToLockingState.Find(Actor);
 	if (ActorLockingState != nullptr)
 	{
 		++ActorLockingState->LockCount;
 	}
 	else
 	{
+		// We want to avoid memory leak if a locked actor is deleted.
+		// To do this, we register with the Actor OnDestroyed delegate with a function that cleans up the internal map.
 		Actor->OnDestroyed.AddDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorDeleted);
-		ActorToLockingState.Add(Actor, LockingState{ 1, [this, Actor]
+		ActorToLockingState.Add(Actor, MigrationLockElement{ 1, [this, Actor]
 		{
 			Actor->OnDestroyed.RemoveDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorDeleted);
 		} });
@@ -75,7 +77,7 @@ void UReferenceCountedLockingPolicy::ReleaseLock(ActorLockToken Token)
 	{
 		// Reduce the reference count and erase the entry if reduced to 0.
 		auto CountIt = ActorToLockingState.CreateKeyIterator(Actor);
-		LockingState& ActorLockingState = CountIt.Value();
+		MigrationLockElement& ActorLockingState = CountIt.Value();
 		if (ActorLockingState.LockCount == 1)
 		{
 			UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Actor migration no longer locked. Actor: %s"), *Actor->GetName());
@@ -101,7 +103,6 @@ bool UReferenceCountedLockingPolicy::IsLocked(const AActor* Actor) const
 
 void UReferenceCountedLockingPolicy::OnLockedActorDeleted(AActor* DestroyedActor)
 {
-	// iterate through actor to lock state tokens and delete debug strings
 	TArray<ActorLockToken> TokensToRemove;
 	for (const auto& KeyValuePair : TokenToNameAndActor)
 	{
