@@ -17,11 +17,11 @@
 #include "Net/NetworkProfiler.h"
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
-#include "Schema/ClientRPCEndpoint.h"
+#include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
-#include "Schema/ServerRPCEndpoint.h"
+#include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
@@ -135,10 +135,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, OwningClientOnlyRequirementSet);
 
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
@@ -297,9 +297,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	InterestFactory InterestDataFactory(Actor, Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
-	ComponentDatas.Add(ClientRPCEndpoint().CreateRPCEndpointData());
-	ComponentDatas.Add(ServerRPCEndpoint().CreateRPCEndpointData());
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
+	ComponentDatas.Add(ClientRPCEndpointLegacy().CreateRPCEndpointData());
+	ComponentDatas.Add(ServerRPCEndpointLegacy().CreateRPCEndpointData());
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY));
 
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
@@ -602,7 +602,7 @@ void USpatialSender::FlushPackedRPCs()
 
 		Worker_ComponentUpdate ComponentUpdate = {};
 
-		Worker_ComponentId ComponentId = NetDriver->IsServer() ? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+		Worker_ComponentId ComponentId = NetDriver->IsServer() ? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 		ComponentUpdate.component_id = ComponentId;
 		ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
@@ -659,8 +659,8 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterestForActor(
 		FillComponentInterests(SubobjectInfo, bIsNetOwned, ComponentInterest);
 	}
 
-	ComponentInterest.Add({ SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, bIsNetOwned });
-	ComponentInterest.Add({ SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, bIsNetOwned });
+	ComponentInterest.Add({ SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, bIsNetOwned });
+	ComponentInterest.Add({ SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, bIsNetOwned });
 
 	return ComponentInterest;
 }
@@ -757,7 +757,7 @@ void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const 
 	{
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID ||
 			ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID ||
-			ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+			ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
 		{
 			continue;
 		}
@@ -835,7 +835,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 	{
 	case ERPCType::CrossServer:
 	{
-		Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentId(RPCInfo.Type);
+		Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
 
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
@@ -883,7 +883,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		EntityId = TargetObjectRef.Entity;
 		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-		Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentId(RPCInfo.Type);
+		Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
 
 		bool bCanPackRPC = GetDefault<USpatialGDKSettings>()->bPackRPCs;
 		if (bCanPackRPC && RPCInfo.Type == ERPCType::NetMulticast)
@@ -1029,7 +1029,7 @@ void USpatialSender::ClearRPCsOnEntityCreation(Worker_EntityId EntityId)
 
 void USpatialSender::SendClientEndpointReadyUpdate(Worker_EntityId EntityId)
 {
-	ClientRPCEndpoint Endpoint;
+	ClientRPCEndpointLegacy Endpoint;
 	Endpoint.bReady = true;
 	Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
@@ -1037,7 +1037,7 @@ void USpatialSender::SendClientEndpointReadyUpdate(Worker_EntityId EntityId)
 
 void USpatialSender::SendServerEndpointReadyUpdate(Worker_EntityId EntityId)
 {
-	ServerRPCEndpoint Endpoint;
+	ServerRPCEndpointLegacy Endpoint;
 	Endpoint.bReady = true;
 	Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
@@ -1204,7 +1204,7 @@ bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& O
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
-	EntityACL->ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
+	EntityACL->ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, OwningClientOnly);
 	EntityACL->ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
 	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 
