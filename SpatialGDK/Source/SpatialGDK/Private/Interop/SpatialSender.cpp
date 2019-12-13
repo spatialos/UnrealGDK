@@ -738,19 +738,15 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	}
 }
 
-void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId)
+void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& DestinationWorkerId)
 {
 	check(NetDriver);
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Failing to set Acl WriteAuth for entity %lld to workerid: %s because this worker doesn't have authority over the EntityACL component."), *NetDriver->Connection->GetWorkerId(), EntityId, *WorkerId);
-		return;
-	}
+	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
 
 	EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<EntityAcl>(EntityId);
 	check(EntityACL);
 
-	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *WorkerId);
+	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *DestinationWorkerId);
 
 	WorkerAttributeSet OwningWorkerAttribute = { WriteWorkerId };
 
@@ -772,7 +768,7 @@ void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const 
 		RequirementSet->Add(OwningWorkerAttribute);
 	}
 
-	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) Setting Acl WriteAuth for entity %lld to workerid: %s"), *NetDriver->Connection->GetWorkerId(), EntityId, *WorkerId);
+	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) Setting Acl WriteAuth for entity %lld to workerid: %s"), *NetDriver->Connection->GetWorkerId(), EntityId, *DestinationWorkerId);
 
 	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
