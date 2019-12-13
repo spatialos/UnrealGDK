@@ -22,18 +22,18 @@ bool UReferenceCountedLockingPolicy::CanAcquireLock(AActor* Actor) const
 		return false;
 	}
 
-	const bool HasAuthIntent = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId() ==
-		NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId)->VirtualWorkerId;
-	const bool HasAuth = NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE;
-	if (!HasAuth)
+	const bool bHasAuthority = NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE;
+	if (!bHasAuthority)
 	{
 		UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Can not lock actor migration. Do not have authority. Actor: %s"), *Actor->GetName());
 	}
-	if (!HasAuthIntent)
+	const bool bHasAuthorityIntent = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId() ==
+		NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId)->VirtualWorkerId;
+	if (!bHasAuthorityIntent)
 	{
 		UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Can not lock actor migration. Authority intent does not match this worker. Actor: %s"), *Actor->GetName());
 	}
-	return HasAuthIntent && HasAuth;
+	return bHasAuthorityIntent && bHasAuthority;
 }
 
 ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(AActor* Actor, FString DebugString)
