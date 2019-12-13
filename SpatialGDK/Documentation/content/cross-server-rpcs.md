@@ -45,10 +45,8 @@ To set up a cross-server RPC, follow the same instructions as you would for [mar
 {
   "codes": [
   {
-      "code": "    void MyActor::MyCrossServerRPC_Implementation()
-    {
-        // Implementation goes here...
-    }\n",s+ "language": "text"
+      "code": "    void MyActor::MyCrossServerRPC_Implementation()\n{\n// Implementation goes here...\n}\n",
+     "language": "text"
     }
   ]
 }

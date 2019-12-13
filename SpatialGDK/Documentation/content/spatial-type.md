@@ -32,12 +32,7 @@ For example;
 {
   "codes": [
   {
-      "code": "UCLASS(SpatialType)
-class AMyReplicatingActor : public AActor
-{
-  GENERATED_BODY()
-  ...
-}",
+      "code": "UCLASS(SpatialType)\nclass AMyReplicatingActor : public AActor\n{\nGENERATED_BODY()\n...\n}",
       "language": "text"
     }
   ]
@@ -49,13 +44,8 @@ To add `SpatialType` descriptors, use the following format;
 [block:code]
 {
   "codes": [
-  {
-      "code": "UCLASS(SpatialType=Singleton)
-class AMySingleton : public AActor
 {
-  GENERATED_BODY()
-  ...
-}",
+      "code": "UCLASS(SpatialType=Singleton)\nclass AMySingleton : public AActor\n{\nGENERATED_BODY()\n...\n}",
       "language": "text"
     }
   ]

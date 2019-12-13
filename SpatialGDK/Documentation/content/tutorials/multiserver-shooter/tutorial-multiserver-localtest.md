@@ -50,17 +50,7 @@ To damage a player on a different server, the actor shooting the bullet must sen
 {
   "codes": [
   {
-      "code": "float AGDKCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-	TakeDamageCrossServer(Damage, DamageEvent, EventInstigator, DamageCauser);
-	return Damage;
-}
-
-void AGDKCharacter::TakeDamageCrossServer_Implementation(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-	float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
-	HealthComponent->TakeDamage(ActualDamage, DamageEvent, EventInstigator, DamageCauser);
-}",
+      "code": "float AGDKCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)\n{\nTakeDamageCrossServer(Damage, DamageEvent, EventInstigator, DamageCauser);\nreturn Damage;\n}\n\nvoid AGDKCharacter::TakeDamageCrossServer_Implementation(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)\n{\nfloat ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);\nHealthComponent->TakeDamage(ActualDamage, DamageEvent, EventInstigator, DamageCauser);\n}",
       "language": "text"
     }
   ]

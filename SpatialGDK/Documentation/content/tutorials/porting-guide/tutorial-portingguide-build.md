@@ -24,19 +24,7 @@ For example:
 {
   "codes": [
   {
-      "code": "   PublicDependencyModuleNames.AddRange(
-               new string[] {
-                   "Core",
-                   "CoreUObject",
-                   "Engine",
-                   "OnlineSubsystem",
-                   "OnlineSubsystemUtils",
-                   "AssetRegistry",
-                   "AIModule",
-                   "GameplayTasks",
-                   "SpatialGDK",
-               }
-           );",
+      "code": "   PublicDependencyModuleNames.AddRange( \n            new string[] {\n                \"Core\",\n                \"CoreUObject\",\n                \"Engine\",\n                \"OnlineSubsystem\",\n                \"OnlineSubsystemUtils\",   \n                \"AssetRegistry\",\n                \"AIModule\",\n                \"GameplayTasks\",\n                \"SpatialGDK\",\n            }\n        );",
       "language": "text"
     }
   ]
@@ -90,11 +78,7 @@ Make your `GameInstance` inherit from `SpatialGameInstance`.  <br/>
 {
   "codes": [
   {
-      "code": "  UCLASS()
-  class YOURPROJECT_API UYourProjectGameInstance : public USpatialGameInstance
-  {
-      GENERATED_BODY()
-  };\n",
+      "code": "  UCLASS()\n  class YOURPROJECT_API UYourProjectGameInstance : public USpatialGameInstance\n  {\n      GENERATED_BODY()\n  };\n",
       "language": "cplusplus"
     }
   ]

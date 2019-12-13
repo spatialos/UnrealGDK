@@ -38,12 +38,7 @@ Before you begin, ensure that you have an Actor, which can be either an [Unreal 
 {
   "codes": [
   {
-      "code": "     UCLASS(SpatialType=Singleton)
-     class AScoreBoard : public AActor
-     {
-       GENERATED_BODY()
-       ...
-     }\n",
+      "code": "     UCLASS(SpatialType=Singleton)\n     class AScoreBoard : public AActor\n     {\n       GENERATED_BODY()\n       ...\n     }\n",
       "language": "text"
     }
   ]
@@ -54,12 +49,7 @@ Before you begin, ensure that you have an Actor, which can be either an [Unreal 
 {
   "codes": [
   {
-      "code": "     UCLASS(SpatialType=(Singleton, ServerOnly))
-     class AScoreBoard : public AActor
-     {
-       GENERATED_BODY()
-       ...
-     }\n",
+      "code": "     UCLASS(SpatialType=(Singleton, ServerOnly))\n     class AScoreBoard : public AActor\n     {\n       GENERATED_BODY()\n       ...\n     }\n",
       "language": "text"
     }
   ]

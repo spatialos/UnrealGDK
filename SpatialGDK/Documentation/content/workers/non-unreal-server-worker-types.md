@@ -75,13 +75,7 @@ You can customize snapshot generation by creating a class derived from the GDK `
 {
   "codes": [
   {
-      "code": "  
-  /** Write to the snapshot generation output stream.
-    * @param OutputStream the output stream for the snapshot being created.
-    * @param NextEntityId the next available entity ID in the snapshot, this reference should be incremented appropriately.
-    * @return bool the success of writing to the snapshot output stream, this is returned to the overall snapshot generation.
-    **/
-bool WriteToSnapshotOutput(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextEntityId);",
+      "code": "  \n  /** Write to the snapshot generation output stream.\n    * @param OutputStream the output stream for the snapshot being created.\n    * @param NextEntityId the next available entity ID in the snapshot, this reference should be incremented appropriately.\n    * @return bool the success of writing to the snapshot output stream, this is returned to the overall snapshot generation.\n    **/\nbool WriteToSnapshotOutput(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextEntityId);",
       "language": "text"
     }
   ]
@@ -97,25 +91,7 @@ Below is a simple example schema file which a non-Unreal server-worker type coul
 {
   "codes": [
   {
-      "code": "package improbable.testing;
-
-type UnrealRequest {
-    string some_request_string = 1;
-}
-type UnrealResponse {
-    string some_response_string = 1;
-}
-
-component TestComponent {
-    id = 1337;
-    uint32 counter = 1;
-    command UnrealResponse test_command(UnrealRequest);
-}
-
-component OtherTestComponent {
-    id = 1338;
-    uint32 other_counter = 1;
-}",
+      "code": "package improbable.testing;\n\ntype UnrealRequest {\n    string some_request_string = 1;\n}\ntype UnrealResponse {\n    string some_response_string = 1;\n}\n\ncomponent TestComponent {\n    id = 1337;\n    uint32 counter = 1;\n    command UnrealResponse test_command(UnrealRequest);\n}\n\ncomponent OtherTestComponent {\n    id = 1338;\n    uint32 other_counter = 1;\n}",
       "language": "text"
     }
   ]
@@ -138,9 +114,7 @@ To send component updates or command requests / responses, you can call any of t
 {
   "codes": [
   {
-      "code": "auto Update = new ::improbable::testing::TestComponent::Update(20 /* counter field */);
-// further edit Update using constructor pattern methods, e.g. (void)Update->SetCounter(30);
-ExternalSchema->SendComponentUpdate(30 /* entity_id */, Update);",
+      "code": "auto Update = new ::improbable::testing::TestComponent::Update(20 /* counter field */);\n// further edit Update using constructor pattern methods, e.g. (void)Update->SetCounter(30);\nExternalSchema->SendComponentUpdate(30 /* entity_id */, Update);",
       "language": "text"
     }
   ]
@@ -155,9 +129,7 @@ To register callbacks to receive network operations, you can call any of the ove
 {
   "codes": [
   {
-      "code": "ExternalSchema->OnComponentUpdate([&](const ::improbable::testing::TestComponent::ComponentUpdateOp& Op) {
-    // access via Op.Update.get_counter();
-});",
+      "code": "ExternalSchema->OnComponentUpdate([&](const ::improbable::testing::TestComponent::ComponentUpdateOp& Op) {\n    // access via Op.Update.get_counter();\n});",
       "language": "text"
     }
   ]
@@ -172,21 +144,7 @@ For example, the following code instantiates the `ExternalSchema` member of type
 {
   "codes": [
   {
-      "code": "void UTPSGameInstance::Init()
-{
-    OnConnected.AddLambda([this]() {
-        // On the client the world may not be completely set up, if so we can use the PendingNetGame
-        USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-        if (NetDriver == nullptr)
-        {
-            NetDriver = Cast<USpatialNetDriver>(GetWorldContext()->PendingNetGame->GetNetDriver());
-        }
-
-        ExternalSchema = new ExternalSchemaInterface(NetDriver->Connection, NetDriver->Dispatcher);
-
-        // register callbacks here
-   });
-}",
+      "code": "void UTPSGameInstance::Init()\n{\n    OnConnected.AddLambda([this]() {\n        // On the client the world may not be completely set up, if so we can use the PendingNetGame\n        USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());\n        if (NetDriver == nullptr)\n        {\n            NetDriver = Cast<USpatialNetDriver>(GetWorldContext()->PendingNetGame->GetNetDriver());\n        }\n\n        ExternalSchema = new ExternalSchemaInterface(NetDriver->Connection, NetDriver->Dispatcher);\n\n        // register callbacks here\n   });\n}",
       "language": "text"
     }
   ]
@@ -201,15 +159,7 @@ You could serialize and send a component update in your Unreal project code in t
 {
   "codes": [
   {
-      "code": "void SendSomeUpdate(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId)
-{
-    Worker_ComponentUpdate Update = {};
-    Update.component_id = ComponentId;
-    Update.schema_type = Schema_CreateComponentUpdate(ComponentId);
-    Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Update.schema_type);
-    Schema_AddInt32(FieldsObject, 1, 123456);
-    Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendComponentUpdate(TargetEntityId, &Update);
-}",
+      "code": "void SendSomeUpdate(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId)\n{\n    Worker_ComponentUpdate Update = {};\n    Update.component_id = ComponentId;\n    Update.schema_type = Schema_CreateComponentUpdate(ComponentId);\n    Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Update.schema_type);\n    Schema_AddInt32(FieldsObject, 1, 123456);\n    Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendComponentUpdate(TargetEntityId, &Update);\n}",
       "language": "text"
     }
   ]
@@ -222,15 +172,7 @@ You could serialize and send a command response in your Unreal project code in t
 {
   "codes": [
   {
-      "code": "Worker_RequestId SendSomeCommandResponse(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId, Schema_FieldId CommandId) {
-    Worker_CommandResponse Response = {};
-    Response.component_id = ComponentId;
-    Response.schema_type = Schema_CreateCommandResponse(ComponentId, CommandId);
-    Schema_Object* ResponseObject = Schema_GetCommandResponseObject(Response.schema_type);
-    const char* Text = "Hello World.";
-    Schema_AddBytes(ResponseObject, 1, (const uint8_t*)Text, sizeof(char) * strlen(Text));
-    Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendCommandResponse(TargetEntityId, &Response);
-}",
+      "code": "Worker_RequestId SendSomeCommandResponse(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId, Schema_FieldId CommandId) {\n    Worker_CommandResponse Response = {};\n    Response.component_id = ComponentId;\n    Response.schema_type = Schema_CreateCommandResponse(ComponentId, CommandId);\n    Schema_Object* ResponseObject = Schema_GetCommandResponseObject(Response.schema_type);\n    const char* Text = "Hello World.";\n    Schema_AddBytes(ResponseObject, 1, (const uint8_t*)Text, sizeof(char) * strlen(Text));\n    Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendCommandResponse(TargetEntityId, &Response);\n}",
       "language": "text"
     }
   ]
@@ -242,48 +184,7 @@ You could receive and deserialize a component update and command request in your
 {
   "codes": [
   {
-      "code": "void UTPSGameInstance::Init()
-{
-    // OnConnected is an event declared in USpatialGameInstance
-    OnConnected.AddLambda([this]() {
-        // On the client the world may not be completely set up, if s we can use the PendingNetGame
-        USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-        if (NetDriver == nullptr)
-        {
-            NetDriver = Cast<USpatialNetDriver>(GetWorldContext()->PendingNetGame->GetNetDriver());
-        }
-        USpatialDispatcher* Dispatcher = NetDriver->Dispatcher;
-
-        Dispatcher->OnComponentUpdate(1337, [this](const Worker_ComponentUpdateOp& Op) {
-            // Example deserializing component update network operation
-            uint32 CounterValue = Schema_GetUint32(Schema_GetComponentUpdateFields(Op.update.schema_type), 1);
-            // do something with CounterValue
-
-            // Example actor spawning from within a callback
-            const FVector Location = FVector::ZeroVector;
-            const FRotator Rotation = FRotator::ZeroRotator;
-            GetWorld()->SpawnActor(CubeClass, &Location, &Rotation);
-        });
-
-        Dispatcher->OnCommandRequest(1338, [this](const Worker_CommandRequestOp& Op)
-            // Example deserializing network operation
-            auto RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);
-            uint32 TextLength = Schema_GetBytesLength(RequestObject, FieldId);
-            const uint8* Text = Schema_GetBytes(RequestObject, FieldId);
-            auto MyString = FString(TextLength, ANSI_TO_TCHAR(reinterpret_cast<const char*>(Text)))
-            // do something with MyString
-
-            // Example serializing and sending command response
-            Worker_CommandResponse Response = {};
-            Response.component_id = 1338;
-            Response.schema_type = Schema_CreateCommandResponse(1338, 1);
-            Schema_Object* response_object = Schema_GetCommandResponseObject(Response.schema_type);
-            FString text = "Here's my response.";
-            Schema_AddBytes(response_object, 1, (const uint8_t*)TCHAR_TO_ANSI(*text), sizeof(char) * strlen(TCHAR_TO_ANSI(*text)));
-            Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->SendCommandResponse(Op.request_id, &Response);
-        });
-    });
-}",
+      "code": "void UTPSGameInstance::Init()\n{\n// OnConnected is an event declared in USpatialGameInstance\nOnConnected.AddLambda([this]() {\n// On the client the world may not be completely set up, if s we can use the PendingNetGame\nUSpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());\nif (NetDriver == nullptr)\n{\nNetDriver = Cast<USpatialNetDriver>(GetWorldContext()->PendingNetGame->GetNetDriver());\n}\nUSpatialDispatcher* Dispatcher = NetDriver->Dispatcher;\n\nDispatcher->OnComponentUpdate(1337, [this](const Worker_ComponentUpdateOp& Op) {\n// Example deserializing component update network operation\nuint32 CounterValue = Schema_GetUint32(Schema_GetComponentUpdateFields(Op.update.schema_type), 1);\n// do something with CounterValue\n\n// Example actor spawning from within a callback\nconst FVector Location = FVector::ZeroVector;\nconst FRotator Rotation = FRotator::ZeroRotator;\nGetWorld()->SpawnActor(CubeClass, &Location, &Rotation);\n});\n\nDispatcher->OnCommandRequest(1338, [this](const Worker_CommandRequestOp& Op)\n// Example deserializing network operation\nauto RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);\nuint32 TextLength = Schema_GetBytesLength(RequestObject, FieldId);\nconst uint8* Text = Schema_GetBytes(RequestObject, FieldId);\nauto MyString = FString(TextLength, ANSI_TO_TCHAR(reinterpret_cast<const char*>(Text)))\n// do something with MyString\n\n// Example serializing and sending command response\nWorker_CommandResponse Response = {};\nResponse.component_id = 1338;\nResponse.schema_type = Schema_CreateCommandResponse(1338, 1);\nSchema_Object* response_object = Schema_GetCommandResponseObject(Response.schema_type);\nFString text = "Here's my response.";\nSchema_AddBytes(response_object, 1, (const uint8_t*)TCHAR_TO_ANSI(*text), sizeof(char) * strlen(TCHAR_TO_ANSI(*text)));\nCast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->SendCommandResponse(Op.request_id, &Response);\n});\n});\n}",
       "language": "text"
     }
   ]
@@ -298,63 +199,7 @@ You could add a new entity with the given component in your Unreal project code 
 {
   "codes": [
   {
-      "code": "UCLASS()
-class UTestEntitySnapshotGeneration : public USnapshotGenerationTemplate
-{
-	GENERATED_BODY()
-
-public:
-	bool WriteToSnapshotOutput(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextEntityId) override {
-		Worker_Entity TestEntity;
-		TestEntity.entity_id = NextEntityId;
-
-		TArray<Worker_ComponentData> Components;
-
-		const WorkerAttributeSet TestWorkerAttributeSet{ TArray<FString>{TEXT("test_attribute")} };
-		const WorkerRequirementSet TestWorkerPermission{ TestWorkerAttributeSet };
-		const WorkerRequirementSet AnyWorkerPermission{ {SpatialConstants::UnrealClientAttributeSet, SpatialConstants::UnrealServerAttributeSet, TestWorkerAttributeSet } };
-
-		WriteAclMap ComponentWriteAcl;
-		ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-		ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-		ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-		ComponentWriteAcl.Add(1337, TestWorkerPermission);
-		ComponentWriteAcl.Add(1338, SpatialConstants::UnrealServerPermission);
-
-		// Serialize NonUnrealAuthoritative component data
-		Worker_ComponentData NonUnrealAuthoritativeComponentData{};
-		NonUnrealAuthoritativeComponentData.component_id = 1337;
-		NonUnrealAuthoritativeComponentData.schema_type = Schema_CreateComponentData(1337);
-		Schema_Object* NonUnrealAuthoritativeComponentDataObject = Schema_GetComponentDataFields(NonUnrealAuthoritativeComponentData.schema_type);
-		Schema_AddInt32(NonUnrealAuthoritativeComponentDataObject, 1, 1); // set counter field to 1 initially
-
-		// Serialize FromUnreal component data
-		Worker_ComponentData UnrealAuthoritativeComponentData{};
-		UnrealAuthoritativeComponentData.component_id = 1338;
-		UnrealAuthoritativeComponentData.schema_type = Schema_CreateComponentData(1338);
-		Schema_Object* UnrealAuthoritativeComponentDataObject = Schema_GetComponentDataFields(UnrealAuthoritativeComponentData.schema_type);
-		Schema_AddInt32(UnrealAuthoritativeComponentDataObject, 1, 1); // set other_counter field to 1 initially
-
-		Components.Add(SpatialGDK::Position(SpatialGDK::Origin).CreatePositionData());
-		Components.Add(SpatialGDK::Metadata(TEXT("TestEntity")).CreateMetadataData());
-		Components.Add(SpatialGDK::Persistence().CreatePersistenceData());
-		Components.Add(SpatialGDK::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
-		Components.Add(NonUnrealAuthoritativeComponentData);
-		Components.Add(UnrealAuthoritativeComponentData);
-
-		TestEntity.component_count = Components.Num();
-		TestEntity.components = Components.GetData();
-
-		bool bSuccess = Worker_SnapshotOutputStream_WriteEntity(OutputStream, &TestEntity) != 0;
-		if (bSuccess)
-		{
-			NextEntityId++;
-		}
-
-		return bSuccess;
-	}
-};",
+      "code": "UCLASS()\nclass UTestEntitySnapshotGeneration : public USnapshotGenerationTemplate\n{\nGENERATED_BODY()\n\npublic:\nbool WriteToSnapshotOutput(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextEntityId) override {\nWorker_Entity TestEntity;\nTestEntity.entity_id = NextEntityId;\n\nTArray<Worker_ComponentData> Components;\n\nconst WorkerAttributeSet TestWorkerAttributeSet{ TArray<FString>{TEXT("test_attribute")} };\nconst WorkerRequirementSet TestWorkerPermission{ TestWorkerAttributeSet };\nconst WorkerRequirementSet AnyWorkerPermission{ {SpatialConstants::UnrealClientAttributeSet, SpatialConstants::UnrealServerAttributeSet, TestWorkerAttributeSet } };\n\nWriteAclMap ComponentWriteAcl;\nComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);\nComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);\nComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);\nComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);\nComponentWriteAcl.Add(1337, TestWorkerPermission);\nComponentWriteAcl.Add(1338, SpatialConstants::UnrealServerPermission);\n\n// Serialize NonUnrealAuthoritative component data\nWorker_ComponentData NonUnrealAuthoritativeComponentData{};\nNonUnrealAuthoritativeComponentData.component_id = 1337;\nNonUnrealAuthoritativeComponentData.schema_type = Schema_CreateComponentData(1337);\nSchema_Object* NonUnrealAuthoritativeComponentDataObject = Schema_GetComponentDataFields(NonUnrealAuthoritativeComponentData.schema_type);\nSchema_AddInt32(NonUnrealAuthoritativeComponentDataObject, 1, 1); // set counter field to 1 initially\n\n// Serialize FromUnreal component data\nWorker_ComponentData UnrealAuthoritativeComponentData{};\nUnrealAuthoritativeComponentData.component_id = 1338;\nUnrealAuthoritativeComponentData.schema_type = Schema_CreateComponentData(1338);\nSchema_Object* UnrealAuthoritativeComponentDataObject = Schema_GetComponentDataFields(UnrealAuthoritativeComponentData.schema_type);\nSchema_AddInt32(UnrealAuthoritativeComponentDataObject, 1, 1); // set other_counter field to 1 initially\n\nComponents.Add(SpatialGDK::Position(SpatialGDK::Origin).CreatePositionData());\nComponents.Add(SpatialGDK::Metadata(TEXT("TestEntity")).CreateMetadataData());\nComponents.Add(SpatialGDK::Persistence().CreatePersistenceData());\nComponents.Add(SpatialGDK::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());\nComponents.Add(NonUnrealAuthoritativeComponentData);\nComponents.Add(UnrealAuthoritativeComponentData);\n\nTestEntity.component_count = Components.Num();\nTestEntity.components = Components.GetData();\n\nbool bSuccess = Worker_SnapshotOutputStream_WriteEntity(OutputStream, &TestEntity) != 0;\nif (bSuccess)\n{\nNextEntityId++;\n}\n\nreturn bSuccess;\n}\n};",
       "language": "text"
     }
   ]

@@ -40,11 +40,7 @@ For example:
 {
   "codes": [
   {
-      "code": "void AMyContoller::OnRep_Pawn()
-{
-	Super::OnRep_Pawn();
-	// Interact with the Pawn
-}",
+      "code": "void AMyContoller::OnRep_Pawn()\n{\n	Super::OnRep_Pawn();\n	// Interact with the Pawn\n}",
       "language": "text"
     }
   ]
@@ -61,10 +57,7 @@ For example:
 {
   "codes": [
   {
-      "code": "UPROPERTY(ReplicatedUsing=OnRep_MyActorReference);
-AActor* MyActorReference;
-UFUNCTION()
-void OnRep_MyActorReference();",
+      "code": "UPROPERTY(ReplicatedUsing=OnRep_MyActorReference);\nAActor* MyActorReference;\nUFUNCTION()\nvoid OnRep_MyActorReference();",
       "language": "text"
     }
   ]

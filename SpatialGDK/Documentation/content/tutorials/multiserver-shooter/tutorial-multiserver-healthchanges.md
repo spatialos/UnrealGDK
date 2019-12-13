@@ -66,14 +66,7 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 {
   "codes": [
   {
-      "code": "    void UHealthComponent::OnRep_CurrentHealth()
-    {
-	    HealthUpdated.Broadcast(CurrentHealth, MaxHealth);
-	    if (CurrentHealth <= 0.f)
-	    {
-		    Death.Broadcast();
-	    }
-    }",
+      "code": "    void UHealthComponent::OnRep_CurrentHealth()\n{\nHealthUpdated.Broadcast(CurrentHealth, MaxHealth);\nif (CurrentHealth <= 0.f)\n{\nDeath.Broadcast();\n}\n}",
       "language": "text"
     }
   ]

@@ -74,10 +74,7 @@ If you are using a launch configuration which you have manually defined in a fil
 {
   "codes": [
   {
-      "code": ""load_balancing": {
-    "layer_configurations": [
-      {
-          "layer": "UnrealWorker",
+      "code": ""load_balancing": {\n"layer_configurations": [\n{\n"layer": "UnrealWorker",
           "rectangle_grid": {
               "cols": 1,
               "rows": 1

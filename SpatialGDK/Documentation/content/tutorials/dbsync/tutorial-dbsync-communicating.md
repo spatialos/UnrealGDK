@@ -20,25 +20,7 @@ This means modifying `GDKShooterSpatialGameInstance.h` as such:
 {
   "codes": [
   {
-      "code": "#include "GDKShooter/ExternalSchemaCodegen/ExternalSchemaInterface.h"
-#include "GDKShooterSpatialGameInstance.generated.h"
-
-…
-GENERATED_BODY()
-
-public:
-
-	void Init();
-
-	ExternalSchemaInterface* GetExternalSchemaInterface()
-	{
-		return ExternalSchema;
-	}
-
-protected:
-
-	ExternalSchemaInterface* ExternalSchema;
-};",
+      "code": "#include "GDKShooter/ExternalSchemaCodegen/ExternalSchemaInterface.h"\n#include "GDKShooterSpatialGameInstance.generated.h"\n\n…\nGENERATED_BODY()\npublic:\n\nvoid Init();\n\nExternalSchemaInterface* GetExternalSchemaInterface()\n{\nreturn ExternalSchema;\n}\n\nprotected:\n\nExternalSchemaInterface* ExternalSchema;\n};",
       "language": "text"
     }
   ]
@@ -51,27 +33,7 @@ Then, in `GDKShooterSpatialGameInstance.cpp`, add a callback for the `OnConnecte
 {
   "codes": [
   {
-      "code": "#include "GDKShooterSpatialGameInstance.h"
-#include "Editor.h"
-#include "EngineClasses/SpatialNetDriver.h"
-#include "ExternalSchemaCodegen/improbable/database_sync/DatabaseSyncService.h"
-#include "GameFramework/GameStateBase.h"
-#include "Game/Components/DeathmatchScoreComponent.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
-
-void UGDKShooterSpatialGameInstance::Init()
-{
-	OnConnected.AddLambda([this]() {
-		// On the client the world may not be completely set up, if so we can use the PendingNetGame
-		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-		if (NetDriver == nullptr)
-		{
-			NetDriver = Cast<USpatialNetDriver>(GetWorldContext()->PendingNetGame->GetNetDriver());
-		}
-
-		ExternalSchema = new ExternalSchemaInterface(NetDriver->Connection, NetDriver->Dispatcher);
-});
-}",
+      "code": "#include "GDKShooterSpatialGameInstance.h"\n#include "Editor.h"\n#include "EngineClasses/SpatialNetDriver.h"\n#include "ExternalSchemaCodegen/improbable/database_sync/DatabaseSyncService.h"\n#include "GameFramework/GameStateBase.h"\n#include "Game/Components/DeathmatchScoreComponent.h"\n#include "Interop/Connection/SpatialWorkerConnection.h"\n\nvoid UGDKShooterSpatialGameInstance::Init()\n{\nOnConnected.AddLambda([this]() {\n// On the client the world may not be completely set up, if so we can use the PendingNetGame\nUSpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());\nif (NetDriver == nullptr)\n{\nNetDriver = Cast<USpatialNetDriver>(GetWorldContext()->PendingNetGame->GetNetDriver());\n}\nExternalSchema = new ExternalSchemaInterface(NetDriver->Connection, NetDriver->Dispatcher);\n});\n}",
       "language": "text"
     }
   ]
@@ -88,19 +50,7 @@ Again, you will be using this elsewhere, so be sure to expose it by adding this 
 {
   "codes": [
   {
-      "code": "...
-	Worker_EntityId GetHierarchyServiceId()
-	{
-		return HierarchyServiceId;
-	}
-
-protected:
-
-	ExternalSchemaInterface* ExternalSchema;
-
-	Worker_EntityId HierarchyServiceId = 0;
-
-};",
+      "code": "...\nWorker_EntityId GetHierarchyServiceId()\n{\nreturn HierarchyServiceId;\n}\n\nprotected:\n\nExternalSchemaInterface* ExternalSchema;\n\nWorker_EntityId HierarchyServiceId = 0;\n\n};",
       "language": "text"
     }
   ]
@@ -113,16 +63,7 @@ Then, on `GDKShooterSpatialGameInstance.cpp`, add a callback for the `OnAddCompo
 {
   "codes": [
   {
-      "code": "...
-		ExternalSchema = new ExternalSchemaInterface(NetDriver->Connection, NetDriver->Dispatcher);
-
-		// Listen to the callback for HierarchyService component to be added to an entity to get the EntityId of the service to send commands to it.
-		ExternalSchema->OnAddComponent([this](const ::improbable::database_sync::DatabaseSyncService::AddComponentOp& Op)
-		{
-			HierarchyServiceId = Op.EntityId;
-		});
-});
-}",
+      "code": "...\nExternalSchema = new ExternalSchemaInterface(NetDriver->Connection, NetDriver->Dispatcher);\n\n// Listen to the callback for HierarchyService component to be added to an entity to get the EntityId of the service to send commands to it.\nExternalSchema->OnAddComponent([this](const ::improbable::database_sync::DatabaseSyncService::AddComponentOp& Op)\n{\nHierarchyServiceId = Op.EntityId;\n});\n});\n}",
       "language": "text"
     }
   ]
@@ -141,20 +82,7 @@ You will need the `WorkerId` of the Worker that is going to be accessing that da
 {
   "codes": [
   {
-      "code": "...
-			HierarchyServiceId = Op.EntityId;
-			//It can do this by sending the associate_path_with_client command to DBSync in order to allow it.For example, associate_path_with_client(profiles.player1->workerId:Client - {0e61a845 - e978 - 4e5f - b314 - cc6bf1929171}).
-			USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-			if (NetDriver == nullptr)
-			{
-				NetDriver = Cast<USpatialNetDriver>(GetWorldContext()->PendingNetGame->GetNetDriver());
-			}
-			FString workerId = NetDriver->Connection->GetWorkerId();
-
-			::improbable::database_sync::DatabaseSyncService::Commands::AssociatePathWithClient::Request Request(TEXT("profiles.UnrealWorker"), workerId);
-
-			ExternalSchema->SendCommandRequest(HierarchyServiceId, Request);
-		});",
+      "code": "...\nHierarchyServiceId = Op.EntityId;\n//It can do this by sending the associate_path_with_client command to DBSync in order to allow it.For example, associate_path_with_client(profiles.player1->workerId:Client - {0e61a845 - e978 - 4e5f - b314 - cc6bf1929171}).\nUSpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());\nif (NetDriver == nullptr)\n{\nNetDriver = Cast<USpatialNetDriver>(GetWorldContext()->PendingNetGame->GetNetDriver());\n}\nFString workerId = NetDriver->Connection->GetWorkerId();\n\n::improbable::database_sync::DatabaseSyncService::Commands::AssociatePathWithClient::Request Request(TEXT("profiles.UnrealWorker"), workerId);\n\nExternalSchema->SendCommandRequest(HierarchyServiceId, Request);\n});",
       "language": "text"
     }
   ]
@@ -171,29 +99,7 @@ Because in this example everything that you will be writing/reading from the dat
 {
   "codes": [
   {
-      "code": "...
-ExternalSchema->SendCommandRequest(HierarchyServiceId, *Request);
-		});
-
-		// Listen to callbacks for using the DB, like searching for items, creating them and increasing the value
-		ExternalSchema->OnCommandResponse([this](const ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::ResponseOp& Op)
-		{
-			UDeathmatchScoreComponent* Deathmatch = Cast<UDeathmatchScoreComponent>(GetWorld()->GetGameState()->GetComponentByClass(UDeathmatchScoreComponent::StaticClass()));
-			Deathmatch->GetItemResponse(Op);
-		});
-
-		ExternalSchema->OnCommandResponse([this](const ::improbable::database_sync::DatabaseSyncService::Commands::Create::ResponseOp& Op)
-		{
-			UDeathmatchScoreComponent* Deathmatch = Cast<UDeathmatchScoreComponent>(GetWorld()->GetGameState()->GetComponentByClass(UDeathmatchScoreComponent::StaticClass()));
-			Deathmatch->CreateItemResponse(Op);
-		});
-
-		ExternalSchema->OnCommandResponse([this] (const ::improbable::database_sync::DatabaseSyncService::Commands::Increment::ResponseOp& Op)
-		{
-			UDeathmatchScoreComponent* Deathmatch = Cast<UDeathmatchScoreComponent>(GetWorld()->GetGameState()->GetComponentByClass(UDeathmatchScoreComponent::StaticClass()));
-			Deathmatch->IncrementResponse(Op);
-		});
-	});",
+      "code": "...\nExternalSchema->SendCommandRequest(HierarchyServiceId, *Request);\n});\n\n// Listen to callbacks for using the DB, like searching for items, creating them and increasing the value\nExternalSchema->OnCommandResponse([this](const ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::ResponseOp& Op)\n{\nUDeathmatchScoreComponent* Deathmatch = Cast<UDeathmatchScoreComponent>(GetWorld()->GetGameState()->GetComponentByClass(UDeathmatchScoreComponent::StaticClass()));\nDeathmatch->GetItemResponse(Op);\n});\n\nExternalSchema->OnCommandResponse([this](const ::improbable::database_sync::DatabaseSyncService::Commands::Create::ResponseOp& Op)\n{\nUDeathmatchScoreComponent* Deathmatch = Cast<UDeathmatchScoreComponent>(GetWorld()->GetGameState()->GetComponentByClass(UDeathmatchScoreComponent::StaticClass()));\nDeathmatch->CreateItemResponse(Op);\n});\n\nExternalSchema->OnCommandResponse([this] (const ::improbable::database_sync::DatabaseSyncService::Commands::Increment::ResponseOp& Op)\n{\nUDeathmatchScoreComponent* Deathmatch = Cast<UDeathmatchScoreComponent>(GetWorld()->GetGameState()->GetComponentByClass(UDeathmatchScoreComponent::StaticClass()));\nDeathmatch->IncrementResponse(Op);\n});\n});",
       "language": "text"
     }
   ]
@@ -208,18 +114,7 @@ A key feature of the Database Sync Worker is that it allows you to externally mo
 {
   "codes": [
   {
-      "code": "...
-			Deathmatch->IncrementResponse(Op);
-		});
-
-		// Listen to updates of items stored in the DB that have been changed outside of the game
-		ExternalSchema->OnComponentUpdate([this](const ::improbable::database_sync::DatabaseSyncService::ComponentUpdateOp& Op)
-		{
-			UDeathmatchScoreComponent* Deathmatch = Cast<UDeathmatchScoreComponent>(GetWorld()->GetGameState()->GetComponentByClass(UDeathmatchScoreComponent::StaticClass()));
-			Deathmatch->ItemUpdateEvent(Op);
-		});
-
-	});",
+      "code": "...\nDeathmatch->IncrementResponse(Op);\n});\n\n// Listen to updates of items stored in the DB that have been changed outside of the game\nExternalSchema->OnComponentUpdate([this](const ::improbable::database_sync::DatabaseSyncService::ComponentUpdateOp& Op)\n{\nUDeathmatchScoreComponent* Deathmatch = Cast<UDeathmatchScoreComponent>(GetWorld()->GetGameState()->GetComponentByClass(UDeathmatchScoreComponent::StaticClass()));\nDeathmatch->ItemUpdateEvent(Op);\n});\n\n});",
       "language": "text"
     }
   ]

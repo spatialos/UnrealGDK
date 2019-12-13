@@ -10,20 +10,7 @@ In `DeathmatchScoreComponent.h`, declare all the functions that you are calling 
 {
   "codes": [
   {
-      "code": "...
-#include "ExternalSchemaCodegen/improbable/database_sync/DatabaseSyncService.h"
-#include "GDKShooterSpatialGameInstance.h"
-#include "DeathmatchScoreComponent.generated.h"
-...
-	UPROPERTY(BlueprintAssignable)
-		FScoreChangeEvent ScoreEvent;
-
-	void ItemUpdateEvent(const ::improbable::database_sync::DatabaseSyncService::ComponentUpdateOp& Op);
-
-	void GetItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::ResponseOp& Op);
-	void CreateItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Create::ResponseOp& Op);
-	void IncrementResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Increment::ResponseOp& Op);
-...",
+      "code": "...\n#include "ExternalSchemaCodegen/improbable/database_sync/DatabaseSyncService.h"\n#include "GDKShooterSpatialGameInstance.h"\n#include "DeathmatchScoreComponent.generated.h"\n...\nUPROPERTY(BlueprintAssignable)\nFScoreChangeEvent ScoreEvent;\n\nvoid ItemUpdateEvent(const ::improbable::database_sync::DatabaseSyncService::ComponentUpdateOp& Op);\n\nvoid GetItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::ResponseOp& Op);\nvoid CreateItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Create::ResponseOp& Op);\nvoid IncrementResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Increment::ResponseOp& Op);\n...",
       "language": "text"
     }
   ]
@@ -36,14 +23,7 @@ And the internal ones that will encapsulate the code to do the requests:
 {
   "codes": [
   {
-      "code": "...
-    UPROPERTY()
-		TMap<FString, int32> PlayerScoreMap;
-
-	void RequestGetItem(const FString &Path);
-	void RequestCreateItem(const FString &Name, int64 Count, const FString &Path);
-	void RequestIncrement(const FString &Path, int64 Count);
-...",
+      "code": "...\nUPROPERTY()\nTMap<FString, int32> PlayerScoreMap;\n\nvoid RequestGetItem(const FString &Path);\nvoid RequestCreateItem(const FString &Name, int64 Count, const FString &Path);\nvoid RequestIncrement(const FString &Path, int64 Count);\n...",
       "language": "text"
     }
   ]
@@ -57,13 +37,7 @@ In this example, you will be sending 3 types of requests to the Database Sync Wo
 {
   "codes": [
   {
-      "code": "...
-    void RequestIncrement(const FString &Path, int64 Count);
-
-    TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::Request> GetItemRequests;
-    TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Create::Request> CreateItemRequests;
-    TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request> IncrementRequests;
-...",
+      "code": "...\nvoid RequestIncrement(const FString &Path, int64 Count);\n\nTMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::Request> GetItemRequests;\nTMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Create::Request> CreateItemRequests;\nTMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request> IncrementRequests;\n...",
       "language": "text"
     }
   ]
@@ -78,15 +52,7 @@ Finally, because the Database Sync Worker stores the data in a hierarchical way,
 {
   "codes": [
   {
-      "code": "...
-	TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request> IncrementRequests;
-
-	void UpdateScoreFromPath(const FString &Path, int64 NewCount);
-	void RequestCreateItemFromPath(const FString &Path);
-
-	UGDKShooterSpatialGameInstance* GameInstance = nullptr;
-
-};",
+      "code": "...\nTMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request> IncrementRequests;\n\nvoid UpdateScoreFromPath(const FString &Path, int64 NewCount);\nvoid RequestCreateItemFromPath(const FString &Path);\n\nUGDKShooterSpatialGameInstance* GameInstance = nullptr;\n\n};",
       "language": "text"
     }
   ]
@@ -106,33 +72,7 @@ You can create this structure in the way that fits your game the best, having in
 {
   "codes": [
   {
-      "code": "...
-#include "ExternalSchemaCodegen/improbable/database_sync/CommandErrors.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
-#include "SpatialNetDriver.h"
-
-// Path format to store the score is in the format "profiles.UnrealWorker.players.<PlayerName>.score.(AllTimeKills or AllTimeDeaths)"
-namespace DBPaths
-{
-	static const FString kPlayersRoot = TEXT("profiles.UnrealWorker.players.");
-	static const FString kScoreFolder = TEXT("score");
-	static const FString kAllTimeKills = TEXT("AllTimeKills");
-	static const FString kAllTimeDeaths = TEXT("AllTimeDeaths");
-}
-
-...
-
-void UDeathmatchScoreComponent::RequestGetItem(const FString &Path)
-{
-	FString workerId = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->GetWorkerId();
-
-	::improbable::database_sync::DatabaseSyncService::Commands::GetItem::Request Request(Path, workerId);
-
-	Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), Request);
-
-	GetItemRequests.Add(requestId, Request);
-
-}",
+      "code": "...\n#include "ExternalSchemaCodegen/improbable/database_sync/CommandErrors.h"\n#include "Interop/Connection/SpatialWorkerConnection.h"\n#include "SpatialNetDriver.h"\n\n// Path format to store the score is in the format "profiles.UnrealWorker.players.<PlayerName>.score.(AllTimeKills or AllTimeDeaths)"\nnamespace DBPaths\n{\nstatic const FString kPlayersRoot = TEXT("profiles.UnrealWorker.players.");\nstatic const FString kScoreFolder = TEXT("score");\nstatic const FString kAllTimeKills = TEXT("AllTimeKills");\nstatic const FString kAllTimeDeaths = TEXT("AllTimeDeaths");\n}\n\n...\n\nvoid UDeathmatchScoreComponent::RequestGetItem(const FString &Path)\n{\nFString workerId = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->GetWorkerId();\n\n::improbable::database_sync::DatabaseSyncService::Commands::GetItem::Request Request(Path, workerId);\n\nWorker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), Request);\n\nGetItemRequests.Add(requestId, Request);\n\n}",
       "language": "text"
     }
   ]
@@ -151,39 +91,7 @@ If the command times out, you may want to send it again (in this example, for si
 {
   "codes": [
   {
-      "code": "...
-void UDeathmatchScoreComponent::GetItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::ResponseOp& Op)
-{
-	if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_SUCCESS)
-	{
-		UpdateScoreFromPath(GetItemRequests[Op.RequestId].Data.GetPath(), Op.Data.Data.GetItem().GetCount());
-
-		GetItemRequests.Remove(Op.RequestId);
-	}
-	else if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_APPLICATION_ERROR)
-	{
-		FString message = Op.Message;
-		if (FCString::Atoi(*message) == (int32)::improbable::database_sync::CommandErrors::INVALID_REQUEST)
-		{
-			RequestCreateItemFromPath(GetItemRequests[Op.RequestId].Data.GetPath());
-		}
-
-		GetItemRequests.Remove(Op.RequestId);
-	}
-	else if(Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_TIMEOUT)
-	{
-		Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), GetItemRequests[Op.RequestId]);
-
-		GetItemRequests.Add(requestId, GetItemRequests[Op.RequestId]);
-
-		GetItemRequests.Remove(Op.RequestId);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("GetItem Request failed with Error %d : %s"), Op.StatusCode, Op.Message);
-	}
-}
-...",
+      "code": "...\nvoid UDeathmatchScoreComponent::GetItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::ResponseOp& Op)\n{\nif (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_SUCCESS)\n{\nUpdateScoreFromPath(GetItemRequests[Op.RequestId].Data.GetPath(), Op.Data.Data.GetItem().GetCount());\n\nGetItemRequests.Remove(Op.RequestId);\n}\nelse if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_APPLICATION_ERROR)\n{\nFString message = Op.Message;\nif (FCString::Atoi(*message) == (int32)::improbable::database_sync::CommandErrors::INVALID_REQUEST)\n{\nRequestCreateItemFromPath(GetItemRequests[Op.RequestId].Data.GetPath());\n}\n\nGetItemRequests.Remove(Op.RequestId);\n}\nelse if(Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_TIMEOUT)\n{\nWorker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), GetItemRequests[Op.RequestId]);\n\nGetItemRequests.Add(requestId, GetItemRequests[Op.RequestId]);\n\nGetItemRequests.Remove(Op.RequestId);\n}\nelse\n{\nUE_LOG(LogTemp, Error, TEXT("GetItem Request failed with Error %d : %s"), Op.StatusCode, Op.Message);\n}\n}\n...",
       "language": "text"
     }
   ]
@@ -198,20 +106,7 @@ Because the database starts empty, when a player joins and you try to get their 
 {
   "codes": [
   {
-      "code": "...
-void UDeathmatchScoreComponent::RequestCreateItem(const FString &Name, int64 Count, const FString &Path)
-{
-	FString workerId = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->GetWorkerId();
-
-	::improbable::database_sync::DatabaseSyncItem Item (Name, Count, Path);
-
-	::improbable::database_sync::DatabaseSyncService::Commands::Create::Request Request(Item, workerId);
-
-	Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), Request);
-
-	CreateItemRequests.Add(requestId, Request);
-}
-...",
+      "code": "...\nvoid UDeathmatchScoreComponent::RequestCreateItem(const FString &Name, int64 Count, const FString &Path)\n{\nFString workerId = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->GetWorkerId();\n\n::improbable::database_sync::DatabaseSyncItem Item (Name, Count, Path);\n\n::improbable::database_sync::DatabaseSyncService::Commands::Create::Request Request(Item, workerId);\n\nWorker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), Request);\n\nCreateItemRequests.Add(requestId, Request);\n}\n...",
       "language": "text"
     }
   ]
@@ -225,67 +120,7 @@ In this and the previous step you are using the helper functions to deal with pa
 {
   "codes": [
   {
-      "code": "...
-void UDeathmatchScoreComponent::UpdateScoreFromPath(const FString &Path, int64 NewCount)
-{
-	FString workingPath = *Path;
-	if (workingPath.RemoveFromStart(DBPaths::kPlayersRoot))
-	{
-		FString PlayerName;
-		if (workingPath.Split(".", &PlayerName, &workingPath))
-		{
-			if (workingPath.RemoveFromStart(DBPaths::kScoreFolder + "."))
-			{
-				if (workingPath.Compare(DBPaths::kAllTimeKills) == 0)
-				{
-					if (PlayerScoreMap.Contains(PlayerName))
-					{
-						PlayerScoreArray[PlayerScoreMap[PlayerName]].AllTimeKills = NewCount;
-						return;
-					}
-					else
-					{
-						UE_LOG(LogTemp, Log, TEXT("Received Update from Player not currently in game, ignoring it."));
-					}
-				}
-				else if (workingPath.Compare(DBPaths::kAllTimeDeaths) == 0)
-				{
-					if (PlayerScoreMap.Contains(PlayerName))
-					{
-						PlayerScoreArray[PlayerScoreMap[PlayerName]].AllTimeDeaths = NewCount;
-						return;
-					}
-					else
-					{
-						UE_LOG(LogTemp, Log, TEXT("Received Update from Player not currently in game, ignoring it."));
-					}
-				}
-			}
-		}
-	}
-
-	UE_LOG(LogTemp, Log, TEXT("Received update with unexpected path : %s"), *Path);
-}
-
-void UDeathmatchScoreComponent::RequestCreateItemFromPath(const FString &Path)
-{
-	FString workingPath = *Path;
-	if (workingPath.RemoveFromStart(DBPaths::kPlayersRoot))
-	{
-		FString PlayerName;
-		if (workingPath.Split(".", &PlayerName, &workingPath))
-		{
-			if (workingPath.RemoveFromStart(DBPaths::kScoreFolder + "."))
-			{
-				RequestCreateItem(workingPath, 0, Path);
-				return;
-			}
-		}
-	}
-
-	UE_LOG(LogTemp, Log, TEXT("Request to create item from unexpected path : %s"), *Path);
-}
-...",
+      "code": "...\nvoid UDeathmatchScoreComponent::UpdateScoreFromPath(const FString &Path, int64 NewCount)\n{\nFString workingPath = *Path;\nif (workingPath.RemoveFromStart(DBPaths::kPlayersRoot))\n{\nFString PlayerName;\nif (workingPath.Split(".", &PlayerName, &workingPath))\n{\nif (workingPath.RemoveFromStart(DBPaths::kScoreFolder + "."))\n{\nif (workingPath.Compare(DBPaths::kAllTimeKills) == 0)\n{\nif (PlayerScoreMap.Contains(PlayerName))\n{\nPlayerScoreArray[PlayerScoreMap[PlayerName]].AllTimeKills = NewCount;\nreturn;\n}\nelse\n{\nUE_LOG(LogTemp, Log, TEXT("Received Update from Player not currently in game, ignoring it."));\n}\n}\nelse if (workingPath.Compare(DBPaths::kAllTimeDeaths) == 0)\n{\nif (PlayerScoreMap.Contains(PlayerName))\n{\nPlayerScoreArray[PlayerScoreMap[PlayerName]].AllTimeDeaths = NewCount;\nreturn;\n}\nelse\n{\nUE_LOG(LogTemp, Log, TEXT("Received Update from Player not currently in game, ignoring it."));\n}\n}\n}\n}\n}\n\nUE_LOG(LogTemp, Log, TEXT("Received update with unexpected path : %s"), *Path);\n}\n\nvoid UDeathmatchScoreComponent::RequestCreateItemFromPath(const FString &Path)\n{\nFString workingPath = *Path;\nif (workingPath.RemoveFromStart(DBPaths::kPlayersRoot))\n{\nFString PlayerName;\nif (workingPath.Split(".", &PlayerName, &workingPath))\n{\nif (workingPath.RemoveFromStart(DBPaths::kScoreFolder + "."))\n{\nRequestCreateItem(workingPath, 0, Path);\nreturn;\n}\n}\n}\n\nUE_LOG(LogTemp, Log, TEXT("Request to create item from unexpected path : %s"), *Path);\n}\n...",
       "language": "text"
     }
   ]
@@ -300,27 +135,7 @@ As with the `GetItem` request, you need to listen to the answer, being sure to r
 {
   "codes": [
   {
-      "code": "...
-void UDeathmatchScoreComponent::CreateItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Create::ResponseOp& Op)
-{
-	if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_SUCCESS)
-	{
-		CreateItemRequests.Remove(Op.RequestId);
-	}
-	else if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_TIMEOUT)
-	{
-		Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), CreateItemRequests[Op.RequestId]);
-
-		CreateItemRequests.Add(requestId, CreateItemRequests[Op.RequestId]);
-
-		CreateItemRequests.Remove(Op.RequestId);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("CreateItem Request failed with Error %d : %s"), Op.StatusCode, Op.Message);
-	}
-}
-...",
+      "code": "...\nvoid UDeathmatchScoreComponent::CreateItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Create::ResponseOp& Op)\n{\nif (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_SUCCESS)\n{\nCreateItemRequests.Remove(Op.RequestId);\n}\nelse if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_TIMEOUT)\n{\nWorker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), CreateItemRequests[Op.RequestId]);\n\nCreateItemRequests.Add(requestId, CreateItemRequests[Op.RequestId]);\n\nCreateItemRequests.Remove(Op.RequestId);\n}\nelse\n{\nUE_LOG(LogTemp, Error, TEXT("CreateItem Request failed with Error %d : %s"), Op.StatusCode, Op.Message);\n}\n}\n...",
       "language": "text"
     }
   ]
@@ -337,19 +152,7 @@ Once you have created the information for the players, you will need to update i
 {
   "codes": [
   {
-      "code": "...
-void UDeathmatchScoreComponent::RequestIncrement(const FString &Path, int64 Count)
-{
-
-	FString workerId = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->GetWorkerId();
-
-	::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request Request(Path, Count, workerId);
-
-	Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), Request);
-
-	IncrementRequests.Add(requestId, Request);
-}
-...",
+      "code": "...\nvoid UDeathmatchScoreComponent::RequestIncrement(const FString &Path, int64 Count)\n{\n\nFString workerId = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->GetWorkerId();\n\n::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request Request(Path, Count, workerId);\n\nWorker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), Request);\n\nIncrementRequests.Add(requestId, Request);\n}\n...",
       "language": "text"
     }
   ]
@@ -362,27 +165,7 @@ As previously, you need to be sure that the Command has worked or retry it hasn'
 {
   "codes": [
   {
-      "code": "...
-void UDeathmatchScoreComponent::IncrementResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Increment::ResponseOp& Op)
-{
-	if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_SUCCESS)
-	{
-		IncrementRequests.Remove(Op.RequestId);
-	}
-	else if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_TIMEOUT)
-	{
-		Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), IncrementRequests[Op.RequestId]);
-
-		IncrementRequests.Add(requestId, IncrementRequests[Op.RequestId]);
-
-		IncrementRequests.Remove(Op.RequestId);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Increment Request failed with Error %d : %s"), Op.StatusCode, Op.Message);
-	}
-}
-...",
+      "code": "...\nvoid UDeathmatchScoreComponent::IncrementResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Increment::ResponseOp& Op)\n{\nif (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_SUCCESS)\n{\nIncrementRequests.Remove(Op.RequestId);\n}\nelse if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_TIMEOUT)\n{\nWorker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), IncrementRequests[Op.RequestId]);\n\nIncrementRequests.Add(requestId, IncrementRequests[Op.RequestId]);\n\nIncrementRequests.Remove(Op.RequestId);\n}\nelse\n{\nUE_LOG(LogTemp, Error, TEXT("Increment Request failed with Error %d : %s"), Op.StatusCode, Op.Message);\n}\n}\n...",
       "language": "text"
     }
   ]
@@ -397,18 +180,7 @@ When the database is changed externally, i.e from a manual operation, or an exte
 {
   "codes": [
   {
-      "code": "...
-void UDeathmatchScoreComponent::ItemUpdateEvent(const ::improbable::database_sync::DatabaseSyncService::ComponentUpdateOp& Op)
-{
-	for (int32 i = 0; i < Op.Update.GetPathsUpdatedList().Num(); i++)
-	{
-		for (int32 j = 0; j < Op.Update.GetPathsUpdatedList()[i].GetPaths().Num(); j++)
-		{
-			RequestGetItem(Op.Update.GetPathsUpdatedList()[i].GetPaths()[j]);
-		}
-	}
-}
-...",
+      "code": "...\nvoid UDeathmatchScoreComponent::ItemUpdateEvent(const ::improbable::database_sync::DatabaseSyncService::ComponentUpdateOp& Op)\n{\nfor (int32 i = 0; i < Op.Update.GetPathsUpdatedList().Num(); i++)\n{\nfor (int32 j = 0; j < Op.Update.GetPathsUpdatedList()[i].GetPaths().Num(); j++)\n{\nRequestGetItem(Op.Update.GetPathsUpdatedList()[i].GetPaths()[j]);\n}\n}\n}\n...",
       "language": "text"
     }
   ]
@@ -423,60 +195,7 @@ With all the internal functions created, the only step left is to use them in th
 {
   "codes": [
   {
-      "code": "void UDeathmatchScoreComponent::RecordNewPlayer(APlayerState* PlayerState)
-{
-	if (GameInstance == nullptr)
-	{
-		GameInstance = Cast<UGDKShooterSpatialGameInstance>(GetWorld()->GetGameInstance());
-	}
-
-	if (!PlayerScoreMap.Contains(PlayerState->GetPlayerName()))
-	{
-		FPlayerScore NewPlayerScore;
-		NewPlayerScore.PlayerId = PlayerState->PlayerId;
-		NewPlayerScore.PlayerName = PlayerState->GetPlayerName();
-		NewPlayerScore.Kills = 0;
-		NewPlayerScore.Deaths = 0;
-		NewPlayerScore.AllTimeKills = 0;
-		NewPlayerScore.AllTimeDeaths = 0;
-
-		int32 Index = PlayerScoreArray.Add(NewPlayerScore);
-		PlayerScoreMap.Emplace(NewPlayerScore.PlayerName, Index);
-
-		// Only use the Database Sync Worker if the entity exists.
-		if (GameInstance->GetHierarchyServiceId() != 0)
-		{
-			RequestGetItem(DBPaths::kPlayersRoot + PlayerState->GetPlayerName() + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeKills); // Get this value from persistent storage
-			RequestGetItem(DBPaths::kPlayersRoot + PlayerState->GetPlayerName() + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeDeaths); // Get this value from persistent storage
-		}
-	}
-}
-
-void UDeathmatchScoreComponent::RecordKill(const FString Killer, const FString Victim)
-{
-	if (Killer != Victim && PlayerScoreMap.Contains(Killer))
-	{
-		++PlayerScoreArray[PlayerScoreMap[Killer]].Kills;
-
-		++PlayerScoreArray[PlayerScoreMap[Killer]].AllTimeKills;
-		// Only use the Database Sync Worker if the entity exists.
-		if (GameInstance->GetHierarchyServiceId() != 0)
-		{
-			RequestIncrement(DBPaths::kPlayersRoot + Killer + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeKills, 1);	// Store this value in persistent storage
-		}
-	}
-	if (PlayerScoreMap.Contains(Victim))
-	{
-		++PlayerScoreArray[PlayerScoreMap[Victim]].Deaths;
-
-		++PlayerScoreArray[PlayerScoreMap[Victim]].AllTimeDeaths;
-		// Only use the Database Sync Worker if the entity exists.
-		if (GameInstance->GetHierarchyServiceId() != 0)
-		{
-			RequestIncrement(DBPaths::kPlayersRoot + Victim + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeDeaths, 1); // Store this value in persistent storage
-		}
-	}
-}",
+      "code": "void UDeathmatchScoreComponent::RecordNewPlayer(APlayerState* PlayerState)\n{\nif (GameInstance == nullptr)\n{\nGameInstance = Cast<UGDKShooterSpatialGameInstance>(GetWorld()->GetGameInstance());\n}\n\nif (!PlayerScoreMap.Contains(PlayerState->GetPlayerName()))\n{\nFPlayerScore NewPlayerScore;\nNewPlayerScore.PlayerId = PlayerState->PlayerId;\nNewPlayerScore.PlayerName = PlayerState->GetPlayerName();\nNewPlayerScore.Kills = 0;\nNewPlayerScore.Deaths = 0;\nNewPlayerScore.AllTimeKills = 0;\nNewPlayerScore.AllTimeDeaths = 0;\n\nint32 Index = PlayerScoreArray.Add(NewPlayerScore);\nPlayerScoreMap.Emplace(NewPlayerScore.PlayerName, Index);\n\n// Only use the Database Sync Worker if the entity exists.\nif (GameInstance->GetHierarchyServiceId() != 0)\n{\nRequestGetItem(DBPaths::kPlayersRoot + PlayerState->GetPlayerName() + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeKills); // Get this value from persistent storage\nRequestGetItem(DBPaths::kPlayersRoot + PlayerState->GetPlayerName() + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeDeaths); // Get this value from persistent storage\n}\n}\n}\n\nvoid UDeathmatchScoreComponent::RecordKill(const FString Killer, const FString Victim)\n{\nif (Killer != Victim && PlayerScoreMap.Contains(Killer))\n{\n++PlayerScoreArray[PlayerScoreMap[Killer]].Kills;\n\n++PlayerScoreArray[PlayerScoreMap[Killer]].AllTimeKills;\n// Only use the Database Sync Worker if the entity exists.\nif (GameInstance->GetHierarchyServiceId() != 0)\n{\nRequestIncrement(DBPaths::kPlayersRoot + Killer + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeKills, 1);	// Store this value in persistent storage\n}\n}\nif (PlayerScoreMap.Contains(Victim))\n{\n++PlayerScoreArray[PlayerScoreMap[Victim]].Deaths;\n\n++PlayerScoreArray[PlayerScoreMap[Victim]].AllTimeDeaths;\n// Only use the Database Sync Worker if the entity exists.\nif (GameInstance->GetHierarchyServiceId() != 0)\n{\nRequestIncrement(DBPaths::kPlayersRoot + Victim + "." + DBPaths::kScoreFolder + "." + DBPaths::kAllTimeDeaths, 1); // Store this value in persistent storage\n}\n}\n}",
       "language": "text"
     }
   ]

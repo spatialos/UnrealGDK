@@ -20,11 +20,7 @@
 {
   "codes": [
   {
-      "code": "@ WARNING: UNPROTECTED PRIVATE KEY FILE! @
-
-Permissions 0660 for '/cygdrive/C/Users/<username>/AppData/Roaming/Unreal Engine/UnrealBuildTool/SSHKeys/<ip>/<username>/RemoteToolChainPrivate.key' are too open.
-
-It is recommended that your private key files are NOT accessible by others. This private key will be ignored.",
+      "code": "@ WARNING: UNPROTECTED PRIVATE KEY FILE! @\n\nPermissions 0660 for '/cygdrive/C/Users/<username>/AppData/Roaming/Unreal Engine/UnrealBuildTool/SSHKeys/<ip>/<username>/RemoteToolChainPrivate.key' are too open.\n\nIt is recommended that your private key files are NOT accessible by others. This private key will be ignored.",
       "language": "text"
     }
   ]

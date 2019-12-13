@@ -31,21 +31,7 @@ For example, in C++:
 {
   "codes": [
   {
-      "code": "ATP_SpatialGDKGameMode::ATP_SpatialGDKGameMode()
-{
-	// Set default pawn class to our Blueprint character.
-	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/StarterProject/Characters/PlayerCharacter_BP"));
-	static ConstructorHelpers::FClassFinder<APawn> SimulatedPawnBPClass(TEXT("/Game/StarterProject/Characters/SimulatedPlayers/SimulatedPlayerCharacter_BP"));
-
-	if (PlayerPawnBPClass.Class != NULL)
-	{
-		DefaultPawnClass = PlayerPawnBPClass.Class;
-	}
-	if (SimulatedPawnBPClass.Class != NULL)
-	{
-		SimulatedPawnClass = SimulatedPawnBPClass.Class;
-	}
-}",
+      "code": "ATP_SpatialGDKGameMode::ATP_SpatialGDKGameMode()\n{\n	// Set default pawn class to our Blueprint character.\n	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/StarterProject/Characters/PlayerCharacter_BP"));\n	static ConstructorHelpers::FClassFinder<APawn> SimulatedPawnBPClass(TEXT("/Game/StarterProject/Characters/SimulatedPlayers/SimulatedPlayerCharacter_BP"));\n\n	if (PlayerPawnBPClass.Class != NULL)\n	{\n		DefaultPawnClass = PlayerPawnBPClass.Class;\n	}\n	if (SimulatedPawnBPClass.Class != NULL)\n	{\n		SimulatedPawnClass = SimulatedPawnBPClass.Class;\n	}\n}",
       "language": "text"
     }
   ]
@@ -74,19 +60,7 @@ To do this, you can use a Blueprint function library that exposes the `IsSimulat
 {
   "codes": [
   {
-      "code": "#include "SimulatedPlayer.h"
-
-
-void AExampleActor::BeginPlay()
-{
-    Super::BeginPlay();
-
-    if (USimulatedPlayer::IsSimulatedPlayer(this))
-    {
-        // Execute simulated player related logic here.
-        // ...
-    }
-}",
+      "code": "#include "SimulatedPlayer.h"\n\n\nvoid AExampleActor::BeginPlay()\n{\n    Super::BeginPlay();\n\n    if (USimulatedPlayer::IsSimulatedPlayer(this))\n    {\n        // Execute simulated player related logic here.\n        // ...\n    }\n}",
       "language": "cplusplus"
     }
   ]

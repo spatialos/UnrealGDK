@@ -43,12 +43,7 @@ Copy all of the files and directories below to your `<ProjectRoot>`:
 {
   "codes": [
   {
-      "code": "   \<ProjectRoot>\<GameRoot>\
-   \<ProjectRoot>\spatial\
-   \<ProjectRoot>\LaunchClient.bat 
-   \<ProjectRoot>\LaunchServer.bat
-   \<ProjectRoot>\ProjectPaths.bat
-   Etc…",
+      "code": "   \<ProjectRoot>\<GameRoot>\\n   \<ProjectRoot>\spatial\\n   \<ProjectRoot>\LaunchClient.bat \n   \<ProjectRoot>\LaunchServer.bat\n   \<ProjectRoot>\ProjectPaths.bat\n   Etc…",
       "language": "text"
     }
   ]
