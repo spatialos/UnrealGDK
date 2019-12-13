@@ -154,7 +154,7 @@ There is a summary on the [Local deployment workflow]({{urlRoot}}/content/local-
       "image": [
         "https://docs.google.com/drawings/d/e/2PACX-1vQCTOucXKMkDJ3-Vpg17_tpUS7IxOXD6Mps-FzWe2tQl3vw5alQPngCnw339cFy3u2NvrcBxhYASKsS/pub?w=710&h=1033",
         710,
-        1033,
+        1033
       ],
       "caption": ""
     }

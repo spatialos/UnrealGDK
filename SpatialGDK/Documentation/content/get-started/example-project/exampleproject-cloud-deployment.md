@@ -308,7 +308,7 @@ There is a summary on when to update schema, how to build and upload workers, an
       "image": [
         "https://docs.google.com/drawings/d/e/2PACX-1vQVcAihbYTNe7TjNsIvkfqIR34Vgw5RESKxboxbvgY5VcgxiI-SZT_M2kuGE8RYMU6sAYWqdkoCjMWt/pub?w=758&h=1162",
         758,
-        1162,
+        1162
       ],
       "caption": ""
     }
