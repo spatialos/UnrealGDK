@@ -301,7 +301,20 @@ When your deployment(s) have launched, you can open the Console at [console.impr
 
 There is a summary on when to update schema, how to build and upload workers, and how to launch your game  on the [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow) page. It is the same as the one here.
 
- <%(Lightbox image="https://docs.google.com/drawings/d/e/2PACX-1vQVcAihbYTNe7TjNsIvkfqIR34Vgw5RESKxboxbvgY5VcgxiI-SZT_M2kuGE8RYMU6sAYWqdkoCjMWt/pub?w=758&h=1162")%>
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://docs.google.com/drawings/d/e/2PACX-1vQVcAihbYTNe7TjNsIvkfqIR34Vgw5RESKxboxbvgY5VcgxiI-SZT_M2kuGE8RYMU6sAYWqdkoCjMWt/pub?w=758&h=1162",
+        758,
+        1162,
+      ],
+      "caption": ""
+    }
+  ]
+}
+[/block]
 
 
 </div>
