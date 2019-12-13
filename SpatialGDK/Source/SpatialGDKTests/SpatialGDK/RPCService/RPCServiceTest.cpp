@@ -414,21 +414,23 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_unreliabl
 
 	TArray<SpatialGDK::SpatialRPCService::UpdateToSend> UpdateToSendArray = RPCService.GetRPCsAndAcksToSend();
 
+	bTestPassed = true;
 	if (UpdateToSendArray.Num() != EntityPayloads.Num())
 	{
-		return false;
+		bTestPassed = false;
 	}
 
 	for (int i = 0; i < EntityPayloads.Num(); ++i)
 	{
 		if (!CompareUpdateToSendAndEntityPayload(UpdateToSendArray[i], EntityPayloads[i], ERPCType::ServerUnreliable, 1))
 		{
-			return false;
+			bTestPassed = false;
+			break;
 		}
 	}
 
 	TestTrue("UpdateToSend have expected payloads", bTestPassed);
-	return true;
+	return bTestPassed;
 }
 
 RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_client_reliable_rpcs_to_the_service_THEN_check_component_data)
