@@ -446,7 +446,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		if (IsServer()) {
+		if (IsServer()) 
+		{
 			if (SpatialSettings->LoadBalanceStrategy == nullptr)
 			{
 				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
