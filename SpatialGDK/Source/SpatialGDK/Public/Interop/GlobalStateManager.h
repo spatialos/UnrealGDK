@@ -65,7 +65,7 @@ public:
 
 	void TriggerBeginPlay();
 
-	FORCEINLINE bool IsReadyToCallBeginPlay() const
+	FORCEINLINE bool GetCanBeginPlay() const
 	{
 		return bCanBeginPlay;
 	}
