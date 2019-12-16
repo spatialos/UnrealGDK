@@ -13,6 +13,12 @@ DEFINE_LOG_CATEGORY(LogReferenceCountedLockingPolicy);
 
 bool UReferenceCountedLockingPolicy::CanAcquireLock(AActor* Actor) const
 {
+	if (Actor == nullptr)
+	{
+		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Failed to lock nullptr actor"));
+		return false;
+	}
+
 	const USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver());
 	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 
@@ -43,8 +49,8 @@ ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(AActor* Actor, FStrin
 		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Called AcquireLock when CanAcquireLock returned false. Actor: %s."), *GetNameSafe(Actor));
 		return SpatialConstants::INVALID_ACTOR_LOCK_TOKEN;
 	}
-	MigrationLockElement* ActorLockingState = ActorToLockingState.Find(Actor);
-	if (ActorLockingState != nullptr)
+
+	if (MigrationLockElement* ActorLockingState = ActorToLockingState.Find(Actor))
 	{
 		++ActorLockingState->LockCount;
 	}
