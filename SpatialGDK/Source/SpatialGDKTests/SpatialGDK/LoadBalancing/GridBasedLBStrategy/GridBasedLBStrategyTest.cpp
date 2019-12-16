@@ -6,7 +6,7 @@
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameStateBase.h"
 #include "SpatialConstants.h"
-#include "TestDefinitions.h"
+#include "Tests/TestDefinitions.h"
 #include "TestGridBasedLBStrategy.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
