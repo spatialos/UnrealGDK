@@ -22,7 +22,6 @@ void SpatialVirtualWorkerTranslator::Init(UAbstractLBStrategy* InLoadBalanceStra
 	USpatialWorkerConnection* InConnection,
 	FString InWorkerId)
 {
-	check(InLoadBalanceStrategy != nullptr);
 	LoadBalanceStrategy = InLoadBalanceStrategy;
 
 	check(InStaticComponentView != nullptr);
@@ -54,7 +53,7 @@ void SpatialVirtualWorkerTranslator::AddVirtualWorkerIds(const TSet<VirtualWorke
 	}
 }
 
-const FString* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVirtualWorker(VirtualWorkerId id) const
+const PhysicalWorkerName* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVirtualWorker(VirtualWorkerId id) const
 {
 	return VirtualToPhysicalWorkerMapping.Find(id);
 }
