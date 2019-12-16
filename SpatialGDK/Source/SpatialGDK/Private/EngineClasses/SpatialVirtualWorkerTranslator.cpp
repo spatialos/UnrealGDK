@@ -22,7 +22,6 @@ void SpatialVirtualWorkerTranslator::Init(UAbstractLBStrategy* InLoadBalanceStra
 	USpatialWorkerConnection* InConnection,
 	PhysicalWorkerName InWorkerId)
 {
-	check(InLoadBalanceStrategy != nullptr);
 	LoadBalanceStrategy = InLoadBalanceStrategy;
 
 	check(InStaticComponentView != nullptr);
