@@ -12,11 +12,11 @@
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
 
-Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
 {
-	if (TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
+	if (const TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
 	{
-		if (Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
+		if (const Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
 		{
 			return *Authority;
 		}
@@ -26,7 +26,7 @@ Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId Entit
 }
 
 // TODO UNR-640 - Need to fix for authority loss imminent
-bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
 {
 	return GetAuthority(EntityId, ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 }

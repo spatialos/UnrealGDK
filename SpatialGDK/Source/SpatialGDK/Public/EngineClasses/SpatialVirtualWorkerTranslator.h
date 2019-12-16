@@ -40,7 +40,7 @@ public:
 	// no worker assigned.
 	// TODO(harkness): Do we want to copy this data? Otherwise it's only guaranteed to be valid until
 	// the next mapping update.
-	const FString* GetPhysicalWorkerForVirtualWorker(VirtualWorkerId id);
+	const FString* GetPhysicalWorkerForVirtualWorker(VirtualWorkerId id) const;
 
 	// On receiving a version of the translation state, apply that to the internal mapping.
 	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);

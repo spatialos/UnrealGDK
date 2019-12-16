@@ -54,7 +54,7 @@ void SpatialVirtualWorkerTranslator::AddVirtualWorkerIds(const TSet<VirtualWorke
 	}
 }
 
-const FString* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVirtualWorker(VirtualWorkerId id)
+const FString* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVirtualWorker(VirtualWorkerId id) const
 {
 	return VirtualToPhysicalWorkerMapping.Find(id);
 }

@@ -31,9 +31,9 @@ public:
 
 private:
 
-	FString WorkerId;
+	const FString WorkerId;
 	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
-	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
+	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 	struct WriteAuthAssignmentRequest
 	{

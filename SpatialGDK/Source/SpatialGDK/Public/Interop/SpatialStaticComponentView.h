@@ -20,8 +20,8 @@ class SPATIALGDK_API USpatialStaticComponentView : public UObject
 	GENERATED_BODY()
 
 public:
-	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
 	template <typename T>
 	T* GetComponentData(Worker_EntityId EntityId)
