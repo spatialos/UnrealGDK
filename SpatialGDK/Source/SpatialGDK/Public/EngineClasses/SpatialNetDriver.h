@@ -10,6 +10,7 @@
 #include "Interop/SpatialSnapshotManager.h"
 #include "Utils/SpatialActorGroupManager.h"
 
+#include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
@@ -146,6 +147,8 @@ public:
 	ASpatialDebugger* SpatialDebugger;
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
+	UPROPERTY()
+	UAbstractLockingPolicy* LockingPolicy;
 
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
