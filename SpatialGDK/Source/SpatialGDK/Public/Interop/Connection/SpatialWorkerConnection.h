@@ -19,11 +19,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
-class UGlobalStateManager;
-class USpatialGameInstance;
-class USpatialStaticComponentView;
-class UWorld;
-
 enum class ESpatialConnectionType
 {
 	Receptionist,
@@ -37,8 +32,6 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialGameInstance* InGameInstance);
-
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 
@@ -82,19 +75,12 @@ public:
 	DECLARE_DELEGATE_TwoParams(OnConnectionToSpatialOSFailedDelegate, uint8_t, const FString&);
 	OnConnectionToSpatialOSFailedDelegate OnFailedToConnectCallback;
 
-	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
-
-	UPROPERTY()
-	UGlobalStateManager* GlobalStateManager;
-
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator();
 	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 
 	void OnConnectionSuccess();
-	void OnPreConnectionFailure(const FString& Reason);
 	void OnConnectionFailure();
 
 	ESpatialConnectionType GetConnectionType() const;
@@ -121,8 +107,6 @@ private:
 private:
 	Worker_Connection* WorkerConnection;
 	Worker_Locator* WorkerLocator;
-
-	TWeakObjectPtr<USpatialGameInstance> GameInstance;
 
 	bool bIsConnected;
 	bool bConnectAsClient = false;

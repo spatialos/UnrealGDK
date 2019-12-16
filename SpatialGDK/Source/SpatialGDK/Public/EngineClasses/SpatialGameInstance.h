@@ -9,6 +9,8 @@
 
 class USpatialLatencyTracer;
 class USpatialWorkerConnection;
+class UGlobalStateManager;
+class USpatialStaticComponentView;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
@@ -53,6 +55,12 @@ public:
 
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
+
+	UPROPERTY()
+	UGlobalStateManager* GlobalStateManager;
+
+	UPROPERTY()
+	USpatialStaticComponentView* StaticComponentView;
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
