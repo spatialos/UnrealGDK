@@ -19,7 +19,7 @@ SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer()
 {
 }
 
-void SpatialLoadBalanceEnforcer::Init(const FString &InWorkerId,
+void SpatialLoadBalanceEnforcer::Init(const PhysicalWorkerName &InWorkerId,
 	USpatialStaticComponentView* InStaticComponentView,
 	USpatialSender* InSpatialSender,
 	SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
@@ -71,7 +71,7 @@ void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp
 			return;
 		}
 
-		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (OwningWorkerId != nullptr &&
 			*OwningWorkerId == WorkerId &&
 			StaticComponentView->GetAuthority(AuthOp.entity_id, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
@@ -117,11 +117,11 @@ void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 			// TODO(zoning): Not sure whether this should be possible or not. Remove if we don't see the warning again.
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Entity without AuthIntent component will not be processed. EntityId: %lld"), *WorkerId, Request.EntityId);
 			CompletedRequests.Add(Request.EntityId);
-			return;
+			continue;
 		}
 
-		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
-		if (OwningWorkerId == nullptr)
+		const PhysicalWorkerName* DestinationWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		if (DestinationWorkerId == nullptr)
 		{
 			const int32 WarnOnAttemptNum = 5;
 			Request.ProcessAttempts++;
@@ -136,7 +136,15 @@ void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 		}
 
 		check(Sender.IsValid());
-		Sender->SetAclWriteAuthority(Request.EntityId, *OwningWorkerId);
+		if (StaticComponentView->HasAuthority(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+		{
+			Sender->SetAclWriteAuthority(Request.EntityId, *DestinationWorkerId);
+		}
+		else
+		{
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Failed to update the EntityACL to match the authority intent; this worker does not have authority over the EntityACL."
+				" Source worker ID: %s. Entity ID %lld. Desination worker ID: %s."), *WorkerId, Request.EntityId, **DestinationWorkerId);
+		}
 		CompletedRequests.Add(Request.EntityId);
 	}
 
