@@ -13,11 +13,11 @@ class UWorkerFlagsTestSpyObject : public UObject
 public:
 
 	UFUNCTION()
-	void SetFlagUpdated(const FString& flagName, const FString& flagValue);
+	void SetFlagUpdated(const FString& FlagName, const FString& FlagValue);
 
-	int getTimesFlagUpdated() const;
+	int GetTimesFlagUpdated() const;
 
 private:
 
-	int  timesUpdated = 0;
+	int  TimesUpdated = 0;
 }; 

@@ -2,14 +2,15 @@
 
 #include "WorkerFlagsTestSpyObject.h"
 
-void  UWorkerFlagsTestSpyObject::SetFlagUpdated(const FString& flagName, const FString& flagValue)
+void  UWorkerFlagsTestSpyObject::SetFlagUpdated(const FString& FlagName, const FString& FlagValue)
 {
-	timesUpdated++;
+	TimesUpdated++;
 
 	return;
 }
 
-int UWorkerFlagsTestSpyObject::getTimesFlagUpdated() const
+int UWorkerFlagsTestSpyObject::GetTimesFlagUpdated() const
 {
-	return timesUpdated;
+	return TimesUpdated;
 }
+
