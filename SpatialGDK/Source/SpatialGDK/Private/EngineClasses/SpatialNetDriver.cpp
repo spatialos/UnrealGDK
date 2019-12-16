@@ -478,9 +478,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		if (IsServer()) 
 		{
 			VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
-
-			LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>();
-			LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator.Get());
+			LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 		}
 	}
 
@@ -1571,7 +1569,10 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (LoadBalanceEnforcer.IsValid())
 		{
-			LoadBalanceEnforcer->Tick();
+			for(const auto& Elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
+			{
+				Sender->SetAclWriteAuthority(Elem.EntityId, Elem.OwningWorkerId);
+			}
 		}
 	}
 }
