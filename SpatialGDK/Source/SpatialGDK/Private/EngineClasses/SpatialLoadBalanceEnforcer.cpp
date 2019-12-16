@@ -2,9 +2,6 @@
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/SpatialSender.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
 #include "SpatialCommonTypes.h"
 
@@ -12,38 +9,17 @@ DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
 using namespace SpatialGDK;
 
-SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer()
-	: StaticComponentView(nullptr)
-	, Sender(nullptr)
-	, VirtualWorkerTranslator(nullptr)
+SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
+	: WorkerId(InWorkerId)
+	, StaticComponentView(InStaticComponentView)
+	, VirtualWorkerTranslator(InVirtualWorkerTranslator)
 {
-}
-
-void SpatialLoadBalanceEnforcer::Init(const FString &InWorkerId,
-	USpatialStaticComponentView* InStaticComponentView,
-	USpatialSender* InSpatialSender,
-	SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
-{
-	WorkerId = InWorkerId;
-
 	check(InStaticComponentView != nullptr);
-	StaticComponentView = InStaticComponentView;
-
-	check(InSpatialSender != nullptr);
-	Sender = InSpatialSender;
-
 	check(InVirtualWorkerTranslator != nullptr);
-	VirtualWorkerTranslator = InVirtualWorkerTranslator;
-}
-
-void SpatialLoadBalanceEnforcer::Tick()
-{
-	ProcessQueuedAclAssignmentRequests();
 }
 
 void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
-	check(StaticComponentView.IsValid())
 	check(Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	if (StaticComponentView->GetAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -56,8 +32,6 @@ void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_
 // which may have been received before this call.
 void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	check(StaticComponentView.IsValid())
-
 	if (AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID &&
 		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -104,8 +78,10 @@ void SpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId
 	}
 }
 
-void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
+TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 {
+	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> PendingRequests;
+
 	TArray<Worker_EntityId> CompletedRequests;
 	CompletedRequests.Reserve(AclWriteAuthAssignmentRequests.Num());
 
@@ -120,7 +96,7 @@ void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 			continue;
 		}
 
-		const FString* DestinationWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		const PhysicalWorkerName* DestinationWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (DestinationWorkerId == nullptr)
 		{
 			const int32 WarnOnAttemptNum = 5;
@@ -135,10 +111,9 @@ void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 			continue;
 		}
 
-		check(Sender.IsValid());
 		if (StaticComponentView->HasAuthority(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 		{
-			Sender->SetAclWriteAuthority(Request.EntityId, *DestinationWorkerId);
+			PendingRequests.Push(AclWriteAuthorityRequest{ Request.EntityId, *DestinationWorkerId });
 		}
 		else
 		{
@@ -149,4 +124,6 @@ void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 	}
 
 	AclWriteAuthAssignmentRequests.RemoveAll([CompletedRequests](const WriteAuthAssignmentRequest& Request) { return CompletedRequests.Contains(Request.EntityId); });
+
+	return PendingRequests;
 }

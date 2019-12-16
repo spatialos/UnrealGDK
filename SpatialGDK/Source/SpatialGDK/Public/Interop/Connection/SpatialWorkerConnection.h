@@ -8,6 +8,7 @@
 
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/Connection/OutgoingMessages.h"
+#include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
 #include "UObject/WeakObjectPtr.h"
 #include "Utils/SpatialLatencyTracer.h"
@@ -55,7 +56,7 @@ public:
 	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
 	void SendMetrics(const SpatialGDK::SpatialMetrics& Metrics);
 
-	FString GetWorkerId() const;
+	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
 	void SetConnectionType(ESpatialConnectionType InConnectionType);

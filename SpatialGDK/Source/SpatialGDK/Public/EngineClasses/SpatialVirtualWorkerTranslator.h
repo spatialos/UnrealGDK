@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "Containers/Queue.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
@@ -39,7 +41,7 @@ public:
 	// no worker assigned.
 	// TODO(harkness): Do we want to copy this data? Otherwise it's only guaranteed to be valid until
 	// the next mapping update.
-	const PhysicalWorkerName* GetPhysicalWorkerForVirtualWorker(VirtualWorkerId id);
+	const PhysicalWorkerName* GetPhysicalWorkerForVirtualWorker(VirtualWorkerId Id) const;
 
 	// On receiving a version of the translation state, apply that to the internal mapping.
 	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
@@ -56,7 +58,7 @@ private:
 	TWeakObjectPtr<USpatialReceiver> Receiver;
 	TWeakObjectPtr<USpatialWorkerConnection> Connection;
 
-	TMap<VirtualWorkerId, PhysicalWorkerName>  VirtualToPhysicalWorkerMapping;
+	TMap<VirtualWorkerId, PhysicalWorkerName> VirtualToPhysicalWorkerMapping;
 	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
