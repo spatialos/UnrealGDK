@@ -19,7 +19,7 @@ SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer()
 {
 }
 
-void SpatialLoadBalanceEnforcer::Init(const FString &InWorkerId,
+void SpatialLoadBalanceEnforcer::Init(const PhysicalWorkerName &InWorkerId,
 	USpatialStaticComponentView* InStaticComponentView,
 	USpatialSender* InSpatialSender,
 	SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
@@ -120,7 +120,7 @@ void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 			continue;
 		}
 
-		const FString* DestinationWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		const PhysicalWorkerName* DestinationWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (DestinationWorkerId == nullptr)
 		{
 			const int32 WarnOnAttemptNum = 5;
