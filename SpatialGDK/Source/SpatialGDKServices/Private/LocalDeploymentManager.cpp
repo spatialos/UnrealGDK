@@ -103,6 +103,11 @@ void FLocalDeploymentManager::SetInChina(bool bChinaEnabled)
 	bIsInChina = bChinaEnabled;
 }
 
+void FLocalDeploymentManager::SetInChina(bool bChinaEnabled)
+{
+	bIsInChina = bChinaEnabled;
+}
+
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 {
 	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
