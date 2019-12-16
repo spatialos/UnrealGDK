@@ -43,7 +43,7 @@ public:
 		return const_cast<T*>(static_cast<const USpatialStaticComponentView*>(this)->GetComponentData<T>(EntityId));
 	}
 
-	bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
 	void OnAddComponent(const Worker_AddComponentOp& Op);
 	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
@@ -51,7 +51,7 @@ public:
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
-	void GetEntityIds(TArray<Worker_EntityId_Key>& EntityIds) { EntityComponentMap.GetKeys(EntityIds); }
+	void GetEntityIds(TArray<Worker_EntityId_Key>& EntityIds) const { EntityComponentMap.GetKeys(EntityIds); }
 
 private:
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
