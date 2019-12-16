@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 20xx-xx-xx
 
-## [`0.8.0-preview`] - 2019-11-18
+## [`0.8.0-preview`] - 2019-12-16
 
 ### Breaking Changes:
 - This is the last GDK version to support Unreal Engine 4.22. You will need to upgrade your project to use Unreal Engine 4.23 (`4.23-SpatialOSUnrealGDK-preview`) in order to continue receiving GDK releases and support.
