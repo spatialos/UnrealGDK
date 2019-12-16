@@ -14,6 +14,7 @@ using Worker_RequestId_Key = int64;
 
 using VirtualWorkerId = uint32;
 using PhysicalWorkerName = FString;
+using ActorLockToken = int64;
 
 using WorkerAttributeSet = TArray<FString>;
 using WorkerRequirementSet = TArray<WorkerAttributeSet>;
