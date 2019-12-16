@@ -376,10 +376,7 @@ void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCo
 		{
 			GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
 		}
-	}
 
-	if (USpatialGameInstance* GameInstance = GetGameInstance())
-	{
 		GameInstance->HandleOnConnectionFailed(ErrorMessage);
 	}
 }
