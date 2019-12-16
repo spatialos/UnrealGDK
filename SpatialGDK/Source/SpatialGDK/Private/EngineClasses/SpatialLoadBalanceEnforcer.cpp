@@ -1,9 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
-
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
 #include "SpatialCommonTypes.h"
 
