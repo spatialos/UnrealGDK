@@ -71,7 +71,7 @@ void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp
 			return;
 		}
 
-		const FString* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (OwningWorkerId != nullptr &&
 			*OwningWorkerId == WorkerId &&
 			StaticComponentView->GetAuthority(AuthOp.entity_id, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
