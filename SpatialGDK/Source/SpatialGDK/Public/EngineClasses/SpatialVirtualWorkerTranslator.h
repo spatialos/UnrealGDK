@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "Containers/Queue.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
@@ -56,7 +58,7 @@ private:
 	TWeakObjectPtr<USpatialReceiver> Receiver;
 	TWeakObjectPtr<USpatialWorkerConnection> Connection;
 
-	TMap<VirtualWorkerId, PhysicalWorkerName>  VirtualToPhysicalWorkerMapping;
+	TMap<VirtualWorkerId, PhysicalWorkerName> VirtualToPhysicalWorkerMapping;
 	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
 #include "CoreMinimal.h"
