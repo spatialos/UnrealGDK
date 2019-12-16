@@ -40,7 +40,7 @@ public:
 	template <typename T>
 	T* GetComponentData(Worker_EntityId EntityId)
 	{
-		return const_cast<USpatialStaticComponentView*>(this)->GetComponentData();
+		return const_cast<T*>(static_cast<const USpatialStaticComponentView*>(this)->GetComponentData<T>(EntityId));
 	}
 
 	bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
