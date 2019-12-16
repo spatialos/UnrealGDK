@@ -28,6 +28,7 @@
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
+#include "LoadBalancing/ReferenceCountedLockingPolicy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -444,26 +445,41 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	if (IsServer() && SpatialSettings->bEnableUnrealLoadBalancer)
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		if (SpatialSettings->LoadBalanceStrategy == nullptr)
+		if (IsServer()) 
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
-			LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
+			if (SpatialSettings->LoadBalanceStrategy == nullptr)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+				LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
+			}
+			else
+			{
+				// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
+				LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
+			}
+			LoadBalanceStrategy->Init(this);
+		}
+
+		if (SpatialSettings->LockingPolicy == nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
+			LockingPolicy = NewObject<UReferenceCountedLockingPolicy>(this);
 		}
 		else
 		{
-			// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
-			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
+			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, SpatialSettings->LockingPolicy);
 		}
-		LoadBalanceStrategy->Init(this);
 
 		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
 		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
-		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
 
-		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>();
-		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator.Get());
+		if (IsServer()) 
+		{
+			VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+			LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+		}
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
@@ -1553,7 +1569,10 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (LoadBalanceEnforcer.IsValid())
 		{
-			LoadBalanceEnforcer->Tick();
+			for(const auto& Elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
+			{
+				Sender->SetAclWriteAuthority(Elem.EntityId, Elem.OwningWorkerId);
+			}
 		}
 	}
 }

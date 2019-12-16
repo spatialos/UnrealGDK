@@ -3,12 +3,13 @@
 #include "Schema/UnrealObjectRef.h"
 
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealObjectRef, Log, All);
 
-const FUnrealObjectRef FUnrealObjectRef::NULL_OBJECT_REF = FUnrealObjectRef(0, 0);
-const FUnrealObjectRef FUnrealObjectRef::UNRESOLVED_OBJECT_REF = FUnrealObjectRef(0, 1);
+const FUnrealObjectRef FUnrealObjectRef::NULL_OBJECT_REF = FUnrealObjectRef(SpatialConstants::INVALID_ENTITY_ID, 0);
+const FUnrealObjectRef FUnrealObjectRef::UNRESOLVED_OBJECT_REF = FUnrealObjectRef(SpatialConstants::INVALID_ENTITY_ID, 1);
 
 UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpatialPackageMapClient* PackageMap, bool& bOutUnresolved)
 {

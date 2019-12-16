@@ -172,7 +172,6 @@ const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
 
 // AuthorityIntent codes and Field IDs.
 const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
-const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID							= 0;
 
 // VirtualWorkerTranslation Field IDs.
 const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
@@ -190,6 +189,9 @@ const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 
 const FName DefaultActorGroup = FName(TEXT("Default"));
+
+const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID = 0;
+const ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;
 
 const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType.ToString()};
 const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType.ToString()};

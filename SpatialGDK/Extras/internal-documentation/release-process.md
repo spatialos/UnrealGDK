@@ -186,7 +186,7 @@ Only announce full releases, not `preview` ones.
 * Forums
 * Discord (`#unreal`, do not `@here`)
 * Slack (`#releases`)
-* Email (`spatialos-announce@`)
+* Email (`unreal-interest@`)
 
 Congratulations, you've done the release!
 
