@@ -1552,9 +1552,9 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (LoadBalanceEnforcer.IsValid())
 		{
-			for(const auto& elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
+			for(const auto& Elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
 			{
-				Sender->SetAclWriteAuthority(elem.EntityId, elem.OwningWorkerId);
+				Sender->SetAclWriteAuthority(Elem.EntityId, Elem.OwningWorkerId);
 			}
 		}
 	}
