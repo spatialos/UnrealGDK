@@ -11,7 +11,7 @@ DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
 using namespace SpatialGDK;
 
-SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const FString &InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
+SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
 	: WorkerId(InWorkerId)
 	, StaticComponentView(InStaticComponentView)
 	, VirtualWorkerTranslator(InVirtualWorkerTranslator)
