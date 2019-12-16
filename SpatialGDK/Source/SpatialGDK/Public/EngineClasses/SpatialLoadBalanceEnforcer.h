@@ -20,7 +20,7 @@ public:
 		FString OwningWorkerId;
 	};
 
-	SpatialLoadBalanceEnforcer(const FString &InWorkerId, USpatialStaticComponentView* InStaticComponentView, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);	
+	SpatialLoadBalanceEnforcer(const FString &InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);	
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
 	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
@@ -32,7 +32,7 @@ public:
 private:
 
 	const FString WorkerId;
-	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
+	TWeakObjectPtr<const USpatialStaticComponentView> StaticComponentView;
 	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 	struct WriteAuthAssignmentRequest
