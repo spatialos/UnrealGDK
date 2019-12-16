@@ -20,10 +20,10 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/AlwaysRelevant.h"
-#include "Schema/ClientRPCEndpoint.h"
+#include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/RPCPayload.h"
-#include "Schema/ServerRPCEndpoint.h"
+#include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/SpawnData.h"
 #include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
@@ -126,12 +126,12 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
+	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY:
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
@@ -348,7 +348,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
-	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
+	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY
 		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		check(!NetDriver->IsServer());
@@ -471,7 +471,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	}
 	else
 	{
-		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
 		{
 			if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 			{
@@ -479,7 +479,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			}
 
 			// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
-			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
 			{
 				Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
@@ -488,11 +488,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 
 	if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
 		{
 			Sender->SendClientEndpointReadyUpdate(Op.entity_id);
 		}
-		if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
+		if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
 		{
 			Sender->SendServerEndpointReadyUpdate(Op.entity_id);
 		}
@@ -1144,9 +1144,9 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyStartupActorManagerUpdate(Op.update);
 		return;
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
+	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY:
 		HandleRPC(Op);
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
@@ -1260,11 +1260,11 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 
 	// If the update is to the client rpc endpoint, then the handler should have authority over the server rpc endpoint component and vice versa
 	// Ideally these events are never delivered to workers which are not able to handle them with clever interest management
-	const Worker_ComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
-		? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+	const Worker_ComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+		? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 
 	// Multicast RPCs should be executed by whoever receives them.
-	if (Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
+	if (Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY)
 	{
 		if (StaticComponentView->GetAuthority(Op.entity_id, RPCEndpointComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
 		{
@@ -1300,8 +1300,8 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 		{
 			// When packing unreliable RPCs into one update, they also always go through the PlayerController.
 			// This means we need to retrieve the actual target Entity ID from the payload.
-			if (Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
-				Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
+			if (Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY ||
+				Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
 			{
 				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
 
