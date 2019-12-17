@@ -463,16 +463,16 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 				LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
 			}
 			LoadBalanceStrategy->Init(this);
-		}
 
-		if (SpatialSettings->LockingPolicy == nullptr)
-		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
-			LockingPolicy = NewObject<UReferenceCountedLockingPolicy>(this);
-		}
-		else
-		{
-			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, SpatialSettings->LockingPolicy);
+			if (SpatialSettings->LockingPolicy == nullptr)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
+				LockingPolicy = NewObject<UReferenceCountedLockingPolicy>(this);
+			}
+			else
+			{
+				LockingPolicy = NewObject<UAbstractLockingPolicy>(this, SpatialSettings->LockingPolicy);
+			}
 		}
 
 		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
