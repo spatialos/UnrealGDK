@@ -423,7 +423,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	check(GlobalStateManager != nullptr);
 
 	StaticComponentView = GameInstance->StaticComponentView;
-	check(GlobalStateManager != nullptr);
+	check(StaticComponentView != nullptr);
 
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	SnapshotManager = MakeUnique<SpatialSnapshotManager>();
