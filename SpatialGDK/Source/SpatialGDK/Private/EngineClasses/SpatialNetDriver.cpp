@@ -362,10 +362,9 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 		Sender->CreateServerWorkerEntity();
 	}
 
-	if (USpatialGameInstance* GameInstance = GetGameInstance())
-	{
-		GameInstance->HandleOnConnected();
-	}
+	USpatialGameInstance* GameInstance = GetGameInstance();
+	check(GameInstance != nullptr);
+	GameInstance->HandleOnConnected();
 }
 
 void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage)
@@ -420,17 +419,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	USpatialGameInstance* GameInstance = GetGameInstance();
 	check(GameInstance != nullptr);
 
-	if (GameInstance->GlobalStateManager == nullptr)
-	{
-		GameInstance->GlobalStateManager = NewObject<UGlobalStateManager>();
-	}
 	GlobalStateManager = GameInstance->GlobalStateManager;
+	check(GlobalStateManager != nullptr);
 
-	if (GameInstance->StaticComponentView == nullptr)
-	{
-		GameInstance->StaticComponentView = NewObject<USpatialStaticComponentView>();
-	}
 	StaticComponentView = GameInstance->StaticComponentView;
+	check(GlobalStateManager != nullptr);
 
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	SnapshotManager = MakeUnique<SpatialSnapshotManager>();

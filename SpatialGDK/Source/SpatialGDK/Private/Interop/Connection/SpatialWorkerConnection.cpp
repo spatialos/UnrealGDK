@@ -449,10 +449,12 @@ void USpatialWorkerConnection::OnConnectionFailure()
 {
 	bIsConnected = false;
 
-	uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
-	const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
-
-	OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
+	if (WorkerConnection != nullptr)
+	{
+		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
+		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
+		OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
+	}
 }
 
 bool USpatialWorkerConnection::Init()
