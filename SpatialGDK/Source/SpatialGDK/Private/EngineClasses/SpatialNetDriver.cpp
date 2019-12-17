@@ -701,7 +701,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			// ServerTravel - Increment the session id, so users don't rejoin the old game.
 			GlobalStateManager->SetCanBeginPlay(true);
 			GlobalStateManager->TriggerBeginPlay();
-			GlobalStateManager->SetAcceptingPlayers(true);
+			GlobalStateManager->SetupAcceptingPlayerState(true);
 			GlobalStateManager->IncrementSessionID();
 		}
 	}
