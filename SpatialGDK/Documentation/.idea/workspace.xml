@@ -3,7 +3,17 @@
   <component name="ChangeListManager">
     <list default="true" id="b9449316-2fda-4a0a-b7b9-ad7920f6f134" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/content/how-to-use-schema.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/how-to-use-schema.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/cloud-deployment-workflow.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/cloud-deployment-workflow.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/build-unreal-fork.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/build-unreal-fork.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-cloud-deployment.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-cloud-deployment.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-local-deployment.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-local-deployment.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-manual-setup.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/example-project/exampleproject-manual-setup.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/gdk-template.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/gdk-template.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/get-started/starter-template/get-started-template-local.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/get-started/starter-template/get-started-template-local.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-deployment.md" beforeDir="false" afterPath="$PROJECT_DIR$/content/tutorials/porting-guide/tutorial-portingguide-deployment.md" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />

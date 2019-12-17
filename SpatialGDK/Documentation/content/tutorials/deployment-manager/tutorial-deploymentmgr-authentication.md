@@ -11,7 +11,8 @@ To ensure that game clients are able to see all available deployments and can co
 
 [block:html]
 {
-  "html": "<button class=\"collapsible\">What is development authentication?</button>\n<div>\n\nWhile developing your game you may want to test game clients using connection authentication before you set up your own authentication and login servers. To facilitate this, Improbable hosts a development authentication service and a development login service for early-stage game development. This development authentication workflow provides you with a long-lived `DevelopmentAuthenticationToken` that you can hardcode into your game client.\n\nYou should only use development authentication and login for testing during development of your game.You can find out more about the development authentication workflow in the [development authentication documentation](https://docs.improbable.io/reference/latest/shared/auth/development-authentication). \n\n</div>"
+  "html": "<div class=\"wrap-collapsible\">\n  <input id=\"collapsible\" class=\"toggle\" type=\"checkbox\">
+  <label for=\"collapsible\" class=\"lbl-toggle\">What is development authentication? </label>\n  <div class=\"collapsible-content\">\n    <div class=\"content-inner\">\n      <p>\n </p>\n    </div>\n  </div>\n</div>"
 }
 [/block]
 

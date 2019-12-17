@@ -48,7 +48,8 @@ If you can see these three deployments, then you have successfully launched mult
 
 [block:html]
 {
-  "html": "<button class=\"collapsible\">The PowerShell Cannot find path '\UnrealGDKExampleProject\spatial\one_worker_test.json' because it does not exist.</button><div>\n\n\nMake sure your Deployment Manager repository is in the same parent directory as your Example Project repository. If it is not, you have to edit the file paths in these Powershell commands to point to wherever your Example Project `one_worker_test.json` and `default.snapshot` files are located. \n\n\n</div>"
+  "html": "<div class=\"wrap-collapsible\">\n  <input id=\"collapsible\" class=\"toggle\" type=\"checkbox\">
+  <label for=\"collapsible\" class=\"lbl-toggle\">The PowerShell Cannot find path '\UnrealGDKExampleProject\spatial\one_worker_test.json' because it does not exist.</button> </label>\n  <div class=\"collapsible-content\">\n    <div class=\"content-inner\">\n      <p>\n </p>\n    </div>\n  </div>\n</div>"
 }
 [/block]
 

@@ -11,7 +11,8 @@ Before launching a cloud deployment, as well as generating schema and a snapshot
 
 [block:html]
 {
-  "html": "<button class=\"collapsible\">Build-out workers - what does it mean?</button>\n<div>\n\n\nYou prepare both your server-workers and client-workers for upload to the cloud by building their assemblies from the code in their `.uproject` files. We call this “building workers”, and the resulting worker assemblies "built-out workers".\n</div>"
+  "html": "<div class=\"wrap-collapsible\">\n  <input id=\"collapsible\" class=\"toggle\" type=\"checkbox\">
+  <label for=\"collapsible\" class=\"lbl-toggle\">Build-out workers - what does it mean? </label>\n  <div class=\"collapsible-content\">\n    <div class=\"content-inner\">\n      <p>\n </p>\n    </div>\n  </div>\n</div>"
 }
 [/block]
 
@@ -276,7 +277,8 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
 [/block]
   [block:html]
 {
-  "html": "<button class=\"collapsible\">Note: disabling game client plugins which don't run on Linux</button>\n<div>\n\n\n  Simulated players run on Linux in the cloud. If your game clients use any plugins which don't run on Linux clients, you'll need to exclude them from building. This can be done in your game's Build.cs file, by wrapping any plugins that shouldn't be used on linux clients in a check like\n  `if (Target.Platform != UnrealTargetPlatform.Linux)`\n  </div>"
+  "html": "<div class=\"wrap-collapsible\">\n  <input id=\"collapsible\" class=\"toggle\" type=\"checkbox\">
+  <label for=\"collapsible\" class=\"lbl-toggle\">Note: disabling game client plugins which don't run on Linux </label>\n  <div class=\"collapsible-content\">\n    <div class=\"content-inner\">\n      <p>\n </p>\n    </div>\n  </div>\n</div>"
 }
 [/block]
 

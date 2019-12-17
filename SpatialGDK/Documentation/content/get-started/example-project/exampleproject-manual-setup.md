@@ -27,7 +27,8 @@ If you have already signed up, make sure you are logged into [Improbable.io](htt
 
 [block:html]
 {
-  "html": "<button class=\"collapsible\">Using the command line</button>\n<div>\n\n\n\n1. Open a command line  window and navigate to a suitable directory to clone the repository to.\n2. Run either of these commands to clone the example project repository:\n\n\n|  |  |\n| ----- | ------------------------------------------------------------ |\n| HTTPS | `git clone https://github.com/spatialos/UnrealGDKExampleProject.git` |\n| SSH   | `git clone git@github.com:spatialos/UnrealGDKExampleProject.git` |\n\n\n\n\n\n</div>"
+  "html": "<div class=\"wrap-collapsible\">\n  <input id=\"collapsible\" class=\"toggle\" type=\"checkbox\">
+  <label for=\"collapsible\" class=\"lbl-toggle\">Using the command line </label>\n  <div class=\"collapsible-content\">\n    <div class=\"content-inner\">\n      <p>\n </p>\n    </div>\n  </div>\n</div>"
 }
 [/block]
 
