@@ -8,8 +8,6 @@ param(
     [bool] $override_spatial_networking = $true
 )
 
-. "$PSScriptRoot\common.ps1"
-
 # This resolves a path to be absolute, without actually reading the filesystem.
 # This means it works even when the indicated path does not exist, as opposed to the Resolve-Path cmdlet
 function Force-ResolvePath {
