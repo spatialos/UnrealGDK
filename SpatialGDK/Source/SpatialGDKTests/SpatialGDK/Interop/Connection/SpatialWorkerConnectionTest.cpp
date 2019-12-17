@@ -9,6 +9,8 @@
 
 #include "CoreMinimal.h"
 
+#pragma optimize("", off)
+
 #define WORKERCONNECTION_TEST(TestName) \
 	GDK_TEST(Core, USpatialWorkerConnection, TestName)
 
@@ -16,16 +18,20 @@ using namespace SpatialGDK;
 
 namespace
 {
-	FURL CreateTestURL()
-	{
-		FURL URL = {};
-		URL.Protocol = L"unreal";
-		URL.Port = 7777;
-		URL.Valid = 1;
-		URL.Map = L"/Game/Maps/UEDPIE_4_EmptyGym";
+// TODO(Alex): These should be properly reset
+bool bClientConnected = false;
+bool bServerConnected = false;
 
-		return URL;
-	}
+FURL CreateTestURL()
+{
+	FURL URL = {};
+	URL.Protocol = L"unreal";
+	URL.Port = 7777;
+	URL.Valid = 1;
+	URL.Map = L"/Game/Maps/UEDPIE_4_EmptyGym";
+
+	return URL;
+}
 
 void StartSetupConnectionConfigFromURL(USpatialWorkerConnection* Connection, const FURL& URL, bool& bOutUseReceptionist)
 {
@@ -80,6 +86,15 @@ bool FSetupServerWorkerConnection::Update()
 
 	FString WorkerType = "UnrealWorker";
 	USpatialWorkerConnection* Connection = NewObject<USpatialWorkerConnection>();
+	Connection->OnConnectedCallback.BindLambda([]()
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Server connected successfully"));
+		bServerConnected = true;
+	});
+	Connection->OnFailedToConnectCallback.BindLambda([](uint8_t ErrorCode, const FString& ErrorMessage)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Server failed to connect: %d : %s"), ErrorCode, *ErrorMessage);
+	});
 	bool bUseReceptionist = false;
 	StartSetupConnectionConfigFromURL(Connection, TestURL, bUseReceptionist);
 	FinishSetupConnectionConfig(Connection, WorkerType, TestURL, bUseReceptionist);
@@ -101,6 +116,16 @@ bool FSetupClientWorkerConnection::Update()
 
 	FString WorkerType = "UnrealWorker";
 	USpatialWorkerConnection* Connection = NewObject<USpatialWorkerConnection>();
+	Connection->OnConnectedCallback.BindLambda([]()
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Client connected successfully"));
+		bClientConnected = true;
+	});
+	Connection->OnFailedToConnectCallback.BindLambda([](uint8_t ErrorCode, const FString& ErrorMessage)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Client failed to connect: %d : %s"), ErrorCode, *ErrorMessage);
+	});
+
 	bool bUseReceptionist = false;
 	StartSetupConnectionConfigFromURL(Connection, TestURL, bUseReceptionist);
 	FinishSetupConnectionConfig(Connection, WorkerType, TestURL, bUseReceptionist);
@@ -116,7 +141,13 @@ bool FSetupClientWorkerConnection::Update()
 DEFINE_LATENT_AUTOMATION_COMMAND(FWaitForClientWorkerConnection);
 bool FWaitForClientWorkerConnection::Update()
 {
-	return false;
+	return bClientConnected;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND(FWaitForServerWorkerConnection);
+bool FWaitForServerWorkerConnection::Update()
+{
+	return bServerConnected;
 }
 
 WORKERCONNECTION_TEST(GIVEN_WHEN_THEN)
@@ -129,6 +160,7 @@ WORKERCONNECTION_TEST(GIVEN_WHEN_THEN)
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupServerWorkerConnection());
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupClientWorkerConnection());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientWorkerConnection());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForServerWorkerConnection());
 
 	return true;
 }
