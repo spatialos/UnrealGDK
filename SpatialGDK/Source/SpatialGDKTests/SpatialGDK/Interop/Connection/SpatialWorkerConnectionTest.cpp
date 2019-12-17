@@ -19,8 +19,8 @@ using namespace SpatialGDK;
 namespace
 {
 // TODO(Alex): These should be properly reset
-bool bClientConnected = false;
-bool bServerConnected = false;
+bool bClientConnectionProcessed = false;
+bool bServerConnectionProcessed = false;
 
 FURL CreateTestURL()
 {
@@ -89,11 +89,12 @@ bool FSetupServerWorkerConnection::Update()
 	Connection->OnConnectedCallback.BindLambda([]()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Server connected successfully"));
-		bServerConnected = true;
+		bServerConnectionProcessed = true;
 	});
 	Connection->OnFailedToConnectCallback.BindLambda([](uint8_t ErrorCode, const FString& ErrorMessage)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Server failed to connect: %d : %s"), ErrorCode, *ErrorMessage);
+		bServerConnectionProcessed = true;
 	});
 	bool bUseReceptionist = false;
 	StartSetupConnectionConfigFromURL(Connection, TestURL, bUseReceptionist);
@@ -119,11 +120,12 @@ bool FSetupClientWorkerConnection::Update()
 	Connection->OnConnectedCallback.BindLambda([]()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Client connected successfully"));
-		bClientConnected = true;
+		bClientConnectionProcessed = true;
 	});
 	Connection->OnFailedToConnectCallback.BindLambda([](uint8_t ErrorCode, const FString& ErrorMessage)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Client failed to connect: %d : %s"), ErrorCode, *ErrorMessage);
+		bClientConnectionProcessed = true;
 	});
 
 	bool bUseReceptionist = false;
@@ -138,29 +140,45 @@ bool FSetupClientWorkerConnection::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND(FWaitForClientWorkerConnection);
-bool FWaitForClientWorkerConnection::Update()
+DEFINE_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection);
+bool FWaitForClientAndServerWorkerConnection::Update()
 {
-	return bClientConnected;
+	return bClientConnectionProcessed && bServerConnectionProcessed;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND(FWaitForServerWorkerConnection);
-bool FWaitForServerWorkerConnection::Update()
+DEFINE_LATENT_AUTOMATION_COMMAND(FResetConnectionProcessed);
+bool FResetConnectionProcessed::Update()
 {
-	return bServerConnected;
+	bClientConnectionProcessed = false;
+	bServerConnectionProcessed = false;
+	return true;
 }
 
-WORKERCONNECTION_TEST(GIVEN_WHEN_THEN)
+WORKERCONNECTION_TEST(GIVEN_running_local_deployment_WHEN_connecting_client_and_server_worker_THEN_connected_successfully)
 {
-	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
-	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
 	ADD_LATENT_AUTOMATION_COMMAND(FStartDeployment());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsRunning));
 
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupServerWorkerConnection());
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupClientWorkerConnection());
-	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientWorkerConnection());
-	ADD_LATENT_AUTOMATION_COMMAND(FWaitForServerWorkerConnection());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
+	ADD_LATENT_AUTOMATION_COMMAND(FResetConnectionProcessed());
+
+	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
+
+	return true;
+}
+
+WORKERCONNECTION_TEST(GIVEN_no_local_deployment_WHEN_connecting_client_and_server_worker_THEN_connection_failed)
+{
+	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupServerWorkerConnection());
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupClientWorkerConnection());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
+	ADD_LATENT_AUTOMATION_COMMAND(FResetConnectionProcessed());
 
 	return true;
 }
