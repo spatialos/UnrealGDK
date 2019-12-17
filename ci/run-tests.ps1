@@ -3,8 +3,12 @@ param(
     [string] $uproject_path,
     [string] $test_repo_path,
     [string] $log_file_path,
-    [string] $test_repo_map
+    [string] $test_repo_map,
+    [string] $tests_path = "SpatialGDK",
+    [bool] $override_spatial_networking = $false
 )
+
+. "$PSScriptRoot\common.ps1"
 
 # This resolves a path to be absolute, without actually reading the filesystem.
 # This means it works even when the indicated path does not exist, as opposed to the Resolve-Path cmdlet
@@ -46,14 +50,15 @@ $output_dir_absolute = Force-ResolvePath $output_dir
 $cmd_args_list = @( `
     "`"$uproject_path_absolute`"", ` # We need some project to run tests in, but for unit tests the exact project shouldn't matter
     "`"$test_repo_map`"", ` # The map to run tests in
-    "-ExecCmds=`"Automation RunTests SpatialGDK; Quit`"", ` # Run all tests. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
+    "-ExecCmds=`"Automation RunTests $tests_path; Quit`"", ` # Run all tests. See https://docs.unrealengine.com/en-US/Programming/Automation/index.html for docs on the automation system
     "-TestExit=`"Automation Test Queue Empty`"", ` # When to close the editor
     "-ReportOutputPath=`"$($output_dir_absolute)`"", ` # Output folder for test results. If it doesn't exist, gets created. If it does, all contents get deleted before new results get placed there.
     "-ABSLOG=`"$($log_file_path)`"", ` # Sets the path for the log file produced during this run.
     "-nopause", ` # Close the unreal log window automatically on exit
     "-nosplash", ` # No splash screen
     "-unattended", ` # Disable anything requiring user feedback
-    "-nullRHI" # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+    "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+    "-OverrideSpatialNetworking=`"$override_spatial_networking`"" # A parameter to switch beetween different networking implementations
 )
 
 Echo "Running $($ue_path_absolute) $($cmd_args_list)"
