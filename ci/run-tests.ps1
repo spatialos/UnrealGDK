@@ -19,23 +19,25 @@ function Force-ResolvePath {
     return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($path)
 }
 
-# Generate schema and snapshots
-Echo "Generating snapshot and schema for testing project"
-$commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
-    "$uproject_path", `
-    "-NoShaderCompile", ` # Prevent shader compilation
-    "-nopause", ` # Close the unreal log window automatically on exit
-    "-nosplash", ` # No splash screen
-    "-unattended", ` # Disable anything requiring user feedback
-    "-nullRHI", ` # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
-    "-run=GenerateSchemaAndSnapshots", ` # Run the commandlet
-    "-MapPaths=`"$test_repo_map`"" ` # Which maps to run the commandlet for
-)
+if ($override_spatial_networking) {
+    # Generate schema and snapshots
+    Echo "Generating snapshot and schema for testing project"
+    $commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
+        "$uproject_path", `
+        "-NoShaderCompile", ` # Prevent shader compilation
+        "-nopause", ` # Close the unreal log window automatically on exit
+        "-nosplash", ` # No splash screen
+        "-unattended", ` # Disable anything requiring user feedback
+        "-nullRHI", ` # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+        "-run=GenerateSchemaAndSnapshots", ` # Run the commandlet
+        "-MapPaths=`"$test_repo_map`"" ` # Which maps to run the commandlet for
+    )
 
-# Create the default snapshot
-Copy-Item -Force `
-    -Path "$test_repo_path\spatial\snapshots\$test_repo_map.snapshot" `
-    -Destination "$test_repo_path\spatial\snapshots\default.snapshot"
+    # Create the default snapshot
+    Copy-Item -Force `
+        -Path "$test_repo_path\spatial\snapshots\$test_repo_map.snapshot" `
+        -Destination "$test_repo_path\spatial\snapshots\default.snapshot"
+}
 
 # Create the TestResults directory if it does not exist, for storing results
 New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorAction SilentlyContinue
