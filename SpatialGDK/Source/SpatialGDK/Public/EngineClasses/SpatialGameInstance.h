@@ -56,9 +56,11 @@ public:
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
 
+	// GlobalStateManager must persist when server traveling
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
+	// StaticComponentView must persist when server traveling
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 

@@ -362,10 +362,9 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 		Sender->CreateServerWorkerEntity();
 	}
 
-	if (USpatialGameInstance* GameInstance = GetGameInstance())
-	{
-		GameInstance->HandleOnConnected();
-	}
+	USpatialGameInstance* GameInstance = GetGameInstance();
+	check(GameInstance != nullptr);
+	GameInstance->HandleOnConnected();
 }
 
 void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage)
