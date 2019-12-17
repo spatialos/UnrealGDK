@@ -5,7 +5,7 @@ param(
     [string] $log_file_path,
     [string] $test_repo_map,
     [string] $tests_path = "SpatialGDK",
-    [bool] $override_spatial_networking = $false
+    [bool] $override_spatial_networking = $true
 )
 
 . "$PSScriptRoot\common.ps1"
