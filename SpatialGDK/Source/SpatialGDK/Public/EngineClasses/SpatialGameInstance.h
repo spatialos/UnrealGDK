@@ -44,6 +44,8 @@ public:
 
 	FORCEINLINE USpatialWorkerConnection* GetSpatialWorkerConnection() { return SpatialConnection; }
 	FORCEINLINE USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
+	FORCEINLINE UGlobalStateManager* GetGlobalStateManager() { return GlobalStateManager; };
+	FORCEINLINE USpatialStaticComponentView* GetStaticComponentView() { return StaticComponentView; };
 
 	void HandleOnConnected();
 	void HandleOnConnectionFailed(const FString& Reason);
@@ -55,14 +57,6 @@ public:
 
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
-
-	// GlobalStateManager must persist when server traveling
-	UPROPERTY()
-	UGlobalStateManager* GlobalStateManager;
-
-	// StaticComponentView must persist when server traveling
-	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
@@ -82,4 +76,13 @@ private:
 
 	UPROPERTY()
 	USpatialLatencyTracer* SpatialLatencyTracer = nullptr;
+
+	// GlobalStateManager must persist when server traveling
+	UPROPERTY()
+	UGlobalStateManager* GlobalStateManager;
+
+	// StaticComponentView must persist when server traveling
+	UPROPERTY()
+	USpatialStaticComponentView* StaticComponentView;
+
 };
