@@ -370,7 +370,7 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 
 void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage)
 {
-	if (const USpatialGameInstance* GameInstance = GetGameInstance())
+	if (USpatialGameInstance* GameInstance = GetGameInstance())
 	{
 		if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 		{
