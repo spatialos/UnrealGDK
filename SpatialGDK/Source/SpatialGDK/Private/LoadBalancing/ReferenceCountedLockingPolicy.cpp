@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "ReferenceCountedLockingPolicy.h"
+#include "LoadBalancing/ReferenceCountedLockingPolicy.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
