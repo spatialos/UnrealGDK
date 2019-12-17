@@ -4,7 +4,6 @@
 
 #include "SpatialWorkerConnection.h"
 
-//#include "LocalDeploymentManagerUtilities.h"
 #include "SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
 
 #include "CoreMinimal.h"
@@ -18,7 +17,6 @@ using namespace SpatialGDK;
 
 namespace
 {
-// TODO(Alex): These should be properly reset
 bool bClientConnectionProcessed = false;
 bool bServerConnectionProcessed = false;
 
@@ -77,57 +75,36 @@ void FinishSetupConnectionConfig(USpatialWorkerConnection* Connection, const FSt
 }
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND(FSetupServerWorkerConnection);
-bool FSetupServerWorkerConnection::Update()
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetupWorkerConnection, USpatialWorkerConnection*, Connection, bool, bConnectAsClient);
+bool FSetupWorkerConnection::Update()
 {
-	bool bConnectAsClient = false;
-
 	const FURL TestURL = CreateTestURL();
-
 	FString WorkerType = "UnrealWorker";
-	USpatialWorkerConnection* Connection = NewObject<USpatialWorkerConnection>();
-	Connection->OnConnectedCallback.BindLambda([]()
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Server connected successfully"));
-		bServerConnectionProcessed = true;
-	});
-	Connection->OnFailedToConnectCallback.BindLambda([](uint8_t ErrorCode, const FString& ErrorMessage)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Server failed to connect: %d : %s"), ErrorCode, *ErrorMessage);
-		bServerConnectionProcessed = true;
-	});
-	bool bUseReceptionist = false;
-	StartSetupConnectionConfigFromURL(Connection, TestURL, bUseReceptionist);
-	FinishSetupConnectionConfig(Connection, WorkerType, TestURL, bUseReceptionist);
-	int32 PlayInEditorID = 0;
-#if WITH_EDITOR
-	Connection->Connect(bConnectAsClient, PlayInEditorID);
-#else
-	Connection->Connect(bConnectAsClient, 0);
-#endif
-	return true;
-}
 
-DEFINE_LATENT_AUTOMATION_COMMAND(FSetupClientWorkerConnection);
-bool FSetupClientWorkerConnection::Update()
-{
-	bool bConnectAsClient = true;
-
-	const FURL TestURL = CreateTestURL();
-
-	FString WorkerType = "UnrealWorker";
-	USpatialWorkerConnection* Connection = NewObject<USpatialWorkerConnection>();
-	Connection->OnConnectedCallback.BindLambda([]()
+	Connection->OnConnectedCallback.BindLambda([bConnectAsClient = this->bConnectAsClient]()
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Client connected successfully"));
-		bClientConnectionProcessed = true;
+		//UE_LOG(LogTemp, Warning, TEXT("Worker connected successfully"));
+		if (bConnectAsClient)
+		{
+			bClientConnectionProcessed = true;
+		}
+		else
+		{
+			bServerConnectionProcessed = true;
+		}
 	});
-	Connection->OnFailedToConnectCallback.BindLambda([](uint8_t ErrorCode, const FString& ErrorMessage)
+	Connection->OnFailedToConnectCallback.BindLambda([bConnectAsClient = this->bConnectAsClient](uint8_t ErrorCode, const FString& ErrorMessage)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Client failed to connect: %d : %s"), ErrorCode, *ErrorMessage);
-		bClientConnectionProcessed = true;
+		//UE_LOG(LogTemp, Warning, TEXT("Worker failed to connect: %d : %s"), ErrorCode, *ErrorMessage);
+		if (bConnectAsClient)
+		{
+			bClientConnectionProcessed = true;
+		}
+		else
+		{
+			bServerConnectionProcessed = true;
+		}
 	});
-
 	bool bUseReceptionist = false;
 	StartSetupConnectionConfigFromURL(Connection, TestURL, bUseReceptionist);
 	FinishSetupConnectionConfig(Connection, WorkerType, TestURL, bUseReceptionist);
@@ -154,49 +131,58 @@ bool FResetConnectionProcessed::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FCheckConnectionState, FAutomationTestBase*, Test, bool, bExpectedIsConnected);
-bool FCheckConnectionState::Update()
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckConnectionStatus, FAutomationTestBase*, Test, USpatialWorkerConnection*, Connection, bool, bExpectedIsConnected);
+bool FCheckConnectionStatus::Update()
 {
-	if (bExpectedIsConnected)
-	{
-		//Test->TestTrue(TEXT("Worker connected"), );
-	}
-	else
-	{
-		//Test->TestFalse(TEXT("Worker not connected"), );
-	}
-
+	Test->TestTrue(TEXT("Worker connection status is valid"), Connection->IsConnected() == bExpectedIsConnected);
 	return true;
 }
 
 WORKERCONNECTION_TEST(GIVEN_running_local_deployment_WHEN_connecting_client_and_server_worker_THEN_connected_successfully)
 {
+	// GIVEN
 	ADD_LATENT_AUTOMATION_COMMAND(FStartDeployment());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsRunning));
 
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupServerWorkerConnection());
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupClientWorkerConnection());
+	// WHEN
+	USpatialWorkerConnection* ClientConnection = NewObject<USpatialWorkerConnection>();
+	USpatialWorkerConnection* ServerConnection = NewObject<USpatialWorkerConnection>();
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection, true));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
-	ADD_LATENT_AUTOMATION_COMMAND(FResetConnectionProcessed());
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionState(this, true));
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionState(this, true));
 
+	// THEN
+	bool bIsConnected = true;
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ClientConnection, bIsConnected));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ServerConnection, bIsConnected));
+
+	// CLEANUP
 	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
+	ADD_LATENT_AUTOMATION_COMMAND(FResetConnectionProcessed());
 
 	return true;
 }
 
 WORKERCONNECTION_TEST(GIVEN_no_local_deployment_WHEN_connecting_client_and_server_worker_THEN_connection_failed)
 {
+	// GIVEN
 	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
 
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupServerWorkerConnection());
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupClientWorkerConnection());
+	// WHEN
+	USpatialWorkerConnection* ClientConnection = NewObject<USpatialWorkerConnection>();
+	USpatialWorkerConnection* ServerConnection = NewObject<USpatialWorkerConnection>();
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection, true));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionState(this, false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionState(this, false));
+
+	// THEN
+	bool bIsConnected = false;
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ClientConnection, bIsConnected));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ServerConnection, bIsConnected));
+
+	// CLEANUP
 	ADD_LATENT_AUTOMATION_COMMAND(FResetConnectionProcessed());
 
 	return true;
