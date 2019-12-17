@@ -46,7 +46,7 @@ public:
 	bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers, int32& OutSessionId);
 	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
-	void SetAcceptingPlayers(bool bAcceptingPlayers);
+	void SetupAcceptingPlayerState(bool bAcceptingPlayers);
 	void SetCanBeginPlay(const bool bInCanBeginPlay);
 	void IncrementSessionID();
 

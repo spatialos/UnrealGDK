@@ -194,7 +194,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 			Connection->SendCreateEntityRequest(MoveTemp(EntityToSpawn), &ReservedEntityID);
 		}
 
-		GlobalStateManager->SetAcceptingPlayers(true);
+		GlobalStateManager->SetupAcceptingPlayerState(true);
 	});
 
 	// Reserve the Entity IDs
