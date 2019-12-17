@@ -4,6 +4,9 @@
 
 #include "SpatialWorkerConnection.h"
 
+//#include "LocalDeploymentManagerUtilities.h"
+#include "SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
+
 #include "CoreMinimal.h"
 
 #define WORKERCONNECTION_TEST(TestName) \
@@ -118,6 +121,11 @@ bool FWaitForClientWorkerConnection::Update()
 
 WORKERCONNECTION_TEST(GIVEN_WHEN_THEN)
 {
+	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
+	ADD_LATENT_AUTOMATION_COMMAND(FStartDeployment());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsRunning));
+
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupServerWorkerConnection());
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupClientWorkerConnection());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientWorkerConnection());
