@@ -154,6 +154,21 @@ bool FResetConnectionProcessed::Update()
 	return true;
 }
 
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FCheckConnectionState, FAutomationTestBase*, Test, bool, bExpectedIsConnected);
+bool FCheckConnectionState::Update()
+{
+	if (bExpectedIsConnected)
+	{
+		//Test->TestTrue(TEXT("Worker connected"), );
+	}
+	else
+	{
+		//Test->TestFalse(TEXT("Worker not connected"), );
+	}
+
+	return true;
+}
+
 WORKERCONNECTION_TEST(GIVEN_running_local_deployment_WHEN_connecting_client_and_server_worker_THEN_connected_successfully)
 {
 	ADD_LATENT_AUTOMATION_COMMAND(FStartDeployment());
@@ -163,6 +178,8 @@ WORKERCONNECTION_TEST(GIVEN_running_local_deployment_WHEN_connecting_client_and_
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupClientWorkerConnection());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
 	ADD_LATENT_AUTOMATION_COMMAND(FResetConnectionProcessed());
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionState(this, true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionState(this, true));
 
 	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
@@ -178,6 +195,8 @@ WORKERCONNECTION_TEST(GIVEN_no_local_deployment_WHEN_connecting_client_and_serve
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupServerWorkerConnection());
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupClientWorkerConnection());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionState(this, false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionState(this, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FResetConnectionProcessed());
 
 	return true;
