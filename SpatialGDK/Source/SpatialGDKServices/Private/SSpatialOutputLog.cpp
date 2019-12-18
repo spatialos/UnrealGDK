@@ -10,6 +10,7 @@
 #include "Modules/ModuleManager.h"
 #include "SlateOptMacros.h"
 #include "SpatialGDKServicesModule.h"
+#include "Internationalization/Regex.h"
 
 #define LOCTEXT_NAMESPACE "SSpatialOutputLog"
 
@@ -123,6 +124,16 @@ void SSpatialOutputLog::OnLogDirectoryChanged(const TArray<FFileChangeData>& Fil
 			return;
 		}
 	}
+}
+
+void SSpatialOutputLog::OnClearLog()
+{
+	// SOutputLog will clear the messages and the SelectedLogCategories.
+	SOutputLog::OnClearLog();
+
+	// Clear the AvailableLogCategories and SelectedLogCategories as we generate many worker categories which are hard to parse.
+	Filter.AvailableLogCategories.Reset();
+	Filter.SelectedLogCategories.Reset();
 }
 
 void SSpatialOutputLog::ShutdownLogDirectoryWatcher(const FString& LogDirectory)
@@ -241,19 +252,40 @@ void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 {
 	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
-	FString LogTime;
-	FString LogLevelAndRest;
-	FString LogLevelText;
-	FString LogCategoryAndRest;
-	FString LogCategory;
-	FString LogMessage;
+	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) logger=(.*\\.)?(.*) msg=(.*)"));
+	FRegexMatcher LogMatcher(LogPattern, LogLine);
 
-	LogLine.Split(TEXT("level="), &LogTime, &LogLevelAndRest);
-	LogLevelAndRest.Split(TEXT("logger="), &LogLevelText, &LogCategoryAndRest);
-	LogCategoryAndRest.Split(TEXT("msg="), &LogCategory, &LogMessage);
+	if (!LogMatcher.FindNext())
+	{
+		UE_LOG(LogSpatialOutputLog, Error, TEXT("Failed to parse log line: %s"), *LogLine);
+		return;
+	}
 
-	// Log categories take the form "improbable.deployment.InternalGameLauncher", we filter to the last category to make it more human readable.
-	LogCategory.Split(TEXT("."), nullptr, &LogCategory, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+	FString LogLevelText = LogMatcher.GetCaptureGroup(1);
+	FString LogCategory = LogMatcher.GetCaptureGroup(3);
+	FString LogMessage = LogMatcher.GetCaptureGroup(4);
+
+	// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
+	// msg=[WORKER_NAME:WORKER_TYPE] ... e.g. msg=[UnrealWorkerF5C56488482FEDC37B10E382770067E3:UnrealWorker]
+	if (LogCategory == TEXT("WorkerLogMessageHandler"))
+	{
+		const FRegexPattern WorkerLogPattern = FRegexPattern(TEXT("\\[([^:]*):([^\\]]*)\\] (.*)"));
+		FRegexMatcher WorkerLogMatcher(WorkerLogPattern, LogMessage);
+
+		if (WorkerLogMatcher.FindNext())
+		{
+			LogCategory = WorkerLogMatcher.GetCaptureGroup(1); // Worker Name
+			FString WorkerType = WorkerLogMatcher.GetCaptureGroup(2); // Worker Type
+
+			if (LogCategory.StartsWith(WorkerType))
+			{
+				// We shorten the category name to make it more human readable. e.g. UnrealWorkerF5C56
+				LogCategory = LogCategory.Left(WorkerType.Len() + 5);
+			}
+
+			LogMessage = WorkerLogMatcher.GetCaptureGroup(3);
+		}
+	}
 
 	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
 

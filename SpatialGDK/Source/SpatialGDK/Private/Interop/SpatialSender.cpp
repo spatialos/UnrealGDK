@@ -14,6 +14,7 @@
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
 #include "Schema/AlwaysRelevant.h"
+#include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
@@ -125,6 +126,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 
 	if (Actor->IsNetStartupActor())
 	{
@@ -207,10 +209,12 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	}
 
 	TArray<Worker_ComponentData> ComponentDatas;
-	ComponentDatas.Add(Position(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
+	ComponentDatas.Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
+	// TODO(zoning): For now, setting AuthorityIntent to an invalid value.
+	ComponentDatas.Add(AuthorityIntent(SpatialConstants::INVALID_VIRTUAL_WORKER_ID).CreateAuthorityIntentData());
 
 	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
 	{
@@ -496,6 +500,15 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Receiver->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
 }
 
+bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
+{
+	// Level blueprint classes could have a PIE prefix, this will remove it.
+	FString RemappedPathName = PathName;
+	GEngine->NetworkRemapPath(NetDriver, RemappedPathName, false);
+
+	return ClassInfoManager->ValidateOrExit_IsSupportedClass(RemappedPathName);
+}
+
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendComponentUpdates);
@@ -689,19 +702,19 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 	}
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
- 	if (Channel->bCreatingNewEntity)
- 	{
- 		if (Function->HasAnyFunctionFlags(FUNC_NetClient))
- 		{
- 			check(NetDriver->IsServer());
+	if (Channel->bCreatingNewEntity)
+	{
+		if (Function->HasAnyFunctionFlags(FUNC_NetClient))
+		{
+			check(NetDriver->IsServer());
 
- 			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Payload);
- #if !UE_BUILD_SHIPPING
- 			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
- #endif // !UE_BUILD_SHIPPING
- 			return ERPCResult::Success;
- 		}
- 	}
+			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Payload);
+#if !UE_BUILD_SHIPPING
+			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Payload.PayloadData.Num());
+#endif // !UE_BUILD_SHIPPING
+			return ERPCResult::Success;
+		}
+	}
 
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
 

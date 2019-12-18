@@ -490,7 +490,7 @@ namespace Improbable
             if (args.Length == 0 ||
                 args[0] == "create" && (args.Length != 11 && args.Length != 7) ||
                 args[0] == "stop" && (args.Length != 3 && args.Length != 4) ||
-                args[0] == "list" && args.Length != 3)
+                args[0] == "list" && args.Length != 4)
             {
                 ShowUsage();
                 return 1;

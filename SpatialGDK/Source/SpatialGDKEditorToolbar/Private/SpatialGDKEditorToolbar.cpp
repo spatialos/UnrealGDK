@@ -68,22 +68,26 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionFailSound->AddToRoot();
 	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
 
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
-	bStopSpatialOnExit = GetDefault<USpatialGDKEditorSettings>()->bStopSpatialOnExit;
+	bStopSpatialOnExit = SpatialGDKEditorSettings->bStopSpatialOnExit;
 
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
-	LocalDeploymentManager->SetAutoDeploy(GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment);
-	LocalDeploymentManager->SetInChina(GetDefault<USpatialGDKEditorSettings>()->IsRunningInChina());
+	LocalDeploymentManager->SetAutoDeploy(SpatialGDKEditorSettings->bAutoStartLocalDeployment);
+	LocalDeploymentManager->SetInChina(SpatialGDKEditorSettings->IsRunningInChina());
 
 	// Bind the play button delegate to starting a local spatial deployment.
-	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment)
+	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && SpatialGDKEditorSettings->bAutoStartLocalDeployment)
 	{
 		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
 		{
 			VerifyAndStartDeployment();
 		});
 	}
+
+	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -295,7 +299,7 @@ void FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked()
 	if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("DeleteSchemaDatabasePrompt", "Are you sure you want to delete the schema database?")) == EAppReturnType::Yes)
 	{
 		OnShowTaskStartNotification(TEXT("Deleting schema database"));
-		if (SpatialGDKEditor::Schema::DeleteSchemaDatabase())
+		if (SpatialGDKEditor::Schema::DeleteSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 		{
 			OnShowSuccessNotification(TEXT("Schema database deleted"));
 		}
@@ -504,7 +508,10 @@ void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 		FDateTime StartTime = FDateTime::Now();
 		OnShowTaskStartNotification(TEXT("Starting spatial service..."));
 
-		if (!LocalDeploymentManager->TryStartSpatialService())
+		// If the runtime IP is to be exposed, pass it to the spatial service on startup
+		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+		const bool bSpatialServiceStarted = LocalDeploymentManager->TryStartSpatialService(GetOptionalExposedRuntimeIP());
+		if (!bSpatialServiceStarted)
 		{
 			OnShowFailedNotification(TEXT("Spatial service failed to start"));
 			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not start spatial service."));
@@ -618,7 +625,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
-		if (LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName))
+		const bool bLocalDeploymentStarted = LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, GetOptionalExposedRuntimeIP());
+
+		if (bLocalDeploymentStarted)
 		{
 			OnShowSuccessNotification(TEXT("Local deployment started!"));
 		}
@@ -716,12 +725,6 @@ bool FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute() const
 	return !LocalDeploymentManager->IsServiceStopping();
 }
 
-/**
-* This function is used to update our own local copy of bStopSpatialOnExit as Settings change.
-* We keep the copy of the variable as all the USpatialGDKEditorSettings references get
-* cleaned before all the available callbacks that IModuleInterface exposes. This means that we can't access
-* this variable through its references after the engine is closed.
-*/
 void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent)
 {
 	if (USpatialGDKEditorSettings* Settings = Cast<USpatialGDKEditorSettings>(ObjectBeingModified))
@@ -731,6 +734,12 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 				: NAME_None;
 		if (PropertyName.ToString() == TEXT("bStopSpatialOnExit"))
 		{
+			/*
+			* This updates our own local copy of bStopSpatialOnExit as Settings change.
+			* We keep the copy of the variable as all the USpatialGDKEditorSettings references get
+			* cleaned before all the available callbacks that IModuleInterface exposes. This means that we can't access
+			* this variable through its references after the engine is closed.
+			*/
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
 		}
 		else if (PropertyName.ToString() == TEXT("bAutoStartLocalDeployment"))
@@ -775,9 +784,7 @@ void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
 		]
 	);
 
-	TSharedPtr<SWindow> RootWindow = FGlobalTabmanager::Get()->GetRootWindow();
-
-	FSlateApplication::Get().AddModalWindow(SimulatedPlayerDeploymentWindowPtr.ToSharedRef(), RootWindow);
+	FSlateApplication::Get().AddWindow(SimulatedPlayerDeploymentWindowPtr.ToSharedRef());
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
@@ -836,6 +843,19 @@ bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
 	FString DescriptorPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("build/assembly/schema/schema.descriptor"));
 	FString GdkFolderPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("schema/unreal/gdk"));
 	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();
+}
+
+FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (SpatialGDKEditorSettings->bExposeRuntimeIP)
+	{
+		return SpatialGDKEditorSettings->ExposedRuntimeIP;
+	}
+	else
+	{
+		return TEXT("");
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

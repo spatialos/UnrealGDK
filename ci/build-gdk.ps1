@@ -1,16 +1,22 @@
+# Expects gdk_home, which is not the GDK location in the engine
 param(
-  [string] $target_platform = "Win64"
+  [string] $unreal_path = "$((Get-Item `"$($PSScriptRoot)`").parent.parent.FullName)\UnrealEngine", ## This should ultimately resolve to "C:\b\<number>\UnrealEngine".
+  [string] $target_platform = "Win64",
+  [string] $build_output_dir
 )
 
 pushd "$($gdk_home)"
-
     Start-Event "build-unreal-gdk-$($target_platform)" "build-gdk"
     pushd "SpatialGDK"
-        $gdk_build_proc = Start-Process -PassThru -NoNewWindow -FilePath "$($gdk_home)\UnrealEngine\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
+        $gdk_build_proc = Start-Process -PassThru -NoNewWindow -FilePath "$unreal_path\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
             "BuildPlugin", `
-            " -Plugin=`"$($gdk_home)/SpatialGDK/SpatialGDK.uplugin`"", `
+            "-Plugin=`"$($gdk_home)/SpatialGDK/SpatialGDK.uplugin`"", `
             "-TargetPlatforms=$($target_platform)", `
-            "-Package=`"$($gdk_home)/SpatialGDK/Intermediate/BuildPackage/Win64`"" `
+                # The build output directory here is intentionally meant to be outside both the GDK and the Engine,
+                # as apparently there were issues where BuildPlugin would fail when targeting a folder within UnrealEngine
+                # (and the gdk is symlinked inside the UnrealEngine) for output.
+                # Unreal would find two instances of the plugin during the build process (as it copies the .uplugin to the target folder at the start of the build process)
+            "-Package=`"$build_output_dir`"" `
         )
         $gdk_build_handle = $gdk_build_proc.Handle
         Wait-Process -Id (Get-Process -InputObject $gdk_build_proc).id

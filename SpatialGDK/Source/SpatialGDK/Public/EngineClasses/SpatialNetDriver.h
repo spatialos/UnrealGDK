@@ -9,6 +9,7 @@
 #include "TimerManager.h"
 #include "UObject/CoreOnline.h"
 
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "SpatialConstants.h"
@@ -114,6 +115,8 @@ public:
 
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
+	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
+
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
 	UPROPERTY()
@@ -142,6 +145,8 @@ public:
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
+
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
@@ -198,6 +203,8 @@ private:
 	bool bMapLoaded;
 
 	FString SnapshotToLoad;
+
+	class USpatialGameInstance* GetGameInstance() const;
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 
