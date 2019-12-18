@@ -2,21 +2,31 @@
 
 #include "Utils/SpatialDebugger.h"
 
+
+#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialStaticComponentView.h"
+#include "LoadBalancing/WorkerRegion.h"
+#include "Schema/AuthorityIntent.h"
+#include "SpatialCommonTypes.h"
+#include "Utils/InspectionColors.h"
+
 #include "Debug/DebugDrawService.h"
 #include "Engine/Engine.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
-#include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Kismet/GameplayStatics.h"
-#include "Schema/AuthorityIntent.h"
-#include "Utils/InspectionColors.h"
+#include "Net/UnrealNetwork.h"
 
 using namespace SpatialGDK;
 
 DEFINE_LOG_CATEGORY(LogSpatialDebugger);
+
+namespace
+{
+	const FString DEFAULT_WORKER_REGION_MATERIAL = TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
+}
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -40,6 +50,13 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	{
 		NetDriver->SetSpatialDebugger(this);
 	}
+}
+
+void ASpatialDebugger::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ASpatialDebugger, WorkerRegions, COND_SimulatedOnly);
 }
 
 void ASpatialDebugger::Tick(float DeltaSeconds)
@@ -116,6 +133,57 @@ void ASpatialDebugger::BeginPlay()
 		if (bAutoStart)
 		{
 			SpatialToggleDebugger();
+		}
+	}
+	else
+	{
+		if (NetDriver->LoadBalanceStrategy != nullptr)
+		{
+			if (UGridBasedLBStrategy* GridBasedLBStrategy = dynamic_cast<UGridBasedLBStrategy*>(NetDriver->LoadBalanceStrategy))
+			{
+				const TArray<TPair<const VirtualWorkerId*, const FBox2D*>> VirtualWorkerToCell = GridBasedLBStrategy->GetVirtualWorkerToCell();
+				WorkerRegions.Empty();
+				for (int i = 0; i < VirtualWorkerToCell.Num(); i++)
+				{
+					const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(*VirtualWorkerToCell[i].Get<0>());
+					FWorkerRegionInfo WorkerRegionInfo;
+					WorkerRegionInfo.Color = SpatialGDK::GetColorForWorkerName(*WorkerName);
+					WorkerRegionInfo.Extents = *VirtualWorkerToCell[i].Get<1>();
+					WorkerRegions.Add(WorkerRegionInfo);
+				}
+			}
+		}
+	}
+}
+
+void ASpatialDebugger::OnRep_SetWorkerRegions()
+{
+	if (NetDriver != nullptr && !NetDriver->IsServer())
+	{
+		UMaterial* WorkerRegionMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_REGION_MATERIAL);
+		if (WorkerRegionMaterial == nullptr)
+		{
+			UE_LOG(LogSpatialDebugger, Error, TEXT("Worker regions were not rendered. Could not find default material: %s"),
+				*DEFAULT_WORKER_REGION_MATERIAL);
+			return;
+		}
+
+		// Naively delete all old worker regions
+		TArray<AActor*> OldWorkerRegions;
+		UGameplayStatics::GetAllActorsOfClass(this, AWorkerRegion::StaticClass(), OldWorkerRegions);
+		for (int i = 0; i < OldWorkerRegions.Num(); i++)
+		{
+			OldWorkerRegions[i]->Destroy();
+		}
+
+		// Create new actors for all new worker regions
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.bNoFail = true;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		for (int i = 0; i < WorkerRegions.Num(); i++)
+		{
+			AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
+			WorkerRegion->Init(WorkerRegionMaterial, WorkerRegions[i].Color, WorkerRegions[i].Extents);
 		}
 	}
 }

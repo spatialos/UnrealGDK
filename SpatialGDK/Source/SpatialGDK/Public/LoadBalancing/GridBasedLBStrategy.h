@@ -5,6 +5,8 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 
 #include "CoreMinimal.h"
+#include "Math/Box2D.h"
+#include "Math/Vector2D.h"
 
 #include "GridBasedLBStrategy.generated.h"
 
@@ -39,6 +41,8 @@ public:
 	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 /* End UAbstractLBStrategy Interface */
+
+	const TArray<TPair<const VirtualWorkerId*, const FBox2D*>> GetVirtualWorkerToCell() const;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")
