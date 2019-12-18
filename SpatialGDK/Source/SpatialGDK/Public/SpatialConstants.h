@@ -214,8 +214,11 @@ inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 	return FIRST_COMMAND_RETRY_WAIT_SECONDS * WaitTimeExponentialFactor;
 }
 
-const FString LOCAL_HOST = TEXT("127.0.0.1");
-const uint16 DEFAULT_PORT = 7777;
+const FString LOCAL_HOST   = TEXT("127.0.0.1");
+const uint16  DEFAULT_PORT = 7777;
+
+const FString LOCATOR_HOST = TEXT("locator.improbable.io");
+const uint16  LOCATOR_PORT = 443;
 
 const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
@@ -224,12 +227,10 @@ const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
 
 const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 
-const FString LOCATOR_HOST = TEXT("locator.improbable.io");
 // URL that can be used to reconnect using the command line arguments.
 const FString RECONNECT_USING_COMMANDLINE_ARGUMENTS = TEXT("0.0.0.0");
 const FString URL_LOGIN_OPTION = TEXT("login=");
 const FString URL_PLAYER_IDENTITY_OPTION = TEXT("playeridentity=");
-const uint16 LOCATOR_PORT  = 443;
 
 const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
