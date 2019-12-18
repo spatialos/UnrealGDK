@@ -13,7 +13,7 @@ script_runner: &script_runner
   - "machine_type=quarter"
   - "permission_set=builder"
   - "platform=linux"
-  - "queue=${CI_LINUX_BUILDER_QUEUE:-v3-1572524284-e64831bf1e88b227-------z}"
+  - "queue=${CI_LINUX_BUILDER_QUEUE:-v3-1571392077-9a4506d980673dea-------z}"
   - "scaler_version=2"
   - "working_hours_time_zone=london"
 
@@ -26,7 +26,7 @@ common: &common
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-2019-11-11-bk3891-f17bd2c787d2fe1c}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-2019-12-09-bk5051-27568394a73b2cd3}"
   retry:
     automatic:
       - <<: *agent_transients
@@ -56,7 +56,6 @@ steps:
 
   - label: "generate-pipeline-steps"
     commands:
-      - "chmod -R +rwx ci" # give the Linux user access to everything in the ci directory
       - "ci/generate-and-upload-build-steps.sh"
     env:
         ENGINE_VERSION: "${ENGINE_VERSION}"

@@ -20,9 +20,8 @@ void SpatialVirtualWorkerTranslator::Init(UAbstractLBStrategy* InLoadBalanceStra
 	USpatialStaticComponentView* InStaticComponentView,
 	USpatialReceiver* InReceiver,
 	USpatialWorkerConnection* InConnection,
-	FString InWorkerId)
+	PhysicalWorkerName InWorkerId)
 {
-	check(InLoadBalanceStrategy != nullptr);
 	LoadBalanceStrategy = InLoadBalanceStrategy;
 
 	check(InStaticComponentView != nullptr);
@@ -54,9 +53,9 @@ void SpatialVirtualWorkerTranslator::AddVirtualWorkerIds(const TSet<VirtualWorke
 	}
 }
 
-const FString* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVirtualWorker(VirtualWorkerId id)
+const PhysicalWorkerName* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVirtualWorker(VirtualWorkerId Id) const
 {
-	return VirtualToPhysicalWorkerMapping.Find(id);
+	return VirtualToPhysicalWorkerMapping.Find(Id);
 }
 
 void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject)
@@ -114,7 +113,7 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 		// Get each entry of the list and then unpack the virtual and physical IDs from the entry.
 		Schema_Object* MappingObject = Schema_IndexObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);
 		VirtualWorkerId VirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
-		FString PhysicalWorkerName = SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME);
+		PhysicalWorkerName PhysicalWorkerName = SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME);
 
 		// Insert each into the provided map.
 		UpdateMapping(VirtualWorkerId, PhysicalWorkerName);

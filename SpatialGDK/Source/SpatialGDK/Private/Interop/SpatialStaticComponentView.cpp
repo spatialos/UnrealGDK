@@ -3,20 +3,20 @@
 #include "Interop/SpatialStaticComponentView.h"
 
 #include "Schema/AuthorityIntent.h"
-#include "Schema/ClientRPCEndpoint.h"
+#include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Component.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
-#include "Schema/ServerRPCEndpoint.h"
+#include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
 
-Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
 {
-	if (TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
+	if (const TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
 	{
-		if (Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
+		if (const Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
 		{
 			return *Authority;
 		}
@@ -26,12 +26,12 @@ Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId Entit
 }
 
 // TODO UNR-640 - Need to fix for authority loss imminent
-bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
 {
 	return GetAuthority(EntityId, ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 }
 
-bool USpatialStaticComponentView::HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+bool USpatialStaticComponentView::HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
 {
 	if (auto* EntityComponentStorage = EntityComponentMap.Find(EntityId))
 	{
@@ -76,11 +76,11 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::RPCsOnEntityCreation>>(Op.data);
 		break;
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ClientRPCEndpoint>>(Op.data);
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ClientRPCEndpointLegacy>>(Op.data);
 		break;
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ServerRPCEndpoint>>(Op.data);
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ServerRPCEndpointLegacy>>(Op.data);
 		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::AuthorityIntent>>(Op.data);
@@ -118,11 +118,11 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 	case SpatialConstants::POSITION_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::Position>(Op.entity_id);
 		break;
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::ClientRPCEndpoint>(Op.entity_id);
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
+		Component = GetComponentData<SpatialGDK::ClientRPCEndpointLegacy>(Op.entity_id);
 		break;
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::ServerRPCEndpoint>(Op.entity_id);
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
+		Component = GetComponentData<SpatialGDK::ServerRPCEndpointLegacy>(Op.entity_id);
 		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::AuthorityIntent>(Op.entity_id);
