@@ -30,6 +30,8 @@ For more information, check the [Keep your GDK up to date](https://docs.improbab
 - Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK-preview).
 - In Example Project, the default session duration has increased from 5 minutes to 120 minutes so you don't have to re-deploy while playtesting.
 - In Example Project, the default lobby timer has decreased from 15 seconds to 3 seconds so you don't have to wait for your playtest to start.
+- Added in-editor support for exposing a local runtime at a particular IP address. This offers the same functionality as the `--runtime_ip` option in the SpatialOS CLI.
+- Spatial networking is now always enabled in built assemblies.
 
 ### Bug fixes:
 - Fixed a bug that could cause name collisions in schema generated for sublevels.
@@ -38,6 +40,7 @@ For more information, check the [Keep your GDK up to date](https://docs.improbab
 - Fixed a bug that caused entity pool reservations to cease after a request times out.
 - Running `BuildWorker.bat` for `SimulatedPlayer` no longer fails if the project path has a space in it.
 - Fixed a crash when starting PIE with out-of-date schema.
+- Fixed an issue where launching a cloud deployment with an invalid assembly name or deployment name wouldn't show a helpful error message.
 
 ### Internal:
 Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
@@ -80,7 +83,6 @@ Features listed in the internal section are not ready to use but, in the spirit 
 
 ### Features:
 - The GDK now uses SpatialOS `14.1.0`.
-- Added in-editor support for exposing a local runtime at a particular IP address. This offers the same functionality as the `--runtime_ip` option in the SpatialOS CLI.
 - Visual Studio 2019 is now supported.
 - You can now delete your schema database using options in the GDK toolbar and the commandlet.
 - The GDK now checks that schema and a snapshot are present before attempting to start a local deployment. If either are missing then an error message is displayed.
@@ -98,7 +100,6 @@ Features listed in the internal section are not ready to use but, in the spirit 
 - Added the `OverrideSpatialOffloading` command line flag. This allows you to toggle offloading at launch time.
 
 ### Bug fixes:
-- Spatial networking is now always enabled in built assemblies.
 - Fixed a bug where the spatial daemon started even with spatial networking disabled.
 - Fixed an issue that could cause multiple Channels to be created for an Actor.
 - PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
@@ -113,7 +114,6 @@ Features listed in the internal section are not ready to use but, in the spirit 
 - Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
 - When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
 - Fixed a crash upon checking out an actor with a deleted static subobject.
-- Fixed an issue where launching a cloud deployment with an invalid assembly name or deployment name wouldn't show a helpful error message 
 
 ## [`0.6.2`] - 2019-10-10
 
