@@ -5,14 +5,7 @@
 #include "Interop/Connection/EditorWorkerController.h"
 #endif
 
-#include "EngineClasses/SpatialGameInstance.h"
-#include "Engine/World.h"
-#include "Interop/GlobalStateManager.h"
-#include "Interop/SpatialStaticComponentView.h"
-#include "UnrealEngine.h"
 #include "Async/Async.h"
-#include "Engine/Engine.h"
-#include "Engine/World.h"
 #include "Misc/Paths.h"
 
 #include "SpatialGDKSettings.h"
@@ -82,11 +75,6 @@ struct ConfigureConnection
 	Worker_Alpha_KcpParameters UpstreamParams{};
 	Worker_Alpha_KcpParameters DownstreamParams{};
 };
-
-void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
-{
-	GameInstance = InGameInstance;
-}
 
 void USpatialWorkerConnection::FinishDestroy()
 {
@@ -455,24 +443,16 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 	}
 
 	OnConnectedCallback.ExecuteIfBound();
-	GameInstance->HandleOnConnected();
-}
-
-void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
-{
-	bIsConnected = false;
-	GameInstance->HandleOnConnectionFailed(Reason);
 }
 
 void USpatialWorkerConnection::OnConnectionFailure()
 {
 	bIsConnected = false;
 
-	if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+	if (WorkerConnection != nullptr)
 	{
 		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
 		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
-
 		OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 	}
 }

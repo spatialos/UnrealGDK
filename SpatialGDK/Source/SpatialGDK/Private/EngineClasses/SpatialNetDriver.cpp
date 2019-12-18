@@ -361,16 +361,22 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 	{
 		Sender->CreateServerWorkerEntity();
 	}
+
+	USpatialGameInstance* GameInstance = GetGameInstance();
+	check(GameInstance != nullptr);
+	GameInstance->HandleOnConnected();
 }
 
 void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage)
 {
-	if (const USpatialGameInstance* GameInstance = GetGameInstance())
+	if (USpatialGameInstance* GameInstance = GetGameInstance())
 	{
 		if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 		{
 			GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
 		}
+
+		GameInstance->HandleOnConnectionFailed(ErrorMessage);
 	}
 }
 
@@ -410,17 +416,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	// Ideally the GlobalStateManager and StaticComponentView would be created as part of USpatialWorkerConnection::Init
 	// however, this causes a crash upon the second instance of running PIE due to a destroyed USpatialNetDriver still being reference.
 	// Why the destroyed USpatialNetDriver is referenced is unknown.
-	if (Connection->GlobalStateManager == nullptr)
-	{
-		Connection->GlobalStateManager = NewObject<UGlobalStateManager>();
-	}
-	GlobalStateManager = Connection->GlobalStateManager;
+	USpatialGameInstance* GameInstance = GetGameInstance();
+	check(GameInstance != nullptr);
 
-	if (Connection->StaticComponentView == nullptr)
-	{
-		Connection->StaticComponentView = NewObject<USpatialStaticComponentView>();
-	}
-	StaticComponentView = Connection->StaticComponentView;
+	GlobalStateManager = GameInstance->GetGlobalStateManager();
+	check(GlobalStateManager != nullptr);
+
+	StaticComponentView = GameInstance->GetStaticComponentView();
+	check(StaticComponentView != nullptr);
 
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	SnapshotManager = MakeUnique<SpatialSnapshotManager>();
