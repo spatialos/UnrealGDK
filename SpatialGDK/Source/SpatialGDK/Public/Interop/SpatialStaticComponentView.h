@@ -26,7 +26,7 @@ public:
 	template <typename T>
 	T* GetComponentData(Worker_EntityId EntityId) const
 	{
-		if (auto* ComponentStorageMap = EntityComponentMap.Find(EntityId))
+		if (const auto* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 		{
 			if (const TUniquePtr<SpatialGDK::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
 			{
@@ -36,6 +36,7 @@ public:
 
 		return nullptr;
 	}
+
 	bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
 	void OnAddComponent(const Worker_AddComponentOp& Op);
@@ -44,7 +45,7 @@ public:
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
-	void GetEntityIds(TArray<Worker_EntityId_Key>& EntityIds) const { EntityComponentMap.GetKeys(EntityIds); }
+	void GetEntityIds(TArray<Worker_EntityId_Key>& OutEntityIds) const { EntityComponentMap.GetKeys(OutEntityIds); }
 
 private:
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;

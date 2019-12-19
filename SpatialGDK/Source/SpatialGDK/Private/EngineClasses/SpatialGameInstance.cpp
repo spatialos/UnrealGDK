@@ -13,6 +13,8 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/GlobalStateManager.h"
+#include "Interop/SpatialStaticComponentView.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
@@ -72,7 +74,6 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 {
 	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
-	SpatialConnection->Init(this);
 
 #if TRACE_LIB_ACTIVE
 	SpatialConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
@@ -168,6 +169,8 @@ void USpatialGameInstance::Init()
 	Super::Init();
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
+	GlobalStateManager = NewObject<UGlobalStateManager>();
+	StaticComponentView = NewObject<USpatialStaticComponentView>();
 }
 
 void USpatialGameInstance::HandleOnConnected()

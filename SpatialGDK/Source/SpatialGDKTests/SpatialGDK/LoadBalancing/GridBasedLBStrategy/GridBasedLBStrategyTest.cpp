@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "CoreMinimal.h"
+#include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "GameFramework/DefaultPawn.h"
@@ -17,10 +18,10 @@
 // Test Globals
 namespace
 {
-	UWorld* TestWorld;
-	TMap<FName, AActor*> TestActors;
-	UGridBasedLBStrategy* Strat;
-}
+
+UWorld* TestWorld;
+TMap<FName, AActor*> TestActors;
+UGridBasedLBStrategy* Strat;
 
 // Copied from AutomationCommon::GetAnyGameWorld()
 UWorld* GetAnyGameWorld()
@@ -201,6 +202,8 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is
 
 	return true;
 }
+
+}  // anonymous namespace
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false)
 {

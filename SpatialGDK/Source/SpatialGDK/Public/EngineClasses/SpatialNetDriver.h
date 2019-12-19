@@ -11,6 +11,7 @@
 #include "Interop/SpatialSnapshotManager.h"
 #include "Utils/SpatialActorGroupManager.h"
 
+#include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
@@ -37,6 +38,7 @@ class USpatialReceiver;
 class USpatialSender;
 class USpatialStaticComponentView;
 class USpatialWorkerConnection;
+class USpatialWorkerFlags;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -143,11 +145,14 @@ public:
 	ASpatialDebugger* SpatialDebugger;
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
+	UPROPERTY()
+	UAbstractLockingPolicy* LockingPolicy;
+	UPROPERTY()
+	USpatialWorkerFlags* SpatialWorkerFlags;
 
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
-
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
