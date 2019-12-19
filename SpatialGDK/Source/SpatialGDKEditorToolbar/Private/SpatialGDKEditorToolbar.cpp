@@ -49,6 +49,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 : bStopSpatialOnExit(false)
+, bSchemaBuildError(false)
 {
 }
 
@@ -80,7 +81,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 	LocalDeploymentManager->SetAutoDeploy(SpatialGDKEditorSettings->bAutoStartLocalDeployment);
-	LocalDeploymentManager->SetInChina(GetDefault<USpatialGDKEditorSettings>()->IsRunningInChina());
+	LocalDeploymentManager->SetInChina(SpatialGDKEditorSettings->IsRunningInChina());
 
 	// Bind the play button delegate to starting a local spatial deployment.
 	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && SpatialGDKEditorSettings->bAutoStartLocalDeployment)
@@ -583,6 +584,17 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		return;
 	}
 
+	if (bSchemaBuildError)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Schema did not previously compile correctly, you may be running a stale build."));
+
+		EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString("Last schema generation failed or failed to run the schema compiler. Schema will most likely be out of date, which may lead to undefined behavior. Are you sure you want to continue?"));
+		if (Result == EAppReturnType::No)
+		{
+			return;
+		}
+	}
+
 	// Get the latest launch config.
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -813,6 +825,8 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
 	LocalDeploymentManager->SetRedeployRequired();
 
+	bSchemaBuildError = false;
+
 	if (SpatialGDKEditorInstance->FullScanRequired())
 	{
 		OnShowTaskStartNotification("Initial Schema Generation");
@@ -824,6 +838,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification("Initial Schema Generation failed");
+			bSchemaBuildError = true;
 		}
 	}
 	else if (bFullScan)
@@ -837,6 +852,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification("Full Schema Generation failed");
+			bSchemaBuildError = true;
 		}
 	}
 	else
@@ -850,6 +866,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification("Incremental Schema Generation failed");
+			bSchemaBuildError = true;
 		}
 	}
 }

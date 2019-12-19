@@ -3,6 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "Containers/Queue.h"
+#include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
@@ -15,8 +18,6 @@ class USpatialStaticComponentView;
 class USpatialReceiver;
 class USpatialWorkerConnection;
 
-typedef FString PhysicalWorkerName;
-
 class SPATIALGDK_API SpatialVirtualWorkerTranslator
 {
 public:
@@ -26,7 +27,7 @@ public:
 		USpatialStaticComponentView* InStaticComponentView,
 		USpatialReceiver* InReceiver,
 		USpatialWorkerConnection* InConnection,
-		FString InWorkerId);
+		PhysicalWorkerName InWorkerId);
 
 	// Returns true if the Translator has received the information needed to map virtual workers to physical workers.
 	// Currently that is only the number of virtual workers desired.
@@ -40,7 +41,7 @@ public:
 	// no worker assigned.
 	// TODO(harkness): Do we want to copy this data? Otherwise it's only guaranteed to be valid until
 	// the next mapping update.
-	const FString* GetPhysicalWorkerForVirtualWorker(VirtualWorkerId id);
+	const PhysicalWorkerName* GetPhysicalWorkerForVirtualWorker(VirtualWorkerId Id) const;
 
 	// On receiving a version of the translation state, apply that to the internal mapping.
 	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
@@ -57,7 +58,7 @@ private:
 	TWeakObjectPtr<USpatialReceiver> Receiver;
 	TWeakObjectPtr<USpatialWorkerConnection> Connection;
 
-	TMap<VirtualWorkerId, PhysicalWorkerName>  VirtualToPhysicalWorkerMapping;
+	TMap<VirtualWorkerId, PhysicalWorkerName> VirtualToPhysicalWorkerMapping;
 	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
@@ -65,7 +66,7 @@ private:
 	bool bIsReady;
 
 	// The WorkerId of this worker, for logging purposes.
-	FString WorkerId;
+	PhysicalWorkerName WorkerId;
 	VirtualWorkerId LocalVirtualWorkerId;
 
 	// Serialization and deserialization of the mapping.
@@ -79,7 +80,7 @@ private:
 	void ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SendVirtualWorkerMappingUpdate();
 
-	void AssignWorker(const FString& WorkerId);
+	void AssignWorker(const PhysicalWorkerName& WorkerId);
 
 	void UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName Name);
 };

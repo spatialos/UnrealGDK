@@ -289,7 +289,7 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 
 	if (!bSpatialServiceInProjectDirectory)
 	{
-		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("StopSpatialServiceFromDifferentProject", "Another SpatialOS service is already running in another project. Would you like to stop it?")) == EAppReturnType::Yes)
+		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("StopSpatialServiceFromDifferentProject", "An instance of the SpatialOS Runtime is running with another project. Would you like to stop it and start the Runtime for this project?")) == EAppReturnType::Yes)
 		{
 			bSuccess = TryStopSpatialService();
 		}

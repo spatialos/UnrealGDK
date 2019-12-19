@@ -19,9 +19,8 @@ BINARIES_DIR="$(pwd)/SpatialGDK/Binaries/ThirdParty/Improbable"
 SCHEMA_COPY_DIR="$(pwd)/../../../spatial/schema/unreal/gdk"
 SCHEMA_STD_COPY_DIR="$(pwd)/../../../spatial/build/dependencies/schema/standard_library"
 SPATIAL_DIR="$(pwd)/../../../spatial"
-DOMAIN_ENVIRONMENT_VAR=
-if [[ "$*" == "--china" ]]; then
-    DOMAIN_ENVIRONMENT_VAR=--domain spatialoschina.com --environment cn-production
+if [[ "${1:-}" == "--china" ]]; then
+    DOMAIN_ENVIRONMENT_VAR="--domain spatialoschina.com --environment cn-production"
 fi
 
 echo "Setup the git hooks"
@@ -63,13 +62,13 @@ if [[ -d "${SPATIAL_DIR}" ]]; then
 fi
 
 echo "Retrieve dependencies"
-spatial package retrieve tools       schema_compiler-x86_64-macos        "${PINNED_CORE_SDK_VERSION}"   $DOMAIN_ENVIRONMENT_VAR   "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip
-spatial package retrieve schema      standard_library                    "${PINNED_CORE_SDK_VERSION}"   $DOMAIN_ENVIRONMENT_VAR   "${CORE_SDK_DIR}"/schema/standard_library.zip
-spatial package retrieve worker_sdk  c_headers                           "${PINNED_CORE_SDK_VERSION}"   $DOMAIN_ENVIRONMENT_VAR   "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip
-spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos        "${PINNED_CORE_SDK_VERSION}"   $DOMAIN_ENVIRONMENT_VAR   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip
-spatial package retrieve worker_sdk  c-static-fullylinked-arm-clang-ios  "${PINNED_CORE_SDK_VERSION}"   $DOMAIN_ENVIRONMENT_VAR   "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
-spatial package retrieve worker_sdk  csharp                              "${PINNED_CORE_SDK_VERSION}"   $DOMAIN_ENVIRONMENT_VAR   "${CORE_SDK_DIR}"/worker_sdk/csharp.zip
-spatial package retrieve spot        spot-macos                          "${PINNED_SPOT_VERSION}"       $DOMAIN_ENVIRONMENT_VAR   "${BINARIES_DIR}"/Programs/spot
+spatial package retrieve tools       schema_compiler-x86_64-macos        "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip
+spatial package retrieve schema      standard_library                    "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/schema/standard_library.zip
+spatial package retrieve worker_sdk  c_headers                           "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip
+spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos        "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip
+spatial package retrieve worker_sdk  c-static-fullylinked-arm-clang-ios  "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
+spatial package retrieve worker_sdk  csharp                              "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/csharp.zip
+spatial package retrieve spot        spot-macos                          "${PINNED_SPOT_VERSION}"       ${DOMAIN_ENVIRONMENT_VAR:-}   "${BINARIES_DIR}"/Programs/spot
 chmod +x "${BINARIES_DIR}"/Programs/spot
 
 echo "Unpack dependencies"

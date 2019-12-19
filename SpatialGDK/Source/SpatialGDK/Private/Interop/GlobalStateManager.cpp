@@ -563,7 +563,7 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
-	check(IsReadyToCallBeginPlay());
+	check(GetCanBeginPlay());
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
@@ -601,12 +601,30 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 		}
 		else
 		{
+			if (NetDriver->VirtualWorkerTranslator != nullptr)
+			{
+				ApplyVirtualWorkerMappingFromQueryResponse(Op);
+			}
 			ApplyDeploymentMapDataFromQueryResponse(Op);
 			Callback.ExecuteIfBound(Op);
 		}
 	});
 
 	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
+}
+
+void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
+{
+	check(NetDriver->VirtualWorkerTranslator != nullptr);
+	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
+	{
+		Worker_ComponentData Data = Op.results[0].components[i];
+		if (Data.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+		}
+	}
 }
 
 void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
