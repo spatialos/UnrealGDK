@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2020-xx-xx
 - Minor spelling fix to connection log message
-- The GDK now uses SpatialOS `14.2.1`.
+- The GDK now uses SpatialOS `14.3.0`.
 - Added %s token to debug strings in GlobalStateManager to display actor class name in log
 - The server no longer crashes, when received RPCs are processed recursively.
 - DeploymentLauncher can parse a .pb.json launch configuration.
