@@ -167,7 +167,7 @@ void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, 
 	RPCRingBufferDescriptor Descriptor = GetRingBufferDescriptor(Type);
 
 	Schema_Object* RPCObject = Schema_AddObject(SchemaObject, Descriptor.GetRingBufferElementFieldId(RPCId));
-	RPCPayload::WriteToSchemaObject(RPCObject, Payload.Offset, Payload.Index, Payload.PayloadData.GetData(), Payload.PayloadData.Num());
+	Payload.WriteToSchemaObject(RPCObject);
 
 	Schema_ClearField(SchemaObject, Descriptor.LastSentRPCFieldId);
 	Schema_AddUint64(SchemaObject, Descriptor.LastSentRPCFieldId, RPCId);
