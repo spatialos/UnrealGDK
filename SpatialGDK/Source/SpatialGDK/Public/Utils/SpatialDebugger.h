@@ -13,7 +13,6 @@
 #include "Materials/Material.h"
 #include "Math/Box2D.h"
 #include "Math/Color.h"
-#include "Math/Color.h"
 #include "Templates/Tuple.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
