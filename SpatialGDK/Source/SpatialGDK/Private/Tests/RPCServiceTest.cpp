@@ -15,192 +15,187 @@
 // Test Globals
 namespace
 {
-	enum ERPCEndpointType : uint8_t
+
+enum ERPCEndpointType : uint8_t
+{
+	SERVER_AUTH,
+	CLIENT_AUTH,
+	SERVER_AND_CLIENT_AUTH,
+	NO_AUTH
+};
+
+struct EntityPayload
+{
+	EntityPayload(Worker_EntityId InEntityID, const SpatialGDK::RPCPayload& InPayload)
+		: EntityId(InEntityID)
+		, Payload(InPayload)
+	{}
+
+	Worker_EntityId EntityId;
+	SpatialGDK::RPCPayload Payload;
+};
+
+constexpr Worker_EntityId RPCTestEntityId_1 = 201;
+constexpr Worker_EntityId RPCTestEntityId_2 = 42;
+
+const SpatialGDK::RPCPayload SimplePayload = SpatialGDK::RPCPayload(1, 0, TArray<uint8>({ 1 }, 1));
+
+ExtractRPCDelegate DefaultRPCDelegate = ExtractRPCDelegate::CreateLambda([](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) {
+	return true;
+});
+
+void AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView,
+	const SpatialGDK::EntityComponentId& EntityComponentId,
+	Schema_ComponentData* ComponentData,
+	Worker_Authority Authority)
+{
+	Worker_AddComponentOp AddComponentOp;
+	AddComponentOp.entity_id = EntityComponentId.EntityId;
+	AddComponentOp.data.component_id = EntityComponentId.ComponentId;
+	AddComponentOp.data.schema_type = ComponentData;
+	StaticComponentView.OnAddComponent(AddComponentOp);
+
+	Worker_AuthorityChangeOp AuthorityChangeOp;
+	AuthorityChangeOp.entity_id = EntityComponentId.EntityId;
+	AuthorityChangeOp.component_id = EntityComponentId.ComponentId;
+	AuthorityChangeOp.authority = Authority;
+	StaticComponentView.OnAuthorityChange(AuthorityChangeOp);
+}
+
+void AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView, const SpatialGDK::EntityComponentId& EntityComponentId, Worker_Authority Authority)
+{
+	AddEntityComponentToStaticComponentView(StaticComponentView, EntityComponentId, Schema_CreateComponentData(), Authority);
+}
+
+Worker_Authority GetClientAuthorityFromRPCEndpointType(ERPCEndpointType RPCEndpointType)
+{
+	switch (RPCEndpointType)
 	{
-		INVALID,
-		SERVER_AUTH,
-		CLIENT_AUTH,
-		SERVER_AND_CLIENT_AUTH,
-		NO_AUTH
-	};
+	case CLIENT_AUTH:
+	case SERVER_AND_CLIENT_AUTH:
+		return WORKER_AUTHORITY_AUTHORITATIVE;
+		break;
+	case SERVER_AUTH:
+	default:
+		return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
+		break;
+	}
+}
 
-	struct EntityPayload
+Worker_Authority GetServerAuthorityFromRPCEndpointType(ERPCEndpointType RPCEndpointType)
+{
+	switch (RPCEndpointType)
 	{
-		EntityPayload(Worker_EntityId InEntityID, const SpatialGDK::RPCPayload& InPayload)
-			: EntityId(InEntityID)
-			, Payload(InPayload)
-		{}
+	case SERVER_AUTH:
+	case SERVER_AND_CLIENT_AUTH:
+		return WORKER_AUTHORITY_AUTHORITATIVE;
+		break;
+	case CLIENT_AUTH:
+	default:
+		return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
+		break;
+	}
+}
 
-		Worker_EntityId EntityId;
-		SpatialGDK::RPCPayload Payload;
-	};
+Worker_Authority GetMulticastAuthorityFromRPCEndpointType(ERPCEndpointType RPCEndpointType)
+{
+	return GetServerAuthorityFromRPCEndpointType(RPCEndpointType);
+}
 
-	Worker_EntityId RPCTestEntityId_1 = 201;
-	Worker_EntityId RPCTestEntityId_2 = 24;
+void AddEntityToStaticComponentView(USpatialStaticComponentView& StaticComponentView, Worker_EntityId EntityId, ERPCEndpointType RPCEndpointType)
+{
+	AddEntityComponentToStaticComponentView(StaticComponentView,
+		SpatialGDK::EntityComponentId(EntityId, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID),
+		GetClientAuthorityFromRPCEndpointType(RPCEndpointType));
 
-	SpatialGDK::RPCPayload SimplePayload = SpatialGDK::RPCPayload(1, 0, TArray<uint8>({ 1 }, 1));
+	AddEntityComponentToStaticComponentView(StaticComponentView,
+		SpatialGDK::EntityComponentId(EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID),
+		GetServerAuthorityFromRPCEndpointType(RPCEndpointType));
 
-	ExtractRPCDelegate DefaultRPCDelegate = ExtractRPCDelegate::CreateLambda([](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) {
-		return true;
+	AddEntityComponentToStaticComponentView(StaticComponentView,
+		SpatialGDK::EntityComponentId(EntityId, SpatialConstants::MULTICAST_RPCS_COMPONENT_ID),
+		GetMulticastAuthorityFromRPCEndpointType(RPCEndpointType));
+};
+
+USpatialStaticComponentView* CreateStaticComponentView(const TArray<Worker_EntityId>& EntityIdArray, ERPCEndpointType RPCEndpointType)
+{
+	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
+	for (Worker_EntityId EntityId : EntityIdArray)
+	{
+		AddEntityToStaticComponentView(*StaticComponentView, EntityId, RPCEndpointType);
+	}
+	return StaticComponentView;
+}
+
+SpatialGDK::SpatialRPCService CreateRPCService(const TArray<Worker_EntityId>& EntityIdArray,
+	ERPCEndpointType RPCEndpointType,
+	ExtractRPCDelegate RPCDelegate = DefaultRPCDelegate,
+	USpatialStaticComponentView* StaticComponentView = nullptr)
+{
+	if (StaticComponentView == nullptr)
+	{
+		StaticComponentView = CreateStaticComponentView(EntityIdArray, RPCEndpointType);
+	}
+
+	SpatialGDK::SpatialRPCService RPCService = SpatialGDK::SpatialRPCService(RPCDelegate, StaticComponentView);
+
+	for (Worker_EntityId EntityId : EntityIdArray)
+	{
+		if (GetClientAuthorityFromRPCEndpointType(RPCEndpointType) == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			RPCService.OnEndpointAuthorityGained(EntityId, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
+		}
+
+		if (GetServerAuthorityFromRPCEndpointType(RPCEndpointType) == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			RPCService.OnEndpointAuthorityGained(EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
+		}
+	}
+
+	return RPCService;
+}
+
+bool CompareRPCPayload(const SpatialGDK::RPCPayload& Payload1, const SpatialGDK::RPCPayload& Payload2)
+{
+	return Payload1.Index == Payload2.Index &&
+		Payload1.Offset == Payload2.Offset &&
+		Payload1.PayloadData == Payload2.PayloadData;
+}
+
+bool CompareSchemaObjectToSendAndPayload(Schema_Object* SchemaObject, const SpatialGDK::RPCPayload& Payload, ERPCType RPCType, uint64 RPCId)
+{
+	SpatialGDK::RPCRingBufferDescriptor Descriptor = SpatialGDK::RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
+	Schema_Object* RPCObject = Schema_GetObject(SchemaObject, Descriptor.GetRingBufferElementFieldId(RPCId));
+	return CompareRPCPayload(SpatialGDK::RPCPayload(RPCObject), Payload);
+}
+
+bool CompareUpdateToSendAndEntityPayload(SpatialGDK::SpatialRPCService::UpdateToSend& Update, const EntityPayload& EntityPayloadItem, ERPCType RPCType, uint64 RPCId)
+{
+	return CompareSchemaObjectToSendAndPayload(Schema_GetComponentUpdateFields(Update.Update.schema_type), EntityPayloadItem.Payload, RPCType, RPCId) &&
+		Update.EntityId == EntityPayloadItem.EntityId;
+}
+
+bool CompareComponentDataAndEntityPayload(const Worker_ComponentData& ComponentData, const EntityPayload& EntityPayloadItem, ERPCType RPCType, uint64 RPCId)
+{
+	return CompareSchemaObjectToSendAndPayload(Schema_GetComponentDataFields(ComponentData.schema_type), EntityPayloadItem.Payload, RPCType, RPCId);
+}
+
+Worker_ComponentData GetComponentDataOnEntityCreationFromRPCService(SpatialGDK::SpatialRPCService& RPCService, Worker_EntityId EntityID, ERPCType RPCType)
+{
+	Worker_ComponentId ExpectedUpdateComponentId = SpatialGDK::RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
+	TArray<Worker_ComponentData> ComponentDataArray = RPCService.GetRPCComponentsOnEntityCreation(EntityID);
+
+	const Worker_ComponentData* ComponentData = ComponentDataArray.FindByPredicate([ExpectedUpdateComponentId](const Worker_ComponentData& ComponentData) {
+		return ComponentData.component_id == ExpectedUpdateComponentId;
 	});
 
-	void AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView,
-		const SpatialGDK::EntityComponentId& EntityComponentId,
-		Schema_ComponentData* ComponentData,
-		Worker_Authority Authority)
+	if (ComponentData == nullptr)
 	{
-		Worker_AddComponentOp AddComponentOp;
-		AddComponentOp.entity_id = EntityComponentId.EntityId;
-		AddComponentOp.data.component_id = EntityComponentId.ComponentId;
-		AddComponentOp.data.schema_type = ComponentData;
-		StaticComponentView.OnAddComponent(AddComponentOp);
-
-		Worker_AuthorityChangeOp AuthorityChangeOp;
-		AuthorityChangeOp.entity_id = EntityComponentId.EntityId;
-		AuthorityChangeOp.component_id = EntityComponentId.ComponentId;
-		AuthorityChangeOp.authority = Authority;
-		StaticComponentView.OnAuthorityChange(AuthorityChangeOp);
+		return {};
 	}
+	return *ComponentData;
+}
 
-	void AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView, const SpatialGDK::EntityComponentId& EntityComponentId, Worker_Authority Authority)
-	{
-		AddEntityComponentToStaticComponentView(StaticComponentView, EntityComponentId, Schema_CreateComponentData(), Authority);
-	}
-
-	Worker_Authority GetClientAuthorityFromRPCEndpointType(ERPCEndpointType RPCEndpointType)
-	{
-		switch (RPCEndpointType)
-		{
-		case CLIENT_AUTH:
-		case SERVER_AND_CLIENT_AUTH:
-			return WORKER_AUTHORITY_AUTHORITATIVE;
-			break;
-		case SERVER_AUTH:
-		default:
-			return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
-			break;
-		}
-	}
-
-	Worker_Authority GetServerAuthorityFromRPCEndpointType(ERPCEndpointType RPCEndpointType)
-	{
-		switch (RPCEndpointType)
-		{
-		case SERVER_AUTH:
-		case SERVER_AND_CLIENT_AUTH:
-			return WORKER_AUTHORITY_AUTHORITATIVE;
-			break;
-		case CLIENT_AUTH:
-		default:
-			return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
-			break;
-		}
-	}
-
-	Worker_Authority GetMultiCastAuthorityFromRPCEndpointType(ERPCEndpointType RPCEndpointType)
-	{
-		return GetServerAuthorityFromRPCEndpointType(RPCEndpointType);
-	}
-
-	void AddEntityToStaticComponentView(USpatialStaticComponentView& StaticComponentView, Worker_EntityId EntityId, ERPCEndpointType RPCEndpointType)
-	{
-		Worker_Authority ClientAuth = GetClientAuthorityFromRPCEndpointType(RPCEndpointType);
-		Worker_Authority ServerAuth = GetServerAuthorityFromRPCEndpointType(RPCEndpointType);
-		Worker_Authority MultiCastAuth = GetMultiCastAuthorityFromRPCEndpointType(RPCEndpointType);
-
-		AddEntityComponentToStaticComponentView(StaticComponentView,
-			SpatialGDK::EntityComponentId(EntityId, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID),
-			ClientAuth);
-
-		AddEntityComponentToStaticComponentView(StaticComponentView,
-			SpatialGDK::EntityComponentId(EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID),
-			ServerAuth);
-
-		AddEntityComponentToStaticComponentView(StaticComponentView,
-			SpatialGDK::EntityComponentId(EntityId, SpatialConstants::MULTICAST_RPCS_COMPONENT_ID),
-			MultiCastAuth);
-	};
-
-	USpatialStaticComponentView* CreateStaticComponentView(const TArray<Worker_EntityId>& EntityIdArray, ERPCEndpointType RPCEndpointType)
-	{
-		USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-		for (Worker_EntityId EntityId : EntityIdArray)
-		{
-			AddEntityToStaticComponentView(*StaticComponentView, EntityId, RPCEndpointType);
-		}
-		return StaticComponentView;
-	}
-
-	SpatialGDK::SpatialRPCService CreateRPCService(const TArray<Worker_EntityId>& EntityIdArray,
-		ERPCEndpointType RPCEndpointType,
-		ExtractRPCDelegate RPCDelegate = DefaultRPCDelegate,
-		USpatialStaticComponentView* StaticComponentView = nullptr)
-	{
-		if (StaticComponentView == nullptr)
-		{
-			StaticComponentView = CreateStaticComponentView(EntityIdArray, RPCEndpointType);
-		}
-
-		SpatialGDK::SpatialRPCService RPCService = SpatialGDK::SpatialRPCService(RPCDelegate, StaticComponentView);
-
-		for (const Worker_EntityId& EntityId : EntityIdArray)
-		{
-			if (RPCEndpointType == CLIENT_AUTH ||
-				RPCEndpointType == SERVER_AND_CLIENT_AUTH)
-			{
-				RPCService.OnEndpointAuthorityGained(EntityId, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
-			}
-
-			if (RPCEndpointType == SERVER_AUTH ||
-				RPCEndpointType == SERVER_AND_CLIENT_AUTH)
-			{
-				RPCService.OnEndpointAuthorityGained(EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
-			}
-		}
-
-		return RPCService;
-	}
-
-	bool CompareRPCPayload(const SpatialGDK::RPCPayload& Payload1, const SpatialGDK::RPCPayload& Payload2)
-	{
-		return Payload1.Index == Payload2.Index &&
-			   Payload1.Offset == Payload2.Offset &&
-			   Payload1.PayloadData == Payload2.PayloadData;
-	}
-
-	bool CompareSchemaObjectToSendAndPayload(Schema_Object* SchemaObject, const SpatialGDK::RPCPayload& Payload, ERPCType RPCType, uint64 RPCId)
-	{
-		SpatialGDK::RPCRingBufferDescriptor Descriptor = SpatialGDK::RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
-		Schema_Object* RPCObject = Schema_GetObject(SchemaObject, Descriptor.GetRingBufferElementFieldId(RPCId));
-		return CompareRPCPayload(SpatialGDK::RPCPayload(RPCObject), Payload);
-	}
-
-	bool CompareUpdateToSendAndEntityPayload(SpatialGDK::SpatialRPCService::UpdateToSend& Update, const EntityPayload& EntityPayloadItem, ERPCType RPCType, uint64 RPCId)
-	{
-		return CompareSchemaObjectToSendAndPayload(Schema_GetComponentUpdateFields(Update.Update.schema_type), EntityPayloadItem.Payload, RPCType, RPCId) &&
-			   Update.EntityId == EntityPayloadItem.EntityId;
-	}
-
-	bool CompareComponentDataAndEntityPayload(const Worker_ComponentData& ComponentData, const EntityPayload& EntityPayloadItem, ERPCType RPCType, uint64 RPCId)
-	{
-		return CompareSchemaObjectToSendAndPayload(Schema_GetComponentDataFields(ComponentData.schema_type), EntityPayloadItem.Payload, RPCType, RPCId);
-	}
-
-	const Worker_ComponentData GetComponentDataOnEntityCreationFromRPCService(SpatialGDK::SpatialRPCService& RPCService, Worker_EntityId EntityID, ERPCType RPCType)
-	{
-		Worker_ComponentId ExpectedUpdateComponentId = SpatialGDK::RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
-		TArray<Worker_ComponentData> ComponentDataArray = RPCService.GetRPCComponentsOnEntityCreation(EntityID);
-
-		const Worker_ComponentData* ComponentData = ComponentDataArray.FindByPredicate([ExpectedUpdateComponentId](const Worker_ComponentData& ComponentData) {
-			return ComponentData.component_id == ExpectedUpdateComponentId;
-		});
-
-		if (ComponentData == nullptr)
-		{
-			return {};
-		}
-		return *ComponentData;
-	}
 } // anonymous namespace
 
 RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_client_reliable_rpcs_to_the_service_THEN_rpc_push_result_success)
@@ -211,7 +206,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_client_reliable_
 	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_client_unreliable_rpcs_to_the_service_rpc_push_result_success)
+RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_client_unreliable_rpcs_to_the_service_THEN_rpc_push_result_success)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload);
@@ -267,7 +262,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_unreliabl
 	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_multicast_rpcs_to_the_service_THEN_rpc_push_result_success)
+RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_multicast_rpcs_to_the_service_THEN_rpc_push_result_no_buffer_authority)
 {
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, CLIENT_AUTH);
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
@@ -296,8 +291,8 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_client_
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH);
 
 	// Send RPCs to the point where we will overflow
-	int RPCsToSend = static_cast<int>(GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(ERPCType::ClientReliable));
-	for (int i = 0; i < RPCsToSend; ++i)
+	uint32 RPCsToSend = GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(ERPCType::ClientReliable);
+	for (uint32 i = 0; i < RPCsToSend; ++i)
 	{
 		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientReliable, SimplePayload);
 	}
@@ -312,8 +307,8 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_client_
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH);
 
 	// Send RPCs to the point where we will overflow
-	int RPCsToSend = static_cast<int>(GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(ERPCType::ClientReliable));
-	for (int i = 0; i < RPCsToSend; ++i)
+	uint32 RPCsToSend = GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(ERPCType::ClientUnreliable);
+	for (uint32 i = 0; i < RPCsToSend; ++i)
 	{
 		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload);
 	}
@@ -328,8 +323,8 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_overflow_client_
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, CLIENT_AUTH);
 
 	// Send RPCs to the point where we will overflow
-	int RPCsToSend = static_cast<int>(GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(ERPCType::ServerReliable));
-	for (int i = 0; i < RPCsToSend; ++i)
+	uint32 RPCsToSend = GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(ERPCType::ServerReliable);
+	for (uint32 i = 0; i < RPCsToSend; ++i)
 	{
 		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerReliable, SimplePayload);
 	}
@@ -344,8 +339,8 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_overflow_client_
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, CLIENT_AUTH);
 
 	// Send RPCs to the point where we will overflow
-	int RPCsToSend = static_cast<int>(GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(ERPCType::ServerReliable));
-	for (int i = 0; i < RPCsToSend; ++i)
+	uint32 RPCsToSend = GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(ERPCType::ServerUnreliable);
+	for (uint32 i = 0; i < RPCsToSend; ++i)
 	{
 		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload);
 	}
@@ -360,8 +355,8 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_multica
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH);
 
 	// Send RPCs to the point where we will overflow
-	int RPCsToSend = static_cast<int>(GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(ERPCType::NetMulticast));
-	for (int i = 0; i < RPCsToSend; ++i)
+	uint32 RPCsToSend = GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(ERPCType::NetMulticast);
+	for (uint32 i = 0; i < RPCsToSend; ++i)
 	{
 		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
 	}
@@ -384,7 +379,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_unreliabl
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService(EntityIdArray, CLIENT_AUTH);
 	for (const EntityPayload& EntityPayloadItem : EntityPayloads)
 	{
-		RPCService.PushRPC(EntityPayloadItem.EntityId, ERPCType::ServerUnreliable, SimplePayload);
+		RPCService.PushRPC(EntityPayloadItem.EntityId, ERPCType::ServerUnreliable, EntityPayloadItem.Payload);
 	}
 
 	TArray<SpatialGDK::SpatialRPCService::UpdateToSend> UpdateToSendArray = RPCService.GetRPCsAndAcksToSend();
@@ -413,7 +408,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_unreliabl
 RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_client_reliable_rpcs_to_the_service_THEN_component_data_matches_payload)
 {
 	// Create RPCService with empty component view
-	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({}, INVALID);
+	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({}, NO_AUTH);
 
 	RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientReliable, SimplePayload);
 
@@ -423,10 +418,10 @@ RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_client_reliable_
 	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_multicast_rpcs_to_the_service_THEN_initially_preset_set)
+RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_multicast_rpcs_to_the_service_THEN_initially_present_set)
 {
 	// Create RPCService with empty component view
-	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({}, INVALID);
+	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({}, NO_AUTH);
 
 	RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
 	RPCService.PushRPC(RPCTestEntityId_1, ERPCType::NetMulticast, SimplePayload);
@@ -434,16 +429,13 @@ RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_multicast_rpcs_t
 	Worker_ComponentData ComponentData = GetComponentDataOnEntityCreationFromRPCService(RPCService, RPCTestEntityId_1, ERPCType::NetMulticast);
 	const Schema_Object* SchemaObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 	uint32 InitiallyPresent = Schema_GetUint32(SchemaObject, SpatialGDK::RPCRingBufferUtils::GetInitiallyPresentMulticastRPCsCountFieldId());
-	TestTrue("Entity creation multi-cast test returned expected results", (InitiallyPresent == 2));
+	TestTrue("Entity creation multicast test returned expected results", (InitiallyPresent == 2));
 	return true;
 }
 
-RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_server_reliable_rpcs_to_the_service_THEN_extracted_payloads_match_pushed_payloads)
+RPC_SERVICE_TEST(GIVEN_client_endpoint_with_rpcs_in_view_and_authority_over_server_endpoint_WHEN_extract_rpcs_from_the_service_THEN_extracted_payloads_match_pushed_payloads)
 {
 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-
-	Worker_Authority ClientAuth = GetClientAuthorityFromRPCEndpointType(SERVER_AUTH);
-	Worker_Authority ServerAuth = GetServerAuthorityFromRPCEndpointType(SERVER_AUTH);
 
 	Schema_ComponentData* ClientComponentData = Schema_CreateComponentData();
 	Schema_Object* ClientSchemaObject = Schema_GetComponentDataFields(ClientComponentData);
@@ -453,16 +445,16 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_server_reliable_
 	AddEntityComponentToStaticComponentView(*StaticComponentView,
 		SpatialGDK::EntityComponentId(RPCTestEntityId_1, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID),
 		ClientComponentData,
-		ClientAuth);
+		GetClientAuthorityFromRPCEndpointType(SERVER_AUTH));
 
 	AddEntityComponentToStaticComponentView(*StaticComponentView,
 		SpatialGDK::EntityComponentId(RPCTestEntityId_1, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID),
-		ServerAuth);
+		GetServerAuthorityFromRPCEndpointType(SERVER_AUTH));
 
-	bool bAttemptedRPCExtraction = false;
+	int RPCsExtracted = 0;
 	bool bPayloadsMatch = true;
-	ExtractRPCDelegate RPCDelegate = ExtractRPCDelegate::CreateLambda([&bAttemptedRPCExtraction, &bPayloadsMatch](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) {
-		bAttemptedRPCExtraction = true;
+	ExtractRPCDelegate RPCDelegate = ExtractRPCDelegate::CreateLambda([&RPCsExtracted, &bPayloadsMatch](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) {
+		RPCsExtracted++;
 		bPayloadsMatch &= CompareRPCPayload(Payload, SimplePayload);
 		bPayloadsMatch &= EntityId == RPCTestEntityId_1;
 		return true;
@@ -471,16 +463,13 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_server_reliable_
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH, RPCDelegate, StaticComponentView);
 	RPCService.ExtractRPCsForEntity(RPCTestEntityId_1, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
 
-	TestTrue("Extracted RPCs match expected payloads", (bAttemptedRPCExtraction && bPayloadsMatch));
+	TestTrue("Extracted RPCs match expected payloads", (RPCsExtracted == 2 && bPayloadsMatch));
 	return true;
 }
 
 RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_WHEN_return_false_from_extract_callback_THEN_some_rpcs_persist_on_component)
 {
 	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
-
-	Worker_Authority ClientAuth = GetClientAuthorityFromRPCEndpointType(SERVER_AUTH);
-	Worker_Authority ServerAuth = GetServerAuthorityFromRPCEndpointType(SERVER_AUTH);
 
 	Schema_ComponentData* ClientComponentData = Schema_CreateComponentData();
 	Schema_Object* ClientSchemaObject = Schema_GetComponentDataFields(ClientComponentData);
@@ -493,14 +482,14 @@ RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_WHEN_return_false_from_extract_callback_
 	AddEntityComponentToStaticComponentView(*StaticComponentView,
 		SpatialGDK::EntityComponentId(RPCTestEntityId_1, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID),
 		ClientComponentData,
-		ClientAuth);
+		GetClientAuthorityFromRPCEndpointType(SERVER_AUTH));
 
 	AddEntityComponentToStaticComponentView(*StaticComponentView,
 		SpatialGDK::EntityComponentId(RPCTestEntityId_1, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID),
-		ServerAuth);
+		GetServerAuthorityFromRPCEndpointType(SERVER_AUTH));
 
-	const static int MaxRPCsToProccess = 2;
-	int8 RPCsToProcess = MaxRPCsToProccess;
+	constexpr int MaxRPCsToProccess = 2;
+	int RPCsToProcess = MaxRPCsToProccess;
 	ExtractRPCDelegate RPCDelegate = ExtractRPCDelegate::CreateLambda([&RPCsToProcess](Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) {
 		--RPCsToProcess;
 		return RPCsToProcess >= 0;
@@ -513,7 +502,7 @@ RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_WHEN_return_false_from_extract_callback_
 	TArray<SpatialGDK::SpatialRPCService::UpdateToSend> UpdateToSendArray = RPCService.GetRPCsAndAcksToSend();
 
 	bool bTestPassed = false;
-	SpatialGDK::SpatialRPCService::UpdateToSend* Update = UpdateToSendArray.FindByPredicate([](const SpatialGDK::SpatialRPCService::UpdateToSend& Update){
+	SpatialGDK::SpatialRPCService::UpdateToSend* Update = UpdateToSendArray.FindByPredicate([](const SpatialGDK::SpatialRPCService::UpdateToSend& Update) {
 		return (Update.Update.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
 	});
 
