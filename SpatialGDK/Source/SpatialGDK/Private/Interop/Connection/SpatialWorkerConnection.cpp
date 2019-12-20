@@ -35,8 +35,12 @@ struct ConfigureConnection
 
 		Params.network.connection_type = Config.LinkProtocol;
 		Params.network.use_external_ip = Config.UseExternalIp;
-		Params.network.tcp.multiplex_level = Config.TcpMultiplexLevel;
-		Params.network.tcp.no_delay = Config.TcpNoDelay;
+		Params.network.modular_tcp.multiplex_level = Config.TcpMultiplexLevel;
+		if (Config.TcpNoDelay)
+		{
+			Params.network.modular_tcp.downstream_tcp.flush_delay_millis = 0;
+			Params.network.modular_tcp.upstream_tcp.flush_delay_millis = 0;
+		}
 
 		// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
 		Params.network.modular_kcp.upstream_compression = nullptr;
