@@ -48,6 +48,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The command line argument "receptionistHost <URL>" will now not override connections to "127.0.0.1".
 - The receptionist will now be used for appropriate URLs after connecting to a locator URL.
 - You can now access the worker flags via `USpatialStatics::GetWorkerFlag` instead of `USpatialWorkerFlags::GetWorkerFlag`.
+- Fix crash in SpatialDebugger when GDK-space load balancing is disabled.
 
 ## [`0.8.0-preview`] - 2019-12-17
 
