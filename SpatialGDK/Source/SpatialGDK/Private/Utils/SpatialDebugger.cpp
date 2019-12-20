@@ -352,7 +352,7 @@ FColor ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId) c
 	const PhysicalWorkerName* PhysicalWorkerName = nullptr;
 	if (NetDriver->VirtualWorkerTranslator)
 	{
-		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(VirtualWorkerId);
+		PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(VirtualWorkerId);
 	}
 
 	if (PhysicalWorkerName == nullptr)
