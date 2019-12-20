@@ -3,11 +3,14 @@
 #include "Interop/SpatialStaticComponentView.h"
 
 #include "Schema/AuthorityIntent.h"
+#include "Schema/ClientEndpoint.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Component.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
+#include "Schema/MulticastRPCs.h"
 #include "Schema/RPCPayload.h"
+#include "Schema/ServerEndpoint.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
@@ -85,6 +88,15 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::AuthorityIntent>>(Op.data);
 		break;
+	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ClientEndpoint>>(Op.data);
+		break;
+	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ServerEndpoint>>(Op.data);
+		break;
+	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::MulticastRPCs>>(Op.data);
+		break;
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.
 		Data = nullptr;
@@ -126,6 +138,15 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::AuthorityIntent>(Op.entity_id);
+		break;
+	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::ClientEndpoint>(Op.entity_id);
+		break;
+	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::ServerEndpoint>(Op.entity_id);
+		break;
+	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::MulticastRPCs>(Op.entity_id);
 		break;
 	default:
 		return;
