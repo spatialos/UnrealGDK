@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 
-#include "TestDefinitions.h"
+#include "Tests/TestDefinitions.h"
 #include "Tests/AutomationCommon.h"
 #include "Runtime/EngineSettings/Public/EngineSettings.h"
 

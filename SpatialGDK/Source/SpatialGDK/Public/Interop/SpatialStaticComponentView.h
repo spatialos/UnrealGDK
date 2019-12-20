@@ -24,9 +24,9 @@ public:
 	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
 	template <typename T>
-	const T* GetComponentData(Worker_EntityId EntityId) const
+	T* GetComponentData(Worker_EntityId EntityId) const
 	{
-		if (const TMap<Worker_ComponentId, TUniquePtr<SpatialGDK::ComponentStorageBase>>* ComponentStorageMap = EntityComponentMap.Find(EntityId))
+		if (const auto* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 		{
 			if (const TUniquePtr<SpatialGDK::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
 			{
@@ -35,12 +35,6 @@ public:
 		}
 
 		return nullptr;
-	}
-
-	template <typename T>
-	T* GetComponentData(Worker_EntityId EntityId)
-	{
-		return const_cast<T*>(static_cast<const USpatialStaticComponentView*>(this)->GetComponentData<T>(EntityId));
 	}
 
 	bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
