@@ -6,6 +6,7 @@
 
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Interop/SpatialRPCService.h"
 #include "Schema/RPCPayload.h"
 #include "TimerManager.h"
 #include "Utils/RepDataUtils.h"
@@ -21,13 +22,13 @@ using namespace SpatialGDK;
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
 class USpatialActorChannel;
-class USpatialDispatcher;
+class SpatialDispatcher;
 class USpatialNetDriver;
 class USpatialPackageMapClient;
 class USpatialReceiver;
 class USpatialStaticComponentView;
 class USpatialClassInfoManager;
-class UActorGroupManager;
+class SpatialActorGroupManager;
 class USpatialWorkerConnection;
 
 struct FReliableRPCForRetry
@@ -68,7 +69,7 @@ class SPATIALGDK_API USpatialSender : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService);
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
@@ -76,7 +77,7 @@ public:
 	void SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
-	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& WorkerId);
+	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& DestinationWorkerId);
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	ERPCResult SendRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
@@ -107,6 +108,8 @@ public:
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 
 	void FlushPackedRPCs();
+
+	void FlushRPCService();
 
 	RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function, void* Params);
 	void GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info);
@@ -157,10 +160,11 @@ private:
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 
-	UPROPERTY()
-	UActorGroupManager* ActorGroupManager;
+	SpatialActorGroupManager* ActorGroupManager;
 
 	FTimerManager* TimerManager;
+
+	SpatialGDK::SpatialRPCService* RPCService;
 
 	FRPCContainer OutgoingRPCs;
 	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;

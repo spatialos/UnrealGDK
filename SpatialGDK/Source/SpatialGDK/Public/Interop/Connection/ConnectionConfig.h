@@ -16,8 +16,12 @@ struct FConnectionConfig
 	FConnectionConfig()
 		: UseExternalIp(false)
 		, EnableProtocolLoggingAtStartup(false)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_UDP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
+		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
+		, TcpNoDelay(0)
+		, UdpUpstreamIntervalMS(0)
+		, UdpDownstreamIntervalMS(0)
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
@@ -35,16 +39,37 @@ struct FConnectionConfig
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString == TEXT("Tcp"))
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_TCP;
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
 		}
 		else if (LinkProtocolString == TEXT("Kcp"))
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_UDP;
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
 		}
 		else if (!LinkProtocolString.IsEmpty())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."), *LinkProtocolString);
 		}
+	}
+
+	void PreConnectInit(const bool bConnectAsClient)
+	{
+		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+		if (WorkerType.IsEmpty())
+		{
+			WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType.ToString() : SpatialConstants::DefaultServerWorkerType.ToString();
+			UE_LOG(LogTemp, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *WorkerType);
+		}
+
+		if (WorkerId.IsEmpty())
+		{
+			WorkerId = WorkerType + FGuid::NewGuid().ToString();
+		}
+
+		TcpNoDelay = (SpatialGDKSettings->bTcpNoDelay ? 1 : 0);
+
+		UdpUpstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientUpstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerUpstreamUpdateIntervalMS);
+		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 	}
 
 	FString WorkerId;
@@ -55,6 +80,9 @@ struct FConnectionConfig
 	Worker_NetworkConnectionType LinkProtocol;
 	Worker_ConnectionParameters ConnectionParams;
 	uint8 TcpMultiplexLevel;
+	uint8 TcpNoDelay;
+	uint8 UdpUpstreamIntervalMS;
+	uint8 UdpDownstreamIntervalMS;
 };
 
 class FLocatorConfig : public FConnectionConfig
@@ -128,7 +156,10 @@ public:
 	void SetReceptionistHost(const FString& host)
 	{
 		ReceptionistHost = host;
-		UseExternalIp = ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0;
+		if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
+		{
+			UseExternalIp = true;
+		}
 	}
 
 	FString GetReceptionistHost() const { return ReceptionistHost; }

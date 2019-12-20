@@ -11,6 +11,7 @@
 #include "SpatialStatics.generated.h"
 
 class AActor;
+class SpatialActorGroupManager;
 
 // This log category will always log to the spatial runtime and thus also be printed in the SpatialOutput.
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatial, Log, All);
@@ -79,8 +80,15 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject", CallableWithoutWorldContext, Keywords = "log spatial", AdvancedDisplay = "2", DevelopmentOnly), Category = "Utilities|Text")
 	static void PrintTextSpatial(UObject* WorldContextObject, const FText InText = INVTEXT("Hello"), bool bPrintToScreen = true, FLinearColor TextColor = FLinearColor(0.0, 0.66, 1.0), float Duration = 2.f);
 
+	/**
+	 * Returns true if worker flag with the given name was found.
+	 * Gets value of a worker flag.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool GetWorkerFlag(const UObject* WorldContextObject, const FString& InFlagName, FString& OutFlagValue);
+
 private:
 
-	static class UActorGroupManager* GetActorGroupManager(const UObject* WorldContext);
+	static SpatialActorGroupManager* GetActorGroupManager(const UObject* WorldContext);
 	static FName GetCurrentWorkerType(const UObject* WorldContext);
 };

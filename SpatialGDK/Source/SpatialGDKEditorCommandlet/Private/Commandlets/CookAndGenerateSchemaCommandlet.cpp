@@ -140,6 +140,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	SpatialGDKGenerateSchemaForClasses(Classes);
 
 	GenerateSchemaForSublevels();
+	GenerateSchemaForRPCEndpoints();
 
 	FTimespan Duration = FDateTime::Now() - StartTime;
 

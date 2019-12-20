@@ -12,6 +12,7 @@
 #include "Interop/SpatialStaticComponentView.h"
 #include "Kismet/GameplayStatics.h"
 #include "Schema/AuthorityIntent.h"
+#include "Utils/InspectionColors.h"
 
 using namespace SpatialGDK;
 
@@ -49,6 +50,14 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 
 	if (!NetDriver->IsServer())
 	{
+		for (TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>::TIterator It = EntityActorMapping.CreateIterator(); It; ++It)
+		{
+			if (!It->Value.IsValid())
+			{
+				It.RemoveCurrent();
+			}
+		}
+
 		// Since we have no guarantee on the order we'll receive the PC/Pawn/PlayerState
 		// over the wire, we check here once per tick (currently 1 Hz tick rate) to setup our local pointers.
 		// Note that we can capture the PC in OnEntityAdded() since we know we will only receive one of those.
@@ -329,29 +338,56 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 	}
 }
 
-const FColor& ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId) const
+FColor ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId) const
 {
 	check(NetDriver != nullptr && !NetDriver->IsServer());
-
-	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
-	const int32 VirtualWorkerId = (AuthorityIntentComponent != nullptr) ? AuthorityIntentComponent->VirtualWorkerId : SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
-
-	if (VirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID &&
-		VirtualWorkerId < ServerTintColors.Num())
+	if (!NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
-		return ServerTintColors[VirtualWorkerId];
-	}
-	else
-	{
+		UE_LOG(LogSpatialDebugger, Error, TEXT("Trying to get virtual worker color for entity with no AuthorityIntent component."));
 		return InvalidServerTintColor;
 	}
+	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+	const int32 VirtualWorkerId = AuthorityIntentComponent->VirtualWorkerId;
+
+	const PhysicalWorkerName* PhysicalWorkerName = nullptr;
+	if (NetDriver->VirtualWorkerTranslator)
+	{
+		PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(VirtualWorkerId);
+	}
+
+	if (PhysicalWorkerName == nullptr)
+	{
+		// This can happen if the client hasn't yet received the VirtualWorkerTranslator mapping
+		return InvalidServerTintColor;
+	}
+	return SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName);
 }
 
-// TODO: Implement once this functionality is available https://improbableio.atlassian.net/browse/UNR-2362.
-const FColor& ASpatialDebugger::GetServerWorkerColor(const Worker_EntityId EntityId) const
+FColor ASpatialDebugger::GetServerWorkerColor(const Worker_EntityId EntityId) const
 {
 	check(NetDriver != nullptr && !NetDriver->IsServer());
-	return InvalidServerTintColor;
+
+	const PhysicalWorkerName& AuthoritativeWorkerFromACL = GetAuthoritativeWorkerFromACL(EntityId);
+
+	const FString WorkerNamePrefix = FString{ "workerId:" };
+	if (!AuthoritativeWorkerFromACL.StartsWith(*WorkerNamePrefix)) {
+		// The ACL entry is not an explicit worker ID, this may happen at startup when it's just
+		// the UnrealWorker attribute, just return invalid for now.
+		return InvalidServerTintColor;
+	}
+	return SpatialGDK::GetColorForWorkerName(AuthoritativeWorkerFromACL.RightChop(WorkerNamePrefix.Len()));
+}
+
+const PhysicalWorkerName& ASpatialDebugger::GetAuthoritativeWorkerFromACL(const Worker_EntityId EntityId) const
+{
+	const SpatialGDK::EntityAcl* AclData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId);
+	const WorkerRequirementSet* WriteAcl = AclData->ComponentWriteAcl.Find(SpatialConstants::POSITION_COMPONENT_ID);
+
+	check(WriteAcl != nullptr);
+	check(WriteAcl->Num() == 1);
+	check((*WriteAcl)[0].Num() == 1);
+
+	return (*WriteAcl)[0][0];
 }
 
 // TODO: Implement once this functionality is available https://improbableio.atlassian.net/browse/UNR-2361.

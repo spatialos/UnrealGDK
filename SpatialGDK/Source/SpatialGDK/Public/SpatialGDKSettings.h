@@ -5,8 +5,9 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
-#include "Utils/ActorGroupManager.h"
-#include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialActorGroupManager.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/AbstractLockingPolicy.h"
 
 #include "SpatialGDKSettings.generated.h"
 
@@ -156,7 +157,7 @@ public:
 	uint32 MaxDynamicallyAttachedSubobjectsPerClass;
 
 	/** EXPERIMENTAL - This is a stop-gap until we can better define server interest on system entities.
-	Disabling this is not supported in any type of multi-server environment*/
+	Disabling this is not supported in a zoned-worker environment*/
 	UPROPERTY(config)
 	bool bEnableServerQBI;
 
@@ -205,12 +206,53 @@ public:
 
 	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
-		bool bEnableUnrealLoadBalancer;
+	bool bEnableUnrealLoadBalancer;
 
 	/** EXPERIMENTAL: Worker type to assign for load balancing. */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-		FWorkerType LoadBalancingWorkerType;
+	FWorkerType LoadBalancingWorkerType;
 
-	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-	TSubclassOf<class UAbstractLBStrategy> LoadBalanceStrategy;
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
+	TSubclassOf<UAbstractLBStrategy> LoadBalanceStrategy;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
+	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
+	bool bUseRPCRingBuffers;
+
+private:
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "Default RPC Ring Buffer Size"))
+	uint32 DefaultRPCRingBufferSize;
+
+	/** Overrides default ring buffer size. */
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "RPC Ring Buffer Size Map"))
+	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
+
+public:
+	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
+
+	/** The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and break snapshot compatibility. */
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "Max RPC Ring Buffer Size"))
+	uint32 MaxRPCRingBufferSize;
+
+	/** Only valid on Tcp connections - indicates if we should enable TCP_NODELAY - see c_worker.h */
+	UPROPERTY(Config)
+	bool bTcpNoDelay;
+
+	/** Only valid on Udp connections - specifies server upstream flush interval - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 UdpServerUpstreamUpdateIntervalMS;
+
+	/** Only valid on Udp connections - specifies server downstream flush interval - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 UdpServerDownstreamUpdateIntervalMS;
+
+	/** Only valid on Udp connections - specifies client upstream flush interval - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 UdpClientUpstreamUpdateIntervalMS;
+
+	/** Only valid on Udp connections - specifies client downstream flush interval - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 UdpClientDownstreamUpdateIntervalMS;
 };

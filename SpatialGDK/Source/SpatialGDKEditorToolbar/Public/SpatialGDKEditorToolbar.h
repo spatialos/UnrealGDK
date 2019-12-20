@@ -45,6 +45,10 @@ public:
 		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables);
 	}
 
+	void OnShowSuccessNotification(const FString& NotificationText);
+	void OnShowFailedNotification(const FString& NotificationText);
+	void OnShowTaskStartNotification(const FString& NotificationText);
+
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);
@@ -71,6 +75,8 @@ private:
 	bool StopSpatialServiceIsVisible() const;
 	bool StopSpatialServiceCanExecute() const;
 
+	bool UpdateIOSClientIsVisible() const;
+
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
@@ -86,13 +92,10 @@ private:
 
 	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
 
-	void OnShowTaskStartNotification(const FString& NotificationText);
 	void ShowTaskStartNotification(const FString& NotificationText);
 
-	void OnShowSuccessNotification(const FString& NotificationText);
 	void ShowSuccessNotification(const FString& NotificationText);
 
-	void OnShowFailedNotification(const FString& NotificationText);
 	void ShowFailedNotification(const FString& NotificationText);
 
 	bool ValidateGeneratedLaunchConfig() const;
@@ -104,11 +107,15 @@ private:
 
 	FString GetOptionalExposedRuntimeIP() const;
 
+	void UpdateIOSClient() const;
+
 	static void ShowCompileLog();
 
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	bool bStopSpatialOnExit;
+
+	bool bSchemaBuildError;
 
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 

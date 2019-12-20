@@ -12,6 +12,18 @@
 
 #include "SpatialConstants.generated.h"
 
+UENUM()
+enum class ERPCType : uint8
+{
+	Invalid,
+	ClientReliable,
+	ClientUnreliable,
+	ServerReliable,
+	ServerUnreliable,
+	NetMulticast,
+	CrossServer
+};
+
 enum ESchemaComponentType : int32
 {
 	SCHEMA_Invalid = -1,
@@ -27,41 +39,8 @@ enum ESchemaComponentType : int32
 	SCHEMA_Begin = SCHEMA_Data,
 };
 
-UENUM()
-enum class ERPCType : uint8
+namespace SpatialConstants
 {
-	Invalid,
-	ClientReliable,
-	ClientUnreliable,
-	ServerReliable,
-	ServerUnreliable,
-	NetMulticast,
-	CrossServer
-};
-
-FORCEINLINE ERPCType FunctionFlagsToRPCType(EFunctionFlags FunctionFlags)
-{
-	if (FunctionFlags & FUNC_NetClient)
-	{
-		return ERPCType::ClientReliable;
-	}
-	else if (FunctionFlags & FUNC_NetServer)
-	{
-		return ERPCType::ServerReliable;
-	}
-	else if (FunctionFlags & FUNC_NetMulticast)
-	{
-		return ERPCType::NetMulticast;
-	}
-	else if (FunctionFlags & FUNC_NetCrossServer)
-	{
-		return ERPCType::CrossServer;
-	}
-	else
-	{
-		return ERPCType::Invalid;
-	}
-}
 
 FORCEINLINE FString RPCTypeToString(ERPCType RPCType)
 {
@@ -85,196 +64,218 @@ FORCEINLINE FString RPCTypeToString(ERPCType RPCType)
 	return FString();
 }
 
-namespace SpatialConstants
+enum EntityIds
 {
-	enum EntityIds
-	{
-		INVALID_ENTITY_ID = 0,
-		INITIAL_SPAWNER_ENTITY_ID = 1,
-		INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
-		// TODO(UNR-2213): Decide whether the translator should be on the GSM or separate.
-		INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
-		FIRST_AVAILABLE_ENTITY_ID = 4,
-	};
+	INVALID_ENTITY_ID = 0,
+	INITIAL_SPAWNER_ENTITY_ID = 1,
+	INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
+	// TODO(UNR-2213): Decide whether the translator should be on the GSM or separate.
+	INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
+	FIRST_AVAILABLE_ENTITY_ID = 4,
+};
 
-	const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
+const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
 
-	const Worker_ComponentId ENTITY_ACL_COMPONENT_ID						= 50;
-	const Worker_ComponentId METADATA_COMPONENT_ID							= 53;
-	const Worker_ComponentId POSITION_COMPONENT_ID							= 54;
-	const Worker_ComponentId PERSISTENCE_COMPONENT_ID						= 55;
-	const Worker_ComponentId INTEREST_COMPONENT_ID							= 58;
-	// This is a component on per-worker system entities.
-	const Worker_ComponentId WORKER_COMPONENT_ID							= 60;
+const Worker_ComponentId ENTITY_ACL_COMPONENT_ID						= 50;
+const Worker_ComponentId METADATA_COMPONENT_ID							= 53;
+const Worker_ComponentId POSITION_COMPONENT_ID							= 54;
+const Worker_ComponentId PERSISTENCE_COMPONENT_ID						= 55;
+const Worker_ComponentId INTEREST_COMPONENT_ID							= 58;
+// This is a component on per-worker system entities.
+const Worker_ComponentId WORKER_COMPONENT_ID							= 60;
 
-	const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID		= 100;
+const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID		= 100;
 
-	const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 9999;
-	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 9998;
-	const Worker_ComponentId SINGLETON_COMPONENT_ID							= 9997;
-	const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID					= 9996;
-	const Worker_ComponentId SINGLETON_MANAGER_COMPONENT_ID					= 9995;
-	const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 9994;
-	const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID			    = 9993;
-	const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 9992;
-	const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 9991;
-	const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID				= 9990;
-	const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID				= 9989;
-	const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID					= 9987;
-	const Worker_ComponentId NOT_STREAMED_COMPONENT_ID						= 9986;
-	const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
-	const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
-	const Worker_ComponentId ALWAYS_RELEVANT_COMPONENT_ID					= 9983;
-	const Worker_ComponentId TOMBSTONE_COMPONENT_ID                         = 9982;
-	const Worker_ComponentId DORMANT_COMPONENT_ID							= 9981;
-	const Worker_ComponentId AUTHORITY_INTENT_COMPONENT_ID                  = 9980;
-	const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID        = 9979;
+const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 9999;
+const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 9998;
+const Worker_ComponentId SINGLETON_COMPONENT_ID							= 9997;
+const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID					= 9996;
+const Worker_ComponentId SINGLETON_MANAGER_COMPONENT_ID					= 9995;
+const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 9994;
+const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID			    = 9993;
+const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 9992;
+const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 9991;
+// Marking the event-based RPC components as legacy while the ring buffer
+// implementation is under a feature flag.
+const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY		= 9990;
+const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY		= 9989;
+const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID_LEGACY			= 9987;
 
-	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
+const Worker_ComponentId NOT_STREAMED_COMPONENT_ID						= 9986;
+const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
+const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
+const Worker_ComponentId ALWAYS_RELEVANT_COMPONENT_ID					= 9983;
+const Worker_ComponentId TOMBSTONE_COMPONENT_ID                         = 9982;
+const Worker_ComponentId DORMANT_COMPONENT_ID							= 9981;
+const Worker_ComponentId AUTHORITY_INTENT_COMPONENT_ID                  = 9980;
+const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID        = 9979;
 
-	const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
+const Worker_ComponentId CLIENT_ENDPOINT_COMPONENT_ID					= 9978;
+const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID					= 9977;
+const Worker_ComponentId MULTICAST_RPCS_COMPONENT_ID					= 9976;
 
-	const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
-	const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
-	const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID							= 3;
+const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
-	const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
+const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
 
-	const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID                      = 1;
-	const Schema_FieldId ACTOR_TEAROFF_ID									= 3;
+const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
+const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
+const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID							= 3;
 
-	const Schema_FieldId HEARTBEAT_EVENT_ID                                 = 1;
-	const Schema_FieldId HEARTBEAT_CLIENT_HAS_QUIT_ID						= 1;
+const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
 
-	const Schema_FieldId SHUTDOWN_MULTI_PROCESS_REQUEST_ID					= 1;
-	const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID				= 1;
+const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID                      = 1;
+const Schema_FieldId ACTOR_TEAROFF_ID									= 3;
 
-	const Schema_FieldId CLEAR_RPCS_ON_ENTITY_CREATION						= 1;
+const Schema_FieldId HEARTBEAT_EVENT_ID                                 = 1;
+const Schema_FieldId HEARTBEAT_CLIENT_HAS_QUIT_ID						= 1;
 
-	// DebugMetrics command IDs
-	const Schema_FieldId DEBUG_METRICS_START_RPC_METRICS_ID					= 1;
-	const Schema_FieldId DEBUG_METRICS_STOP_RPC_METRICS_ID					= 2;
-	const Schema_FieldId DEBUG_METRICS_MODIFY_SETTINGS_ID					= 3;
+const Schema_FieldId SHUTDOWN_MULTI_PROCESS_REQUEST_ID					= 1;
+const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID				= 1;
 
-	// ModifySettingPayload Field IDs
-	const Schema_FieldId MODIFY_SETTING_PAYLOAD_NAME_ID						= 1;
-	const Schema_FieldId MODIFY_SETTING_PAYLOAD_VALUE_ID					= 2;
+const Schema_FieldId CLEAR_RPCS_ON_ENTITY_CREATION						= 1;
 
-	// UnrealObjectRef Field IDs
-	const Schema_FieldId UNREAL_OBJECT_REF_ENTITY_ID						= 1;
-	const Schema_FieldId UNREAL_OBJECT_REF_OFFSET_ID						= 2;
-	const Schema_FieldId UNREAL_OBJECT_REF_PATH_ID							= 3;
-	const Schema_FieldId UNREAL_OBJECT_REF_NO_LOAD_ON_CLIENT_ID				= 4;
-	const Schema_FieldId UNREAL_OBJECT_REF_OUTER_ID							= 5;
-	const Schema_FieldId UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID		= 6;
+// DebugMetrics command IDs
+const Schema_FieldId DEBUG_METRICS_START_RPC_METRICS_ID					= 1;
+const Schema_FieldId DEBUG_METRICS_STOP_RPC_METRICS_ID					= 2;
+const Schema_FieldId DEBUG_METRICS_MODIFY_SETTINGS_ID					= 3;
 
-	// UnrealRPCPayload Field IDs
-	const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID						= 1;
-	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_INDEX_ID					= 2;
-	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID					= 3;
-	// UnrealPackedRPCPayload additional Field ID
-	const Schema_FieldId UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID				= 4;
+// ModifySettingPayload Field IDs
+const Schema_FieldId MODIFY_SETTING_PAYLOAD_NAME_ID						= 1;
+const Schema_FieldId MODIFY_SETTING_PAYLOAD_VALUE_ID					= 2;
 
-	// Unreal(Client|Server|Multicast)RPCEndpoint Field IDs
-	const Schema_FieldId UNREAL_RPC_ENDPOINT_READY_ID 						= 1;
-	const Schema_FieldId UNREAL_RPC_ENDPOINT_EVENT_ID						= 1;
-	const Schema_FieldId UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID				= 2;
-	const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID						= 1;
+// UnrealObjectRef Field IDs
+const Schema_FieldId UNREAL_OBJECT_REF_ENTITY_ID						= 1;
+const Schema_FieldId UNREAL_OBJECT_REF_OFFSET_ID						= 2;
+const Schema_FieldId UNREAL_OBJECT_REF_PATH_ID							= 3;
+const Schema_FieldId UNREAL_OBJECT_REF_NO_LOAD_ON_CLIENT_ID				= 4;
+const Schema_FieldId UNREAL_OBJECT_REF_OUTER_ID							= 5;
+const Schema_FieldId UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID		= 6;
 
-	const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
+// UnrealRPCPayload Field IDs
+const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID						= 1;
+const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_INDEX_ID					= 2;
+const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID					= 3;
+const Schema_FieldId UNREAL_RPC_PAYLOAD_TRACE_ID						= 4;
+// UnrealPackedRPCPayload additional Field ID
+const Schema_FieldId UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID				= 5;
 
-	// AuthorityIntent codes and Field IDs.
-	const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
-	const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID							= 0;
+const Schema_FieldId UNREAL_RPC_TRACE_ID								= 1;
+const Schema_FieldId UNREAL_RPC_SPAN_ID									= 2;
 
-	// VirtualWorkerTranslation Field IDs.
-	const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
-	const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID							= 1;
-	const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME						= 2;
+// Unreal(Client|Server|Multicast)RPCEndpoint Field IDs
+const Schema_FieldId UNREAL_RPC_ENDPOINT_READY_ID 						= 1;
+const Schema_FieldId UNREAL_RPC_ENDPOINT_EVENT_ID						= 1;
+const Schema_FieldId UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID				= 2;
+const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID						= 1;
 
-	// WorkerEntity Field IDs.
-	const Schema_FieldId WORKER_ID_ID										= 1;
-	const Schema_FieldId WORKER_TYPE_ID										= 2;
+const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
 
-	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
-	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
+// AuthorityIntent codes and Field IDs.
+const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
 
-	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
-	const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
+// VirtualWorkerTranslation Field IDs.
+const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
+const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID							= 1;
+const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME						= 2;
 
-	const FName DefaultActorGroup = FName(TEXT("Default"));
+// WorkerEntity Field IDs.
+const Schema_FieldId WORKER_ID_ID										= 1;
+const Schema_FieldId WORKER_TYPE_ID										= 2;
 
-	const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType.ToString()};
-	const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType.ToString()};
+// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
+const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
 
-	const WorkerRequirementSet UnrealServerPermission{ {UnrealServerAttributeSet} };
-	const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
-	const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
+const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
+const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 
-	const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
-	const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
+const FName DefaultActorGroup = FName(TEXT("Default"));
 
-	const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
-	const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");
-	const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
+const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID = 0;
+const ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;
 
-	inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
-	{
-		// Double the time to wait on each failure.
-		uint32 WaitTimeExponentialFactor = 1u << (NumAttempts - 1);
-		return FIRST_COMMAND_RETRY_WAIT_SECONDS * WaitTimeExponentialFactor;
-	}
+const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType.ToString()};
+const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType.ToString()};
 
-	const FString LOCAL_HOST = TEXT("127.0.0.1");
-	const uint16 DEFAULT_PORT = 7777;
+const WorkerRequirementSet UnrealServerPermission{ {UnrealServerAttributeSet} };
+const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
+const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
-	const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
+const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
+const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
 
-	const Worker_ComponentId MIN_EXTERNAL_SCHEMA_ID = 1000;
-	const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
+const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
+const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");
+const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
 
-	const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
+inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
+{
+	// Double the time to wait on each failure.
+	uint32 WaitTimeExponentialFactor = 1u << (NumAttempts - 1);
+	return FIRST_COMMAND_RETRY_WAIT_SECONDS * WaitTimeExponentialFactor;
+}
 
-	const FString LOCATOR_HOST = TEXT("locator.improbable.io");
-	// URL that can be used to reconnect using the command line arguments.
-	const FString RECONNECT_USING_COMMANDLINE_ARGUMENTS = TEXT("0.0.0.0");
-	const FString URL_LOGIN_OPTION = TEXT("login=");
-	const FString URL_PLAYER_IDENTITY_OPTION = TEXT("playeridentity=");
-	const uint16 LOCATOR_PORT  = 444;
+const FString LOCAL_HOST   = TEXT("127.0.0.1");
+const uint16  DEFAULT_PORT = 7777;
 
-	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
+const FString LOCATOR_HOST = TEXT("locator.improbable.io");
+const uint16  LOCATOR_PORT = 443;
 
-	const FString SCHEMA_DATABASE_FILE_PATH  = TEXT("Spatial/SchemaDatabase");
-	const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
+const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
-	const FString ZoningAttribute = DefaultServerWorkerType.ToString();
+const Worker_ComponentId MIN_EXTERNAL_SCHEMA_ID = 1000;
+const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
 
-} // ::SpatialConstants
+const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 
-FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentId(ERPCType RPCType)
+// URL that can be used to reconnect using the command line arguments.
+const FString RECONNECT_USING_COMMANDLINE_ARGUMENTS = TEXT("0.0.0.0");
+const FString URL_LOGIN_OPTION = TEXT("login=");
+const FString URL_PLAYER_IDENTITY_OPTION = TEXT("playeridentity=");
+
+const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
+
+const FString SCHEMA_DATABASE_FILE_PATH  = TEXT("Spatial/SchemaDatabase");
+const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
+
+const FString ZoningAttribute = DefaultServerWorkerType.ToString();
+
+FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {
 	switch (RPCType)
 	{
 	case ERPCType::CrossServer:
 	{
-		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 	}
 	case ERPCType::NetMulticast:
 	{
-		return SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
+		return SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY;
 	}
 	case ERPCType::ClientReliable:
 	case ERPCType::ClientUnreliable:
 	{
-		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 	}
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
 	{
-		return SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+		return SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 	}
 	default:
 		checkNoEntry();
 		return SpatialConstants::INVALID_COMPONENT_ID;
 	}
 }
+
+FORCEINLINE Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
+{
+	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
+}
+
+FORCEINLINE Worker_ComponentId GetCrossServerRPCComponent(bool bUsingRingBuffers)
+{
+	return bUsingRingBuffers ? SERVER_ENDPOINT_COMPONENT_ID : SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
+}
+
+} // ::SpatialConstants

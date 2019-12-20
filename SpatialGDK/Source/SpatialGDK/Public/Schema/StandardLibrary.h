@@ -44,7 +44,7 @@ struct Coordinates
 	}
 };
 
-static const Coordinates Origin{ 0, 0, 0 };
+static const Coordinates DeploymentOrigin{ 0, 0, 0 };
 
 inline void AddCoordinateToSchema(Schema_Object* Object, Schema_FieldId Id, const Coordinates& Coordinate)
 {

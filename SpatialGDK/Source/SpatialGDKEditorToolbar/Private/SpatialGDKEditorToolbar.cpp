@@ -9,6 +9,9 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
+#include "HAL/PlatformFilemanager.h"
+#include "Interfaces/IProjectManager.h"
+#include "IOSRuntimeSettings.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
@@ -26,6 +29,7 @@
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKSimulatedPlayerDeployment.h"
@@ -45,6 +49,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 : bStopSpatialOnExit(false)
+, bSchemaBuildError(false)
 {
 }
 
@@ -76,6 +81,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 	LocalDeploymentManager->SetAutoDeploy(SpatialGDKEditorSettings->bAutoStartLocalDeployment);
+	LocalDeploymentManager->SetInChina(SpatialGDKEditorSettings->IsRunningInChina());
 
 	// Bind the play button delegate to starting a local spatial deployment.
 	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && SpatialGDKEditorSettings->bAutoStartLocalDeployment)
@@ -204,6 +210,13 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute),
 		FIsActionChecked(),
 		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible));
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().UpdateIOSClient,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UpdateIOSClient),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UpdateIOSClientIsVisible),
+		FIsActionChecked(),
+		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UpdateIOSClientIsVisible));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -239,9 +252,12 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+#if PLATFORM_WINDOWS
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+#endif
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().UpdateIOSClient);
 	}
 	Builder.EndSection();
 }
@@ -262,7 +278,9 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+#if PLATFORM_WINDOWS
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+#endif
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 }
@@ -566,6 +584,17 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		return;
 	}
 
+	if (bSchemaBuildError)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Schema did not previously compile correctly, you may be running a stale build."));
+
+		EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString("Last schema generation failed or failed to run the schema compiler. Schema will most likely be out of date, which may lead to undefined behavior. Are you sure you want to continue?"));
+		if (Result == EAppReturnType::No)
+		{
+			return;
+		}
+	}
+
 	// Get the latest launch config.
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -724,6 +753,12 @@ bool FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute() const
 	return !LocalDeploymentManager->IsServiceStopping();
 }
 
+bool FSpatialGDKEditorToolbarModule::UpdateIOSClientIsVisible() const
+{
+	FProjectStatus ProjectStatus;
+	return IProjectManager::Get().QueryStatusForCurrentProject(ProjectStatus) && ProjectStatus.IsTargetPlatformSupported("IOS");
+}
+
 void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent)
 {
 	if (USpatialGDKEditorSettings* Settings = Cast<USpatialGDKEditorSettings>(ObjectBeingModified))
@@ -790,6 +825,8 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
 	LocalDeploymentManager->SetRedeployRequired();
 
+	bSchemaBuildError = false;
+
 	if (SpatialGDKEditorInstance->FullScanRequired())
 	{
 		OnShowTaskStartNotification("Initial Schema Generation");
@@ -801,6 +838,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification("Initial Schema Generation failed");
+			bSchemaBuildError = true;
 		}
 	}
 	else if (bFullScan)
@@ -814,6 +852,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification("Full Schema Generation failed");
+			bSchemaBuildError = true;
 		}
 	}
 	else
@@ -827,6 +866,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification("Incremental Schema Generation failed");
+			bSchemaBuildError = true;
 		}
 	}
 }
@@ -839,8 +879,8 @@ bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated() const
 
 bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
 {
-	FString DescriptorPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("build/assembly/schema/schema.descriptor"));
-	FString GdkFolderPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("schema/unreal/gdk"));
+	FString DescriptorPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema/schema.descriptor"));
+	FString GdkFolderPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
 	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath) && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();
 }
 
@@ -855,6 +895,54 @@ FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
 	{
 		return TEXT("");
 	}
+}
+
+void FSpatialGDKEditorToolbarModule::UpdateIOSClient() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	const UIOSRuntimeSettings* IOSRuntimeSettings = GetDefault<UIOSRuntimeSettings>();
+	const FString ProjectName = FApp::GetProjectName();
+
+	// The project path is based on this: https://github.com/improbableio/UnrealEngine/blob/4.22-SpatialOSUnrealGDK-release/Engine/Source/Programs/AutomationTool/AutomationUtils/DeploymentContext.cs#L408
+	const FString CommandLineArgs = FString::Printf(TEXT( "../../../%s/%s.uproject %s -game -log -workerType %s"), *ProjectName, *ProjectName, *(SpatialGDKSettings->ExposedRuntimeIP), *SpatialConstants::DefaultClientWorkerType.ToString());
+	const FString CommandLineArgsFile = FPaths::Combine(*FPaths::ProjectLogDir(), TEXT("ue4commandline.txt"));
+
+	if(!FFileHelper::SaveStringToFile(CommandLineArgs, *CommandLineArgsFile, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("UpdateIOSClient: Failed to write command line args to file: %s"), *CommandLineArgsFile);
+		return;
+	}
+
+	FString DeploymentServerExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
+	FString DeploymentServerArguments = FString::Printf(TEXT("copyfile -bundle \"%s\" -file \"%s\" -file \"/Documents/ue4commandline.txt\""), *(IOSRuntimeSettings->BundleIdentifier), *CommandLineArgsFile);
+	FString DeploymentServerOutput;
+	FString StdErr;
+	int32 ExitCode;
+
+#if PLATFORM_WINDOWS
+	FPlatformProcess::ExecProcess(*DeploymentServerExe, *DeploymentServerArguments, &ExitCode, &DeploymentServerOutput, &StdErr);
+#elif PLATFORM_MAC
+	FString MonoExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/ThirdParty/Mono/Mac/bin/mono")));
+	DeploymentServerArguments = FString::Printf(TEXT("%s %s"), *DeploymentServerExe, *DeploymentServerArguments);
+	FPlatformProcess::ExecProcess(*MonoExe, *DeploymentServerArguments, &ExitCode, &DeploymentServerOutput, &StdErr);
+#endif
+
+	UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Output: %s. Args: %s %s"), *DeploymentServerOutput, *DeploymentServerExe, *DeploymentServerArguments);
+
+	if (ExitCode != 0)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to update the iOS client."));
+		return;
+	}
+
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	if (!PlatformFile.DeleteFile(*CommandLineArgsFile))
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to delete file %s"), *CommandLineArgsFile);
+		return;
+	}
+
+	UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Successfully stored command line args on device: %s"), *DeploymentServerOutput);
 }
 
 #undef LOCTEXT_NAMESPACE

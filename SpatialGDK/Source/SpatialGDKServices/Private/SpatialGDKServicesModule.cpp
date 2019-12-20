@@ -11,6 +11,7 @@
 #include "SSpatialOutputLog.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesPrivate.h"
 #include "Widgets/Docking/SDockTab.h"
 
@@ -20,8 +21,6 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKServices);
 
 IMPLEMENT_MODULE(FSpatialGDKServicesModule, SpatialGDKServices);
 
-const FString SpatialExe = TEXT("spatial.exe");
-const FString SpotExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe"));
 static const FName SpatialOutputLogTabName = FName(TEXT("SpatialOutputLog"));
 
 TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
@@ -59,11 +58,6 @@ FLocalDeploymentManager* FSpatialGDKServicesModule::GetLocalDeploymentManager()
 	return &LocalDeploymentManager;
 }
 
-FString FSpatialGDKServicesModule::GetSpatialOSDirectory(const FString& AppendPath)
-{
-	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/"), AppendPath));
-}
-
 FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& AppendPath)
 {
 	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
@@ -78,35 +72,25 @@ FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& A
 	return FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, AppendPath));
 }
 
-const FString& FSpatialGDKServicesModule::GetSpotExe()
-{
-	return SpotExe;
-}
-
-const FString& FSpatialGDKServicesModule::GetSpatialExe()
-{
-	return SpatialExe;
-}
-
 bool FSpatialGDKServicesModule::SpatialPreRunChecks()
 {
 	FString SpatialExistenceCheckResult;
 	int32 ExitCode;
-	ExecuteAndReadOutput(GetSpatialExe(), TEXT("version"), GetSpatialOSDirectory(), SpatialExistenceCheckResult, ExitCode);
+	ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, TEXT("version"), SpatialGDKServicesConstants::SpatialOSDirectory, SpatialExistenceCheckResult, ExitCode);
 
 	if (ExitCode != 0)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Spatial.exe does not exist on this machine! Please make sure Spatial is installed before trying to start a local deployment. %s"), *SpatialExistenceCheckResult);
+		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("%s does not exist on this machine! Please make sure Spatial is installed before trying to start a local deployment. %s"), *SpatialGDKServicesConstants::SpatialExe, *SpatialExistenceCheckResult);
 		return false;
 	}
 
 	FString SpotExistenceCheckResult;
 	FString StdErr;
-	FPlatformProcess::ExecProcess(*GetSpotExe(), TEXT("version"), &ExitCode, &SpotExistenceCheckResult, &StdErr);
+	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpotExe, TEXT("version"), &ExitCode, &SpotExistenceCheckResult, &StdErr);
 
 	if (ExitCode != 0)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Spot.exe does not exist on this machine! Please make sure to run Setup.bat in the UnrealGDK Plugin before trying to start a local deployment."));
+		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("%s does not exist on this machine! Please make sure to run Setup.bat in the UnrealGDK Plugin before trying to start a local deployment."), *SpatialGDKServicesConstants::SpotExe);
 		return false;
 	}
 
@@ -155,12 +139,11 @@ void FSpatialGDKServicesModule::ExecuteAndReadOutput(const FString& Executable, 
 FString FSpatialGDKServicesModule::ParseProjectName()
 {
 	FString ProjectNameParsed;
-	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
 
 	FString SpatialFileName = TEXT("spatialos.json");
 	FString SpatialFileResult;
 
-	if (FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialDirectory, SpatialFileName)))
+	if (FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, SpatialFileName)))
 	{
 		TSharedPtr<FJsonObject> JsonParsedSpatialFile;
 		if (ParseJson(SpatialFileResult, JsonParsedSpatialFile))
