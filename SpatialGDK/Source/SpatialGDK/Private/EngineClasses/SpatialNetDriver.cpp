@@ -25,7 +25,6 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
