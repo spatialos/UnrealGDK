@@ -194,7 +194,7 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
 	RemoveActor(Op.entity_id);
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
-	if (GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers)
+	if (GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers && RPCService != nullptr)
 	{
 		RPCService->OnRemoveEntity(Op.entity_id);
 	}
@@ -496,7 +496,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID ||
 		Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers)
+		if (GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers && RPCService != nullptr)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
@@ -569,7 +569,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers)
+	if (GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers && RPCService != nullptr)
 	{
 		RPCService->OnCheckoutEntity(EntityId);
 	}
@@ -1366,7 +1366,7 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 
 void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 {
-	if (!GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers)
+	if (!GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers || RPCService == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::HandleRPC: Received component update on ring buffer component but ring buffers not enabled! Entity: %lld, Component: %d"), Op.entity_id, Op.update.component_id);
 		return;

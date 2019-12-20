@@ -139,7 +139,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 
-	if (SpatialSettings->bUseRPCRingBuffers)
+	if (SpatialSettings->bUseRPCRingBuffers && RPCService != nullptr)
 	{
 		ComponentWriteAcl.Add(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 		ComponentWriteAcl.Add(SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
@@ -300,7 +300,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	InterestFactory InterestDataFactory(Actor, Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
-	if (SpatialSettings->bUseRPCRingBuffers)
+	if (SpatialSettings->bUseRPCRingBuffers && RPCService != nullptr)
 	{
 		ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
 	}
@@ -643,11 +643,14 @@ void USpatialSender::FlushPackedRPCs()
 
 void USpatialSender::FlushRPCService()
 {
-	RPCService->PushOverflowedRPCs();
-
-	for (const SpatialRPCService::UpdateToSend& Update : RPCService->GetRPCsAndAcksToSend())
+	if (RPCService != nullptr)
 	{
-		Connection->SendComponentUpdate(Update.EntityId, &Update.Update);
+		RPCService->PushOverflowedRPCs();
+
+		for (const SpatialRPCService::UpdateToSend& Update : RPCService->GetRPCsAndAcksToSend())
+		{
+			Connection->SendComponentUpdate(Update.EntityId, &Update.Update);
+		}
 	}
 }
 
@@ -909,7 +912,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			return ERPCResult::UnresolvedTargetObject;
 		}
 
-		if (SpatialGDKSettings->bUseRPCRingBuffers)
+		if (SpatialGDKSettings->bUseRPCRingBuffers && RPCService != nullptr)
 		{
 			EPushRPCResult Result = RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload);
 #if !UE_BUILD_SHIPPING
