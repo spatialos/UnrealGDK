@@ -7,6 +7,7 @@
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialOutputDevice.h"
+#include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
 #include "Utils/SpatialActorGroupManager.h"
 
@@ -14,14 +15,10 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
-
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "IpNetDriver.h"
-#include "OnlineSubsystemNames.h"
 #include "TimerManager.h"
-#include "UObject/CoreOnline.h"
 
 #include "SpatialNetDriver.generated.h"
 
@@ -182,6 +179,8 @@ private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
+
+	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TArray<Worker_OpList*> QueuedStartupOpLists;
