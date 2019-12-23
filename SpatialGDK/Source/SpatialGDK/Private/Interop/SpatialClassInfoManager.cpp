@@ -465,7 +465,7 @@ const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction*
 	return *RPCInfoPtr;
 }
 
-uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
+uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath) const
 {
 	FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
 	if (const uint32* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
@@ -475,9 +475,25 @@ uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& Leve
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
-bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
+bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId) const
 {
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
+}
+
+TArray<float> USpatialClassInfoManager::GetNetCullDistances() const
+{
+	TArray<float> NetCullDistances;
+	SchemaDatabase->NetCullDistanceToComponentId.GetKeys(NetCullDistances);
+	return NetCullDistances;
+}
+
+uint32 USpatialClassInfoManager::GetComponentIdForNetCullDistance(float NetCullDistance) const
+{
+	if (const uint32* ComponentId = SchemaDatabase->NetCullDistanceToComponentId.Find(NetCullDistance))
+	{
+		return *ComponentId;
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
 void USpatialClassInfoManager::QuitGame()

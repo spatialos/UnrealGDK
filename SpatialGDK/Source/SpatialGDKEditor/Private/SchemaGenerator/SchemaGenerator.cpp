@@ -646,6 +646,15 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 
 	ActorClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
 
+	// Cache the NCD for this Actor
+	if (AActor* CDO = Class->GetDefaultObject<AActor>())
+	{
+		if (NetCullDistanceToComponentId.Find(CDO->NetCullDistanceSquared) == nullptr)
+		{
+			NetCullDistanceToComponentId.Add(CDO->NetCullDistanceSquared, 0);
+		}
+	}
+
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
 }
 

@@ -113,8 +113,11 @@ public:
 	
 	const FRPCInfo& GetRPCInfo(UObject* Object, UFunction* Function);
 
-	uint32 GetComponentIdFromLevelPath(const FString& LevelPath);
-	bool IsSublevelComponent(Worker_ComponentId ComponentId);
+	uint32 GetComponentIdFromLevelPath(const FString& LevelPath) const;
+	bool IsSublevelComponent(Worker_ComponentId ComponentId) const;
+
+	TArray<float> GetNetCullDistances() const;
+	uint32 GetComponentIdForNetCullDistance(float NetCullDistance) const;
 
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;

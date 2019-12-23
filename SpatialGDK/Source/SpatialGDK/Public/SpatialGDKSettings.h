@@ -255,4 +255,8 @@ public:
 	/** Only valid on Udp connections - specifies client downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UdpClientDownstreamUpdateIntervalMS;
+
+	/** Enable to use the new net cull distance component tagging form of interest */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest")
+	bool bEnableNetCullDistanceInterest;
 };

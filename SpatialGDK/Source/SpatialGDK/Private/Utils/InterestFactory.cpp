@@ -312,42 +312,64 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 		}
 	}
 
-	// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
-	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
-	//   - NetCullDistanceSquared on AActor is used to define the default checkout radius with no other constraints.
-	//   - NetCullDistanceSquared on other actor types is used to define additional constraints if needed.
-	//   - If a subtype defines a radius smaller than a parent type, then its requirements are already captured.
-	//   - If a subtype defines a radius larger than all parent types, then it needs an additional constraint.
-	//   - Other than the default from AActor, all radius constraints also include Component constraints to
-	//     capture specific types, including all derived types of that actor.
-
-	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
-	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
-
 	QueryConstraint CheckoutRadiusConstraints;
 
-	// Use AActor's ClientInterestDistance for the default radius (all actors in that radius will be checked out)
-	const float DefaultCheckoutRadiusMeters = FMath::Sqrt(DefaultDistanceSquared / (100.0f * 100.0f));
-	QueryConstraint DefaultCheckoutRadiusConstraint;
-	DefaultCheckoutRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ DefaultCheckoutRadiusMeters };
-	CheckoutRadiusConstraints.OrConstraint.Add(DefaultCheckoutRadiusConstraint);
-
-	// For every interest distance that we still want, add a constraint with the distance for the actor type and all of its derived types.
-	for (const auto& InterestDistanceSquared: ClientInterestDistancesSquared)
+	if (!GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest)
 	{
-		QueryConstraint CheckoutRadiusConstraint;
+		// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
+		//   - Checkout radius is a RelativeCylinder constraint on the player controller.
+		//   - NetCullDistanceSquared on AActor is used to define the default checkout radius with no other constraints.
+		//   - NetCullDistanceSquared on other actor types is used to define additional constraints if needed.
+		//   - If a subtype defines a radius smaller than a parent type, then its requirements are already captured.
+		//   - If a subtype defines a radius larger than all parent types, then it needs an additional constraint.
+		//   - Other than the default from AActor, all radius constraints also include Component constraints to
+		//     capture specific types, including all derived types of that actor.
 
-		QueryConstraint RadiusConstraint;
-		const float CheckoutRadiusMeters = FMath::Sqrt(InterestDistanceSquared.Value / (100.0f * 100.0f));
-		RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadiusMeters };
-		CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
+		const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
+		const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
 
-		QueryConstraint ActorTypeConstraint;
-		check(InterestDistanceSquared.Key);
-		AddTypeHierarchyToConstraint(*InterestDistanceSquared.Key, ActorTypeConstraint);
-		if (ActorTypeConstraint.IsValid())
+		// Use AActor's ClientInterestDistance for the default radius (all actors in that radius will be checked out)
+		const float DefaultCheckoutRadiusMeters = FMath::Sqrt(DefaultDistanceSquared / (100.0f * 100.0f));
+		QueryConstraint DefaultCheckoutRadiusConstraint;
+		DefaultCheckoutRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ DefaultCheckoutRadiusMeters };
+		CheckoutRadiusConstraints.OrConstraint.Add(DefaultCheckoutRadiusConstraint);
+
+		// For every interest distance that we still want, add a constraint with the distance for the actor type and all of its derived types.
+		for (const auto& InterestDistanceSquared : ClientInterestDistancesSquared)
 		{
-			CheckoutRadiusConstraint.AndConstraint.Add(ActorTypeConstraint);
+			QueryConstraint CheckoutRadiusConstraint;
+
+			QueryConstraint RadiusConstraint;
+			const float CheckoutRadiusMeters = FMath::Sqrt(InterestDistanceSquared.Value / (100.0f * 100.0f));
+			RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadiusMeters };
+			CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
+
+			QueryConstraint ActorTypeConstraint;
+			check(InterestDistanceSquared.Key);
+			AddTypeHierarchyToConstraint(*InterestDistanceSquared.Key, ActorTypeConstraint);
+			if (ActorTypeConstraint.IsValid())
+			{
+				CheckoutRadiusConstraint.AndConstraint.Add(ActorTypeConstraint);
+				CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
+			}
+		}
+	}
+	else
+	{
+		TArray<float> NetCullDistances = ClassInfoManager->GetNetCullDistances();
+		for (float NetCullDistance : NetCullDistances)
+		{
+			QueryConstraint RadiusConstraint;
+			const float CheckoutRadiusMeters = FMath::Sqrt(NetCullDistance / (100.0f * 100.0f));
+			RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadiusMeters };
+
+			QueryConstraint ComponentConstraint;
+			ComponentConstraint.ComponentConstraint = ClassInfoManager->GetComponentIdForNetCullDistance(NetCullDistance);
+
+			QueryConstraint CheckoutRadiusConstraint;
+			CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
+			CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
+
 			CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
 		}
 	}

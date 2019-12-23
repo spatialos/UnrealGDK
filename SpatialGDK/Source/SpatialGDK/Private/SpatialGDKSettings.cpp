@@ -53,6 +53,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, UdpClientUpstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
 	// TODO - end
+	, bEnableNetCullDistanceInterest(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
