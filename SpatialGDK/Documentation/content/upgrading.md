@@ -46,16 +46,10 @@ To update your Unreal Engine fork and GDK to the latest version, complete the fo
 1. Run `git pull` to update your Unreal Engine.
 1. In a terminal, change directory to the root of `UnrealGDK`.
 1. Run `git pull` to update your GDK.
-1. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and then double-click **`Setup.bat`**. You might be prompted to sign into your SpatialOS account if you have not signed in yet.
-1. In **File Explorer**, navigate to the `<GameRoot>` directory that contains your project's `.uproject` file.<br>
-Right-click on your `.uproject` file and select **Generate Visual Studio project files**.
-1. In **File Explorer**, navigate to `<GameRoot>\Content\Spatial`and delete `SchemaDatabase.uasset`. This is necessary because some GDK upgrades change how we handle schema, and this sometimes invalidates previously generated schema.
-
-You are now on the latest GDK and the latest SpatialOS Unreal Engine fork.
 
 ## Step 5: Update your clang version, rebuild your Engine and your Project
 
-This step is only required if you checked out an `UnrealEngine` branch with a new Unreal Engine version, for example, if you moved from `4.22-SpatialOSUnrealGDK-release` to `4.23-SpatialOSUnrealGDK-release`.
+This step is **only** required if you checked out an `UnrealEngine` branch with a new Unreal Engine version, for example, if you moved from `4.22-SpatialOSUnrealGDK-release` to `4.23-SpatialOSUnrealGDK-release`. If you didn't do this, skip forward to Step 6.
 
 1. Download and install the [version of clang](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html) that corresponds to your Engine version.
 1. Run `Setup.bat`, which is located in the root directory of the `UnrealEngine` repository.
@@ -63,6 +57,15 @@ This step is only required if you checked out an `UnrealEngine` branch with a ne
 1. Open **UE4.sln** in Visual Studio and build it.
 1. In your project, right click on **.uproject** file and `Generate Project Files`.
 1. Open your project's **.sln** in Visual Studio and build it.
+
+## Step 6: Set-up your Unreal Engine fork and plugin
+
+1. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and then double-click **`Setup.bat`**. You might be prompted to sign into your SpatialOS account if you have not signed in yet.
+1. In **File Explorer**, navigate to the `<GameRoot>` directory that contains your project's `.uproject` file.<br>
+Right-click on your `.uproject` file and select **Generate Visual Studio project files**.
+1. In **File Explorer**, navigate to `<GameRoot>\Content\Spatial`and delete `SchemaDatabase.uasset`. This is necessary because some GDK upgrades change how we handle schema, and this sometimes invalidates previously generated schema.
+
+You are now on the latest GDK and the latest SpatialOS Unreal Engine fork.
 
 Be sure to join the community on our <a href="https://forums.improbable.io" data-track-link="Join Forums Clicked|product=Docs" target="_blank">forums</a> or on <a href="https://discord.gg/vAT7RSU" data-track-link="Join Discord Clicked|product=Docs|platform=Win|label=Win" target="_blank">Discord</a>. We announce GDK versions there.
 
