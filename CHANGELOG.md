@@ -49,6 +49,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The receptionist will now be used for appropriate URLs after connecting to a locator URL.
 - You can now access the worker flags via `USpatialStatics::GetWorkerFlag` instead of `USpatialWorkerFlags::GetWorkerFlag`.
 - Fix crash in SpatialDebugger when GDK-space load balancing is disabled.
+- Fixed issue where schema database failed to load previous saved state when working in editor.
 
 ## [`0.8.0-preview`] - 2019-12-17
 
