@@ -79,15 +79,11 @@ struct UnrealMetadata : Component
 			UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("UnrealMetadata native class %s unloaded whilst entity in view."), *ClassPath);
 		}
 #endif
-		UClass* Class = nullptr;
+		UClass* Class = FindObject<UClass>(nullptr, *ClassPath, false);
 
 		// Unfortunately StablyNameRef doesn't mean NameStableForNetworking as we add a StablyNameRef for every startup actor (see USpatialSender::CreateEntity)
 		// TODO: UNR-2537 Investigate why FindObject can be used the first time the actor comes into view for a client but not subsequent loads.
-		if (StablyNamedRef.IsSet() && bNetStartup.IsSet() && bNetStartup.GetValue())
-		{
-			Class = FindObject<UClass>(nullptr, *ClassPath, false);
-		}
-		else
+		if (Class == nullptr && !(StablyNamedRef.IsSet() && bNetStartup.IsSet() && bNetStartup.GetValue()))
 		{
 			Class = LoadObject<UClass>(nullptr, *ClassPath);
 		}

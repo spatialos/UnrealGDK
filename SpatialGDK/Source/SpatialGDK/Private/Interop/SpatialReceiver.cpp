@@ -80,7 +80,10 @@ void USpatialReceiver::LeaveCriticalSection()
 	for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
 	{
 		ReceiveActor(PendingAddEntity);
-		OnEntityAddedDelegate.Broadcast(PendingAddEntity);
+		if (!IsEntityWaitingForAsyncLoad(PendingAddEntity))
+		{
+			OnEntityAddedDelegate.Broadcast(PendingAddEntity);
+		}
 	}
 
 	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
@@ -110,6 +113,12 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"),
 		Op.data.component_id, Op.entity_id);
+
+	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
+	{
+		QueueAddComponentOpForAsyncLoad(Op);
+		return;
+	}
 
 	switch (Op.data.component_id)
 	{
@@ -192,6 +201,13 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 
 void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
+	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
+	{
+		// Pretend we never saw this
+		EntitiesWaitingForAsyncLoad.Remove(Op.entity_id);
+		return;
+	}
+
 	RemoveActor(Op.entity_id);
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
 	if (GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers && RPCService != nullptr)
@@ -247,6 +263,12 @@ USpatialActorChannel* USpatialReceiver::RecreateDormantSpatialChannel(AActor* Ac
 
 void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
+	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
+	{
+		QueueRemoveComponentOpForAsyncLoad(Op);
+		return;
+	}
+
 	if (!StaticComponentView->HasComponent(Op.entity_id, Op.component_id))
 	{
 		return;
@@ -285,6 +307,12 @@ void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 
 void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
+	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
+	{
+		QueueAuthorityOpForAsyncLoad(Op);
+		return;
+	}
+
 	if (bInCriticalSection)
 	{
 		PendingAuthorityChanges.Add(Op);
@@ -569,7 +597,27 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers && RPCService != nullptr)
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	// Check if actor's class is loaded. If not, start async loading it and extract all data and authority ops into a separate thing.
+	// Also add this EntityId to a list of things to check for completion.
+	const FString& ClassPath = UnrealMetadataComp->ClassPath;
+	if (SpatialGDKSettings->bAsyncLoadNewClassesOnEntityCheckout && NeedToLoadClass(ClassPath))
+	{
+		FString PackagePath = GetPackagePath(ClassPath);
+
+		EntityWaitingForAsyncLoad AsyncLoadEntity;
+		AsyncLoadEntity.ClassPath = ClassPath;
+		AsyncLoadEntity.InitialPendingAddComponents = ExtractAddComponents(EntityId);
+		AsyncLoadEntity.PendingOps = ExtractAuthorityOps(EntityId);
+
+		EntitiesWaitingForAsyncLoad.Emplace(EntityId, MoveTemp(AsyncLoadEntity));
+		AsyncLoadingPackages.Add(PackagePath, EntityId);
+		LoadPackageAsync(PackagePath, FLoadPackageAsyncDelegate::CreateUObject(this, &USpatialReceiver::OnAsyncPackageLoaded));
+		return;
+	}
+
+	if (SpatialGDKSettings->bUseRPCRingBuffers && RPCService != nullptr)
 	{
 		RPCService->OnCheckoutEntity(EntityId);
 	}
@@ -1145,6 +1193,12 @@ void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorCh
 
 void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
+	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
+	{
+		QueueComponentUpdateOpForAsyncLoad(Op);
+		return;
+	}
+
 	switch (Op.update.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
@@ -1379,6 +1433,13 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 {
 	Schema_FieldId CommandIndex = Op.request.command_index;
 
+	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("USpatialReceiver::OnCommandRequest: Actor class async loading, ignoring command. Entity %lld, Class %s"), Op.entity_id, *EntitiesWaitingForAsyncLoad[Op.entity_id].ClassPath);
+		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
+		return;
+	}
+
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
 	{
 		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
@@ -1455,6 +1516,12 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 
 void USpatialReceiver::OnCommandResponse(const Worker_CommandResponseOp& Op)
 {
+	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("USpatialReceiver::OnCommandResponse: Actor class async loading, ignoring command response. Entity %lld, Class %s"), Op.entity_id, *EntitiesWaitingForAsyncLoad[Op.entity_id].ClassPath);
+		return;
+	}
+
 	if (Op.response.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
 	{
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponse(Op);
@@ -2172,4 +2239,185 @@ void USpatialReceiver::PeriodicallyProcessIncomingRPCs()
 			SpatialReceiver->IncomingRPCs.ProcessRPCs();
 		}
 	}, GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCWaitTime, true);
+}
+
+bool USpatialReceiver::NeedToLoadClass(const FString& ClassPath)
+{
+	return FindObject<UClass>(nullptr, *ClassPath, false) == nullptr;
+}
+
+FString USpatialReceiver::GetPackagePath(const FString& ClassPath)
+{
+	return FSoftObjectPath(ClassPath).GetLongPackageName();
+}
+
+void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result)
+{
+	FString PackageNameStr = PackageName.ToString();
+	if (!AsyncLoadingPackages.Contains(PackageNameStr))
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package loaded but no entry in AsyncLoadingPackages. Package: %s"), *PackageNameStr);
+		return;
+	}
+
+	Worker_EntityId Entity = AsyncLoadingPackages.FindAndRemoveChecked(PackageNameStr);
+
+	if (IsEntityWaitingForAsyncLoad(Entity))
+	{
+		CriticalSectionSaveState CriticalSectionState;
+		if (bInCriticalSection)
+		{
+			SaveCriticalSection(CriticalSectionState);
+		}
+		bool bInCriticalSectionSaved = bInCriticalSection;
+		bInCriticalSection = true;
+
+		EntityWaitingForAsyncLoad AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindAndRemoveChecked(Entity);
+		PendingAddEntities.Add(Entity);
+		PendingAddComponents = MoveTemp(AsyncLoadEntity.InitialPendingAddComponents);
+		LeaveCriticalSection();
+
+		for (QueuedOpForAsyncLoad& Op : AsyncLoadEntity.PendingOps)
+		{
+			HandleQueuedOpForAsyncLoad(Op);
+		}
+
+		bInCriticalSection = bInCriticalSectionSaved;
+		if (bInCriticalSection)
+		{
+			RestoreCriticalSection(CriticalSectionState);
+		}
+	}
+}
+
+bool USpatialReceiver::IsEntityWaitingForAsyncLoad(Worker_EntityId Entity)
+{
+	return EntitiesWaitingForAsyncLoad.Contains(Entity);
+}
+
+void USpatialReceiver::QueueAddComponentOpForAsyncLoad(const Worker_AddComponentOp& Op)
+{
+	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
+
+	QueuedOpForAsyncLoad NewOp = {};
+	NewOp.Type = WORKER_OP_TYPE_ADD_COMPONENT;
+	NewOp.AddComponent = Op;
+	NewOp.AcquiredData = Worker_AcquireComponentData(&Op.data);
+	NewOp.AddComponent.data = *NewOp.AcquiredData;
+	AsyncLoadEntity.PendingOps.Add(NewOp);
+}
+
+void USpatialReceiver::QueueRemoveComponentOpForAsyncLoad(const Worker_RemoveComponentOp& Op)
+{
+	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
+
+	QueuedOpForAsyncLoad NewOp = {};
+	NewOp.Type = WORKER_OP_TYPE_REMOVE_COMPONENT;
+	NewOp.RemoveComponent = Op;
+	AsyncLoadEntity.PendingOps.Add(NewOp);
+}
+
+void USpatialReceiver::QueueAuthorityOpForAsyncLoad(const Worker_AuthorityChangeOp& Op)
+{
+	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
+
+	QueuedOpForAsyncLoad NewOp = {};
+	NewOp.Type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
+	NewOp.AuthorityChange = Op;
+	AsyncLoadEntity.PendingOps.Add(NewOp);
+}
+
+void USpatialReceiver::QueueComponentUpdateOpForAsyncLoad(const Worker_ComponentUpdateOp& Op)
+{
+	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
+
+	QueuedOpForAsyncLoad NewOp = {};
+	NewOp.Type = WORKER_OP_TYPE_COMPONENT_UPDATE;
+	NewOp.ComponentUpdate = Op;
+	NewOp.AcquiredUpdate = Worker_AcquireComponentUpdate(&Op.update);
+	NewOp.ComponentUpdate.update = *NewOp.AcquiredUpdate;
+	AsyncLoadEntity.PendingOps.Add(NewOp);
+}
+
+TArray<PendingAddComponentWrapper> USpatialReceiver::ExtractAddComponents(Worker_EntityId Entity)
+{
+	TArray<PendingAddComponentWrapper> ExtractedAddComponents;
+	TArray<PendingAddComponentWrapper> RemainingAddComponents;
+
+	for (PendingAddComponentWrapper& AddComponent : PendingAddComponents)
+	{
+		if (AddComponent.EntityId == Entity)
+		{
+			ExtractedAddComponents.Add(MoveTemp(AddComponent));
+		}
+		else
+		{
+			RemainingAddComponents.Add(MoveTemp(AddComponent));
+		}
+	}
+	PendingAddComponents = MoveTemp(RemainingAddComponents);
+	return ExtractedAddComponents;
+}
+
+TArray<USpatialReceiver::QueuedOpForAsyncLoad> USpatialReceiver::ExtractAuthorityOps(Worker_EntityId Entity)
+{
+	TArray<QueuedOpForAsyncLoad> ExtractedOps;
+	TArray<Worker_AuthorityChangeOp> RemainingOps;
+
+	for (const Worker_AuthorityChangeOp& Op : PendingAuthorityChanges)
+	{
+		if (Op.entity_id == Entity)
+		{
+			QueuedOpForAsyncLoad NewOp = {};
+			NewOp.Type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
+			NewOp.AuthorityChange = Op;
+			ExtractedOps.Add(NewOp);
+		}
+		else
+		{
+			RemainingOps.Add(Op);
+		}
+	}
+	PendingAuthorityChanges = MoveTemp(RemainingOps);
+	return ExtractedOps;
+}
+
+void USpatialReceiver::SaveCriticalSection(CriticalSectionSaveState& OutState)
+{
+	OutState.PendingAddEntities = MoveTemp(PendingAddEntities);
+	OutState.PendingAuthorityChanges = MoveTemp(PendingAuthorityChanges);
+	OutState.PendingAddComponents = MoveTemp(PendingAddComponents);
+	PendingAddEntities.Empty();
+	PendingAuthorityChanges.Empty();
+	PendingAddComponents.Empty();
+}
+
+void USpatialReceiver::RestoreCriticalSection(CriticalSectionSaveState& State)
+{
+	PendingAddEntities = MoveTemp(State.PendingAddEntities);
+	PendingAuthorityChanges = MoveTemp(State.PendingAuthorityChanges);
+	PendingAddComponents = MoveTemp(State.PendingAddComponents);
+}
+
+void USpatialReceiver::HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op)
+{
+	switch (Op.Type)
+	{
+	case WORKER_OP_TYPE_ADD_COMPONENT:
+		OnAddComponent(Op.AddComponent);
+		Worker_ReleaseComponentData(Op.AcquiredData);
+		break;
+	case WORKER_OP_TYPE_REMOVE_COMPONENT:
+		ProcessRemoveComponent(Op.RemoveComponent);
+		break;
+	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+		OnAuthorityChange(Op.AuthorityChange);
+		break;
+	case WORKER_OP_TYPE_COMPONENT_UPDATE:
+		OnComponentUpdate(Op.ComponentUpdate);
+		Worker_ReleaseComponentUpdate(Op.AcquiredUpdate);
+		break;
+	default:
+		checkNoEntry();
+	}
 }
