@@ -246,7 +246,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	// Client Interest
 	if (ClientConstraint.IsValid())
 	{
-		NewInterest.ComponentInterestMap.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, ClientComponentInterest);
+		NewInterest.ComponentInterestMap.Add(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers), ClientComponentInterest);
 	}
 
 	return NewInterest;

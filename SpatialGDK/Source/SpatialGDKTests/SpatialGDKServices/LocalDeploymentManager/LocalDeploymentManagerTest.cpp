@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "TestDefinitions.h"
+#include "Tests/TestDefinitions.h"
 
 #include "LocalDeploymentManagerUtilities.h"
 

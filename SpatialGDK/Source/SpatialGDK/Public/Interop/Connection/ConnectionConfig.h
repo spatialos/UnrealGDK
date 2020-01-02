@@ -16,7 +16,7 @@ struct FConnectionConfig
 	FConnectionConfig()
 		: UseExternalIp(false)
 		, EnableProtocolLoggingAtStartup(false)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_UDP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
 		, TcpNoDelay(0)
@@ -39,11 +39,11 @@ struct FConnectionConfig
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString == TEXT("Tcp"))
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_TCP;
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
 		}
 		else if (LinkProtocolString == TEXT("Kcp"))
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_UDP;
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
 		}
 		else if (!LinkProtocolString.IsEmpty())
 		{
@@ -156,7 +156,10 @@ public:
 	void SetReceptionistHost(const FString& host)
 	{
 		ReceptionistHost = host;
-		UseExternalIp = ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0;
+		if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
+		{
+			UseExternalIp = true;
+		}
 	}
 
 	FString GetReceptionistHost() const { return ReceptionistHost; }
