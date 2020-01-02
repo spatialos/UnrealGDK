@@ -100,6 +100,7 @@ const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 9991;
 const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY		= 9990;
 const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY		= 9989;
 const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID_LEGACY			= 9987;
+
 const Worker_ComponentId NOT_STREAMED_COMPONENT_ID						= 9986;
 const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
 const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
@@ -109,9 +110,9 @@ const Worker_ComponentId DORMANT_COMPONENT_ID							= 9981;
 const Worker_ComponentId AUTHORITY_INTENT_COMPONENT_ID                  = 9980;
 const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID        = 9979;
 
-const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID				= 9978;
-const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID				= 9977;
-const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID					= 9976;
+const Worker_ComponentId CLIENT_ENDPOINT_COMPONENT_ID					= 9978;
+const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID					= 9977;
+const Worker_ComponentId MULTICAST_RPCS_COMPONENT_ID					= 9976;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -215,8 +216,11 @@ inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 	return FIRST_COMMAND_RETRY_WAIT_SECONDS * WaitTimeExponentialFactor;
 }
 
-const FString LOCAL_HOST = TEXT("127.0.0.1");
-const uint16 DEFAULT_PORT = 7777;
+const FString LOCAL_HOST   = TEXT("127.0.0.1");
+const uint16  DEFAULT_PORT = 7777;
+
+const FString LOCATOR_HOST = TEXT("locator.improbable.io");
+const uint16  LOCATOR_PORT = 443;
 
 const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
@@ -225,12 +229,10 @@ const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
 
 const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 
-const FString LOCATOR_HOST = TEXT("locator.improbable.io");
 // URL that can be used to reconnect using the command line arguments.
 const FString RECONNECT_USING_COMMANDLINE_ARGUMENTS = TEXT("0.0.0.0");
 const FString URL_LOGIN_OPTION = TEXT("login=");
 const FString URL_PLAYER_IDENTITY_OPTION = TEXT("playeridentity=");
-const uint16 LOCATOR_PORT  = 443;
 
 const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
@@ -265,6 +267,16 @@ FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType
 		checkNoEntry();
 		return SpatialConstants::INVALID_COMPONENT_ID;
 	}
+}
+
+FORCEINLINE Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
+{
+	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
+}
+
+FORCEINLINE Worker_ComponentId GetCrossServerRPCComponent(bool bUsingRingBuffers)
+{
+	return bUsingRingBuffers ? SERVER_ENDPOINT_COMPONENT_ID : SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 }
 
 } // ::SpatialConstants

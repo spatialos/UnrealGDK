@@ -48,10 +48,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxRPCRingBufferSize(32)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
 	, bTcpNoDelay(false)
-	, UdpServerUpstreamUpdateIntervalMS(10)
-	, UdpServerDownstreamUpdateIntervalMS(10)
-	, UdpClientUpstreamUpdateIntervalMS(10)
-	, UdpClientDownstreamUpdateIntervalMS(10)
+	, UdpServerUpstreamUpdateIntervalMS(1)
+	, UdpServerDownstreamUpdateIntervalMS(1)
+	, UdpClientUpstreamUpdateIntervalMS(1)
+	, UdpClientDownstreamUpdateIntervalMS(1)
 	// TODO - end
 	, bEnableSchemaValidationOnJoin(true)
 {

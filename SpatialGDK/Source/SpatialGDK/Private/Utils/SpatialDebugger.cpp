@@ -348,8 +348,15 @@ FColor ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId) c
 	}
 	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
 	const int32 VirtualWorkerId = AuthorityIntentComponent->VirtualWorkerId;
-	const PhysicalWorkerName* PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(VirtualWorkerId);
-	if (PhysicalWorkerName == nullptr) {
+
+	const PhysicalWorkerName* PhysicalWorkerName = nullptr;
+	if (NetDriver->VirtualWorkerTranslator)
+	{
+		PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(VirtualWorkerId);
+	}
+
+	if (PhysicalWorkerName == nullptr)
+	{
 		// This can happen if the client hasn't yet received the VirtualWorkerTranslator mapping
 		return InvalidServerTintColor;
 	}
