@@ -135,19 +135,29 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 
 FUnrealObjectRef FUnrealObjectRef::FromSoftObjectPtr(const FSoftObjectPtr& ObjectPtr)
 {
-	const FSoftObjectPath& SoftObjectPath = ObjectPtr.ToSoftObjectPath();
+	return FromSoftObjectPath(ObjectPtr.ToSoftObjectPath());
+}
+
+FUnrealObjectRef FUnrealObjectRef::FromSoftObjectPath(const FSoftObjectPath& ObjectPath)
+{
 	FUnrealObjectRef PackageRef;
 
-	PackageRef.Path = SoftObjectPath.GetLongPackageName();
+	PackageRef.Path = ObjectPath.GetLongPackageName();
 
 	FUnrealObjectRef ObjectRef;
 	ObjectRef.Outer = PackageRef;
-	ObjectRef.Path = SoftObjectPath.GetAssetName();
+	ObjectRef.Path = ObjectPath.GetAssetName();
 
 	return ObjectRef;
 }
 
 void FUnrealObjectRef::ToSoftObjectPtr(const FUnrealObjectRef& ObjectRef, FSoftObjectPtr& OutPtr)
+{
+	OutPtr.Reset();
+	OutPtr = FSoftObjectPtr(ToSoftObjectPath(ObjectRef));
+}
+
+FSoftObjectPath FUnrealObjectRef::ToSoftObjectPath(const FUnrealObjectRef& ObjectRef)
 {
 	if (ObjectRef.Path.IsSet())
 	{
@@ -170,11 +180,11 @@ void FUnrealObjectRef::ToSoftObjectPtr(const FUnrealObjectRef& ObjectRef, FSoftO
 			CurRef = CurRef->Outer.IsSet() ? &(*CurRef->Outer) : nullptr;
 		}
 
-		OutPtr = FSoftObjectPtr(FSoftObjectPath(FullPackagePath));
+		return FSoftObjectPath(FullPackagePath);
 	}
 	else
 	{
-		OutPtr = FSoftObjectPtr();
+		return FSoftObjectPath();
 	}
 }
 

@@ -204,21 +204,24 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
-
-		if (ObjectProperty->PropertyFlags & CPF_AlwaysInterested)
-		{
-			bInterestHasChanged = true;
-		}
-		if (ObjectValue)
-		{
-			AddObjectRefToSchema(Object, FieldId, FUnrealObjectRef::FromObjectPtr(ObjectValue, PackageMap));
-		}
-		else if(Cast<USoftObjectProperty>(Property))
+		if (Cast<USoftObjectProperty>(Property))
 		{
 			FSoftObjectPtr* ObjectPtr = (FSoftObjectPtr*)Data;
 
 			AddObjectRefToSchema(Object, FieldId, FUnrealObjectRef::FromSoftObjectPtr(*ObjectPtr));
+		}
+		else
+		{
+			UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
+
+			if (ObjectProperty->PropertyFlags & CPF_AlwaysInterested)
+			{
+				bInterestHasChanged = true;
+			}
+			if (ObjectValue)
+			{
+				AddObjectRefToSchema(Object, FieldId, FUnrealObjectRef::FromObjectPtr(ObjectValue, PackageMap));
+			}
 		}
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
