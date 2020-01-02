@@ -15,7 +15,9 @@ namespace
 	// TODO: UNR-1969 - Prepare LocalDeployment in CI pipeline
 	const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 30.0;
 
-	const FName AutomationWorkerType = TEXT("AutomationWorker");
+	// TODO(Alex): When using AutomationWorker, permissions in WorkerConnection tests fails
+	//const FName AutomationWorkerType = TEXT("AutomationWorker");
+	const FName AutomationWorkerType = TEXT("UnrealWorker");
 	const FString AutomationLaunchConfig = TEXT("Improbable/AutomationLaunchConfig.json");
 
 	FLocalDeploymentManager* GetLocalDeploymentManager()

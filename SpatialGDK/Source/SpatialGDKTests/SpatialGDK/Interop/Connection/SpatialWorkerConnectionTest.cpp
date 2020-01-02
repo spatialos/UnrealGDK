@@ -1,8 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "TestDefinitions.h"
+#include "Tests/TestDefinitions.h"
 
 #include "SpatialWorkerConnection.h"
+
+#include "Interop/SpatialOutputDevice.h"
 
 #include "SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
 
@@ -19,17 +21,7 @@ namespace
 {
 bool bClientConnectionProcessed = false;
 bool bServerConnectionProcessed = false;
-
-FURL CreateTestURL()
-{
-	FURL URL = {};
-	URL.Protocol = L"unreal";
-	URL.Port = 7777;
-	URL.Valid = 1;
-	URL.Map = L"/Game/Maps/UEDPIE_4_EmptyGym";
-
-	return URL;
-}
+double MAX_WAIT_TIME = 10.0;
 
 void StartSetupConnectionConfigFromURL(USpatialWorkerConnection* Connection, const FURL& URL, bool& bOutUseReceptionist)
 {
@@ -75,10 +67,27 @@ void FinishSetupConnectionConfig(USpatialWorkerConnection* Connection, const FSt
 }
 }
 
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForSeconds, double, Seconds);
+bool FWaitForSeconds::Update()
+{
+	const double NewTime = FPlatformTime::Seconds();
+
+	if (NewTime - StartTime >= Seconds)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetupWorkerConnection, USpatialWorkerConnection*, Connection, bool, bConnectAsClient);
 bool FSetupWorkerConnection::Update()
 {
-	const FURL TestURL = CreateTestURL();
+	const FURL TestURL = {};
+	// TODO(Alex): AutomationWorker type permissions don't work
+	//FString WorkerType = "AutomationWorker";
 	FString WorkerType = "UnrealWorker";
 
 	Connection->OnConnectedCallback.BindLambda([bConnectAsClient = this->bConnectAsClient]()
@@ -138,6 +147,49 @@ bool FCheckConnectionStatus::Update()
 	return true;
 }
 
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendReserveEntityIdsRequest, USpatialWorkerConnection*, Connection);
+bool FSendReserveEntityIdsRequest::Update()
+{
+	uint32_t NumOfEntities = 1;
+	Connection->SendReserveEntityIdsRequest(NumOfEntities);
+
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FFindWorkerResponseOfType, FAutomationTestBase*, Test, USpatialWorkerConnection*, Connection, uint8_t, ExpectedOpType);
+bool FFindWorkerResponseOfType::Update()
+{
+	bool bFoundOpOfExpectedType = false;
+	for (const auto& OpList : Connection->GetOpList())
+	{
+		for (uint32_t i = 0; i < OpList->op_count; i++)
+		{
+			if (OpList->ops[i].op_type == ExpectedOpType)
+			{
+				bFoundOpOfExpectedType = true;
+				break;
+			}
+		}
+	}
+
+	bool bReachedTimeout = false;
+	const double NewTime = FPlatformTime::Seconds();
+	if (NewTime - StartTime >= MAX_WAIT_TIME)
+	{
+		bReachedTimeout = true;
+	}
+
+	if (bFoundOpOfExpectedType || bReachedTimeout)
+	{
+		Test->TestTrue(TEXT("Received Worker Repsonse of expected type"), bFoundOpOfExpectedType);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 WORKERCONNECTION_TEST(GIVEN_running_local_deployment_WHEN_connecting_client_and_server_worker_THEN_connected_successfully)
 {
 	// GIVEN
@@ -187,3 +239,60 @@ WORKERCONNECTION_TEST(GIVEN_no_local_deployment_WHEN_connecting_client_and_serve
 
 	return true;
 }
+
+WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_reserve_entity_ids_request_sent_THEN_reserve_entity_ids_response_received)
+{
+	// GIVEN
+	ADD_LATENT_AUTOMATION_COMMAND(FStartDeployment());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsRunning));
+
+	// WHEN
+	USpatialWorkerConnection* ClientConnection = NewObject<USpatialWorkerConnection>();
+	USpatialWorkerConnection* ServerConnection = NewObject<USpatialWorkerConnection>();
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection, true));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection, false));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
+
+	// THEN
+	ADD_LATENT_AUTOMATION_COMMAND(FSendReserveEntityIdsRequest(ClientConnection));
+	ADD_LATENT_AUTOMATION_COMMAND(FSendReserveEntityIdsRequest(ServerConnection));
+	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ServerConnection, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE));
+	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ClientConnection, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE));
+
+	// CLEANUP
+	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
+	ADD_LATENT_AUTOMATION_COMMAND(FResetConnectionProcessed());
+
+	return true;
+}
+
+// TODO(Alex): should these be tested?
+/*
+	void DestroyConnection();
+
+	void Connect(bool bConnectAsClient, uint32 PlayInEditorID);
+
+	FORCEINLINE bool IsConnected() { return bIsConnected; }
+
+	// Worker Connection Interface
+	TArray<Worker_OpList*> GetOpList();
+	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);
+	Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId);
+	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
+	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
+	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
+	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
+	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
+	void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message);
+	void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest);
+	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
+	void SendMetrics(const SpatialGDK::SpatialMetrics& Metrics);
+
+	PhysicalWorkerName GetWorkerId() const;
+	const TArray<FString>& GetWorkerAttributes() const;
+
+	void SetConnectionType(ESpatialConnectionType InConnectionType);
+*/
