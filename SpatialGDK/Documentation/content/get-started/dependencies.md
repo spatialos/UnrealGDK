@@ -25,8 +25,8 @@ To build the GDK for Unreal you need the following software installed on your ma
 
 - **Windows 10** with Command Prompt or PowerShell.
   - **Note:** The GDK for Unreal is currently only supported on Windows 10.
-- **A Git client**
-  - In order to clone the GDK and Unreal Engine repos, we recommend using a Git client such as <a href="https://gitforwindows.org" data-track-link="Clicked GIT for Windows|product=Docs|platform=Win|label=Win" target="_blank">**Git for Windows**</a>
+- <a href="https://git-scm.com/" target="_blank">**Git**</a>
+  - In order to clone the GDK and Unreal Engine repos, you need to have Git installed. We recommend using a Git client such as <a href="https://desktop.github.com/" target="_blank">**GitHub Desktop**</a>.
 - <a href="https://console.improbable.io/installer/download/stable/latest/win" data-track-link="Clicked Download SpatialOS|product=Docs|platform=Win|label=Win" target="_blank">**SpatialOS**</a>
     - This installs the [SpatialOS CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli), the [SpatialOS Launcher]({{urlRoot}}/content/glossary#launcher), and 32-bit and 64-bit Visual C++ Redistributables.
 - The [**DirectX End-User Runtimes (June 2010)**](https://www.microsoft.com/en-us/download/details.aspx?id=8109)
