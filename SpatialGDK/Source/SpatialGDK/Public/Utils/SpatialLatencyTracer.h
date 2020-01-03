@@ -107,7 +107,7 @@ public:
 	TraceKey ReadTraceFromSpatialPayload(const FSpatialLatencyPayload& payload);
 
 	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
-	void ResetWorkerId() { WorkerId = TEXT("Undefined"); }
+	void ResetWorkerId();
 
 	void OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*);
 	void OnDequeueMessage(const SpatialGDK::FOutgoingMessage*);

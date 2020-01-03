@@ -230,6 +230,11 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSpatialPayload(const FSpatialLatenc
 	return Key;
 }
 
+void USpatialLatencyTracer::ResetWorkerId()
+{
+	WorkerId = "DeviceId_" + FPlatformMisc::GetDeviceId();
+}
+
 void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage* Message)
 {
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
