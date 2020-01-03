@@ -212,11 +212,7 @@ private:
 
 	struct QueuedOpForAsyncLoad
 	{
-		Worker_OpType Type;
-		Worker_AddComponentOp AddComponent;
-		Worker_RemoveComponentOp RemoveComponent;
-		Worker_AuthorityChangeOp AuthorityChange;
-		Worker_ComponentUpdateOp ComponentUpdate;
+		Worker_Op Op;
 
 		Worker_ComponentData* AcquiredData;
 		Worker_ComponentUpdate* AcquiredUpdate;
@@ -306,5 +302,5 @@ private:
 		TArray<QueuedOpForAsyncLoad> PendingOps;
 	};
 	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
-	TMap<FString, Worker_EntityId> AsyncLoadingPackages;
+	TMap<FString, TArray<Worker_EntityId>> AsyncLoadingPackages;
 };

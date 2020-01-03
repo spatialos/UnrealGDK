@@ -599,12 +599,25 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-	// Check if actor's class is loaded. If not, start async loading it and extract all data and authority ops into a separate thing.
-	// Also add this EntityId to a list of things to check for completion.
+	// Check if actor's class is loaded. If not, start async loading it and extract all data and
+	// authority ops into a separate entry that will get processed once the loading is finished.
 	const FString& ClassPath = UnrealMetadataComp->ClassPath;
 	if (SpatialGDKSettings->bAsyncLoadNewClassesOnEntityCheckout && NeedToLoadClass(ClassPath))
 	{
 		FString PackagePath = GetPackagePath(ClassPath);
+
+		bool bAlreadyLoading = false;
+		if (AsyncLoadingPackages.Contains(PackagePath))
+		{
+			bAlreadyLoading = true;
+		}
+
+		if (IsEntityWaitingForAsyncLoad(EntityId))
+		{
+			// This shouldn't happen because even if the entity goes out and comes back into view,
+			// we would've received a RemoveEntity op that would remove the entry from the map.
+			UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::ReceiveActor: Checked out entity %lld but it's already waiting for async load!"), EntityId);
+		}
 
 		EntityWaitingForAsyncLoad AsyncLoadEntity;
 		AsyncLoadEntity.ClassPath = ClassPath;
@@ -612,8 +625,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		AsyncLoadEntity.PendingOps = ExtractAuthorityOps(EntityId);
 
 		EntitiesWaitingForAsyncLoad.Emplace(EntityId, MoveTemp(AsyncLoadEntity));
-		AsyncLoadingPackages.Add(PackagePath, EntityId);
-		LoadPackageAsync(PackagePath, FLoadPackageAsyncDelegate::CreateUObject(this, &USpatialReceiver::OnAsyncPackageLoaded));
+		AsyncLoadingPackages.FindOrAdd(PackagePath).Add(EntityId);
+
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Async loading package %s for entity %lld. Already loading: %d"), *PackagePath, EntityId, bAlreadyLoading ? 1 : 0);
+		if (!bAlreadyLoading)
+		{
+			LoadPackageAsync(PackagePath, FLoadPackageAsyncDelegate::CreateUObject(this, &USpatialReceiver::OnAsyncPackageLoaded));
+		}
 		return;
 	}
 
@@ -2260,32 +2278,37 @@ void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* 
 		return;
 	}
 
-	Worker_EntityId Entity = AsyncLoadingPackages.FindAndRemoveChecked(PackageNameStr);
+	TArray<Worker_EntityId> Entities = AsyncLoadingPackages.FindAndRemoveChecked(PackageNameStr);
 
-	if (IsEntityWaitingForAsyncLoad(Entity))
+	for (Worker_EntityId Entity : Entities)
 	{
-		CriticalSectionSaveState CriticalSectionState;
-		if (bInCriticalSection)
+		if (IsEntityWaitingForAsyncLoad(Entity))
 		{
-			SaveCriticalSection(CriticalSectionState);
-		}
-		bool bInCriticalSectionSaved = bInCriticalSection;
-		bInCriticalSection = true;
+			UE_LOG(LogSpatialReceiver, Log, TEXT("Finished async loading package %s for entity %lld."), *PackageNameStr, Entity);
 
-		EntityWaitingForAsyncLoad AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindAndRemoveChecked(Entity);
-		PendingAddEntities.Add(Entity);
-		PendingAddComponents = MoveTemp(AsyncLoadEntity.InitialPendingAddComponents);
-		LeaveCriticalSection();
+			CriticalSectionSaveState CriticalSectionState;
+			if (bInCriticalSection)
+			{
+				SaveCriticalSection(CriticalSectionState);
+			}
+			bool bInCriticalSectionSaved = bInCriticalSection;
+			bInCriticalSection = true;
 
-		for (QueuedOpForAsyncLoad& Op : AsyncLoadEntity.PendingOps)
-		{
-			HandleQueuedOpForAsyncLoad(Op);
-		}
+			EntityWaitingForAsyncLoad AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindAndRemoveChecked(Entity);
+			PendingAddEntities.Add(Entity);
+			PendingAddComponents = MoveTemp(AsyncLoadEntity.InitialPendingAddComponents);
+			LeaveCriticalSection();
 
-		bInCriticalSection = bInCriticalSectionSaved;
-		if (bInCriticalSection)
-		{
-			RestoreCriticalSection(CriticalSectionState);
+			for (QueuedOpForAsyncLoad& Op : AsyncLoadEntity.PendingOps)
+			{
+				HandleQueuedOpForAsyncLoad(Op);
+			}
+
+			bInCriticalSection = bInCriticalSectionSaved;
+			if (bInCriticalSection)
+			{
+				RestoreCriticalSection(CriticalSectionState);
+			}
 		}
 	}
 }
@@ -2300,10 +2323,10 @@ void USpatialReceiver::QueueAddComponentOpForAsyncLoad(const Worker_AddComponent
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
 	QueuedOpForAsyncLoad NewOp = {};
-	NewOp.Type = WORKER_OP_TYPE_ADD_COMPONENT;
-	NewOp.AddComponent = Op;
 	NewOp.AcquiredData = Worker_AcquireComponentData(&Op.data);
-	NewOp.AddComponent.data = *NewOp.AcquiredData;
+	NewOp.Op.op_type = WORKER_OP_TYPE_ADD_COMPONENT;
+	NewOp.Op.op.add_component.entity_id = Op.entity_id;
+	NewOp.Op.op.add_component.data = *NewOp.AcquiredData;
 	AsyncLoadEntity.PendingOps.Add(NewOp);
 }
 
@@ -2312,8 +2335,8 @@ void USpatialReceiver::QueueRemoveComponentOpForAsyncLoad(const Worker_RemoveCom
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
 	QueuedOpForAsyncLoad NewOp = {};
-	NewOp.Type = WORKER_OP_TYPE_REMOVE_COMPONENT;
-	NewOp.RemoveComponent = Op;
+	NewOp.Op.op_type = WORKER_OP_TYPE_REMOVE_COMPONENT;
+	NewOp.Op.op.remove_component = Op;
 	AsyncLoadEntity.PendingOps.Add(NewOp);
 }
 
@@ -2322,8 +2345,8 @@ void USpatialReceiver::QueueAuthorityOpForAsyncLoad(const Worker_AuthorityChange
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
 	QueuedOpForAsyncLoad NewOp = {};
-	NewOp.Type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-	NewOp.AuthorityChange = Op;
+	NewOp.Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
+	NewOp.Op.op.authority_change = Op;
 	AsyncLoadEntity.PendingOps.Add(NewOp);
 }
 
@@ -2332,10 +2355,10 @@ void USpatialReceiver::QueueComponentUpdateOpForAsyncLoad(const Worker_Component
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
 	QueuedOpForAsyncLoad NewOp = {};
-	NewOp.Type = WORKER_OP_TYPE_COMPONENT_UPDATE;
-	NewOp.ComponentUpdate = Op;
 	NewOp.AcquiredUpdate = Worker_AcquireComponentUpdate(&Op.update);
-	NewOp.ComponentUpdate.update = *NewOp.AcquiredUpdate;
+	NewOp.Op.op_type = WORKER_OP_TYPE_COMPONENT_UPDATE;
+	NewOp.Op.op.component_update.entity_id = Op.entity_id;
+	NewOp.Op.op.component_update.update = *NewOp.AcquiredUpdate;
 	AsyncLoadEntity.PendingOps.Add(NewOp);
 }
 
@@ -2369,8 +2392,8 @@ TArray<USpatialReceiver::QueuedOpForAsyncLoad> USpatialReceiver::ExtractAuthorit
 		if (Op.entity_id == Entity)
 		{
 			QueuedOpForAsyncLoad NewOp = {};
-			NewOp.Type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-			NewOp.AuthorityChange = Op;
+			NewOp.Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
+			NewOp.Op.op.authority_change = Op;
 			ExtractedOps.Add(NewOp);
 		}
 		else
@@ -2401,20 +2424,20 @@ void USpatialReceiver::RestoreCriticalSection(CriticalSectionSaveState& State)
 
 void USpatialReceiver::HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op)
 {
-	switch (Op.Type)
+	switch (Op.Op.op_type)
 	{
 	case WORKER_OP_TYPE_ADD_COMPONENT:
-		OnAddComponent(Op.AddComponent);
+		OnAddComponent(Op.Op.op.add_component);
 		Worker_ReleaseComponentData(Op.AcquiredData);
 		break;
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
-		ProcessRemoveComponent(Op.RemoveComponent);
+		ProcessRemoveComponent(Op.Op.op.remove_component);
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		OnAuthorityChange(Op.AuthorityChange);
+		OnAuthorityChange(Op.Op.op.authority_change);
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
-		OnComponentUpdate(Op.ComponentUpdate);
+		OnComponentUpdate(Op.Op.op.component_update);
 		Worker_ReleaseComponentUpdate(Op.AcquiredUpdate);
 		break;
 	default:

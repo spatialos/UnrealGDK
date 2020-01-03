@@ -7,12 +7,15 @@
 #include "Schema/Component.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 #include "UObject/Package.h"
 #include "UObject/UObjectHash.h"
 #include "Utils/SchemaUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+
+DEFINE_LOG_CATEGORY_STATIC(LogSpatialUnrealMetadata, Warning, All);
 
 using SubobjectToOffsetMap = TMap<UObject*, uint32>;
 
@@ -76,7 +79,7 @@ struct UnrealMetadata : Component
 #if !UE_BUILD_SHIPPING
 		if (NativeClass.IsStale())
 		{
-			UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("UnrealMetadata native class %s unloaded whilst entity in view."), *ClassPath);
+			UE_LOG(LogSpatialUnrealMetadata, Warning, TEXT("UnrealMetadata native class %s unloaded whilst entity in view."), *ClassPath);
 		}
 #endif
 		UClass* Class = FindObject<UClass>(nullptr, *ClassPath, false);
@@ -85,6 +88,11 @@ struct UnrealMetadata : Component
 		// TODO: UNR-2537 Investigate why FindObject can be used the first time the actor comes into view for a client but not subsequent loads.
 		if (Class == nullptr && !(StablyNamedRef.IsSet() && bNetStartup.IsSet() && bNetStartup.GetValue()))
 		{
+			if (GetDefault<USpatialGDKSettings>()->bAsyncLoadNewClassesOnEntityCheckout)
+			{
+				UE_LOG(LogSpatialUnrealMetadata, Warning, TEXT("Class %s couldn't be found even though async loading on entity checkout is enabled. Will attempt to load it synchronously."), *ClassPath);
+			}
+
 			Class = LoadObject<UClass>(nullptr, *ClassPath);
 		}
 
