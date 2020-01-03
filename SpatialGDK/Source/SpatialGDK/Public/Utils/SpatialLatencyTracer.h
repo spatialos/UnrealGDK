@@ -48,10 +48,11 @@ public:
 	// These timings are logged to Google's Stackdriver (https://cloud.google.com/stackdriver/)
 	//
 	// Setup:
-	// 1. Setup a Google project with access to Stackdriver.
-	// 2. Create and download a service-account certificate
-	// 3. Set an environment variable GOOGLE_APPLICATION_CREDENTIALS to certificate path
-	// 4. Set an environment variable GRPC_DEFAULT_SSL_ROOTS_FILE_PATH to your `roots.pem` gRPC path
+	// 1. Run UnrealGDK SetupIncTraceLibs.bat to include latency tracking libraries.
+	// 2. Setup a Google project with access to Stackdriver.
+	// 3. Create and download a service-account certificate
+	// 4. Set an environment variable GOOGLE_APPLICATION_CREDENTIALS to certificate path
+	// 5. Set an environment variable GRPC_DEFAULT_SSL_ROOTS_FILE_PATH to your `roots.pem` gRPC path
 	//
 	// Usage:
 	// 1. Register your Google's project id with `RegisterProject`
@@ -72,11 +73,11 @@ public:
 
 	// Start a latency trace. This will start the latency timer and attach it to a specific RPC.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool BeginLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, FSpatialLatencyPayload& LatencyPayload);
+	static bool BeginLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 
 	// Hook into an existing latency trace, and pipe the trace to another outgoing networking event
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool ContinueLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& ContinuedLatencyPayload);
+	static bool ContinueLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
 	// End a latency trace. This needs to be called within the receiving end of the traced networked event (ie. an rpc)
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
@@ -121,7 +122,7 @@ private:
 	bool EndLatencyTrace_Internal(const FSpatialLatencyPayload& LatencyPayload);
 	bool IsLatencyTraceActive_Internal();
 
-	TraceKey CreateNewTraceEntry(const AActor* Actor, const FString& FunctionName, bool KeepTrackingReference);
+	TraceKey CreateNewTraceEntry(const AActor* Actor, const FString& FunctionName);
 	TraceKey GenerateNewTraceKey();
 	TraceSpan* GetActiveTrace();
 
