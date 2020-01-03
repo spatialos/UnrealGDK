@@ -153,6 +153,11 @@ void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_
 
 void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 {
+	float Timeout = GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds;
+#if WITH_EDITOR
+	Timeout = 10000.f;
+#endif
+
 	TimerManager->SetTimer(HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]()
 	{
 		if (USpatialNetConnection* Connection = WeakThis.Get())
@@ -160,7 +165,7 @@ void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 			// This client timed out. Disconnect it and trigger OnDisconnected logic.
 			Connection->CleanUp();
 		}
-	}, GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds, false);
+	}, Timeout, false);
 }
 
 void USpatialNetConnection::SetHeartbeatEventTimer()
