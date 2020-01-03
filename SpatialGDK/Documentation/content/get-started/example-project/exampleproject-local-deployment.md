@@ -87,8 +87,9 @@ In the **Multiplayer Options** section of the window:</br>
 The **Spatial Networking** option is the networking switch; you use this to switch your game's deployment from native Unreal networking to SpatialOS networking.</br></br>
 
 
-1. Now, run the game: in the **Modes** section of the window, select **New Editor Window (PIE)**.</br> 
-You are now running one game server and two game clients in a local deployment in your Unreal Editor. (If it doesn't run, see **Note** below.)</br>
+1. Now, run the game: in the **Modes** section of the window, select **New Editor Window (PIE)**.</br>
+
+You are now running one game server and two game clients in a local deployment in your Unreal Editor. You do not need to worry about the loading bar being stuck on 45%, this is just the shaders being compiled for the first time. (If it doesn't run, see **Note** below.)</br>
 
 **What's running?**</br>
 You have started one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor. You have also started an instance of the SpatialOS Runtime locally.</br></br>
