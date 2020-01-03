@@ -5,13 +5,13 @@
 #include "Engine/Engine.h"
 #include "EngineGlobals.h"
 
-#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/Connection/WorkerConnection.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
 
-void USpatialMetrics::Init(USpatialWorkerConnection* InConnection,
+void USpatialMetrics::Init(UWorkerConnection* InConnection,
 	float InNetServerMaxTickRate, bool bInIsServer)
 {
 	Connection = InConnection;

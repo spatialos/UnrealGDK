@@ -29,7 +29,7 @@ class USpatialReceiver;
 class USpatialStaticComponentView;
 class USpatialClassInfoManager;
 class SpatialActorGroupManager;
-class USpatialWorkerConnection;
+class UWorkerConnection;
 
 struct FReliableRPCForRetry
 {
@@ -149,7 +149,7 @@ private:
 	USpatialStaticComponentView* StaticComponentView;
 
 	UPROPERTY()
-	USpatialWorkerConnection* Connection;
+	UWorkerConnection* Connection;
 
 	UPROPERTY()
 	USpatialReceiver* Receiver;

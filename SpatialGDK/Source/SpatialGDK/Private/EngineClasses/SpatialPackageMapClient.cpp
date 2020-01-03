@@ -10,7 +10,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialNetBitReader.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/Connection/WorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/UnrealObjectRef.h"

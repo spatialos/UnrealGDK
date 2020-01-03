@@ -3,9 +3,9 @@
 #include "Interop/SpatialOutputDevice.h"
 #include "Utils/SpatialStatics.h"
 
-#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/Connection/WorkerConnection.h"
 
-FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FName InLoggerName, int32 InPIEIndex)
+FSpatialOutputDevice::FSpatialOutputDevice(UWorkerConnection* InConnection, FName InLoggerName, int32 InPIEIndex)
 	: FilterLevel(ELogVerbosity::Type(GetDefault<USpatialGDKSettings>()->WorkerLogLevel.GetValue()))
 	, Connection(InConnection)
 	, LoggerName(InLoggerName)

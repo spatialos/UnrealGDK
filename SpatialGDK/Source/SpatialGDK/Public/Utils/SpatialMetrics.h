@@ -11,7 +11,7 @@
 
 #include "SpatialMetrics.generated.h"
 
-class USpatialWorkerConnection;
+class UWorkerConnection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialMetrics, Log, All);
 
@@ -21,7 +21,7 @@ class SPATIALGDK_API USpatialMetrics : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialWorkerConnection* Connection,
+	void Init(UWorkerConnection* Connection,
 		float MaxServerTickRate, bool bIsServer);
 
 	void TickMetrics(float NetDriverTime);
@@ -59,7 +59,7 @@ public:
 private:
 
 	UPROPERTY()
-	USpatialWorkerConnection* Connection;
+	UWorkerConnection* Connection;
 
 	bool bIsServer;
 	float NetServerMaxTickRate;
