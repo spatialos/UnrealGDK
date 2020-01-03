@@ -203,7 +203,7 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
 	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
 	{
-		// Pretend we never saw this
+		// Pretend we never saw this entity.
 		EntitiesWaitingForAsyncLoad.Remove(Op.entity_id);
 		return;
 	}
