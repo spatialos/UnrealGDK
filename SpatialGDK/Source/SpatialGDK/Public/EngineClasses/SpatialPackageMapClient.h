@@ -62,6 +62,10 @@ public:
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
+	// Package being loaded, and the set of references depending on it.
+	typedef TMap<FNetworkGUID, TSet<FUnrealObjectRef>> PendingRefMap;
+	PendingRefMap PendingReferences;
+
 private:
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;

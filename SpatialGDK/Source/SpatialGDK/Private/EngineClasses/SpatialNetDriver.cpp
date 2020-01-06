@@ -1669,6 +1669,28 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 void USpatialNetDriver::TickFlush(float DeltaTime)
 {
+	//Poll pending async loaded packages.
+	if (PackageMap)
+	{
+		for (USpatialPackageMapClient::PendingRefMap::TIterator IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
+		{
+			if (!PackageMap->IsGUIDPending(IterPending->Key))
+			{
+				TSet<FUnrealObjectRef>& PendingRefs = IterPending->Value;
+				for (const auto& Ref : PendingRefs)
+				{
+					bool bOutUnresolved = false;
+					UObject* ResolvedObject = FUnrealObjectRef::ToObjectPtr(Ref, PackageMap, bOutUnresolved);
+					if (ResolvedObject)
+					{
+						Receiver->ResolvePendingOperations(ResolvedObject, Ref);
+					}
+				}
+				IterPending.RemoveCurrent();
+			}
+		}
+	}
+
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
 	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
 
