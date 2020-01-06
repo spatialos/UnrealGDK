@@ -125,6 +125,7 @@ private:
 	TraceKey CreateNewTraceEntry(const AActor* Actor, const FString& FunctionName);
 	TraceKey GenerateNewTraceKey();
 	TraceSpan* GetActiveTrace();
+	TraceSpan* GetActiveTraceOrReadPayload(const FSpatialLatencyPayload& Payload);
 
 	void WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc);
 	FString FormatMessage(const FString& Message) const;

@@ -306,14 +306,8 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const AActor* Actor, cons
 bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue)
 {
 	FScopeLock Lock(&Mutex);
-
-	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
-	{
-		TraceKey Key = ReadTraceFromSpatialPayload(LatencyPayload);
-		MarkActiveLatencyTrace(Key);
-	}
 		
-	TraceSpan* ActiveTrace = GetActiveTrace();
+	TraceSpan* ActiveTrace = GetActiveTraceOrReadPayload(LatencyPayload);
 	if (ActiveTrace == nullptr)
 	{
 		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : No active trace to continue (%s)"), *WorkerId, *TraceDesc);
@@ -354,13 +348,8 @@ bool USpatialLatencyTracer::EndLatencyTrace_Internal(const FSpatialLatencyPayloa
 {
 	FScopeLock Lock(&Mutex);
 
-	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
-	{
-		TraceKey Key = ReadTraceFromSpatialPayload(LatencyPayload);
-		MarkActiveLatencyTrace(Key);
-	}
+	TraceSpan* ActiveTrace = GetActiveTraceOrReadPayload(LatencyPayload);
 
-	TraceSpan* ActiveTrace = GetActiveTrace();
 	if (ActiveTrace == nullptr)
 	{
 		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : No active trace to end"), *WorkerId);
@@ -416,6 +405,22 @@ TraceKey USpatialLatencyTracer::GenerateNewTraceKey()
 USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTrace()
 {
 	return TraceMap.Find(ActiveTraceKey);
+}
+
+USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTraceOrReadPayload(const FSpatialLatencyPayload& Payload)
+{
+	USpatialLatencyTracer::TraceSpan* ActiveTrace = GetActiveTrace();
+	if (ActiveTrace == nullptr)
+	{
+		// Try read the trace from the payload
+		TraceKey Key = ReadTraceFromSpatialPayload(Payload);
+		if (Key != InvalidTraceKey)
+		{
+			MarkActiveLatencyTrace(Key);
+			ActiveTrace = GetActiveTrace();
+		}
+	}
+	return ActiveTrace;
 }
 
 void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc)
