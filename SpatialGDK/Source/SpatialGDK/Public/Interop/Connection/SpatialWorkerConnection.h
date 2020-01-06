@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "WorkerConnection.h"
-
 #include "Containers/Queue.h"
 #include "HAL/Runnable.h"
 #include "HAL/ThreadSafeBool.h"
@@ -18,22 +16,14 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-#include "SpatialWorkerConnection.generated.h"
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
-UCLASS()
-class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
+class SPATIALGDK_API USpatialWorkerConnection
 {
-	GENERATED_BODY()
-
 public:
-	virtual void FinishDestroy() override;
+	// TODO(Alex): is it called properly?
+	~USpatialWorkerConnection();
 	void DestroyConnection();
-
-	void Connect(bool bConnectAsClient, uint32 PlayInEditorID);
-
-	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
 	// Worker Connection Interface
 	TArray<Worker_OpList*> GetOpList();
@@ -59,44 +49,31 @@ public:
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
-	FOnEnqueueMessage OnEnqueueMessage;
-
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
-	FOnDequeueMessage OnDequeueMessage;
-
-	DECLARE_DELEGATE(OnConnectionToSpatialOSSucceededDelegate)
-	OnConnectionToSpatialOSSucceededDelegate OnConnectedCallback;
-
-	DECLARE_DELEGATE_TwoParams(OnConnectionToSpatialOSFailedDelegate, uint8_t, const FString&);
-	OnConnectionToSpatialOSFailedDelegate OnFailedToConnectCallback;
-
 private:
-	void ConnectToReceptionist(uint32 PlayInEditorID);
-	void ConnectToLocator();
-	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
-
-	void OnConnectionSuccess();
-	void OnConnectionFailure();
-
-	ESpatialConnectionType GetConnectionType() const;
-
-	void CacheWorkerAttributes();
-
-	// TODO(Alex): hide it back to private
+	// TODO(Alex): hide it back
 public:
-	// Begin FRunnable Interface
-	virtual bool Init() override;
-	virtual uint32 Run() override;
-	virtual void Stop() override;
-	// End FRunnable Interface
+	Worker_ConnectionFuture* ConnectToReceptionist(uint32 PlayInEditorID, bool bConnectAsClient);
+	Worker_ConnectionFuture* ConnectToLocator(bool bConnectAsClient);
 private:
 
-	void InitializeOpsProcessingThread();
+	// TODO(Alex): hide it back
+public:
+	ESpatialConnectionType GetConnectionType() const;
+	void CacheWorkerAttributes();
+private:
+
+private:
+
+	// TODO(Alex): hide it back
+public:
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
+private:
 
-	void StartDevelopmentAuth(FString DevAuthToken);
+	// TODO(Alex): hide it back
+public:
+	void StartDevelopmentAuth(FString DevAuthToken, bool bInConnectToLocatorAsClient);
+private:
 	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
 	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
@@ -104,17 +81,17 @@ private:
 	void QueueOutgoingMessage(ArgsType&&... Args);
 
 private:
+	// TODO(Alex): hide back?
+public:
 	Worker_Connection* WorkerConnection;
+private:
 	Worker_Locator* WorkerLocator;
 
-	bool bIsConnected;
-	bool bConnectAsClient = false;
+	// TODO(Alex): not nice to have this variable
+	bool bConnectToLocatorAsClient = false;
 
 	TArray<FString> CachedWorkerAttributes;
 
-	FRunnableThread* OpsProcessingThread;
-	FThreadSafeBool KeepRunning = true;
-	float OpsUpdateInterval;
 
 	TQueue<Worker_OpList*> OpListQueue;
 	TQueue<TUniquePtr<SpatialGDK::FOutgoingMessage>> OutgoingMessagesQueue;
