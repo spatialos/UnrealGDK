@@ -108,6 +108,33 @@ void USpatialWorkerConnection::DestroyConnection()
 	NextRequestId = 0;
 }
 
+Worker_Connection* USpatialWorkerConnection::Connect(uint32 PlayInEditorID, bool bConnectAsClient)
+{
+	Worker_ConnectionFuture* ConnectionFuture = nullptr;
+
+	switch (GetConnectionType())
+	{
+	case ESpatialConnectionType::Receptionist:
+		ConnectionFuture = ConnectToReceptionist(PlayInEditorID, bConnectAsClient);
+		break;
+	case ESpatialConnectionType::Locator:
+		ConnectionFuture = ConnectToLocator(bConnectAsClient);
+		break;
+	}
+
+	Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+	Worker_ConnectionFuture_Destroy(ConnectionFuture);
+
+	if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
+	{
+		return NewCAPIWorkerConnection;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
 void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
 {
 	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)

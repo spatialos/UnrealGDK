@@ -56,6 +56,7 @@ public:
 
 	void DestroyConnection();
 	PhysicalWorkerName GetWorkerId() const;
+	void CacheWorkerAttributes();
 
 	bool IsConnected() const;
 
@@ -97,8 +98,6 @@ private:
 	virtual uint32 Run() override;
 	virtual void Stop() override;
 	// End FRunnable Interface
-
-	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 
 private:
 	bool bIsConnected;

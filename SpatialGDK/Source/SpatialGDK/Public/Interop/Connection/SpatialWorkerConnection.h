@@ -25,6 +25,8 @@ public:
 	~USpatialWorkerConnection();
 	void DestroyConnection();
 
+	Worker_Connection* Connect(uint32 PlayInEditorID, bool bConnectAsClient);
+
 	// Worker Connection Interface
 	TArray<Worker_OpList*> GetOpList();
 	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);

@@ -46,6 +46,11 @@ PhysicalWorkerName UWorkerConnection::GetWorkerId() const
 	return WorkerConnectionImpl->GetWorkerId();
 }
 
+void UWorkerConnection::CacheWorkerAttributes()
+{
+	WorkerConnectionImpl->CacheWorkerAttributes();
+}
+
 Worker_RequestId UWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
 {
 	return WorkerConnectionImpl->SendCommandRequest(EntityId, Request, CommandId);
@@ -144,19 +149,41 @@ void UWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID)
 		WorkerConnectionImpl->StartDevelopmentAuth(SpatialGDKSettings->DevelopmentAuthenticationToken, bConnectAsClient);
 		return;
 	}
-
-	Worker_ConnectionFuture* ConnectionFuture = nullptr;
-	switch (WorkerConnectionImpl->GetConnectionType())
+	else
 	{
-	case ESpatialConnectionType::Receptionist:
-		ConnectionFuture = WorkerConnectionImpl->ConnectToReceptionist(PlayInEditorID, bConnectAsClient);
-		break;
-	case ESpatialConnectionType::Locator:
-		ConnectionFuture = WorkerConnectionImpl->ConnectToLocator(bConnectAsClient);
-		break;
-	}
+		TWeakObjectPtr<UWorkerConnection> WeakWorkerConnection(this);
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [PlayInEditorID, bInitAsClient, WeakWorkerConnection]
+		{
+			UWorkerConnection* WorkerConnection = WeakWorkerConnection.Get();
+			if (WorkerConnection == nullptr)
+			{
+				return;
+			}
 
-	FinishConnecting(ConnectionFuture);
+			Worker_Connection* NewCAPIWorkerConnection = WorkerConnection->WorkerConnectionImpl->Connect(PlayInEditorID, bInitAsClient);
+
+			if (NewCAPIWorkerConnection != nullptr)
+			{
+				AsyncTask(ENamedThreads::GameThread, [WeakWorkerConnection, NewCAPIWorkerConnection]
+				{
+					UWorkerConnection* WorkerConnection = WeakWorkerConnection.Get();
+					if (WorkerConnection == nullptr)
+					{
+						return;
+					}
+
+					WorkerConnection->WorkerConnectionImpl->WorkerConnection = NewCAPIWorkerConnection;
+					WorkerConnection->CacheWorkerAttributes();
+					WorkerConnection->OnConnectionSuccess();
+				});
+			}
+			else
+			{
+				// TODO: Try to reconnect - UNR-576
+				WorkerConnection->OnConnectionFailure();
+			}
+		});
+	}
 }
 
 bool UWorkerConnection::IsConnected() const
@@ -223,38 +250,4 @@ uint32 UWorkerConnection::Run()
 void UWorkerConnection::Stop()
 {
 	KeepRunning.AtomicSet(false);
-}
-
-void UWorkerConnection::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture)
-{
-	TWeakObjectPtr<UWorkerConnection> WeakWorkerConnection(this);
-
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakWorkerConnection]
-	{
-		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
-		Worker_ConnectionFuture_Destroy(ConnectionFuture);
-
-		AsyncTask(ENamedThreads::GameThread, [WeakWorkerConnection, NewCAPIWorkerConnection]
-		{
-			UWorkerConnection* WorkerConnection = WeakWorkerConnection.Get();
-
-			if (WorkerConnection == nullptr)
-			{
-				return;
-			}
-
-			WorkerConnection->WorkerConnectionImpl->WorkerConnection = NewCAPIWorkerConnection;
-
-			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
-			{
-				WorkerConnection->WorkerConnectionImpl->CacheWorkerAttributes();
-				WorkerConnection->OnConnectionSuccess();
-			}
-			else
-			{
-				// TODO: Try to reconnect - UNR-576
-				WorkerConnection->OnConnectionFailure();
-			}
-		});
-	});
 }
