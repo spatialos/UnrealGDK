@@ -2,7 +2,7 @@
 
 #include "Interop/SpatialWorkerFlags.h"
 
-#include "TestDefinitions.h"
+#include "Tests/TestDefinitions.h"
 #include "WorkerFlagsTestSpyObject.h"
 
 #define SPATIALWORKERFLAGS_TEST(TestName) \
