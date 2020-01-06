@@ -135,6 +135,11 @@ Worker_Connection* USpatialWorkerConnection::Connect(uint32 PlayInEditorID, bool
 	}
 }
 
+void USpatialWorkerConnection::SetConnection(Worker_Connection* InConnection)
+{
+	WorkerConnection = InConnection;
+}
+
 void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
 {
 	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)

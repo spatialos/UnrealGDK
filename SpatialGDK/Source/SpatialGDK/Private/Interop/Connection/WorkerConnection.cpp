@@ -1,6 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 // TODO(Alex): move `Worker_` code to SpatialWorkerConnection
+
+// TODO(Alex): move include to .cpp
+#include "SpatialWorkerConnection.h"
+#include "SpatialWorkerTestConnection.h"
+
 #include "WorkerConnection.h"
 
 #include "SpatialWorkerConnection.h"
@@ -11,7 +16,8 @@
 UWorkerConnection::UWorkerConnection(const FObjectInitializer & ObjectInitializer /*= FObjectInitializer::Get()*/)
 {
 	WorkerConnectionCallbacks = NewObject<UWorkerConnectionCallbacks>();
-	WorkerConnectionImpl = MakeUnique<USpatialWorkerConnection>();
+	//WorkerConnectionImpl = MakeUnique<USpatialWorkerConnection>();
+	WorkerConnectionImpl = MakeUnique<USpatialWorkerTestConnection>();
 }
 
 void UWorkerConnection::FinishDestroy()
@@ -172,7 +178,7 @@ void UWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID)
 						return;
 					}
 
-					WorkerConnection->WorkerConnectionImpl->WorkerConnection = NewCAPIWorkerConnection;
+					WorkerConnection->WorkerConnectionImpl->SetConnection(NewCAPIWorkerConnection);
 					WorkerConnection->CacheWorkerAttributes();
 					WorkerConnection->OnConnectionSuccess();
 				});
@@ -220,7 +226,7 @@ void UWorkerConnection::OnConnectionFailure()
 {
 	bIsConnected = false;
 
-	uint8_t ConnectionStatusCode;
+	uint8_t ConnectionStatusCode = WORKER_CONNECTION_STATUS_CODE_INVALID_ARGUMENT;
 	FString ErrorMessage;
 	WorkerConnectionImpl->GetErrorCodeAndMessage(ConnectionStatusCode, ErrorMessage);
 	WorkerConnectionCallbacks->OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);

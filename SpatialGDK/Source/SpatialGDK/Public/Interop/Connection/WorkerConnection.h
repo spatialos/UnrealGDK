@@ -2,8 +2,7 @@
 
 #pragma once
 
-// TODO(Alex): move include to .cpp
-#include "SpatialWorkerConnection.h"
+#include "SpatialWorkerConnectionInterface.h"
 
 #include "SpatialCommonTypes.h"
 
@@ -20,7 +19,6 @@ namespace SpatialGDK
 {
 	struct SpatialMetrics;
 }
-class USpatialWorkerConnection;
 class FRunnableThread;
 
 UCLASS()
@@ -107,5 +105,5 @@ private:
 
 	bool bConnectAsClient = false;
 
-	TUniquePtr<USpatialWorkerConnection> WorkerConnectionImpl;
+	TUniquePtr<USpatialWorkerConnectionInterface> WorkerConnectionImpl;
 };

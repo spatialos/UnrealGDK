@@ -18,13 +18,13 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerTestConnection, Log, All);
 
-class SPATIALGDK_API USpatialWorkerConnection : public USpatialWorkerConnectionInterface
+class SPATIALGDK_API USpatialWorkerTestConnection : public USpatialWorkerConnectionInterface
 {
 public:
 	// TODO(Alex): is it called properly?
-	~USpatialWorkerConnection();
+	~USpatialWorkerTestConnection();
 	virtual void DestroyConnection() override;
 
 	virtual Worker_Connection* Connect(uint32 PlayInEditorID, bool bConnectAsClient) override;
@@ -79,34 +79,7 @@ private:
 public:
 	virtual void StartDevelopmentAuth(FString DevAuthToken, bool bInConnectToLocatorAsClient) override;
 private:
-	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
-	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
-
-	template <typename T, typename... ArgsType>
-	void QueueOutgoingMessage(ArgsType&&... Args);
-
-private:
-	// TODO(Alex): hide back?
-public:
-	Worker_Connection* WorkerConnection;
-private:
-	Worker_Locator* WorkerLocator;
-
-	// TODO(Alex): not nice to have this variable
-	bool bConnectToLocatorAsClient = false;
 
 	TArray<FString> CachedWorkerAttributes;
-
-
-	TQueue<Worker_OpList*> OpListQueue;
-	TQueue<TUniquePtr<SpatialGDK::FOutgoingMessage>> OutgoingMessagesQueue;
-
-	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
-	Worker_RequestId NextRequestId = 0;
-
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
-
-	FReceptionistConfig ReceptionistConfig;
-	FLocatorConfig LocatorConfig;
-
 };
