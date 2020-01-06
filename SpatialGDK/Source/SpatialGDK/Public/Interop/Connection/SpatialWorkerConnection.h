@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "WorkerConnection.h"
+
 #include "Containers/Queue.h"
 #include "HAL/Runnable.h"
 #include "HAL/ThreadSafeBool.h"
@@ -19,13 +21,6 @@
 #include "SpatialWorkerConnection.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
-
-enum class ESpatialConnectionType
-{
-	Receptionist,
-	LegacyLocator,
-	Locator
-};
 
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable

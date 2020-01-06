@@ -4,8 +4,7 @@
 
 #include "SpatialCommonTypes.h"
 
-// TODO(Alex): remove!
-#include "SpatialWorkerConnection.h"
+#include "Interop/Connection/ConnectionConfig.h"
 
 #include "Utils/SpatialLatencyTracer.h"
 
@@ -13,6 +12,18 @@
 #include "CoreMinimal.h"
 
 #include "WorkerConnection.generated.h"
+
+namespace SpatialGDK
+{
+	struct SpatialMetrics;
+}
+
+enum class ESpatialConnectionType
+{
+	Receptionist,
+	LegacyLocator,
+	Locator
+};
 
 UCLASS()
 class SPATIALGDK_API UWorkerConnection : public UObject, public FRunnable

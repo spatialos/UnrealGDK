@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "WorkerConnection.h"
+#include "SpatialWorkerConnection.h"
 
 void UWorkerConnection::DestroyConnection()
 {

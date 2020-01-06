@@ -6,6 +6,8 @@
 #include "EngineGlobals.h"
 
 #include "Interop/Connection/WorkerConnection.h"
+#include "Interop/Connection/OutgoingMessages.h"
+
 #include "SpatialGDKSettings.h"
 #include "Utils/SchemaUtils.h"
 
