@@ -17,6 +17,7 @@ namespace SpatialGDK
 {
 	struct SpatialMetrics;
 }
+class USpatialWorkerConnection;
 
 enum class ESpatialConnectionType
 {
@@ -25,12 +26,16 @@ enum class ESpatialConnectionType
 	Locator
 };
 
+// TODO(Alex): use MoveTemp for function arguments
+
 UCLASS()
 class SPATIALGDK_API UWorkerConnection : public UObject, public FRunnable
 {
 	GENERATED_BODY()
 
 public:
+	UWorkerConnection(const FObjectInitializer & ObjectInitializer = FObjectInitializer::Get());
+
 	void DestroyConnection();
 	PhysicalWorkerName GetWorkerId() const;
 
@@ -73,6 +78,7 @@ private:
 	// End FRunnable Interface
 
 private:
-	// TODO(Alex): remove it
-	TArray<FString> WorkerAttributes;
+	// TODO(Alex): Use TUniquePtr
+	UPROPERTY()
+	USpatialWorkerConnection* WorkerConnectionImpl;
 };

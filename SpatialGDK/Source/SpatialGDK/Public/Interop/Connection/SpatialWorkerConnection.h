@@ -83,11 +83,14 @@ private:
 
 	void CacheWorkerAttributes();
 
+	// TODO(Alex): hide it back to private
+public:
 	// Begin FRunnable Interface
 	virtual bool Init() override;
 	virtual uint32 Run() override;
 	virtual void Stop() override;
 	// End FRunnable Interface
+private:
 
 	void InitializeOpsProcessingThread();
 	void QueueLatestOpList();
