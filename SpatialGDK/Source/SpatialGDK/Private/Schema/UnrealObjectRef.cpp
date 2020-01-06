@@ -41,17 +41,11 @@ UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpati
 			if (Value == nullptr)
 			{
 				// Check if the object we are looking for is in a package being loaded.
-				if (ObjectRef.Outer)
+				if (PackageMap->IsGUIDPending(NetGUID))
 				{
-					FUnrealObjectRef OuterObj = *ObjectRef.Outer;
-					FNetworkGUID OuterNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(OuterObj);
-					if (PackageMap->IsGUIDPending(OuterNetGUID))
-					{
-						TSet<FUnrealObjectRef>& PendingSet = PackageMap->PendingReferences.FindOrAdd(OuterNetGUID);
-						PendingSet.Add(ObjectRef);
-						bOutUnresolved = true;
-						return nullptr;
-					}
+					PackageMap->PendingReferences.Add(NetGUID);
+					bOutUnresolved = true;
+					return nullptr;
 				}
 
 				// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or

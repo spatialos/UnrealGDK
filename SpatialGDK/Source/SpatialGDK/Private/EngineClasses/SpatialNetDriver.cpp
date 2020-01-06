@@ -1672,20 +1672,23 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	//Poll pending async loaded packages.
 	if (PackageMap)
 	{
-		for (USpatialPackageMapClient::PendingRefMap::TIterator IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
+		for (USpatialPackageMapClient::PendingRefSet::TIterator IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
 		{
-			if (!PackageMap->IsGUIDPending(IterPending->Key))
+			if (!PackageMap->IsGUIDPending(*IterPending))
 			{
-				TSet<FUnrealObjectRef>& PendingRefs = IterPending->Value;
-				for (const auto& Ref : PendingRefs)
+				FUnrealObjectRef ObjectReference = PackageMap->GetUnrealObjectRefFromNetGUID(*IterPending);
+
+				bool bOutUnresolved = false;
+				UObject* ResolvedObject = FUnrealObjectRef::ToObjectPtr(ObjectReference, PackageMap, bOutUnresolved);
+				if (ResolvedObject)
 				{
-					bool bOutUnresolved = false;
-					UObject* ResolvedObject = FUnrealObjectRef::ToObjectPtr(Ref, PackageMap, bOutUnresolved);
-					if (ResolvedObject)
-					{
-						Receiver->ResolvePendingOperations(ResolvedObject, Ref);
-					}
+					Receiver->ResolvePendingOperations(ResolvedObject, ObjectReference);
 				}
+				else
+				{
+					UE_LOG(LogSpatialPackageMap, Warning, TEXT("Object %s which was being asynchronously loaded was not found after loading has completed."), *ObjectReference.ToString());
+				}
+				
 				IterPending.RemoveCurrent();
 			}
 		}
