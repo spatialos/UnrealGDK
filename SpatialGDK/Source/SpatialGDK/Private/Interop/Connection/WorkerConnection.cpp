@@ -191,16 +191,12 @@ void UWorkerConnection::OnConnectionSuccess()
 
 void UWorkerConnection::OnConnectionFailure()
 {
-	// TODO(Alex): move spatial-specific code to SpatialWorkerConnection
 	bIsConnected = false;
-	Worker_Connection* WorkerConnection = WorkerConnectionImpl->WorkerConnection;
 
-	if (WorkerConnection != nullptr)
-	{
-		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
-		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
-		WorkerConnectionCallbacks->OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
-	}
+	uint8_t ConnectionStatusCode;
+	FString ErrorMessage;
+	WorkerConnectionImpl->GetErrorCodeAndMessage(ConnectionStatusCode, ErrorMessage);
+	WorkerConnectionCallbacks->OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 }
 
 bool UWorkerConnection::Init()

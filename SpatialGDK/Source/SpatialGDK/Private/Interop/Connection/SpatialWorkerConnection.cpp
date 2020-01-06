@@ -241,6 +241,15 @@ void USpatialWorkerConnection::SetConnectionType(ESpatialConnectionType InConnec
 	ConnectionType = InConnectionType;
 }
 
+void USpatialWorkerConnection::GetErrorCodeAndMessage(uint8_t& OutConnectionStatusCode, FString& OutErrorMessage) const
+{
+	if (WorkerConnection != nullptr)
+	{
+		OutConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
+		OutErrorMessage = UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection));
+	}
+}
+
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
 {
 	TArray<Worker_OpList*> OpLists;

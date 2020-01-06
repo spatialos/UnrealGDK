@@ -46,6 +46,8 @@ public:
 
 	void SetConnectionType(ESpatialConnectionType InConnectionType);
 
+	void GetErrorCodeAndMessage(uint8_t& OutConnectionStatusCode, FString& OutErrorMessage) const;
+
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
