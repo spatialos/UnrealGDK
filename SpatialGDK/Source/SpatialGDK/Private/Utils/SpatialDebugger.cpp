@@ -52,7 +52,7 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	}
 }
 
-void ASpatialDebugger::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+void ASpatialDebugger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
@@ -141,14 +141,14 @@ void ASpatialDebugger::BeginPlay()
 		{
 			if (UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(NetDriver->LoadBalanceStrategy))
 			{
-				const TArray<TPair<VirtualWorkerId, FBox2D>> VirtualWorkerToCell = GridBasedLBStrategy->GetVirtualWorkerToCell();
+				const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
 				WorkerRegions.Empty();
-				for (int i = 0; i < VirtualWorkerToCell.Num(); i++)
+				for (int i = 0; i < LBStrategyRegions.Num(); i++)
 				{
-					const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(VirtualWorkerToCell[i].Get<0>());
+					const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegions[i].Get<0>());
 					FWorkerRegionInfo WorkerRegionInfo;
 					WorkerRegionInfo.Color = SpatialGDK::GetColorForWorkerName(*WorkerName);
-					WorkerRegionInfo.Extents = VirtualWorkerToCell[i].Get<1>();
+					WorkerRegionInfo.Extents = LBStrategyRegions[i].Get<1>();
 					WorkerRegions.Add(WorkerRegionInfo);
 				}
 			}

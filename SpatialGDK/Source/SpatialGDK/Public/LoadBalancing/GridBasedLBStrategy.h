@@ -33,6 +33,8 @@ class SPATIALGDK_API UGridBasedLBStrategy : public UAbstractLBStrategy
 public:
 	UGridBasedLBStrategy();
 
+	using LBStrategyRegions = TArray<TPair<VirtualWorkerId, FBox2D>>;
+
 /* UAbstractLBStrategy Interface */
 	virtual void Init(const USpatialNetDriver* InNetDriver) override;
 
@@ -42,7 +44,7 @@ public:
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 /* End UAbstractLBStrategy Interface */
 
-	const TArray<TPair<VirtualWorkerId, FBox2D>> GetVirtualWorkerToCell() const;
+	LBStrategyRegions GetLBStrategyRegions() const;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")

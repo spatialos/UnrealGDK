@@ -106,9 +106,9 @@ bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location
 		&& Location.X < Box.Max.X && Location.Y < Box.Max.Y;
 }
 
-const TArray<TPair<VirtualWorkerId, FBox2D>> UGridBasedLBStrategy::GetVirtualWorkerToCell() const
+UGridBasedLBStrategy::LBStrategyRegions UGridBasedLBStrategy::GetLBStrategyRegions() const
 {
-	TArray<TPair<VirtualWorkerId, FBox2D>> VirtualWorkerToCell;
+	LBStrategyRegions VirtualWorkerToCell;
 	for (int i = 0; i < WorkerCells.Num(); i++)
 	{
 		VirtualWorkerToCell.Add(MakeTuple(VirtualWorkerIds[i], WorkerCells[i]));

@@ -10,8 +10,8 @@ DEFINE_LOG_CATEGORY(LogWorkerRegion);
 
 namespace
 {
-	const float DEFAULT_WORKER_REGION_HEIGHT = 30;
-	const float DEFAULT_WORKER_REGION_OPACITY = 0.7;
+	const float DEFAULT_WORKER_REGION_HEIGHT = 30.0f;
+	const float DEFAULT_WORKER_REGION_OPACITY = 0.7f;
 	const FString WORKER_REGION_ACTOR_NAME = TEXT("WorkerRegionPlane");
 	const FName WORKER_REGION_MATERIAL_OPACITY_PARAM = TEXT("Opacity");
 	const FName WORKER_REGION_MATERIAL_COLOR_PARAM = TEXT("Color");
@@ -29,19 +29,19 @@ AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 
 void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D& Extents)
 {
-	this->SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
+	SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
 
 	MaterialInstance = UMaterialInstanceDynamic::Create(Material, nullptr);
 	Mesh->SetMaterial(0, MaterialInstance);
-	this->SetOpacity(DEFAULT_WORKER_REGION_OPACITY);
-	this->SetColor(Color);
+	SetOpacity(DEFAULT_WORKER_REGION_OPACITY);
+	SetColor(Color);
 	this->SetExtents(Extents);
 }
 
 void AWorkerRegion::SetHeight(const float Height)
 {
 	const FVector CurrentLocation = this->GetActorLocation();
-	this->SetActorLocation(FVector(CurrentLocation.X, CurrentLocation.Y, Height));
+	SetActorLocation(FVector(CurrentLocation.X, CurrentLocation.Y, Height));
 }
 
 void AWorkerRegion::SetOpacity(const float Opacity)
@@ -52,8 +52,19 @@ void AWorkerRegion::SetOpacity(const float Opacity)
 void AWorkerRegion::SetExtents(const FBox2D& Extents)
 {
 	const FVector CurrentLocation = this->GetActorLocation();
-	this->SetActorLocation(FVector(Extents.Min.X + (Extents.Max.X - Extents.Min.X) / 2, Extents.Min.Y + (Extents.Max.Y - Extents.Min.Y) / 2,  CurrentLocation.Z));
-	this->SetActorScale3D(FVector((Extents.Max.X - Extents.Min.X) / 100, (Extents.Max.Y - Extents.Min.Y) / 100,  1));
+
+	const float& MinX = Extents.Min.X;
+	const float& MaxX = Extents.Max.X;
+	const float& MinY = Extents.Min.Y;
+	const float& MaxY = Extents.Max.Y;
+
+	float CenterX = MinX + (MaxX - MinX) / 2;
+	float CenterY = MinY + (MaxY - MinY) / 2;
+	float ScaleX = (MaxX - MinX) / 100;
+	float ScaleY = (MaxY - MinY) / 100;
+
+	SetActorLocation(FVector(CenterX, CenterY,  CurrentLocation.Z));
+	SetActorScale3D(FVector(ScaleX, ScaleY,  1));
 }
 
 void AWorkerRegion::SetColor(const FColor& Color)
