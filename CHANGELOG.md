@@ -47,7 +47,7 @@ Features listed in the internal section are not ready to use but, in the spirit 
 - We've added a partial loadbalancing framework. When this is completed in a future release, you will be able to control loadbalancing using server-workers.
 
 ## [`0.7.1-preview`] - 2019-12-06
-
+### Adapted from 0.6.3:
 ### Bug fixes: 
 - The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
 
