@@ -69,7 +69,7 @@ foreach ($test in $tests) {
         -log_file_path "$PSScriptRoot\$test_project_root\TestResults\tests.log" `
         -report_output_path "$test_project_root\TestResults" `
         -test_repo_map "$test_repo_map" `
-        -tests_path = "$tests_path"
+        -tests_path "$tests_path"
     Finish-Event "test-gdk" "command"
 
     Start-Event "report-tests" "command"
