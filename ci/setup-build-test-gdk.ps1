@@ -62,6 +62,7 @@ foreach ($test in $tests) {
         -uproject_path "$build_home\$test_project_root\$test_repo_relative_uproject_path" `
         -test_repo_path "$build_home\$test_project_root" `
         -log_file_path "$PSScriptRoot\$test_project_root\TestResults\tests.log" `
+        -report_output_path "$test_project_root\TestResults" `
         -test_repo_map "$test_repo_map"
     Finish-Event "test-gdk" "command"
 

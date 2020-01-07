@@ -4,6 +4,7 @@ param(
     [string] $test_repo_path,
     [string] $log_file_path,
     [string] $test_repo_map,
+    [string] $report_output_path,
     [string] $tests_path = "SpatialGDK",
     [bool] $override_spatial_networking = $true
 )
@@ -38,8 +39,8 @@ if ($override_spatial_networking) {
 }
 
 # Create the TestResults directory if it does not exist, for storing results
-New-Item -Path "$PSScriptRoot" -Name "TestResults" -ItemType "directory" -ErrorAction SilentlyContinue
-$output_dir = "$PSScriptRoot\TestResults"
+New-Item -Path "$PSScriptRoot" -Name "$report_output_path" -ItemType "directory" -ErrorAction SilentlyContinue
+$output_dir = "$PSScriptRoot\$report_output_path"
 
 # We want absolute paths since paths given to the unreal editor are interpreted as relative to the UE4Editor binary
 # Absolute paths are more reliable
