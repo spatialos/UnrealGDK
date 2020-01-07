@@ -211,16 +211,6 @@ namespace ERegionCode
 	};
 }
 
-UENUM()
-namespace EServicesRegion
-{
-	enum Type
-	{
-		Default,
-		CN
-	};
-}
-
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
@@ -308,9 +298,6 @@ private:
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Number of simulated players"))
 		uint32 NumberOfSimulatedPlayers;
-
-	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
-	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsProjectNameValid(const FString& Name);
@@ -466,6 +453,4 @@ public:
 	}
 
 	bool IsDeploymentConfigurationValid() const;
-
-	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
 };
