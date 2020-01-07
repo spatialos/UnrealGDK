@@ -33,6 +33,17 @@ namespace
 	};
 
 	UEStream Stream;
+
+	improbable::trace::SpanContext ReadSpanContext(const void* TraceBytes, size_t TraceSize, const void* SpanBytes, size_t SpanSize)
+	{
+		improbable::trace::TraceId _TraceId;
+		memcpy(&_TraceId[0], TraceBytes, TraceSize);
+
+		improbable::trace::SpanId _SpanId;
+		memcpy(&_SpanId[0], SpanBytes, SpanSize);
+
+		return improbable::trace::SpanContext(_TraceId, _SpanId);
+	}
 }  // anonymous namespace
 
 const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
@@ -178,13 +189,7 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, co
 		const uint8* TraceBytes = Schema_GetBytes(TraceData, SpatialConstants::UNREAL_RPC_TRACE_ID);
 		const uint8* SpanBytes = Schema_GetBytes(TraceData, SpatialConstants::UNREAL_RPC_SPAN_ID);
 
-		improbable::trace::TraceId _TraceId;
-		memcpy(&_TraceId[0], TraceBytes, sizeof(improbable::trace::TraceId));
-
-		improbable::trace::SpanId _SpanId;
-		memcpy(&_SpanId[0], SpanBytes, sizeof(improbable::trace::SpanId));
-
-		improbable::trace::SpanContext DestContext(_TraceId, _SpanId);
+		improbable::trace::SpanContext DestContext = ReadSpanContext(TraceBytes, sizeof(improbable::trace::TraceId), SpanBytes, sizeof(improbable::trace::SpanId));
 
 		FString SpanMsg = FormatMessage(TEXT("Read Trace From Schema Obj"));
 		TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
@@ -214,13 +219,7 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSpatialPayload(const FSpatialLatenc
 		return InvalidTraceKey;
 	}
 
-	improbable::trace::TraceId _TraceId;
-	memcpy(&_TraceId[0], Payload.TraceId.GetData(), sizeof(improbable::trace::TraceId));
-
-	improbable::trace::SpanId _SpanId;
-	memcpy(&_SpanId[0], Payload.SpanId.GetData(), sizeof(improbable::trace::SpanId));
-
-	improbable::trace::SpanContext DestContext(_TraceId, _SpanId);
+	improbable::trace::SpanContext DestContext = ReadSpanContext(Payload.TraceId.GetData(), sizeof(improbable::trace::TraceId), Payload.SpanId.GetData(), sizeof(improbable::trace::SpanId));
 
 	FString SpanMsg = FormatMessage(TEXT("Read Trace From Payload Obj"));
 	TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
@@ -288,16 +287,15 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const AActor* Actor, cons
 	// For non-spatial tracing
 	const improbable::trace::SpanContext& TraceContext = NewTrace.context();
 
-	OutLatencyPayload.TraceId = TArray<uint8_t>((const uint8_t*)&TraceContext.trace_id()[0], sizeof(improbable::trace::TraceId));
-	OutLatencyPayload.SpanId = TArray<uint8_t>((const uint8_t*)&TraceContext.span_id()[0], sizeof(improbable::trace::SpanId));
+	TArray<uint8> TraceBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.trace_id()[0], sizeof(improbable::trace::TraceId));
+	TArray<uint8> SpanBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.span_id()[0], sizeof(improbable::trace::SpanId));
+	OutLatencyPayload = FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes));
 
 	TraceMap.Add(Key, MoveTemp(NewTrace));
 
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
-	{
-		// We can't do any deeper tracing in the stack here so terminate these traces here
-		TraceMap.Reset();
-		TrackingTraces.Reset();
+	{ // We can't do any deeper tracing in the stack here so terminate these traces here
+		ClearTrackingInformation();
 	}
 
 	return true;
@@ -332,18 +330,17 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 	// For non-spatial tracing
 	const improbable::trace::SpanContext& TraceContext = ActiveTrace->context();
 
-	OutLatencyPayloadContinue.TraceId = TArray<uint8_t>((const uint8_t*)&TraceContext.trace_id()[0], sizeof(improbable::trace::TraceId));
-	OutLatencyPayloadContinue.SpanId = TArray<uint8_t>((const uint8_t*)&TraceContext.span_id()[0], sizeof(improbable::trace::SpanId));
+	TArray<uint8> TraceBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.trace_id()[0], sizeof(improbable::trace::TraceId));
+	TArray<uint8> SpanBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.span_id()[0], sizeof(improbable::trace::SpanId));
+	OutLatencyPayloadContinue = FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes));
 
 	TraceMap.Add(Key, MoveTemp(*ActiveTrace));
 	TraceMap.Remove(ActiveTraceKey);
 	ActiveTraceKey = InvalidTraceKey;
 
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
-	{
-		// We can't do any deeper tracing in the stack here so terminate these traces here
-		TraceMap.Reset();
-		TrackingTraces.Reset();
+	{ // We can't do any deeper tracing in the stack here so terminate these traces here
+		ClearTrackingInformation();
 	}
 
 	return true;
@@ -368,10 +365,8 @@ bool USpatialLatencyTracer::EndLatencyTrace_Internal(const FSpatialLatencyPayloa
 	ActiveTraceKey = InvalidTraceKey;
 
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
-	{
-		// We can't do any deeper tracing in the stack here so terminate these traces here
-		TraceMap.Reset();
-		TrackingTraces.Reset();
+	{ // We can't do any deeper tracing in the stack here so terminate these traces here
+		ClearTrackingInformation();
 	}
 
 	return true;
@@ -380,6 +375,12 @@ bool USpatialLatencyTracer::EndLatencyTrace_Internal(const FSpatialLatencyPayloa
 bool USpatialLatencyTracer::IsLatencyTraceActive_Internal()
 {
 	return (ActiveTraceKey != InvalidTraceKey);
+}
+
+void USpatialLatencyTracer::ClearTrackingInformation()
+{
+	TraceMap.Reset();
+	TrackingTraces.Reset();
 }
 
 TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& FunctionOrProperty)

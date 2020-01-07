@@ -131,6 +131,7 @@ private:
 	void WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc);
 	FString FormatMessage(const FString& Message) const;
 
+	void ClearTrackingInformation();
 
 	FString WorkerId;
 
