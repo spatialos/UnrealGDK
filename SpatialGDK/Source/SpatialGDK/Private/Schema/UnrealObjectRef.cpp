@@ -159,33 +159,31 @@ void FUnrealObjectRef::ToSoftObjectPtr(const FUnrealObjectRef& ObjectRef, FSoftO
 
 FSoftObjectPath FUnrealObjectRef::ToSoftObjectPath(const FUnrealObjectRef& ObjectRef)
 {
-	if (ObjectRef.Path.IsSet())
-	{
-		bool SubObjectName = true;
-		FString FullPackagePath;
-		const FUnrealObjectRef* CurRef = &ObjectRef;
-		while (CurRef)
-		{
-			if (CurRef->Path.IsSet())
-			{
-				FString Path = *CurRef->Path;
-				if (!FullPackagePath.IsEmpty())
-				{
-					Path.Append(SubObjectName ? TEXT(".") : TEXT("/"));
-					Path.Append(FullPackagePath);
-					SubObjectName = false;
-				}
-				FullPackagePath = MoveTemp(Path);
-			}
-			CurRef = CurRef->Outer.IsSet() ? &(*CurRef->Outer) : nullptr;
-		}
-
-		return FSoftObjectPath(FullPackagePath);
-	}
-	else
+	if (!ObjectRef.Path.IsSet())
 	{
 		return FSoftObjectPath();
 	}
+
+	bool bSubObjectName = true;
+	FString FullPackagePath;
+	const FUnrealObjectRef* CurRef = &ObjectRef;
+	while (CurRef)
+	{
+		if (CurRef->Path.IsSet())
+		{
+			FString Path = *CurRef->Path;
+			if (!FullPackagePath.IsEmpty())
+			{
+				Path.Append(bSubObjectName ? TEXT(".") : TEXT("/"));
+				Path.Append(FullPackagePath);
+				bSubObjectName = false;
+			}
+			FullPackagePath = MoveTemp(Path);
+		}
+		CurRef = CurRef->Outer.IsSet() ? &(*CurRef->Outer) : nullptr;
+	}
+
+	return FSoftObjectPath(FullPackagePath);
 }
 
 FUnrealObjectRef FUnrealObjectRef::GetSingletonClassRef(UObject* SingletonObject, USpatialPackageMapClient* PackageMap)
