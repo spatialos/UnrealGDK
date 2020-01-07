@@ -7,8 +7,8 @@ param(
 )
 
 $tests = @(
-  ("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym"),
-  ("https://github.com/improbable/UnrealGDKEngineNetTest.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap")
+  ("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject"),
+  ("https://github.com/improbable/UnrealGDKEngineNetTest.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject")
 )
 
 # Allow overriding testing branch via environment variable
@@ -37,6 +37,7 @@ foreach ($test in $tests) {
   $test_repo_branch = $test[1]
   $test_repo_relative_uproject_path = $test[2]
   $test_repo_map = $test[3]
+  $test_project_root = $test[4]
 
   # Build the testing project
   Start-Event "build-project" "command"
@@ -44,8 +45,8 @@ foreach ($test in $tests) {
       -unreal_path "$unreal_path" `
       -test_repo_branch "$test_repo_branch" `
       -test_repo_url "$test_repo_url" `
-      -test_repo_uproject_path "$build_home\TestProject\$test_repo_relative_uproject_path" `
-      -test_repo_path "$build_home\TestProject" `
+      -test_repo_uproject_path "$build_home\$test_project_root\$test_repo_relative_uproject_path" `
+      -test_repo_path "$build_home\$test_project_root" `
       -msbuild_exe "$msbuild_exe" `
       -gdk_home "$gdk_home" `
       -build_platform "$env:BUILD_PLATFORM" `
@@ -58,14 +59,14 @@ foreach ($test in $tests) {
     Start-Event "test-gdk" "command"
     & $PSScriptRoot"\run-tests.ps1" `
         -unreal_editor_path "$unreal_path\Engine\Binaries\Win64\UE4Editor.exe" `
-        -uproject_path "$build_home\TestProject\$test_repo_relative_uproject_path" `
-        -test_repo_path "$build_home\TestProject" `
-        -log_file_path "$PSScriptRoot\TestResults\tests.log" `
+        -uproject_path "$build_home\$test_project_root\$test_repo_relative_uproject_path" `
+        -test_repo_path "$build_home\$test_project_root" `
+        -log_file_path "$PSScriptRoot\$test_project_root\TestResults\tests.log" `
         -test_repo_map "$test_repo_map"
     Finish-Event "test-gdk" "command"
 
     Start-Event "report-tests" "command"
-    & $PSScriptRoot"\report-tests.ps1" -test_result_dir "$PSScriptRoot\TestResults" -target_platform "$env:BUILD_PLATFORM"
+    & $PSScriptRoot"\report-tests.ps1" -test_result_dir "$PSScriptRoot\$test_project_root\TestResults" -target_platform "$env:BUILD_PLATFORM"
     Finish-Event "report-tests" "command"
   }
 }
