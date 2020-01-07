@@ -7,8 +7,8 @@ param(
 )
 
 $tests = @(
-  ("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject"),
-  ("git@github.com:improbable/UnrealGDKEngineNetTest.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject")
+  ("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject", "SpatialGDK"),
+  ("git@github.com:improbable/UnrealGDKEngineNetTest.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "/Game/NetworkingMap")
 )
 
 # Allow overriding testing branch via environment variable
@@ -42,6 +42,7 @@ foreach ($test in $tests) {
   $test_repo_relative_uproject_path = $test[2]
   $test_repo_map = $test[3]
   $test_project_root = $test[4]
+  $tests_path = $test[5]
 
   # Build the testing project
   Start-Event "build-project" "command"
@@ -67,7 +68,8 @@ foreach ($test in $tests) {
         -test_repo_path "$build_home\$test_project_root" `
         -log_file_path "$PSScriptRoot\$test_project_root\TestResults\tests.log" `
         -report_output_path "$test_project_root\TestResults" `
-        -test_repo_map "$test_repo_map"
+        -test_repo_map "$test_repo_map" `
+        -tests_path = "$tests_path"
     Finish-Event "test-gdk" "command"
 
     Start-Event "report-tests" "command"
