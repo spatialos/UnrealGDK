@@ -4,6 +4,8 @@
 
 #include "SpatialWorkerConnectionInterface.h"
 
+#include "WorkerOpListSerializer.h"
+
 #include "Containers/Queue.h"
 #include "HAL/Runnable.h"
 #include "HAL/ThreadSafeBool.h"
@@ -109,4 +111,5 @@ private:
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
+	UE4_OpLists SerializedOpLists;
 };

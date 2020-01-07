@@ -16,8 +16,8 @@
 UWorkerConnection::UWorkerConnection(const FObjectInitializer & ObjectInitializer /*= FObjectInitializer::Get()*/)
 {
 	WorkerConnectionCallbacks = NewObject<UWorkerConnectionCallbacks>();
-	//WorkerConnectionImpl = MakeUnique<USpatialWorkerConnection>();
-	WorkerConnectionImpl = MakeUnique<USpatialWorkerTestConnection>();
+	WorkerConnectionImpl = MakeUnique<USpatialWorkerConnection>();
+	//WorkerConnectionImpl = MakeUnique<USpatialWorkerTestConnection>();
 }
 
 void UWorkerConnection::FinishDestroy()

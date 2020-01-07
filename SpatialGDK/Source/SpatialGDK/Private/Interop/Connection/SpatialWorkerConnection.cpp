@@ -80,6 +80,8 @@ USpatialWorkerConnection::~USpatialWorkerConnection()
 {
 	// TODO(Alex): could be unsafe, since not sure if OpsProcessingThread has been executed
 	DestroyConnection();
+
+	SerializedOpLists.DumpSavedOpLists();
 }
 
 void USpatialWorkerConnection::DestroyConnection()
@@ -290,6 +292,9 @@ TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
 		Worker_OpList* OutOpList;
 		OpListQueue.Dequeue(OutOpList);
 		OpLists.Add(OutOpList);
+
+		// Serialize Op List for testing;
+		SerializedOpLists.SerializedOpList(OutOpList);
 	}
 
 	return OpLists;
