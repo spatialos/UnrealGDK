@@ -73,11 +73,11 @@ public:
 
 	// Start a latency trace. This will start the latency timer and attach it to a specific RPC.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool BeginLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
+	static bool BeginLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionOrProperty, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 
 	// Hook into an existing latency trace, and pipe the trace to another outgoing networking event
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool ContinueLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutContinuedLatencyPayload);
+	static bool ContinueLatencyTrace(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionOrProperty, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
 	// End a latency trace. This needs to be called within the receiving end of the traced networked event (ie. an rpc)
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
@@ -115,6 +115,7 @@ public:
 private:
 
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
+	using ActorPropertyKey = TPair<const AActor*, const UProperty*>;
 	using TraceSpan = improbable::trace::Span;
 
 	bool BeginLatencyTrace_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
@@ -141,6 +142,7 @@ private:
 
 	FCriticalSection Mutex; // This mutex is to protect modifications to the containers below
 	TMap<ActorFuncKey, TraceKey> TrackingTraces;
+	TMap<ActorPropertyKey, TraceKey> TrackingProperties;
 	TMap<TraceKey, TraceSpan> TraceMap;
 
 public:
