@@ -34,6 +34,7 @@ namespace
 
 	UEStream Stream;
 
+#if TRACE_LIB_ACTIVE
 	improbable::trace::SpanContext ReadSpanContext(const void* TraceBytes, size_t TraceSize, const void* SpanBytes, size_t SpanSize)
 	{
 		improbable::trace::TraceId _TraceId;
@@ -44,6 +45,7 @@ namespace
 
 		return improbable::trace::SpanContext(_TraceId, _SpanId);
 	}
+#endif
 }  // anonymous namespace
 
 const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
