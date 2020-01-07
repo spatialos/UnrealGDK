@@ -26,6 +26,7 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Interop/SpatialWorkerFlags.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/ReferenceCountedLockingPolicy.h"
@@ -428,6 +429,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	SnapshotManager = MakeUnique<SpatialSnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
+	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 #if !UE_BUILD_SHIPPING
@@ -485,9 +487,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		}
 	}
 
-	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
-	Sender->Init(this, &TimerManager);
-	Receiver->Init(this, &TimerManager);
+	if (SpatialSettings->bUseRPCRingBuffers)
+	{
+		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView);
+	}
+
+	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
+	Sender->Init(this, &TimerManager, RPCService.Get());
+	Receiver->Init(this, &TimerManager, RPCService.Get());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this, &TimerManager);
@@ -1669,6 +1676,8 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
 
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
 	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady())
 	{
 		// Update all clients.
@@ -1692,8 +1701,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		}
 		LastUpdateCount = Updated;
 
-		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
 		{
 			if ((Time - TimeWhenPositionLastUpdated) >= (1.0f / SpatialGDKSettings->PositionUpdateFrequency))
@@ -1707,9 +1714,14 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bPackRPCs && Sender != nullptr)
+	if (SpatialGDKSettings->bPackRPCs && Sender != nullptr)
 	{
 		Sender->FlushPackedRPCs();
+	}
+
+	if (SpatialGDKSettings->bUseRPCRingBuffers && Sender != nullptr)
+	{
+		Sender->FlushRPCService();
 	}
 
 	ProcessPendingDormancy();

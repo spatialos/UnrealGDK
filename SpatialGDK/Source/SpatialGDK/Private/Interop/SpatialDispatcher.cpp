@@ -13,7 +13,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics)
+void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags)
 {
 	check(InReceiver != nullptr);
 	Receiver = InReceiver;
@@ -23,6 +23,7 @@ void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticCompone
 
 	check(InSpatialMetrics != nullptr);
 	SpatialMetrics = InSpatialMetrics;
+	SpatialWorkerFlags = InSpatialWorkerFlags;
 }
 
 void SpatialDispatcher::ProcessOps(Worker_OpList* OpList)
@@ -104,7 +105,7 @@ void SpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			break;
 
 		case WORKER_OP_TYPE_FLAG_UPDATE:
-			USpatialWorkerFlags::ApplyWorkerFlagUpdate(Op->op.flag_update);
+			SpatialWorkerFlags->ApplyWorkerFlagUpdate(Op->op.flag_update);
 			break;
 		case WORKER_OP_TYPE_LOG_MESSAGE:
 			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->op.log_message.message));
