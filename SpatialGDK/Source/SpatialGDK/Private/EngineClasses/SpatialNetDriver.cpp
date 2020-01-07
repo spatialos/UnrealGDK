@@ -1669,28 +1669,32 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 void USpatialNetDriver::PollPendingLoads()
 {
-	if (PackageMap)
+	if (PackageMap == nullptr)
 	{
-		for (USpatialPackageMapClient::PendingRefSet::TIterator IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
+		return;
+	}
+	
+	for (USpatialPackageMapClient::PendingRefSet::TIterator IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
+	{
+		if (PackageMap->IsGUIDPending(*IterPending))
 		{
-			if (!PackageMap->IsGUIDPending(*IterPending))
-			{
-				FUnrealObjectRef ObjectReference = PackageMap->GetUnrealObjectRefFromNetGUID(*IterPending);
-
-				bool bOutUnresolved = false;
-				UObject* ResolvedObject = FUnrealObjectRef::ToObjectPtr(ObjectReference, PackageMap, bOutUnresolved);
-				if (ResolvedObject)
-				{
-					Receiver->ResolvePendingOperations(ResolvedObject, ObjectReference);
-				}
-				else
-				{
-					UE_LOG(LogSpatialPackageMap, Warning, TEXT("Object %s which was being asynchronously loaded was not found after loading has completed."), *ObjectReference.ToString());
-				}
-
-				IterPending.RemoveCurrent();
-			}
+			continue;
 		}
+
+		FUnrealObjectRef ObjectReference = PackageMap->GetUnrealObjectRefFromNetGUID(*IterPending);
+
+		bool bOutUnresolved = false;
+		UObject* ResolvedObject = FUnrealObjectRef::ToObjectPtr(ObjectReference, PackageMap, bOutUnresolved);
+		if (ResolvedObject)
+		{
+			Receiver->ResolvePendingOperations(ResolvedObject, ObjectReference);
+		}
+		else
+		{
+			UE_LOG(LogSpatialPackageMap, Warning, TEXT("Object %s which was being asynchronously loaded was not found after loading has completed."), *ObjectReference.ToString());
+		}
+
+		IterPending.RemoveCurrent();
 	}
 }
 
