@@ -8,7 +8,7 @@ param(
 
 $tests = @(
   ("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject"),
-  ("git@github.com:spatialos/UnrealGDK.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject")
+  ("git@github.com:improbable/UnrealGDKEngineNetTest.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject")
 )
 
 # Allow overriding testing branch via environment variable
