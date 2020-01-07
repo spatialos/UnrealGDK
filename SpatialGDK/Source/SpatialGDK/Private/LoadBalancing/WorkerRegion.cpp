@@ -10,7 +10,7 @@ DEFINE_LOG_CATEGORY(LogWorkerRegion);
 
 namespace
 {
-	const float DEFAULT_WORKER_REGION_HEIGHT = 10;
+	const float DEFAULT_WORKER_REGION_HEIGHT = 30;
 	const float DEFAULT_WORKER_REGION_OPACITY = 0.7;
 	const FString WORKER_REGION_ACTOR_NAME = TEXT("WorkerRegionPlane");
 	const FName WORKER_REGION_MATERIAL_OPACITY_PARAM = TEXT("Opacity");
