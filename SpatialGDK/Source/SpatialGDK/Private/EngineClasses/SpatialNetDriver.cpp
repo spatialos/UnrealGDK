@@ -1674,7 +1674,7 @@ void USpatialNetDriver::PollPendingLoads()
 		return;
 	}
 	
-	for (USpatialPackageMapClient::PendingRefSet::TIterator IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
+	for (auto IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
 	{
 		if (PackageMap->IsGUIDPending(*IterPending))
 		{
