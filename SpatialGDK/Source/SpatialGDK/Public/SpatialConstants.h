@@ -218,8 +218,9 @@ inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 const FString LOCAL_HOST   = TEXT("127.0.0.1");
 const uint16  DEFAULT_PORT = 7777;
 
-const FString LOCATOR_HOST = TEXT("locator.improbable.io");
-const uint16  LOCATOR_PORT = 443;
+const FString LOCATOR_HOST    = TEXT("locator.improbable.io");
+const FString LOCATOR_HOST_CN = TEXT("locator.spatialoschina.com");
+const uint16  LOCATOR_PORT    = 443;
 
 const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
