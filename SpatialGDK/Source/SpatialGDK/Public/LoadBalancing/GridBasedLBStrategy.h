@@ -42,7 +42,7 @@ public:
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 /* End UAbstractLBStrategy Interface */
 
-	const TArray<TPair<const VirtualWorkerId*, const FBox2D*>> GetVirtualWorkerToCell() const;
+	const TArray<TPair<VirtualWorkerId, FBox2D>> GetVirtualWorkerToCell() const;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")

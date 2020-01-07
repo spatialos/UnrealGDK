@@ -16,7 +16,6 @@
 #include "Templates/Tuple.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
-#include "Containers/Map.h"
 #include "SpatialDebugger.generated.h"
 
 class APawn;
@@ -115,7 +114,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Color used for any server with an unresolved name"))
 	FColor InvalidServerTintColor = FColor::Magenta;
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_SetWorkerRegions, Category = Visualization, meta = (ToolTip = "Load-balancing worker region data replicated to clients"))
+	UPROPERTY(ReplicatedUsing = OnRep_SetWorkerRegions)
 	TArray<FWorkerRegionInfo> WorkerRegions;
 
 	UFUNCTION()

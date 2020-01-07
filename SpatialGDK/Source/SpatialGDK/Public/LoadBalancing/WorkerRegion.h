@@ -11,7 +11,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogWorkerRegion, Log, All)
 
-UCLASS()
+UCLASS(NotPlaceable, NotBlueprintable)
 class SPATIALGDK_API AWorkerRegion : public AActor
 {
 	GENERATED_BODY()
@@ -19,20 +19,17 @@ class SPATIALGDK_API AWorkerRegion : public AActor
 public:
 	AWorkerRegion(const FObjectInitializer& ObjectInitializer);
 
-	void Init(UMaterial* Material, FColor Color, FBox2D Extents);
-	void SetOpacity(float Opacity);
-	void SetHeight(float Height);
+	void Init(UMaterial* Material, const FColor& Color, const FBox2D& Extents);
+	void SetOpacity(const float Opacity);
+	void SetHeight(const float Height);
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY()
 	UStaticMeshComponent *Mesh;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY()
 	UMaterialInstanceDynamic *MaterialInstance;
 
-	static const float DEFAULT_WORKER_REGION_HEIGHT;
-	static const float DEFAULT_WORKER_REGION_OPACITY;
-
 private:
-	void SetExtents(FBox2D Extents);
-	void SetColor(FColor Color);
+	void SetExtents(const FBox2D& Extents);
+	void SetColor(const FColor& Color);
 };

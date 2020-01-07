@@ -139,16 +139,16 @@ void ASpatialDebugger::BeginPlay()
 	{
 		if (NetDriver->LoadBalanceStrategy != nullptr)
 		{
-			if (UGridBasedLBStrategy* GridBasedLBStrategy = dynamic_cast<UGridBasedLBStrategy*>(NetDriver->LoadBalanceStrategy))
+			if (UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(NetDriver->LoadBalanceStrategy))
 			{
-				const TArray<TPair<const VirtualWorkerId*, const FBox2D*>> VirtualWorkerToCell = GridBasedLBStrategy->GetVirtualWorkerToCell();
+				const TArray<TPair<VirtualWorkerId, FBox2D>> VirtualWorkerToCell = GridBasedLBStrategy->GetVirtualWorkerToCell();
 				WorkerRegions.Empty();
 				for (int i = 0; i < VirtualWorkerToCell.Num(); i++)
 				{
-					const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(*VirtualWorkerToCell[i].Get<0>());
+					const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(VirtualWorkerToCell[i].Get<0>());
 					FWorkerRegionInfo WorkerRegionInfo;
 					WorkerRegionInfo.Color = SpatialGDK::GetColorForWorkerName(*WorkerName);
-					WorkerRegionInfo.Extents = *VirtualWorkerToCell[i].Get<1>();
+					WorkerRegionInfo.Extents = VirtualWorkerToCell[i].Get<1>();
 					WorkerRegions.Add(WorkerRegionInfo);
 				}
 			}

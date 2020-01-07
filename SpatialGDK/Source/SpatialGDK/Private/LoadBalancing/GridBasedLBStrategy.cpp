@@ -2,9 +2,9 @@
 
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SpatialActorUtils.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Templates/Tuple.h"
 
 DEFINE_LOG_CATEGORY(LogGridBasedLBStrategy);
@@ -106,12 +106,12 @@ bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location
 		&& Location.X < Box.Max.X && Location.Y < Box.Max.Y;
 }
 
-const TArray<TPair<const VirtualWorkerId*, const FBox2D*>> UGridBasedLBStrategy::GetVirtualWorkerToCell() const
+const TArray<TPair<VirtualWorkerId, FBox2D>> UGridBasedLBStrategy::GetVirtualWorkerToCell() const
 {
-	TArray<TPair<const VirtualWorkerId*, const FBox2D*>> VirtualWorkerToCell;
+	TArray<TPair<VirtualWorkerId, FBox2D>> VirtualWorkerToCell;
 	for (int i = 0; i < WorkerCells.Num(); i++)
 	{
-		VirtualWorkerToCell.Add(MakeTuple(&VirtualWorkerIds[i], &WorkerCells[i]));
+		VirtualWorkerToCell.Add(MakeTuple(VirtualWorkerIds[i], WorkerCells[i]));
 	}
 	return VirtualWorkerToCell;
 }
