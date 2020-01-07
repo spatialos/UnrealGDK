@@ -1,9 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "TestDefinitions.h"
+#include "Tests/TestDefinitions.h"
 
+#include "HAL/IPlatformFileProfilerWrapper.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/ScopeTryLock.h"
+#include "Misc/Paths.h"
 
 #define EXAMPLE_SIMPLE_TEST(TestName) \
 	GDK_TEST(SpatialGDKExamples, SimpleExamples, TestName)
