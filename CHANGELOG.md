@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`0.8.1-preview`] - 2020-01-07
 ### Adapted from 0.6.5
 ### Internal:
+Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
 - Local deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
 
@@ -123,6 +124,7 @@ Features listed in the internal section are not ready to use but, in the spirit 
 
 ## [`0.6.5`] - 2020-01-07
 ### Internal:
+Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
 - Local deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
 
