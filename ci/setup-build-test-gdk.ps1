@@ -13,22 +13,22 @@ class TestSuite {
   [ValidateNotNullOrEmpty()][string]$test_repo_map
   [ValidateNotNullOrEmpty()][string]$test_project_root
   [ValidateNotNullOrEmpty()][string]$tests_path
-  [bool]$override_spatial_networking
+  [bool]$run_with_spatial
 
-  TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map, [string] $test_project_root, [string] $tests_path, [bool] $override_spatial_networking) {
+  TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map, [string] $test_project_root, [string] $tests_path, [bool] $run_with_spatial) {
     $this.test_repo_url = $test_repo_url
     $this.test_repo_branch = $test_repo_branch
     $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
     $this.test_repo_map = $test_repo_map
     $this.test_project_root = $test_project_root
     $this.tests_path = $tests_path
-    $this.override_spatial_networking = $override_spatial_networking
+    $this.run_with_spatial = $run_with_spatial
   }
 }
 
 $tests = @(
-  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "/Game/NetworkingMap", "False"),
-  [TestSuite]::new("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject", "SpatialGDK", "True")
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "/Game/NetworkingMap", "True"),
+  [TestSuite]::new("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject", "SpatialGDK", "False")
 )
 
 # Allow overriding testing branch via environment variable
@@ -63,7 +63,7 @@ foreach ($test in $tests) {
   $test_repo_map = $test.test_repo_map
   $test_project_root = $test.test_project_root
   $tests_path = $test.tests_path
-  $override_spatial_networking = $test.override_spatial_networking
+  $run_with_spatial = $test.run_with_spatial
 
   # Build the testing project
   Start-Event "build-project" "command"
@@ -91,7 +91,7 @@ foreach ($test in $tests) {
         -report_output_path "$test_project_root\TestResults" `
         -test_repo_map "$test_repo_map" `
         -tests_path "$tests_path" `
-        -override_spatial_networking "$override_spatial_networking"
+        -run_with_spatial "$run_with_spatial"
     Finish-Event "test-gdk" "command"
 
     Start-Event "report-tests" "command"

@@ -6,7 +6,7 @@ param(
     [string] $test_repo_map,
     [string] $report_output_path,
     [string] $tests_path = "SpatialGDK",
-    [bool] $override_spatial_networking = $true
+    [bool] $run_with_spatial = $false
 )
 
 # This resolves a path to be absolute, without actually reading the filesystem.
@@ -18,7 +18,7 @@ function Force-ResolvePath {
     return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($path)
 }
 
-if ($override_spatial_networking) {
+if ($run_with_spatial) {
     # Generate schema and snapshots
     Echo "Generating snapshot and schema for testing project"
     $commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
@@ -36,6 +36,8 @@ if ($override_spatial_networking) {
     Copy-Item -Force `
         -Path "$test_repo_path\spatial\snapshots\$test_repo_map.snapshot" `
         -Destination "$test_repo_path\spatial\snapshots\default.snapshot"
+
+    $spatial_process = Start-Process "spatial" -PassThru -NoNewWindow -WorkingDirectory "$test_repo_path\spatial" -ArgumentList @("local", "launch")
 }
 
 # Create the TestResults directory if it does not exist, for storing results
@@ -59,10 +61,15 @@ $cmd_args_list = @( `
     "-nosplash", ` # No splash screen
     "-unattended", ` # Disable anything requiring user feedback
     "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
-    "-OverrideSpatialNetworking=`"$override_spatial_networking`"" # A parameter to switch beetween different networking implementations
 )
+
+if($run_with_spatial) {
+    $cmd_args_list.Add("-OverrideSpatialNetworking=True") # A parameter to switch beetween different networking implementations
+}
 
 Echo "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
 Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
+
+Stop-Process -InputObject $spatial_process
