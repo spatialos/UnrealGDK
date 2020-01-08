@@ -60,11 +60,11 @@ $cmd_args_list = @( `
     "-nopause", ` # Close the unreal log window automatically on exit
     "-nosplash", ` # No splash screen
     "-unattended", ` # Disable anything requiring user feedback
-    "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+    "-nullRHI" # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
 )
 
 if($run_with_spatial) {
-    $cmd_args_list.Add("-OverrideSpatialNetworking=True") # A parameter to switch beetween different networking implementations
+    $cmd_args_list += "-OverrideSpatialNetworking=True" # A parameter to switch beetween different networking implementations
 }
 
 Echo "Running $($ue_path_absolute) $($cmd_args_list)"
