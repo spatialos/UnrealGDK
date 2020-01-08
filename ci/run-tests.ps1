@@ -64,7 +64,7 @@ $cmd_args_list = @( `
 )
 
 if($run_with_spatial) {
-    $cmd_args_list += "-OverrideSpatialNetworking=$True" # A parameter to switch beetween different networking implementations
+    $cmd_args_list += "-OverrideSpatialNetworking=1" # A parameter to switch beetween different networking implementations
 }
 
 Echo "Running $($ue_path_absolute) $($cmd_args_list)"
