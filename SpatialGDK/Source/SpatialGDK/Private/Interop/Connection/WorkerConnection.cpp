@@ -1,12 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "WorkerConnection.h"
+
 // TODO(Alex): move `Worker_` code to SpatialWorkerConnection
 
 // TODO(Alex): move include to .cpp
 #include "SpatialWorkerConnection.h"
 #include "SpatialWorkerTestConnection.h"
-
-#include "WorkerConnection.h"
 
 #include "SpatialWorkerConnection.h"
 
