@@ -203,9 +203,10 @@ private:
 
 	void PeriodicallyProcessIncomingRPCs();
 
-	bool NeedToLoadClass(const FString& ClassPath);
-	FString GetPackagePath(const FString& ClassPath);
+	static bool NeedToLoadClass(const FString& ClassPath);
+	static FString GetPackagePath(const FString& ClassPath);
 
+	void StartAsyncLoadingClass(const FString& ClassPath, Worker_EntityId EntityId);
 	void OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result);
 
 	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
@@ -213,7 +214,6 @@ private:
 	struct QueuedOpForAsyncLoad
 	{
 		Worker_Op Op;
-
 		Worker_ComponentData* AcquiredData;
 		Worker_ComponentUpdate* AcquiredUpdate;
 	};
@@ -302,5 +302,5 @@ private:
 		TArray<QueuedOpForAsyncLoad> PendingOps;
 	};
 	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
-	TMap<FString, TArray<Worker_EntityId>> AsyncLoadingPackages;
+	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
 };

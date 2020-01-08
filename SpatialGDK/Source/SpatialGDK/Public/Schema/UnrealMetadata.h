@@ -90,7 +90,7 @@ struct UnrealMetadata : Component
 		{
 			if (GetDefault<USpatialGDKSettings>()->bAsyncLoadNewClassesOnEntityCheckout)
 			{
-				UE_LOG(LogSpatialUnrealMetadata, Warning, TEXT("Class %s couldn't be found even though async loading on entity checkout is enabled. Will attempt to load it synchronously."), *ClassPath);
+				UE_LOG(LogSpatialUnrealMetadata, Warning, TEXT("Class couldn't be found even though async loading on entity checkout is enabled. Will attempt to load it synchronously. Class: %s"), *ClassPath);
 			}
 
 			Class = LoadObject<UClass>(nullptr, *ClassPath);

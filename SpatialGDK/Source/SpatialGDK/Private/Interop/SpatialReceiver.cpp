@@ -35,6 +35,17 @@ DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
 DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel, STATGROUP_SpatialNet);
 
+DECLARE_CYCLE_STAT(TEXT("Receiver CritSection"), STAT_ReceiverCritSection, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver AddEntity"), STAT_ReceiverAddEntity, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver RemoveEntity"), STAT_ReceiverRemoveEntity, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver AddComponent"), STAT_ReceiverAddComponent, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver ComponentUpdate"), STAT_ReceiverComponentUpdate, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver CommandRequest"), STAT_ReceiverCommandRequest, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver CommandResponse"), STAT_ReceiverCommandResponse, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver AuthorityChange"), STAT_ReceiverAuthChange, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver ReserveEntityIds"), STAT_ReceiverReserveEntityIds, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver CreateEntityResponse"), STAT_ReceiverCreateEntityResponse, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver EntityQueryResponse"), STAT_ReceiverEntityQueryResponse, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService)
@@ -55,6 +66,7 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverCritSection);
 	if (InCriticalSection)
 	{
 		EnterCriticalSection();
@@ -102,6 +114,7 @@ void USpatialReceiver::LeaveCriticalSection()
 
 void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverAddEntity);
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddEntity: %lld"), Op.entity_id);
 
 	check(bInCriticalSection);
@@ -111,6 +124,7 @@ void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
 
 void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverAddComponent);
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"),
 		Op.data.component_id, Op.entity_id);
 
@@ -201,6 +215,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 
 void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverRemoveEntity);
 	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
 	{
 		// Pretend we never saw this entity.
@@ -307,6 +322,7 @@ void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 
 void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverAuthChange);
 	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
 	{
 		QueueAuthorityOpForAsyncLoad(Op);
@@ -604,34 +620,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	const FString& ClassPath = UnrealMetadataComp->ClassPath;
 	if (SpatialGDKSettings->bAsyncLoadNewClassesOnEntityCheckout && NeedToLoadClass(ClassPath))
 	{
-		FString PackagePath = GetPackagePath(ClassPath);
-
-		bool bAlreadyLoading = false;
-		if (AsyncLoadingPackages.Contains(PackagePath))
-		{
-			bAlreadyLoading = true;
-		}
-
-		if (IsEntityWaitingForAsyncLoad(EntityId))
-		{
-			// This shouldn't happen because even if the entity goes out and comes back into view,
-			// we would've received a RemoveEntity op that would remove the entry from the map.
-			UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::ReceiveActor: Checked out entity %lld but it's already waiting for async load!"), EntityId);
-		}
-
-		EntityWaitingForAsyncLoad AsyncLoadEntity;
-		AsyncLoadEntity.ClassPath = ClassPath;
-		AsyncLoadEntity.InitialPendingAddComponents = ExtractAddComponents(EntityId);
-		AsyncLoadEntity.PendingOps = ExtractAuthorityOps(EntityId);
-
-		EntitiesWaitingForAsyncLoad.Emplace(EntityId, MoveTemp(AsyncLoadEntity));
-		AsyncLoadingPackages.FindOrAdd(PackagePath).Add(EntityId);
-
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Async loading package %s for entity %lld. Already loading: %d"), *PackagePath, EntityId, bAlreadyLoading ? 1 : 0);
-		if (!bAlreadyLoading)
-		{
-			LoadPackageAsync(PackagePath, FLoadPackageAsyncDelegate::CreateUObject(this, &USpatialReceiver::OnAsyncPackageLoaded));
-		}
+		StartAsyncLoadingClass(ClassPath, EntityId);
 		return;
 	}
 
@@ -1125,7 +1114,6 @@ void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp&
 
 void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info)
 {
-
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
 	if (Channel == nullptr)
 	{
@@ -1211,6 +1199,7 @@ void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorCh
 
 void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverComponentUpdate);
 	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
 	{
 		QueueComponentUpdateOpForAsyncLoad(Op);
@@ -1449,12 +1438,13 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 
 void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandRequest);
 	Schema_FieldId CommandIndex = Op.request.command_index;
 
 	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("USpatialReceiver::OnCommandRequest: Actor class async loading, ignoring command. Entity %lld, Class %s"), Op.entity_id, *EntitiesWaitingForAsyncLoad[Op.entity_id].ClassPath);
-		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("USpatialReceiver::OnCommandRequest: Actor class async loading, cannot handle command. Entity %lld, Class %s"), Op.entity_id, *EntitiesWaitingForAsyncLoad[Op.entity_id].ClassPath);
+		Sender->SendCommandFailure(Op.request_id, TEXT("Target actor async loading."));
 		return;
 	}
 
@@ -1534,12 +1524,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 
 void USpatialReceiver::OnCommandResponse(const Worker_CommandResponseOp& Op)
 {
-	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("USpatialReceiver::OnCommandResponse: Actor class async loading, ignoring command response. Entity %lld, Class %s"), Op.entity_id, *EntitiesWaitingForAsyncLoad[Op.entity_id].ClassPath);
-		return;
-	}
-
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandResponse);
 	if (Op.response.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
 	{
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponse(Op);
@@ -1718,6 +1703,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverReserveEntityIds);
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("ReserveEntityIds request failed: request id: %d, message: %s"), Op.request_id, UTF8_TO_TCHAR(Op.message));
@@ -1741,6 +1727,7 @@ void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsR
 
 void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverCreateEntityResponse);
 	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{
 	case WORKER_STATUS_CODE_SUCCESS:
@@ -1785,6 +1772,7 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseO
 
 void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverEntityQueryResponse);
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialReceiver, Error, TEXT("EntityQuery failed: request id: %d, message: %s"), Op.request_id, UTF8_TO_TCHAR(Op.message));
@@ -2269,22 +2257,49 @@ FString USpatialReceiver::GetPackagePath(const FString& ClassPath)
 	return FSoftObjectPath(ClassPath).GetLongPackageName();
 }
 
-void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result)
+void USpatialReceiver::StartAsyncLoadingClass(const FString& ClassPath, Worker_EntityId EntityId)
 {
-	FString PackageNameStr = PackageName.ToString();
-	if (!AsyncLoadingPackages.Contains(PackageNameStr))
+	FString PackagePath = GetPackagePath(ClassPath);
+	FName PackagePathName = *PackagePath;
+
+	bool bAlreadyLoading = AsyncLoadingPackages.Contains(PackagePathName);
+
+	if (IsEntityWaitingForAsyncLoad(EntityId))
 	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package loaded but no entry in AsyncLoadingPackages. Package: %s"), *PackageNameStr);
-		return;
+		// This shouldn't happen because even if the entity goes out and comes back into view,
+		// we would've received a RemoveEntity op that would remove the entry from the map.
+		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::ReceiveActor: Checked out entity but it's already waiting for async load! Entity: %lld"), EntityId);
 	}
 
-	TArray<Worker_EntityId> Entities = AsyncLoadingPackages.FindAndRemoveChecked(PackageNameStr);
+	EntityWaitingForAsyncLoad AsyncLoadEntity;
+	AsyncLoadEntity.ClassPath = ClassPath;
+	AsyncLoadEntity.InitialPendingAddComponents = ExtractAddComponents(EntityId);
+	AsyncLoadEntity.PendingOps = ExtractAuthorityOps(EntityId);
+
+	EntitiesWaitingForAsyncLoad.Emplace(EntityId, MoveTemp(AsyncLoadEntity));
+	AsyncLoadingPackages.FindOrAdd(PackagePathName).Add(EntityId);
+
+	UE_LOG(LogSpatialReceiver, Log, TEXT("Async loading package %s for entity %lld. Already loading: %d"), *PackagePath, EntityId, bAlreadyLoading ? 1 : 0);
+	if (!bAlreadyLoading)
+	{
+		LoadPackageAsync(PackagePath, FLoadPackageAsyncDelegate::CreateUObject(this, &USpatialReceiver::OnAsyncPackageLoaded));
+	}
+}
+
+void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result)
+{
+	TArray<Worker_EntityId> Entities;
+	if (!AsyncLoadingPackages.RemoveAndCopyValue(PackageName, Entities))
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package loaded but no entry in AsyncLoadingPackages. Package: %s"), *PackageName.ToString());
+		return;
+	}
 
 	for (Worker_EntityId Entity : Entities)
 	{
 		if (IsEntityWaitingForAsyncLoad(Entity))
 		{
-			UE_LOG(LogSpatialReceiver, Log, TEXT("Finished async loading package %s for entity %lld."), *PackageNameStr, Entity);
+			UE_LOG(LogSpatialReceiver, Log, TEXT("Finished async loading package %s for entity %lld."), *PackageName.ToString(), Entity);
 
 			CriticalSectionSaveState CriticalSectionState;
 			if (bInCriticalSection)
