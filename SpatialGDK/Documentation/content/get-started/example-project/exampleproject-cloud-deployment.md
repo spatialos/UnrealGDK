@@ -17,9 +17,9 @@ You prepare both your server-workers and client-workers for upload to the cloud 
 
 **Schema and snapshot**
 
-When you launched a local deployment of the Example project you initiated schema and snapshot generation for it. If you haven’t changed the project since, you don’t need to regenerate a schema or snapshot. However, when you do make any changes to the project, you must regenerate schema and create a snapshot before launching a local or cloud deployment. 
+When you launched a local deployment of the Example project, you generated a schema and a snapshot for it. If you haven’t changed the project since, you don’t need to regenerate a schema or snapshot. However, when you do make any changes to the project, you must regenerate schema and create a snapshot before launching a local or cloud deployment. 
 
-**Hosting costs**
+**Hosting cost**
 
 Everyone who signs up for SpatialOS automatically has free cloud deployment hosting via the free tier, so you can use free tier hosting for this Example project.
 
@@ -91,13 +91,12 @@ See the [Helper script]({{urlRoot}}/content/apis-and-helper-scripts/helper-scrip
 
 <%(/Expandable)%>
 
-If you haven't yet run BuildProject.bat to build server-workers and client-workers, you need to:
+If you haven't yet run `BuildProject.bat` to build server-workers and client-workers, you need to:
 
 1. Close your Unreal Editor - if the Editor is open when you try to build workers, the command fails.
 2. Open a terminal window and navigate to the `UnrealGDKExampleProject` directory.
-3. Run the `BuildProject.bat` command to build a server-worker using the filepath and flags below.
-  
-The filepath you use depends on whether you have the `UnrealGDK` plugin set up as an *engine* plugin or as a *project* plugin. If you followed the default setup instructions which use the `InstallGDK.bat` script, you have it set up as an *engine* plugin. <br/><br/>
+3. Run the `BuildProject.bat` command to build a server-worker using the filepath and flags below. </br></br>
+  The filepath you use depends on whether you have the `UnrealGDK` plugin set up as an *engine* plugin or as a *project* plugin. If you followed the default setup instructions which use the `InstallGDK.bat` script, you have it set up as an *engine* plugin. <br/><br/>
 
   * Engine plugin filepath (default):
   ```
@@ -289,7 +288,7 @@ This `.json` file contains the configuration parameters for starting a deploymen
 * worker types - lists the worker type names you have set up for your project. For this project; an Unreal server-worker `UnrealWorker` and an Unreal client-worker `UnrealClient`.
 This project comes with a ready-made launch configuration file `one_worker_test.json`. Note that you can call your launch  configuration file any name you choose.
 
-You can find out more in the SpatialOS Worker SDK documentation about the [launch configuration file](https://docs.improbable.io/reference/14.0/shared/flexible-project-layout/reference/launch-configuration). Note that this may contain additional details on parameters that are not relevant to projects based on Unreal
+You can find out more in the SpatialOS Worker SDK documentation about the [launch configuration file](https://docs.improbable.io/reference/14.0/shared/flexible-project-layout/reference/launch-configuration).Note that this may contain additional details on parameters that are not relevant to Unreal projects.
 
 <%(/Expandable)%>
 
