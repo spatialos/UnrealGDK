@@ -298,7 +298,7 @@ You can find out more in the SpatialOS Worker SDK documentation: [launch confgur
 
 <%(#Expandable title="Tell me more about developing with simulated players")%>
 
-There is a basic implementation of simulated players included with the Starter Template. You can find out more about settingup simulated players by:
+There is a basic implementation of simulated players included with the Starter Template. You can find out more about setting up simulated players by:
   
 * Exploring the source code (look for `SimulatedPlayerCharacter_BP`).
 * Trying them out  by deploying simulated players with this project.
