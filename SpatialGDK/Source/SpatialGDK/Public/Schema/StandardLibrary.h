@@ -55,9 +55,9 @@ inline void AddCoordinateToSchema(Schema_Object* Object, Schema_FieldId Id, cons
 	Schema_AddDouble(CoordsObject, 3, Coordinate.Z);
 }
 
-inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId Id)
+inline Coordinates IndexCoordinateFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
-	Schema_Object* CoordsObject = Schema_GetObject(Object, Id);
+	Schema_Object* CoordsObject = Schema_IndexObject(Object, Id, Index);
 
 	Coordinates Coordinate;
 	Coordinate.X = Schema_GetDouble(CoordsObject, 1);
@@ -65,6 +65,11 @@ inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId
 	Coordinate.Z = Schema_GetDouble(CoordsObject, 3);
 
 	return Coordinate;
+}
+
+inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId Id)
+{
+	return IndexCoordinateFromSchema(Object, Id, 0);
 }
 
 struct EntityAcl : Component
