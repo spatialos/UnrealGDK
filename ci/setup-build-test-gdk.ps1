@@ -38,7 +38,7 @@ if (Test-Path env:TEST_REPO_BRANCH) {
 
 # Guard against other runs not cleaning up after themselves
 foreach ($test in $tests) {
-  $test_project_root = $test[4]
+  $test_project_root = $test.test_project_root
   & $PSScriptRoot"\cleanup.ps1" `
     -project_path "$test_project_root"
 }
