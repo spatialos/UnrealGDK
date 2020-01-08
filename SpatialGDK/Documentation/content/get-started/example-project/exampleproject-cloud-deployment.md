@@ -17,9 +17,9 @@ You prepare both your server-workers and client-workers for upload to the cloud 
 
 **Schema and snapshot**
 
-As you already generated schema and a snapshot for the Example Project when you launched a local deployment, and haven’t changed the project since, you don’t need to generate a schema or snapshot. However, when you do make any changes to the project, you must generate schema and create a snapshot before launching a local or cloud deployment. 
+When you launched a local deployment of the Example project you initiated schema and snapshot generation for it. If you haven’t changed the project since, you don’t need to regenerate a schema or snapshot. However, when you do make any changes to the project, you must regenerate schema and create a snapshot before launching a local or cloud deployment. 
 
-**Hosting cost**
+**Hosting costs**
 
 Everyone who signs up for SpatialOS automatically has free cloud deployment hosting via the free tier, so you can use free tier hosting for this Example project.
 
@@ -49,7 +49,7 @@ When you signed up for SpatialOS, your account was automatically associated with
 2. In File Explorer, navigate to the `UnrealGDKExampleProject\spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 3. In the file, locate the `name` field - it defaults to `your_project_name_here`. Replace `your_project_name_here` with the SpatialOS cloud project name shown in the Console (`beta_yankee_hawaii_621` using the example above). This associates your Unreal game with your SpatialOS cloud project, telling SpatialOS which cloud project you are uploading your built-out worker assemblies to.
 
-**Note:** Ensure you only change the `name` field at the top of the file. If you change any other settings, the deployment cloud will fail.
+**Note:** Ensure you only change the `name` field at the top of the file. If you change any other settings, the cloud deployment will fail.
 
 ### Step 2: Build workers
 
@@ -91,12 +91,13 @@ See the [Helper script]({{urlRoot}}/content/apis-and-helper-scripts/helper-scrip
 
 <%(/Expandable)%>
 
-For now, you need to build server-workers and client-workers, so if you haven't run `BuildProject.bat` from File Explorer you need to:
+If you haven't yet run BuildProject.bat to build server-workers and client-workers, you need to:
 
 1. Close your Unreal Editor - if the Editor is open when you try to build workers, the command fails.
 2. Open a terminal window and navigate to the `UnrealGDKExampleProject` directory.
 3. Run the `BuildProject.bat` command to build a server-worker using the filepath and flags below.
-  The filepath you use depends on whether you have the `UnrealGDK` plugin set up as an *engine* plugin or as a *project* plugin. If you followed the default setup instructions which use the `InstallGDK.bat` script, you have it set up as an *engine* plugin. <br/><br/>
+  
+The filepath you use depends on whether you have the `UnrealGDK` plugin set up as an *engine* plugin or as a *project* plugin. If you followed the default setup instructions which use the `InstallGDK.bat` script, you have it set up as an *engine* plugin. <br/><br/>
 
   * Engine plugin filepath (default):
   ```
@@ -122,9 +123,7 @@ For now, you need to build server-workers and client-workers, so if you haven't 
 
 Whichever way you built workers, you now have one (or two) built-out worker assemblies as `.zip` files in your `<ProjectRoot>\spatial\build\assembly\worker\` directory (where `<ProjectRoot>` is the root directory of your project). `BuildProject.bat` creates one `.zip` file in this directory every time you run it.
 
-#### Troubleshooting
-
-Problems with building workers?
+#### Troubleshooting building workers
 
 <%(#Expandable title="Have you changed the Spatial networking switch?")%>
 
@@ -173,9 +172,7 @@ A valid upload command looks like this:
 spatial cloud upload exampleprojectassembly
 ```
 
-#### Troubleshooting
-
-Problems with uploading workers?
+#### Troubleshooting uploading workers
 
 <%(#Expandable title="No upload progress")%>
 
@@ -203,7 +200,7 @@ For more information on the CLI commands for building workers and launching clou
 
 <%(/Expandable)%>
 
-To launch a cloud deployment from Unreal Editor:
+To launch a cloud deployment from the Unreal Editor:
 
 1. On the GDK toolbar, select **Deploy**.
 
@@ -292,7 +289,7 @@ This `.json` file contains the configuration parameters for starting a deploymen
 * worker types - lists the worker type names you have set up for your project. For this project; an Unreal server-worker `UnrealWorker` and an Unreal client-worker `UnrealClient`.
 This project comes with a ready-made launch configuration file `one_worker_test.json`. Note that you can call your launch  configuration file any name you choose.
 
-You can find out more in the SpatialOS Worker SDK documentation: [launch confguration file](https://docs.improbable.io/reference/14.0/shared/flexible-project-layout/reference/launch-configuration) (but note that this may contain details on  parameters not relevant to Unreal-developed projects.)
+You can find out more in the SpatialOS Worker SDK documentation about the [launch configuration file](https://docs.improbable.io/reference/14.0/shared/flexible-project-layout/reference/launch-configuration). Note that this may contain additional details on parameters that are not relevant to projects based on Unreal
 
 <%(/Expandable)%>
 
