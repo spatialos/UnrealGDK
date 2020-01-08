@@ -8,7 +8,7 @@ When you want to try out your game, you need to launch a deployment; the deploym
 There are two types of deployment: local and cloud.
 
 - A **local deployment** is for testing only. A local deployment runs your game simulation in your Unreal Editor. 
-</br>Your game simulation with its own instance of the SpatialOS Runtime, runs on your development machine. You can run multiple clients in a local deployment - they are useful for fast development iteration.
+</br>Your game simulation, with its own instance of the SpatialOS Runtime, runs on your development machine. You can run multiple clients in a local deployment, which is useful for fast development iteration.
 <%(#Expandable title="What is the SpatialOS Runtime?")%>
 There is a Runtime instance for every game simulation. A Runtime instance holds the canononical store of all a game's SpatialOS-relevant object data in the SpatialOS entity database. It handles server and client connections, and coordinates each server and client's write and read access to the entity database.
 <%(/Expandable)%>
@@ -87,8 +87,9 @@ In the **Multiplayer Options** section of the window:</br>
 The **Spatial Networking** option is the networking switch; you use this to switch your game's deployment from native Unreal networking to SpatialOS networking.</br></br>
 
 
-1. Now, run the game: in the **Modes** section of the window, select **New Editor Window (PIE)**.</br> 
-You are now running one game server and two game clients in a local deployment in your Unreal Editor. (If it doesn't run, see **Note** below.)</br>
+1. Now, run the game: in the **Modes** section of the window, select **New Editor Window (PIE)**.</br>
+
+You are now running one game server and two game clients in a local deployment in your Unreal Editor. You don't need to worry about the loading bar being stuck on 45%; this is just the shaders being compiled for the first time. (If it doesn't run, see **Note** below.)</br>
 
 **What's running?**</br>
 You have started one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor. You have also started an instance of the SpatialOS Runtime locally.</br></br>
@@ -142,7 +143,7 @@ To do this:
 
 1. To test your changes, select **Play** on the Unreal toolbar; this starts your game's clients and server-worker instances.
 
-<%(#Expandable title="Locak deployment workflow summary")%>
+<%(#Expandable title="Local deployment workflow summary")%>
 There is a sumary on the [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow) page. It is the same as the one here.
  <%(Lightbox image="https://docs.google.com/drawings/d/e/2PACX-1vQCTOucXKMkDJ3-Vpg17_tpUS7IxOXD6Mps-FzWe2tQl3vw5alQPngCnw339cFy3u2NvrcBxhYASKsS/pub?w=710&h=1033")%>
 
@@ -158,4 +159,5 @@ To fully stop your local deployment, select **Stop** in the GDK toolbar.<br/></b
 
 <br/>
 <br/>------------<br/>
+_2019-07-22 Page updated with editorial review: Added loading bar note._
 _2019-07-22 Page updated with limited editorial review._
