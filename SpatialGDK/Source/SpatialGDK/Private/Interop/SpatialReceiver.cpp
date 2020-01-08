@@ -2279,7 +2279,7 @@ void USpatialReceiver::StartAsyncLoadingClass(const FString& ClassPath, Worker_E
 	EntitiesWaitingForAsyncLoad.Emplace(EntityId, MoveTemp(AsyncLoadEntity));
 	AsyncLoadingPackages.FindOrAdd(PackagePathName).Add(EntityId);
 
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Async loading package %s for entity %lld. Already loading: %d"), *PackagePath, EntityId, bAlreadyLoading ? 1 : 0);
+	UE_LOG(LogSpatialReceiver, Log, TEXT("Async loading package %s for entity %lld. Already loading: %s"), *PackagePath, EntityId, bAlreadyLoading ? TEXT("true") : TEXT("false"));
 	if (!bAlreadyLoading)
 	{
 		LoadPackageAsync(PackagePath, FLoadPackageAsyncDelegate::CreateUObject(this, &USpatialReceiver::OnAsyncPackageLoaded));
