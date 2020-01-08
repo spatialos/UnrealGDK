@@ -252,7 +252,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 
 	Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
 
-	if (StaticComponentView->GetAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (StaticComponentView->HasAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID))
 	{
 		SingletonActor->Role = ROLE_Authority;
 		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
@@ -327,7 +327,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 		{
 			check(NetDriver->PackageMap->GetObjectFromEntityId(*SingletonEntityId) == nullptr);
 			NetDriver->PackageMap->ResolveEntityActor(SingletonActor, *SingletonEntityId);
-			if (StaticComponentView->GetAuthority(*SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) != WORKER_AUTHORITY_AUTHORITATIVE)
+			if (!StaticComponentView->HasAuthority(*SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID))
 			{
 				SingletonActor->Role = ROLE_SimulatedProxy;
 				SingletonActor->RemoteRole = ROLE_Authority;
