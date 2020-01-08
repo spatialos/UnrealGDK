@@ -8,7 +8,7 @@ When you want to try out your game, you need to launch a deployment; the deploym
 There are two types of deployment: local and cloud.
 
 - A **local deployment** is for testing only. A local deployment runs your game simulation in your Unreal Editor. 
-</br>Your game simulation with its own instance of the SpatialOS Runtime, runs on your development machine. You can run multiple clients in a local deployment. This type of deployment is useful for fast development iteration.
+</br>Your game simulation, with its own instance of the SpatialOS Runtime, runs on your development machine. You can run multiple clients in a local deployment, which is useful for fast development iteration.
 <%(#Expandable title="What is the SpatialOS Runtime?")%>
 There is a Runtime instance for every game simulation. A Runtime instance holds the canononical store of all a game's SpatialOS-relevant object data in the SpatialOS entity database. It handles server and client connections, and coordinates each server and client's write and read access to the entity database.
 <%(/Expandable)%>
