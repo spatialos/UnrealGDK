@@ -14,7 +14,7 @@ class TestSuite {
   [ValidateNotNullOrEmpty()][string]$test_project_root
   [ValidateNotNullOrEmpty()][string]$tests_path
 
-  TestSuite($test_repo_url, $test_repo_branch, $test_repo_relative_uproject_path, $test_repo_map, $test_project_root, $tests_path) {
+  TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map, [string] $test_project_root, [string] $tests_path) {
     $this.test_repo_url = $test_repo_url
     $this.test_repo_branch = $test_repo_branch
     $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
@@ -25,8 +25,8 @@ class TestSuite {
 }
 
 $tests = @(
-  TestSuite("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject", "SpatialGDK"),
-  TestSuite("git@github.com:improbable/UnrealGDKEngineNetTest.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "/Game/NetworkingMap")
+  [TestSuite]::new("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject", "SpatialGDK"),
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "/Game/NetworkingMap")
 )
 
 # Allow overriding testing branch via environment variable
