@@ -15,7 +15,7 @@ There are several ways to generate schema for your project:
 
 For large projects, the full scan methods are significantly slower than the iterative method.
 
-> **Note:** Whenever you generate schema, the GDK creates schema for you, for classes with replicated properties or RPCs. It stores schema in your project's [`SchemaDatabase`]({{urlRoot}}/content/glossary#schemadatabase) file. 
+> **Note:** Whenever you generate schema, the GDK creates the schema for you, for classes with replicated properties or RPCs, and stores them in your project's [`SchemaDatabase`]({{urlRoot}}/content/glossary#schemadatabase) file. 
 > <br><br>
 > If a class does not have replicated properties or RPCs, then the GDK does not generate schema for it.
 
@@ -26,18 +26,18 @@ Within the Unreal Editor, you can generate schema using a full scan, or generate
 
     To generate schema for all classes in your project that have replicated properties or RPCs:<br/>
 
-    In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
+* In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
     <br/> ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
     <br/>When you select **Schema (Full Scan)**, the GDK searches through all classes in your project that have replicated properties or RPCs to generate the schema files, and then updates the `SchemaDatabase`. <br/>
 
-    Run a full scan the first time you generate schema for your project, and whenever you need to generate schema for classes that have replicated properties or RPCs but that are not currently loaded in the Editor.<br/>For example: You need to select **Schema (Full Scan)** if you haven’t generated schema after adding a new Blueprint to your game, and that Blueprint is no longer open in the Editor.<br/><br/>
+* Run a full scan the first time you generate schema for your project, and whenever you need to generate schema for classes that have replicated properties or RPCs but that are not currently loaded in the Editor.<br/>For example: You need to select **Schema (Full Scan)** if you haven’t generated schema after adding a new Blueprint to your game, and that Blueprint is no longer open in the Editor.<br/><br/>
 
 * **Iterative**
 
     To generate schema for classes that have replicated properties or RPCs and that are currently loaded in the Editor: <br/>
 
-    Select **Schema** in the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons). The GDK searchesthrough classes that have replicated properties or RPCs and that are currently loaded in the Editor, generates the schema files and updates the `SchemaDatabase`.<br/>
+* Select **Schema** in the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons). The GDK searchesthrough classes that have replicated properties or RPCs and that are currently loaded in the Editor, generates the schema files and updates the `SchemaDatabase`.<br/>
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_<br/>
 
@@ -64,10 +64,7 @@ You run the commandlet in the same way you would run the Unreal-native [`Cook` c
 
 ```
 <Path to UE4Editor-Cmd.exe> <Path to your game's .uproject file> -run=CookAndGenerateSchema -TargetPlatform=WindowsNoEditor -fileopenlog -unversioned -stdout -CrashForUAT -unattended -NoLogTimes  -UTF8Output
-
-
 ```
-
 
 ## How to delete schema  
 When you generate schema, the GDK verifies that any classes referenced in the `SchemaDatabase` still exist. If you delete a class, the GDK removes it from the `SchemaDatabase` the next time you generate schema.
