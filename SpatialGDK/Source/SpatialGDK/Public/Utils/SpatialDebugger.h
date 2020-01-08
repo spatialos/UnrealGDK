@@ -62,6 +62,8 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
+	virtual void OnAuthorityGained() override;
+
 	UFUNCTION(Exec, Category = "SpatialGDK", BlueprintCallable)
 	void SpatialToggleDebugger();
 

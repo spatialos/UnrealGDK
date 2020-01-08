@@ -35,7 +35,7 @@ void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D&
 	Mesh->SetMaterial(0, MaterialInstance);
 	SetOpacity(DEFAULT_WORKER_REGION_OPACITY);
 	SetColor(Color);
-	this->SetExtents(Extents);
+	SetExtents(Extents);
 }
 
 void AWorkerRegion::SetHeight(const float Height)

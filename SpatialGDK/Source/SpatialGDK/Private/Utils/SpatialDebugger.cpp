@@ -2,7 +2,7 @@
 
 #include "Utils/SpatialDebugger.h"
 
-
+#include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/WorkerRegion.h"
@@ -12,7 +12,6 @@
 
 #include "Debug/DebugDrawService.h"
 #include "Engine/Engine.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -135,22 +134,23 @@ void ASpatialDebugger::BeginPlay()
 			SpatialToggleDebugger();
 		}
 	}
-	else
+}
+
+void ASpatialDebugger::OnAuthorityGained()
+{
+	if (NetDriver->LoadBalanceStrategy)
 	{
-		if (NetDriver->LoadBalanceStrategy != nullptr)
+		if (UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(NetDriver->LoadBalanceStrategy))
 		{
-			if (UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(NetDriver->LoadBalanceStrategy))
+			const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
+			WorkerRegions.Empty();
+			for (int i = 0; i < LBStrategyRegions.Num(); i++)
 			{
-				const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
-				WorkerRegions.Empty();
-				for (int i = 0; i < LBStrategyRegions.Num(); i++)
-				{
-					const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegions[i].Get<0>());
-					FWorkerRegionInfo WorkerRegionInfo;
-					WorkerRegionInfo.Color = SpatialGDK::GetColorForWorkerName(*WorkerName);
-					WorkerRegionInfo.Extents = LBStrategyRegions[i].Get<1>();
-					WorkerRegions.Add(WorkerRegionInfo);
-				}
+				const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegions[i].Get<0>());
+				FWorkerRegionInfo WorkerRegionInfo;
+				WorkerRegionInfo.Color = (WorkerName == nullptr) ? InvalidServerTintColor : SpatialGDK::GetColorForWorkerName(*WorkerName);
+				WorkerRegionInfo.Extents = LBStrategyRegions[i].Get<1>();
+				WorkerRegions.Add(WorkerRegionInfo);
 			}
 		}
 	}
