@@ -6,9 +6,27 @@ param(
   [string] $unreal_path = "$build_home\UnrealEngine"
 )
 
+class TestSuite {
+  [ValidateNotNullOrEmpty()][string]$test_repo_url
+  [ValidateNotNullOrEmpty()][string]$test_repo_branch
+  [ValidateNotNullOrEmpty()][string]$test_repo_relative_uproject_path
+  [ValidateNotNullOrEmpty()][string]$test_repo_map
+  [ValidateNotNullOrEmpty()][string]$test_project_root
+  [ValidateNotNullOrEmpty()][string]$tests_path
+
+  TestSuite($test_repo_url, $test_repo_branch, $test_repo_relative_uproject_path, $test_repo_map, $test_project_root, $tests_path) {
+    $this.test_repo_url = $test_repo_url
+    $this.test_repo_branch = $test_repo_branch
+    $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
+    $this.test_repo_map = $test_repo_map
+    $this.test_project_root = $test_project_root
+    $this.tests_path = $tests_path
+  }
+}
+
 $tests = @(
-  ("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject", "SpatialGDK"),
-  ("git@github.com:improbable/UnrealGDKEngineNetTest.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "/Game/NetworkingMap")
+  TestSuite("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject", "SpatialGDK"),
+  TestSuite("git@github.com:improbable/UnrealGDKEngineNetTest.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "/Game/NetworkingMap")
 )
 
 # Allow overriding testing branch via environment variable
@@ -37,12 +55,12 @@ Finish-Event "setup-gdk" "command"
 
 foreach ($test in $tests) {
   
-  $test_repo_url = $test[0]
-  $test_repo_branch = $test[1]
-  $test_repo_relative_uproject_path = $test[2]
-  $test_repo_map = $test[3]
-  $test_project_root = $test[4]
-  $tests_path = $test[5]
+  $test_repo_url = $test.test_repo_url
+  $test_repo_branch = $test.test_repo_branch
+  $test_repo_relative_uproject_path = $test.test_repo_relative_uproject_path
+  $test_repo_map = $test.test_repo_map
+  $test_project_root = $test.test_project_root
+  $tests_path = $test.tests_path
 
   # Build the testing project
   Start-Event "build-project" "command"
