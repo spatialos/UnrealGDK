@@ -13,20 +13,22 @@ class TestSuite {
   [ValidateNotNullOrEmpty()][string]$test_repo_map
   [ValidateNotNullOrEmpty()][string]$test_project_root
   [ValidateNotNullOrEmpty()][string]$tests_path
+  [bool]$override_spatial_networking
 
-  TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map, [string] $test_project_root, [string] $tests_path) {
+  TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map, [string] $test_project_root, [string] $tests_path, [bool] $override_spatial_networking) {
     $this.test_repo_url = $test_repo_url
     $this.test_repo_branch = $test_repo_branch
     $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
     $this.test_repo_map = $test_repo_map
     $this.test_project_root = $test_project_root
     $this.tests_path = $tests_path
+    $this.override_spatial_networking = $override_spatial_networking
   }
 }
 
 $tests = @(
-  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "/Game/NetworkingMap"),
-  [TestSuite]::new("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject", "SpatialGDK")
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "master", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "/Game/NetworkingMap", "False"),
+  [TestSuite]::new("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject", "SpatialGDK", "True")
 )
 
 # Allow overriding testing branch via environment variable
@@ -61,6 +63,7 @@ foreach ($test in $tests) {
   $test_repo_map = $test.test_repo_map
   $test_project_root = $test.test_project_root
   $tests_path = $test.tests_path
+  $override_spatial_networking = $test.override_spatial_networking
 
   # Build the testing project
   Start-Event "build-project" "command"
@@ -87,7 +90,8 @@ foreach ($test in $tests) {
         -log_file_path "$PSScriptRoot\$test_project_root\TestResults\tests.log" `
         -report_output_path "$test_project_root\TestResults" `
         -test_repo_map "$test_repo_map" `
-        -tests_path "$tests_path"
+        -tests_path "$tests_path" `
+        -override_spatial_networking "$override_spatial_networking"
     Finish-Event "test-gdk" "command"
 
     Start-Event "report-tests" "command"
