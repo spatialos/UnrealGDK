@@ -24,20 +24,20 @@ Within the Unreal Editor, you can generate schema using a full scan, or generate
 
 * **Full scan** 
 
-    To generate schema for all classes in your project that have replicated properties or RPCs:<br/>
+To generate schema for all classes in your project that have replicated properties or RPCs:<br/>
 
-* In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
+** In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
     <br/> ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
     <br/>When you select **Schema (Full Scan)**, the GDK searches through all classes in your project that have replicated properties or RPCs to generate the schema files, and then updates the `SchemaDatabase`. <br/>
 
-* Run a full scan the first time you generate schema for your project, and whenever you need to generate schema for classes that have replicated properties or RPCs but that are not currently loaded in the Editor.<br/>For example: You need to select **Schema (Full Scan)** if you haven’t generated schema after adding a new Blueprint to your game, and that Blueprint is no longer open in the Editor.<br/><br/>
+** Run a full scan the first time you generate schema for your project, and whenever you need to generate schema for classes that have replicated properties or RPCs but that are not currently loaded in the Editor.<br/>For example: You need to select **Schema (Full Scan)** if you haven’t generated schema after adding a new Blueprint to your game, and that Blueprint is no longer open in the Editor.<br/><br/>
 
 * **Iterative**
 
-    To generate schema for classes that have replicated properties or RPCs and that are currently loaded in the Editor: <br/>
+To generate schema for classes that have replicated properties or RPCs and that are currently loaded in the Editor: <br/>
 
-* Select **Schema** in the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons). The GDK searchesthrough classes that have replicated properties or RPCs and that are currently loaded in the Editor, generates the schema files and updates the `SchemaDatabase`.<br/>
+** Select **Schema** in the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons). The GDK searchesthrough classes that have replicated properties or RPCs and that are currently loaded in the Editor, generates the schema files and updates the `SchemaDatabase`.<br/>
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_<br/>
 
