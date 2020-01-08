@@ -95,7 +95,8 @@ public:
 	static USpatialLatencyTracer* GetTracer(UObject* WorldContextObject);
 
 	bool IsValidKey(TraceKey Key);
-	TraceKey GetTraceKey(const UObject* Obj, const UFunction* Function);
+	TraceKey GetTraceKey(const UObject* Obj, const UFunction* Function, bool bRemove = true);
+	TraceKey GetTraceKey(const UObject* Obj, const UProperty* Property, bool bRemove = true);
 
 	void MarkActiveLatencyTrace(const TraceKey Key);
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);
@@ -103,6 +104,8 @@ public:
 
 	void WriteTraceToSchemaObject(const TraceKey Key, Schema_Object* Obj, const Schema_FieldId FieldId);
 	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId);
+
+	TraceKey AssociateEntityComponent(int64 Entity, uint32 Component, TraceKey Key);
 
 	TraceKey ReadTraceFromSpatialPayload(const FSpatialLatencyPayload& payload);
 
@@ -116,6 +119,7 @@ private:
 
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
 	using ActorPropertyKey = TPair<const AActor*, const UProperty*>;
+	using EntityComponentKey = TPair<uint32, uint32>;
 	using TraceSpan = improbable::trace::Span;
 
 	bool BeginLatencyTrace_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
@@ -144,6 +148,7 @@ private:
 	FCriticalSection Mutex; // This mutex is to protect modifications to the containers below
 	TMap<ActorFuncKey, TraceKey> TrackingTraces;
 	TMap<ActorPropertyKey, TraceKey> TrackingProperties;
+	TMap<EntityComponentKey, TraceKey> TrackingEntityComponents;
 	TMap<TraceKey, TraceSpan> TraceMap;
 
 public:

@@ -47,6 +47,22 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 			const FRepLayoutCmd& Cmd = Changes.RepLayout.Cmds[HandleIterator.CmdIndex];
 			const FRepParentCmd& Parent = Changes.RepLayout.Parents[Cmd.ParentIndex];
 
+#if TRACE_LIB_ACTIVE
+			if (USpatialLatencyTracer* LatencyTracer = USpatialLatencyTracer::GetTracer(NetDriver))
+			{
+				TraceKey TraceId = LatencyTracer->GetTraceKey(Object, Cmd.Property, false); 
+				if (TraceId == USpatialLatencyTracer::InvalidTraceKey)
+				{ // Possibly sending a nested property?
+					TraceId = LatencyTracer->GetTraceKey(Object, Parent.Property, false);
+				}
+				if (TraceId != USpatialLatencyTracer::InvalidTraceKey)
+				{
+					LatencyTracer->WriteToLatencyTrace(TraceId, TEXT("Written to schema object."));
+					LatencyTracer->AssociateEntityComponent(Schema_GetEntityId(ComponentObject, SpatialConstants::UNREAL_OBJECT_REF_ENTITY_ID), HandleIterator.Handle, TraceId);
+				}
+			}
+#endif
+
 			if (GetGroupFromCondition(Parent.Condition) == PropertyGroup)
 			{
 				const uint8* Data = (uint8*)Object + Cmd.Offset;

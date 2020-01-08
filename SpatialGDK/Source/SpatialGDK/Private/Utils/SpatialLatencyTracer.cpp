@@ -34,6 +34,7 @@ namespace
 
 	UEStream Stream;
 
+#if TRACE_LIB_ACTIVE
 	improbable::trace::SpanContext ReadSpanContext(const void* TraceBytes, size_t TraceSize, const void* SpanBytes, size_t SpanSize)
 	{
 		improbable::trace::TraceId _TraceId;
@@ -44,6 +45,7 @@ namespace
 
 		return improbable::trace::SpanContext(_TraceId, _SpanId);
 	}
+#endif
 }  // anonymous namespace
 
 const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
@@ -121,13 +123,43 @@ bool USpatialLatencyTracer::IsValidKey(const TraceKey Key)
 	return TraceMap.Find(Key);
 }
 
-TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UFunction* Function)
+TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UFunction* Function, bool bRemove /* = true */)
 {
 	FScopeLock Lock(&Mutex);
 
 	ActorFuncKey FuncKey{ Cast<AActor>(Obj), Function };
 	TraceKey ReturnKey = InvalidTraceKey;
-	TrackingTraces.RemoveAndCopyValue(FuncKey, ReturnKey);
+	if (bRemove)
+	{
+		TrackingTraces.RemoveAndCopyValue(FuncKey, ReturnKey);
+	}
+	else
+	{
+		if (TraceKey* FoundKey = TrackingTraces.Find(FuncKey))
+		{
+			ReturnKey = *FoundKey;
+		}
+	}
+	return ReturnKey;
+}
+
+TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UProperty* Property, bool bRemove /* = true */)
+{
+	FScopeLock Lock(&Mutex);
+
+	ActorPropertyKey PropKey{ Cast<AActor>(Obj), Property };
+	TraceKey ReturnKey = InvalidTraceKey;
+	if (bRemove)
+	{
+		TrackingProperties.RemoveAndCopyValue(PropKey, ReturnKey);
+	}
+	else
+	{
+		if (TraceKey* FoundKey = TrackingTraces.Find(PropKey))
+		{
+			ReturnKey = *FoundKey;
+		}
+	}
 	return ReturnKey;
 }
 
@@ -203,6 +235,19 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, co
 	return InvalidTraceKey;
 }
 
+TraceKey USpatialLatencyTracer::AssociateEntityComponent(int64 Entity, uint32 Component, TraceKey Key)
+{
+	FScopeLock Lock(&Mutex);
+
+	EntityComponentKey MapKey { Entity, Component };
+	if (TrackingEntityComponents.Find(MapKey) != nullptr || TraceMap.Find(Key) == nullptr)
+	{
+		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("Failed to associate entity/component to trace key"));
+		return InvalidTraceKey;
+	}
+	TrackingEntityComponents.Add(MapKey, Key);
+}
+
 TraceKey USpatialLatencyTracer::ReadTraceFromSpatialPayload(const FSpatialLatencyPayload& Payload)
 {
 	FScopeLock Lock(&Mutex);
@@ -240,6 +285,8 @@ void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
 		WriteToLatencyTrace(ComponentUpdate->Trace, TEXT("Moved update to Worker queue"));
+
+		//#
 	}
 }
 
@@ -248,7 +295,14 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
-		EndLatencyTrace(ComponentUpdate->Trace, TEXT("Sent to Worker SDK"));
+		if (ComponentUpdate->Trace != InvalidTraceKey)
+		{
+			EndLatencyTrace(ComponentUpdate->Trace, TEXT("Sent to Worker SDK"));
+		}
+		else
+		{
+
+		}
 	}
 }
 

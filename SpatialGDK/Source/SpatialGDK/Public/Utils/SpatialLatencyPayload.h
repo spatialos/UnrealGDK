@@ -7,7 +7,7 @@
 
 #include "SpatialLatencyPayload.generated.h"
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct SPATIALGDK_API FSpatialLatencyPayload 
 {
 	GENERATED_BODY()
