@@ -2,7 +2,7 @@
 # Get started
 ## 1 - Get the dependencies
 
-To start using the GDK for Unreal, you need to ensure you have the correct software installed and that your machine is capable of running Unreal Engine. 
+To start using the GDK for Unreal, you need to ensure you have the correct software installed and that your machine is capable of running Unreal Engine.
 
 ### Step 1: Login
 
@@ -14,7 +14,7 @@ Before you start, make sure you are logged in to your SpatialOS account.
 
 ### Step 2: Hardware
 
-- Ensure your machine meets the minimum hardware requirements for Unreal Engine. 
+- Ensure your machine meets the minimum hardware requirements for Unreal Engine.
 </br>See the <a href="https://docs.unrealengine.com/en-US/GettingStarted/RecommendedSpecifications" data-track-link="Clicked UE4 Recommendations|product=Docs|platform=Win|label=Win" target="_blank">Unreal Engine hardware recommendations</a> for further information about the minimum hardware requirements.
 
 - Recommended storage: 60GB+ available space
@@ -32,14 +32,16 @@ To build the GDK for Unreal you need the following software installed on your ma
 - The [**DirectX End-User Runtimes (June 2010)**](https://www.microsoft.com/en-us/download/details.aspx?id=8109)
 
   - You need the DirectX End-User Runtime to run Unreal Engine 4 clients.
-- <a href="https://visualstudio.microsoft.com/vs/older-downloads/" data-track-link="Clicked VS 2017|product=Docs|platform=Win|label=Win">**Visual Studio 2017**</a>.
-    
-    During the installation of Visual Studio, select the following items in the Workloads tab:
-    - **Universal Windows Platform development**<br>
-    - **.NET desktop development** <br>
-      - You must also select the **.NET Framework 4.6.2 development tools**
-    - **Desktop development with C++**<br>
-    - **Game development with C++**, including the optional **Unreal Engine installer** component.
+  
+- <a href="https://visualstudio.microsoft.com/vs/older-downloads/" data-track-link="Clicked VS 2017|product=Docs|platform=Win|label=Win">**Visual Studio 2017**</a>.  
+To access and download the Visual Studio 2017 installer you must sign up for a Microsoft account and sign up to the free [Visual Studio Dev Essentials](https://visualstudio.microsoft.com/dev-essentials/).
+
+- During the installation of Visual Studio, select the following items in the Workloads tab:  
+  - **Universal Windows Platform development**  
+  - **.NET desktop development**  
+      - You must also select the **.NET Framework 4.6.2 development tools**  
+  - **Desktop development with C++**  
+  - **Game development with C++**, including the optional **Unreal Engine installer** component.  
 
 <%(Callout type="warn" message="Make sure you install Visual Studio 2017. The GDK does not currently support any other version.")%>
 
