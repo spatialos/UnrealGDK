@@ -151,9 +151,6 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
-
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
 	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
@@ -189,7 +186,6 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Metadata(TEXT("VirtualWorkerTranslator")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateVirtualWorkerTranslatorData());
-
 	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
 
 	VirtualWorkerTranslator.component_count = Components.Num();

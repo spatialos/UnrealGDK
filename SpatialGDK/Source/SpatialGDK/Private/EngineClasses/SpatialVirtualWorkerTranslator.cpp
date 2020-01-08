@@ -68,7 +68,7 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 
 	for (const auto& Entry : VirtualToPhysicalWorkerMapping)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) assignment: %d - %s"), *WorkerId, Entry.Key, *(Entry.Value));
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Translator assignment: %d - %s"), Entry.Key, *(Entry.Value));
 	}
 }
 
@@ -92,6 +92,24 @@ void SpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChan
 	}
 }
 
+// Check to see if this worker's physical worker name is in the mapping. If it isn't, it's possibly an old mapping.
+// This is needed to give good behaviour across restarts.
+bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object)
+{
+	int32 TranslationCount = (int32)Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
+
+	for (int32 i = 0; i < TranslationCount; i++)
+	{
+		// Get each entry of the list and then unpack the virtual and physical IDs from the entry.
+		Schema_Object* MappingObject = Schema_IndexObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);
+		if (SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME) == WorkerId)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 // The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID.
 // This method should only be called on workers who are not authoritative over the mapping and also when
 // a worker first becomes authoritative for the mapping.
@@ -100,7 +118,13 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 	// StaticComponentView may be null in tests
 	if (StaticComponentView.IsValid() && StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) ApplyMappingFromSchema called, but this worker is authoritative, ignoring"), *WorkerId);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("ApplyMappingFromSchema called, but this worker is authoritative, ignoring"));
+		return;
+	}
+
+	if (!IsValidMapping(Object))
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Received invalid mapping, likely due to PiE restart, will wait for a valid version."));
 		return;
 	}
 
@@ -232,27 +256,33 @@ void SpatialVirtualWorkerTranslator::QueryForWorkerEntities()
 // returned information will be thrown away.
 void SpatialVirtualWorkerTranslator::WorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op)
 {
+	bWorkerEntityQueryInFlight = false;
+
 	check(StaticComponentView.IsValid());
 	if (!StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Received response to WorkerEntityQuery, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *WorkerId);
+		return;
 	}
 	else if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Could not find Worker Entities via entity query: %s"), *WorkerId, UTF8_TO_TCHAR(Op.message));
-	}
-	else if (Op.result_count == 0)
-	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Worker Entity query shows that Worker Entities do not yet exist in the world."), *WorkerId);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) Could not find Worker Entities via entity query: %s, retrying."), *WorkerId, UTF8_TO_TCHAR(Op.message));
 	}
 	else
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Processing Worker Entity query response"), *WorkerId);
 		ConstructVirtualWorkerMappingFromQueryResponse(Op);
-		SendVirtualWorkerMappingUpdate();
 	}
 
-	bWorkerEntityQueryInFlight = false;
+	// If the translation mapping is complete, publish it. Otherwise retry the worker entity query.
+	if (UnassignedVirtualWorkers.IsEmpty())
+	{
+		SendVirtualWorkerMappingUpdate();
+	}
+	else
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Waiting for all virtual workers to be assigned before publishing translation update."));
+	}
 }
 
 void SpatialVirtualWorkerTranslator::AssignWorker(const PhysicalWorkerName& Name)
