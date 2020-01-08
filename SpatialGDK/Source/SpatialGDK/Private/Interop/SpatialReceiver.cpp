@@ -2301,13 +2301,8 @@ void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* 
 		{
 			UE_LOG(LogSpatialReceiver, Log, TEXT("Finished async loading package %s for entity %lld."), *PackageName.ToString(), Entity);
 
-			CriticalSectionSaveState CriticalSectionState;
-			if (bInCriticalSection)
-			{
-				SaveCriticalSection(CriticalSectionState);
-			}
-			bool bInCriticalSectionSaved = bInCriticalSection;
-			bInCriticalSection = true;
+			// Save critical section if we're in one and restore upon leaving this scope.
+			CriticalSectionSaveState CriticalSectionState(*this);
 
 			EntityWaitingForAsyncLoad AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindAndRemoveChecked(Entity);
 			PendingAddEntities.Add(Entity);
@@ -2317,12 +2312,6 @@ void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* 
 			for (QueuedOpForAsyncLoad& Op : AsyncLoadEntity.PendingOps)
 			{
 				HandleQueuedOpForAsyncLoad(Op);
-			}
-
-			bInCriticalSection = bInCriticalSectionSaved;
-			if (bInCriticalSection)
-			{
-				RestoreCriticalSection(CriticalSectionState);
 			}
 		}
 	}
@@ -2420,23 +2409,6 @@ TArray<USpatialReceiver::QueuedOpForAsyncLoad> USpatialReceiver::ExtractAuthorit
 	return ExtractedOps;
 }
 
-void USpatialReceiver::SaveCriticalSection(CriticalSectionSaveState& OutState)
-{
-	OutState.PendingAddEntities = MoveTemp(PendingAddEntities);
-	OutState.PendingAuthorityChanges = MoveTemp(PendingAuthorityChanges);
-	OutState.PendingAddComponents = MoveTemp(PendingAddComponents);
-	PendingAddEntities.Empty();
-	PendingAuthorityChanges.Empty();
-	PendingAddComponents.Empty();
-}
-
-void USpatialReceiver::RestoreCriticalSection(CriticalSectionSaveState& State)
-{
-	PendingAddEntities = MoveTemp(State.PendingAddEntities);
-	PendingAuthorityChanges = MoveTemp(State.PendingAuthorityChanges);
-	PendingAddComponents = MoveTemp(State.PendingAddComponents);
-}
-
 void USpatialReceiver::HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op)
 {
 	switch (Op.Op.op_type)
@@ -2458,4 +2430,31 @@ void USpatialReceiver::HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op)
 	default:
 		checkNoEntry();
 	}
+}
+
+USpatialReceiver::CriticalSectionSaveState::CriticalSectionSaveState(USpatialReceiver& InReceiver)
+	: Receiver(InReceiver)
+	, bInCriticalSection(InReceiver.bInCriticalSection)
+{
+	if (bInCriticalSection)
+	{
+		PendingAddEntities = MoveTemp(Receiver.PendingAddEntities);
+		PendingAuthorityChanges = MoveTemp(Receiver.PendingAuthorityChanges);
+		PendingAddComponents = MoveTemp(Receiver.PendingAddComponents);
+		Receiver.PendingAddEntities.Empty();
+		Receiver.PendingAuthorityChanges.Empty();
+		Receiver.PendingAddComponents.Empty();
+	}
+	Receiver.bInCriticalSection = true;
+}
+
+USpatialReceiver::CriticalSectionSaveState::~CriticalSectionSaveState()
+{
+	if (bInCriticalSection)
+	{
+		Receiver.PendingAddEntities = MoveTemp(PendingAddEntities);
+		Receiver.PendingAuthorityChanges = MoveTemp(PendingAuthorityChanges);
+		Receiver.PendingAddComponents = MoveTemp(PendingAddComponents);
+	}
+	Receiver.bInCriticalSection = bInCriticalSection;
 }

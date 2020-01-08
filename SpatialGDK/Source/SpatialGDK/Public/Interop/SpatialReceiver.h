@@ -203,6 +203,7 @@ private:
 
 	void PeriodicallyProcessIncomingRPCs();
 
+	// TODO: Refactor into a separate class so we can add automated tests for this. UNR-2649
 	static bool NeedToLoadClass(const FString& ClassPath);
 	static FString GetPackagePath(const FString& ClassPath);
 
@@ -227,14 +228,19 @@ private:
 
 	struct CriticalSectionSaveState
 	{
+		CriticalSectionSaveState(USpatialReceiver& InReceiver);
+		~CriticalSectionSaveState();
+
+		USpatialReceiver& Receiver;
+
+		bool bInCriticalSection;
 		TArray<Worker_EntityId> PendingAddEntities;
 		TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 		TArray<PendingAddComponentWrapper> PendingAddComponents;
 	};
-	void SaveCriticalSection(CriticalSectionSaveState& OutState);
-	void RestoreCriticalSection(CriticalSectionSaveState& State);
 
 	void HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op);
+	// END TODO
 
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
@@ -295,6 +301,7 @@ private:
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
 
+	// TODO: Refactor into a separate class so we can add automated tests for this. UNR-2649
 	struct EntityWaitingForAsyncLoad
 	{
 		FString ClassPath;
@@ -303,4 +310,5 @@ private:
 	};
 	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
 	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
+	// END TODO
 };
