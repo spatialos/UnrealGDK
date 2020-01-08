@@ -412,7 +412,6 @@ FColor ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId) c
 	check(NetDriver != nullptr && !NetDriver->IsServer());
 	if (!NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialDebugger, Error, TEXT("Trying to get virtual worker color for entity with no AuthorityIntent component."));
 		return InvalidServerTintColor;
 	}
 	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
