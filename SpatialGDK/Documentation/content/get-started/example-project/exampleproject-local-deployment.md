@@ -159,4 +159,5 @@ To fully stop your local deployment, select **Stop** in the GDK toolbar.<br/></b
 
 <br/>
 <br/>------------<br/>
+_2019-07-22 Page updated with editorial review: Added loading bar note._
 _2019-07-22 Page updated with limited editorial review._

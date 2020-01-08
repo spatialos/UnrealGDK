@@ -60,6 +60,7 @@ To build the GDK for Unreal you need the following software installed on your ma
 <br/>
 
 ------</br>
+_2020-01-03 Page updated with editorial review: Git recommendation clarified._<br/>
 _2019-11-08 Updated version of Linux Cross-Compilation toolchain._<br/>
 _2019-08-08 Page updated with editorial review: text clarification only._<br/>
 _2019-07-22 Page updated with limited editorial review_
