@@ -140,17 +140,18 @@ void ASpatialDebugger::OnAuthorityGained()
 {
 	if (NetDriver->LoadBalanceStrategy)
 	{
-		if (UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(NetDriver->LoadBalanceStrategy))
+		if (const UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(NetDriver->LoadBalanceStrategy))
 		{
 			const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
-			WorkerRegions.Empty();
+			WorkerRegions.SetNum(LBStrategyRegions.Num());
 			for (int i = 0; i < LBStrategyRegions.Num(); i++)
 			{
-				const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegions[i].Get<0>());
+				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
+				const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Get<0>());
 				FWorkerRegionInfo WorkerRegionInfo;
 				WorkerRegionInfo.Color = (WorkerName == nullptr) ? InvalidServerTintColor : SpatialGDK::GetColorForWorkerName(*WorkerName);
-				WorkerRegionInfo.Extents = LBStrategyRegions[i].Get<1>();
-				WorkerRegions.Add(WorkerRegionInfo);
+				WorkerRegionInfo.Extents = LBStrategyRegion.Get<1>();
+				WorkerRegions[i] = WorkerRegionInfo;
 			}
 		}
 	}
@@ -171,19 +172,19 @@ void ASpatialDebugger::OnRep_SetWorkerRegions()
 		// Naively delete all old worker regions
 		TArray<AActor*> OldWorkerRegions;
 		UGameplayStatics::GetAllActorsOfClass(this, AWorkerRegion::StaticClass(), OldWorkerRegions);
-		for (int i = 0; i < OldWorkerRegions.Num(); i++)
+		for (AActor* OldWorkerRegion : OldWorkerRegions)
 		{
-			OldWorkerRegions[i]->Destroy();
+			OldWorkerRegion->Destroy();
 		}
 
 		// Create new actors for all new worker regions
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.bNoFail = true;
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		for (int i = 0; i < WorkerRegions.Num(); i++)
+		for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 		{
 			AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
-			WorkerRegion->Init(WorkerRegionMaterial, WorkerRegions[i].Color, WorkerRegions[i].Extents);
+			WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionData.Extents);
 		}
 	}
 }

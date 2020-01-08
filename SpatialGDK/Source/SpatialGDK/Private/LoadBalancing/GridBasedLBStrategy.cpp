@@ -109,9 +109,11 @@ bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location
 UGridBasedLBStrategy::LBStrategyRegions UGridBasedLBStrategy::GetLBStrategyRegions() const
 {
 	LBStrategyRegions VirtualWorkerToCell;
+	VirtualWorkerToCell.SetNum(WorkerCells.Num());
+
 	for (int i = 0; i < WorkerCells.Num(); i++)
 	{
-		VirtualWorkerToCell.Add(MakeTuple(VirtualWorkerIds[i], WorkerCells[i]));
+		VirtualWorkerToCell[i] = MakeTuple(VirtualWorkerIds[i], WorkerCells[i]);
 	}
 	return VirtualWorkerToCell;
 }
