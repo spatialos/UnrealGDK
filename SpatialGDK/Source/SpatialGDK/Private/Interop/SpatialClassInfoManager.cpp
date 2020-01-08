@@ -512,3 +512,46 @@ void USpatialClassInfoManager::QuitGame()
 	FGenericPlatformMisc::RequestExit(false);
 #endif
 }
+
+Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(const AActor* Actor) const
+{
+	check(Actor);
+	const AActor* ActorForRelevancy = Actor;
+	while (ActorForRelevancy->GetOwner() && ActorForRelevancy->bNetUseOwnerRelevancy)
+	{
+		if (ActorForRelevancy->bAlwaysRelevant)
+		{
+			break;
+		}
+		ActorForRelevancy = ActorForRelevancy->GetOwner();
+	}
+
+	if (ActorForRelevancy->bAlwaysRelevant)
+	{
+		return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
+	}
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest)
+	{
+		Worker_ComponentId NCDComponentId = GetComponentIdForNetCullDistance(ActorForRelevancy->NetCullDistanceSquared);
+		if (NCDComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			return NCDComponentId;
+		}
+
+		const AActor* DefaultActor = Actor->GetClass()->GetDefaultObject<AActor>();
+		if (Actor != DefaultActor && Actor->NetCullDistanceSquared != DefaultActor->NetCullDistanceSquared)
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s, because its Net Cull Distance is different from its default one."),
+				Actor->NetCullDistanceSquared, *Actor->GetPathName());
+
+			return ComputeActorInterestComponentId(DefaultActor);
+		}
+		else
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s. Have you generated schema?"),
+				Actor->NetCullDistanceSquared, *Actor->GetPathName());
+		}
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
+}

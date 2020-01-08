@@ -117,7 +117,10 @@ public:
 	bool IsSublevelComponent(Worker_ComponentId ComponentId) const;
 
 	TArray<float> GetNetCullDistances() const;
-	uint32 GetComponentIdForNetCullDistance(float NetCullDistance) const;
+
+	Worker_ComponentId GetComponentIdForNetCullDistance(float NetCullDistance) const;
+	Worker_ComponentId ComputeActorInterestComponentId(const AActor* Actor) const;
+
 	bool IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const;
 
 	UPROPERTY()

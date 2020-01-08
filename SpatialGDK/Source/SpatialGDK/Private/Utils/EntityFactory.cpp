@@ -137,7 +137,14 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 	}
 
+	// Add all Interest component ID to allow us to change it if needed.
 	ComponentWriteAcl.Add(SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	for (const auto& Entry : ClassInfoManager->SchemaDatabase->NetCullDistanceToComponentId)
+	{
+		ComponentWriteAcl.Add(Entry.Value, AuthoritativeWorkerRequirementSet);
+	}
+
+	uint32 ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
@@ -219,21 +226,9 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentDatas.Add(Singleton().CreateSingletonData());
 	}
 
-	if (Actor->bAlwaysRelevant)
+	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(AlwaysRelevant().CreateData());
-	}
-
-	if (SpatialSettings->bEnableNetCullDistanceInterest)
-	{
-		const uint32 NetCullDistanceComponentId = ClassInfoManager->GetComponentIdForNetCullDistance(Actor->NetCullDistanceSquared);
-		if (NetCullDistanceComponentId == SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s. Have you generated schema?"),
-				Actor->NetCullDistanceSquared, *Actor->GetPathName());
-		}
-		ComponentWriteAcl.Add(NetCullDistanceComponentId, AuthoritativeWorkerRequirementSet);
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(NetCullDistanceComponentId));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
 	}
 
 	if (Actor->NetDormancy >= DORM_DormantAll)
