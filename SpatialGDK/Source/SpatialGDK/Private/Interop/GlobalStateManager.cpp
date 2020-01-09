@@ -148,7 +148,7 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 		UE_LOG(LogGlobalStateManager, Log, TEXT("Received shutdown multi-process request."));
 		
 		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server. 
-		SetupAcceptingPlayerState(false);
+		SetAcceptingPlayers(false);
 		DeploymentSessionId = 0;
 		SendSessionIdUpdate();
 
@@ -410,7 +410,7 @@ bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId) const
 	return false;
 }
 
-void UGlobalStateManager::SetupAcceptingPlayerState(bool bInAcceptingPlayers)
+void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 {
 	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
 
@@ -424,8 +424,8 @@ void UGlobalStateManager::SetupAcceptingPlayerState(bool bInAcceptingPlayers)
 	// Set the map URL on the GSM.
 	AddStringToSchema(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID, NetDriver->GetWorld()->URL.Map);
 
-	// Set the schame on the GSM
-	Schema_AddUint32(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH, NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
+	// Set the AcceptingPlayers state on the GSM
+	Schema_AddBool(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID, static_cast<uint8_t>(bInAcceptingPlayers));
 
 	// Component updates are short circuited so we set the updated state here and then send the component update.
 	bAcceptingPlayers = bInAcceptingPlayers;
@@ -465,7 +465,7 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		{
 			GlobalStateManagerEntityId = AuthOp.entity_id;
-			SetupAcceptingPlayerState(true);
+			SetAcceptingPlayers(true);
 			break;
 		}
 		case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -511,7 +511,7 @@ void UGlobalStateManager::ResetGSM()
 	UE_LOG(LogGlobalStateManager, Display, TEXT("GlobalStateManager singletons are being reset. Session restarting."));
 
 	SingletonNameToEntityId.Empty();
-	SetupAcceptingPlayerState(false);
+	SetAcceptingPlayers(false);
 
 	// Reset the BeginPlay flag so Startup Actors are properly managed.
 	SetCanBeginPlay(false);

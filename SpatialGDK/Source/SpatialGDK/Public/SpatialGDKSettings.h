@@ -255,8 +255,4 @@ public:
 	/** Only valid on Udp connections - specifies client downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UdpClientDownstreamUpdateIntervalMS;
-
-	/** Enables warnings for schema mismatch when a client joins a server */
-	UPROPERTY(EditAnywhere, config, Category = "Validation", meta = (ConfigRestartRequired = false))
-	bool bEnableSchemaValidationOnJoin;
 };
