@@ -22,8 +22,8 @@
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AlwaysRelevant.h"
-#include "Schema/ClientRPCEndpoint.h"
-#include "Schema/ServerRPCEndpoint.h"
+#include "Schema/ClientRPCEndpointLegacy.h"
+#include "Schema/ServerRPCEndpointLegacy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/RepLayoutUtils.h"
@@ -34,6 +34,12 @@ DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 DECLARE_CYCLE_STAT(TEXT("ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ServerProcessOwnershipChange"), STAT_ServerProcessOwnershipChange, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ClientProcessOwnershipChange"), STAT_ClientProcessOwnershipChange, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("GetOwnerWorkerAttribute"), STAT_GetOwnerWorkerAttribute, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("CallUpdateEntityACLs"), STAT_CallUpdateEntityACLs, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("OnUpdateEntityACLSuccess"), STAT_OnUpdateEntityACLSuccess, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("IsAuthoritativeServer"), STAT_IsAuthoritativeServer, STATGROUP_SpatialNet);
 
 namespace
 {
@@ -151,11 +157,6 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 			Sender->RetireEntity(EntityId);
 		}
 	}
-}
-
-bool USpatialActorChannel::IsSingletonEntity()
-{
-	return NetDriver->GlobalStateManager->IsSingletonEntity(EntityId);
 }
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason)
@@ -564,11 +565,11 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
-		NetDriver->LoadBalanceStrategy != nullptr &&
 		// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
 		// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
-		Actor->HasAuthority() &&
-		NetDriver->LoadBalanceStrategy->ShouldRelinquishAuthority(*Actor))
+		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) &&
+		NetDriver->LoadBalanceStrategy->ShouldRelinquishAuthority(*Actor) &&
+		!NetDriver->LockingPolicy->IsLocked(Actor))
 	{
 		const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
 		if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
@@ -638,14 +639,14 @@ bool USpatialActorChannel::IsListening() const
 {
 	if (NetDriver->IsServer())
 	{
-		if (SpatialGDK::ClientRPCEndpoint* Endpoint = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ClientRPCEndpoint>(EntityId))
+		if (SpatialGDK::ClientRPCEndpointLegacy* Endpoint = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ClientRPCEndpointLegacy>(EntityId))
 		{
 			return Endpoint->bReady;
 		}
 	}
 	else
 	{
-		if (SpatialGDK::ServerRPCEndpoint* Endpoint = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ServerRPCEndpoint>(EntityId))
+		if (SpatialGDK::ServerRPCEndpointLegacy* Endpoint = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ServerRPCEndpointLegacy>(EntityId))
 		{
 			return Endpoint->bReady;
 		}
@@ -1157,9 +1158,13 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 
 void USpatialActorChannel::ServerProcessOwnershipChange()
 {
-	if (!IsAuthoritativeServer())
+	SCOPE_CYCLE_COUNTER(STAT_ServerProcessOwnershipChange);
 	{
-		return;
+		SCOPE_CYCLE_COUNTER(STAT_IsAuthoritativeServer);
+		if (!IsAuthoritativeServer())
+		{
+			return;
+		}
 	}
 
 	UpdateEntityACLToNewOwner();
@@ -1177,7 +1182,11 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 void USpatialActorChannel::UpdateEntityACLToNewOwner()
 {
-	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
+	FString NewOwnerWorkerAttribute;
+	{
+		SCOPE_CYCLE_COUNTER(STAT_GetOwnerWorkerAttribute);
+		NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
+	}
 
 	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
 	{
@@ -1192,6 +1201,7 @@ void USpatialActorChannel::UpdateEntityACLToNewOwner()
 
 void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ClientProcessOwnershipChange);
 	if (bNewNetOwned != bNetOwned)
 	{
 		bNetOwned = bNewNetOwned;

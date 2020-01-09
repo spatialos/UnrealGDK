@@ -13,7 +13,7 @@ common: &common
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-2019-11-11-bk3891-f17bd2c787d2fe1c}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-2019-12-09-bk5051-27568394a73b2cd3}" ## revert to new queue once windows baking issues have been resolved...
     - "boot_disk_size_gb=500"
   retry:
     automatic:
@@ -28,19 +28,13 @@ env:
   FASTBUILD_BROKERAGE_PATH: "\\\\fastbuild-brokerage.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba"
 
 steps:
-  - label: "build-and-test-GDK-:windows:-ENGINE_COMMIT_HASH_PLACEHOLDER"
-    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Win64"
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
-    artifact_paths:
-      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
-      - "../UnrealEngine/Samples/StarterContent/Saved/Logs/*"
-    env:
-      ENGINE_COMMIT_HASH: "ENGINE_COMMIT_HASH_PLACEHOLDER"
-
-  - label: "build-GDK-:linux:-ENGINE_COMMIT_HASH_PLACEHOLDER"
-    command: "powershell ./ci/setup-build-test-gdk.ps1 -target_platform Linux"
+  - label: "build-${ENGINE_COMMIT_HASH}-${BUILD_PLATFORM}-${BUILD_TARGET}-${BUILD_STATE}"
+    command: "powershell ./ci/setup-build-test-gdk.ps1"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
     env:
-      ENGINE_COMMIT_HASH: "ENGINE_COMMIT_HASH_PLACEHOLDER"
+      ENGINE_COMMIT_HASH: "${ENGINE_COMMIT_HASH}"
+      BUILD_PLATFORM: "${BUILD_PLATFORM}"
+      BUILD_TARGET: "${BUILD_TARGET}"
+      BUILD_STATE: "${BUILD_STATE}"

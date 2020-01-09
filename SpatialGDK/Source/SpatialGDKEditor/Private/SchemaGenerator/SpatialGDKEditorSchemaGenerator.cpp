@@ -345,6 +345,16 @@ SPATIALGDKEDITOR_API void GenerateSchemaForSublevels(const FString& SchemaOutput
 	Writer.WriteToFile(FString::Printf(TEXT("%sSublevels/sublevels.schema"), *SchemaOutputPath));
 }
 
+SPATIALGDKEDITOR_API void GenerateSchemaForRPCEndpoints()
+{
+	GenerateSchemaForRPCEndpoints(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
+}
+
+SPATIALGDKEDITOR_API void GenerateSchemaForRPCEndpoints(const FString& SchemaOutputPath)
+{
+	GenerateRPCEndpointsSchema(SchemaOutputPath);
+}
+
 FString GenerateIntermediateDirectory()
 {
 	const FString CombinedIntermediatePath = FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Intermediate/Improbable/"), *FGuid::NewGuid().ToString(), TEXT("/"));
@@ -443,26 +453,13 @@ bool IsSupportedClass(const UClass* SupportedClass)
 		if (SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Has NotSpatialType flag, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
-			return false;
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Has neither a SpatialType or NotSpatialType flag."), *GetPathNameSafe(SupportedClass));
 		}
 
-		// Need to check if super class is supported here because some blueprints don't appear to inherit SpatialFlags correctly until
-		// recompiled and saved. See [UNR-2172].
-		UClass* Class = SupportedClass->GetSuperClass();
-		while (Class != nullptr)
-		{
-			if (Class->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType | SPATIALCLASS_NotSpatialType))
-			{
-				break;
-			}
-			Class = Class->GetSuperClass();
-		}
-
-		if (Class == nullptr || !Class->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] No SpatialType flag, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
-			return false;
-		}
+		return false;
 	}
 
 	if (SupportedClass->HasAnyClassFlags(CLASS_LayoutChanging))
@@ -819,6 +816,7 @@ bool SpatialGDKGenerateSchema()
 	}
 
 	GenerateSchemaForSublevels();
+	GenerateSchemaForRPCEndpoints();
 
 	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
 	{

@@ -2,13 +2,20 @@
 
 #pragma once
 
+#include "LoadBalancing/GridBasedLBStrategy.h"
+#include "LoadBalancing/WorkerRegion.h"
+#include "SpatialCommonTypes.h"
+
+#include "Containers/Map.h"
 #include "CoreMinimal.h"
 #include "Engine/Canvas.h"
 #include "GameFramework/Info.h"
-#include "SpatialCommonTypes.h"
+#include "Materials/Material.h"
+#include "Math/Box2D.h"
+#include "Math/Color.h"
+#include "Templates/Tuple.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
-
 #include "SpatialDebugger.generated.h"
 
 class APawn;
@@ -30,6 +37,18 @@ DECLARE_CYCLE_STAT(TEXT("DrawText"), STAT_DrawText, STATGROUP_SpatialDebugger);
 DECLARE_CYCLE_STAT(TEXT("BuildText"), STAT_BuildText, STATGROUP_SpatialDebugger);
 DECLARE_CYCLE_STAT(TEXT("SortingActors"), STAT_SortingActors, STATGROUP_SpatialDebugger);
 
+USTRUCT()
+struct FWorkerRegionInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FColor Color;
+
+	UPROPERTY()
+	FBox2D Extents;
+};
+
 UCLASS(SpatialType=(Singleton, NotPersistent), Blueprintable, NotPlaceable)
 class SPATIALGDK_API ASpatialDebugger :
 	public AInfo
@@ -38,9 +57,12 @@ class SPATIALGDK_API ASpatialDebugger :
 
 public:
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
+
+	virtual void OnAuthorityGained() override;
 
 	UFUNCTION(Exec, Category = "SpatialGDK", BlueprintCallable)
 	void SpatialToggleDebugger();
@@ -91,17 +113,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
 	FVector WorldSpaceActorTagOffset = FVector(0.0f, 0.0f, 200.0f);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Array of tint colors used to color code tag elements by server"))
-	TArray<FColor> ServerTintColors =
-	{
-		FColor::Blue,
-		FColor::Green,
-		FColor::Yellow,
-		FColor::Orange
-	};
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Color used for any server id / virtual worker id that doesn't map into the ServerColors array"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Color used for any server with an unresolved name"))
 	FColor InvalidServerTintColor = FColor::Magenta;
+
+	UPROPERTY(ReplicatedUsing = OnRep_SetWorkerRegions)
+	TArray<FWorkerRegionInfo> WorkerRegions;
+
+	UFUNCTION()
+	virtual void OnRep_SetWorkerRegions();
 
 private:
 
@@ -117,8 +136,9 @@ private:
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
-	const FColor& GetServerWorkerColor(const Worker_EntityId EntityId) const;
-	const FColor& GetVirtualWorkerColor(const Worker_EntityId EntityId) const;
+	FColor GetServerWorkerColor(const Worker_EntityId EntityId) const;
+	FColor GetVirtualWorkerColor(const Worker_EntityId EntityId) const;
+	const FString& GetAuthoritativeWorkerFromACL(const Worker_EntityId EntityId) const;
 
 	bool GetLockStatus(const Worker_EntityId EntityId);
 

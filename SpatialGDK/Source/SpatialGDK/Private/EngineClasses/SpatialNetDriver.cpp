@@ -26,12 +26,15 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Interop/SpatialWorkerFlags.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
+#include "LoadBalancing/ReferenceCountedLockingPolicy.h"
 #include "Schema/AlwaysRelevant.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/EntityPool.h"
+#include "Utils/ErrorCodeRemapping.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialDebugger.h"
@@ -124,7 +127,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
 	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
-	// from OnConnectedToSpatialOS callback which could be executed with the async
+	// from OnConnectionToSpatialOSSucceeded callback which could be executed with the async
 	// loading thread suspended (e.g. when resuming rendering thread), in which
 	// case we'll crash upon trying to load SchemaDatabase.
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
@@ -288,6 +291,8 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	}
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
+	Connection->OnConnectedCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSSucceeded);
+	Connection->OnFailedToConnectCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed);
 
 	bool bUseReceptionist = true;
 	bool bShouldLoadFromURL = true;
@@ -330,10 +335,14 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	FinishSetupConnectionConfig(URL, bUseReceptionist);
 
-	Connection->Connect(bConnectAsClient);
+#if WITH_EDITOR
+	Connection->Connect(bConnectAsClient, PlayInEditorID);
+#else
+	Connection->Connect(bConnectAsClient, 0);
+#endif
 }
 
-void USpatialNetDriver::OnConnectedToSpatialOS()
+void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 {
 	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
 	// There may be more than one of these connections in the future for different replication conditions.
@@ -352,6 +361,23 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	else
 	{
 		Sender->CreateServerWorkerEntity();
+	}
+
+	USpatialGameInstance* GameInstance = GetGameInstance();
+	check(GameInstance != nullptr);
+	GameInstance->HandleOnConnected();
+}
+
+void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage)
+{
+	if (USpatialGameInstance* GameInstance = GetGameInstance())
+	{
+		if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+		{
+			GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
+		}
+
+		GameInstance->HandleOnConnectionFailed(ErrorMessage);
 	}
 }
 
@@ -391,21 +417,19 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	// Ideally the GlobalStateManager and StaticComponentView would be created as part of USpatialWorkerConnection::Init
 	// however, this causes a crash upon the second instance of running PIE due to a destroyed USpatialNetDriver still being reference.
 	// Why the destroyed USpatialNetDriver is referenced is unknown.
-	if (Connection->GlobalStateManager == nullptr)
-	{
-		Connection->GlobalStateManager = NewObject<UGlobalStateManager>();
-	}
-	GlobalStateManager = Connection->GlobalStateManager;
+	USpatialGameInstance* GameInstance = GetGameInstance();
+	check(GameInstance != nullptr);
 
-	if (Connection->StaticComponentView == nullptr)
-	{
-		Connection->StaticComponentView = NewObject<USpatialStaticComponentView>();
-	}
-	StaticComponentView = Connection->StaticComponentView;
+	GlobalStateManager = GameInstance->GetGlobalStateManager();
+	check(GlobalStateManager != nullptr);
+
+	StaticComponentView = GameInstance->GetStaticComponentView();
+	check(StaticComponentView != nullptr);
 
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	SnapshotManager = MakeUnique<SpatialSnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
+	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 #if !UE_BUILD_SHIPPING
@@ -426,35 +450,56 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	if (IsServer() && SpatialSettings->bEnableUnrealLoadBalancer)
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		if (SpatialSettings->LoadBalanceStrategy == nullptr)
+		if (IsServer()) 
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
-			LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
+			if (SpatialSettings->LoadBalanceStrategy == nullptr)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+				LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
+			}
+			else
+			{
+				// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
+				LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
+			}
+			LoadBalanceStrategy->Init(this);
+
+			if (SpatialSettings->LockingPolicy == nullptr)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
+				LockingPolicy = NewObject<UReferenceCountedLockingPolicy>(this);
+			}
+			else
+			{
+				LockingPolicy = NewObject<UAbstractLockingPolicy>(this, SpatialSettings->LockingPolicy);
+			}
 		}
-		else
-		{
-			// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
-			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
-		}
-		LoadBalanceStrategy->Init(this);
 
 		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
 		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
-		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
 
-		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>();
-		LoadBalanceEnforcer->Init(Connection->GetWorkerId(), StaticComponentView, Sender, VirtualWorkerTranslator.Get());
+		if (IsServer()) 
+		{
+			VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+			LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+		}
 	}
 
-	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics);
-	Sender->Init(this, &TimerManager);
-	Receiver->Init(this, &TimerManager);
+	if (SpatialSettings->bUseRPCRingBuffers)
+	{
+		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView);
+	}
+
+	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
+	Sender->Init(this, &TimerManager, RPCService.Get());
+	Receiver->Init(this, &TimerManager, RPCService.Get());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this, &TimerManager);
-	SpatialMetrics->Init(this);
+	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
+	SpatialMetrics->ControllerRefProvider.BindUObject(this, &USpatialNetDriver::GetCurrentPlayerControllerRef);
 
 	// PackageMap value has been set earlier in USpatialNetConnection::InitBase
 	// Making sure the value is the same
@@ -521,6 +566,14 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
 			RedirectURL.Host = LastURL.Host;
 			RedirectURL.Port = LastURL.Port;
+
+			// Usually the LastURL options are added to the RedirectURL in the FURL constructor.
+			// However this is not the case when TravelType = TRAVEL_Absolute so we must do it explicitly here.
+			if (WorldContext.TravelType == ETravelType::TRAVEL_Absolute)
+			{
+				RedirectURL.Op.Append(LastURL.Op);
+			}
+
 			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
 
 			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
@@ -613,17 +666,15 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	if (IsServer())
 	{
-		if (GlobalStateManager != nullptr)
+		if (GlobalStateManager != nullptr &&
+			!GlobalStateManager->GetCanBeginPlay() &&
+			StaticComponentView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
 		{
-			// Increment the session id, so users don't rejoin the old game.
+			// ServerTravel - Increment the session id, so users don't rejoin the old game.
 			GlobalStateManager->SetCanBeginPlay(true);
 			GlobalStateManager->TriggerBeginPlay();
 			GlobalStateManager->SetAcceptingPlayers(true);
 			GlobalStateManager->IncrementSessionID();
-		}
-		else
-		{
-			UE_LOG(LogSpatial, Error, TEXT("Map loaded on server but GlobalStateManager is not properly initialised. Session cannot start, players cannot connect."));
 		}
 	}
 	else
@@ -786,7 +837,6 @@ void USpatialNetDriver::BeginDestroy()
 			{
 				Cast<USpatialGameInstance>(LocalWorld->GetGameInstance())->DestroySpatialWorkerConnection();
 			}
-
 			Connection = nullptr;
 		}
 	}
@@ -1524,12 +1574,15 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
 		{
-			SpatialMetrics->TickMetrics();
+			SpatialMetrics->TickMetrics(Time);
 		}
 
 		if (LoadBalanceEnforcer.IsValid())
 		{
-			LoadBalanceEnforcer->Tick();
+			for(const auto& Elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
+			{
+				Sender->SetAclWriteAuthority(Elem.EntityId, Elem.OwningWorkerId);
+			}
 		}
 	}
 }
@@ -1623,6 +1676,8 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
 
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
 	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady())
 	{
 		// Update all clients.
@@ -1646,8 +1701,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		}
 		LastUpdateCount = Updated;
 
-		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
 		{
 			if ((Time - TimeWhenPositionLastUpdated) >= (1.0f / SpatialGDKSettings->PositionUpdateFrequency))
@@ -1661,9 +1714,14 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bPackRPCs && Sender != nullptr)
+	if (SpatialGDKSettings->bPackRPCs && Sender != nullptr)
 	{
 		Sender->FlushPackedRPCs();
+	}
+
+	if (SpatialGDKSettings->bUseRPCRingBuffers && Sender != nullptr)
+	{
+		Sender->FlushRPCService();
 	}
 
 	ProcessPendingDormancy();
@@ -2217,7 +2275,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	}
 
 	// Search for StartupActorManager ops we need and process them
-	if (!GlobalStateManager->IsReadyToCallBeginPlay())
+	if (!GlobalStateManager->GetCanBeginPlay())
 	{
 		Worker_Op* AddComponentOp = nullptr;
 		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AddComponentOp);
@@ -2277,7 +2335,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	SelectiveProcessOps(FoundOps);
 
 	if (PackageMap->IsEntityPoolReady() &&
-		GlobalStateManager->IsReadyToCallBeginPlay() &&
+		GlobalStateManager->GetCanBeginPlay() &&
 		(!VirtualWorkerTranslator.IsValid() || VirtualWorkerTranslator->IsReady()))
 	{
 		// Return whether or not we are ready to start
@@ -2355,4 +2413,19 @@ void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
 	}
 
 	SpatialDebugger = InSpatialDebugger;
+}
+
+FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
+{
+	if (USpatialNetConnection* NetConnection = GetSpatialOSNetConnection())
+	{
+		if (APlayerController* PlayerController = Cast<APlayerController>(NetConnection->OwningActor))
+		{
+			if (PackageMap)
+			{
+				return PackageMap->GetUnrealObjectRefFromObject(PlayerController);
+			}
+		}
+	}
+	return FUnrealObjectRef::NULL_OBJECT_REF;
 }

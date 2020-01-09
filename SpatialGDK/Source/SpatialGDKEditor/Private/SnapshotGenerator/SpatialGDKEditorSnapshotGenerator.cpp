@@ -51,7 +51,7 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
-	Components.Add(Position(Origin).CreatePositionData());
+	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
@@ -144,7 +144,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
-	Components.Add(Position(Origin).CreatePositionData());
+	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateSingletonManagerData());
