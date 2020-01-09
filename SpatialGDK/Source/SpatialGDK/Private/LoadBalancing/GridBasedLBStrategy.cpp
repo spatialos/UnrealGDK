@@ -5,6 +5,8 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SpatialActorUtils.h"
 
+#include "Templates/Tuple.h"
+
 DEFINE_LOG_CATEGORY(LogGridBasedLBStrategy);
 
 UGridBasedLBStrategy::UGridBasedLBStrategy()
@@ -102,4 +104,16 @@ bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location
 {
 	return Location.X >= Box.Min.X && Location.Y >= Box.Min.Y
 		&& Location.X < Box.Max.X && Location.Y < Box.Max.Y;
+}
+
+UGridBasedLBStrategy::LBStrategyRegions UGridBasedLBStrategy::GetLBStrategyRegions() const
+{
+	LBStrategyRegions VirtualWorkerToCell;
+	VirtualWorkerToCell.SetNum(WorkerCells.Num());
+
+	for (int i = 0; i < WorkerCells.Num(); i++)
+	{
+		VirtualWorkerToCell[i] = MakeTuple(VirtualWorkerIds[i], WorkerCells[i]);
+	}
+	return VirtualWorkerToCell;
 }
