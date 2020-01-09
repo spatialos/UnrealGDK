@@ -2,14 +2,20 @@
 
 #include "LoadBalancing/ReferenceCountedLockingPolicy.h"
 
+#include "EngineClasses/AbstractPackageMap.h"
 #include "EngineClasses/SpatialNetDriver.h"
-#include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
 
 #include "GameFramework/Actor.h"
 
 DEFINE_LOG_CATEGORY(LogReferenceCountedLockingPolicy);
+
+void UReferenceCountedLockingPolicy::Init(AbstractPackageMap* InPackageMap)
+{
+	check(InPackageMap != nullptr);
+	PackageMap = InPackageMap;
+}
 
 bool UReferenceCountedLockingPolicy::CanAcquireLock(AActor* Actor) const
 {
@@ -20,7 +26,7 @@ bool UReferenceCountedLockingPolicy::CanAcquireLock(AActor* Actor) const
 	}
 
 	const USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver());
-	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{

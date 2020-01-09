@@ -17,6 +17,8 @@ class SPATIALGDK_API UReferenceCountedLockingPolicy : public UAbstractLockingPol
 	GENERATED_BODY()
 
 public:
+	void Init(AbstractPackageMap* InPackageMap);
+
 	virtual ActorLockToken AcquireLock(AActor* Actor, FString DebugString = "") override;
 
 	// This should only be called during the lifetime of the locked actor
@@ -41,6 +43,8 @@ private:
 	void OnLockedActorDeleted(AActor* DestroyedActor);
 
 	bool CanAcquireLock(AActor* Actor) const;
+
+	TWeakObjectPtr<AbstractPackageMap> PackageMap;
 
 	TMap<const AActor*, MigrationLockElement> ActorToLockingState;
 	TMap<ActorLockToken, LockNameAndActor> TokenToNameAndActor;

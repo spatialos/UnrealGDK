@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/PackageMapClient.h"
 
+#include "EngineClasses/AbstractPackageMap.h"
 #include "Schema/UnrealMetadata.h"
 #include "Schema/UnrealObjectRef.h"
 
@@ -20,7 +21,7 @@ class UEntityPool;
 class FTimerManager;
 
 UCLASS()
-class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
+class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient, public AbstractPackageMap
 {
 	GENERATED_BODY()		
 public:
