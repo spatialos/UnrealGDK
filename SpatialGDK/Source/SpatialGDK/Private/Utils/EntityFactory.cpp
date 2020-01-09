@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Interop/SpatialRPCService.h"
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Heartbeat.h"
@@ -22,16 +23,18 @@
 namespace SpatialGDK
 {
  
-EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver)
+EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, SpatialRPCService* InRPCService)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
+	, RPCService(InRPCService)
 { }
  
 TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs)
 {
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
+	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 
