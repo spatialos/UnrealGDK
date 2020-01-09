@@ -72,6 +72,7 @@ if($run_with_spatial) {
 Echo "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
+Start-Sleep -s 10
 # $tail_proc = Start-Process "powershell" -PassThru -ArgumentList @("Get-Content", $log_file_path,  "-Wait")
 Get-Content $log_file_path -Wait # this will most likely block, not ideal, just for debugging
 Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
