@@ -88,10 +88,10 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::MULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
  
 	// NWX_BEGIN - NWX-9747 - [PREPORT] Take latest GDK Load balancing from master
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
@@ -256,9 +256,9 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	InterestFactory InterestDataFactory(Actor, Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
  
-	ComponentDatas.Add(ClientRPCEndpoint().CreateRPCEndpointData());
-	ComponentDatas.Add(ServerRPCEndpoint().CreateRPCEndpointData());
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
+	ComponentDatas.Add(ClientRPCEndpointLegacy().CreateRPCEndpointData());
+	ComponentDatas.Add(ServerRPCEndpointLegacy().CreateRPCEndpointData());
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::MULTICAST_RPCS_COMPONENT_ID));
  
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
