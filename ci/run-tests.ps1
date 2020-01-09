@@ -37,7 +37,20 @@ if ($run_with_spatial) {
         -Path "$test_repo_path\spatial\snapshots\$test_repo_map.snapshot" `
         -Destination "$test_repo_path\spatial\snapshots\default.snapshot"
 
-    $spatial_process = Start-Process "spatial" -PassThru -NoNewWindow -WorkingDirectory "$test_repo_path\spatial" -ArgumentList @("local", "launch")
+
+    pushd "$test_repo_path\spatial"
+        $build_configs_process = Start-Process -Wait -PassThru -NoNewWindow -FilePath "spatial" -ArgumentList @(`
+            "build", `
+            "build-config"
+        )
+
+        if ($build_configs_process.ExitCode -ne 0) {
+            Write-Log "Failed to build worker configurations for the project. Error: $($build_configs_process.ExitCode)"
+            Throw "Failed to build worker configurations"
+        }
+
+        $spatial_process = Start-Process "spatial" -PassThru -NoNewWindow -ArgumentList @("local", "launch")
+    popd
 
     Start-Sleep -s 10
 }
@@ -73,9 +86,8 @@ Echo "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
 Start-Sleep -s 10
-# $tail_proc = Start-Process "powershell" -PassThru -ArgumentList @("Get-Content", $log_file_path,  "-Wait")
-Get-Content $log_file_path -Wait # this will most likely block, not ideal, just for debugging
+$tail_proc = Start-Process "powershell" -PassThru -ArgumentList @("Get-Content", $log_file_path,  "-Wait")
 Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
-# Stop-Process -InputObject $tail_proc
+Stop-Process -InputObject $tail_proc
 
 Stop-Process -InputObject $spatial_process
