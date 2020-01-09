@@ -38,6 +38,8 @@ if ($run_with_spatial) {
         -Destination "$test_repo_path\spatial\snapshots\default.snapshot"
 
     $spatial_process = Start-Process "spatial" -PassThru -NoNewWindow -WorkingDirectory "$test_repo_path\spatial" -ArgumentList @("local", "launch")
+
+    Start-Sleep -s 10
 }
 
 # Create the TestResults directory if it does not exist, for storing results
@@ -70,8 +72,9 @@ if($run_with_spatial) {
 Echo "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
-$tail_proc = Start-Process "powershell" -PassThru -ArgumentList @("Get-Content", $log_file_path,  "-Wait")
+# $tail_proc = Start-Process "powershell" -PassThru -ArgumentList @("Get-Content", $log_file_path,  "-Wait")
+Get-Content $log_file_path -Wait # this will most likely block, not ideal, just for debugging
 Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
-Stop-Process -InputObject $tail_proc
+# Stop-Process -InputObject $tail_proc
 
 Stop-Process -InputObject $spatial_process
