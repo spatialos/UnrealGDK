@@ -558,13 +558,8 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 		if (GetDefault<USpatialGDKSettings>()->bEnableSchemaValidationOnJoin)
 		{
 			uint32 ServerHash = GlobalStateManager->GetSchemaHash();
-			if (ClassInfoManager->SchemaDatabase->SchemaDescriptorHash != ServerHash)
 			{
-				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Your clients Spatial schema does match the servers, this may cause problems. Client hash: '%u' Server hash: '%u'"), ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
-				if (FMessageDialog::Open(EAppMsgType::YesNo, EAppReturnType::No, FText::FromString(TEXT("Schema hash does not match the server, this may cause problems. Are you sure you want to continue?"))) == EAppReturnType::No)
-				{
-					ClassInfoManager->QuitGame();
-				}
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Your clients Spatial schema does match the servers, this may cause problems. Client hash: '%u' Server hash: '%u'"), ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
 			}
 		}
 #endif
@@ -690,7 +685,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			// ServerTravel - Increment the session id, so users don't rejoin the old game.
 			GlobalStateManager->SetCanBeginPlay(true);
 			GlobalStateManager->TriggerBeginPlay();
-			GlobalStateManager->SetupAcceptingPlayerState(true);
+			GlobalStateManager->SetAcceptingPlayers(true);
 			GlobalStateManager->IncrementSessionID();
 		}
 	}

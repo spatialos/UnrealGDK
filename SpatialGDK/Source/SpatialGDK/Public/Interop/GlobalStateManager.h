@@ -47,14 +47,14 @@ public:
 	void ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
-	void SetupAcceptingPlayerState(bool bAcceptingPlayers);
+	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void SetCanBeginPlay(const bool bInCanBeginPlay);
 	void IncrementSessionID();
 
 	FORCEINLINE FString GetDeploymentMapURL() const { return DeploymentMapURL; }
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
 	FORCEINLINE int32 GetSessionId() const { return DeploymentSessionId; }
-	FORCEINLINE uint32 GetSchemaHash() const { return SchemaHash;  }
+	FORCEINLINE uint32 GetSchemaHash() const { return SchemaHash; }
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 	bool HandlesComponent(const Worker_ComponentId ComponentId) const;
