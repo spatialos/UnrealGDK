@@ -70,6 +70,8 @@ if($run_with_spatial) {
 Echo "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
+$tail_proc = Start-Process "powershell" -ArgumentList @("Get-Content", $log_file_path,  "-Wait")
 Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
+Stop-Process -InputObject $tail_proc
 
 Stop-Process -InputObject $spatial_process
