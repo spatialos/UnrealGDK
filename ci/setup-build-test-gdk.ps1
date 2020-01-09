@@ -91,7 +91,7 @@ foreach ($test in $tests) {
         -report_output_path "$test_project_root\TestResults" `
         -test_repo_map "$test_repo_map" `
         -tests_path "$tests_path" `
-        -override_spatial_networking "$override_spatial_networking"
+        -override_spatial_networking $override_spatial_networking
     Finish-Event "test-gdk" "command"
 
     Start-Event "report-tests" "command"
