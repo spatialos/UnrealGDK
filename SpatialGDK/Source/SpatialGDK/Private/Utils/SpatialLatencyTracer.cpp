@@ -422,6 +422,10 @@ USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTraceOrReadPay
 			MarkActiveLatencyTrace(Key);
 			ActiveTrace = GetActiveTrace();
 		}
+		else
+		{
+			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Could not read trace from payload. The payload was likely invalid."), *WorkerId);
+		}
 	}
 	return ActiveTrace;
 }
