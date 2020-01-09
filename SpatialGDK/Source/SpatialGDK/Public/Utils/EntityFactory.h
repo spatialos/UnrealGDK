@@ -31,6 +31,6 @@ private:
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;
 	USpatialClassInfoManager* ClassInfoManager;
-	SpatialRPCService* RPCService
+	SpatialRPCService* RPCService;
 };
 }
