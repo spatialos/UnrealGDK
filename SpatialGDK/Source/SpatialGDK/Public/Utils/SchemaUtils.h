@@ -221,6 +221,11 @@ inline FRotator IndexRotatorFromSchema(Schema_Object* Object, Schema_FieldId Id,
 	return Rotator;
 }
 
+inline FRotator GetRotatorFromSchema(Schema_Object* Object, Schema_FieldId Id)
+{
+	return IndexRotatorFromSchema(Object, Id, 0);
+}
+	
 inline void AddVectorToSchema(Schema_Object* Object, Schema_FieldId Id, FVector Vector)
 {
 	Schema_Object* VectorObject = Schema_AddObject(Object, Id);
