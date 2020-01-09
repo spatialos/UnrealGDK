@@ -206,7 +206,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	{
 		if (Cast<USoftObjectProperty>(Property))
 		{
-			FSoftObjectPtr* ObjectPtr = (FSoftObjectPtr*)Data;
+			const FSoftObjectPtr* ObjectPtr = reinterpret_cast<const FSoftObjectPtr*>(Data);
 
 			AddObjectRefToSchema(Object, FieldId, FUnrealObjectRef::FromSoftObjectPtr(*ObjectPtr));
 		}

@@ -326,7 +326,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 
 		if (Cast<USoftObjectProperty>(Property))
 		{
-			FSoftObjectPtr* ObjectPtr = (FSoftObjectPtr*)Data;
+			FSoftObjectPtr* ObjectPtr = reinterpret_cast<FSoftObjectPtr*>(Data);
 			FUnrealObjectRef::ToSoftObjectPtr(ObjectRef, *ObjectPtr);
 		}
 		else
