@@ -25,22 +25,24 @@ For large projects, the full scan methods are significantly slower than the iter
 ### Generate schema from within the Unreal Editor
 Within the Unreal Editor, you can generate schema using a full scan, or generate schema iteratively. For information on when to use each method, see [How to generate schema](#how-to-generate-schema).
 
-* **Full scan** 
+**Full scan** 
 
-    To generate schema for all classes in your project that have replicated properties or RPCs:<br/>
-
-    In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
-    <br/> ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+Used to generate schema for all classes in your project that have replicated properties or RPCs, or the first time you generate schema for a project:<br/>
+     
+ * In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/><br/>
+ <br/> ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
     <br/>When you select **Schema (Full Scan)**, the GDK searches through all classes in your project that have replicated properties or RPCs to generate the schema files, and then updates the `SchemaDatabase`. <br/>
 
-    Run a full scan the first time you generate schema for your project, and whenever you need to generate schema for classes that have replicated properties or RPCs but that are not currently loaded in the Editor.<br/>For example: You need to select **Schema (Full Scan)** if you haven’t generated schema after adding a new Blueprint to your game, and that Blueprint is no longer open in the Editor.<br/><br/>
+* Run a full scan the first time you generate schema for your project, and whenever you need to generate schema for classes that have replicated properties or RPCs but that are not currently loaded in the Editor.<br/>
 
-* **Iterative**
+    For example: You need to select **Schema (Full Scan)** if you haven’t generated schema after adding a new Blueprint to your game, and that Blueprint is no longer open in the Editor.<br/><br/>
 
-    To generate schema for classes that have replicated properties or RPCs and that are currently loaded in the Editor: <br/>
+**Iterative**
 
-    Select **Schema** in the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons). The GDK searchesthrough classes that have replicated properties or RPCs and that are currently loaded in the Editor, generates the schema files and updates the `SchemaDatabase`.<br/>
+Used to generate schema for classes that have replicated properties or RPCs and that are currently loaded in the Editor: <br/>
+
+* Select **Schema** in the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons). The GDK searches through classes that have replicated properties or RPCs and that are currently loaded in the Editor, generates the schema files and updates the `SchemaDatabase`.<br/>
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_<br/>
 
@@ -58,7 +60,7 @@ This command generates schema using a full scan for all classes that have replic
 
 ### Generate schema during the cooking process
 
-The `CookAndGenerateSchemaCommandlet` command generates the schema needed by your game, and does so during the cooking process, so it is like running the full scan described above, but is faster. It will ultimately replace the command line schema generation described above, but is currently experimental and in ‘alpha’ state.
+The `CookAndGenerateSchemaCommandlet` command generates the schema needed by your game, and does so during the cooking process, so it is like running the full scan described above, but is faster. It will ultimately replace the command line schema generation described above, but is currently experimental.
 
 #### How it works
 
@@ -97,5 +99,5 @@ This means that if you have a class that only exists on one user's machine (for 
 To prevent this, commit newly created or modified classes to source control alongside the `SchemaDatabase`.
 
 <br/>------------<br/>
-_2020-01-08 Page updated with editorial review: added commandlet_<br/>
+_2020-01-08 Page updated with editorial review: added commandlet and improved clarity_<br/>
 _2019-07-26 Page updated with editorial review_
