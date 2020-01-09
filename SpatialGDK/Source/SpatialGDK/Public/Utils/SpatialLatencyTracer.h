@@ -95,8 +95,9 @@ public:
 	static USpatialLatencyTracer* GetTracer(UObject* WorldContextObject);
 
 	bool IsValidKey(TraceKey Key);
-	TraceKey GetTraceKey(const UObject* Obj, const UFunction* Function, bool bRemove = true);
-	TraceKey GetTraceKey(const UObject* Obj, const UProperty* Property, bool bRemove = true);
+	TraceKey GetTraceKey(const UObject* Obj, const UFunction* Function);
+	TraceKey GetTraceKey(const UObject* Obj, const UProperty* Property);
+	TraceKey GetTraceKey(uint32 Entity, uint32 Component);
 
 	void MarkActiveLatencyTrace(const TraceKey Key);
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);

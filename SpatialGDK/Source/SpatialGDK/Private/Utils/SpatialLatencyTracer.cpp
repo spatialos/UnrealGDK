@@ -123,43 +123,33 @@ bool USpatialLatencyTracer::IsValidKey(const TraceKey Key)
 	return TraceMap.Find(Key);
 }
 
-TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UFunction* Function, bool bRemove /* = true */)
+TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UFunction* Function)
 {
 	FScopeLock Lock(&Mutex);
 
 	ActorFuncKey FuncKey{ Cast<AActor>(Obj), Function };
 	TraceKey ReturnKey = InvalidTraceKey;
-	if (bRemove)
-	{
-		TrackingTraces.RemoveAndCopyValue(FuncKey, ReturnKey);
-	}
-	else
-	{
-		if (TraceKey* FoundKey = TrackingTraces.Find(FuncKey))
-		{
-			ReturnKey = *FoundKey;
-		}
-	}
+	TrackingTraces.RemoveAndCopyValue(FuncKey, ReturnKey);
 	return ReturnKey;
 }
 
-TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UProperty* Property, bool bRemove /* = true */)
+TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UProperty* Property)
 {
 	FScopeLock Lock(&Mutex);
 
 	ActorPropertyKey PropKey{ Cast<AActor>(Obj), Property };
 	TraceKey ReturnKey = InvalidTraceKey;
-	if (bRemove)
-	{
-		TrackingProperties.RemoveAndCopyValue(PropKey, ReturnKey);
-	}
-	else
-	{
-		if (TraceKey* FoundKey = TrackingTraces.Find(PropKey))
-		{
-			ReturnKey = *FoundKey;
-		}
-	}
+	TrackingProperties.RemoveAndCopyValue(PropKey, ReturnKey);
+	return ReturnKey;
+}
+
+TraceKey USpatialLatencyTracer::GetTraceKey(uint32 Entity, uint32 Component)
+{
+	FScopeLock Lock(&Mutex);
+
+	EntityComponentKey PropKey{ Entity, Component };
+	TraceKey ReturnKey = InvalidTraceKey;
+	TrackingEntityComponents.RemoveAndCopyValue(PropKey, ReturnKey);
 	return ReturnKey;
 }
 
@@ -246,6 +236,7 @@ TraceKey USpatialLatencyTracer::AssociateEntityComponent(int64 Entity, uint32 Co
 		return InvalidTraceKey;
 	}
 	TrackingEntityComponents.Add(MapKey, Key);
+	return Key;
 }
 
 TraceKey USpatialLatencyTracer::ReadTraceFromSpatialPayload(const FSpatialLatencyPayload& Payload)
@@ -284,9 +275,13 @@ void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
-		WriteToLatencyTrace(ComponentUpdate->Trace, TEXT("Moved update to Worker queue"));
-
-		//#
+		TraceKey Trace = GetTraceKey(ComponentUpdate->EntityId, ComponentUpdate->Update.component_id);
+		if (Trace != InvalidTraceKey)
+		{
+			WriteToLatencyTrace(Trace, TEXT("Moved update to Worker queue"));
+			// Add it back for dequeue
+			AssociateEntityComponent(ComponentUpdate->EntityId, ComponentUpdate->Update.component_id, Trace);
+		}
 	}
 }
 
@@ -295,13 +290,13 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
-		if (ComponentUpdate->Trace != InvalidTraceKey)
-		{
-			EndLatencyTrace(ComponentUpdate->Trace, TEXT("Sent to Worker SDK"));
-		}
-		else
-		{
 
+		TraceKey Trace = GetTraceKey(ComponentUpdate->EntityId, ComponentUpdate->Update.component_id);
+		if (Trace != InvalidTraceKey)
+		{
+			WriteToLatencyTrace(Trace, TEXT("Sent to Worker SDK"));
+			// Add it back for dequeue
+			AssociateEntityComponent(ComponentUpdate->EntityId, ComponentUpdate->Update.component_id, Trace);
 		}
 	}
 }
@@ -320,7 +315,7 @@ USpatialLatencyTracer* USpatialLatencyTracer::GetTracer(UObject* WorldContextObj
 	}
 
 	return nullptr;
-}
+} 
 
 bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const AActor* Actor, const FString& FunctionOrProperty, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
 {
@@ -435,6 +430,8 @@ void USpatialLatencyTracer::ClearTrackingInformation()
 {
 	TraceMap.Reset();
 	TrackingTraces.Reset();
+	TrackingProperties.Reset();
+	TrackingEntityComponents.Reset();
 }
 
 TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& FunctionOrProperty)
