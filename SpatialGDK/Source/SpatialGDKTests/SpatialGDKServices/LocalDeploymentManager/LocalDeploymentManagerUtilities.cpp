@@ -15,10 +15,8 @@ namespace
 	// TODO: UNR-1969 - Prepare LocalDeployment in CI pipeline
 	const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 30.0;
 
-	// TODO(Alex): When using AutomationWorker, permissions in WorkerConnection tests fails
-	//const FName AutomationWorkerType = TEXT("AutomationWorker");
-	const FName AutomationWorkerType = TEXT("UnrealWorker");
-	const FString AutomationLaunchConfig = TEXT("Improbable/AutomationLaunchConfig.json");
+	const FName AutomationWorkerType = TEXT("AutomationWorker");
+	const FString AutomationLaunchConfig = FString(TEXT("Improbable/")) + *AutomationWorkerType.ToString() + FString(TEXT(".json"));
 
 	FLocalDeploymentManager* GetLocalDeploymentManager()
 	{
@@ -42,7 +40,8 @@ namespace
 	{
 		const FString WorkerJsonDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("workers/unreal"));
 
-		FString JsonPath = FPaths::Combine(WorkerJsonDir, TEXT("spatialos.UnrealAutomation.worker.json"));
+		FString Filename = FString(TEXT("spatialos.")) + *AutomationWorkerType.ToString() + FString(TEXT(".worker.json"));
+		FString JsonPath = FPaths::Combine(WorkerJsonDir, Filename);
 		if (!FPaths::FileExists(JsonPath))
 		{
 			bool bRedeployRequired = false;

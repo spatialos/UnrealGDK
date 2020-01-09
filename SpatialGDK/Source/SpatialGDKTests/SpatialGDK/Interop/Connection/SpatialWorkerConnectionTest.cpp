@@ -10,10 +10,8 @@
 
 #include "CoreMinimal.h"
 
-#pragma optimize("", off)
-
 #define WORKERCONNECTION_TEST(TestName) \
-	GDK_TEST(Core, USpatialWorkerConnection, TestName)
+	GDK_TEST(Core, SpatialWorkerConnection, TestName)
 
 using namespace SpatialGDK;
 
@@ -22,6 +20,18 @@ namespace
 bool bClientConnectionProcessed = false;
 bool bServerConnectionProcessed = false;
 double MAX_WAIT_TIME = 10.0;
+
+void ConnectionProcessed(bool bConnectAsClient)
+{
+	if (bConnectAsClient)
+	{
+		bClientConnectionProcessed = true;
+	}
+	else
+	{
+		bServerConnectionProcessed = true;
+	}
+}
 
 void StartSetupConnectionConfigFromURL(USpatialWorkerConnection* Connection, const FURL& URL, bool& bOutUseReceptionist)
 {
@@ -86,33 +96,15 @@ DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetupWorkerConnection, USpatialW
 bool FSetupWorkerConnection::Update()
 {
 	const FURL TestURL = {};
-	// TODO(Alex): AutomationWorker type permissions don't work
-	//FString WorkerType = "AutomationWorker";
-	FString WorkerType = "UnrealWorker";
+	FString WorkerType = "AutomationWorker";
 
 	Connection->OnConnectedCallback.BindLambda([bConnectAsClient = this->bConnectAsClient]()
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Worker connected successfully"));
-		if (bConnectAsClient)
-		{
-			bClientConnectionProcessed = true;
-		}
-		else
-		{
-			bServerConnectionProcessed = true;
-		}
+		ConnectionProcessed(bConnectAsClient);
 	});
 	Connection->OnFailedToConnectCallback.BindLambda([bConnectAsClient = this->bConnectAsClient](uint8_t ErrorCode, const FString& ErrorMessage)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Worker failed to connect: %d : %s"), ErrorCode, *ErrorMessage);
-		if (bConnectAsClient)
-		{
-			bClientConnectionProcessed = true;
-		}
-		else
-		{
-			bServerConnectionProcessed = true;
-		}
+		ConnectionProcessed(bConnectAsClient);
 	});
 	bool bUseReceptionist = false;
 	StartSetupConnectionConfigFromURL(Connection, TestURL, bUseReceptionist);
