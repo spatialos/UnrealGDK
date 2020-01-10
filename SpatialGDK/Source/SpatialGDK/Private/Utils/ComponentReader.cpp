@@ -323,27 +323,35 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	{
 		FUnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
-		bool bUnresolved = false;
 
-		UObject* ObjectValue = FUnrealObjectRef::ToObjectPtr(ObjectRef, PackageMap, bUnresolved);
-
-		if (bUnresolved)
+		if (Cast<USoftObjectProperty>(Property))
 		{
-			InObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, ShadowOffset, ParentIndex, Property));
-			UnresolvedRefs.Add(ObjectRef);
+			FSoftObjectPtr* ObjectPtr = reinterpret_cast<FSoftObjectPtr*>(Data);
+			*ObjectPtr = FUnrealObjectRef::ToSoftObjectPath(ObjectRef);
 		}
 		else
 		{
-			ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
-			if (ObjectValue != nullptr)
-			{
-				checkf(ObjectValue->IsA(ObjectProperty->PropertyClass), TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRef.ToString(), *ObjectValue->GetFullName());
-			}
-		}
+			bool bUnresolved = false;
+			UObject* ObjectValue = FUnrealObjectRef::ToObjectPtr(ObjectRef, PackageMap, bUnresolved);
 
-		if (!bUnresolved && InObjectReferencesMap.Find(Offset))
-		{
-			InObjectReferencesMap.Remove(Offset);
+			if (bUnresolved)
+			{
+				InObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, ShadowOffset, ParentIndex, Property));
+				UnresolvedRefs.Add(ObjectRef);
+			}
+			else
+			{
+				ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
+				if (ObjectValue != nullptr)
+				{
+					checkf(ObjectValue->IsA(ObjectProperty->PropertyClass), TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRef.ToString(), *ObjectValue->GetFullName());
+				}
+			}
+
+			if (!bUnresolved && InObjectReferencesMap.Find(Offset))
+			{
+				InObjectReferencesMap.Remove(Offset);
+			}
 		}
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
