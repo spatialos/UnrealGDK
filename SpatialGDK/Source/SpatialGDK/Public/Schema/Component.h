@@ -22,6 +22,12 @@ public:
 };
 
 template <typename T>
+static T* GetComponentStorageData(SpatialGDK::ComponentStorageBase* StorageBase)
+{
+	return &(static_cast<SpatialGDK::ComponentStorage<T>*>(StorageBase)->Get());
+}
+
+template <typename T>
 class ComponentStorage : public ComponentStorageBase
 {
 public:

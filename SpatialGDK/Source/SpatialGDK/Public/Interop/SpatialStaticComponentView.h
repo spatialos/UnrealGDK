@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "Interop/AbstractStaticComponentView.h"
 #include "Schema/Component.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
@@ -15,22 +16,21 @@
 #include "SpatialStaticComponentView.generated.h"
 
 UCLASS()
-class SPATIALGDK_API USpatialStaticComponentView : public UObject
+class SPATIALGDK_API USpatialStaticComponentView : public UObject, public AbstractStaticComponentView
 {
 	GENERATED_BODY()
 
 public:
-	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
-	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override;
+	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override;
 
-	template <typename T>
-	T* GetComponentData(Worker_EntityId EntityId) const
+	SpatialGDK::ComponentStorageBase* GetComponentData(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override
 	{
 		if (const auto* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 		{
-			if (const TUniquePtr<SpatialGDK::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
+			if (const TUniquePtr<SpatialGDK::ComponentStorageBase>* Component = ComponentStorageMap->Find(ComponentId))
 			{
-				return &(static_cast<SpatialGDK::ComponentStorage<T>*>(Component->Get())->Get());
+				return Component->Get();
 			}
 		}
 
