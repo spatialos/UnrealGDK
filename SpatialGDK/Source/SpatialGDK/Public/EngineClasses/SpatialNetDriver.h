@@ -239,6 +239,7 @@ private:
 	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn);
 
 	void ProcessPendingDormancy();
+	void PollPendingLoads();
 
 	// This index is incremented and assigned to every new RPC in ProcessRemoteFunction.
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs

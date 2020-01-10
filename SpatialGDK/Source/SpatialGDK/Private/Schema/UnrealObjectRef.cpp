@@ -40,6 +40,14 @@ UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpati
 			UObject* Value = PackageMap->GetObjectFromNetGUID(NetGUID, true);
 			if (Value == nullptr)
 			{
+				// Check if the object we are looking for is in a package being loaded.
+				if (PackageMap->IsGUIDPending(NetGUID))
+				{
+					PackageMap->PendingReferences.Add(NetGUID);
+					bOutUnresolved = true;
+					return nullptr;
+				}
+
 				// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
 				// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
 				// So we do the same.
