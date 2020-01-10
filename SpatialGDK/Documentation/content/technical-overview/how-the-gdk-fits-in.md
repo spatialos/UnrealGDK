@@ -21,7 +21,7 @@ When we forked Unreal Engine, we extended Unreal’s `UIpNetDriver` (which orche
 <%(Lightbox image="{{assetRoot}}assets/tech-overview/networking-switch.png")%><br>
 _Use the Unreal Editor toolbar networking switch to swap out native Unreal networking and swap in SpatialOS networking._
 
-The SpatialOS model differs significantly from Unreal Engine when it comes to replicating an Actor. We don't replicate Actors to each player individually as Unreal would. Instead, we update the game instance running in the cloud, and SpatialOS distributes the data to connected clients so it is not sent multiple times to each interested client.
+The SpatialOS model differs significantly from Unreal Engine when it comes to replicating an Actor. We don't replicate Actors to each player individually as Unreal would. Instead, we update the game instance running in the cloud, and SpatialOS distributes the data to connected clients so it is not sent multiple times to each client.
 
 <br/>------------<br/>
 _2019-12-05 Page amended with editorial review_   
