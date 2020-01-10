@@ -29,6 +29,8 @@
 
 #include "Internationalization/Regex.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialGDKSimulatedPlayerDeployment);
+
 void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -503,6 +505,23 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		return FReply::Handled();
 	}
 
+	if (!bHasAttemptedAuth)
+	{
+		FString SpatialInfoArgs = TEXT("auth login");
+		FString SpatialInfoResult;
+		FString StdErr;
+		int32 ExitCode;
+		FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpatialExe, *SpatialInfoArgs, &ExitCode, &SpatialInfoResult, &StdErr);
+
+		bool bSuccess = ExitCode == 0;
+		if (!bSuccess)
+		{
+			UE_LOG(LogSpatialGDKSimulatedPlayerDeployment, Warning, TEXT("Spatial auth login failed. Error Code: %d, Error Message: %s"), ExitCode, *SpatialProjectInfoResult);
+		}
+
+		bHasAttemptedAuth = bSuccess;
+	}
+
 	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
 	{
 		if (ToolbarPtr)
@@ -523,7 +542,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 			{
 				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
-					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment.");
+					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
 				}
 			}));
 

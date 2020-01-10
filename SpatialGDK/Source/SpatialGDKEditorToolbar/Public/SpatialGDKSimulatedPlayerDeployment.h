@@ -13,6 +13,8 @@
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/SCompoundWidget.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSimulatedPlayerDeployment, Log, All);
+
 class SWindow;
 
 enum class ECheckBoxState : uint8;
@@ -34,6 +36,9 @@ public:
 	void Construct(const FArguments& InArgs);
 
 private:
+
+	bool bHasAttemptedAuth = false;
+
 	/** The parent window of this widget */
 	TWeakPtr<SWindow> ParentWindowPtr;
 
