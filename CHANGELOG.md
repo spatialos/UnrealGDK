@@ -51,6 +51,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - You can now access the worker flags via `USpatialStatics::GetWorkerFlag` instead of `USpatialWorkerFlags::GetWorkerFlag`.
 - Fix crash in SpatialDebugger when GDK-space load balancing is disabled.
 - Fixed issue where schema database failed to load previous saved state when working in editor.
+- Attempting a cloud deployment will now run the spatial auth process as it is required for deploying. Previously the deployment would simply fail.   
 
 ## [`0.8.0-preview`] - 2019-12-17
 

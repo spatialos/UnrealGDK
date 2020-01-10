@@ -516,7 +516,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		bool bSuccess = ExitCode == 0;
 		if (!bSuccess)
 		{
-			UE_LOG(LogSpatialGDKSimulatedPlayerDeployment, Warning, TEXT("Spatial auth login failed. Error Code: %d, Error Message: %s"), ExitCode, *SpatialProjectInfoResult);
+			UE_LOG(LogSpatialGDKSimulatedPlayerDeployment, Warning, TEXT("Spatial auth login failed. Error Code: %d, Error Message: %s"), ExitCode, *SpatialInfoResult);
 		}
 
 		bHasAttemptedAuth = bSuccess;
