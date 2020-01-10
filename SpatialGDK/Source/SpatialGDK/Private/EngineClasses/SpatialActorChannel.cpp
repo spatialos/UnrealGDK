@@ -740,14 +740,14 @@ bool USpatialActorChannel::IsListening() const
 {
 	if (NetDriver->IsServer())
 	{
-		if (SpatialGDK::ClientRPCEndpointLegacy* Endpoint = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ClientRPCEndpointLegacy>(EntityId))
+		if (SpatialGDK::ClientRPCEndpointLegacy* Endpoint = &(static_cast<SpatialGDK::ComponentStorage<SpatialGDK::ClientRPCEndpointLegacy>*>(GetComponentData(EntityId))->Get()))
 		{
 			return Endpoint->bReady;
 		}
 	}
 	else
 	{
-		if (SpatialGDK::ServerRPCEndpointLegacy* Endpoint = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ServerRPCEndpointLegacy>(EntityId))
+		if (SpatialGDK::ServerRPCEndpointLegacy* Endpoint = &(static_cast<SpatialGDK::ComponentStorage<SpatialGDK::ServerRPCEndpointLegacy>*>(GetComponentData(EntityId))->Get()))
 		{
 			return Endpoint->bReady;
 		}

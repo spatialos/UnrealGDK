@@ -121,32 +121,33 @@ void USpatialStaticComponentView::OnRemoveEntity(Worker_EntityId EntityId)
 void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
 	SpatialGDK::Component* Component = nullptr;
+	return &(static_cast<SpatialGDK::ComponentStorage<T>*>(Component->Get())->Get());
 
 	switch (Op.update.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::EntityAcl>(Op.entity_id);
+		Component = SpatialGDK::GetComponentStorageData<SpatialGDK::EntityAcl>(GetComponentData(Op.entity_id));
 		break;
 	case SpatialConstants::POSITION_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::Position>(Op.entity_id);
+		Component = SpatialGDK::GetComponentStorageData<SpatialGDK::Position>(GetComponentData(Op.entity_id));
 		break;
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
-		Component = GetComponentData<SpatialGDK::ClientRPCEndpointLegacy>(Op.entity_id);
+		Component = SpatialGDK::GetComponentStorageData<SpatialGDK::ClientRPCEndpointLegacy>(GetComponentData(Op.entity_id));
 		break;
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
-		Component = GetComponentData<SpatialGDK::ServerRPCEndpointLegacy>(Op.entity_id);
+		Component = SpatialGDK::GetComponentStorageData<SpatialGDK::ServerRPCEndpointLegacy>(GetComponentData(Op.entity_id));
 		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::AuthorityIntent>(Op.entity_id);
+		Component = &(static_cast<SpatialGDK::ComponentStorage<SpatialGDK::AuthorityIntent>*>(GetComponentData(Op.entity_id))->Get());
 		break;
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::ClientEndpoint>(Op.entity_id);
+		Component = &(static_cast<SpatialGDK::ComponentStorage<SpatialGDK::ClientEndpoint>*>(GetComponentData(Op.entity_id))->Get());
 		break;
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::ServerEndpoint>(Op.entity_id);
+		Component = &(static_cast<SpatialGDK::ComponentStorage<SpatialGDK::ServerEndpoint>*>(GetComponentData(Op.entity_id))->Get());
 		break;
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::MulticastRPCs>(Op.entity_id);
+		Component = &(static_cast<SpatialGDK::ComponentStorage<SpatialGDK::MulticastRPCs>*>(GetComponentData(Op.entity_id))->Get());
 		break;
 	default:
 		return;
