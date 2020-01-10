@@ -72,10 +72,8 @@ struct SPATIALGDK_API FUnrealObjectRef
 	}
 
 	static UObject* ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpatialPackageMapClient* PackageMap, bool& bOutUnresolved);
-	static void ToSoftObjectPtr(const FUnrealObjectRef& ObjectRef, FSoftObjectPtr& OutPtr);
 	static FSoftObjectPath ToSoftObjectPath(const FUnrealObjectRef& ObjectRef);
 	static FUnrealObjectRef FromObjectPtr(UObject* ObjectValue, USpatialPackageMapClient* PackageMap);
-	static FUnrealObjectRef FromSoftObjectPtr(const FSoftObjectPtr& ObjectRef);
 	static FUnrealObjectRef FromSoftObjectPath(const FSoftObjectPath& ObjectPath);
 	static FUnrealObjectRef GetSingletonClassRef(UObject* SingletonObject, USpatialPackageMapClient* PackageMap);
 

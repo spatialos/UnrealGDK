@@ -133,11 +133,6 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 	return ObjectRef;
 }
 
-FUnrealObjectRef FUnrealObjectRef::FromSoftObjectPtr(const FSoftObjectPtr& ObjectPtr)
-{
-	return FromSoftObjectPath(ObjectPtr.ToSoftObjectPath());
-}
-
 FUnrealObjectRef FUnrealObjectRef::FromSoftObjectPath(const FSoftObjectPath& ObjectPath)
 {
 	FUnrealObjectRef PackageRef;
@@ -149,12 +144,6 @@ FUnrealObjectRef FUnrealObjectRef::FromSoftObjectPath(const FSoftObjectPath& Obj
 	ObjectRef.Path = ObjectPath.GetAssetName();
 
 	return ObjectRef;
-}
-
-void FUnrealObjectRef::ToSoftObjectPtr(const FUnrealObjectRef& ObjectRef, FSoftObjectPtr& OutPtr)
-{
-	OutPtr.Reset();
-	OutPtr = FSoftObjectPtr(ToSoftObjectPath(ObjectRef));
 }
 
 FSoftObjectPath FUnrealObjectRef::ToSoftObjectPath(const FUnrealObjectRef& ObjectRef)
@@ -183,7 +172,7 @@ FSoftObjectPath FUnrealObjectRef::ToSoftObjectPath(const FUnrealObjectRef& Objec
 		CurRef = CurRef->Outer.IsSet() ? &(*CurRef->Outer) : nullptr;
 	}
 
-	return FSoftObjectPath(FullPackagePath);
+	return FSoftObjectPath(MoveTemp(FullPackagePath));
 }
 
 FUnrealObjectRef FUnrealObjectRef::GetSingletonClassRef(UObject* SingletonObject, USpatialPackageMapClient* PackageMap)
