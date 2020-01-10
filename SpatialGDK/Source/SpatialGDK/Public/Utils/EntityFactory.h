@@ -23,7 +23,7 @@ using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntit
 class SPATIALGDK_API EntityFactory
 {
 public:
-	EntityFactory(USpatialNetDriver* InNetDriver, SpatialRPCService* InRPCService);
+	EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService);
  
 	TArray<Worker_ComponentData> CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs);
  
