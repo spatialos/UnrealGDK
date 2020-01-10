@@ -29,6 +29,4 @@ UNREALOBJECTREF_TEST(GIVEN_a_softpointer_WHEN_making_an_object_ref_from_it_THEN_
 	return true;
 }
 
-// [UNR-2691] Todo : Add tests involving the PackageMapClient (needs a NetDriver).
-// [UNR-2691] Todo : Add test using entityId (needs the PackageMapClient)
-// [UNR-2691] Todo : Add test using actual assets to generate the path to/from (needs the PackageMapClient)
+// TODO : [UNR-2691] Add tests involving the PackageMapClient, with entity Id and actual assets to generate the path to/from (needs a NetDriver right now).
