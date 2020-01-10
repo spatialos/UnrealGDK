@@ -2,8 +2,6 @@
  
 #include "Utils/EntityFactory.h"
  
-#include "Engine.h"
- 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -19,14 +17,16 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialActorUtils.h"
+
+#include "Engine.h"
  
 namespace SpatialGDK
 {
  
-EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, SpatialRPCService* InRPCService)
+EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService)
 	: NetDriver(InNetDriver)
-	, PackageMap(InNetDriver->PackageMap)
-	, ClassInfoManager(InNetDriver->ClassInfoManager)
+	, PackageMap(InPackageMap)
+	, ClassInfoManager(InClassInfoManager)
 	, RPCService(InRPCService)
 { }
  
@@ -245,7 +245,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 	ComponentDatas.Append(DynamicComponentDatas);
 
-	InterestFactory InterestDataFactory(Actor, Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
+	InterestFactory InterestDataFactory(Actor, Info, ClassInfoManager, PackageMap);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
 	if (SpatialSettings->bUseRPCRingBuffers && RPCService != nullptr)
