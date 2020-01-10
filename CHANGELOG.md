@@ -34,6 +34,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Enabled the SpatialOS toolbar for MacOS.
 - Added a menu item to push additional arguments for iOS devices.
 - Improved workflow around schema generation issues and launching local builds. A warning will now show if attempting to run a local deployment after a schema error.
+- Added the `bAsyncLoadNewClassesOnEntityCheckout` setting to SpatialGDKSettings that allows loading new classes asynchronously when checking out entities. This is off by default.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.

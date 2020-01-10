@@ -1239,9 +1239,9 @@ ERPCResult USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Funct
 	return ERPCResult::Success;
 }
 
-void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)
+void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response)
 {
-	Connection->SendCommandResponse(request_id, &Response);
+	Connection->SendCommandResponse(RequestId, &Response);
 }
 
 void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId)
@@ -1252,6 +1252,11 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Response.schema_type = Schema_CreateCommandResponse();
 
 	Connection->SendCommandResponse(RequestId, &Response);
+}
+
+void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
+{
+	Connection->SendCommandFailure(RequestId, Message);
 }
 
 // Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
