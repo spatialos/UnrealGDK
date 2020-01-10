@@ -82,7 +82,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 {
-	EntityFactory DataFactory(NetDriver, RPCService);
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
 	TArray<Worker_ComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs);
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
