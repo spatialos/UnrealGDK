@@ -111,6 +111,7 @@ inline WorkerRequirementSet GetWorkerRequirementSetFromSchema(Schema_Object* Obj
 {
 	return IndexWorkerRequirementSetFromSchema(Object, Id, 0);
 }
+
 inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const FUnrealObjectRef& ObjectRef)
 {
 	using namespace SpatialConstants;
