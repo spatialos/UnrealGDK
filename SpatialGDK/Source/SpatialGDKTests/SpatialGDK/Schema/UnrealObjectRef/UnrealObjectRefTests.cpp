@@ -5,7 +5,7 @@
 #include "Tests/TestDefinitions.h"
 #include "Tests/AutomationCommon.h"
 #include "Schema/UnrealObjectRef.h"
-#include "SoftObjectPtr.h"
+#include "UObject/SoftObjectPtr.h"
 
 #define UNREALOBJECTREF_TEST(TestName) \
 	GDK_TEST(Core, FUnrealObjectRef, TestName)
