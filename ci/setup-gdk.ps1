@@ -10,5 +10,5 @@ Push-Location $gdk_path
         $env:NO_PAUSE = 1
     }
     $env:MSBUILD_EXE = "`"$msbuild_path`""
-    cmd /c Setup.bat
+    cmd /c SetupIncTraceLibs.bat
 Pop-Location
