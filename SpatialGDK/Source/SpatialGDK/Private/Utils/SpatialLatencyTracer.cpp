@@ -55,6 +55,7 @@ USpatialLatencyTracer::USpatialLatencyTracer()
 #if TRACE_LIB_ACTIVE
 	ActiveTraceKey = InvalidTraceKey;
 	ResetWorkerId();
+	MessagePrefix = "";
 #endif
 }
 
@@ -69,6 +70,13 @@ void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const F
 	std::cerr.rdbuf(&Stream);
 
 	StdoutExporter::Register();
+#endif // TRACE_LIB_ACTIVE
+}
+
+void USpatialLatencyTracer::SetMessagePrefix(const FString& NewMessagePrefix)
+{
+#if TRACE_LIB_ACTIVE
+	MessagePrefix = NewMessagePrefix;
 #endif // TRACE_LIB_ACTIVE
 }
 
@@ -569,7 +577,7 @@ void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const F
 
 FString USpatialLatencyTracer::FormatMessage(const FString& Message) const
 {
-	return FString::Printf(TEXT("(%s) : %s"), *WorkerId.Left(18), *Message);
+	return FString::Printf(TEXT("%s(%s) : %s"), *MessagePrefix, *WorkerId.Left(18), *Message);
 }
 
 #endif // TRACE_LIB_ACTIVE
