@@ -12,24 +12,26 @@ class TestSuite {
   [ValidateNotNullOrEmpty()][string]$test_repo_relative_uproject_path
   [ValidateNotNullOrEmpty()][string]$test_repo_map
   [ValidateNotNullOrEmpty()][string]$test_project_root
+  [ValidateNotNullOrEmpty()][string]$test_results_dir
   [ValidateNotNullOrEmpty()][string]$tests_path
   [bool]$run_with_spatial
 
-  TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map, [string] $test_project_root, [string] $tests_path, [bool] $run_with_spatial) {
+  TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map, [string] $test_project_root, [string] $test_results_dir, [string] $tests_path, [bool] $run_with_spatial) {
     $this.test_repo_url = $test_repo_url
     $this.test_repo_branch = $test_repo_branch
     $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
     $this.test_repo_map = $test_repo_map
     $this.test_project_root = $test_project_root
+    $this.test_results_dir = $test_results_dir
     $this.tests_path = $tests_path
     $this.run_with_spatial = $run_with_spatial
   }
 }
 
 $tests = @(
-  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialGDK", $True),
-  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "Project", $True),
-  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "Project", $False)
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "UnitTestResults", "SpatialGDK", $True),
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialNetworkingTestResults", "Project", $True),
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaNetworkingTestResults", "Project", $False)
 )
 
 # Allow overriding testing branch via environment variable
@@ -74,6 +76,7 @@ foreach ($test in $tests) {
   $test_repo_relative_uproject_path = $test.test_repo_relative_uproject_path
   $test_repo_map = $test.test_repo_map
   $test_project_root = $test.test_project_root
+  $test_results_dir = $test.test_results_dir
   $tests_path = $test.tests_path
   $run_with_spatial = $test.run_with_spatial
 
@@ -110,15 +113,15 @@ foreach ($test in $tests) {
         -unreal_editor_path "$unreal_path\Engine\Binaries\Win64\UE4Editor.exe" `
         -uproject_path "$build_home\$test_project_root\$test_repo_relative_uproject_path" `
         -test_repo_path "$build_home\$test_project_root" `
-        -log_file_path "$PSScriptRoot\$test_project_root\TestResults\tests.log" `
-        -report_output_path "$test_project_root\TestResults" `
+        -log_file_path "$PSScriptRoot\$test_project_root\$test_results_dir\tests.log" `
+        -report_output_path "$test_project_root\$test_results_dir" `
         -test_repo_map "$test_repo_map" `
         -tests_path "$tests_path" `
         -run_with_spatial $run_with_spatial
     Finish-Event "test-gdk" "command"
 
     Start-Event "report-tests" "command"
-    & $PSScriptRoot"\report-tests.ps1" -test_result_dir "$PSScriptRoot\$test_project_root\TestResults" -target_platform "$env:BUILD_PLATFORM"
+    & $PSScriptRoot"\report-tests.ps1" -test_result_dir "$PSScriptRoot\$test_project_root\$test_results_dir" -target_platform "$env:BUILD_PLATFORM"
     Finish-Event "report-tests" "command"
   }
 }
