@@ -81,5 +81,4 @@ if($run_with_spatial) {
 Echo "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
-Start-Sleep -s 6
 Wait-Process -Timeout 1200 -InputObject $run_tests_proc
