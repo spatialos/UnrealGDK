@@ -48,11 +48,7 @@ if ($run_with_spatial) {
             Write-Log "Failed to build worker configurations for the project. Error: $($build_configs_process.ExitCode)"
             Throw "Failed to build worker configurations"
         }
-
-        $spatial_process = Start-Process "spatial" -PassThru -NoNewWindow -ArgumentList @("local", "launch")
     popd
-
-    Start-Sleep -s 10
 }
 
 # Create the TestResults directory if it does not exist, for storing results
@@ -86,7 +82,3 @@ Echo "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
 Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
-
-if ($run_with_spatial) {
-    Stop-Process -InputObject $spatial_process
-}
