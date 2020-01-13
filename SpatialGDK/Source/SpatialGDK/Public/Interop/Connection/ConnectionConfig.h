@@ -94,10 +94,13 @@ struct FReceptionistConfig : public FConnectionConfig
 
 struct FLocatorConfig : public FConnectionConfig
 {
-	FLocatorConfig() {
+	FLocatorConfig()
+	{
 		const TCHAR* CommandLine = FCommandLine::Get();
-		if (!FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost)) {
-			if (GetDefault<USpatialGDKSettings>()->IsRunningInChina()) {
+		if (!FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost))
+		{
+			if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
+			{
 				LocatorHost = SpatialConstants::LOCATOR_HOST_CN;
 			}
 			else {
