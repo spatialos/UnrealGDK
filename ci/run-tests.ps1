@@ -36,23 +36,6 @@ if ($run_with_spatial) {
     Copy-Item -Force `
         -Path "$test_repo_path\spatial\snapshots\$test_repo_map.snapshot" `
         -Destination "$test_repo_path\spatial\snapshots\default.snapshot"
-
-
-    pushd "$test_repo_path\spatial"
-        $build_configs_process = Start-Process -Wait -PassThru -NoNewWindow -FilePath "spatial" -ArgumentList @(`
-            "build", `
-            "build-config"
-        )
-
-        if ($build_configs_process.ExitCode -ne 0) {
-            Write-Log "Failed to build worker configurations for the project. Error: $($build_configs_process.ExitCode)"
-            Throw "Failed to build worker configurations"
-        }
-
-        $spatial_process = Start-Process "spatial" -PassThru -NoNewWindow -ArgumentList @("local", "launch")
-    popd
-
-    Start-Sleep -s 10
 }
 
 # Create the TestResults directory if it does not exist, for storing results
@@ -85,8 +68,10 @@ if($run_with_spatial) {
 Echo "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
-Wait-Process -Id (Get-Process -InputObject $run_tests_proc).id
-
-if ($run_with_spatial) {
-    Stop-Process -InputObject $spatial_process
+try {
+    Wait-Process -Timeout 1200 -InputObject $run_tests_proc
+}
+catch {
+    buildkite-agent artifact upload "$log_file_path" # If the tests timed out, upload the log and throw an error
+    throw $_
 }
