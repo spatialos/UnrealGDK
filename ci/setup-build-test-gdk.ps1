@@ -27,8 +27,9 @@ class TestSuite {
 }
 
 $tests = @(
-  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialGDK; Automation RunTests Project", $True) #,
-  # [TestSuite]::new("https://github.com/spatialos/UnrealGDKTestGyms.git", "master", "Game\GDKTestGyms.uproject", "EmptyGym", "TestProject", "SpatialGDK", $False)
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialGDK", $True),
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "Project", $True),
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "Project", $False),
 )
 
 # Allow overriding testing branch via environment variable
@@ -55,8 +56,19 @@ Start-Event "setup-gdk" "command"
 & $PSScriptRoot"\setup-gdk.ps1" -gdk_path "$gdk_in_engine" -msbuild_path "$msbuild_exe"
 Finish-Event "setup-gdk" "command"
 
+class CachedProject {
+  [ValidateNotNullOrEmpty()][string]$test_repo_url
+  [ValidateNotNullOrEmpty()][string]$test_repo_branch
+
+  CachedProject([string] $test_repo_url, [string] $test_repo_branch) {
+    $this.test_repo_url = $test_repo_url
+    $this.test_repo_branch = $test_repo_branch
+  }
+}
+
+$projects_cached = @()
+
 foreach ($test in $tests) {
-  
   $test_repo_url = $test.test_repo_url
   $test_repo_branch = $test.test_repo_branch
   $test_repo_relative_uproject_path = $test.test_repo_relative_uproject_path
@@ -65,20 +77,31 @@ foreach ($test in $tests) {
   $tests_path = $test.tests_path
   $run_with_spatial = $test.run_with_spatial
 
-  # Build the testing project
-  Start-Event "build-project" "command"
-  & $PSScriptRoot"\build-project.ps1" `
-      -unreal_path "$unreal_path" `
-      -test_repo_branch "$test_repo_branch" `
-      -test_repo_url "$test_repo_url" `
-      -test_repo_uproject_path "$build_home\$test_project_root\$test_repo_relative_uproject_path" `
-      -test_repo_path "$build_home\$test_project_root" `
-      -msbuild_exe "$msbuild_exe" `
-      -gdk_home "$gdk_home" `
-      -build_platform "$env:BUILD_PLATFORM" `
-      -build_state "$env:BUILD_STATE" `
-      -build_target "$env:BUILD_TARGET"
-  Finish-Event "build-project" "command"
+  $project_is_cached = $False
+  foreach($cached_project in $projects_cached) {
+    if( ($test_repo_url -eq $cached_project.test_repo_url) -and ($test_repo_branch -eq $cached_project.test_repo_branch) ){
+      $project_is_cached = $True
+    }
+  }
+
+  if(-Not $project_is_cached) {
+    # Build the testing project
+    Start-Event "build-project" "command"
+    & $PSScriptRoot"\build-project.ps1" `
+        -unreal_path "$unreal_path" `
+        -test_repo_branch "$test_repo_branch" `
+        -test_repo_url "$test_repo_url" `
+        -test_repo_uproject_path "$build_home\$test_project_root\$test_repo_relative_uproject_path" `
+        -test_repo_path "$build_home\$test_project_root" `
+        -msbuild_exe "$msbuild_exe" `
+        -gdk_home "$gdk_home" `
+        -build_platform "$env:BUILD_PLATFORM" `
+        -build_state "$env:BUILD_STATE" `
+        -build_target "$env:BUILD_TARGET"
+    
+    $projects_cached += [CachedProject]::new($test_repo_url, $test_repo_branch)
+    Finish-Event "build-project" "command"
+  }
 
   # Only run tests on Windows, as we do not have a linux agent - should not matter
   if ($env:BUILD_PLATFORM -eq "Win64" -And $env:BUILD_TARGET -eq "Editor" -And $env:BUILD_STATE -eq "Development") {
