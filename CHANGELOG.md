@@ -128,6 +128,12 @@ Features listed in the internal section are not ready to use but, in the spirit 
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
 - Local deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
 
+## [`0.6.5`] - 2020-01-13
+### Internal:
+Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
+- **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
+- Local deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
+
 ## [`0.6.4`] - 2019-12-13
 ### Bug fixes: 
 - The Inspector button in the SpatialOS GDK for Unreal toolbar now opens the correct URL.
