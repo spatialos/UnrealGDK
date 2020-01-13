@@ -1547,17 +1547,6 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 		{
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
 		}
-
-#if TRACE_LIB_ACTIVE
-		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(NetDriver))
-		{
-			TraceKey Key = Tracer->ReadTraceFromSchemaObject(ComponentObject, SpatialConstants::LATENCY_TRACKING_TRACE_ID);
-			if (Key != USpatialLatencyTracer::InvalidTraceKey)
-			{
-				Tracer->WriteToLatencyTrace(Key, TEXT("Received component update"));
-			}
-		}
-#endif
 	}
 
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);

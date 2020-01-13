@@ -279,11 +279,6 @@ void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*
 		if (Trace != InvalidTraceKey)
 		{
 			WriteToLatencyTrace(Trace, TEXT("Moved update to Worker queue"));
-			// Add it back for dequeue
-			AssociateEntityComponent(ComponentUpdate->EntityId, ComponentUpdate->Update.component_id, Trace);
-
-			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate->Update.schema_type);
-			WriteTraceToSchemaObject(Trace, ComponentObject, SpatialConstants::LATENCY_TRACKING_TRACE_ID);
 		}
 	}
 }
