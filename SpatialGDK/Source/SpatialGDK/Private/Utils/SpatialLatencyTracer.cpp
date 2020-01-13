@@ -48,6 +48,8 @@ namespace
 #endif
 }  // anonymous namespace
 
+FString USpatialLatencyTracer::MessagePrefix = TEXT("");
+
 const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
 
 USpatialLatencyTracer::USpatialLatencyTracer()
@@ -55,7 +57,6 @@ USpatialLatencyTracer::USpatialLatencyTracer()
 #if TRACE_LIB_ACTIVE
 	ActiveTraceKey = InvalidTraceKey;
 	ResetWorkerId();
-	MessagePrefix = "";
 #endif
 }
 

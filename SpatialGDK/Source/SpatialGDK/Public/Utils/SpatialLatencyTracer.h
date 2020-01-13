@@ -71,7 +71,7 @@ public:
 
 	// Set a prefix to be used for all span names. No whitespace is generated (e.g. "prefix(WorkerID) Actual Message Here").
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	void SetMessagePrefix(const FString& NewMessagePrefix);
+	static void SetMessagePrefix(const FString& NewMessagePrefix);
 
 	// Start a latency trace. This will start the latency timer and attach it to a specific RPC.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
@@ -143,7 +143,7 @@ private:
 	void ClearTrackingInformation();
 
 	FString WorkerId;
-	FString MessagePrefix;
+	static FString MessagePrefix;
 
 	// This is used to track if there is an active trace within a currently processing network call. The user is
 	// able to hook into this active trace, and `continue` it to another network relevant call. If so, the
