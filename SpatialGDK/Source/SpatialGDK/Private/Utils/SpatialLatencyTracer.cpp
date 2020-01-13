@@ -56,7 +56,6 @@ USpatialLatencyTracer::USpatialLatencyTracer()
 #if TRACE_LIB_ACTIVE
 	ActiveTraceKey = InvalidTraceKey;
 	ResetWorkerId();
-	MessagePrefix = "";
 #endif
 }
 
