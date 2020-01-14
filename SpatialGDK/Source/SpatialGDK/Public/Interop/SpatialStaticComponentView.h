@@ -21,10 +21,10 @@ class SPATIALGDK_API USpatialStaticComponentView : public UObject, public Abstra
 	GENERATED_BODY()
 
 public:
-	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override;
-	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override;
+	virtual Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override;
+	virtual bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override;
 
-	SpatialGDK::ComponentStorageBase* GetComponentData(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override
+	virtual SpatialGDK::ComponentStorageBase* GetComponentData(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override
 	{
 		if (const auto* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 		{

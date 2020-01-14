@@ -18,6 +18,7 @@
 #include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
+#include "Schema/Component.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
@@ -446,7 +447,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 	const WorkerAttributeSet WorkerAttribute{ ActorInfo.WorkerType.ToString() };
 	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
 
-	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
+	EntityAcl* EntityACL = SpatialGDK::GetComponentStorageData<SpatialGDK::EntityAcl>(StaticComponentView->GetComponentData(Channel->GetEntityId(), SpatialGDK::EntityAcl::ComponentId));
 
 	TSharedRef<FPendingSubobjectAttachment> PendingSubobjectAttachment = MakeShared<FPendingSubobjectAttachment>();
 	PendingSubobjectAttachment->Subobject = Object;
@@ -752,8 +753,8 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 	check(NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID));
-
-	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+	
+	AuthorityIntent* AuthorityIntentComponent = SpatialGDK::GetComponentStorageData<AuthorityIntent>(StaticComponentView->GetComponentData(EntityId, AuthorityIntent::ComponentId));
 	check(AuthorityIntentComponent != nullptr);
 
 	if (AuthorityIntentComponent->VirtualWorkerId == NewAuthoritativeVirtualWorkerId)
@@ -782,7 +783,7 @@ void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const 
 	check(NetDriver);
 	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
 
-	EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<EntityAcl>(EntityId);
+	EntityAcl* EntityACL = SpatialGDK::GetComponentStorageData<EntityAcl>(NetDriver->StaticComponentView->GetComponentData(EntityId, EntityAcl::ComponentId));
 	check(EntityACL);
 
 	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *DestinationWorkerId);
@@ -1263,7 +1264,7 @@ void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FStrin
 // This function updates the authority of that component as the owning connection can change.
 bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
 {
-	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
+	EntityAcl* EntityACL = SpatialGDK::GetComponentStorageData<EntityAcl>(StaticComponentView->GetComponentData(EntityId, EntityAcl::ComponentId));
 
 	if (EntityACL == nullptr)
 	{

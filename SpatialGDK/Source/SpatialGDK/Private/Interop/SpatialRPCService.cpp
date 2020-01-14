@@ -4,6 +4,7 @@
 
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/ClientEndpoint.h"
+#include "Schema/Component.h"
 #include "Schema/MulticastRPCs.h"
 #include "Schema/ServerEndpoint.h"
 
@@ -254,7 +255,7 @@ void SpatialRPCService::ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_Co
 
 void SpatialRPCService::OnCheckoutEntity(Worker_EntityId EntityId)
 {
-	const MulticastRPCs* Component = View->GetComponentData<MulticastRPCs>(EntityId);
+	const MulticastRPCs* Component = SpatialGDK::GetComponentStorageData<MulticastRPCs>(View->GetComponentData(EntityId, MulticastRPCs::ComponentId));
 	// When checking out entity, ignore multicast RPCs that are already on the component.
 	LastSeenMulticastRPCIds.Add(EntityId, Component->MulticastRPCBuffer.LastSentRPCId);
 }
@@ -270,7 +271,7 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 	{
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	{
-		const ClientEndpoint* Endpoint = View->GetComponentData<ClientEndpoint>(EntityId);
+		const ClientEndpoint* Endpoint = SpatialGDK::GetComponentStorageData<ClientEndpoint>(View->GetComponentData(EntityId, ClientEndpoint::ComponentId));
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint->ReliableRPCAck);
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientUnreliable), Endpoint->UnreliableRPCAck);
 		LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint->ReliableRPCBuffer.LastSentRPCId);
@@ -279,7 +280,7 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 	}
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	{
-		const ServerEndpoint* Endpoint = View->GetComponentData<ServerEndpoint>(EntityId);
+		const ServerEndpoint* Endpoint = SpatialGDK::GetComponentStorageData<ServerEndpoint>(View->GetComponentData(EntityId, ServerEndpoint::ComponentId));
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint->ReliableRPCAck);
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint->UnreliableRPCAck);
 		LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint->ReliableRPCBuffer.LastSentRPCId);
@@ -288,7 +289,7 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 	}
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 	{
-		const MulticastRPCs* Component = View->GetComponentData<MulticastRPCs>(EntityId);
+		const MulticastRPCs* Component = SpatialGDK::GetComponentStorageData<MulticastRPCs>(View->GetComponentData(EntityId, MulticastRPCs::ComponentId));
 
 		if (Component->MulticastRPCBuffer.LastSentRPCId == 0 && Component->InitiallyPresentMulticastRPCsCount > 0)
 		{
@@ -429,13 +430,13 @@ uint64 SpatialRPCService::GetAckFromView(Worker_EntityId EntityId, ERPCType Type
 	switch (Type)
 	{
 	case ERPCType::ClientReliable:
-		return View->GetComponentData<ClientEndpoint>(EntityId)->ReliableRPCAck;
+		return SpatialGDK::GetComponentStorageData<ClientEndpoint>(View->GetComponentData(EntityId, ClientEndpoint::ComponentId))->ReliableRPCAck;
 	case ERPCType::ClientUnreliable:
-		return View->GetComponentData<ClientEndpoint>(EntityId)->UnreliableRPCAck;
+		return SpatialGDK::GetComponentStorageData<ClientEndpoint>(View->GetComponentData(EntityId, ClientEndpoint::ComponentId))->UnreliableRPCAck;
 	case ERPCType::ServerReliable:
-		return View->GetComponentData<ServerEndpoint>(EntityId)->ReliableRPCAck;
+		return SpatialGDK::GetComponentStorageData<ServerEndpoint>(View->GetComponentData(EntityId, ServerEndpoint::ComponentId))->ReliableRPCAck;
 	case ERPCType::ServerUnreliable:
-		return View->GetComponentData<ServerEndpoint>(EntityId)->UnreliableRPCAck;
+		return SpatialGDK::GetComponentStorageData<ServerEndpoint>(View->GetComponentData(EntityId, ServerEndpoint::ComponentId))->UnreliableRPCAck;
 	}
 
 	checkNoEntry();
@@ -448,18 +449,18 @@ const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId Entity
 	{
 	// Server sends Client RPCs, so ClientReliable & ClientUnreliable buffers live on ServerEndpoint.
 	case ERPCType::ClientReliable:
-		return View->GetComponentData<ServerEndpoint>(EntityId)->ReliableRPCBuffer;
+		return SpatialGDK::GetComponentStorageData<ServerEndpoint>(View->GetComponentData(EntityId, ServerEndpoint::ComponentId))->ReliableRPCBuffer;
 	case ERPCType::ClientUnreliable:
-		return View->GetComponentData<ServerEndpoint>(EntityId)->UnreliableRPCBuffer;
+		return SpatialGDK::GetComponentStorageData<ServerEndpoint>(View->GetComponentData(EntityId, ServerEndpoint::ComponentId))->UnreliableRPCBuffer;
 
 	// Client sends Server RPCs, so ServerReliable & ServerUnreliable buffers live on ClientEndpoint.
 	case ERPCType::ServerReliable:
-		return View->GetComponentData<ClientEndpoint>(EntityId)->ReliableRPCBuffer;
+		return SpatialGDK::GetComponentStorageData<ClientEndpoint>(View->GetComponentData(EntityId, ClientEndpoint::ComponentId))->ReliableRPCBuffer;
 	case ERPCType::ServerUnreliable:
-		return View->GetComponentData<ClientEndpoint>(EntityId)->UnreliableRPCBuffer;
+		return SpatialGDK::GetComponentStorageData<ClientEndpoint>(View->GetComponentData(EntityId, ClientEndpoint::ComponentId))->UnreliableRPCBuffer;
 
 	case ERPCType::NetMulticast:
-		return View->GetComponentData<MulticastRPCs>(EntityId)->MulticastRPCBuffer;
+		return SpatialGDK::GetComponentStorageData<MulticastRPCs>(View->GetComponentData(EntityId, MulticastRPCs::ComponentId))->MulticastRPCBuffer;
 	}
 
 	checkNoEntry();
