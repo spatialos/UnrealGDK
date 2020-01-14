@@ -487,9 +487,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		}
 	}
 
+	if (SpatialSettings->bUseRPCRingBuffers)
+	{
+		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView);
+	}
+
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
-	Sender->Init(this, &TimerManager);
-	Receiver->Init(this, &TimerManager);
+	Sender->Init(this, &TimerManager, RPCService.Get());
+	Receiver->Init(this, &TimerManager, RPCService.Get());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this, &TimerManager);
@@ -1662,14 +1667,49 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	}
 }
 
+void USpatialNetDriver::PollPendingLoads()
+{
+	if (PackageMap == nullptr)
+	{
+		return;
+	}
+	
+	for (auto IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
+	{
+		if (PackageMap->IsGUIDPending(*IterPending))
+		{
+			continue;
+		}
+
+		FUnrealObjectRef ObjectReference = PackageMap->GetUnrealObjectRefFromNetGUID(*IterPending);
+
+		bool bOutUnresolved = false;
+		UObject* ResolvedObject = FUnrealObjectRef::ToObjectPtr(ObjectReference, PackageMap, bOutUnresolved);
+		if (ResolvedObject)
+		{
+			Receiver->ResolvePendingOperations(ResolvedObject, ObjectReference);
+		}
+		else
+		{
+			UE_LOG(LogSpatialPackageMap, Warning, TEXT("Object %s which was being asynchronously loaded was not found after loading has completed."), *ObjectReference.ToString());
+		}
+
+		IterPending.RemoveCurrent();
+	}
+}
+
 void USpatialNetDriver::TickFlush(float DeltaTime)
 {
+	PollPendingLoads();
+
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
 	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
 
 #if USE_SERVER_PERF_COUNTERS
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady())
 	{
@@ -1694,8 +1734,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		}
 		LastUpdateCount = Updated;
 
-		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
 		{
 			if ((Time - TimeWhenPositionLastUpdated) >= (1.0f / SpatialGDKSettings->PositionUpdateFrequency))
@@ -1709,9 +1747,14 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bPackRPCs && Sender != nullptr)
+	if (SpatialGDKSettings->bPackRPCs && Sender != nullptr)
 	{
 		Sender->FlushPackedRPCs();
+	}
+
+	if (SpatialGDKSettings->bUseRPCRingBuffers && Sender != nullptr)
+	{
+		Sender->FlushRPCService();
 	}
 
 	ProcessPendingDormancy();

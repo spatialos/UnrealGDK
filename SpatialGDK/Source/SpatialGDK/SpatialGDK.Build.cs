@@ -18,6 +18,11 @@ public class SpatialGDK : ModuleRules
 
         PrivateIncludePaths.Add("SpatialGDK/Private");
 
+        var WorkerSDKPath = Path.GetFullPath(Path.Combine(ModuleDirectory, "Public", "WorkerSDK"));
+
+        PublicIncludePaths.Add(WorkerSDKPath); // Worker SDK uses a different include format <improbable/x.h>
+        PrivateIncludePaths.Add(WorkerSDKPath);
+        
         PublicDependencyModuleNames.AddRange(
             new string[]
             {

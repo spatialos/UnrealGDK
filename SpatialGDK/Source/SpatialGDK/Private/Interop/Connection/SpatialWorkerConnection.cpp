@@ -35,19 +35,19 @@ struct ConfigureConnection
 
 		Params.network.connection_type = Config.LinkProtocol;
 		Params.network.use_external_ip = Config.UseExternalIp;
-		Params.network.tcp.multiplex_level = Config.TcpMultiplexLevel;
-		Params.network.tcp.no_delay = Config.TcpNoDelay;
+		Params.network.modular_tcp.multiplex_level = Config.TcpMultiplexLevel;
+		if (Config.TcpNoDelay)
+		{
+			Params.network.modular_tcp.downstream_tcp.flush_delay_millis = 0;
+			Params.network.modular_tcp.upstream_tcp.flush_delay_millis = 0;
+		}
 
 		// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
-		Params.network.modular_udp.upstream_compression = nullptr;
-		Params.network.modular_udp.downstream_compression = &EnableCompressionParams;
+		Params.network.modular_kcp.upstream_compression = nullptr;
+		Params.network.modular_kcp.downstream_compression = &EnableCompressionParams;
 
-		UpstreamParams = *Params.network.modular_udp.upstream_kcp;
-		UpstreamParams.update_interval_millis = Config.UdpUpstreamIntervalMS;
-		DownstreamParams = *Params.network.modular_udp.downstream_kcp;
-		DownstreamParams.update_interval_millis = Config.UdpDownstreamIntervalMS;
-		Params.network.modular_udp.upstream_kcp = &UpstreamParams;
-		Params.network.modular_udp.downstream_kcp = &DownstreamParams;
+		Params.network.modular_kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
+		Params.network.modular_kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
 		Params.enable_dynamic_components = true;
 	}
@@ -71,9 +71,9 @@ struct ConfigureConnection
 	FTCHARToUTF8 WorkerType;
 	FTCHARToUTF8 ProtocolLogPrefix;
 	Worker_ComponentVtable DefaultVtable{};
-	Worker_Alpha_CompressionParameters EnableCompressionParams{};
-	Worker_Alpha_KcpParameters UpstreamParams{};
-	Worker_Alpha_KcpParameters DownstreamParams{};
+	Worker_CompressionParameters EnableCompressionParams{};
+	Worker_KcpTransportParameters UpstreamParams{};
+	Worker_KcpTransportParameters DownstreamParams{};
 };
 
 void USpatialWorkerConnection::FinishDestroy()

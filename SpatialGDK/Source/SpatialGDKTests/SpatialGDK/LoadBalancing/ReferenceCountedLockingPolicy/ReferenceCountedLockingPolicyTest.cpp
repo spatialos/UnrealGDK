@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "LoadBalancing/ReferenceCountedLockingPolicy.h"
-#include "TestDefinitions.h"
+#include "Tests/TestDefinitions.h"
 
 #include "Engine/Engine.h"
 #include "GameFramework/GameStateBase.h"

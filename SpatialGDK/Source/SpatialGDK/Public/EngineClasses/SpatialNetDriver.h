@@ -7,6 +7,7 @@
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialOutputDevice.h"
+#include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
 #include "Utils/SpatialActorGroupManager.h"
 
@@ -14,14 +15,10 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
-
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "IpNetDriver.h"
-#include "OnlineSubsystemNames.h"
 #include "TimerManager.h"
-#include "UObject/CoreOnline.h"
 
 #include "SpatialNetDriver.generated.h"
 
@@ -183,6 +180,8 @@ private:
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
+	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
+
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TArray<Worker_OpList*> QueuedStartupOpLists;
 	TSet<Worker_EntityId_Key> DormantEntities;
@@ -240,6 +239,7 @@ private:
 	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn);
 
 	void ProcessPendingDormancy();
+	void PollPendingLoads();
 
 	// This index is incremented and assigned to every new RPC in ProcessRemoteFunction.
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs

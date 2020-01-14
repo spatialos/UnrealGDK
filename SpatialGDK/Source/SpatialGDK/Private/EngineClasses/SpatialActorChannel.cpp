@@ -34,6 +34,12 @@ DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 DECLARE_CYCLE_STAT(TEXT("ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ServerProcessOwnershipChange"), STAT_ServerProcessOwnershipChange, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ClientProcessOwnershipChange"), STAT_ClientProcessOwnershipChange, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("GetOwnerWorkerAttribute"), STAT_GetOwnerWorkerAttribute, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("CallUpdateEntityACLs"), STAT_CallUpdateEntityACLs, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("OnUpdateEntityACLSuccess"), STAT_OnUpdateEntityACLSuccess, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("IsAuthoritativeServer"), STAT_IsAuthoritativeServer, STATGROUP_SpatialNet);
 
 namespace
 {
@@ -1152,9 +1158,13 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 
 void USpatialActorChannel::ServerProcessOwnershipChange()
 {
-	if (!IsAuthoritativeServer())
+	SCOPE_CYCLE_COUNTER(STAT_ServerProcessOwnershipChange);
 	{
-		return;
+		SCOPE_CYCLE_COUNTER(STAT_IsAuthoritativeServer);
+		if (!IsAuthoritativeServer())
+		{
+			return;
+		}
 	}
 
 	UpdateEntityACLToNewOwner();
@@ -1172,7 +1182,11 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 void USpatialActorChannel::UpdateEntityACLToNewOwner()
 {
-	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
+	FString NewOwnerWorkerAttribute;
+	{
+		SCOPE_CYCLE_COUNTER(STAT_GetOwnerWorkerAttribute);
+		NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
+	}
 
 	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
 	{
@@ -1187,6 +1201,7 @@ void USpatialActorChannel::UpdateEntityACLToNewOwner()
 
 void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ClientProcessOwnershipChange);
 	if (bNewNetOwned != bNetOwned)
 	{
 		bNetOwned = bNewNetOwned;
