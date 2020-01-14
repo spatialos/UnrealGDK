@@ -2372,8 +2372,8 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 		(!VirtualWorkerTranslator.IsValid() || VirtualWorkerTranslator->IsReady()))
 	{
 		// Return whether or not we are ready to start
-		return true;
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
+		return true;
 	}
 
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Not yet ready to begin processing, still processing startup ops."));
