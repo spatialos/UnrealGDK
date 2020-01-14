@@ -13,11 +13,46 @@
 #include "HAL/RunnableThread.h"
 #include "Async/Async.h"
 
+#pragma optimize("", off)
+
+UE4_OpLists UWorkerConnection::ClientSerializedOpLists;
+UE4_OpLists UWorkerConnection::ServerSerializedOpLists;
+
+// TODO(Alex): move elsewhere
+static bool bUseRealConnection = true;
+
 UWorkerConnection::UWorkerConnection(const FObjectInitializer & ObjectInitializer /*= FObjectInitializer::Get()*/)
 {
+}
+
+void UWorkerConnection::ProperInit(bool bInitAsClient)
+{
+	// TODO(Alex): should be in constructor?
 	WorkerConnectionCallbacks = NewObject<UWorkerConnectionCallbacks>();
-	WorkerConnectionImpl = MakeUnique<USpatialWorkerConnection>();
-	//WorkerConnectionImpl = MakeUnique<USpatialWorkerTestConnection>();
+	if (bUseRealConnection)
+	{
+		if (bInitAsClient)
+		{
+			ClientSerializedOpLists.OpLists.Empty();
+			WorkerConnectionImpl = MakeUnique<USpatialWorkerConnection>(ClientSerializedOpLists);
+		}
+		else
+		{
+			ServerSerializedOpLists.OpLists.Empty();
+			WorkerConnectionImpl = MakeUnique<USpatialWorkerConnection>(ServerSerializedOpLists);
+		}
+	}
+	else
+	{
+		if (bInitAsClient)
+		{
+			WorkerConnectionImpl = MakeUnique<USpatialWorkerTestConnection>(ClientSerializedOpLists);
+		}
+		else
+		{
+			WorkerConnectionImpl = MakeUnique<USpatialWorkerTestConnection>(ServerSerializedOpLists);
+		}
+	}
 }
 
 void UWorkerConnection::FinishDestroy()
@@ -168,7 +203,7 @@ void UWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID)
 
 			Worker_Connection* NewCAPIWorkerConnection = WorkerConnection->WorkerConnectionImpl->Connect(PlayInEditorID, bInitAsClient);
 
-			if (NewCAPIWorkerConnection != nullptr)
+			if (!bUseRealConnection || NewCAPIWorkerConnection != nullptr)
 			{
 				AsyncTask(ENamedThreads::GameThread, [WeakWorkerConnection, NewCAPIWorkerConnection]
 				{

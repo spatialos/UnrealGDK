@@ -73,6 +73,11 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 
 void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 {
+	//UWorld* World = GetWorld();
+	//UNetDriver * NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
+	//bool bInitAsClient = !NetDriver->IsServer();
+	//SpatialConnection = NewObject<UWorkerConnection>(bInitAsClient);
+
 	SpatialConnection = NewObject<UWorkerConnection>(this);
 
 #if TRACE_LIB_ACTIVE

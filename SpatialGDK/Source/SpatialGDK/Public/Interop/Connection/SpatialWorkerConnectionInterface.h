@@ -16,9 +16,15 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+struct UE4_OpLists;
+
 class SPATIALGDK_API USpatialWorkerConnectionInterface
 {
 public:
+	USpatialWorkerConnectionInterface(UE4_OpLists& InSerializedOpLists)
+	{
+	}
+
 	virtual ~USpatialWorkerConnectionInterface() = default;
 	virtual void DestroyConnection() = 0;
 

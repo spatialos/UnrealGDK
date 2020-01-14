@@ -5,6 +5,8 @@
 #include "Interop/Connection/EditorWorkerController.h"
 #endif
 
+#include "WorkerOpListSerializer.h"
+
 #include "Async/Async.h"
 #include "Misc/Paths.h"
 
@@ -61,7 +63,39 @@ void USpatialWorkerTestConnection::GetErrorCodeAndMessage(uint8_t& OutConnection
 
 TArray<Worker_OpList*> USpatialWorkerTestConnection::GetOpList()
 {
+	//static const double StartTime = FPlatformTime::Seconds();
+	//const double TimePassed = FPlatformTime::Seconds() - StartTime;
+	//if (TimePassed < 5.0)
+	//{
+	//	return TArray<Worker_OpList*>();
+	//}
+
 	TArray<Worker_OpList*> OpLists;
+	//for (const auto& OpList : SerializedOpLists.OpLists)
+	// TODO(Alex): const value here
+	int CurrentOpIndex = OpToProcessNum;
+
+	//while((CurrentOpIndex % 10 != 0) && (CurrentOpIndex < SerializedOpLists.OpLists.Num())) 
+	while(CurrentOpIndex < SerializedOpLists.OpLists.Num()) 
+	{
+		const UE4_OpLists::UE4_OpList& OpList = SerializedOpLists.OpLists[CurrentOpIndex];
+
+		Worker_OpList* CurrOpList = new Worker_OpList{};
+		CurrOpList->op_count = OpList.Num();
+		CurrOpList->ops = new Worker_Op[CurrOpList->op_count];
+		for (uint32_t i = 0; i < CurrOpList->op_count; i++)
+		{
+			Worker_Op& OpDst = CurrOpList->ops[i];
+			OpDst = UE4_OpToWorker_Op(OpList[i]);
+		}
+
+		OpLists.Push(CurrOpList);
+
+		CurrentOpIndex++;
+		break;
+	}
+	OpToProcessNum = CurrentOpIndex + 1;
+
 	return OpLists;
 }
 

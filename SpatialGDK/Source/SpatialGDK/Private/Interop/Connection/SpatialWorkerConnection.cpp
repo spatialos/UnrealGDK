@@ -81,7 +81,7 @@ USpatialWorkerConnection::~USpatialWorkerConnection()
 	// TODO(Alex): could be unsafe, since not sure if OpsProcessingThread has been executed
 	DestroyConnection();
 
-	SerializedOpLists.DumpSavedOpLists();
+	//SerializedOpLists.DumpSavedOpLists();
 }
 
 void USpatialWorkerConnection::DestroyConnection()
@@ -406,7 +406,8 @@ void USpatialWorkerConnection::QueueLatestOpList()
 	}
 	else
 	{
-		Worker_OpList_Destroy(OpList);
+		// TODO(Alex): memory leak
+		//Worker_OpList_Destroy(OpList);
 	}
 }
 

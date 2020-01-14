@@ -25,6 +25,11 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 class SPATIALGDK_API USpatialWorkerConnection : public USpatialWorkerConnectionInterface
 {
 public:
+	USpatialWorkerConnection(UE4_OpLists& InSerializedOpLists)
+		: USpatialWorkerConnectionInterface(InSerializedOpLists)
+		, SerializedOpLists(InSerializedOpLists)
+	{
+	}
 	// TODO(Alex): is it called properly?
 	~USpatialWorkerConnection();
 	virtual void DestroyConnection() override;
@@ -90,9 +95,9 @@ private:
 private:
 	// TODO(Alex): hide back?
 public:
-	Worker_Connection* WorkerConnection;
+	Worker_Connection* WorkerConnection = nullptr;
 private:
-	Worker_Locator* WorkerLocator;
+	Worker_Locator* WorkerLocator = nullptr;
 
 	// TODO(Alex): not nice to have this variable
 	bool bConnectToLocatorAsClient = false;
@@ -111,5 +116,5 @@ private:
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
-	UE4_OpLists SerializedOpLists;
+	UE4_OpLists& SerializedOpLists;
 };

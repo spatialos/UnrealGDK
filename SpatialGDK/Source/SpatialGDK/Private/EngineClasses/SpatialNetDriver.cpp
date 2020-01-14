@@ -291,6 +291,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	}
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
+	Connection->ProperInit(bConnectAsClient);
 	Connection->WorkerConnectionCallbacks->OnConnectedCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSSucceeded);
 	Connection->WorkerConnectionCallbacks->OnFailedToConnectCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed);
 
@@ -1569,7 +1570,8 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			Dispatcher->ProcessOps(OpList);
 
-			Worker_OpList_Destroy(OpList);
+			// TODO(Alex): memory leak
+			//Worker_OpList_Destroy(OpList);
 		}
 
 		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
@@ -2238,7 +2240,8 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 	for (Worker_OpList* OpList : QueuedStartupOpLists)
 	{
 		Dispatcher->ProcessOps(OpList);
-		Worker_OpList_Destroy(OpList);
+		// TODO(Alex): memory leak
+		//Worker_OpList_Destroy(OpList);
 	}
 
 	// Sanity check that the dispatcher encountered, skipped, and removed

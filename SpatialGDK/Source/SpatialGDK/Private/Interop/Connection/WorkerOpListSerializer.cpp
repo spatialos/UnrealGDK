@@ -14,6 +14,8 @@
 
 using namespace SpatialGDK;
 
+#pragma optimize("", off)
+
 UE4_Op* Worker_OpToUE4_Op(const Worker_Op* WorkerOp)
 {
 	const Worker_Op_Union Op = WorkerOp->op;
@@ -57,8 +59,191 @@ UE4_Op* Worker_OpToUE4_Op(const Worker_Op* WorkerOp)
 			return new UE4_CommandResponseOp{ Op.command_response };
 		default:
 			// TODO(Alex): 
+			check(false);
 			return new UE4_Op;
 	}
+}
+
+Worker_Op UE4_OpToWorker_Op(const UE4_OpAndType& WorkerOpAndType)
+{
+	Worker_Op Op;
+	Op.op_type = WorkerOpAndType.op_type;
+
+	switch (WorkerOpAndType.op_type)
+	{
+	case WORKER_OP_TYPE_DISCONNECT:
+	{
+		// TODO(Alex): ptr
+		UE4_DisconnectOp* SourceOp = static_cast<UE4_DisconnectOp*>(WorkerOpAndType.Op);
+		Op.op.disconnect.connection_status_code = SourceOp->connection_status_code;
+		Op.op.disconnect.reason = SourceOp->reason.c_str();
+		// TODO(Alex): unsafe?
+		//Op.op.disconnect.reason = static_cast<const char*>(*SourceOp->reason);
+		//SourceOp.op.disconnect.reason = SourceOp->reason.c 
+		//SourceOp.op.disconnect.reason = SourceOp->reason.c 
+		break;
+	}
+	case WORKER_OP_TYPE_FLAG_UPDATE:
+	{
+		UE4_FlagUpdateOp* SourceOp = static_cast<UE4_FlagUpdateOp*>(WorkerOpAndType.Op);
+		Op.op.flag_update.name;
+		Op.op.flag_update.value;
+		break;
+	}
+	case WORKER_OP_TYPE_LOG_MESSAGE:
+	{
+		UE4_LogMessageOp* SourceOp = static_cast<UE4_LogMessageOp*>(WorkerOpAndType.Op);
+		Op.op.log_message.level = SourceOp->level;
+		Op.op.log_message.message;
+		break;
+	}
+	case WORKER_OP_TYPE_METRICS:
+	{
+		UE4_MetricsOp* SourceOp = static_cast<UE4_MetricsOp*>(WorkerOpAndType.Op);
+		// TODO(Alex): is it necessary?
+		Op.op.metrics.metrics;
+		break;
+	}
+	case WORKER_OP_TYPE_CRITICAL_SECTION:
+	{
+		UE4_CriticalSectionOp* SourceOp = static_cast<UE4_CriticalSectionOp*>(WorkerOpAndType.Op);
+		Op.op.critical_section.in_critical_section = SourceOp->in_critical_section;
+		break;
+	}
+	case WORKER_OP_TYPE_ADD_ENTITY:
+	{
+		UE4_AddEntityOp* SourceOp = static_cast<UE4_AddEntityOp*>(WorkerOpAndType.Op);
+		Op.op.add_entity.entity_id = SourceOp->entity_id;
+		break;
+	}
+	case WORKER_OP_TYPE_REMOVE_ENTITY:
+	{
+		UE4_RemoveEntityOp* SourceOp = static_cast<UE4_RemoveEntityOp*>(WorkerOpAndType.Op);
+		Op.op.remove_entity.entity_id = SourceOp->entity_id;
+		break;
+	}
+	case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
+	{
+		UE4_ReserveEntityIdsResponseOp* SourceOp = static_cast<UE4_ReserveEntityIdsResponseOp*>(WorkerOpAndType.Op);
+		Op.op.reserve_entity_ids_response.first_entity_id = SourceOp->first_entity_id;
+		Op.op.reserve_entity_ids_response.message = SourceOp->message.c_str();
+		Op.op.reserve_entity_ids_response.number_of_entity_ids = SourceOp->number_of_entity_ids;
+		Op.op.reserve_entity_ids_response.request_id = SourceOp->request_id;
+		Op.op.reserve_entity_ids_response.status_code = SourceOp->status_code;
+		break;
+	}
+	case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
+	{
+		UE4_CreateEntityResponseOp* SourceOp = static_cast<UE4_CreateEntityResponseOp*>(WorkerOpAndType.Op);
+		Op.op.create_entity_response.entity_id = SourceOp->entity_id;
+		Op.op.create_entity_response.message = SourceOp->message.c_str();
+		Op.op.create_entity_response.request_id = SourceOp->request_id;
+		Op.op.create_entity_response.status_code = SourceOp->status_code;
+		break;
+	}
+	case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
+	{
+		UE4_DeleteEntityResponseOp* SourceOp = static_cast<UE4_DeleteEntityResponseOp*>(WorkerOpAndType.Op);
+		Op.op.delete_entity_response.entity_id = SourceOp->entity_id;
+		Op.op.delete_entity_response.message = SourceOp->message.c_str();
+		Op.op.delete_entity_response.request_id = SourceOp->request_id;
+		Op.op.delete_entity_response.status_code = SourceOp->status_code;
+		break;
+	}
+	case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
+	{
+		UE4_EntityQueryResponseOp* SourceOp = static_cast<UE4_EntityQueryResponseOp*>(WorkerOpAndType.Op);
+		Op.op.entity_query_response.message = SourceOp->message.c_str();
+		Op.op.entity_query_response.request_id = SourceOp->request_id;
+		Op.op.entity_query_response.result_count = SourceOp->result_count;
+		Op.op.entity_query_response.results = SourceOp->results.Create_Worker_Entity();
+		Op.op.entity_query_response.status_code = SourceOp->status_code;
+		break;
+	}
+	case WORKER_OP_TYPE_ADD_COMPONENT:
+	{
+		UE4_AddComponentOp* SourceOp = static_cast<UE4_AddComponentOp*>(WorkerOpAndType.Op);
+		{
+			Op.op.add_component.data.component_id = SourceOp->data.component_id;
+			Op.op.add_component.data.reserved = SourceOp->data.reserved;
+			Op.op.add_component.data.schema_type = SourceOp->data.schema_type;
+			Op.op.add_component.data.user_handle = SourceOp->data.user_handle;
+		}
+		Op.op.add_component.entity_id = SourceOp->entity_id;
+		break;
+	}
+	case WORKER_OP_TYPE_REMOVE_COMPONENT:
+	{
+		UE4_RemoveComponentOp* SourceOp = static_cast<UE4_RemoveComponentOp*>(WorkerOpAndType.Op);
+		Op.op.remove_component.component_id = SourceOp->component_id;
+		Op.op.remove_component.entity_id = SourceOp->entity_id;
+		break;
+	}
+	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+	{
+		UE4_AuthorityChangeOp* SourceOp = static_cast<UE4_AuthorityChangeOp*>(WorkerOpAndType.Op);
+		Op.op.authority_change.authority = SourceOp->authority;
+		Op.op.authority_change.component_id = SourceOp->component_id;
+		Op.op.authority_change.entity_id = SourceOp->entity_id;
+		break;
+	}
+	case WORKER_OP_TYPE_COMPONENT_UPDATE:
+	{
+		UE4_ComponentUpdateOp* SourceOp = static_cast<UE4_ComponentUpdateOp*>(WorkerOpAndType.Op);
+		Op.op.component_update.entity_id = SourceOp->entity_id;
+		{
+			Op.op.component_update.update.component_id = SourceOp->update.component_id;
+			Op.op.component_update.update.reserved = SourceOp->update.reserved;
+			Op.op.component_update.update.schema_type = SourceOp->update.schema_type;
+			Op.op.component_update.update.user_handle = SourceOp->update.user_handle;
+		}
+		break;
+	}
+	case WORKER_OP_TYPE_COMMAND_REQUEST:
+	{
+		UE4_CommandRequestOp* SourceOp = static_cast<UE4_CommandRequestOp*>(WorkerOpAndType.Op);
+		{
+			// TODO(Alex): 
+			//Op.op.command_request.caller_attribute_set.attribute_count = SourceOp.caller_attribute_set.attribute_count;
+			//Op.op.command_request.caller_attribute_set.attributes = SourceOp.caller_attribute_set.attributes;
+			Op.op.command_request.caller_attribute_set.attribute_count = 0;
+			Op.op.command_request.caller_attribute_set.attributes = nullptr;
+		}
+		Op.op.command_request.caller_worker_id = SourceOp->caller_worker_id.c_str();
+		Op.op.command_request.entity_id = SourceOp->entity_id;
+		{
+			Op.op.command_request.request.command_index = SourceOp->request.command_index;
+			Op.op.command_request.request.component_id = SourceOp->request.component_id;
+			Op.op.command_request.request.reserved = SourceOp->request.reserved;
+			Op.op.command_request.request.schema_type = SourceOp->request.schema_type;
+			Op.op.command_request.request.user_handle = SourceOp->request.user_handle;
+		}
+		Op.op.command_request.request_id = SourceOp->request_id;
+		Op.op.command_request.timeout_millis = SourceOp->timeout_millis;
+		break;
+	}
+	case WORKER_OP_TYPE_COMMAND_RESPONSE:
+	{
+		UE4_CommandResponseOp* SourceOp = static_cast<UE4_CommandResponseOp*>(WorkerOpAndType.Op);
+		Op.op.command_response.entity_id = SourceOp->entity_id;
+		Op.op.command_response.message = SourceOp->message.c_str();
+		Op.op.command_response.request_id = SourceOp->request_id;
+		{
+			Op.op.command_response.response.command_index = SourceOp->response.command_index;
+			Op.op.command_response.response.component_id = SourceOp->response.component_id;
+			Op.op.command_response.response.reserved = SourceOp->response.reserved;
+			Op.op.command_response.response.schema_type = SourceOp->response.schema_type;
+			Op.op.command_response.response.user_handle = SourceOp->response.user_handle;
+		}
+		Op.op.command_response.status_code = SourceOp->status_code;
+		break;
+	}
+	default:
+		// TODO(Alex): 
+		break;
+	}
+
+	return Op;
 }
 
 FString OpTypeToString(uint8_t OpType)

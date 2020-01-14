@@ -10,6 +10,8 @@
 
 #include "Utils/SpatialLatencyTracer.h"
 
+#include "WorkerOpListSerializer.h"
+
 #include "HAL/Runnable.h"
 #include "CoreMinimal.h"
 
@@ -50,6 +52,7 @@ class SPATIALGDK_API UWorkerConnection : public UObject, public FRunnable
 
 public:
 	UWorkerConnection(const FObjectInitializer & ObjectInitializer = FObjectInitializer::Get());
+	void ProperInit(bool bInitAsClient);
 	virtual void FinishDestroy() override;
 
 	void DestroyConnection();
@@ -106,4 +109,9 @@ private:
 	bool bConnectAsClient = false;
 
 	TUniquePtr<USpatialWorkerConnectionInterface> WorkerConnectionImpl;
+
+	// TODO(Alex): 
+	static UE4_OpLists ClientSerializedOpLists;
+	static UE4_OpLists ServerSerializedOpLists;
+	//UE4_OpLists SerializedOpLists;
 };

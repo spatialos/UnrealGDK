@@ -23,6 +23,11 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerTestConnection, Log, All);
 class SPATIALGDK_API USpatialWorkerTestConnection : public USpatialWorkerConnectionInterface
 {
 public:
+	USpatialWorkerTestConnection(UE4_OpLists& InSerializedOpLists)
+		: USpatialWorkerConnectionInterface(InSerializedOpLists)
+		, SerializedOpLists(InSerializedOpLists)
+	{
+	}
 	// TODO(Alex): is it called properly?
 	~USpatialWorkerTestConnection();
 	virtual void DestroyConnection() override;
@@ -82,4 +87,8 @@ private:
 
 	TArray<FString> CachedWorkerAttributes;
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
+
+	UE4_OpLists& SerializedOpLists;
+
+	uint32_t OpToProcessNum = 0;
 };
