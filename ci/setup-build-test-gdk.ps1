@@ -30,8 +30,8 @@ class TestSuite {
 
 $tests = @(
   [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "UnitTestResults", "SpatialGDK", $True),
-  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialNetworkingTestResults", "Project", $True),
-  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaNetworkingTestResults", "Project", $False)
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialNetworkingTestResults", "Project.", $True),
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "feature/ci", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaNetworkingTestResults", "Project.", $False)
 )
 
 # Allow overriding testing branch via environment variable
