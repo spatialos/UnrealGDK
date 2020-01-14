@@ -259,4 +259,12 @@ public:
 	/** Enable to use the new net cull distance component tagging form of interest */
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
 	bool bEnableNetCullDistanceInterest;
+
+	/** Enable to use interest frequency with bEnableNetCullDistanceInterest*/
+	UPROPERTY(EditAnywhere, Config, Category = "Interest")
+	bool bEnableNetCullDistanceFrequency;
+
+	/** QBI pairs for ratio of - net cull distance : update frequency */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
+	TMap<float, float> InterestRangeFrequencyPairs;
 };
