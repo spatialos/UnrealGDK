@@ -203,6 +203,45 @@ private:
 
 	void PeriodicallyProcessIncomingRPCs();
 
+	// TODO: Refactor into a separate class so we can add automated tests for this. UNR-2649
+	static bool NeedToLoadClass(const FString& ClassPath);
+	static FString GetPackagePath(const FString& ClassPath);
+
+	void StartAsyncLoadingClass(const FString& ClassPath, Worker_EntityId EntityId);
+	void OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result);
+
+	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
+
+	struct QueuedOpForAsyncLoad
+	{
+		Worker_Op Op;
+		Worker_ComponentData* AcquiredData;
+		Worker_ComponentUpdate* AcquiredUpdate;
+	};
+	void QueueAddComponentOpForAsyncLoad(const Worker_AddComponentOp& Op);
+	void QueueRemoveComponentOpForAsyncLoad(const Worker_RemoveComponentOp& Op);
+	void QueueAuthorityOpForAsyncLoad(const Worker_AuthorityChangeOp& Op);
+	void QueueComponentUpdateOpForAsyncLoad(const Worker_ComponentUpdateOp& Op);
+
+	TArray<PendingAddComponentWrapper> ExtractAddComponents(Worker_EntityId Entity);
+	TArray<QueuedOpForAsyncLoad> ExtractAuthorityOps(Worker_EntityId Entity);
+
+	struct CriticalSectionSaveState
+	{
+		CriticalSectionSaveState(USpatialReceiver& InReceiver);
+		~CriticalSectionSaveState();
+
+		USpatialReceiver& Receiver;
+
+		bool bInCriticalSection;
+		TArray<Worker_EntityId> PendingAddEntities;
+		TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
+		TArray<PendingAddComponentWrapper> PendingAddComponents;
+	};
+
+	void HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op);
+	// END TODO
+
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 
@@ -261,4 +300,15 @@ private:
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
+
+	// TODO: Refactor into a separate class so we can add automated tests for this. UNR-2649
+	struct EntityWaitingForAsyncLoad
+	{
+		FString ClassPath;
+		TArray<PendingAddComponentWrapper> InitialPendingAddComponents;
+		TArray<QueuedOpForAsyncLoad> PendingOps;
+	};
+	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
+	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
+	// END TODO
 };

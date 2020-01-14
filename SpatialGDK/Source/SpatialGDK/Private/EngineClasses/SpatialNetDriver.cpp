@@ -1674,8 +1674,41 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	}
 }
 
+void USpatialNetDriver::PollPendingLoads()
+{
+	if (PackageMap == nullptr)
+	{
+		return;
+	}
+	
+	for (auto IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
+	{
+		if (PackageMap->IsGUIDPending(*IterPending))
+		{
+			continue;
+		}
+
+		FUnrealObjectRef ObjectReference = PackageMap->GetUnrealObjectRefFromNetGUID(*IterPending);
+
+		bool bOutUnresolved = false;
+		UObject* ResolvedObject = FUnrealObjectRef::ToObjectPtr(ObjectReference, PackageMap, bOutUnresolved);
+		if (ResolvedObject)
+		{
+			Receiver->ResolvePendingOperations(ResolvedObject, ObjectReference);
+		}
+		else
+		{
+			UE_LOG(LogSpatialPackageMap, Warning, TEXT("Object %s which was being asynchronously loaded was not found after loading has completed."), *ObjectReference.ToString());
+		}
+
+		IterPending.RemoveCurrent();
+	}
+}
+
 void USpatialNetDriver::TickFlush(float DeltaTime)
 {
+	PollPendingLoads();
+
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
 	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
 
