@@ -261,4 +261,8 @@ public:
 	/** Only valid on Udp connections - specifies client downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UdpClientDownstreamUpdateIntervalMS;
+
+	/** Do async loading for new classes when checking out entities. */
+	UPROPERTY(Config)
+	bool bAsyncLoadNewClassesOnEntityCheckout;
 };
