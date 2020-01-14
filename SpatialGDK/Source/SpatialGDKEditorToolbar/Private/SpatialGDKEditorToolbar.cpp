@@ -92,6 +92,22 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 		});
 	}
 
+	FEditorDelegates::PostPIEStarted.AddLambda([this](bool bIsSimulatingInEditor)
+	{
+		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GIsAutomationTesting)
+		{
+			VerifyAndStartDeployment();
+		}
+	});
+
+	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor)
+	{
+		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GIsAutomationTesting)
+		{
+			LocalDeploymentManager->TryStopLocalDeployment();
+		}
+	});
+
 	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
 }
 
@@ -633,9 +649,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName]
 	{
-		LocalDeploymentManager->GetLocalDeploymentStatus();
-		LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
-
 		// If the last local deployment is still stopping then wait until it's finished.
 		while (LocalDeploymentManager->IsDeploymentStopping())
 		{
