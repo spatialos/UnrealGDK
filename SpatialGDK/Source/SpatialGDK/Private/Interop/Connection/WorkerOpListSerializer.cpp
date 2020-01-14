@@ -203,11 +203,15 @@ Worker_Op UE4_OpToWorker_Op(const UE4_OpAndType& WorkerOpAndType)
 	{
 		UE4_CommandRequestOp* SourceOp = static_cast<UE4_CommandRequestOp*>(WorkerOpAndType.Op);
 		{
-			// TODO(Alex): 
-			//Op.op.command_request.caller_attribute_set.attribute_count = SourceOp.caller_attribute_set.attribute_count;
-			//Op.op.command_request.caller_attribute_set.attributes = SourceOp.caller_attribute_set.attributes;
-			Op.op.command_request.caller_attribute_set.attribute_count = 0;
-			Op.op.command_request.caller_attribute_set.attributes = nullptr;
+			uint32_t attributeCount = SourceOp->caller_attribute_set.attributes.Num();
+			Op.op.command_request.caller_attribute_set.attribute_count = attributeCount;
+			// TODO(Alex): memory leak!
+			const char** AttributeArray = new const char*[SourceOp->caller_attribute_set.attributes.Num()];
+			for (uint32_t i = 0; i < attributeCount; i++)
+			{
+				AttributeArray[i] = SourceOp->caller_attribute_set.attributes[i].c_str();
+			}
+			Op.op.command_request.caller_attribute_set.attributes = AttributeArray;
 		}
 		Op.op.command_request.caller_worker_id = SourceOp->caller_worker_id.c_str();
 		Op.op.command_request.entity_id = SourceOp->entity_id;
