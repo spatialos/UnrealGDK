@@ -5,7 +5,6 @@
 #include "Async/Async.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialGameInstance.h"
-#include "GeneralProjectSettings.h"
 #include "Interop/Connection/OutgoingMessages.h"
 #include "Utils/SchemaUtils.h"
 
