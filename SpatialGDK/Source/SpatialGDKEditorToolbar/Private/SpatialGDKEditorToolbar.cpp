@@ -96,6 +96,9 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	{
 		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GIsAutomationTesting)
 		{
+			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
+			LocalDeploymentManager->GetLocalDeploymentStatus();
+
 			VerifyAndStartDeployment();
 		}
 	});
