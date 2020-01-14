@@ -262,7 +262,7 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSpatialPayload(const FSpatialLatenc
 
 	const TraceKey Key = GenerateNewTraceKey();
 	TraceMap.Add(Key, MoveTemp(RetrieveTrace));
-	
+
 	return Key;
 }
 
