@@ -294,7 +294,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
 
-	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges, EntityId);
+	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, EntityId, InitialRepChanges, InitialHandoverChanges);
 	ComponentDatas.Append(DynamicComponentDatas);
 
 	InterestFactory InterestDataFactory(Actor, Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
@@ -356,7 +356,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-			TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, EntityId);
+			TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, EntityId, SubobjectRepChanges, SubobjectHandoverChanges);
 			ComponentDatas.Append(ActorSubobjectDatas);
 		}
 	}
@@ -427,10 +427,11 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 {
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
+	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	ComponentFactory DataFactory(false, NetDriver);
 
-	TArray<Worker_ComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, Channel->GetEntityId());
+	TArray<Worker_ComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, EntityId, SubobjectRepChanges, SubobjectHandoverChanges);
 
 	for (Worker_ComponentData& ComponentData : SubobjectDatas)
 	{
@@ -571,7 +572,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver);
 
-	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, RepChanges, HandoverChanges, EntityId);
+	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges);
 
 	for (Worker_ComponentUpdate& Update : ComponentUpdates)
 	{

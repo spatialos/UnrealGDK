@@ -29,8 +29,8 @@ class SPATIALGDK_API ComponentFactory
 public:
 	ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver);
 
-	TArray<Worker_ComponentData> CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState, Worker_EntityId EntityId);
-	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, const FClassInfo& Info,const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState, Worker_EntityId EntityId);
+	TArray<Worker_ComponentData> CreateComponentDatas(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState);
+	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState);
 
 	Worker_ComponentData CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes);
 

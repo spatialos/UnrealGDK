@@ -284,7 +284,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 }
 
-TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState, Worker_EntityId EntityId)
+TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState)
 {
 	TArray<Worker_ComponentData> ComponentDatas;
 
@@ -339,7 +339,7 @@ Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_Compon
 	return ComponentData;
 }
 
-TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState, Worker_EntityId EntityId)
+TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState)
 {
 	TArray<Worker_ComponentUpdate> ComponentUpdates;
 
