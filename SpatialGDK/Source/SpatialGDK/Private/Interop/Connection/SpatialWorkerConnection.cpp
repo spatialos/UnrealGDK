@@ -5,18 +5,9 @@
 #include "Interop/Connection/EditorWorkerController.h"
 #endif
 
-#include "EngineClasses/SpatialGameInstance.h"
-#include "EngineClasses/SpatialNetDriver.h"
-#include "Engine/World.h"
-#include "Interop/GlobalStateManager.h"
-#include "Interop/SpatialStaticComponentView.h"
-#include "UnrealEngine.h"
 #include "Async/Async.h"
-#include "Engine/Engine.h"
-#include "Engine/World.h"
 #include "Misc/Paths.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
 
@@ -44,19 +35,19 @@ struct ConfigureConnection
 
 		Params.network.connection_type = Config.LinkProtocol;
 		Params.network.use_external_ip = Config.UseExternalIp;
-		Params.network.tcp.multiplex_level = Config.TcpMultiplexLevel;
-		Params.network.tcp.no_delay = Config.TcpNoDelay;
+		Params.network.modular_tcp.multiplex_level = Config.TcpMultiplexLevel;
+		if (Config.TcpNoDelay)
+		{
+			Params.network.modular_tcp.downstream_tcp.flush_delay_millis = 0;
+			Params.network.modular_tcp.upstream_tcp.flush_delay_millis = 0;
+		}
 
 		// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
-		Params.network.modular_udp.upstream_compression = nullptr;
-		Params.network.modular_udp.downstream_compression = &EnableCompressionParams;
+		Params.network.modular_kcp.upstream_compression = nullptr;
+		Params.network.modular_kcp.downstream_compression = &EnableCompressionParams;
 
-		UpstreamParams = *Params.network.modular_udp.upstream_kcp;
-		UpstreamParams.update_interval_millis = Config.UdpUpstreamIntervalMS;
-		DownstreamParams = *Params.network.modular_udp.downstream_kcp;
-		DownstreamParams.update_interval_millis = Config.UdpDownstreamIntervalMS;
-		Params.network.modular_udp.upstream_kcp = &UpstreamParams;
-		Params.network.modular_udp.downstream_kcp = &DownstreamParams;
+		Params.network.modular_kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
+		Params.network.modular_kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
 		Params.enable_dynamic_components = true;
 	}
@@ -80,15 +71,10 @@ struct ConfigureConnection
 	FTCHARToUTF8 WorkerType;
 	FTCHARToUTF8 ProtocolLogPrefix;
 	Worker_ComponentVtable DefaultVtable{};
-	Worker_Alpha_CompressionParameters EnableCompressionParams{};
-	Worker_Alpha_KcpParameters UpstreamParams{};
-	Worker_Alpha_KcpParameters DownstreamParams{};
+	Worker_CompressionParameters EnableCompressionParams{};
+	Worker_KcpTransportParameters UpstreamParams{};
+	Worker_KcpTransportParameters DownstreamParams{};
 };
-
-void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
-{
-	GameInstance = InGameInstance;
-}
 
 void USpatialWorkerConnection::FinishDestroy()
 {
@@ -131,7 +117,7 @@ void USpatialWorkerConnection::DestroyConnection()
 	KeepRunning.AtomicSet(true);
 }
 
-void USpatialWorkerConnection::Connect(bool bInitAsClient)
+void USpatialWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID)
 {
 	if (bIsConnected)
 	{
@@ -163,7 +149,7 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 	switch (GetConnectionType())
 	{
 	case ESpatialConnectionType::Receptionist:
-		ConnectToReceptionist();
+		ConnectToReceptionist(PlayInEditorID);
 		break;
 	case ESpatialConnectionType::Locator:
 		ConnectToLocator();
@@ -248,10 +234,10 @@ void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
 	}
 }
 
-void USpatialWorkerConnection::ConnectToReceptionist()
+void USpatialWorkerConnection::ConnectToReceptionist(uint32 PlayInEditorID)
 {
 #if WITH_EDITOR
-	SpatialGDKServices::InitWorkers(bConnectAsClient, GetSpatialNetDriverChecked()->PlayInEditorID, ReceptionistConfig.WorkerId);
+	SpatialGDKServices::InitWorkers(bConnectAsClient, PlayInEditorID, ReceptionistConfig.WorkerId);
 #endif
 
 	ReceptionistConfig.PreConnectInit(bConnectAsClient);
@@ -420,9 +406,9 @@ void USpatialWorkerConnection::SendMetrics(const SpatialMetrics& Metrics)
 	QueueOutgoingMessage<FMetrics>(Metrics);
 }
 
-FString USpatialWorkerConnection::GetWorkerId() const
+PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const
 {
-	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
+	return PhysicalWorkerName(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
 }
 
 const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
@@ -447,22 +433,6 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	}
 }
 
-USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
-{
-	UNetDriver* NetDriver = GameInstance->GetWorld()->GetNetDriver();
-
-	// On the client, the world might not be completely set up.
-	// in this case we can use the PendingNetGame to get the NetDriver
-	if (NetDriver == nullptr)
-	{
-		NetDriver = GameInstance->GetWorldContext()->PendingNetGame->GetNetDriver();
-	}
-
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
-	checkf(SpatialNetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
-	return SpatialNetDriver;
-}
-
 void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
@@ -472,26 +442,18 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 		InitializeOpsProcessingThread();
 	}
 
-	GetSpatialNetDriverChecked()->OnConnectedToSpatialOS();
-	GameInstance->HandleOnConnected();
-}
-
-void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
-{
-	bIsConnected = false;
-	GameInstance->HandleOnConnectionFailed(Reason);
+	OnConnectedCallback.ExecuteIfBound();
 }
 
 void USpatialWorkerConnection::OnConnectionFailure()
 {
 	bIsConnected = false;
 
-	if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+	if (WorkerConnection != nullptr)
 	{
 		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
 		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
-
-		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
+		OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 	}
 }
 

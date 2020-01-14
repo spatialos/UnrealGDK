@@ -7,20 +7,18 @@
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialOutputDevice.h"
+#include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
 #include "Utils/SpatialActorGroupManager.h"
 
+#include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-
-#include <WorkerSDK/improbable/c_worker.h>
 
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "IpNetDriver.h"
-#include "OnlineSubsystemNames.h"
 #include "TimerManager.h"
-#include "UObject/CoreOnline.h"
 
 #include "SpatialNetDriver.generated.h"
 
@@ -40,6 +38,7 @@ class USpatialReceiver;
 class USpatialSender;
 class USpatialStaticComponentView;
 class USpatialWorkerConnection;
+class USpatialWorkerFlags;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -80,7 +79,8 @@ public:
 
 	virtual void OnOwnerUpdated(AActor* Actor);
 
-	void OnConnectedToSpatialOS();
+	void OnConnectionToSpatialOSSucceeded();
+	void OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
 
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
@@ -145,10 +145,12 @@ public:
 	ASpatialDebugger* SpatialDebugger;
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
+	UPROPERTY()
+	UAbstractLockingPolicy* LockingPolicy;
+	UPROPERTY()
+	USpatialWorkerFlags* SpatialWorkerFlags;
 
-	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
-	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
@@ -174,7 +176,11 @@ public:
 #endif
 
 private:
+	TUniquePtr<SpatialDispatcher> Dispatcher;
+	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
+
+	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TArray<Worker_OpList*> QueuedStartupOpLists;
@@ -233,9 +239,7 @@ private:
 	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn);
 
 	void ProcessPendingDormancy();
-
-	friend USpatialNetConnection;
-	friend USpatialWorkerConnection;
+	void PollPendingLoads();
 
 	// This index is incremented and assigned to every new RPC in ProcessRemoteFunction.
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs
@@ -265,6 +269,8 @@ private:
 	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
 
 	void MakePlayerSpawnRequest();
+
+	FUnrealObjectRef GetCurrentPlayerControllerRef();
 
 	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
 	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
