@@ -49,6 +49,13 @@ struct ConfigureConnection
 		Params.network.modular_kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
 		Params.network.modular_kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
+#if WITH_EDITOR
+		Params.network.modular_tcp.downstream_heartbeat = &HeartbeatParams;
+		Params.network.modular_tcp.upstream_heartbeat = &HeartbeatParams;
+		Params.network.modular_kcp.downstream_heartbeat = &HeartbeatParams;
+		Params.network.modular_kcp.upstream_heartbeat = &HeartbeatParams;
+#endif
+
 		Params.enable_dynamic_components = true;
 	}
 
@@ -72,8 +79,10 @@ struct ConfigureConnection
 	FTCHARToUTF8 ProtocolLogPrefix;
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_CompressionParameters EnableCompressionParams{};
-	Worker_KcpTransportParameters UpstreamParams{};
-	Worker_KcpTransportParameters DownstreamParams{};
+
+#if WITH_EDITOR
+	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };
+#endif
 };
 
 void USpatialWorkerConnection::FinishDestroy()
