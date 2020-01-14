@@ -1194,18 +1194,20 @@ void USpatialActorChannel::UpdateEntityACLToNewOwner()
 	}
 }
 
-bool USpatialActorChannel::shouldChangeAuthorityIntent()
+bool USpatialActorChannel::ShouldChangeAuthorityIntent() const
 {
 	// The authority intent should be changed by this worker if the following conditions are satisfied:
 	//  - This worker has authority over the authority intent component
+	//  - The actor is not locked
 	//  - The authority intent should be changed, this could be because either:
 	//    - The actor no longer should be delegated to the virtual worker it currently is according to the load balancing strategy
 	//    - The actor is not delegated to a virtual worker
-	//  - The actor is not locked
+	bool bAuthorityIntentNeedsUpdating = NetDriver->LoadBalanceStrategy->ShouldRelinquishAuthority(*Actor) ||
+		NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId)->VirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+
 	return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) &&
-		(NetDriver->LoadBalanceStrategy->ShouldRelinquishAuthority(*Actor) ||
-			NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId)->VirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID) &&
-		!NetDriver->LockingPolicy->IsLocked(Actor);
+		!NetDriver->LockingPolicy->IsLocked(Actor) &&
+		bAuthorityIntentNeedsUpdating;
 }
 
 void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
