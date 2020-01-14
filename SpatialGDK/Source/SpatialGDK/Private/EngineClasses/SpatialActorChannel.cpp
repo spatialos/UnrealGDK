@@ -568,9 +568,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
 		// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
 		// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
-		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) &&
-		(NetDriver->LoadBalanceStrategy->ShouldRelinquishAuthority(*Actor) || NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId)->VirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID) &&
-		!NetDriver->LockingPolicy->IsLocked(Actor))
+		shouldChangeAuthorityIntent())
 	{
 		const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
 
@@ -1194,6 +1192,20 @@ void USpatialActorChannel::UpdateEntityACLToNewOwner()
 			SavedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
 		}
 	}
+}
+
+bool USpatialActorChannel::shouldChangeAuthorityIntent()
+{
+	// The authority intent should be changed from this worker if the following conditions are satisfied:
+	//  - This worker has authority over the authority intent component
+	//  - The authority intent should be changed, this could be because either:
+	//    - The actor no longer should be delegated to the virtual worker it currently is according to the load balancing strategy
+	//    - The actor is not delegated to a virtual worker
+	//  - The actor is not locked
+	return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) &&
+		(NetDriver->LoadBalanceStrategy->ShouldRelinquishAuthority(*Actor) ||
+			NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId)->VirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID) &&
+		!NetDriver->LockingPolicy->IsLocked(Actor);
 }
 
 void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
