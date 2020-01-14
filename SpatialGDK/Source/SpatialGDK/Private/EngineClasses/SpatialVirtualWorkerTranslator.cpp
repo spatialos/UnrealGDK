@@ -92,7 +92,8 @@ void SpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChan
 }
 
 // Check to see if this worker's physical worker name is in the mapping. If it isn't, it's possibly an old mapping.
-// This is needed to give good behaviour across restarts.
+// This is needed to give good behaviour across restarts. It's not very efficient, but it should happen only a few times
+// after a PiE restart.
 bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object) const
 {
 	int32 TranslationCount = (int32)Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
