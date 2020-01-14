@@ -51,6 +51,8 @@ namespace
 #endif
 }  // anonymous namespace
 
+const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
+
 USpatialLatencyTracer::USpatialLatencyTracer()
 {
 #if TRACE_LIB_ACTIVE
@@ -175,6 +177,8 @@ USpatialLatencyTracer* USpatialLatencyTracer::GetTracer(UObject* WorldContextObj
 }
 
 #if TRACE_LIB_ACTIVE
+FString USpatialLatencyTracer::MessagePrefix = TEXT("");
+
 bool USpatialLatencyTracer::IsValidKey(const TraceKey Key)
 {
 	FScopeLock Lock(&Mutex);
