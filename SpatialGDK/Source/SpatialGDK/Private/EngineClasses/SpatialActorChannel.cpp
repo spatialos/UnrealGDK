@@ -1009,11 +1009,6 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 #endif
 
 	Replicator.CallRepNotifies(false);
-
-	if (!TargetObject->IsPendingKill())
-	{
-		TargetObject->PostRepNotifies();
-	}
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
