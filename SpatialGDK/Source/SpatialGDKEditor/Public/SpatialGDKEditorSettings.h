@@ -26,7 +26,7 @@ struct FWorldLaunchSection
 	{
 		LegacyFlags.Add(TEXT("bridge_qos_max_timeout"), TEXT("0"));
 		LegacyFlags.Add(TEXT("bridge_soft_handover_enabled"), TEXT("false"));
-		LegacyFlags.Add(TEXT("bridge_single_port_max_heartbeat_timeout_ms"), TEXT("90000"));
+		LegacyFlags.Add(TEXT("bridge_single_port_max_heartbeat_timeout_ms"), TEXT("3600000"));
 	}
 
 	/** The size of the simulation, in meters, for the auto-generated launch configuration file. */
