@@ -71,8 +71,8 @@ private:
 
 	// Serialization and deserialization of the mapping.
 	void ApplyMappingFromSchema(Schema_Object* Object);
-	void WriteMappingToSchema(Schema_Object* Object);
-	bool IsValidMapping(Schema_Object* Object);
+	void WriteMappingToSchema(Schema_Object* Object) const;
+	bool IsValidMapping(Schema_Object* Object) const;
 
 	// The following methods are used to query the Runtime for all worker entities and update the mapping
 	// based on the response.

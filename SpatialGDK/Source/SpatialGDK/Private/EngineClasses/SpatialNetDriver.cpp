@@ -1667,8 +1667,41 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	}
 }
 
+void USpatialNetDriver::PollPendingLoads()
+{
+	if (PackageMap == nullptr)
+	{
+		return;
+	}
+	
+	for (auto IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
+	{
+		if (PackageMap->IsGUIDPending(*IterPending))
+		{
+			continue;
+		}
+
+		FUnrealObjectRef ObjectReference = PackageMap->GetUnrealObjectRefFromNetGUID(*IterPending);
+
+		bool bOutUnresolved = false;
+		UObject* ResolvedObject = FUnrealObjectRef::ToObjectPtr(ObjectReference, PackageMap, bOutUnresolved);
+		if (ResolvedObject)
+		{
+			Receiver->ResolvePendingOperations(ResolvedObject, ObjectReference);
+		}
+		else
+		{
+			UE_LOG(LogSpatialPackageMap, Warning, TEXT("Object %s which was being asynchronously loaded was not found after loading has completed."), *ObjectReference.ToString());
+		}
+
+		IterPending.RemoveCurrent();
+	}
+}
+
 void USpatialNetDriver::TickFlush(float DeltaTime)
 {
+	PollPendingLoads();
+
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
 	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
 
@@ -1676,9 +1709,9 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+  const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady())
+	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady() && bIsReadyToStart)
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
@@ -2340,8 +2373,10 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	{
 		// Return whether or not we are ready to start
 		return true;
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
 	}
 
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Not yet ready to begin processing, still processing startup ops."));
 	return false;
 }
 

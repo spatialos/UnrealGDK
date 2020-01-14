@@ -93,7 +93,7 @@ void SpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChan
 
 // Check to see if this worker's physical worker name is in the mapping. If it isn't, it's possibly an old mapping.
 // This is needed to give good behaviour across restarts.
-bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object)
+bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object) const
 {
 	int32 TranslationCount = (int32)Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 
@@ -145,7 +145,7 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 }
 
 // For each entry in the map, write a VirtualWorkerMapping type object to the Schema object.
-void SpatialVirtualWorkerTranslator::WriteMappingToSchema(Schema_Object* Object)
+void SpatialVirtualWorkerTranslator::WriteMappingToSchema(Schema_Object* Object) const
 {
 	for (auto& Entry : VirtualToPhysicalWorkerMapping)
 	{
@@ -260,7 +260,7 @@ void SpatialVirtualWorkerTranslator::WorkerEntityQueryDelegate(const Worker_Enti
 	check(StaticComponentView.IsValid());
 	if (!StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Received response to WorkerEntityQuery, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *WorkerId);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) Received response to WorkerEntityQuery, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *WorkerId);
 		return;
 	}
 	else if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
@@ -281,6 +281,7 @@ void SpatialVirtualWorkerTranslator::WorkerEntityQueryDelegate(const Worker_Enti
 	else
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Waiting for all virtual workers to be assigned before publishing translation update."));
+		QueryForWorkerEntities();
 	}
 }
 
@@ -311,5 +312,7 @@ void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalW
 		// Tell the strategy about the local virtual worker id.
 		check(LoadBalanceStrategy.IsValid());
 		LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
+
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("VirtualWorkerTranslator is now ready for loadbalancing."));
 	}
 }
