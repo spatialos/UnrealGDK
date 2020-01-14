@@ -312,7 +312,7 @@ USpatialLatencyTracer* USpatialLatencyTracer::GetTracer(UObject* WorldContextObj
 	}
 
 	return nullptr;
-} 
+}
 
 bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const AActor* Actor, const FString& FunctionOrProperty, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
 {
@@ -470,6 +470,7 @@ TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const F
 			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorProperty already exists for trace"), *WorkerId);
 		}
 	}
+
 	return InvalidTraceKey;
 }
 
