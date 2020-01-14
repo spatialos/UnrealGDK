@@ -7,6 +7,7 @@
 #include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/WorkerRegion.h"
 #include "Schema/AuthorityIntent.h"
+#include "Schema/Component.h"
 #include "SpatialCommonTypes.h"
 #include "Utils/InspectionColors.h"
 
@@ -415,7 +416,7 @@ FColor ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId) c
 	{
 		return InvalidServerTintColor;
 	}
-	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+	const AuthorityIntent* AuthorityIntentComponent = SpatialGDK::GetComponentStorageData<SpatialGDK::AuthorityIntent>(NetDriver->StaticComponentView->GetComponentData(EntityId, SpatialGDK::AuthorityIntent::ComponentId));
 	const int32 VirtualWorkerId = AuthorityIntentComponent->VirtualWorkerId;
 
 	const PhysicalWorkerName* PhysicalWorkerName = nullptr;
@@ -449,7 +450,7 @@ FColor ASpatialDebugger::GetServerWorkerColor(const Worker_EntityId EntityId) co
 
 const PhysicalWorkerName& ASpatialDebugger::GetAuthoritativeWorkerFromACL(const Worker_EntityId EntityId) const
 {
-	const SpatialGDK::EntityAcl* AclData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId);
+	const SpatialGDK::EntityAcl* AclData = SpatialGDK::GetComponentStorageData<SpatialGDK::EntityAcl>(NetDriver->StaticComponentView->GetComponentData(EntityId, SpatialGDK::EntityAcl::ComponentId));
 	const WorkerRequirementSet* WriteAcl = AclData->ComponentWriteAcl.Find(SpatialConstants::POSITION_COMPONENT_ID);
 
 	check(WriteAcl != nullptr);

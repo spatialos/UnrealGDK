@@ -6,6 +6,7 @@
 #include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
+#include "Schema/Component.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -457,7 +458,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
-	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<SpatialGDK::UnrealMetadata>(EntityId);
+	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialGDK::GetComponentStorageData<SpatialGDK::UnrealMetadata>(SpatialNetDriver->StaticComponentView->GetComponentData(EntityId, SpatialGDK::UnrealMetadata::ComponentId));
 
 	// If UnrealMetadata is nullptr (can happen if the editor is closing down) just return.
 	if (UnrealMetadata == nullptr)
@@ -536,7 +537,7 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 	}
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
-	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<SpatialGDK::UnrealMetadata>(SubobjectRef.Entity);
+	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialGDK::GetComponentStorageData<SpatialGDK::UnrealMetadata>(SpatialNetDriver->StaticComponentView->GetComponentData(SubobjectRef.Entity, SpatialGDK::UnrealMetadata::ComponentId));
 
 	// If UnrealMetadata is nullptr (can happen if the editor is closing down) just return.
 	if (UnrealMetadata == nullptr)

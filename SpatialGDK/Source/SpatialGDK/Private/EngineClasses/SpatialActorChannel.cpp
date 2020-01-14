@@ -9,6 +9,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
+#include "Schema/Component.h"
 
 #if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"
@@ -740,14 +741,14 @@ bool USpatialActorChannel::IsListening() const
 {
 	if (NetDriver->IsServer())
 	{
-		if (SpatialGDK::ClientRPCEndpointLegacy* Endpoint = &(static_cast<SpatialGDK::ComponentStorage<SpatialGDK::ClientRPCEndpointLegacy>*>(GetComponentData(EntityId))->Get()))
+		if (SpatialGDK::ClientRPCEndpointLegacy* Endpoint = SpatialGDK::GetComponentStorageData<SpatialGDK::ClientRPCEndpointLegacy>(NetDriver->StaticComponentView->GetComponentData(EntityId, SpatialGDK::ClientRPCEndpointLegacy::ComponentId)))
 		{
 			return Endpoint->bReady;
 		}
 	}
 	else
 	{
-		if (SpatialGDK::ServerRPCEndpointLegacy* Endpoint = &(static_cast<SpatialGDK::ComponentStorage<SpatialGDK::ServerRPCEndpointLegacy>*>(GetComponentData(EntityId))->Get()))
+		if (SpatialGDK::ServerRPCEndpointLegacy* Endpoint = SpatialGDK::GetComponentStorageData<SpatialGDK::ServerRPCEndpointLegacy>(NetDriver->StaticComponentView->GetComponentData(EntityId, SpatialGDK::ServerRPCEndpointLegacy::ComponentId)))
 		{
 			return Endpoint->bReady;
 		}

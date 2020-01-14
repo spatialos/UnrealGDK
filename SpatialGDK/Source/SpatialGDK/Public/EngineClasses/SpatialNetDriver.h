@@ -152,7 +152,7 @@ public:
 
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
-	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 

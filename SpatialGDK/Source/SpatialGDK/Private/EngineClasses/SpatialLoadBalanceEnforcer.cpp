@@ -3,6 +3,7 @@
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Schema/AuthorityIntent.h"
+#include "Schema/Component.h"
 #include "SpatialCommonTypes.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
@@ -35,7 +36,7 @@ void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp
 	if (AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID &&
 		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		const SpatialGDK::AuthorityIntent* Endpoint = &(static_cast<SpatialGDK::ComponentStorage<SpatialGDK::AuthorityIntent>*>(GetComponentData(AuthOp.entity_id, AuthOp.component_id))->Get());
+		const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = SpatialGDK::GetComponentStorageData<SpatialGDK::AuthorityIntent>(StaticComponentView->GetComponentData(AuthOp.entity_id, AuthOp.component_id));
 		if (AuthorityIntentComponent == nullptr)
 		{
 			// TODO(zoning): There are still some entities being created without an authority intent component.
@@ -87,9 +88,7 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 
 	for (WriteAuthAssignmentRequest& Request : AclWriteAuthAssignmentRequests)
 	{
-		SpatialGDK::AuthorityIntent* Endpoint = &(static_cast<SpatialGDK::ComponentStorage<SpatialGDK::AuthorityIntent>*>(GetComponentData(EntityId))->Get())
-
- 		const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
+ 		const AuthorityIntent* AuthorityIntentComponent = SpatialGDK::GetComponentStorageData<SpatialGDK::AuthorityIntent>(StaticComponentView->GetComponentData(Request.EntityId, SpatialGDK::AuthorityIntent::ComponentId));
 		if (AuthorityIntentComponent == nullptr)
 		{
 			// TODO(zoning): Not sure whether this should be possible or not. Remove if we don't see the warning again.

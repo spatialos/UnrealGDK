@@ -20,6 +20,7 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/AlwaysRelevant.h"
+#include "Schema/Component.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/SpawnData.h"
@@ -189,7 +190,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		if (NetDriver->VirtualWorkerTranslator.IsValid())
+		if (NetDriver->VirtualWorkerTranslator != nullptr)
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
 			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
@@ -407,7 +408,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		check(!NetDriver->IsServer());
-		if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(Op.entity_id))
+		if (RPCsOnEntityCreation* QueuedRPCs = SpatialGDK::GetComponentStorageData<RPCsOnEntityCreation>(NetDriver->StaticComponentView->GetComponentData(Op.entity_id, RPCsOnEntityCreation::ComponentId)))
 		{
 			if (QueuedRPCs->HasRPCPayloadData())
 			{
@@ -609,8 +610,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
 	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
 
-	SpawnData* SpawnDataComp = StaticComponentView->GetComponentData<SpawnData>(EntityId);
-	UnrealMetadata* UnrealMetadataComp = StaticComponentView->GetComponentData<UnrealMetadata>(EntityId);
+	SpawnData* SpawnDataComp = SpatialGDK::GetComponentStorageData<SpawnData>(StaticComponentView->GetComponentData(EntityId, SpawnData::ComponentId));
+	UnrealMetadata* UnrealMetadataComp = SpatialGDK::GetComponentStorageData<UnrealMetadata>(StaticComponentView->GetComponentData(EntityId, UnrealMetadata::ComponentId));
 
 	if (UnrealMetadataComp == nullptr)
 	{
@@ -1338,7 +1339,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		if (NetDriver->VirtualWorkerTranslator.IsValid())
+		if (NetDriver->VirtualWorkerTranslator != nullptr)
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
 			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
@@ -1358,7 +1359,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	}
 
 	// If this entity has a Tombstone component, abort all component processing
-	if (const Tombstone* TombstoneComponent = StaticComponentView->GetComponentData<Tombstone>(Op.entity_id))
+	if (const Tombstone* TombstoneComponent = SpatialGDK::GetComponentStorageData<Tombstone>(StaticComponentView->GetComponentData(Op.entity_id, Tombstone::ComponentId)))
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received component update for Entity: %lld Component: %d after tombstone marked dead.  Aborting update."), Op.entity_id, Op.update.component_id);
 		return;
@@ -1373,7 +1374,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	if (Channel == nullptr)
 	{
 		// If there is no actor channel as a result of the actor being dormant, then assume the actor is about to become active.
-		if (const Dormant* DormantComponent = StaticComponentView->GetComponentData<Dormant>(Op.entity_id))
+		if (const Dormant* DormantComponent = SpatialGDK::GetComponentStorageData<Dormant>(StaticComponentView->GetComponentData(Op.entity_id, Dormant::ComponentId)))
 		{
 			if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id)))
 			{

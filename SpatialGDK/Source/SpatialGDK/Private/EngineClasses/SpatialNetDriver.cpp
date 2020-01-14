@@ -466,6 +466,15 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 				LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
 			}
 			LoadBalanceStrategy->Init(this);
+		}
+
+		VirtualWorkerTranslator = new SpatialVirtualWorkerTranslator();
+		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
+
+		if (IsServer()) 
+		{
+			VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+			LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator);
 
 			if (SpatialSettings->LockingPolicy == nullptr)
 			{
@@ -476,15 +485,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			{
 				LockingPolicy = NewObject<UAbstractLockingPolicy>(this, SpatialSettings->LockingPolicy);
 			}
-		}
-
-		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
-		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
-
-		if (IsServer()) 
-		{
-			VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
-			LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+			LockingPolicy->Init(StaticComponentView, PackageMap, VirtualWorkerTranslator);
 		}
 	}
 
@@ -2349,7 +2350,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 		}
 	}
 
-	if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
+	if (VirtualWorkerTranslator != nullptr && !VirtualWorkerTranslator->IsReady())
 	{
 		Worker_Op* AddComponentOp = nullptr;
 		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, &AddComponentOp);
@@ -2383,7 +2384,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 	if (PackageMap->IsEntityPoolReady() &&
 		GlobalStateManager->GetCanBeginPlay() &&
-		(!VirtualWorkerTranslator.IsValid() || VirtualWorkerTranslator->IsReady()))
+		(VirtualWorkerTranslator == nullptr || VirtualWorkerTranslator->IsReady()))
 	{
 		// Return whether or not we are ready to start
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
