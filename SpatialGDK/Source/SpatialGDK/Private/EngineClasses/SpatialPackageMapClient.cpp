@@ -69,6 +69,12 @@ Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor
 	check(Actor);
 	checkf(bIsServer, TEXT("Tried to allocate an Entity ID on the client, this shouldn't happen."));
 
+	if (!IsEntityPoolReady())
+	{
+		UE_LOG(LogSpatialPackageMap, Error, TEXT("EntityPool must be ready when resolving an Actor: %s"), *Actor->GetName());
+		return SpatialConstants::INVALID_ENTITY_ID;
+	}
+
 	Worker_EntityId EntityId = EntityPool->GetNextEntityId();
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
