@@ -1196,7 +1196,7 @@ void USpatialActorChannel::UpdateEntityACLToNewOwner()
 
 bool USpatialActorChannel::shouldChangeAuthorityIntent()
 {
-	// The authority intent should be changed from this worker if the following conditions are satisfied:
+	// The authority intent should be changed by this worker if the following conditions are satisfied:
 	//  - This worker has authority over the authority intent component
 	//  - The authority intent should be changed, this could be because either:
 	//    - The actor no longer should be delegated to the virtual worker it currently is according to the load balancing strategy
