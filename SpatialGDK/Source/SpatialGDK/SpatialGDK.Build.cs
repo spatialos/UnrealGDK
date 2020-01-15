@@ -89,6 +89,18 @@ public class SpatialGDK : ModuleRules
             LibPrefix = "libimprobable_";
             ImportLibSuffix = SharedLibSuffix = "_static.a";
         }
+        else if (Target.Platform == UnrealTargetPlatform.Android)
+        {
+            // Android behaves slightly differently and requires an additional XML file to be able to copy the libraries over.
+            PublicLibraryPaths.Add(Path.Combine(WorkerLibraryDir, "arm64-v8a"));
+            PublicLibraryPaths.Add(Path.Combine(WorkerLibraryDir, "armeabi-v7a"));
+            PublicLibraryPaths.Add(Path.Combine(WorkerLibraryDir, "x86_64"));
+            PublicAdditionalLibraries.Add("improbable_worker");
+            string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
+            AdditionalPropertiesForReceipt.Add(new ReceiptProperty("AndroidPlugin", Path.Combine(PluginPath, "SpatialGDK_APL.xml")));
+            PublicDefinitions.Add("TRACE_LIB_ACTIVE=0");
+            return;
+        }
         else
         {
             throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
