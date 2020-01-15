@@ -123,7 +123,7 @@ bool USpatialLatencyTracer::IsValidKey(const TraceKey Key)
 	return TraceMap.Find(Key);
 }
 
-TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UFunction* Function)
+TraceKey USpatialLatencyTracer::GetAndUntrackTrace(const UObject* Obj, const UFunction* Function)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -133,7 +133,7 @@ TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UFunction*
 	return ReturnKey;
 }
 
-TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UProperty* Property)
+TraceKey USpatialLatencyTracer::GetAndUntrackTrace(const UObject* Obj, const UProperty* Property)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -413,7 +413,7 @@ TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const F
 
 	if (UClass* ActorClass = Actor->GetClass())
 	{
-		if (UFunction* Function = ActorClass->FindFunctionByName(*FunctionOrProperty))
+		if (const UFunction* Function = ActorClass->FindFunctionByName(*FunctionOrProperty))
 		{
 			ActorFuncKey Key{ Actor, Function };
 			if (TrackingTraces.Find(Key) == nullptr)
@@ -424,7 +424,7 @@ TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const F
 			}
 			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc already exists for trace"), *WorkerId);
 		}
-		else if (UProperty* Property = ActorClass->FindPropertyByName(*FunctionOrProperty))
+		else if (const UProperty* Property = ActorClass->FindPropertyByName(*FunctionOrProperty))
 		{
 			ActorPropertyKey Key{ Actor, Property };
 			if (TrackingProperties.Find(Key) == nullptr)

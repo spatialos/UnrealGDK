@@ -51,11 +51,11 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 #if TRACE_LIB_ACTIVE
 			if (LatencyTracer)
 			{
-				TraceKey TraceId = LatencyTracer->GetTraceKey(Object, Cmd.Property);
+				TraceKey TraceId = LatencyTracer->GetAndUntrackTrace(Object, Cmd.Property);
 				if (TraceId == USpatialLatencyTracer::InvalidTraceKey)
 				{
 					// Possibly sending a nested property? 
-					TraceId = LatencyTracer->GetTraceKey(Object, Parent.Property);
+					TraceId = LatencyTracer->GetAndUntrackTrace(Object, Parent.Property);
 				}
 				if (TraceId != USpatialLatencyTracer::InvalidTraceKey)
 				{
