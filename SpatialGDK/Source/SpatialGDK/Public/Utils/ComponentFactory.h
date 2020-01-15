@@ -5,7 +5,6 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
 #include "Utils/RepDataUtils.h"
-#include "Utils/SpatialLatencyTracer.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -15,12 +14,14 @@ DECLARE_LOG_CATEGORY_EXTERN(LogComponentFactory, Log, All);
 class USpatialNetDriver;
 class USpatialPackageMap;
 class USpatialClassInfoManager;
+class USpatialLatencyTracer;
 class USpatialPackageMapClient;
 
 class UNetDriver;
 class UProperty;
 
 enum EReplicatedPropertyGroup : uint32;
+using TraceKey = int32;
 
 namespace SpatialGDK
 {

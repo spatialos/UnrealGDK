@@ -14,8 +14,9 @@
 #include "Net/NetworkProfiler.h"
 #include "Schema/Interest.h"
 #include "SpatialConstants.h"
-#include "Utils/RepLayoutUtils.h"
 #include "Utils/InterestFactory.h"
+#include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialLatencyTracer.h"
 
 DEFINE_LOG_CATEGORY(LogComponentFactory);
 
