@@ -29,15 +29,15 @@ class TestSuite {
 }
 
 [string]$test_repo_branch = "feature/ci"
-[bool]$do_long_networking_tests = $False
+[bool]$slow_networking_tests = $False
 
 # Allow overriding testing branch via environment variable
 if (Test-Path env:TEST_REPO_BRANCH) {
   $test_repo_branch = $env:TEST_REPO_BRANCH
 }
-# Allow overriding running long networking tests
-if ( ((Test-Path env:LONG_NETWORKING_TESTS) -And ($env:LONG_NETWORKING_TESTS -eq "true")) -Or ($env:NIGHTLY_BUILD -eq "true")) {
-  $do_long_networking_tests = $True
+# Allow overriding running slow networking tests
+if ( ((Test-Path env:SLOW_NETWORKING_TESTS) -And ($env:SLOW_NETWORKING_TESTS -eq "true")) -Or ($env:NIGHTLY_BUILD -eq "true")) {
+  $slow_networking_tests = $True
 }
 
 $tests = @(
@@ -45,7 +45,7 @@ $tests = @(
   [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialNetworkingFastTestResults", "/Game/SpatialNetworkingMap", $True)
 )
 
-if($do_long_networking_tests) {
+if($slow_networking_tests) {
   # Do we want to run the tests on the SpatialNetworkingMap with native networking?
   # $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaShortNetworkingTestResults", "/Game/SpatialNetworkingMap", $False)
   $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialNetworkingSlowTestResults", "/Game/NetworkingMap", $True)
