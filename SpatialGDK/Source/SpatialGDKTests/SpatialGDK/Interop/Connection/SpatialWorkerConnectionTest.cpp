@@ -3,9 +3,7 @@
 #include "Tests/TestDefinitions.h"
 
 #include "SpatialWorkerConnection.h"
-
 #include "Interop/SpatialOutputDevice.h"
-
 #include "SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
 
 #include "CoreMinimal.h"
@@ -19,7 +17,7 @@ namespace
 {
 bool bClientConnectionProcessed = false;
 bool bServerConnectionProcessed = false;
-double MAX_WAIT_TIME = 10.0;
+const double MAX_WAIT_TIME = 10.0;
 
 void ConnectionProcessed(bool bConnectAsClient)
 {
@@ -35,7 +33,7 @@ void ConnectionProcessed(bool bConnectAsClient)
 
 void StartSetupConnectionConfigFromURL(USpatialWorkerConnection* Connection, const FURL& URL, bool& bOutUseReceptionist)
 {
-	bOutUseReceptionist = !(URL.Host == SpatialConstants::LOCATOR_HOST || URL.HasOption(TEXT("locator")));
+	bOutUseReceptionist = (URL.Host != SpatialConstants::LOCATOR_HOST) && !URL.HasOption(TEXT("locator"));
 	if (bOutUseReceptionist)
 	{
 		Connection->ReceptionistConfig.SetReceptionistHost(URL.Host);
@@ -75,7 +73,7 @@ void FinishSetupConnectionConfig(USpatialWorkerConnection* Connection, const FSt
 		LocatorConfig.WorkerType = WorkerType;
 	}
 }
-}
+} // anonymous namespace
 
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForSeconds, double, Seconds);
 bool FWaitForSeconds::Update()
