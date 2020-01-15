@@ -491,7 +491,7 @@ void SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited(ui
 	SpatialGDKSettings->SetNumberOfSimulatedPlayers(NewValue);
 }
 
-bool SSpatialGDKSimulatedPlayerDeployment::AttemptAuth()
+bool SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth()
 {
 	FString SpatialInfoArgs = TEXT("auth login");
 	FString SpatialInfoResult;
@@ -564,9 +564,9 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 	if (!AttemptSpatialAuthResult.IsReady() || AttemptSpatialAuthResult.Get() == false)
 	{
 #if ENGINE_MINOR_VERSION <= 22
-		AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, SSpatialGDKSimulatedPlayerDeployment::AttemptAuth,
+		AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth,
 #else
-		AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, SSpatialGDKSimulatedPlayerDeployment::AttemptAuth,
+		AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth,
 #endif
 			[this, LaunchCloudDeployment]()
 		{

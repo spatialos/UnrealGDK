@@ -76,7 +76,7 @@ private:
 	void OnNumberOfSimulatedPlayersCommited(uint32 NewValue);
 
 	/** Function to attempt authentication with spatial. This is required to launch a deployment */
-	static bool AttemptAuth();
+	static bool AttemptSpatialAuth();
 
 	/** Delegate called when the user clicks the 'Launch Simulated Player Deployment' button */
 	FReply OnLaunchClicked();
