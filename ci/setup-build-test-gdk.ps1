@@ -41,7 +41,7 @@ if ( ((Test-Path env:SLOW_NETWORKING_TESTS) -And ($env:SLOW_NETWORKING_TESTS -eq
 }
 
 $tests = @(
-  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "FastTestResults", "SpatialGDK+/Game/SpatialNetworkingMap", $True),
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "FastTestResults", "SpatialGDK+/Game/SpatialNetworkingMap", $True)
 )
 
 if($slow_networking_tests) {
