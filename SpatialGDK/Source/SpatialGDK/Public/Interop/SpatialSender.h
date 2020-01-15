@@ -80,8 +80,9 @@ public:
 	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& DestinationWorkerId);
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	ERPCResult SendRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload);
-	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
+	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId);
+	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
 	void SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info);
 	void SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info);
 
