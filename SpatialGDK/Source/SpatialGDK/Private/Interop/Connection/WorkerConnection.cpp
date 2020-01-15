@@ -96,6 +96,11 @@ void UWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Wo
 	WorkerConnectionImpl->SendCommandResponse(RequestId, Response);
 }
 
+void UWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
+{
+	WorkerConnectionImpl->SendCommandFailure(RequestId, Message);
+}
+
 void UWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
 {
 	WorkerConnectionImpl->SendComponentInterest(EntityId, MoveTemp(ComponentInterest));

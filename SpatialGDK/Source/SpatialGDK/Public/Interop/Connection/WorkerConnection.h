@@ -69,6 +69,7 @@ public:
 	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData);
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
+	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
 	void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest);
 
 	void SendMetrics(const SpatialGDK::SpatialMetrics& Metrics);
