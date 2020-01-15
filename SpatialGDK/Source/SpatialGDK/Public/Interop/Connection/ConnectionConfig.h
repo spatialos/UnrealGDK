@@ -103,7 +103,8 @@ struct FLocatorConfig : public FConnectionConfig
 			{
 				LocatorHost = SpatialConstants::LOCATOR_HOST_CN;
 			}
-			else {
+			else 
+			{
 				LocatorHost = SpatialConstants::LOCATOR_HOST;
 			}
 		}
