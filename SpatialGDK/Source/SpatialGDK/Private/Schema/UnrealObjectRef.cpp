@@ -3,12 +3,13 @@
 #include "Schema/UnrealObjectRef.h"
 
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealObjectRef, Log, All);
 
-const FUnrealObjectRef FUnrealObjectRef::NULL_OBJECT_REF = FUnrealObjectRef(0, 0);
-const FUnrealObjectRef FUnrealObjectRef::UNRESOLVED_OBJECT_REF = FUnrealObjectRef(0, 1);
+const FUnrealObjectRef FUnrealObjectRef::NULL_OBJECT_REF = FUnrealObjectRef(SpatialConstants::INVALID_ENTITY_ID, 0);
+const FUnrealObjectRef FUnrealObjectRef::UNRESOLVED_OBJECT_REF = FUnrealObjectRef(SpatialConstants::INVALID_ENTITY_ID, 1);
 
 UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpatialPackageMapClient* PackageMap, bool& bOutUnresolved)
 {
@@ -39,6 +40,14 @@ UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpati
 			UObject* Value = PackageMap->GetObjectFromNetGUID(NetGUID, true);
 			if (Value == nullptr)
 			{
+				// Check if the object we are looking for is in a package being loaded.
+				if (PackageMap->IsGUIDPending(NetGUID))
+				{
+					PackageMap->PendingReferences.Add(NetGUID);
+					bOutUnresolved = true;
+					return nullptr;
+				}
+
 				// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
 				// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
 				// So we do the same.
@@ -130,6 +139,48 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 	}
 
 	return ObjectRef;
+}
+
+FUnrealObjectRef FUnrealObjectRef::FromSoftObjectPath(const FSoftObjectPath& ObjectPath)
+{
+	FUnrealObjectRef PackageRef;
+
+	PackageRef.Path = ObjectPath.GetLongPackageName();
+
+	FUnrealObjectRef ObjectRef;
+	ObjectRef.Outer = PackageRef;
+	ObjectRef.Path = ObjectPath.GetAssetName();
+
+	return ObjectRef;
+}
+
+FSoftObjectPath FUnrealObjectRef::ToSoftObjectPath(const FUnrealObjectRef& ObjectRef)
+{
+	if (!ObjectRef.Path.IsSet())
+	{
+		return FSoftObjectPath();
+	}
+
+	bool bSubObjectName = true;
+	FString FullPackagePath;
+	const FUnrealObjectRef* CurRef = &ObjectRef;
+	while (CurRef)
+	{
+		if (CurRef->Path.IsSet())
+		{
+			FString Path = *CurRef->Path;
+			if (!FullPackagePath.IsEmpty())
+			{
+				Path.Append(bSubObjectName ? TEXT(".") : TEXT("/"));
+				Path.Append(FullPackagePath);
+				bSubObjectName = false;
+			}
+			FullPackagePath = MoveTemp(Path);
+		}
+		CurRef = CurRef->Outer.IsSet() ? &(*CurRef->Outer) : nullptr;
+	}
+
+	return FSoftObjectPath(MoveTemp(FullPackagePath));
 }
 
 FUnrealObjectRef FUnrealObjectRef::GetSingletonClassRef(UObject* SingletonObject, USpatialPackageMapClient* PackageMap)

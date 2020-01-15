@@ -2,20 +2,30 @@
 
 #include "Utils/SpatialDebugger.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialStaticComponentView.h"
+#include "LoadBalancing/WorkerRegion.h"
+#include "Schema/AuthorityIntent.h"
+#include "SpatialCommonTypes.h"
+#include "Utils/InspectionColors.h"
+
 #include "Debug/DebugDrawService.h"
 #include "Engine/Engine.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
-#include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Kismet/GameplayStatics.h"
-#include "Schema/AuthorityIntent.h"
+#include "Net/UnrealNetwork.h"
 
 using namespace SpatialGDK;
 
 DEFINE_LOG_CATEGORY(LogSpatialDebugger);
+
+namespace
+{
+	const FString DEFAULT_WORKER_REGION_MATERIAL = TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
+}
 
 ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -39,6 +49,13 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	{
 		NetDriver->SetSpatialDebugger(this);
 	}
+}
+
+void ASpatialDebugger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ASpatialDebugger, WorkerRegions, COND_SimulatedOnly);
 }
 
 void ASpatialDebugger::Tick(float DeltaSeconds)
@@ -115,6 +132,59 @@ void ASpatialDebugger::BeginPlay()
 		if (bAutoStart)
 		{
 			SpatialToggleDebugger();
+		}
+	}
+}
+
+void ASpatialDebugger::OnAuthorityGained()
+{
+	if (NetDriver->LoadBalanceStrategy)
+	{
+		if (const UGridBasedLBStrategy* GridBasedLBStrategy = Cast<UGridBasedLBStrategy>(NetDriver->LoadBalanceStrategy))
+		{
+			const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
+			WorkerRegions.SetNum(LBStrategyRegions.Num());
+			for (int i = 0; i < LBStrategyRegions.Num(); i++)
+			{
+				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
+				const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Get<0>());
+				FWorkerRegionInfo WorkerRegionInfo;
+				WorkerRegionInfo.Color = (WorkerName == nullptr) ? InvalidServerTintColor : SpatialGDK::GetColorForWorkerName(*WorkerName);
+				WorkerRegionInfo.Extents = LBStrategyRegion.Get<1>();
+				WorkerRegions[i] = WorkerRegionInfo;
+			}
+		}
+	}
+}
+
+void ASpatialDebugger::OnRep_SetWorkerRegions()
+{
+	if (NetDriver != nullptr && !NetDriver->IsServer())
+	{
+		UMaterial* WorkerRegionMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_REGION_MATERIAL);
+		if (WorkerRegionMaterial == nullptr)
+		{
+			UE_LOG(LogSpatialDebugger, Error, TEXT("Worker regions were not rendered. Could not find default material: %s"),
+				*DEFAULT_WORKER_REGION_MATERIAL);
+			return;
+		}
+
+		// Naively delete all old worker regions
+		TArray<AActor*> OldWorkerRegions;
+		UGameplayStatics::GetAllActorsOfClass(this, AWorkerRegion::StaticClass(), OldWorkerRegions);
+		for (AActor* OldWorkerRegion : OldWorkerRegions)
+		{
+			OldWorkerRegion->Destroy();
+		}
+
+		// Create new actors for all new worker regions
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.bNoFail = true;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
+		{
+			AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
+			WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionData.Extents);
 		}
 	}
 }
@@ -337,29 +407,55 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 	}
 }
 
-const FColor& ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId) const
+FColor ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId) const
 {
 	check(NetDriver != nullptr && !NetDriver->IsServer());
-
-	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
-	const int32 VirtualWorkerId = (AuthorityIntentComponent != nullptr) ? AuthorityIntentComponent->VirtualWorkerId : SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
-
-	if (VirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID &&
-		VirtualWorkerId < ServerTintColors.Num())
-	{
-		return ServerTintColors[VirtualWorkerId];
-	}
-	else
+	if (!NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
 		return InvalidServerTintColor;
 	}
+	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+	const int32 VirtualWorkerId = AuthorityIntentComponent->VirtualWorkerId;
+
+	const PhysicalWorkerName* PhysicalWorkerName = nullptr;
+	if (NetDriver->VirtualWorkerTranslator)
+	{
+		PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(VirtualWorkerId);
+	}
+
+	if (PhysicalWorkerName == nullptr)
+	{
+		// This can happen if the client hasn't yet received the VirtualWorkerTranslator mapping
+		return InvalidServerTintColor;
+	}
+	return SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName);
 }
 
-// TODO: Implement once this functionality is available https://improbableio.atlassian.net/browse/UNR-2362.
-const FColor& ASpatialDebugger::GetServerWorkerColor(const Worker_EntityId EntityId) const
+FColor ASpatialDebugger::GetServerWorkerColor(const Worker_EntityId EntityId) const
 {
 	check(NetDriver != nullptr && !NetDriver->IsServer());
-	return InvalidServerTintColor;
+
+	const PhysicalWorkerName& AuthoritativeWorkerFromACL = GetAuthoritativeWorkerFromACL(EntityId);
+
+	const FString WorkerNamePrefix = FString{ "workerId:" };
+	if (!AuthoritativeWorkerFromACL.StartsWith(*WorkerNamePrefix)) {
+		// The ACL entry is not an explicit worker ID, this may happen at startup when it's just
+		// the UnrealWorker attribute, just return invalid for now.
+		return InvalidServerTintColor;
+	}
+	return SpatialGDK::GetColorForWorkerName(AuthoritativeWorkerFromACL.RightChop(WorkerNamePrefix.Len()));
+}
+
+const PhysicalWorkerName& ASpatialDebugger::GetAuthoritativeWorkerFromACL(const Worker_EntityId EntityId) const
+{
+	const SpatialGDK::EntityAcl* AclData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId);
+	const WorkerRequirementSet* WriteAcl = AclData->ComponentWriteAcl.Find(SpatialConstants::POSITION_COMPONENT_ID);
+
+	check(WriteAcl != nullptr);
+	check(WriteAcl->Num() == 1);
+	check((*WriteAcl)[0].Num() == 1);
+
+	return (*WriteAcl)[0][0];
 }
 
 // TODO: Implement once this functionality is available https://improbableio.atlassian.net/browse/UNR-2361.

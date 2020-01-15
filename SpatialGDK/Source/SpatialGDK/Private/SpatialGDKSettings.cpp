@@ -19,6 +19,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EntityPoolRefreshCount(2000)
 	, HeartbeatIntervalSeconds(2.0f)
 	, HeartbeatTimeoutSeconds(10.0f)
+	, HeartbeatTimeoutWithEditorSeconds(10000.0f)
 	, ActorReplicationRateLimit(0)
 	, EntityCreationRateLimit(0)
 	, UseIsActorRelevantForConnection(false)
@@ -43,13 +44,17 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 	, SpatialDebuggerClassPath(TEXT("/SpatialGDK/SpatialDebugger/BP_SpatialDebugger.BP_SpatialDebugger_C"))
 	, bEnableUnrealLoadBalancer(false)
+	, bUseRPCRingBuffers(false)
+	, DefaultRPCRingBufferSize(8)
+	, MaxRPCRingBufferSize(32)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
 	, bTcpNoDelay(false)
-	, UdpServerUpstreamUpdateIntervalMS(10)
-	, UdpServerDownstreamUpdateIntervalMS(10)
-	, UdpClientUpstreamUpdateIntervalMS(10)
-	, UdpClientDownstreamUpdateIntervalMS(10)
+	, UdpServerUpstreamUpdateIntervalMS(1)
+	, UdpServerDownstreamUpdateIntervalMS(1)
+	, UdpClientUpstreamUpdateIntervalMS(1)
+	, UdpClientDownstreamUpdateIntervalMS(1)
 	// TODO - end
+	, bAsyncLoadNewClassesOnEntityCheckout(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -145,3 +150,12 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 }
 #endif
 
+uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
+{
+	if (const uint32* Size = RPCRingBufferSizeMap.Find(RPCType))
+	{
+		return *Size;
+	}
+
+	return DefaultRPCRingBufferSize;
+}

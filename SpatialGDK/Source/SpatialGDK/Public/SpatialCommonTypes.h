@@ -11,7 +11,10 @@
 // These are not a type of key supported by TMap.
 using Worker_EntityId_Key = int64;
 using Worker_RequestId_Key = int64;
+
 using VirtualWorkerId = uint32;
+using PhysicalWorkerName = FString;
+using ActorLockToken = int64;
 
 using WorkerAttributeSet = TArray<FString>;
 using WorkerRequirementSet = TArray<WorkerAttributeSet>;
