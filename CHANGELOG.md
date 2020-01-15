@@ -6,15 +6,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2020-xx-xx
 
-- Minor spelling fix to connection log message
-- The GDK now uses SpatialOS `14.3.0`.
-- Added %s token to debug strings in GlobalStateManager to display actor class name in log
-- The server no longer crashes, when received RPCs are processed recursively.
-- DeploymentLauncher can parse a .pb.json launch configuration.
-- DeploymentLauncher can launch a Simulated Player deployment independently from the target deployment.
-- Track properties containing references to replicated actors, in order to resolve them again if the actor they reference moves out and back into relevance.
-Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>`
-
 ### Features:
 - The GDK now uses SpatialOS `14.3.0`.
 - In local deployments of the Example Project you can now launch Simulated Players in one click. Running `LaunchSimPlayerClient.bat` will launch a single Simulated Player client. Running `Launch10SimPlayerClients.bat` will launch 10.
@@ -65,6 +56,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The server no longer crashes, when received RPCs are processed recursively.
 - Fix to serialize SoftObjectPointers when they are not resolved yet.
 - Fix to handle replicated properties depending on asynchronously loaded packages.
+- Track properties containing references to replicated actors, in order to resolve them again if the actor they reference moves out and back into relevance.
 
 ## [`0.8.0-preview`] - 2019-12-17
 
