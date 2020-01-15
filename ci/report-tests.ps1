@@ -74,7 +74,7 @@ $slack_attachment = [ordered]@{
     color = $(if ($tests_passed) {"good"} else {"danger"})
     fields = @(
              @{
-                value = "*$env:ENGINE_COMMIT_HASH*"
+                value = "*$env:ENGINE_COMMIT_HASH*-$(Split-Path $test_result_dir -Leaf)"
                 short = $true
             }
             @{

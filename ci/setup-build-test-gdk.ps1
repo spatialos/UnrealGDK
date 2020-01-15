@@ -41,14 +41,15 @@ if ( ((Test-Path env:LONG_NETWORKING_TESTS) -And ($env:LONG_NETWORKING_TESTS -eq
 }
 
 $tests = @(
-  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "ShortTestResults", "SpatialGDK; Automation RunTests /Game/SpatialNetworkingMap", $True)
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "UnitTestResults", "SpatialGDK", $True),
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialNetworkingFastTestResults", "/Game/SpatialNetworkingMap", $True)
 )
 
 if($do_long_networking_tests) {
   # Do we want to run the tests on the SpatialNetworkingMap with native networking?
   # $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaShortNetworkingTestResults", "/Game/SpatialNetworkingMap", $False)
-  $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialLongNetworkingTestResults", "/Game/NetworkingMap", $True)
-  $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaLongNetworkingTestResults", "/Game/NetworkingMap", $False)
+  $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialNetworkingSlowTestResults", "/Game/NetworkingMap", $True)
+  $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaNetworkingSlowTestResults", "/Game/NetworkingMap", $False)
 }
 
 . "$PSScriptRoot\common.ps1"
