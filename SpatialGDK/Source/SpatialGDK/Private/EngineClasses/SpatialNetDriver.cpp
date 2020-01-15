@@ -450,6 +450,33 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
+	CreateAndInitializeLoadBalancer();
+
+	if (SpatialSettings->bUseRPCRingBuffers)
+	{
+		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView);
+	}
+
+	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
+	Sender->Init(this, &TimerManager, RPCService.Get());
+	Receiver->Init(this, &TimerManager, RPCService.Get());
+	GlobalStateManager->Init(this);
+	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
+	PlayerSpawner->Init(this, &TimerManager);
+	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
+	SpatialMetrics->ControllerRefProvider.BindUObject(this, &USpatialNetDriver::GetCurrentPlayerControllerRef);
+
+	// PackageMap value has been set earlier in USpatialNetConnection::InitBase
+	// Making sure the value is the same
+	USpatialPackageMapClient* NewPackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+	check(NewPackageMap == PackageMap);
+
+	PackageMap->Init(this, &TimerManager);
+}
+
+void USpatialNetDriver::CreateAndInitializeLoadBalancer()
+{
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
 		if (IsServer()) 
@@ -486,28 +513,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 		}
 	}
-
-	if (SpatialSettings->bUseRPCRingBuffers)
-	{
-		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView);
-	}
-
-	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
-	Sender->Init(this, &TimerManager, RPCService.Get());
-	Receiver->Init(this, &TimerManager, RPCService.Get());
-	GlobalStateManager->Init(this);
-	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
-	PlayerSpawner->Init(this, &TimerManager);
-	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
-	SpatialMetrics->ControllerRefProvider.BindUObject(this, &USpatialNetDriver::GetCurrentPlayerControllerRef);
-
-	// PackageMap value has been set earlier in USpatialNetConnection::InitBase
-	// Making sure the value is the same
-	USpatialPackageMapClient* NewPackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
-	check(NewPackageMap == PackageMap);
-
-	PackageMap->Init(this, &TimerManager);
 }
+
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 {
