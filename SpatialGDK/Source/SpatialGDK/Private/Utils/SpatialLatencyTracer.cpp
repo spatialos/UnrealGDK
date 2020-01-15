@@ -215,20 +215,6 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, co
 	return InvalidTraceKey;
 }
 
-TraceKey USpatialLatencyTracer::AssociateEntityComponent(int64 Entity, uint32 Component, TraceKey Key)
-{
-	FScopeLock Lock(&Mutex);
-
-	EntityComponentKey MapKey { Entity, Component };
-	if (TrackingEntityComponents.Find(MapKey) != nullptr || TraceMap.Find(Key) == nullptr)
-	{
-		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("Failed to associate entity/component to trace key"));
-		return InvalidTraceKey;
-	}
-	TrackingEntityComponents.Add(MapKey, Key);
-	return Key;
-}
-
 TraceKey USpatialLatencyTracer::ReadTraceFromSpatialPayload(const FSpatialLatencyPayload& Payload)
 {
 	FScopeLock Lock(&Mutex);

@@ -105,8 +105,6 @@ public:
 	void WriteTraceToSchemaObject(const TraceKey Key, Schema_Object* Obj, const Schema_FieldId FieldId);
 	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId);
 
-	TraceKey AssociateEntityComponent(int64 Entity, uint32 Component, TraceKey Key);
-
 	TraceKey ReadTraceFromSpatialPayload(const FSpatialLatencyPayload& payload);
 
 	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
@@ -148,7 +146,6 @@ private:
 	FCriticalSection Mutex; // This mutex is to protect modifications to the containers below
 	TMap<ActorFuncKey, TraceKey> TrackingTraces;
 	TMap<ActorPropertyKey, TraceKey> TrackingProperties;
-	TMap<EntityComponentKey, TraceKey> TrackingEntityComponents;
 	TMap<TraceKey, TraceSpan> TraceMap;
 
 public:
