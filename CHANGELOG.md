@@ -56,6 +56,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The server no longer crashes, when received RPCs are processed recursively.
 - Fix to serialize SoftObjectPointers when they are not resolved yet.
 - Fix to handle replicated properties depending on asynchronously loaded packages.
+- Fix to component interest constraints constructed from schema.
 
 ## [`0.8.0-preview`] - 2019-12-17
 
