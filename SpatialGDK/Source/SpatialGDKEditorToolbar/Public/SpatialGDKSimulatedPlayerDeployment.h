@@ -37,13 +37,13 @@ public:
 
 private:
 
-	bool bHasAttemptedAuth = false;
-
 	/** The parent window of this widget */
 	TWeakPtr<SWindow> ParentWindowPtr;
 
 	/** Pointer to the SpatialGDK editor */
 	TWeakPtr<FSpatialGDKEditor> SpatialGDKEditorPtr;
+
+	TFuture<bool> AttemptSpatialAuthResult;
 
 	/** Delegate to commit assembly name */
 	void OnDeploymentAssemblyCommited(const FText& InText, ETextCommit::Type InCommitType);
@@ -74,6 +74,9 @@ private:
 
 	/** Delegate to commit the number of Simulated Players */
 	void OnNumberOfSimulatedPlayersCommited(uint32 NewValue);
+
+	/** Function to attempt authentication with spatial. This is required to launch a deployment */
+	static bool AttemptAuth();
 
 	/** Delegate called when the user clicks the 'Launch Simulated Player Deployment' button */
 	FReply OnLaunchClicked();
