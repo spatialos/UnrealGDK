@@ -27,7 +27,7 @@ public:
 		USpatialStaticComponentView* InStaticComponentView,
 		USpatialReceiver* InReceiver,
 		USpatialWorkerConnection* InConnection,
-		PhysicalWorkerName InWorkerId);
+		PhysicalWorkerName InPhysicalWorkerName);
 
 	// Returns true if the Translator has received the information needed to map virtual workers to physical workers.
 	// Currently that is only the number of virtual workers desired.
@@ -35,7 +35,7 @@ public:
 
 	void AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds);
 	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; }
-	PhysicalWorkerName GetLocalPhysicalWorkerName() const { return WorkerId; }
+	PhysicalWorkerName GetLocalPhysicalWorkerName() const { return LocalPhysicalWorkerName; }
 
 	// Returns the name of the worker currently assigned to VirtualWorkerId id or nullptr if there is
 	// no worker assigned.
@@ -66,7 +66,7 @@ private:
 	bool bIsReady;
 
 	// The WorkerId of this worker, for logging purposes.
-	PhysicalWorkerName WorkerId;
+	PhysicalWorkerName LocalPhysicalWorkerName;
 	VirtualWorkerId LocalVirtualWorkerId;
 
 	// Serialization and deserialization of the mapping.

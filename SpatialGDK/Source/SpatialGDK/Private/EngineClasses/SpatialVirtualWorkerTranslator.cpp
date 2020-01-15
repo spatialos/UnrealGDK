@@ -13,6 +13,7 @@ DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator()
 	: bWorkerEntityQueryInFlight(false)
 	, bIsReady(false)
+	, LocalPhysicalWorkerName(SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME)
 	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 {}
 
@@ -20,7 +21,7 @@ void SpatialVirtualWorkerTranslator::Init(UAbstractLBStrategy* InLoadBalanceStra
 	USpatialStaticComponentView* InStaticComponentView,
 	USpatialReceiver* InReceiver,
 	USpatialWorkerConnection* InConnection,
-	PhysicalWorkerName InWorkerId)
+	PhysicalWorkerName InPhysicalWorkerName)
 {
 	LoadBalanceStrategy = InLoadBalanceStrategy;
 
@@ -33,7 +34,7 @@ void SpatialVirtualWorkerTranslator::Init(UAbstractLBStrategy* InLoadBalanceStra
 	check(InConnection != nullptr);
 	Connection = InConnection;
 
-	WorkerId = InWorkerId;
+	LocalPhysicalWorkerName = InPhysicalWorkerName;
 }
 
 void SpatialVirtualWorkerTranslator::AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds)
@@ -42,7 +43,7 @@ void SpatialVirtualWorkerTranslator::AddVirtualWorkerIds(const TSet<VirtualWorke
 	// flexibility. 
 	if (bIsReady)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) AddVirtualWorkerIds called after the translator is ready, ignoring."), *WorkerId);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) AddVirtualWorkerIds called after the translator is ready, ignoring."), *LocalPhysicalWorkerName);
 		return;
 	}
 
@@ -60,7 +61,7 @@ const PhysicalWorkerName* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVi
 
 void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject)
 {
-    UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) ApplyVirtualWorkerManagerData"), *WorkerId);
+    UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) ApplyVirtualWorkerManagerData"), *LocalPhysicalWorkerName);
 
 	// The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID. 
 	ApplyMappingFromSchema(ComponentObject);
@@ -77,7 +78,7 @@ void SpatialVirtualWorkerTranslator::AuthorityChanged(const Worker_AuthorityChan
 
 	if (AuthOp.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Authority over the VirtualWorkerTranslator has changed. This worker %s authority."), *WorkerId, bAuthoritative ? TEXT("now has") : TEXT("does not have"));
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Authority over the VirtualWorkerTranslator has changed. This worker %s authority."), *LocalPhysicalWorkerName, bAuthoritative ? TEXT("now has") : TEXT("does not have"));
 
 		if (bAuthoritative)
 		{
@@ -102,11 +103,12 @@ bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object) const
 	{
 		// Get each entry of the list and then unpack the virtual and physical IDs from the entry.
 		Schema_Object* MappingObject = Schema_IndexObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);
-		if (SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME) == WorkerId)
+		if (SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME) == LocalPhysicalWorkerName)
 		{
 			return true;
 		}
 	}
+
 	return false;
 }
 
@@ -124,7 +126,7 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 
 	if (!IsValidMapping(Object))
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Received invalid mapping, likely due to PiE restart, will wait for a valid version."));
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Received invalid mapping, likely due to PiE restart, will wait for a valid version."), *LocalPhysicalWorkerName);
 		return;
 	}
 
@@ -191,7 +193,7 @@ void SpatialVirtualWorkerTranslator::ConstructVirtualWorkerMappingFromQueryRespo
 // to the spatialOS storage.
 void SpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) SendVirtualWorkerMappingUpdate"), *WorkerId);
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) SendVirtualWorkerMappingUpdate"), *LocalPhysicalWorkerName);
 
 	check(StaticComponentView.IsValid());
 	check(StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID));
@@ -214,14 +216,14 @@ void SpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 
 void SpatialVirtualWorkerTranslator::QueryForWorkerEntities()
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Sending query for WorkerEntities"), *WorkerId);
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Sending query for WorkerEntities"), *LocalPhysicalWorkerName);
 
-	checkf(!bWorkerEntityQueryInFlight, TEXT("(%s) Trying to query for worker entities while a previous query is still in flight!"), *WorkerId);
+	checkf(!bWorkerEntityQueryInFlight, TEXT("(%s) Trying to query for worker entities while a previous query is still in flight!"), *LocalPhysicalWorkerName);
 
 	check(StaticComponentView.IsValid());
 	if (!StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Trying QueryForWorkerEntities, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *WorkerId);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Trying QueryForWorkerEntities, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *LocalPhysicalWorkerName);
 		return;
 	}
 
@@ -261,16 +263,16 @@ void SpatialVirtualWorkerTranslator::WorkerEntityQueryDelegate(const Worker_Enti
 	check(StaticComponentView.IsValid());
 	if (!StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) Received response to WorkerEntityQuery, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *WorkerId);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) Received response to WorkerEntityQuery, but don't have authority over VIRTUAL_WORKER_MANAGER_COMPONENT.  Aborting processing."), *LocalPhysicalWorkerName);
 		return;
 	}
 	else if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) Could not find Worker Entities via entity query: %s, retrying."), *WorkerId, UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("(%s) Could not find Worker Entities via entity query: %s, retrying."), *LocalPhysicalWorkerName, UTF8_TO_TCHAR(Op.message));
 	}
 	else
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Processing Worker Entity query response"), *WorkerId);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Processing Worker Entity query response"), *LocalPhysicalWorkerName);
 		ConstructVirtualWorkerMappingFromQueryResponse(Op);
 	}
 
@@ -298,21 +300,24 @@ void SpatialVirtualWorkerTranslator::AssignWorker(const PhysicalWorkerName& Name
 
 	UpdateMapping(Id, Name);
 
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Assigned VirtualWorker %d to simulate on Worker %s"), *WorkerId, Id, *Name);
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Assigned VirtualWorker %d to simulate on Worker %s"), *LocalPhysicalWorkerName, Id, *Name);
 }
 
 void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName Name)
 {
 	VirtualToPhysicalWorkerMapping.Add(Id, Name);
 
-	if (LocalVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID && Name == WorkerId)
+	if (LocalVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID && Name == LocalPhysicalWorkerName)
 	{
 		LocalVirtualWorkerId = Id;
 		bIsReady = true;
 
-		// Tell the strategy about the local virtual worker id.
-		check(LoadBalanceStrategy.IsValid());
-		LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
+		// Tell the strategy about the local virtual worker id. This is an "if" and not a "check" to allow unit tests which don't
+		// provide a strategy.
+		if (LoadBalanceStrategy.IsValid())
+		{
+			LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
+		}
 
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("VirtualWorkerTranslator is now ready for loadbalancing."));
 	}

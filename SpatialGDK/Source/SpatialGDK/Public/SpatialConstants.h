@@ -177,6 +177,7 @@ const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
 const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
 const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID							= 1;
 const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME						= 2;
+const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerName");
 
 // WorkerEntity Field IDs.
 const Schema_FieldId WORKER_ID_ID										= 1;
