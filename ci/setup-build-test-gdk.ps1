@@ -41,14 +41,13 @@ if ( ((Test-Path env:SLOW_NETWORKING_TESTS) -And ($env:SLOW_NETWORKING_TESTS -eq
 }
 
 $tests = @(
-  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "UnitTestResults", "SpatialGDK", $True),
-  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialNetworkingFastTestResults", "/Game/SpatialNetworkingMap", $True)
+  [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "FastTestResults", "SpatialGDK+/Game/SpatialNetworkingMap", $True),
 )
 
 if($slow_networking_tests) {
   # Do we want to run the tests on the SpatialNetworkingMap with native networking?
   # $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaShortNetworkingTestResults", "/Game/SpatialNetworkingMap", $False)
-  $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "SpatialNetworkingSlowTestResults", "/Game/NetworkingMap", $True)
+  $tests[0].tests_path += "+/Game/NetworkingMap"
   $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaNetworkingSlowTestResults", "/Game/NetworkingMap", $False)
 }
 
