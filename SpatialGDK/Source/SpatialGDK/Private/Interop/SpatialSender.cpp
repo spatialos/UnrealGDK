@@ -118,11 +118,10 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 {
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
-	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	ComponentFactory DataFactory(false, NetDriver);
 
-	TArray<Worker_ComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, EntityId, SubobjectRepChanges, SubobjectHandoverChanges);
+	TArray<Worker_ComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 
 	for (Worker_ComponentData& ComponentData : SubobjectDatas)
 	{
@@ -262,8 +261,9 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
 	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver);
+	TraceKey LatencyTraceKey = USpatialLatencyTracer::InvalidTraceKey;
 
-	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges);
+	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, &LatencyTraceKey);
 
 	for (Worker_ComponentUpdate& Update : ComponentUpdates)
 	{
@@ -279,7 +279,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			continue;
 		}
 
-		Connection->SendComponentUpdate(EntityId, &Update);
+		Connection->SendComponentUpdate(EntityId, &Update, LatencyTraceKey);
 	}
 }
 

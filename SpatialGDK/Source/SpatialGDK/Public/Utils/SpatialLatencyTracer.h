@@ -97,7 +97,6 @@ public:
 	bool IsValidKey(TraceKey Key);
 	TraceKey GetTraceKey(const UObject* Obj, const UFunction* Function);
 	TraceKey GetTraceKey(const UObject* Obj, const UProperty* Property);
-	TraceKey GetTraceKey(uint32 Entity, uint32 Component);
 
 	void MarkActiveLatencyTrace(const TraceKey Key);
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);

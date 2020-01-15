@@ -143,16 +143,6 @@ TraceKey USpatialLatencyTracer::GetTraceKey(const UObject* Obj, const UProperty*
 	return ReturnKey;
 }
 
-TraceKey USpatialLatencyTracer::GetTraceKey(uint32 Entity, uint32 Component)
-{
-	FScopeLock Lock(&Mutex);
-
-	EntityComponentKey PropKey{ Entity, Component };
-	TraceKey ReturnKey = InvalidTraceKey;
-	TrackingEntityComponents.RemoveAndCopyValue(PropKey, ReturnKey);
-	return ReturnKey;
-}
-
 void USpatialLatencyTracer::MarkActiveLatencyTrace(const TraceKey Key)
 {
 	// We can safely set this to the active trace, even if Key is invalid, as other functionality
@@ -276,11 +266,7 @@ void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
-		TraceKey Trace = GetTraceKey(ComponentUpdate->EntityId, ComponentUpdate->Update.component_id);
-		if (Trace != InvalidTraceKey)
-		{
-			WriteToLatencyTrace(Trace, TEXT("Moved update to Worker queue"));
-		}
+		WriteToLatencyTrace(ComponentUpdate->Trace, TEXT("Moved update to Worker queue"));
 	}
 }
 
@@ -289,12 +275,7 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
-
-		TraceKey Trace = GetTraceKey(ComponentUpdate->EntityId, ComponentUpdate->Update.component_id);
-		if (Trace != InvalidTraceKey)
-		{
-			WriteToLatencyTrace(Trace, TEXT("Sent to Worker SDK"));
-		}
+		EndLatencyTrace(ComponentUpdate->Trace, TEXT("Sent to Worker SDK"));
 	}
 }
 
