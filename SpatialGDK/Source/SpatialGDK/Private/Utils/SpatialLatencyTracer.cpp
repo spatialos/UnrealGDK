@@ -402,7 +402,6 @@ void USpatialLatencyTracer::ClearTrackingInformation()
 	TraceMap.Reset();
 	TrackingTraces.Reset();
 	TrackingProperties.Reset();
-	TrackingEntityComponents.Reset();
 }
 
 TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& FunctionOrProperty)
