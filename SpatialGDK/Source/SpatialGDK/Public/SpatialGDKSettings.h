@@ -77,6 +77,12 @@ public:
 	float HeartbeatTimeoutSeconds;
 
 	/**
+	* Same as HeartbeatTimeoutSeconds, but used if WITH_EDITOR is defined.
+	*/
+	UPROPERTY(EditAnywhere, config, Category = "Heartbeat", meta = (DisplayName = "Heartbeat Timeout With Editor (seconds)"))
+	float HeartbeatTimeoutWithEditorSeconds;
+
+	/**
 	 * Specifies the maximum number of Actors replicated per tick.
 	 * Default: `0` per tick  (no limit)
 	 * (If you set the value to ` 0`, the SpatialOS Runtime replicates every Actor per tick; this forms a large SpatialOS  world, affecting the performance of both game clients and server-worker instances.)
@@ -255,4 +261,8 @@ public:
 	/** Only valid on Udp connections - specifies client downstream flush interval - see c_worker.h */
 	UPROPERTY(Config)
 	uint32 UdpClientDownstreamUpdateIntervalMS;
+
+	/** Do async loading for new classes when checking out entities. */
+	UPROPERTY(Config)
+	bool bAsyncLoadNewClassesOnEntityCheckout;
 };

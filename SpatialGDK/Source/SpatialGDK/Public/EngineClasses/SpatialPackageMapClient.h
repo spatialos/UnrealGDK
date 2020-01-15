@@ -62,6 +62,9 @@ public:
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
+	// Pending object references, being asynchronously loaded.
+	TSet<FNetworkGUID> PendingReferences;
+
 private:
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;

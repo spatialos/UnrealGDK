@@ -19,6 +19,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EntityPoolRefreshCount(2000)
 	, HeartbeatIntervalSeconds(2.0f)
 	, HeartbeatTimeoutSeconds(10.0f)
+	, HeartbeatTimeoutWithEditorSeconds(10000.0f)
 	, ActorReplicationRateLimit(0)
 	, EntityCreationRateLimit(0)
 	, UseIsActorRelevantForConnection(false)
@@ -53,6 +54,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, UdpClientUpstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
 	// TODO - end
+	, bAsyncLoadNewClassesOnEntityCheckout(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
