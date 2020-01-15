@@ -2,9 +2,9 @@
 
 #include "Tests/TestDefinitions.h"
 
-#include "SpatialWorkerConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialOutputDevice.h"
-#include "SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
+#include "SpatialGDKTests/SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
 
 #include "CoreMinimal.h"
 
