@@ -58,15 +58,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				}
 				if (TraceId != USpatialLatencyTracer::InvalidTraceKey)
 				{
-					LatencyTracer->WriteToLatencyTrace(TraceId, TEXT("Written to schema object."));
-					if (OutLatencyTraceId)
-					{
-						if (*OutLatencyTraceId != USpatialLatencyTracer::InvalidTraceKey)
-						{
-							UE_LOG(LogSpatialNetSerialize, Warning, TEXT("Dropping component latency trace update because 2 were requested in the same actor. %s"), *Object->GetName());
-						}
-						*OutLatencyTraceId = TraceId;
-					}
+					*OutLatencyTraceId = TraceId;
 				}
 			}
 #endif
