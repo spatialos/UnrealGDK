@@ -117,7 +117,6 @@ private:
 
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
 	using ActorPropertyKey = TPair<const AActor*, const UProperty*>;
-	using EntityComponentKey = TPair<uint32, uint32>;
 	using TraceSpan = improbable::trace::Span;
 
 	bool BeginLatencyTrace_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
