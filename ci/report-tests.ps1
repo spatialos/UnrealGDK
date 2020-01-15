@@ -43,12 +43,6 @@ if (Test-Path "$test_result_dir\index.html" -PathType Leaf) {
         --style info
 }
 
-# Read the test results
-$results_path = Join-Path -Path $test_result_dir -ChildPath "index.json"
-$results_json = Get-Content $results_path -Raw
-$test_results_obj = ConvertFrom-Json $results_json
-$tests_passed = $test_results_obj.failed -eq 0
-
 # Upload artifacts to Buildkite, capture output to extract artifact ID in the Slack message generation
 # Command format is the results of Powershell weirdness, likely related to the following:
 # https://stackoverflow.com/questions/2095088/error-when-calling-3rd-party-executable-from-powershell-when-using-an-ide
@@ -65,6 +59,12 @@ Catch {
 }
 $test_results_url = "https://buildkite.com/organizations/$env:BUILDKITE_ORGANIZATION_SLUG/pipelines/$env:BUILDKITE_PIPELINE_SLUG/builds/$env:BUILDKITE_BUILD_ID/jobs/$env:BUILDKITE_JOB_ID/artifacts/$test_results_id"
 $test_log_url = "https://buildkite.com/organizations/$env:BUILDKITE_ORGANIZATION_SLUG/pipelines/$env:BUILDKITE_PIPELINE_SLUG/builds/$env:BUILDKITE_BUILD_ID/jobs/$env:BUILDKITE_JOB_ID/artifacts/$test_log_id"
+
+# Read the test results
+$results_path = Join-Path -Path $test_result_dir -ChildPath "index.json"
+$results_json = Get-Content $results_path -Raw
+$test_results_obj = ConvertFrom-Json $results_json
+$tests_passed = $test_results_obj.failed -eq 0
 
 # Build Slack attachment
 $total_tests_succeeded = $test_results_obj.succeeded + $test_results_obj.succeededWithWarnings
