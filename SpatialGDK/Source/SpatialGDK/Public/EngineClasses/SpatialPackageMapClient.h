@@ -21,7 +21,7 @@ class UEntityPool;
 class FTimerManager;
 
 UCLASS()
-class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient, public AbstractPackageMapClient
+class SPATIALGDK_API USpatialPackageMapClient : public UAbstractPackageMapClient
 {
 	GENERATED_BODY()		
 public:

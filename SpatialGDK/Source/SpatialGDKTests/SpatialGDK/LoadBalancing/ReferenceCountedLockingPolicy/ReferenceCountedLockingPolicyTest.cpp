@@ -16,6 +16,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/DefaultPawn.h"
 #include "Tests/AutomationCommon.h"
+#include "Templates/SharedPointer.h"
 #include "UObject/UObjectGlobals.h"
 
 #define REFERENCECOUNTEDLOCKINGPOLICY_TEST(TestName) \
@@ -30,6 +31,9 @@ struct TestData
 	TMap<FName, AActor*> TestActors;
 	TMap<AActor*, TSet<ActorLockToken>> TestActorLockingTokens;
 	UReferenceCountedLockingPolicy* LockingPolicy;
+	UAbstractStaticComponentView* StaticComponentView;
+	UAbstractPackageMapClient* PackageMap;
+	TSharedPtr<AbstractVirtualWorkerTranslator> VirtualWorkerTranslator;
 };
 
 struct TestDataDeleter
@@ -37,15 +41,27 @@ struct TestDataDeleter
 	void operator()(TestData* Data) const noexcept
 	{
 		Data->LockingPolicy->RemoveFromRoot();
+		Data->StaticComponentView->RemoveFromRoot();
+		Data->PackageMap->RemoveFromRoot();
 		delete Data;
 	}
 };
 
-TSharedPtr<TestData> MakeNewTestData(AbstractStaticComponentView* StaticComponentView,
-	AbstractPackageMapClient* PackageMap,
-	AbstractVirtualWorkerTranslator* VirtualWorkerTranslator)
+TSharedPtr<TestData> MakeNewTestData(Worker_EntityId EntityId, Worker_Authority EntityAuthority, SpatialGDK::ComponentStorageBase* AuthorityIntentData, VirtualWorkerId VirtWorkerId)
 {
 	TSharedPtr<TestData> Data(new TestData, TestDataDeleter());
+	USpatialStaticComponentViewMock* StaticComponentView = NewObject<USpatialStaticComponentViewMock>();
+	StaticComponentView->Init(EntityAuthority, AuthorityIntentData);
+	Data->StaticComponentView = StaticComponentView;
+
+	USpatialPackageMapClientMock* PackageMap = NewObject<USpatialPackageMapClientMock>();
+	PackageMap->Init(EntityId);
+	Data->PackageMap = PackageMap;
+
+	TSharedPtr<USpatialVirtualWorkerTranslatorMock> VirtualWorkerTranslator = MakeShared<USpatialVirtualWorkerTranslatorMock>();
+	VirtualWorkerTranslator->Init(VirtWorkerId);
+	Data->VirtualWorkerTranslator = VirtualWorkerTranslator;
+
 	Data->LockingPolicy = NewObject<UReferenceCountedLockingPolicy>();
 	Data->LockingPolicy->Init(StaticComponentView, PackageMap, VirtualWorkerTranslator);
 	Data->LockingPolicy->AddToRoot();
@@ -125,16 +141,23 @@ bool FAcquireLock::Update()
 		}
 	}
 
-	TSet<ActorLockToken> ActorLockTokens = Data->TestActorLockingTokens.FindOrAdd(Actor);
+	TSet<ActorLockToken>& ActorLockTokens = Data->TestActorLockingTokens.FindOrAdd(Actor);
 	ActorLockTokens.Add(Token);
 
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FReleaseLock, TSharedPtr<TestData>, Data, ActorLockToken, Token);
-bool FReleaseLock::Update()
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FReleaseAllLocks, TSharedPtr<TestData>, Data, FName, Handle);
+bool FReleaseAllLocks::Update()
 {
-	Data->LockingPolicy->ReleaseLock(Token);
+	AActor* Actor = Data->TestActors[Handle];
+	TSet<ActorLockToken>* ActorLockTokens = Data->TestActorLockingTokens.Find(Actor);
+
+	for (auto& Token : *ActorLockTokens)
+	{
+		Data->LockingPolicy->ReleaseLock(Token);
+	}
+
 	return true;
 }
 
@@ -163,7 +186,8 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLoc
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(nullptr, nullptr, nullptr);
+	TSharedPtr<TestData> Data = MakeNewTestData(SpatialConstants::INVALID_ENTITY_ID, WORKER_AUTHORITY_NOT_AUTHORITATIVE, nullptr, SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
+
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
@@ -176,7 +200,13 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_IsLocked_is_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(nullptr, nullptr, nullptr);
+	Worker_EntityId EntityId = 1;
+	Worker_Authority EntityAuthority = Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE;
+	VirtualWorkerId VirtWorkerId = 1;
+	SpatialGDK::ComponentStorageBase* AuthorityIntentData = new SpatialGDK::ComponentStorage<SpatialGDK::AuthorityIntent>(SpatialGDK::AuthorityIntent(VirtWorkerId));
+
+	TSharedPtr<TestData> Data = MakeNewTestData(EntityId, EntityAuthority, AuthorityIntentData, VirtWorkerId);
+
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
@@ -191,14 +221,12 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	USpatialStaticComponentViewMock* StaticComponentView = NewObject<USpatialStaticComponentViewMock>();
-	StaticComponentView->Init(Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, nullptr);
-	USpatialPackageMapClientMock* PackageMapClient = NewObject<USpatialPackageMapClientMock>();
-	PackageMapClient->Init(SpatialConstants::INVALID_ENTITY_ID);
-	USpatialVirtualWorkerTranslatorMock* VirtualWorkerTranslator = NewObject<USpatialVirtualWorkerTranslatorMock>();
-	VirtualWorkerTranslator->Init(SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
+	Worker_EntityId EntityId = 1;
+	Worker_Authority EntityAuthority = Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE;
+	VirtualWorkerId VirtWorkerId = 1;
+	SpatialGDK::ComponentStorageBase* AuthorityIntentData = new SpatialGDK::ComponentStorage<SpatialGDK::AuthorityIntent>(SpatialGDK::AuthorityIntent(VirtWorkerId));
 
-	TSharedPtr<TestData> Data = MakeNewTestData(StaticComponentView, PackageMapClient, VirtualWorkerTranslator);
+	TSharedPtr<TestData> Data = MakeNewTestData(EntityId, EntityAuthority, AuthorityIntentData, VirtWorkerId);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
@@ -206,6 +234,8 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false, 0));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "GIVEN_an_actor_has_not_been_locked_WHEN_AcquireLock_is_called_THEN_returns_a_valid_token"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseAllLocks(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false, 0));
 
 	return true;
 }

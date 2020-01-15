@@ -5,9 +5,15 @@
 #include "SpatialConstants.h"
 #include "WorkerSDK/improbable/c_worker.h"
 
-class AbstractPackageMapClient
+#include "Engine/PackageMapClient.h"
+#include "UObject/Object.h"
+
+#include "AbstractPackageMapClient.generated.h"
+
+UCLASS()
+class SPATIALGDK_API UAbstractPackageMapClient : public UPackageMapClient
 {
+	GENERATED_BODY()
 public:
-	virtual ~AbstractPackageMapClient() {};
-	virtual Worker_EntityId GetEntityIdFromObject(const UObject* Object) = 0;
+	virtual Worker_EntityId GetEntityIdFromObject(const UObject* Object) { return SpatialConstants::INVALID_ENTITY_ID;  };
 };

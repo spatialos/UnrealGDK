@@ -468,7 +468,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			LoadBalanceStrategy->Init(this);
 		}
 
-		VirtualWorkerTranslator = new SpatialVirtualWorkerTranslator();
+		VirtualWorkerTranslator = MakeShared<SpatialVirtualWorkerTranslator>();
 		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
 
 		if (IsServer()) 
@@ -2350,7 +2350,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 		}
 	}
 
-	if (VirtualWorkerTranslator != nullptr && !VirtualWorkerTranslator->IsReady())
+	if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
 	{
 		Worker_Op* AddComponentOp = nullptr;
 		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, &AddComponentOp);
@@ -2384,7 +2384,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 	if (PackageMap->IsEntityPoolReady() &&
 		GlobalStateManager->GetCanBeginPlay() &&
-		(VirtualWorkerTranslator == nullptr || VirtualWorkerTranslator->IsReady()))
+		(!VirtualWorkerTranslator.IsValid() || VirtualWorkerTranslator->IsReady()))
 	{
 		// Return whether or not we are ready to start
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));

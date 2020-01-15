@@ -8,7 +8,7 @@
 #include "SpatialPackageMapClientMock.generated.h"
 
 UCLASS()
-class USpatialPackageMapClientMock : public UObject, public AbstractPackageMapClient
+class USpatialPackageMapClientMock : public UAbstractPackageMapClient
 {
 	GENERATED_BODY()
 public:

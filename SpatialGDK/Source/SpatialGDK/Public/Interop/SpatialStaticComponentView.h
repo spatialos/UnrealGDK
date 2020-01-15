@@ -16,7 +16,7 @@
 #include "SpatialStaticComponentView.generated.h"
 
 UCLASS()
-class SPATIALGDK_API USpatialStaticComponentView : public UObject, public AbstractStaticComponentView
+class SPATIALGDK_API USpatialStaticComponentView : public UAbstractStaticComponentView
 {
 	GENERATED_BODY()
 

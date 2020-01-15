@@ -19,25 +19,43 @@ bool UReferenceCountedLockingPolicy::CanAcquireLock(AActor* Actor) const
 		return false;
 	}
 
-	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	if (!PackageMap.IsValid())
+	{
+		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Can not lock actor migration. PackageMap pointer was invalid. Actor: %s"), *Actor->GetName());
+		return false;
+	}
+	Worker_EntityId EntityId = PackageMap.Get()->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Failed to lock actor without corresponding entity ID. Actor: %s"), *Actor->GetName());
 		return false;
 	}
 
-	const bool bHasAuthority = StaticComponentView->GetAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE;
+	if (!StaticComponentView.IsValid())
+	{
+		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Can not lock actor migration. StaticComponentView pointer was invalid. Actor: %s"), *Actor->GetName());
+		return false;
+	}
+	const bool bHasAuthority = StaticComponentView.Get()->GetAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE;
 	if (!bHasAuthority)
 	{
-		UE_LOG(LogReferenceCountedLockingPolicy, Verbose, TEXT("Can not lock actor migration. Do not have authority. Actor: %s"), *Actor->GetName());
+		UE_LOG(LogReferenceCountedLockingPolicy, Warning, TEXT("Can not lock actor migration. Do not have authority. Actor: %s"), *Actor->GetName());
+		return false;
 	}
-	const bool bHasAuthorityIntent = VirtualWorkerTranslator->GetLocalVirtualWorkerId() ==
+
+	if (!VirtualWorkerTranslator.IsValid())
+	{
+		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Can not lock actor migration. VirtualWorkerTranslator pointer was invalid. Actor: %s"), *Actor->GetName());
+		return false;
+	}
+	const bool bHasAuthorityIntent = VirtualWorkerTranslator.Pin()->GetLocalVirtualWorkerId() ==
 		SpatialGDK::GetComponentStorageData<SpatialGDK::AuthorityIntent>(StaticComponentView->GetComponentData(EntityId, SpatialGDK::AuthorityIntent::ComponentId))->VirtualWorkerId;
 	if (!bHasAuthorityIntent)
 	{
-		UE_LOG(LogReferenceCountedLockingPolicy, Verbose, TEXT("Can not lock actor migration. Authority intent does not match this worker. Actor: %s"), *Actor->GetName());
+		UE_LOG(LogReferenceCountedLockingPolicy, Warning, TEXT("Can not lock actor migration. Authority intent does not match this worker. Actor: %s"), *Actor->GetName());
+		return false;
 	}
-	return bHasAuthorityIntent && bHasAuthority;
+	return true;
 }
 
 ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(AActor* Actor, FString DebugString)

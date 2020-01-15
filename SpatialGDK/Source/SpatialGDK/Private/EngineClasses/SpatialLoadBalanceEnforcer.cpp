@@ -10,13 +10,13 @@ DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
 using namespace SpatialGDK;
 
-SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
+SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, TSharedPtr<SpatialVirtualWorkerTranslator> InVirtualWorkerTranslator)
 	: WorkerId(InWorkerId)
 	, StaticComponentView(InStaticComponentView)
 	, VirtualWorkerTranslator(InVirtualWorkerTranslator)
 {
 	check(InStaticComponentView != nullptr);
-	check(InVirtualWorkerTranslator != nullptr);
+	check(InVirtualWorkerTranslator.IsValid());
 }
 
 void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
@@ -46,7 +46,12 @@ void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp
 			return;
 		}
 
-		const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		if (!VirtualWorkerTranslator.IsValid())
+		{
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("VirtualWorkerTranslator was invalid. Newly authoritative entity %lld was not queued."), AuthOp.entity_id);
+			return;
+		}
+		const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator.Pin()->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (OwningWorkerId != nullptr &&
 			*OwningWorkerId == WorkerId &&
 			StaticComponentView->GetAuthority(AuthOp.entity_id, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
@@ -104,7 +109,12 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 			continue;
 		}
 
-		const PhysicalWorkerName* DestinationWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		if (!VirtualWorkerTranslator.IsValid())
+		{
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("VirtualWorkerTranslator was invalid. Queued ACL assignment requests will not be processed."));
+			break;
+		}
+		const PhysicalWorkerName* DestinationWorkerId = VirtualWorkerTranslator.Pin()->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (DestinationWorkerId == nullptr)
 		{
 			const int32 WarnOnAttemptNum = 5;

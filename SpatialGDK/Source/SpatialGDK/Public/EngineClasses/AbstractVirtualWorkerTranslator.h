@@ -3,10 +3,11 @@
 #pragma once
 
 #include "SpatialCommonTypes.h"
+#include "SpatialConstants.h"
 
-class AbstractVirtualWorkerTranslator 
+class SPATIALGDK_API AbstractVirtualWorkerTranslator
 {
 public:
 	virtual ~AbstractVirtualWorkerTranslator() {};
-	virtual VirtualWorkerId GetLocalVirtualWorkerId() const = 0;
+	virtual VirtualWorkerId GetLocalVirtualWorkerId() const { return SpatialConstants::INVALID_VIRTUAL_WORKER_ID; };
 };

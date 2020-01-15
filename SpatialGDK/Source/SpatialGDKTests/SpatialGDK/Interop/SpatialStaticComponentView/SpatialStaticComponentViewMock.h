@@ -12,7 +12,7 @@
 #include "SpatialStaticComponentViewMock.generated.h"
 
 UCLASS()
-class USpatialStaticComponentViewMock : public UObject, public AbstractStaticComponentView
+class USpatialStaticComponentViewMock : public UAbstractStaticComponentView
 {
 	GENERATED_BODY()
 public:

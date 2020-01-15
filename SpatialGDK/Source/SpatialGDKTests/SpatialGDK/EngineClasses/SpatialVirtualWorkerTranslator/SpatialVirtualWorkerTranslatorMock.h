@@ -3,15 +3,10 @@
 #pragma once
 
 #include "EngineClasses/AbstractVirtualWorkerTranslator.h"
+#include "SpatialCommonTypes.h"
 
-#include "UObject/Object.h"
-
-#include "SpatialVirtualWorkerTranslatorMock.generated.h"
-
-UCLASS()
-class USpatialVirtualWorkerTranslatorMock : public UObject, public AbstractVirtualWorkerTranslator
+class USpatialVirtualWorkerTranslatorMock : public AbstractVirtualWorkerTranslator
 {
-	GENERATED_BODY()
 public:
 
 	void Init(VirtualWorkerId inReturnVirtualWorkerId);
