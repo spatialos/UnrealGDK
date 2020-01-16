@@ -13,6 +13,8 @@
 #include "SpatialGDKEditorToolbar.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
+#include "Async/Async.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "Textures/SlateIcon.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
@@ -28,6 +30,8 @@
 #include "Widgets/Text/STextBlock.h"
 
 #include "Internationalization/Regex.h"
+
+DEFINE_LOG_CATEGORY(LogSpatialGDKSimulatedPlayerDeployment);
 
 void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 {
@@ -487,6 +491,23 @@ void SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited(ui
 	SpatialGDKSettings->SetNumberOfSimulatedPlayers(NewValue);
 }
 
+bool SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth()
+{
+	FString SpatialInfoArgs = TEXT("auth login");
+	FString SpatialInfoResult;
+	FString StdErr;
+	int32 ExitCode;
+	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpatialExe, *SpatialInfoArgs, &ExitCode, &SpatialInfoResult, &StdErr);
+
+	bool bSuccess = ExitCode == 0;
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialGDKSimulatedPlayerDeployment, Warning, TEXT("Spatial auth login failed. Error Code: %d, Error Message: %s"), ExitCode, *SpatialInfoResult);
+	}
+
+	return bSuccess;
+}
+
 FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -503,15 +524,17 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		return FReply::Handled();
 	}
 
-	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
+	auto LaunchCloudDeployment = [this, ToolbarPtr]()
 	{
-		if (ToolbarPtr)
+		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
 		{
-			ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
-		}
+			if (ToolbarPtr)
+			{
+				ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
+			}
 
-		SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
-			FSimpleDelegate::CreateLambda([]()
+			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
+				FSimpleDelegate::CreateLambda([]()
 			{
 				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
@@ -519,23 +542,44 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 				}
 			}),
 
-			FSimpleDelegate::CreateLambda([]()
+				FSimpleDelegate::CreateLambda([]()
 			{
 				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
-					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment.");
+					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
 				}
 			}));
 
-		return FReply::Handled();
+			return;
+		}
+
+		FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
+		Info.bUseSuccessFailIcons = true;
+		Info.ExpireDuration = 3.0f;
+
+		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+	};
+
+	if (!AttemptSpatialAuthResult.IsReady() || AttemptSpatialAuthResult.Get() == false)
+	{
+#if ENGINE_MINOR_VERSION <= 22
+		AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth,
+#else
+		AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth,
+#endif
+			[this, LaunchCloudDeployment]()
+		{
+			if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
+			{
+				LaunchCloudDeployment();
+			}
+		});
 	}
-
-	FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
-	Info.bUseSuccessFailIcons = true;
-	Info.ExpireDuration = 3.0f;
-
-	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-	NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+	else
+	{
+		LaunchCloudDeployment();
+	}
 
 	return FReply::Handled();
 }
