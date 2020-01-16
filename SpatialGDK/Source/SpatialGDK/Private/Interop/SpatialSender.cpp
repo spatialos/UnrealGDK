@@ -119,7 +119,11 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
+	USpatialLatencyTracer* Tracer = nullptr;
+#if TRACE_LIB_ACTIVE
+	Tracer = USpatialLatencyTracer::GetTracer(Subobject);
+#endif
+	ComponentFactory DataFactory(false, NetDriver, Tracer);
 
 	TArray<TraceKey>* TraceKeysPtr = nullptr;
 #if TRACE_LIB_ACTIVE
@@ -269,7 +273,11 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
-	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, USpatialLatencyTracer::GetTracer(Object));
+	USpatialLatencyTracer* Tracer = nullptr;
+#if TRACE_LIB_ACTIVE
+	Tracer = USpatialLatencyTracer::GetTracer(Object);
+#endif
+	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer);
 
 	TArray<TraceKey>* TraceKeysPtr = nullptr;
 #if TRACE_LIB_ACTIVE

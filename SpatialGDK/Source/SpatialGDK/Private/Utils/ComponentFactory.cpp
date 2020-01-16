@@ -384,7 +384,10 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(MultiClientUpdate);
-				OutLatencyTraceIds->Add(LatencyKey);
+				if (OutLatencyTraceIds)
+				{
+					OutLatencyTraceIds->Add(LatencyKey);
+				}
 			}
 		}
 
@@ -396,7 +399,10 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(SingleClientUpdate);
-				OutLatencyTraceIds->Add(LatencyKey);
+				if (OutLatencyTraceIds)
+				{
+					OutLatencyTraceIds->Add(LatencyKey);
+				}
 			}
 		}
 	}
@@ -411,7 +417,10 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(HandoverUpdate);
-				OutLatencyTraceIds->Add(LatencyKey);
+				if (OutLatencyTraceIds)
+				{
+					OutLatencyTraceIds->Add(LatencyKey);
+				}
 			}
 		}
 	}
