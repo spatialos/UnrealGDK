@@ -39,7 +39,7 @@ Before you start to use offloading in your game, make sure that you’re familia
 ### Zoning
 Zoning is another multiserver option for working with SpatialOS. It works differently from [offloading](#offloading). Zoning involves sharing the server computation load by splitting up the world into areas of authority, with a different server-worker instance responsible for the computation of each area. A server-worker instance can make updates only to Actors that are in its area of authority.
 
-> **Note:** In the spirint of open development, we are introducing zoning concepts but the GDK is not currently available for development with zoning. For more information on availability, see the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1).
+> **Note:** The GDK is not currently available for development with zoning. For more information on availability, see the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1).
 
 ### Cross-server RPCs
 To facilitate zoning, we created the concept of a cross-server RPC to make updates to Actors, known as “entities” in SpatialOS. This is a type of RPC that enables a server-worker instance  which does not have authority over an entity to tell the server-worker instance that does have authority over that entity to make an update to it. This is necessary if you’re using zoning because areas of authority mean that one server-worker instance can't make updates to every entity in the world; it can make updates only to the entities in its area of authority.
