@@ -324,7 +324,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* ComponentConstraintObject = Schema_GetObject(QueryConstraintObject, 8);
 
-		NewQueryConstraint.EntityIdConstraint = Schema_GetUint32(ComponentConstraintObject, 1);
+		NewQueryConstraint.ComponentConstraint = Schema_GetUint32(ComponentConstraintObject, 1);
 	}
 
 	// list<QueryConstraint> and_constraint = 9;
