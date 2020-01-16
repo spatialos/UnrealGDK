@@ -269,7 +269,7 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	else if (Message->Type == SpatialGDK::EOutgoingMessageType::AddComponent)
 	{
 		const SpatialGDK::FAddComponent* ComponentAdd = static_cast<const SpatialGDK::FAddComponent*>(Message);
-		WriteToLatencyTrace(ComponentAdd->Trace, TEXT("Sent componentAdd to Worker SDK"));
+		EndLatencyTrace(ComponentAdd->Trace, TEXT("Sent componentAdd to Worker SDK"));
 	}
 
 }
