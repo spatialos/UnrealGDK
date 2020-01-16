@@ -9,7 +9,7 @@
 #include "CoreMinimal.h"
 
 #define WORKERCONNECTION_TEST(TestName) \
-	GDK_TEST(Core, WorkerConnection, TestName)
+	GDK_TEST(Core, SpatialWorkerConnection, TestName)
 
 using namespace SpatialGDK;
 
