@@ -337,7 +337,9 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 		OutLatencyPayloadContinue = FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes));
 	}
 
-	TraceMap.Add(Key, MoveTemp(*ActiveTrace));
+	// Move the active trace to a new tracked trace
+	TraceSpan TempSpan(MoveTemp(*ActiveTrace));
+	TraceMap.Add(Key, MoveTemp(TempSpan));
 	TraceMap.Remove(ActiveTraceKey);
 	ActiveTraceKey = InvalidTraceKey;
 
