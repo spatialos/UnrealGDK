@@ -38,10 +38,10 @@ public:
 	static Worker_ComponentData CreateEmptyComponentData(Worker_ComponentId ComponentId);
 
 private:
-	Worker_ComponentData CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, USpatialLatencyTracer* LatencyTracer, TraceKey* OutLatencyTraceId = nullptr);
-	Worker_ComponentUpdate CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool& bWroteSomething, USpatialLatencyTracer* LatencyTracer, TraceKey* OutLatencyTraceId = nullptr);
+	Worker_ComponentData CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, TraceKey* OutLatencyTraceId = nullptr);
+	Worker_ComponentUpdate CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool& bWroteSomething, TraceKey* OutLatencyTraceId = nullptr);
 
-	bool FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, USpatialLatencyTracer* LatencyTracer, TraceKey* OutLatencyTraceId = nullptr, TArray<Schema_FieldId>* ClearedIds = nullptr);
+	bool FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TraceKey* OutLatencyTraceId = nullptr, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
 	Worker_ComponentUpdate CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool& bWroteSomething);
 

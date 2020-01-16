@@ -237,7 +237,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentDatas.Add(Heartbeat().CreateHeartbeatData());
 	}
 
-	ComponentFactory DataFactory(false, NetDriver);
+	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Actor));
 
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);

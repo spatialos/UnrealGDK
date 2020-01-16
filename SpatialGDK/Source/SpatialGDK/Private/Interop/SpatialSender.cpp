@@ -119,7 +119,7 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-	ComponentFactory DataFactory(false, NetDriver);
+	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
 
 	TArray<Worker_ComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 
@@ -260,7 +260,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
-	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver);
+	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, USpatialLatencyTracer::GetTracer(Object));
 	TraceKey LatencyTraceKey = USpatialLatencyTracer::InvalidTraceKey;
 
 	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, &LatencyTraceKey);
@@ -403,7 +403,7 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, con
 	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params);
 
 #if TRACE_LIB_ACTIVE
-	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), USpatialLatencyTracer::GetTracer(this)->GetAndUntrackTrace(TargetObject, Function));
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), USpatialLatencyTracer::GetTracer(this)->RetrievePendingTrace(TargetObject, Function));
 #else
 	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 #endif
