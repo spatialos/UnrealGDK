@@ -88,7 +88,7 @@ public:
 
 	// TODO(Alex): Use TUniquePtr
 	UPROPERTY()
-	USpatialWorkerConnectionCallbacks* WorkerConnectionCallbacks;
+	USpatialWorkerConnectionCallbacks* Callbacks;
 
 private:
 	void InitializeOpsProcessingThread();

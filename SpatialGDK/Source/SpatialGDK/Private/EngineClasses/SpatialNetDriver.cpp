@@ -291,8 +291,8 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	}
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
-	Connection->WorkerConnectionCallbacks->OnConnectedCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSSucceeded);
-	Connection->WorkerConnectionCallbacks->OnFailedToConnectCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed);
+	Connection->Callbacks->OnConnectedCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSSucceeded);
+	Connection->Callbacks->OnFailedToConnectCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed);
 
 	bool bUseReceptionist = true;
 	bool bShouldLoadFromURL = true;
@@ -414,7 +414,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Receiver = NewObject<USpatialReceiver>();
 
 	// TODO: UNR-2452
-	// Ideally the GlobalStateManager and StaticComponentView would be created as part of WorkerConnection::Init
+	// Ideally the GlobalStateManager and StaticComponentView would be created as part of USpatialWorkerConnection::Init
 	// however, this causes a crash upon the second instance of running PIE due to a destroyed USpatialNetDriver still being reference.
 	// Why the destroyed USpatialNetDriver is referenced is unknown.
 	USpatialGameInstance* GameInstance = GetGameInstance();

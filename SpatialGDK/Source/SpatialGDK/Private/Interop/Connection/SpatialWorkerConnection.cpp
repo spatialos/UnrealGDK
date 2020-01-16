@@ -10,7 +10,7 @@
 
 USpatialWorkerConnection::USpatialWorkerConnection(const FObjectInitializer & ObjectInitializer /*= FObjectInitializer::Get()*/)
 {
-	WorkerConnectionCallbacks = NewObject<USpatialWorkerConnectionCallbacks>();
+	Callbacks = NewObject<USpatialWorkerConnectionCallbacks>();
 	WorkerConnectionImpl = MakeUnique<RealWorkerConnection>();
 }
 
@@ -218,7 +218,7 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 		InitializeOpsProcessingThread();
 	}
 
-	WorkerConnectionCallbacks->OnConnectedCallback.ExecuteIfBound();
+	Callbacks->OnConnectedCallback.ExecuteIfBound();
 }
 
 void USpatialWorkerConnection::OnConnectionFailure()
@@ -228,7 +228,7 @@ void USpatialWorkerConnection::OnConnectionFailure()
 	uint8_t ConnectionStatusCode;
 	FString ErrorMessage;
 	WorkerConnectionImpl->GetErrorCodeAndMessage(ConnectionStatusCode, ErrorMessage);
-	WorkerConnectionCallbacks->OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
+	Callbacks->OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 }
 
 bool USpatialWorkerConnection::Init()
