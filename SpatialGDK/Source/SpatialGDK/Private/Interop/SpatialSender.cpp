@@ -11,7 +11,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
-#include "Interop/Connection/WorkerConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
 #include "Net/NetworkProfiler.h"

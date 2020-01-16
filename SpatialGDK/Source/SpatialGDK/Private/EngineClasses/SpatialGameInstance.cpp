@@ -12,7 +12,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
-#include "Interop/Connection/WorkerConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Utils/SpatialDebugger.h"

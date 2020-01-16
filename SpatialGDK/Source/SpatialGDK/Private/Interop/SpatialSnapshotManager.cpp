@@ -2,7 +2,7 @@
 
 #include "Interop/SpatialSnapshotManager.h"
 
-#include "Interop/Connection/WorkerConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "SpatialConstants.h"

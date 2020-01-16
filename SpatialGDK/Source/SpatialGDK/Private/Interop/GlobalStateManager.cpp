@@ -15,7 +15,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineUtils.h"
 #include "GameFramework/GameModeBase.h"
-#include "Interop/Connection/WorkerConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Kismet/GameplayStatics.h"

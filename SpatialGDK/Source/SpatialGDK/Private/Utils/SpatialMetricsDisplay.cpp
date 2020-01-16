@@ -6,7 +6,7 @@
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
 #include "EngineClasses/SpatialNetDriver.h"
-#include "Interop/Connection/WorkerConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Net/UnrealNetwork.h"
 #include "Utils/SpatialMetrics.h"
 

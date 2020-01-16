@@ -5,7 +5,7 @@
 #include "Engine/Engine.h"
 #include "EngineGlobals.h"
 
-#include "Interop/Connection/WorkerConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/Connection/OutgoingMessages.h"
 
 #include "SpatialGDKSettings.h"

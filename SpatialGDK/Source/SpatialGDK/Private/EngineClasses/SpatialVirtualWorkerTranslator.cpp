@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/Connection/WorkerConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/AbstractLBStrategy.h"

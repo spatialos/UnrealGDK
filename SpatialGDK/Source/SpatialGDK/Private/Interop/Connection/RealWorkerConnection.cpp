@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/Connection/RealWorkerConnection.h"
 #if WITH_EDITOR
 #include "Interop/Connection/EditorWorkerController.h"
 #endif

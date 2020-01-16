@@ -1,9 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 // TODO(Alex): move `Worker_` code to SpatialWorkerConnection
-#include "WorkerConnection.h"
-
 #include "SpatialWorkerConnection.h"
+
+#include "RealWorkerConnection.h"
 
 #include "HAL/RunnableThread.h"
 #include "Async/Async.h"

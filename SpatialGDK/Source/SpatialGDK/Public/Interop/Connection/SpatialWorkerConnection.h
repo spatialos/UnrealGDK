@@ -3,7 +3,7 @@
 #pragma once
 
 // TODO(Alex): move include to .cpp
-#include "SpatialWorkerConnection.h"
+#include "RealWorkerConnection.h"
 
 #include "SpatialCommonTypes.h"
 
@@ -14,7 +14,7 @@
 #include "HAL/Runnable.h"
 #include "CoreMinimal.h"
 
-#include "WorkerConnection.generated.h"
+#include "SpatialWorkerConnection.generated.h"
 
 namespace SpatialGDK
 {
