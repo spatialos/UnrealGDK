@@ -7,7 +7,6 @@
 #include "SpatialGDKTests/SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
 
 #include "CoreMinimal.h"
-#include "UObject/StrongObjectPtr.h"
 
 #define WORKERCONNECTION_TEST(TestName) \
 	GDK_TEST(Core, SpatialWorkerConnection, TestName)
@@ -207,16 +206,16 @@ WORKERCONNECTION_TEST(GIVEN_running_local_deployment_WHEN_connecting_client_and_
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsRunning));
 
 	// WHEN
-	TStrongObjectPtr<USpatialWorkerConnection> ClientConnection(NewObject<USpatialWorkerConnection>());
-	TStrongObjectPtr<USpatialWorkerConnection> ServerConnection(NewObject<USpatialWorkerConnection>());
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection.Get(), true));
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection.Get(), false));
+	USpatialWorkerConnection* ClientConnection = NewObject<USpatialWorkerConnection>();
+	USpatialWorkerConnection* ServerConnection = NewObject<USpatialWorkerConnection>();
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection, true));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
 
 	// THEN
 	bool bIsConnected = true;
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ClientConnection.Get(), bIsConnected));
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ServerConnection.Get(), bIsConnected));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ClientConnection, bIsConnected));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ServerConnection, bIsConnected));
 
 	// CLEANUP
 	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
@@ -233,16 +232,16 @@ WORKERCONNECTION_TEST(GIVEN_no_local_deployment_WHEN_connecting_client_and_serve
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
 
 	// WHEN
-	TStrongObjectPtr<USpatialWorkerConnection> ClientConnection(NewObject<USpatialWorkerConnection>());
-	TStrongObjectPtr<USpatialWorkerConnection> ServerConnection(NewObject<USpatialWorkerConnection>());
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection.Get(), true));
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection.Get(), false));
+	USpatialWorkerConnection* ClientConnection = NewObject<USpatialWorkerConnection>();
+	USpatialWorkerConnection* ServerConnection = NewObject<USpatialWorkerConnection>();
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection, true));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
 
 	// THEN
 	bool bIsConnected = false;
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ClientConnection.Get(), bIsConnected));
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ServerConnection.Get(), bIsConnected));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ClientConnection, bIsConnected));
+	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ServerConnection, bIsConnected));
 
 	// CLEANUP
 	ADD_LATENT_AUTOMATION_COMMAND(FResetConnectionProcessed());
@@ -257,17 +256,17 @@ WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_reserve_entity_ids_requ
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsRunning));
 
 	// WHEN
-	TStrongObjectPtr<USpatialWorkerConnection> ClientConnection(NewObject<USpatialWorkerConnection>());
-	TStrongObjectPtr<USpatialWorkerConnection> ServerConnection(NewObject<USpatialWorkerConnection>());
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection.Get(), true));
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection.Get(), false));
+	USpatialWorkerConnection* ClientConnection = NewObject<USpatialWorkerConnection>();
+	USpatialWorkerConnection* ServerConnection = NewObject<USpatialWorkerConnection>();
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection, true));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
 
 	// THEN
-	ADD_LATENT_AUTOMATION_COMMAND(FSendReserveEntityIdsRequest(ClientConnection.Get()));
-	ADD_LATENT_AUTOMATION_COMMAND(FSendReserveEntityIdsRequest(ServerConnection.Get()));
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ServerConnection.Get(), WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE));
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ClientConnection.Get(), WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE));
+	ADD_LATENT_AUTOMATION_COMMAND(FSendReserveEntityIdsRequest(ClientConnection));
+	ADD_LATENT_AUTOMATION_COMMAND(FSendReserveEntityIdsRequest(ServerConnection));
+	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ServerConnection, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE));
+	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ClientConnection, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE));
 
 	// CLEANUP
 	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
@@ -284,17 +283,17 @@ WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_create_entity_request_s
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsRunning));
 
 	// WHEN
-	TStrongObjectPtr<USpatialWorkerConnection> ClientConnection(NewObject<USpatialWorkerConnection>());
-	TStrongObjectPtr<USpatialWorkerConnection> ServerConnection(NewObject<USpatialWorkerConnection>());
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection.Get(), true));
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection.Get(), false));
+	USpatialWorkerConnection* ClientConnection = NewObject<USpatialWorkerConnection>();
+	USpatialWorkerConnection* ServerConnection = NewObject<USpatialWorkerConnection>();
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection, true));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
 
 	// THEN
-	ADD_LATENT_AUTOMATION_COMMAND(FSendCreateEntityRequest(ClientConnection.Get()));
-	ADD_LATENT_AUTOMATION_COMMAND(FSendCreateEntityRequest(ServerConnection.Get()));
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ServerConnection.Get(), WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE));
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ClientConnection.Get(), WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE));
+	ADD_LATENT_AUTOMATION_COMMAND(FSendCreateEntityRequest(ClientConnection));
+	ADD_LATENT_AUTOMATION_COMMAND(FSendCreateEntityRequest(ServerConnection));
+	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ServerConnection, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE));
+	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ClientConnection, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE));
 
 	// CLEANUP
 	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
@@ -311,17 +310,17 @@ WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_delete_entity_request_s
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsRunning));
 
 	// WHEN
-	TStrongObjectPtr<USpatialWorkerConnection> ClientConnection(NewObject<USpatialWorkerConnection>());
-	TStrongObjectPtr<USpatialWorkerConnection> ServerConnection(NewObject<USpatialWorkerConnection>());
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection.Get(), true));
-	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection.Get(), false));
+	USpatialWorkerConnection* ClientConnection = NewObject<USpatialWorkerConnection>();
+	USpatialWorkerConnection* ServerConnection = NewObject<USpatialWorkerConnection>();
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection, true));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
 
 	// THEN
-	ADD_LATENT_AUTOMATION_COMMAND(FSendDeleteEntityRequest(ClientConnection.Get()));
-	ADD_LATENT_AUTOMATION_COMMAND(FSendDeleteEntityRequest(ServerConnection.Get()));
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ServerConnection.Get(), WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE));
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ClientConnection.Get(), WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE));
+	ADD_LATENT_AUTOMATION_COMMAND(FSendDeleteEntityRequest(ClientConnection));
+	ADD_LATENT_AUTOMATION_COMMAND(FSendDeleteEntityRequest(ServerConnection));
+	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ServerConnection, WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE));
+	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ClientConnection, WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE));
 
 	// CLEANUP
 	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
