@@ -13,10 +13,12 @@
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/Singleton.h"
+#include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialActorUtils.h"
+#include "Utils/SpatialDebugger.h"
 
 #include "Engine.h"
  
@@ -212,6 +214,15 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
 		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId()));
+	}
+
+	if (NetDriver->SpatialDebugger != nullptr)
+	{
+		VirtualWorkerId IntentVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+		FColor IntentColor = NetDriver->SpatialDebugger->GetVirtualWorkerColor(IntentVirtualWorkerId);
+		SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, FColor::Magenta, IntentVirtualWorkerId, IntentColor, false);
+
+		ComponentDatas.Add(DebuggingInfo.CreateSpatialDebuggingData());
 	}
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
