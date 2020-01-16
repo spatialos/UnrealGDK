@@ -56,11 +56,16 @@ struct FPendingRPC
 	Schema_EntityId Entity;
 };
 
+struct FQueuedUpdate
+{
+	TArray<Worker_ComponentUpdate> ComponentUpdates;
+	TArray<TraceKey> LatencyKeys;
+};
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation>;
-using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<Worker_ComponentUpdate>>;
+using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, FQueuedUpdate>;
 using FChannelsToUpdatePosition = TSet<TWeakObjectPtr<USpatialActorChannel>>;
 
 UCLASS()

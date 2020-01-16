@@ -20,6 +20,18 @@
 
 DEFINE_LOG_CATEGORY(LogComponentFactory);
 
+namespace
+{
+	TraceKey* AllocateTraceKey(TArray<TraceKey>* Array)
+	{
+		if (Array)
+		{
+			Array->Add(USpatialLatencyTracer::InvalidTraceKey);
+			return &(*Array)[Array->Num() - 1];
+		}
+		return nullptr;
+	}
+}
 namespace SpatialGDK
 {
 
@@ -122,7 +134,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 	return bWroteSomething;
 }
 
-bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
+bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TraceKey* OutLatencyTraceId, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
 {
 	bool bWroteSomething = false;
 
@@ -133,6 +145,16 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 
 		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
 
+#if TRACE_LIB_ACTIVE
+		if (LatencyTracer != nullptr)
+		{
+			TraceKey TraceId = LatencyTracer->RetrievePendingTrace(Object, PropertyInfo.Property);
+			if (TraceId != USpatialLatencyTracer::InvalidTraceKey)
+			{
+				*OutLatencyTraceId = TraceId;
+			}
+		}
+#endif
 		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, ClearedIds);
 
 		bWroteSomething = true;
@@ -292,25 +314,26 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 }
 
-TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState, TraceKey* OutLatencyTraceId /*= nullptr*/)
+TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState, TArray<TraceKey>* OutLatencyTraceIds /*= nullptr*/)
 {
 	TArray<Worker_ComponentData> ComponentDatas;
 
 	if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_Data], Object, RepChangeState, SCHEMA_Data, OutLatencyTraceId));
+		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_Data], Object, RepChangeState, SCHEMA_Data, AllocateTraceKey(OutLatencyTraceIds)));
 	}
 
 	if (Info.SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, RepChangeState, SCHEMA_OwnerOnly, OutLatencyTraceId));
+		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, RepChangeState, SCHEMA_OwnerOnly, AllocateTraceKey(OutLatencyTraceIds)));
 	}
 
 	if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(CreateHandoverComponentData(Info.SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState));
+		ComponentDatas.Add(CreateHandoverComponentData(Info.SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState, AllocateTraceKey(OutLatencyTraceIds)));
 	}
 
+	checkf(!OutLatencyTraceIds || ComponentDatas.Num() == OutLatencyTraceIds->Num(), TEXT("Latency tracing keys array count does not match the component datas."));
 	return ComponentDatas;
 }
 
@@ -337,17 +360,17 @@ Worker_ComponentData ComponentFactory::CreateEmptyComponentData(Worker_Component
 	return ComponentData;
 }
 
-Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes)
+Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, TraceKey* OutLatencyTraceId /* = nullptr */)
 {
 	Worker_ComponentData ComponentData = CreateEmptyComponentData(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, true);
+	FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, true, OutLatencyTraceId);
 
 	return ComponentData;
 }
 
-TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState, TraceKey* OutLatencyTraceId /* = nullptr*/)
+TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState, TArray<TraceKey>* OutLatencyTraceIds /* = nullptr*/)
 {
 	TArray<Worker_ComponentUpdate> ComponentUpdates;
 
@@ -355,21 +378,25 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	{
 		if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
+			TraceKey LatencyKey = USpatialLatencyTracer::InvalidTraceKey;
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_Data], Object, *RepChangeState, SCHEMA_Data, bWroteSomething, OutLatencyTraceId);
+			Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_Data], Object, *RepChangeState, SCHEMA_Data, bWroteSomething, &LatencyKey);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(MultiClientUpdate);
+				OutLatencyTraceIds->Add(LatencyKey);
 			}
 		}
 
 		if (Info.SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
+			TraceKey LatencyKey = USpatialLatencyTracer::InvalidTraceKey;
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, *RepChangeState, SCHEMA_OwnerOnly, bWroteSomething, OutLatencyTraceId);
+			Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, *RepChangeState, SCHEMA_OwnerOnly, bWroteSomething, &LatencyKey);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(SingleClientUpdate);
+				OutLatencyTraceIds->Add(LatencyKey);
 			}
 		}
 	}
@@ -378,11 +405,13 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	{
 		if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
+			TraceKey LatencyKey = USpatialLatencyTracer::InvalidTraceKey;
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info.SchemaComponents[SCHEMA_Handover], Object, Info, *HandoverChangeState, bWroteSomething);
+			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info.SchemaComponents[SCHEMA_Handover], Object, Info, *HandoverChangeState, bWroteSomething, &LatencyKey);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(HandoverUpdate);
+				OutLatencyTraceIds->Add(LatencyKey);
 			}
 		}
 	}
@@ -392,8 +421,10 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	{
 		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
 		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());
+		AllocateTraceKey(OutLatencyTraceIds); // Allocate a dummy key for the interest update
 	}
 
+	checkf(!OutLatencyTraceIds || ComponentUpdates.Num() == OutLatencyTraceIds->Num(), TEXT("Latency tracing keys array count does not match the component updates."));
 	return ComponentUpdates;
 }
 
@@ -422,7 +453,7 @@ Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	return ComponentUpdate;
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool& bWroteSomething)
+Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool& bWroteSomething, TraceKey* OutLatencyTraceId /* = nullptr */)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -432,7 +463,7 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, &ClearedIds);
+	bWroteSomething = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, OutLatencyTraceId, &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
