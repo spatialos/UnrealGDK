@@ -26,8 +26,6 @@ namespace SpatialGDK
 	struct FOutgoingMessage;
 }  // namespace SpatialGDK
 
-using TraceKey = int32;
-
 UCLASS()
 class SPATIALGDK_API USpatialLatencyTracer : public UObject
 {
@@ -95,8 +93,8 @@ public:
 	static USpatialLatencyTracer* GetTracer(UObject* WorldContextObject);
 
 	bool IsValidKey(TraceKey Key);
-	TraceKey GetAndUntrackTrace(const UObject* Obj, const UFunction* Function);
-	TraceKey GetAndUntrackTrace(const UObject* Obj, const UProperty* Property);
+	TraceKey RetrievePendingTrace(const UObject* Obj, const UFunction* Function);
+	TraceKey RetrievePendingTrace(const UObject* Obj, const UProperty* Property);
 
 	void MarkActiveLatencyTrace(const TraceKey Key);
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);

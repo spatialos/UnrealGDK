@@ -21,7 +21,6 @@ class UNetDriver;
 class UProperty;
 
 enum EReplicatedPropertyGroup : uint32;
-using TraceKey = int32;
 
 namespace SpatialGDK
 {
@@ -29,7 +28,7 @@ namespace SpatialGDK
 class SPATIALGDK_API ComponentFactory
 {
 public:
-	ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver);
+	ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* LatencyTracer);
 
 	TArray<Worker_ComponentData> CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState, TraceKey* OutLatencyTraceId = nullptr);
 	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState, TraceKey* OutLatencyTraceId = nullptr);
@@ -55,6 +54,8 @@ private:
 	USpatialClassInfoManager* ClassInfoManager;
 
 	bool bInterestHasChanged;
+
+	USpatialLatencyTracer* LatencyTracer;
 };
 
 } // namespace SpatialGDK

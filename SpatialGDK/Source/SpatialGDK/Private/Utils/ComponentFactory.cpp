@@ -23,11 +23,12 @@ DEFINE_LOG_CATEGORY(LogComponentFactory);
 namespace SpatialGDK
 {
 
-ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver)
+ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* InLatencyTracer)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, bInterestHasChanged(bInterestDirty)
+	, LatencyTracer(InLatencyTracer)
 { }
 
 bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, USpatialLatencyTracer* LatencyTracer, TraceKey* OutLatencyTraceId /*= nullptr*/, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)

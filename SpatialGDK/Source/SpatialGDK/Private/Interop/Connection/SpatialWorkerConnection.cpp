@@ -354,9 +354,9 @@ Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_Entity
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData)
+void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key)
 {
-	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData);
+	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData, Key);
 }
 
 void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)

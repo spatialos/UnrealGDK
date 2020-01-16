@@ -123,7 +123,7 @@ bool USpatialLatencyTracer::IsValidKey(const TraceKey Key)
 	return TraceMap.Find(Key);
 }
 
-TraceKey USpatialLatencyTracer::GetAndUntrackTrace(const UObject* Obj, const UFunction* Function)
+TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const UFunction* Function)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -133,7 +133,7 @@ TraceKey USpatialLatencyTracer::GetAndUntrackTrace(const UObject* Obj, const UFu
 	return ReturnKey;
 }
 
-TraceKey USpatialLatencyTracer::GetAndUntrackTrace(const UObject* Obj, const UProperty* Property)
+TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const UProperty* Property)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -252,7 +252,12 @@ void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
-		WriteToLatencyTrace(ComponentUpdate->Trace, TEXT("Moved update to Worker queue"));
+		WriteToLatencyTrace(ComponentUpdate->Trace, TEXT("Moved componentUpdate to Worker queue"));
+	}
+	else if (Message->Type == SpatialGDK::EOutgoingMessageType::AddComponent)
+	{
+		const SpatialGDK::FAddComponent* ComponentAdd = static_cast<const SpatialGDK::FAddComponent*>(Message);
+		WriteToLatencyTrace(ComponentAdd->Trace, TEXT("Moved componentAdd to Worker queue"));
 	}
 }
 
@@ -261,8 +266,14 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
-		EndLatencyTrace(ComponentUpdate->Trace, TEXT("Sent to Worker SDK"));
+		EndLatencyTrace(ComponentUpdate->Trace, TEXT("Sent componentUpdate to Worker SDK"));
 	}
+	else if (Message->Type == SpatialGDK::EOutgoingMessageType::AddComponent)
+	{
+		const SpatialGDK::FAddComponent* ComponentAdd = static_cast<const SpatialGDK::FAddComponent*>(Message);
+		WriteToLatencyTrace(ComponentAdd->Trace, TEXT("Sent componentAdd to Worker SDK"));
+	}
+
 }
 
 USpatialLatencyTracer* USpatialLatencyTracer::GetTracer(UObject* WorldContextObject)
@@ -352,7 +363,8 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 		OutLatencyPayloadContinue = FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes));
 	}
 
-	TraceMap.Add(Key, MoveTemp(*ActiveTrace));
+	TraceSpan TempSpan(MoveTemp(*ActiveTrace));
+	TraceMap.Add(Key, MoveTemp(TempSpan));
 	TraceMap.Remove(ActiveTraceKey);
 	ActiveTraceKey = InvalidTraceKey;
 
@@ -406,7 +418,7 @@ void USpatialLatencyTracer::ClearTrackingInformation()
 
 TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& FunctionOrProperty)
 {
-	if (!Actor)
+	if (Actor == nullptr)
 	{
 		return InvalidTraceKey;
 	}
