@@ -15,5 +15,5 @@ class SPATIALGDK_API UAbstractPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()
 public:
-	virtual Worker_EntityId GetEntityIdFromObject(const UObject* Object) { return SpatialConstants::INVALID_ENTITY_ID;  };
+	virtual Worker_EntityId GetEntityIdFromObject(const UObject* Object) PURE_VIRTUAL(UAbstractPackageMapClient::GetEntityIdFromObject, return SpatialConstants::INVALID_ENTITY_ID;);
 };
