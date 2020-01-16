@@ -22,16 +22,6 @@ public:
 };
 
 template <typename T>
-static T* GetComponentStorageData(SpatialGDK::ComponentStorageBase* StorageBase)
-{
-	if (StorageBase == nullptr)
-	{
-		return nullptr;
-	}
-	return &(static_cast<SpatialGDK::ComponentStorage<T>*>(StorageBase)->Get());
-}
-
-template <typename T>
 class ComponentStorage : public ComponentStorageBase
 {
 public:
@@ -52,5 +42,15 @@ public:
 private:
 	T data;
 };
+
+template <typename T>
+static T* GetComponentStorageData(SpatialGDK::ComponentStorageBase* StorageBase)
+{
+	if (StorageBase == nullptr)
+	{
+		return nullptr;
+	}
+	return &(static_cast<SpatialGDK::ComponentStorage<T>*>(StorageBase)->Get());
+}
 
 } // namespace SpatialGDK
