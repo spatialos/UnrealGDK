@@ -150,6 +150,12 @@ FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_
 	{
 		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor, EntityId);
 	}
+
+	if (GetEntityIdFromObject(Actor) == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogSpatialPackageMap, Error, TEXT("ResolveEntityActor failed for Actor: %s with NetGUID: %s"), *Actor->GetName(), *NetGUID.ToString());
+	}
+
 	return NetGUID;
 }
 
