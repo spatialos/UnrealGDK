@@ -44,6 +44,7 @@ public:
 };
 
 // TODO(Alex): use MoveTemp for function arguments
+// TODO(Alex): inline trivial functions
 
 UCLASS()
 class SPATIALGDK_API UWorkerConnection : public UObject, public FRunnable
