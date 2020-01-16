@@ -5,6 +5,7 @@
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
+#include "Utils/SpatialLatencyTracer.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -16,19 +17,42 @@ struct RPCPayload
 {
 	RPCPayload() = delete;
 
-	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data) : Offset(InOffset), Index(InIndex), PayloadData(MoveTemp(Data))
+	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, TraceKey InTraceKey = USpatialLatencyTracer::InvalidTraceKey)
+		: Offset(InOffset)
+		, Index(InIndex)
+		, PayloadData(MoveTemp(Data))
+		, Trace(InTraceKey)
 	{}
 
-	RPCPayload(const Schema_Object* RPCObject)
+	RPCPayload(Schema_Object* RPCObject)
 	{
 		Offset = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
 		Index = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);
 		PayloadData = SpatialGDK::GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
+
+#if TRACE_LIB_ACTIVE
+		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
+		{
+			Trace = Tracer->ReadTraceFromSchemaObject(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
+		}
+#endif
 	}
 
 	int64 CountDataBits() const
 	{
 		return PayloadData.Num() * 8;
+	}
+
+	void WriteToSchemaObject(Schema_Object* RPCObject) const
+	{
+		WriteToSchemaObject(RPCObject, Offset, Index, PayloadData.GetData(), PayloadData.Num());
+
+#if TRACE_LIB_ACTIVE
+		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
+		{
+			Tracer->WriteTraceToSchemaObject(Trace, RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
+		}
+#endif
 	}
 
 	static void WriteToSchemaObject(Schema_Object* RPCObject, uint32 Offset, uint32 Index, const uint8* Data, int32 NumElems)
@@ -41,6 +65,7 @@ struct RPCPayload
 	uint32 Offset;
 	uint32 Index;
 	TArray<uint8> PayloadData;
+	TraceKey Trace = USpatialLatencyTracer::InvalidTraceKey;
 };
 
 struct RPCsOnEntityCreation : Component
@@ -71,7 +96,7 @@ struct RPCsOnEntityCreation : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		for (const auto& Payload : RPCs)
@@ -87,7 +112,7 @@ struct RPCsOnEntityCreation : Component
 	{
 		Worker_ComponentUpdate Update = {};
 		Update.component_id = ComponentId;
-		Update.schema_type = Schema_CreateComponentUpdate(ComponentId);
+		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 		Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
 
@@ -98,7 +123,8 @@ struct RPCsOnEntityCreation : Component
 	{
 		Worker_CommandRequest CommandRequest = {};
 		CommandRequest.component_id = ComponentId;
-		CommandRequest.schema_type = Schema_CreateCommandRequest(ComponentId, SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION);
+		CommandRequest.command_index = SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION;
+		CommandRequest.schema_type = Schema_CreateCommandRequest();
 		return CommandRequest;
 	}
 

@@ -16,13 +16,15 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 
 class USpatialClassInfoManager;
 class USpatialNetDriver;
+class UEntityPool;
+class FTimerManager;
 
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()		
 public:
-	void Init(USpatialNetDriver* NetDriver);
+	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
 
 	Worker_EntityId AllocateEntityIdAndResolveActor(AActor* Actor);
 	FNetworkGUID TryResolveObjectAsEntity(UObject* Value);
@@ -51,17 +53,26 @@ public:
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
 	Worker_EntityId GetEntityIdFromObject(const UObject* Object);
 
+	AActor* GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef);
+
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
 
+	bool IsEntityPoolReady() const;
+
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
+
+	// Pending object references, being asynchronously loaded.
+	TSet<FNetworkGUID> PendingReferences;
 
 private:
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 
 	UPROPERTY()
-	USpatialNetDriver* NetDriver;
+	UEntityPool* EntityPool;
+
+	bool bIsServer = false;
 
 	// Entities that have been assigned on this server and not created yet
 	TSet<Worker_EntityId_Key> PendingCreationEntityIds;

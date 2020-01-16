@@ -31,7 +31,7 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 
 struct FRPCInfo
 {
-	ESchemaComponentType Type;
+	ERPCType Type;
 	uint32 Index;
 };
 
@@ -78,7 +78,7 @@ struct FClassInfo
 	FName WorkerType;
 };
 
-class UActorGroupManager;
+class SpatialActorGroupManager;
 class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialClassInfoManager, Log, All)
@@ -90,7 +90,11 @@ class SPATIALGDK_API USpatialClassInfoManager : public UObject
 
 public:
 
-	bool TryInit(USpatialNetDriver* NetDriver, UActorGroupManager* ActorGroupManager);
+	bool TryInit(USpatialNetDriver* InNetDriver, SpatialActorGroupManager* InActorGroupManager);
+
+	// Checks whether a class is supported and quits the game if not. This is to avoid crashing
+	// when running with an out-of-date schema database.
+	bool ValidateOrExit_IsSupportedClass(const FString& PathName);
 
 	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
 	// In PIE, PathName must be NetworkRemapped (bReading = false)
@@ -128,8 +132,7 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	UPROPERTY()
-	UActorGroupManager* ActorGroupManager;
+	SpatialActorGroupManager* ActorGroupManager;
 
 	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;

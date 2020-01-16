@@ -1,17 +1,18 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
-#include "Containers/UnrealString.h"
-#include "Templates/TypeHash.h"
+#include "CoreMinimal.h"
 
 #include "Utils/SchemaOption.h"
+#include <WorkerSDK/Improbable/c_worker.h>
 
-#include <cstdint>
+class USpatialPackageMapClient;
 
-using Worker_EntityId = std::int64_t;
-
-struct FUnrealObjectRef
+struct SPATIALGDK_API FUnrealObjectRef
 {
 	FUnrealObjectRef() = default;
+	FUnrealObjectRef(const FUnrealObjectRef&) = default;
 
 	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset)
 		: Entity(Entity)
@@ -26,23 +27,7 @@ struct FUnrealObjectRef
 		, bNoLoadOnClient(bNoLoadOnClient)
 	{}
 
-	FUnrealObjectRef(const FUnrealObjectRef& In)
-		: Entity(In.Entity)
-		, Offset(In.Offset)
-		, Path(In.Path)
-		, Outer(In.Outer)
-		, bNoLoadOnClient(In.bNoLoadOnClient)
-	{}
-
-	FORCEINLINE FUnrealObjectRef& operator=(const FUnrealObjectRef& In)
-	{
-		Entity = In.Entity;
-		Offset = In.Offset;
-		Path = In.Path;
-		Outer = In.Outer;
-		bNoLoadOnClient = In.bNoLoadOnClient;
-		return *this;
-	}
+	FUnrealObjectRef& operator=(const FUnrealObjectRef&) = default;
 
 	FORCEINLINE FString ToString() const
 	{
@@ -71,8 +56,9 @@ struct FUnrealObjectRef
 		return Entity == Other.Entity &&
 			Offset == Other.Offset &&
 			((!Path && !Other.Path) || (Path && Other.Path && Path->Equals(*Other.Path))) &&
-			((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer));
-		// Intentionally don't compare bNoLoadOnClient since it does not affect equality.
+			((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer)) &&
+			// Intentionally don't compare bNoLoadOnClient since it does not affect equality.
+			bUseSingletonClassPath == Other.bUseSingletonClassPath;
 	}
 
 	FORCEINLINE bool operator!=(const FUnrealObjectRef& Other) const
@@ -85,6 +71,12 @@ struct FUnrealObjectRef
 		return (*this != NULL_OBJECT_REF && *this != UNRESOLVED_OBJECT_REF);
 	}
 
+	static UObject* ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpatialPackageMapClient* PackageMap, bool& bOutUnresolved);
+	static FSoftObjectPath ToSoftObjectPath(const FUnrealObjectRef& ObjectRef);
+	static FUnrealObjectRef FromObjectPtr(UObject* ObjectValue, USpatialPackageMapClient* PackageMap);
+	static FUnrealObjectRef FromSoftObjectPath(const FSoftObjectPath& ObjectPath);
+	static FUnrealObjectRef GetSingletonClassRef(UObject* SingletonObject, USpatialPackageMapClient* PackageMap);
+
 	static const FUnrealObjectRef NULL_OBJECT_REF;
 	static const FUnrealObjectRef UNRESOLVED_OBJECT_REF;
 
@@ -93,6 +85,7 @@ struct FUnrealObjectRef
 	SpatialGDK::TSchemaOption<FString> Path;
 	SpatialGDK::TSchemaOption<FUnrealObjectRef> Outer;
 	bool bNoLoadOnClient = false;
+	bool bUseSingletonClassPath = false;
 };
 
 inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
@@ -103,5 +96,6 @@ inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Path);
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Outer);
 	// Intentionally don't hash bNoLoadOnClient.
+	Result = (Result * 977u) + GetTypeHash(ObjectRef.bUseSingletonClassPath ? 1 : 0);
 	return Result;
 }

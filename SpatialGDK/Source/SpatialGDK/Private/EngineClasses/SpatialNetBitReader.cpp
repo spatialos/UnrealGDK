@@ -9,8 +9,9 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialNetBitReader);
 
-FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<FUnrealObjectRef>& InUnresolvedRefs)
+FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<FUnrealObjectRef>& InDynamicRefs, TSet<FUnrealObjectRef>& InUnresolvedRefs)
 	: FNetBitReader(InPackageMap, Source, CountBits)
+	, DynamicRefs(InDynamicRefs)
 	, UnresolvedRefs(InUnresolvedRefs) {}
 
 void FSpatialNetBitReader::DeserializeObjectRef(FUnrealObjectRef& ObjectRef)
@@ -37,43 +38,36 @@ void FSpatialNetBitReader::DeserializeObjectRef(FUnrealObjectRef& ObjectRef)
 		ObjectRef.Outer = FUnrealObjectRef();
 		DeserializeObjectRef(*ObjectRef.Outer);
 	}
+
+	SerializeBits(&ObjectRef.bNoLoadOnClient, 1);
+	SerializeBits(&ObjectRef.bUseSingletonClassPath, 1);
 }
 
-FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
+UObject* FSpatialNetBitReader::ReadObject(bool& bUnresolved)
 {
 	FUnrealObjectRef ObjectRef;
 
 	DeserializeObjectRef(ObjectRef);
-
 	check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
-	if (ObjectRef == FUnrealObjectRef::NULL_OBJECT_REF)
+
+	UObject* Value = FUnrealObjectRef::ToObjectPtr(ObjectRef, Cast<USpatialPackageMapClient>(PackageMap), bUnresolved);
+
+	if (bUnresolved)
 	{
-		Value = nullptr;
+		UnresolvedRefs.Add(ObjectRef);
 	}
-	else
+	else if (Value && !Value->IsFullNameStableForNetworking())
 	{
-		auto PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
-		FNetworkGUID NetGUID = PackageMapClient->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-		if (NetGUID.IsValid())
-		{
-			Value = PackageMapClient->GetObjectFromNetGUID(NetGUID, true);
-			if (Value == nullptr)
-			{
-				// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
-				// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
-				// So we do the same.
-				FString FullPath;
-				SpatialGDK::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
-				UE_LOG(LogSpatialNetBitReader, Verbose, TEXT("Object ref did not map to valid object. Streaming level not loaded or actor deleted. Will be set to nullptr: %s %s"),
-					*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
-			}
-		}
-		else
-		{
-			UnresolvedRefs.Add(ObjectRef);
-			Value = nullptr;
-		}
+		DynamicRefs.Add(ObjectRef);
 	}
+
+	return Value;
+}
+
+FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
+{
+	bool bUnresolved = false;
+	Value = ReadObject(bUnresolved);
 
 	return *this;
 }

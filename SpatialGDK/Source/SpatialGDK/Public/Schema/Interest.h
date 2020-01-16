@@ -324,7 +324,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* ComponentConstraintObject = Schema_GetObject(QueryConstraintObject, 8);
 
-		NewQueryConstraint.EntityIdConstraint = Schema_GetUint32(ComponentConstraintObject, 1);
+		NewQueryConstraint.ComponentConstraint = Schema_GetUint32(ComponentConstraintObject, 1);
 	}
 
 	// list<QueryConstraint> and_constraint = 9;
@@ -447,7 +447,7 @@ struct Interest : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		FillComponentData(ComponentObject);
@@ -459,7 +459,7 @@ struct Interest : Component
 	{
 		Worker_ComponentUpdate ComponentUpdate = {};
 		ComponentUpdate.component_id = ComponentId;
-		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+		ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 		FillComponentData(ComponentObject);

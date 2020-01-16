@@ -10,13 +10,17 @@
 #include "Editor.h"
 #include "FileHelpers.h"
 
-#include "AssetRegistryModule.h"
 #include "AssetDataTagMap.h"
+#include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
+#include "Internationalization/Regex.h"
 #include "Misc/ScopedSlowTask.h"
-#include "SpatialGDKEditorSettings.h"
-#include "UObject/StrongObjectPtr.h"
 #include "Settings/ProjectPackagingSettings.h"
+#include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesConstants.h"
+#include "UObject/StrongObjectPtr.h"
+
+using namespace SpatialGDKEditor;
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
@@ -52,17 +56,24 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	FScopedSlowTask Progress(100.f, LOCTEXT("GeneratingSchema", "Generating Schema..."));
 	Progress.MakeDialog(true);
 
+#if ENGINE_MINOR_VERSION <= 22
 	// Force spatial networking so schema layouts are correct
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
-	GeneralProjectSettings->bSpatialNetworking = true;
+	bool bCachedSpatialNetworking = GeneralProjectSettings->UsesSpatialNetworking();
+	GeneralProjectSettings->SetUsesSpatialNetworking(true);
+#endif
 
 	RemoveEditorAssetLoadedCallback();
 
-	if (!TryLoadExistingSchemaDatabase())
+	if (Schema::IsAssetReadOnly(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
 		bSchemaGeneratorRunning = false;
 		return false;
+	}
+
+	if (!Schema::LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
+	{
+		Schema::ResetSchemaGeneratorStateAndCleanupFolders();
 	}
 
 	TArray<TStrongObjectPtr<UObject>> LoadedAssets;
@@ -73,7 +84,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		{
 			bSchemaGeneratorRunning = false;
 			LoadedAssets.Empty();
-			CollectGarbage(RF_NoFlags, true);
+			CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 			return false;
 		}
 	}
@@ -89,12 +100,15 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	if (bFullScan)
 	{
 		// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
-		CopyWellKnownSchemaFiles();
-		DeleteGeneratedSchemaFiles();
+		FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
+		FString CoreSDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
+		Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
+		Schema::DeleteGeneratedSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
+		Schema::CreateGeneratedSchemaFolder();
 	}
 
 	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
-	bool bResult = SpatialGDKGenerateSchema();
+	bool bResult = Schema::SpatialGDKGenerateSchema();
 	
 	// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
 	if (ErroredBlueprints.Num() > 0)
@@ -110,10 +124,12 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	{
 		Progress.EnterProgressFrame(10.f);
 		LoadedAssets.Empty();
-		CollectGarbage(RF_NoFlags, true);
+		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 	}
 
-	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
+#if ENGINE_MINOR_VERSION <= 22
+	GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(bCachedSpatialNetworking);
+#endif
 	bSchemaGeneratorRunning = false;
 
 	if (bResult)
@@ -152,10 +168,7 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 			return false;
 		}
 		const FString PackagePath = Data.PackagePath.ToString();
-		if (!PackagePath.StartsWith("/Game"))
-		{
-			return false;
-		}
+
 		for (const auto& Directory : DirectoriesToNeverCook)
 		{
 			if (PackagePath.StartsWith(Directory.Path))
@@ -178,15 +191,11 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 
 		const FString* GeneratedClassPathPtr = nullptr;
 
-#if ENGINE_MINOR_VERSION <= 20
-		GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass");
-#else
 		FAssetDataTagMapSharedView::FFindTagResult GeneratedClassFindTagResult = Data.TagsAndValues.FindTag("GeneratedClass");
 		if (GeneratedClassFindTagResult.IsSet())
 		{
 			GeneratedClassPathPtr = &GeneratedClassFindTagResult.GetValue();
 		}
-#endif
 
 		if (GeneratedClassPathPtr != nullptr)
 		{ 
@@ -216,7 +225,11 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 
 void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
+#if ENGINE_MINOR_VERSION <= 22
 	LaunchCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
+#else
+	LaunchCloudResult = Async(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
+#endif
 		[this, SuccessCallback, FailureCallback]
 		{
 			if (!LaunchCloudResult.IsReady() || LaunchCloudResult.Get() != true)
@@ -232,7 +245,11 @@ void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, F
 
 void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
+#if ENGINE_MINOR_VERSION <= 22
 	StopCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudStop,
+#else
+	StopCloudResult = Async(EAsyncExecution::Thread, SpatialGDKCloudStop,
+#endif
 		[this, SuccessCallback, FailureCallback]
 		{
 			if (!StopCloudResult.IsReady() || StopCloudResult.Get() != true)
@@ -248,7 +265,7 @@ void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSi
 
 bool FSpatialGDKEditor::FullScanRequired()
 {
-	return !GeneratedSchemaFolderExists();
+	return !Schema::GeneratedSchemaFolderExists() || !Schema::GeneratedSchemaDatabaseExists();
 }
 
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()

@@ -6,8 +6,8 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Gameframework/PlayerController.h"
-#include "Gameframework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/Pawn.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -50,17 +50,10 @@ void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSock
 	}
 }
 
-#if ENGINE_MINOR_VERSION <= 20
-void USpatialNetConnection::LowLevelSend(void * Data, int32 CountBytes, int32 CountBits)
-{
-	//Intentionally does not call Super::
-}
-#else
 void USpatialNetConnection::LowLevelSend(void* Data, int32 CountBits, FOutPacketTraits& Traits)
 {
 	//Intentionally does not call Super::
 }
-#endif
 
 bool USpatialNetConnection::ClientHasInitializedLevelFor(const AActor* TestActor) const
 {
@@ -84,6 +77,19 @@ void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool
 	// So we send an Interest update immediately.
 	UpdateActorInterest(Cast<AActor>(PlayerController));
 	UpdateActorInterest(Cast<AActor>(PlayerController->GetPawn()));
+}
+
+void USpatialNetConnection::FlushDormancy(AActor* Actor)
+{
+	Super::FlushDormancy(Actor);
+
+	// This gets called from UNetDriver::FlushActorDormancyInternal for each connection. We inject our refresh
+	// of dormancy component here. This is slightly backwards, but means we don't have to make an engine change.
+	if (bReliableSpatialConnection)
+	{
+		const bool bMakeDormant = false;
+		Cast<USpatialNetDriver>(Driver)->RefreshActorDormancy(Actor, bMakeDormant);
+	}
 }
 
 void USpatialNetConnection::UpdateActorInterest(AActor* Actor)
@@ -114,7 +120,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 
 		Worker_ComponentUpdate Update = {};
 		Update.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
-		Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::HEARTBEAT_COMPONENT_ID);
+		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 		Schema_AddBool(ComponentObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID, true);
@@ -129,6 +135,8 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 
 void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)
 {
+	UE_LOG(LogSpatialNetConnection, Log, TEXT("Init Heartbeat component: NetConnection %s, PlayerController entity %lld"), *GetName(), PlayerControllerEntity);
+
 	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID, TEXT("InitHeartbeat: PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity, InPlayerControllerEntity);
 	PlayerControllerEntity = InPlayerControllerEntity;
 	TimerManager = InTimerManager;
@@ -145,6 +153,11 @@ void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_
 
 void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 {
+	float Timeout = GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds;
+#if WITH_EDITOR
+	Timeout = GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutWithEditorSeconds;
+#endif
+
 	TimerManager->SetTimer(HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]()
 	{
 		if (USpatialNetConnection* Connection = WeakThis.Get())
@@ -152,7 +165,7 @@ void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 			// This client timed out. Disconnect it and trigger OnDisconnected logic.
 			Connection->CleanUp();
 		}
-	}, GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds, false);
+	}, Timeout, false);
 }
 
 void USpatialNetConnection::SetHeartbeatEventTimer()
@@ -164,7 +177,7 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 			Worker_ComponentUpdate ComponentUpdate = {};
 
 			ComponentUpdate.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
-			ComponentUpdate.schema_type = Schema_CreateComponentUpdate(SpatialConstants::HEARTBEAT_COMPONENT_ID);
+			ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 			Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
 			Schema_AddObject(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
 

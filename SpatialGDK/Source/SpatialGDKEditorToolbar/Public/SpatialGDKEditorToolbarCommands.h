@@ -22,6 +22,7 @@ public:
 public:
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSchema;
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSchemaFull;
+	TSharedPtr<FUICommandInfo> DeleteSchemaDatabase;
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
 	TSharedPtr<FUICommandInfo> StartSpatialDeployment;
 	TSharedPtr<FUICommandInfo> StopSpatialDeployment;
@@ -31,4 +32,5 @@ public:
 
 	TSharedPtr<FUICommandInfo> StartSpatialService;
 	TSharedPtr<FUICommandInfo> StopSpatialService;
+	TSharedPtr<FUICommandInfo> UpdateIOSClient;
 };

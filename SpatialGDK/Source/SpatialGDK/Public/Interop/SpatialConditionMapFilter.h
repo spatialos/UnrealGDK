@@ -31,7 +31,11 @@ public:
 #endif
 
 		// Build a ConditionMap. This code is taken directly from FRepLayout::RebuildConditionalProperties
+#if ENGINE_MINOR_VERSION <= 22
 		static_assert(COND_Max == 14, "We are expecting 14 rep conditions"); // Guard in case more are added.
+#else
+		static_assert(COND_Max == 16, "We are expecting 16 rep conditions"); // Guard in case more are added.
+#endif
 		const bool bIsInitial = RepFlags.bNetInitial ? true : false;
 		const bool bIsOwner = RepFlags.bNetOwner ? true : false;
 		const bool bIsSimulated = RepFlags.bNetSimulated ? true : false;
@@ -51,6 +55,9 @@ public:
 		ConditionMap[COND_ReplayOrOwner] = bIsReplay || bIsOwner;
 		ConditionMap[COND_ReplayOnly] = bIsReplay;
 		ConditionMap[COND_SkipReplay] = !bIsReplay;
+#if ENGINE_MINOR_VERSION >= 23
+		ConditionMap[COND_Never] = false;
+#endif
 		ConditionMap[COND_Custom] = true;
 	}
 

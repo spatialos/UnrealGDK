@@ -13,24 +13,21 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-#include "SpatialDispatcher.generated.h"
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
 
-class USpatialNetDriver;
+class USpatialMetrics;
 class USpatialReceiver;
 class USpatialStaticComponentView;
+class USpatialWorkerFlags;
 
-UCLASS()
-class SPATIALGDK_API USpatialDispatcher : public UObject
+class SPATIALGDK_API SpatialDispatcher
 {
-	GENERATED_BODY()
-
 public:
 	using FCallbackId = uint32;
 
-	void Init(USpatialNetDriver* NetDriver);
+	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags);
 	void ProcessOps(Worker_OpList* OpList);
+
 	// The following 2 methods should *only* be used by the Startup OpList Queueing flow
 	// from the SpatialNetDriver, and should be temporary since an alternative solution will be available via the Worker SDK soon.
 	void MarkOpToSkip(const Worker_Op* Op);
@@ -67,14 +64,12 @@ private:
 	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
 
-	UPROPERTY()
-	USpatialNetDriver* NetDriver;
+	TWeakObjectPtr<USpatialReceiver> Receiver;
+	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
+	TWeakObjectPtr<USpatialMetrics> SpatialMetrics;
 
 	UPROPERTY()
-	USpatialReceiver* Receiver;
-
-	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
+	USpatialWorkerFlags* SpatialWorkerFlags;
 
 	// This index is incremented and returned every time an AddOpCallback function is called.
 	// CallbackIds enable you to deregister callbacks using the RemoveOpCallback function. 

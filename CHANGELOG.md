@@ -4,14 +4,186 @@ All notable changes to the SpatialOS Game Development Kit for Unreal will be doc
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased-`x.y.z`] - 2019-xx-xx
+## [Unreleased-`x.y.z`] - 2020-xx-xx
+
+### Features:
+- The GDK now uses SpatialOS `14.3.0`.
+- In local deployments of the Example Project you can now launch Simulated Players in one click. Running `LaunchSimPlayerClient.bat` will launch a single Simulated Player client. Running `Launch10SimPlayerClients.bat` will launch 10.
+- Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
+- Added support for the UE4 Network Profile to measure relative size of RPC and Actor replication data.
+- Added a VirtualWorkerTranslation component to be used in future UnrealGDK loadbalancing.
+- Added partial framework for use in future UnrealGDK controlled loadbalancing.
+- Add SpatialToggleMetricsDisplay console command.  bEnableMetricsDisplay must be enabled in order for the display to be available.  You must then must call SpatialToggleMetricsDisplay on each client that wants to view the metrics display.
+- Enabled compression in modular-udp networking stack
+- Switched off default rpc-packing. This can still be re-enabled in SpatialGDKSettings.ini
+- Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
+- A configurable actor component 'SpatialPingComponent' is now available for player controllers to measure round-trip ping to their current authoritative server worker. The latest ping value can be accessed raw through the component via 'GetPing()' or otherwise via the rolling average stored in 'PlayerState'.
+- The `GenerateSchema`, `GenerateSchemaAndSnapshots`, and `CookAndGenerateSchema` commandlets can be invoked with the `-AdditionalSchemaCompilerArguments="..."` command line switch to output additional compiled schema formats. If no such switch is provided, only the schema descriptor will be produced. This switch's value should be a subset of the arguments that can be passed to the schema compiler directly (e.g., `--bundle_out="path/to/bundle.sb"`). A full list of possibles values is available via the [schema compiler documentation](https://docs.improbable.io/reference/14.2/shared/schema/introduction#schema-compiler-cli-reference)
+- Added the AllowUnresolvedParameters function flag that disables warnings for processing RPCs with unresolved parameters. This flag can be enabled through Blueprints or by adding a tag to the `UFUNCTION` macro.
+- Improved logging around entity creation.
+- Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK).
+- A warning is shown if a cloud deployment is launched with the `manual_worker_connection_only` flag set to true
+- Server travel supported for single server game worlds. Does not currently support zoning or off-loading.
+- Enabled the SpatialOS toolbar for MacOS.
+- Added a menu item to push additional arguments for iOS devices.
+- Improved workflow around schema generation issues and launching local builds. A warning will now show if attempting to run a local deployment after a schema error.
+- DeploymentLauncher can parse a .pb.json launch configuration.
+- DeploymentLauncher can launch a Simulated Player deployment independently from the target deployment.
+Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>`
+- Added `HeartbeatTimeoutWithEditorSeconds` and use it if WITH_EDITOR is defined to prevent workers disconnecting when debugging while running in editor.
+- Added the `bAsyncLoadNewClassesOnEntityCheckout` setting to SpatialGDKSettings that allows loading new classes asynchronously when checking out entities. This is off by default.
+- Added `IndexYFromSchema` functions for the `Coordinates`, `WorkerRequirementSet`, `FRotator`, and `FVector` classes. Remapped the `GetYFromSchema` functions for the same classes to invoke `IndexYFromSchema` internally, in line with other implementations of the pattern.
+- The logic responsible for taking an Actor and generating the array of Components that represents it as an Entity in SpatialOS has been extracted into `EntityFactory`.
+
+## Bug fixes:
+- Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
+- Take into account OverrideSpatialNetworking command line argument as early as possible (LocalDeploymentManager used to query bSpatialNetworking before the command line was parsed).
+- Servers maintain interest in AlwaysRelevant Actors.
+- The default cloud launch configuration is now empty.
+- Fixed an crash caused by attempting to read schema from an unloaded class.
+- Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
+- Fix tombstone-related assert that could fire and bring down the editor.
+- Actors placed in the level with bNetLoadOnClient=false that go out of view will now be reloaded if they come back into view.
+- Fix crash in SpatialDebugger caused by dereference of invalid weak pointer.
+- Fixed connection error when using spatial cloud connect external.
+- The command line argument "receptionistHost <URL>" will now not override connections to "127.0.0.1".
+- The receptionist will now be used for appropriate URLs after connecting to a locator URL.
+- You can now access the worker flags via `USpatialStatics::GetWorkerFlag` instead of `USpatialWorkerFlags::GetWorkerFlag`.
+- Fix crash in SpatialDebugger when GDK-space load balancing is disabled.
+- Fixed issue where schema database failed to load previous saved state when working in editor.
+- Attempting to launch a cloud deployment will now run the spatial auth process as it is required. Previously the deployment would simply fail.
+- Minor spelling fix to connection log message.
+- Added %s token to debug strings in GlobalStateManager to display actor class name in log.
+- The server no longer crashes, when received RPCs are processed recursively.
+- Fix to serialize SoftObjectPointers when they are not resolved yet.
+- Fix to handle replicated properties depending on asynchronously loaded packages.
+- Fix to component interest constraints constructed from schema.
+- Track properties containing references to replicated actors, in order to resolve them again if the actor they reference moves out and back into relevance.
+
+## [`0.8.0-preview`] - 2019-12-17
+
+### Breaking Changes:
+- This is the last GDK version to support Unreal Engine 4.22. You will need to upgrade your project to use Unreal Engine 4.23 (`4.23-SpatialOSUnrealGDK-preview`) in order to continue receiving GDK releases and support.
+- When upgrading to Unreal Engine 4.23 you must:
+1. `git checkout 4.23-SpatialOSUnrealGDK-preview`
+1. `git pull`
+1. Download and install the `-v15 clang-8.0.1-based` toolchain from this [Unreal Engine Documentation page](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html).
+1. Run `Setup.bat`, which is located in the root directory of the `UnrealEngine` repository.
+1. Run `GenerateProjectFiles.bat`, which is in the same root directory.
+For more information, check the [Keep your GDK up to date](https://docs.improbable.io/unreal/preview/content/upgrading) SpatialOS documentation.
+
+### Features:
+- You can now call `SpatialToggleMetricsDisplay` from the console in your Unreal clients in order to view metrics. `bEnableMetricsDisplay` must be enabled on clients where you want to use this feature.
+- The modular-udp networking stack now uses compression by default.
+- Reduced network latency by switching off default rpc-packing. If you need this on by default, you can re-enable it by editing `SpatialGDKSettings.ini`
+- When you start a local deployment, the GDK now checks the port required by the runtime and, if it's in use, prompts you to kill that process.
+- You can now measure round-trip ping from a player controller to the server-woker that's currently authoritative over it using the configurable actor component 'SpatialPingComponent'. The latest ping value can be accessed through the component via 'GetPing()' or via the rolling average stored in 'PlayerState'.
+- You can disable the warnings that trigger when RPCs are processed with unresolved parameters using the `AllowUnresolvedParameters` function flag. This flag can be enabled through Blueprints or by adding a tag to the `UFUNCTION` macro.
+- Improved logging around entity creation.
+- Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK-preview).
+- In Example Project, the default session duration has increased from 5 minutes to 120 minutes so you don't have to re-deploy while playtesting.
+- In Example Project, the default lobby timer has decreased from 15 seconds to 3 seconds so you don't have to wait for your playtest to start.
+- Added in-editor support for exposing a local runtime at a particular IP address. This offers the same functionality as the `--runtime_ip` option in the SpatialOS CLI.
+- Spatial networking is now always enabled in built assemblies.
+
+### Bug fixes:
+- Fixed a bug that could cause name collisions in schema generated for sublevels.
+- Downgraded name collisions during schema generation from Warning to Display.
+- Replicating a static subobject after it has been deleted on a client no longer results in client attaching a new dynamic subobject.
+- Fixed a bug that caused entity pool reservations to cease after a request times out.
+- Running `BuildWorker.bat` for `SimulatedPlayer` no longer fails if the project path has a space in it.
+- Fixed a crash when starting PIE with out-of-date schema.
+- Fixed an issue where launching a cloud deployment with an invalid assembly name or deployment name wouldn't show a helpful error message.
+
+### Internal:
+Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
+- We've added a partial loadbalancing framework. When this is completed in a future release, you will be able to control loadbalancing using server-workers.
+
+## [`0.7.1-preview`] - 2019-12-06
+
+### Bug fixes: 
+- The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
+
+### Internal:
+Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
+- The GDK is now compatible with the `CN` launch region. When Improbable's online services are fully working in China, they will work with this version of the GDK. You will be able to create SpatialOS Deployments in China by specifying the `CN` region in the Deployment Launcher.
+- `Setup.bat` and `Setup.sh` both accept the `--china` flag, which will be required in order to run SpatialOS CLI commands in the `CN` region.
+- **SpatialOS GDK for Unreal** > **Editor Settings** now contains a **Region Settings** section. You will be required to set **Region where services are located** to `CN` in order to create SpatialOS Deployments in China.
+
+## [`0.7.0-preview`] - 2019-10-11
+
+### New Known Issues:
+- MSVC v14.23 removes `typeinfo.h` and replaces it with `typeinfo`. This change causes errors when building the Unreal Engine. This issue **only affects Visual Studio 2019** users. You can work around the issue by:
+1. Open Visual Studio Installer.
+1. Select "Modify" on your Visual Studio 2019 installation.
+1. In the Installation details section uncheck all workloads and components until only **Visual Studio code editor** remains.
+1. Select the following items in the Workloads tab:
+* **Universal Windows Platform development**
+* **.NET desktop development**
+* You must also select the **.NET Framework 4.6.2 development tools** component in the Installation details section.
+* **Desktop development with C++**
+* You must then deselect **MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.23)**, which was added as part of the **Desktop development with C++** Workload. You will be notified that: "If you continue, we'll remove the componenet and any items liseted above that depend on it." Select remove to confirm your decision.
+* Lastly, add **MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.22)** from the Individual components tab.
+5. Select "Modify" to confirm your changes.
+
+### Breaking Changes:
+- If your project uses replicated subobjects that do not inherit from ActorComponent or GameplayAbility, you now need to enable generating schema for them using `SpatialType` UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
+- Chunk based interest is no longer supported. All interest is resolved using query-based interest (QBI). You should remove streaming query and chunk based interest options from worker and launch config files to avoid unnecessary streaming queries being generated.
+- If you already have a project that you are upgrading to this version of the GDK, it is encouraged to follow the upgrade process to SpatialOS `14.1.0`:
+1. Open the `spatialos.json` file in the `spatial/` directory of your project.
+1. Replace the `sdk_version` value and the version value of all dependencies with `14.1.0`.
+1. Replace all other instances of the version number in the file.
+
+### Features:
+- The GDK now uses SpatialOS `14.1.0`.
+- Visual Studio 2019 is now supported.
+- You can now delete your schema database using options in the GDK toolbar and the commandlet.
+- The GDK now checks that schema and a snapshot are present before attempting to start a local deployment. If either are missing then an error message is displayed.
+- Added optional net relevancy check in replication prioritization. If enabled, an actor will only be replicated if IsNetRelevantFor is true for one of the connected client's views.
+- You can now specify which actors should not persist as entities in your Snapshot. You do this by adding the flag `SPATIALCLASS_NotPersistent` to a class or by entering `NotPersistent` in the `Class Defaults` > `Spatial Description` field on blueprints.
+- Deleted startup actors are now tracked.
+- Added a user bindable delegate to `SpatialMetrics` which triggers when worker metrics have been received.
+- Local deployments now create a new log file known as `launch.log` which will contain logs relating to starting and running a deployment. Additionally it will contain worker logs which are forwarded to the SpatialOS runtime.
+- Added a new setting to SpatialOS Runtime Settings `Worker Log Level` which allows configuration of which verbosity of worker logs gets forwarded to the SpatialOS runtime.
+- Added a new developer tool called 'Spatial Output Log' which will show local deployment logs from the `launch.log` file.
+- Added logging for queued RPCs.
+- Added several new STAT annotations into the ServerReplicateActors call chain.
+- The GDK no longer generates schema for all UObject subclasses. Schema generation for Actor, ActorComponent and GameplayAbility subclasses is enabled by default, other classes can be enabled using `SpatialType` UCLASS specifier, or by checking the Spatial Type checkbox on blueprints.
+- Added new experimental CookAndGenerateSchemaCommandlet that generates required schema during a regular cook.
+- Added the `OverrideSpatialOffloading` command line flag. This allows you to toggle offloading at launch time.
+- The initial connection from a worker will attempt to use relevant command line arguments (receptionistHost, locatorHost) to inform the connection. If these are not provided the standard connection flow will be followed. Subsequent connections will not use command line arguments.
+- The command "Open 0.0.0.0" can be used to connect a worker using its command line arguments, simulating initial connection.
+- The command "ConnectToLocator <login> <playerToken>" has been added to allow for explicit connections to deployments.
+- Add SpatialDebugger and associated content.  This tool can be enabled via the SpatialToggleDebugger console command.  Documentation will be added for this soon.
+
+### Bug fixes:
+- Fixed a bug where the spatial daemon started even with spatial networking disabled.
+- Fixed an issue that could cause multiple Channels to be created for an Actor.
+- PlayerControllers on non-auth servers now have BeginPlay called with correct authority.
+- Attempting to replicate unsupported types (such as TMap) results in an error rather than crashing the game.
+- Generating schema when the schema database is locked by another process will no longer crash the editor.
+- When the schema compiler fails, schema generation now displays an error.
+- Fixed crash during initialization when running GenerateSchemaCommandlet.
+- Generating schema after deleting the schema database now correctly triggers an initial schema generation.
+- Streaming levels with query-based interest (QBI) enabled no longer produces errors if the player connection owns unreplicated actors.
+- Fixed an issue that prevented player movement in a zoned deployment.
+- Fixed an issue that caused queued incoming RPCs with unresolved references to never be processed.
+- Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
+- When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
+- Fixed a crash upon checking out an actor with a deleted static subobject.
+- Fixed an issue where launching a cloud deployment with an invalid assembly name or deployment name wouldn't show a helpful error message.
+
+## [`0.6.2`] - 2019-10-10
+
+- The GDK no longer relies on an ordering of entity and interest queries that is not guaranteed by the SpatialOS runtime.
+- The multiserver offloading tutorial has been simplified and re-factored.
 
 ## [`0.6.1`] - 2019-08-15
 
 ### Features:
 - The [Multiserver zoning shooter tutorial](https://docs.improbable.io/unreal/alpha/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) has been updated to use the Example Project.
 
-### Bug fixes: 
+### Bug fixes:
 - Simulated player launch configurations are no longer invalid when the GDK is installed as an Engine Plugin.
 - RPCs that have been queued for execution for more than 1 second (the default value in `SpatialGDKSettings QueuedIncomingRPCWaitTime`) are now executed even if there are unresolved parameters. This stops unresolved parameters from blocking the execution queue.
 - Offloading is no longer enabled by default in the Example Project. You can toggle offloading on using [these steps](https://docs.improbable.io/unreal/alpha/content/tutorials/offloading-tutorial/offloading-setup#step-4-enable-offloading).
@@ -100,7 +272,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Retrying reliable RPCs with `UObject` arguments that were destroyed before the RPC was retried no longer causes a crash.
 - Fixed path naming issues in setup.sh
 - Fixed an assert/crash in `SpatialMetricsDisplay` that occurred when reloading a snapshot.
-- Added Singleton and SingletonManager to QBI constraints to fix issue preventing Test configuration builds from functioning correctly.
+- Added Singleton and SingletonManager to query-based interest (QBI) constraints to fix issue preventing Test configuration builds from functioning correctly.
 - Failing to `NetSerialize` a struct in spatial no longer causes a crash, it now prints a warning. This matches native Unreal behavior.
 - Query response delegates now execute even if response status shows failure. This allows handlers to implement custom retry logic such as clients querying for the GSM.
 - Fixed a crash where processing unreliable RPCs made assumption that the worker had authority over all entities in the SpatialOS op
@@ -117,7 +289,7 @@ In addition to all of the updates from Improbable, this release includes x impro
 ### New Known Issues:
 - `BeginPlay()` is not called on all `WorldSettings` actors [#937](https://github.com/spatialos/UnrealGDK/issues/937)
 - Replicated properties within `DEBUG` or `WITH_EDITORONLY_DATA` macros are not supported [#939](https://github.com/spatialos/UnrealGDK/issues/939)
-- Client connections will be closed by the `ServerWorker` when using Blueprint or C++ breakpoints during play-in-editor sessions [#940](https://github.com/spatialos/UnrealGDK/issues/940)
+- Client connections will be closed by the `ServerWorker` when using blueprint or C++ breakpoints during play-in-editor sessions [#940](https://github.com/spatialos/UnrealGDK/issues/940)
 - Clients that connect after a Startup Actor (with `bNetLoadOnClient = true`) will not delete the Actor [#941](https://github.com/spatialos/UnrealGDK/issues/941)
 - Generating schema while asset manager is asynchronously loading causes editor to crash [#944](https://github.com/spatialos/UnrealGDK/issues/944)
 
@@ -152,7 +324,7 @@ In addition to all of the updates from Improbable, this release includes x impro
 - Ensure that components added in blueprints are replicated.
 - Fixed potential loading issue when attempting to load the SchemaDatabase asset.
 - Add pragma once directive to header file.
-- Schema files are now generated correctly for subobjects of the Blueprint classes.
+- Schema files are now generated correctly for subobjects of the blueprint classes.
 - Fixed being unable to launch SpatialOS if project path had spaces in it.
 - Editor no longer crashes when setting LogSpatialSender to Verbose.
 - Server-workers quickly restarted in the editor will connect to runtime correctly.

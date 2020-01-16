@@ -44,7 +44,7 @@ struct Coordinates
 	}
 };
 
-static const Coordinates Origin{ 0, 0, 0 };
+static const Coordinates DeploymentOrigin{ 0, 0, 0 };
 
 inline void AddCoordinateToSchema(Schema_Object* Object, Schema_FieldId Id, const Coordinates& Coordinate)
 {
@@ -55,9 +55,9 @@ inline void AddCoordinateToSchema(Schema_Object* Object, Schema_FieldId Id, cons
 	Schema_AddDouble(CoordsObject, 3, Coordinate.Z);
 }
 
-inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId Id)
+inline Coordinates IndexCoordinateFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
-	Schema_Object* CoordsObject = Schema_GetObject(Object, Id);
+	Schema_Object* CoordsObject = Schema_IndexObject(Object, Id, Index);
 
 	Coordinates Coordinate;
 	Coordinate.X = Schema_GetDouble(CoordsObject, 1);
@@ -65,6 +65,11 @@ inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId
 	Coordinate.Z = Schema_GetDouble(CoordsObject, 3);
 
 	return Coordinate;
+}
+
+inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId Id)
+{
+	return IndexCoordinateFromSchema(Object, Id, 0);
 }
 
 struct EntityAcl : Component
@@ -122,7 +127,7 @@ struct EntityAcl : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		AddWorkerRequirementSetToSchema(ComponentObject, 1, ReadAcl);
@@ -141,7 +146,7 @@ struct EntityAcl : Component
 	{
 		Worker_ComponentUpdate ComponentUpdate = {};
 		ComponentUpdate.component_id = ComponentId;
-		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+		ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 		AddWorkerRequirementSetToSchema(ComponentObject, 1, ReadAcl);
@@ -180,7 +185,7 @@ struct Metadata : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		AddStringToSchema(ComponentObject, 1, EntityType);
@@ -211,7 +216,7 @@ struct Position : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		AddCoordinateToSchema(ComponentObject, 1, Coords);
@@ -223,7 +228,7 @@ struct Position : Component
 	{
 		Worker_ComponentUpdate ComponentUpdate = {};
 		ComponentUpdate.component_id = ComponentId;
-		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+		ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 		AddCoordinateToSchema(ComponentObject, 1, Coords);
@@ -256,7 +261,7 @@ struct Persistence : Component
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Data.schema_type = Schema_CreateComponentData();
 
 		return Data;
 	}

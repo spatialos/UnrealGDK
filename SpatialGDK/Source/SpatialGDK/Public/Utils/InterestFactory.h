@@ -7,7 +7,7 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
-class USpatialNetDriver;
+class USpatialClassInfoManager;
 class USpatialPackageMapClient;
 class AActor;
 
@@ -21,10 +21,12 @@ void GatherClientInterestDistances();
 class SPATIALGDK_API InterestFactory
 {
 public:
-	InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialNetDriver* InNetDriver);
+	InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
 
 	Worker_ComponentData CreateInterestData() const;
 	Worker_ComponentUpdate CreateInterestUpdate() const;
+
+	static Interest CreateServerWorkerInterest();
 
 private:
 	Interest CreateInterest() const;
@@ -36,13 +38,13 @@ private:
 
 	void AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
 
-	// Checkout Constraint OR AlwaysInterested Constraint
+	// Checkout Constraint OR AlwaysInterested OR AlwaysRelevant Constraint
 	QueryConstraint CreateSystemDefinedConstraints() const;
 
 	// System Defined Constraints
 	QueryConstraint CreateCheckoutRadiusConstraints() const;
 	QueryConstraint CreateAlwaysInterestedConstraint() const;
-	QueryConstraint CreateAlwaysRelevantConstraint() const;
+	static QueryConstraint CreateAlwaysRelevantConstraint();
 
 	// Only checkout entities that are in loaded sublevels
 	QueryConstraint CreateLevelConstraints() const;
@@ -52,7 +54,7 @@ private:
 
 	AActor* Actor;
 	const FClassInfo& Info;
-	USpatialNetDriver* NetDriver;
+	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;
 };
 

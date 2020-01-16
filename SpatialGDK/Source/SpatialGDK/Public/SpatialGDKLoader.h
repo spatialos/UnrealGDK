@@ -21,13 +21,25 @@ public:
 		Path = Path / TEXT("Win64");
 #else
 		Path = Path / TEXT("Win32");
-#endif
-		Path = Path / TEXT("worker.dll");
-		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(*Path);
+#endif // PLATFORM_64BITS
+		FString WorkerFilePath = Path / TEXT("improbable_worker.dll");
+		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(*WorkerFilePath);
 		if (WorkerLibraryHandle == nullptr)
 		{
-			UE_LOG(LogTemp, Fatal, TEXT("Failed to load %s. Have you run `UnrealGDK/Setup.bat`?"), *Path);
+			UE_LOG(LogTemp, Fatal, TEXT("Failed to load %s. Have you run `UnrealGDK/Setup.bat`?"), *WorkerFilePath);
 		}
+
+#if TRACE_LIB_ACTIVE
+
+		FString TraceFilePath = Path / TEXT("trace_dynamic.dll");
+		TraceLibraryHandle = FPlatformProcess::GetDllHandle(*TraceFilePath);
+		if (TraceLibraryHandle == nullptr)
+		{
+			UE_LOG(LogTemp, Fatal, TEXT("Failed to load %s. Have you run `UnrealGDK/SetupIncTraceLibs.bat`?"), *TraceFilePath);
+		}
+
+#endif // TRACE_LIB_ACTIVE
+
 #elif PLATFORM_PS4
 		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(TEXT("libworker.prx"));
 #endif
@@ -40,6 +52,12 @@ public:
 			FPlatformProcess::FreeDllHandle(WorkerLibraryHandle);
 			WorkerLibraryHandle = nullptr;
 		}
+
+		if (TraceLibraryHandle != nullptr)
+		{
+			FPlatformProcess::FreeDllHandle(TraceLibraryHandle);
+			TraceLibraryHandle = nullptr;
+		}
 	}
 
 	FSpatialGDKLoader(const FSpatialGDKLoader& rhs) = delete;
@@ -47,4 +65,5 @@ public:
 
 private:
 	void* WorkerLibraryHandle = nullptr;
+	void* TraceLibraryHandle = nullptr;
 };

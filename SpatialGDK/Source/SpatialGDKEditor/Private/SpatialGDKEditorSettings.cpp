@@ -2,34 +2,36 @@
 
 #include "SpatialGDKEditorSettings.h"
 
-#include "Dom/JsonObject.h"
 #include "Internationalization/Regex.h"
 #include "ISettingsModule.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "Templates/SharedPointer.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
+#define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, bShowSpatialServiceButton(false)
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
+	, bExposeRuntimeIP(false)
+	, ExposedRuntimeIP(TEXT(""))
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
+	, ServicesRegion(EServicesRegion::Default)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
-	SpatialOSSnapshotFile = GetSpatialOSSnapshotFile();
-	ProjectName = GetProjectNameFromSpatial();
+	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
+	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
@@ -100,27 +102,6 @@ void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
 	}
 }
 
-FString USpatialGDKEditorSettings::GetProjectNameFromSpatial() const
-{
-	FString FileContents;
-	const FString SpatialOSFile = FSpatialGDKServicesModule::GetSpatialOSDirectory().Append(TEXT("/spatialos.json"));
-
-	if (!FFileHelper::LoadFileToString(FileContents, *SpatialOSFile))
-	{
-		return TEXT("");
-	}
-
-	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(FileContents);
-	TSharedPtr<FJsonObject> JsonObject;
-
-	if (FJsonSerializer::Deserialize(Reader, JsonObject))
-	{
-		return JsonObject->GetStringField("name");
-	}
-
-	return FString();
-}
-
 bool USpatialGDKEditorSettings::IsAssemblyNameValid(const FString& Name)
 {
 	const FRegexPattern AssemblyPatternRegex(SpatialConstants::AssemblyPattern);
@@ -164,15 +145,17 @@ void USpatialGDKEditorSettings::SetAssemblyName(const FString& Name)
 	SaveConfig();
 }
 
-void USpatialGDKEditorSettings::SetProjectName(const FString& Name)
-{
-	ProjectName = Name;
-	SaveConfig();
-}
-
 void USpatialGDKEditorSettings::SetPrimaryLaunchConfigPath(const FString& Path)
 {
-	PrimaryLaunchConfigPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
+	// If the path is empty don't try to convert it to a full path.
+	if (Path.IsEmpty())
+	{
+		PrimaryLaunchConfigPath.FilePath = Path;
+	}
+	else
+	{
+		PrimaryLaunchConfigPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
+	}
 	SaveConfig();
 }
 
@@ -210,22 +193,78 @@ void USpatialGDKEditorSettings::SetNumberOfSimulatedPlayers(uint32 Number)
 	SaveConfig();
 }
 
+bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& LaunchConfigPath)
+{
+	FString FileContents;
+	FFileHelper::LoadFileToString(FileContents, *LaunchConfigPath);
+
+	const FRegexPattern ManualWorkerFlagPattern("\"manual_worker_connection_only\" *: *true");
+	FRegexMatcher ManualWorkerFlagMatcher(ManualWorkerFlagPattern, FileContents);
+
+	if (ManualWorkerFlagMatcher.FindNext())
+	{
+		UE_LOG(LogSpatialEditorSettings, Warning, TEXT("Launch configuration for cloud deployment has \"manual_worker_connection_only\" set to true. This means server workers will need to be connected manually."));
+		return true;
+	}
+
+	return false;
+}
+
 bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 {
-	bool result = IsAssemblyNameValid(AssemblyName) &&
-		IsDeploymentNameValid(PrimaryDeploymentName) &&
-		IsProjectNameValid(ProjectName) &&
-		!GetSnapshotPath().IsEmpty() &&
-		!GetPrimaryLanchConfigPath().IsEmpty() &&
-		IsRegionCodeValid(PrimaryDeploymentRegionCode);
+	bool bValid = true;
+	if (!IsAssemblyNameValid(AssemblyName))
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Assembly name is invalid. It should match the regex: %s"), *SpatialConstants::AssemblyPattern);
+		bValid = false;
+	}
+	if (!IsDeploymentNameValid(PrimaryDeploymentName))
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. It should match the regex: %s"), *SpatialConstants::DeploymentPattern);
+		bValid = false;
+	}
+	if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Region code is invalid."));
+		bValid = false;
+	}
+	if (GetSnapshotPath().IsEmpty())
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Snapshot path cannot be empty."));
+		bValid = false;
+	}
+	if (GetPrimaryLaunchConfigPath().IsEmpty())
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Launch config path cannot be empty."));
+		bValid = false;
+	}
 
 	if (IsSimulatedPlayersEnabled())
 	{
-		result = result &&
-			IsDeploymentNameValid(SimulatedPlayerDeploymentName) &&
-			!SimulatedPlayerLaunchConfigPath.IsEmpty() &&
-			IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode);
+		if (!IsDeploymentNameValid(SimulatedPlayerDeploymentName))
+		{
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. It should match the regex: %s"), *SpatialConstants::DeploymentPattern);
+			bValid = false;
+		}
+		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
+		{
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player region code is invalid."));
+			bValid = false;
+		}
+		if (GetSimulatedPlayerLaunchConfigPath().IsEmpty())
+		{
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player launch config path cannot be empty."));
+			bValid = false;
+		}
 	}
 
-	return result;
+	if (IsManualWorkerConnectionSet(GetPrimaryLaunchConfigPath()))
+	{
+		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("AllowManualWorkerConnection", "Chosen launch configuration will not automatically launch servers. Do you want to continue?")) != EAppReturnType::Yes)
+		{
+			return false;
+		}
+	}
+
+	return bValid;
 }

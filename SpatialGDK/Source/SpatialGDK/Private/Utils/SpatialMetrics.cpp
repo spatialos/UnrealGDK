@@ -4,20 +4,20 @@
 
 #include "Engine/Engine.h"
 #include "EngineGlobals.h"
-#include "GameFramework/PlayerController.h"
 
-#include "EngineClasses/SpatialNetConnection.h"
-#include "EngineClasses/SpatialNetDriver.h"
-#include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
 
-void USpatialMetrics::Init(USpatialNetDriver* InNetDriver)
+void USpatialMetrics::Init(USpatialWorkerConnection* InConnection,
+	float InNetServerMaxTickRate, bool bInIsServer)
 {
-	NetDriver = InNetDriver;
+	Connection = InConnection;
+	bIsServer = bInIsServer;
+	NetServerMaxTickRate = InNetServerMaxTickRate;
+
 	TimeBetweenMetricsReports = GetDefault<USpatialGDKSettings>()->MetricsReportRate;
 	FramesSinceLastReport = 0;
 	TimeOfLastReport = 0.0f;
@@ -26,11 +26,11 @@ void USpatialMetrics::Init(USpatialNetDriver* InNetDriver)
 	RPCTrackingStartTime = 0.0f;
 }
 
-void USpatialMetrics::TickMetrics()
+void USpatialMetrics::TickMetrics(float NetDriverTime)
 {
 	FramesSinceLastReport++;
 
-	TimeSinceLastReport = NetDriver->Time - TimeOfLastReport;
+	TimeSinceLastReport = NetDriverTime - TimeOfLastReport;
 
 	// Check that there has been a sufficient amount of time since the last report.
 	if (TimeSinceLastReport > 0.f && TimeSinceLastReport < TimeBetweenMetricsReports)
@@ -49,10 +49,10 @@ void USpatialMetrics::TickMetrics()
 	DynamicFPSMetrics.GaugeMetrics.Add(DynamicFPSGauge);
 	DynamicFPSMetrics.Load = WorkerLoad;
 
-	TimeOfLastReport = NetDriver->Time;
+	TimeOfLastReport = NetDriverTime;
 	FramesSinceLastReport = 0;
 
-	NetDriver->Connection->SendMetrics(DynamicFPSMetrics);
+	Connection->SendMetrics(DynamicFPSMetrics);
 }
 
 // Load defined as performance relative to target frame time or just frame time based on config value.
@@ -65,7 +65,7 @@ double USpatialMetrics::CalculateLoad() const
 		return AverageFrameTime;
 	}
 
-	float TargetFrameTime = 1.0f / NetDriver->NetServerMaxTickRate;
+	float TargetFrameTime = 1.0f / NetServerMaxTickRate;
 
 	return AverageFrameTime / TargetFrameTime;
 }
@@ -84,17 +84,18 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 	RPCTrackingStartTime = FPlatformTime::Seconds();
 
 	// If RPC tracking is activated on a client, send a command to the server to start tracking.
-	if (!NetDriver->IsServer())
+	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
-		FUnrealObjectRef PCObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Cast<APlayerController>(NetDriver->GetSpatialOSNetConnection()->OwningActor));
+		FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
 		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			Worker_CommandRequest Request = {};
 			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
-			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
-			NetDriver->Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
+			Request.command_index = SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID;
+			Request.schema_type = Schema_CreateCommandRequest();
+			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
 		}
 		else
 		{
@@ -146,18 +147,18 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 		int TotalPayload = 0;
 
 		UE_LOG(LogSpatialMetrics, Log, TEXT("---------------------------"));
-		UE_LOG(LogSpatialMetrics, Log, TEXT("Recently sent RPCs - %s:"), NetDriver->IsServer() ? TEXT("Server") : TEXT("Client"));
+		UE_LOG(LogSpatialMetrics, Log, TEXT("Recently sent RPCs - %s:"), bIsServer ? TEXT("Server") : TEXT("Client"));
 		UE_LOG(LogSpatialMetrics, Log, TEXT("RPC Type           | %s | # of calls |  Calls/sec | Total payload | Avg. payload | Payload/sec"), *FString(TEXT("RPC Name")).RightPad(MaxRPCNameLen));
 
 		FString SeparatorLine = FString::Printf(TEXT("-------------------+-%s-+------------+------------+---------------+--------------+------------"), *FString::ChrN(MaxRPCNameLen, '-'));
 
-		ESchemaComponentType PrevType = SCHEMA_Invalid;
+		ERPCType PrevType = ERPCType::Invalid;
 		for (RPCStat& Stat : RecentRPCArray)
 		{
 			FString RPCTypeField;
 			if (Stat.Type != PrevType)
 			{
-				RPCTypeField = RPCSchemaTypeToString(Stat.Type);
+				RPCTypeField = SpatialConstants::RPCTypeToString(Stat.Type);
 				PrevType = Stat.Type;
 				UE_LOG(LogSpatialMetrics, Log, TEXT("%s"), *SeparatorLine);
 			}
@@ -174,17 +175,18 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 	bRPCTrackingEnabled = false;
 
 	// If RPC tracking is stopped on a client, send a command to the server to stop tracking.
-	if (!NetDriver->IsServer())
+	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
-		FUnrealObjectRef PCObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Cast<APlayerController>(NetDriver->GetSpatialOSNetConnection()->OwningActor));
+		FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
 		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			Worker_CommandRequest Request = {};
 			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
-			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID);
-			NetDriver->Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID);
+			Request.command_index = SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID;
+			Request.schema_type = Schema_CreateCommandRequest();
+			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID);
 		}
 		else
 		{
@@ -200,22 +202,23 @@ void USpatialMetrics::OnStopRPCMetricsCommand()
 
 void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 {
-	if (!NetDriver->IsServer())
+	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
-		FUnrealObjectRef PCObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Cast<APlayerController>(NetDriver->GetSpatialOSNetConnection()->OwningActor));
+		FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
 		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			Worker_CommandRequest Request = {};
 			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
-			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID);
+			Request.command_index = SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID;
+			Request.schema_type = Schema_CreateCommandRequest();
 			
 			Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
 			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_NAME_ID, Name);
 			Schema_AddFloat(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_VALUE_ID, Value);
 
-			NetDriver->Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID);
+			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID);
 		}
 		else
 		{
@@ -265,7 +268,7 @@ void USpatialMetrics::OnModifySettingCommand(Schema_Object* CommandPayload)
 	SpatialModifySetting(Name, Value);
 }
 
-void USpatialMetrics::TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize)
+void USpatialMetrics::TrackSentRPC(UFunction* Function, ERPCType RPCType, int PayloadSize)
 {
 	if (!bRPCTrackingEnabled)
 	{
@@ -288,4 +291,26 @@ void USpatialMetrics::TrackSentRPC(UFunction* Function, ESchemaComponentType RPC
 	RPCStat& Stat = RecentRPCs[FunctionName];
 	Stat.Calls++;
 	Stat.TotalPayload += PayloadSize;
+}
+
+void USpatialMetrics::HandleWorkerMetrics(Worker_Op* Op)
+{
+	if (WorkerMetricsRecieved.IsBound())
+	{
+		int32 NumMetrics = Op->op.metrics.metrics.gauge_metric_count;
+
+		if (NumMetrics > 0)
+		{
+			// Construct a map to store all the metrics and pass it to the users delegate
+			TMap<FString, double> WorkerMetrics;
+			WorkerMetrics.Reserve(NumMetrics);
+
+			for (int32 i = 0; i < NumMetrics; i++)
+			{
+				WorkerMetrics.Add(Op->op.metrics.metrics.gauge_metrics[i].key, Op->op.metrics.metrics.gauge_metrics[i].value);
+			}
+
+			WorkerMetricsRecieved.Broadcast(WorkerMetrics);
+		}
+	}
 }

@@ -10,6 +10,11 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "Templates/SharedPointer.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKEditorToolbar.h"
+#include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKServicesModule.h"
+#include "Async/Async.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "Textures/SlateIcon.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
@@ -26,10 +31,13 @@
 
 #include "Internationalization/Regex.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialGDKSimulatedPlayerDeployment);
+
 void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	
+	FString ProjectName = FSpatialGDKServicesModule::GetProjectName();
+
 	ParentWindowPtr = InArgs._ParentWindow;
 	SpatialGDKEditorPtr = InArgs._SpatialGDKEditor;
 
@@ -109,10 +117,9 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
-									.Text(FText::FromString(SpatialGDKSettings->GetProjectName()))
+									.Text(FText::FromString(ProjectName))
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
-									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommited)
-									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommited, ETextCommit::Default)
+									.IsEnabled(false)
 								]
 							]
 							// Assembly Name 
@@ -208,9 +215,9 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.BrowseButtonImage(FEditorStyle::GetBrush("PropertyWindow.Button_Ellipsis"))
 									.BrowseButtonStyle(FEditorStyle::Get(), "HoverHintOnly")
 									.BrowseButtonToolTip(FText::FromString(FString(TEXT("Path to the launch configuration file."))))
-									.BrowseDirectory(FSpatialGDKServicesModule::GetSpatialOSDirectory())
+									.BrowseDirectory(SpatialGDKServicesConstants::SpatialOSDirectory)
 									.BrowseTitle(FText::FromString(FString(TEXT("File picker..."))))
-									.FilePath_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryLanchConfigPath)
+									.FilePath_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryLaunchConfigPath)
 									.FileTypeFilter(TEXT("Launch configuration files (*.json)|*.json"))
 									.OnPathPicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked)
 								]
@@ -405,12 +412,6 @@ void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited(const FT
 	SpatialGDKSettings->SetAssemblyName(InText.ToString());
 }
 
-void SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommited(const FText& InText, ETextCommit::Type InCommitType)
-{
-	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetProjectName(InText.ToString());
-}
-
 void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
@@ -490,53 +491,95 @@ void SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited(ui
 	SpatialGDKSettings->SetNumberOfSimulatedPlayers(NewValue);
 }
 
+bool SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth()
+{
+	FString SpatialInfoArgs = TEXT("auth login");
+	FString SpatialInfoResult;
+	FString StdErr;
+	int32 ExitCode;
+	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpatialExe, *SpatialInfoArgs, &ExitCode, &SpatialInfoResult, &StdErr);
+
+	bool bSuccess = ExitCode == 0;
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialGDKSimulatedPlayerDeployment, Warning, TEXT("Spatial auth login failed. Error Code: %d, Error Message: %s"), ExitCode, *SpatialInfoResult);
+	}
+
+	return bSuccess;
+}
+
 FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	if (!SpatialGDKSettings->IsDeploymentConfigurationValid()) {
-		FNotificationInfo Info(FText::FromString(TEXT("Deployment configuration is not valid.")));
+	FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
+
+	if (!SpatialGDKSettings->IsDeploymentConfigurationValid())
+	{
+		if (ToolbarPtr)
+		{
+			ToolbarPtr->OnShowFailedNotification(TEXT("Deployment configuration is not valid."));
+		}
+
+		return FReply::Handled();
+	}
+
+	auto LaunchCloudDeployment = [this, ToolbarPtr]()
+	{
+		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
+		{
+			if (ToolbarPtr)
+			{
+				ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
+			}
+
+			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
+				FSimpleDelegate::CreateLambda([]()
+			{
+				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				{
+					ToolbarPtr->OnShowSuccessNotification("Successfully launched cloud deployment.");
+				}
+			}),
+
+				FSimpleDelegate::CreateLambda([]()
+			{
+				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				{
+					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
+				}
+			}));
+
+			return;
+		}
+
+		FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
 		Info.bUseSuccessFailIcons = true;
 		Info.ExpireDuration = 3.0f;
 
 		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+	};
 
-		return FReply::Handled();
+	if (!AttemptSpatialAuthResult.IsReady() || AttemptSpatialAuthResult.Get() == false)
+	{
+#if ENGINE_MINOR_VERSION <= 22
+		AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth,
+#else
+		AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth,
+#endif
+			[this, LaunchCloudDeployment]()
+		{
+			if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
+			{
+				LaunchCloudDeployment();
+			}
+		});
 	}
-
-	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
-		FNotificationInfo Info(FText::FromString(TEXT("Starting simulated player deployment...")));
-		Info.bUseSuccessFailIcons = true;
-		Info.bFireAndForget = false;
-
-		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-
-		NotificationItem->SetCompletionState(SNotificationItem::CS_Pending);
-
-		SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
-			FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("Successfully initiated launching of the cloud deployment.")));
-				NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
-				NotificationItem->SetExpireDuration(7.5f);
-				NotificationItem->ExpireAndFadeout();
-			}),
-			FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("Failed to launch the DeploymentLauncher script properly.")));
-				NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-				NotificationItem->SetExpireDuration(7.5f);
-				NotificationItem->ExpireAndFadeout();
-			})
-		);
-		return FReply::Handled();
+	else
+	{
+		LaunchCloudDeployment();
 	}
-
-	FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
-	Info.bUseSuccessFailIcons = true;
-	Info.ExpireDuration = 3.0f;
-
-	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-	NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 
 	return FReply::Handled();
 }
@@ -550,24 +593,28 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnRefreshClicked()
 FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 {
 	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
-		FNotificationInfo Info(FText::FromString(TEXT("Stopping cloud deployment ...")));
-		Info.bUseSuccessFailIcons = true;
-		Info.bFireAndForget = false;
 
-		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-
-		NotificationItem->SetCompletionState(SNotificationItem::CS_Pending);
+		if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+		{
+			ToolbarPtr->OnShowTaskStartNotification("Stopping cloud deployment ...");
+		}
 
 		SpatialGDKEditorSharedPtr->StopCloudDeployment(
-				FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("Successfully launched the stop cloud deployments command.")));
-				NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
+			FSimpleDelegate::CreateLambda([]()
+			{
+				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				{
+					ToolbarPtr->OnShowSuccessNotification("Successfully stopped cloud deployment.");
+				}
 			}),
-				FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("Failed to launch the DeploymentLauncher script properly.")));
-				NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-			})
-		);
+
+			FSimpleDelegate::CreateLambda([]()
+			{
+				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				{
+					ToolbarPtr->OnShowFailedNotification("Failed to stop cloud deployment.");
+				}
+			}));
 	}
 	return FReply::Handled();
 }
