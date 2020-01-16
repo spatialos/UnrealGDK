@@ -27,8 +27,7 @@ bool UReferenceCountedLockingPolicy::CanAcquireLock(AActor* Actor) const
 		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Failed to lock actor without corresponding entity ID. Actor: %s"), *Actor->GetName());
 		return false;
 	}
-
-	const bool bHasAuthority = NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE;
+	const bool bHasAuthority = NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 	if (!bHasAuthority)
 	{
 		UE_LOG(LogReferenceCountedLockingPolicy, Verbose, TEXT("Can not lock actor migration. Do not have authority. Actor: %s"), *Actor->GetName());
