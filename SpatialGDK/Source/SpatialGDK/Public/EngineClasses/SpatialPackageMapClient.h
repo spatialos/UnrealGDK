@@ -32,7 +32,7 @@ public:
 	bool IsEntityIdPendingCreation(Worker_EntityId EntityId) const;
 	void RemovePendingCreationEntityId(Worker_EntityId EntityId);
 
-	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
+	bool ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
 	void ResolveSubobject(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
 	void RemoveEntityActor(Worker_EntityId EntityId);

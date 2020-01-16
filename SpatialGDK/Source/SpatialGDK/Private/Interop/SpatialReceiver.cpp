@@ -720,7 +720,10 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			return;
 		}
 
-		PackageMap->ResolveEntityActor(EntityActor, EntityId);
+		if (!PackageMap->ResolveEntityActor(EntityActor, EntityId))
+		{
+			return;
+		}
 
 #if ENGINE_MINOR_VERSION <= 22
 		Channel->SetChannelActor(EntityActor);
