@@ -2,106 +2,112 @@
 
 #pragma once
 
-#include "Containers/Queue.h"
-#include "HAL/Runnable.h"
-#include "HAL/ThreadSafeBool.h"
+// TODO(Alex): move include to .cpp
+#include "SpatialWorkerConnection.h"
+
+#include "SpatialCommonTypes.h"
 
 #include "Interop/Connection/ConnectionConfig.h"
-#include "Interop/Connection/OutgoingMessages.h"
-#include "SpatialCommonTypes.h"
-#include "SpatialGDKSettings.h"
-#include "UObject/WeakObjectPtr.h"
+
 #include "Utils/SpatialLatencyTracer.h"
 
-#include <WorkerSDK/improbable/c_schema.h>
-#include <WorkerSDK/improbable/c_worker.h>
+#include "HAL/Runnable.h"
+#include "CoreMinimal.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
+#include "WorkerConnection.generated.h"
 
-class SPATIALGDK_API RealWorkerConnection
+namespace SpatialGDK
 {
+	struct SpatialMetrics;
+}
+class RealWorkerConnection;
+class FRunnableThread;
+
+UCLASS()
+class SPATIALGDK_API USpatialWorkerConnectionCallbacks : public UObject
+{
+	GENERATED_BODY()
+
 public:
-	// TODO(Alex): is it called properly?
-	~RealWorkerConnection();
+	// TODO(Alex): fix these!
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
+	FOnEnqueueMessage OnEnqueueMessage;
+
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
+	FOnDequeueMessage OnDequeueMessage;
+
+	DECLARE_DELEGATE(OnConnectionToSpatialOSSucceededDelegate)
+	OnConnectionToSpatialOSSucceededDelegate OnConnectedCallback;
+
+	DECLARE_DELEGATE_TwoParams(OnConnectionToSpatialOSFailedDelegate, uint8_t, const FString&);
+	OnConnectionToSpatialOSFailedDelegate OnFailedToConnectCallback;
+};
+
+// TODO(Alex): use MoveTemp for function arguments
+// TODO(Alex): inline trivial functions
+
+UCLASS()
+class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
+{
+	GENERATED_BODY()
+
+public:
+	USpatialWorkerConnection(const FObjectInitializer & ObjectInitializer = FObjectInitializer::Get());
+	virtual void FinishDestroy() override;
+
 	void DestroyConnection();
+	PhysicalWorkerName GetWorkerId() const;
+	void CacheWorkerAttributes();
 
-	Worker_Connection* Connect(uint32 PlayInEditorID, bool bConnectAsClient);
+	bool IsConnected() const;
 
-	// Worker Connection Interface
-	TArray<Worker_OpList*> GetOpList();
+	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
+	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
+	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
 	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);
-	Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId);
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
+	Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId);
 	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData);
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
-	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
-	void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message);
 	void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest);
-	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
+
 	void SendMetrics(const SpatialGDK::SpatialMetrics& Metrics);
+	void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message);
 
-	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
-
 	void SetConnectionType(ESpatialConnectionType InConnectionType);
 
-	void GetErrorCodeAndMessage(uint8_t& OutConnectionStatusCode, FString& OutErrorMessage) const;
+	void Connect(bool bInitAsClient, uint32 PlayInEditorID);
+
+	TArray<Worker_OpList*> GetOpList();
 
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
-private:
-	// TODO(Alex): hide it back
-public:
-	Worker_ConnectionFuture* ConnectToReceptionist(uint32 PlayInEditorID, bool bConnectAsClient);
-	Worker_ConnectionFuture* ConnectToLocator(bool bConnectAsClient);
-private:
-
-	// TODO(Alex): hide it back
-public:
-	ESpatialConnectionType GetConnectionType() const;
-	void CacheWorkerAttributes();
-private:
+	// TODO(Alex): Use TUniquePtr
+	UPROPERTY()
+	USpatialWorkerConnectionCallbacks* WorkerConnectionCallbacks;
 
 private:
+	void InitializeOpsProcessingThread();
+	void OnConnectionSuccess();
+	void OnConnectionFailure();
 
-	// TODO(Alex): hide it back
-public:
-	void QueueLatestOpList();
-	void ProcessOutgoingMessages();
-private:
-
-	// TODO(Alex): hide it back
-public:
-	void StartDevelopmentAuth(FString DevAuthToken, bool bInConnectToLocatorAsClient);
-private:
-	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
-	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
-
-	template <typename T, typename... ArgsType>
-	void QueueOutgoingMessage(ArgsType&&... Args);
+	// Begin FRunnable Interface
+	virtual bool Init() override;
+	virtual uint32 Run() override;
+	virtual void Stop() override;
+	// End FRunnable Interface
 
 private:
-	// TODO(Alex): hide back?
-public:
-	Worker_Connection* WorkerConnection;
-private:
-	Worker_Locator* WorkerLocator;
+	bool bIsConnected;
+	float OpsUpdateInterval;
+	FThreadSafeBool KeepRunning = true;
+	FRunnableThread* OpsProcessingThread;
 
-	// TODO(Alex): not nice to have this variable
-	bool bConnectToLocatorAsClient = false;
+	bool bConnectAsClient = false;
 
-	TArray<FString> CachedWorkerAttributes;
-
-
-	TQueue<Worker_OpList*> OpListQueue;
-	TQueue<TUniquePtr<SpatialGDK::FOutgoingMessage>> OutgoingMessagesQueue;
-
-	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
-	Worker_RequestId NextRequestId = 0;
-
-	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
+	TUniquePtr<RealWorkerConnection> WorkerConnectionImpl;
 };
