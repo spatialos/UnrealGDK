@@ -63,6 +63,10 @@ void USpatialGDKSettings::PostInitProperties()
 {
 	Super::PostInitProperties();
 
+#if !ALLOW_SPATIAL_CMDLINE_PARSING
+	return;
+#endif
+
 	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
 
