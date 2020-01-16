@@ -218,12 +218,6 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
 	FWorkerType LoadBalancingWorkerType;
 
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-	TSubclassOf<UAbstractLBStrategy> LoadBalanceStrategy;
-
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
-
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
 	bool bUseRPCRingBuffers;
 

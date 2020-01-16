@@ -208,7 +208,7 @@ private:
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
-	void CreateAndInitializeLoadBalancer();
+	void CreateAndInitializeLoadBalancingClasses();
 
 	void CreateServerSpatialOSNetConnection();
 	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor);

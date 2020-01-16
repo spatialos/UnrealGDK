@@ -46,6 +46,7 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKServicesModule.h"
 #endif
+#include "SpatialWorldSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -450,7 +451,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	CreateAndInitializeLoadBalancer();
+	CreateAndInitializeLoadBalancingClasses();
 
 	if (SpatialSettings->bUseRPCRingBuffers)
 	{
@@ -474,44 +475,47 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PackageMap->Init(this, &TimerManager);
 }
 
-void USpatialNetDriver::CreateAndInitializeLoadBalancer()
+void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 {
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	if (SpatialSettings->bEnableUnrealLoadBalancer == false)
 	{
-		if (IsServer()) 
+		return;
+	}
+
+	if (IsServer()) 
+	{
+		const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
+		if (WorldSettings == nullptr || WorldSettings->LoadBalanceStrategy == nullptr)
 		{
-			if (SpatialSettings->LoadBalanceStrategy == nullptr)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
-				LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
-			}
-			else
-			{
-				// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
-				LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
-			}
-			LoadBalanceStrategy->Init(this);
-
-			if (SpatialSettings->LockingPolicy == nullptr)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
-				LockingPolicy = NewObject<UReferenceCountedLockingPolicy>(this);
-			}
-			else
-			{
-				LockingPolicy = NewObject<UAbstractLockingPolicy>(this, SpatialSettings->LockingPolicy);
-			}
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+			LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
 		}
-
-		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
-		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
-
-		if (IsServer()) 
+		else
 		{
-			VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
-			LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->LoadBalanceStrategy);
 		}
+		LoadBalanceStrategy->Init(this);
+
+		if (WorldSettings == nullptr || WorldSettings->LockingPolicy == nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
+			LockingPolicy = NewObject<UReferenceCountedLockingPolicy>(this);
+		}
+		else
+		{
+			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->LockingPolicy);
+		}
+	}
+
+	// TODO: this probably shouldn't exist on client workers in shipping builds. It's there right now for the SpatialDebugger.
+	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
+	VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
+
+	if (IsServer()) 
+	{
+		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 	}
 }
 
