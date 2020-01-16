@@ -1,7 +1,7 @@
 <%(TOC)%>
 # Tutorials and guides
 ## \[Experimental\] Multiserver zoning
-<%(Callout type="warn" message="This tutorial is a preview demonstrating early multiserver zoning functionality in the GDK. Please note we do not recommend development of multiserver projects using server [zoning]({{urlRoot}}/content/glossary#worker) at this time. </br></br>
+<%(Callout type="warn" message="This tutorial is a preview demonstrating early multiserver zoning functionality in the GDK. We do not yet recommend development of multiserver projects using server [zoning]({{urlRoot}}/content/glossary#worker). The functionality, interfaces and tooling showed in this tutorial will differ from the version of zoning we will release for development. </br></br>
 For more information on multiserver zoning, see our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) pages.")%>	
 
 <br/>
@@ -43,6 +43,7 @@ You can now set up replication of health changes.
 
 
 <br/>------<br/>
+_2019-12-18 Page updated with limited editorial review: added caveat that the zoning functionality may differ._</br>
 _2019-08-03 Page updated with limited editorial review: added change branch._</br>
 _2019-08-02 Page updated with limited editorial review: updated project name and terms._</br>
 _2019-04-30 Page updated with limited editorial review._
