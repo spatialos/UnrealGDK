@@ -48,6 +48,8 @@ namespace
 #endif
 }  // anonymous namespace
 
+const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
+
 USpatialLatencyTracer::USpatialLatencyTracer()
 {
 #if TRACE_LIB_ACTIVE
