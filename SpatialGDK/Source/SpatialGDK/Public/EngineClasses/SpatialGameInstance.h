@@ -8,7 +8,7 @@
 #include "SpatialGameInstance.generated.h"
 
 class USpatialLatencyTracer;
-class UWorkerConnection;
+class USpatialWorkerConnection;
 class UGlobalStateManager;
 class USpatialStaticComponentView;
 
@@ -42,7 +42,7 @@ public:
 	// Destroying the SpatialWorkerConnection disconnects us from SpatialOS.
 	void DestroySpatialWorkerConnection();
 
-	FORCEINLINE UWorkerConnection* GetSpatialWorkerConnection() { return SpatialConnection; }
+	FORCEINLINE USpatialWorkerConnection* GetSpatialWorkerConnection() { return SpatialConnection; }
 	FORCEINLINE USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
 	FORCEINLINE UGlobalStateManager* GetGlobalStateManager() { return GlobalStateManager; };
 	FORCEINLINE USpatialStaticComponentView* GetStaticComponentView() { return StaticComponentView; };
@@ -66,7 +66,7 @@ protected:
 private:
 	// SpatialConnection is stored here for persistence between map travels.
 	UPROPERTY()
-	UWorkerConnection* SpatialConnection;
+	USpatialWorkerConnection* SpatialConnection;
 
 	bool bFirstConnectionToSpatialOSAttempted = false;
 

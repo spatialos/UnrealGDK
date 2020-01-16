@@ -20,11 +20,11 @@ namespace SpatialGDK
 {
 	struct SpatialMetrics;
 }
-class USpatialWorkerConnection;
+class RealWorkerConnection;
 class FRunnableThread;
 
 UCLASS()
-class SPATIALGDK_API UWorkerConnectionCallbacks : public UObject
+class SPATIALGDK_API USpatialWorkerConnectionCallbacks : public UObject
 {
 	GENERATED_BODY()
 
@@ -47,12 +47,12 @@ public:
 // TODO(Alex): inline trivial functions
 
 UCLASS()
-class SPATIALGDK_API UWorkerConnection : public UObject, public FRunnable
+class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 {
 	GENERATED_BODY()
 
 public:
-	UWorkerConnection(const FObjectInitializer & ObjectInitializer = FObjectInitializer::Get());
+	USpatialWorkerConnection(const FObjectInitializer & ObjectInitializer = FObjectInitializer::Get());
 	virtual void FinishDestroy() override;
 
 	void DestroyConnection();
@@ -88,7 +88,7 @@ public:
 
 	// TODO(Alex): Use TUniquePtr
 	UPROPERTY()
-	UWorkerConnectionCallbacks* WorkerConnectionCallbacks;
+	USpatialWorkerConnectionCallbacks* WorkerConnectionCallbacks;
 
 private:
 	void InitializeOpsProcessingThread();
@@ -109,5 +109,5 @@ private:
 
 	bool bConnectAsClient = false;
 
-	TUniquePtr<USpatialWorkerConnection> WorkerConnectionImpl;
+	TUniquePtr<RealWorkerConnection> WorkerConnectionImpl;
 };

@@ -181,7 +181,7 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 			Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
 			Schema_AddObject(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
 
-			UWorkerConnection* WorkerConnection = Cast<USpatialNetDriver>(Connection->Driver)->Connection;
+			USpatialWorkerConnection* WorkerConnection = Cast<USpatialNetDriver>(Connection->Driver)->Connection;
 			if (WorkerConnection->IsConnected())
 			{
 				WorkerConnection->SendComponentUpdate(Connection->PlayerControllerEntity, &ComponentUpdate);

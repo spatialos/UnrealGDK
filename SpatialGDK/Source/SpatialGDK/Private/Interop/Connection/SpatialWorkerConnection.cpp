@@ -85,13 +85,13 @@ struct ConfigureConnection
 #endif
 };
 
-USpatialWorkerConnection::~USpatialWorkerConnection()
+RealWorkerConnection::~RealWorkerConnection()
 {
 	// TODO(Alex): could be unsafe, since not sure if OpsProcessingThread has been executed
 	DestroyConnection();
 }
 
-void USpatialWorkerConnection::DestroyConnection()
+void RealWorkerConnection::DestroyConnection()
 {
 	if (WorkerConnection)
 	{
@@ -117,7 +117,7 @@ void USpatialWorkerConnection::DestroyConnection()
 	NextRequestId = 0;
 }
 
-Worker_Connection* USpatialWorkerConnection::Connect(uint32 PlayInEditorID, bool bConnectAsClient)
+Worker_Connection* RealWorkerConnection::Connect(uint32 PlayInEditorID, bool bConnectAsClient)
 {
 	Worker_ConnectionFuture* ConnectionFuture = nullptr;
 
@@ -144,7 +144,7 @@ Worker_Connection* USpatialWorkerConnection::Connect(uint32 PlayInEditorID, bool
 	}
 }
 
-void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
+void RealWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
 {
 	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 	{
@@ -159,7 +159,7 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 	}
 
 	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
-	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
+	RealWorkerConnection* Connection = static_cast<RealWorkerConnection*>(UserData);
 	const FString& DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
 	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
 	if (DeploymentToConnect.IsEmpty())
@@ -181,7 +181,7 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 	Connection->ConnectToLocator(Connection->bConnectToLocatorAsClient);
 }
 
-void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
+void RealWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
 {
 	if (PIToken->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 	{
@@ -190,7 +190,7 @@ void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worke
 	}
 
 	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully received PIToken: %s"), UTF8_TO_TCHAR(PIToken->player_identity_token));
-	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
+	RealWorkerConnection* Connection = static_cast<RealWorkerConnection*>(UserData);
 	Connection->LocatorConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
 	Worker_Alpha_LoginTokensRequest LTParams{};
 	LTParams.player_identity_token = PIToken->player_identity_token;
@@ -200,11 +200,11 @@ void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worke
 
 	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*Connection->LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
 	{
-		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, Connection, &USpatialWorkerConnection::OnLoginTokens);
+		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, Connection, &RealWorkerConnection::OnLoginTokens);
 	}
 }
 
-void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken, bool bInConnectToLocatorAsClient)
+void RealWorkerConnection::StartDevelopmentAuth(FString DevAuthToken, bool bInConnectToLocatorAsClient)
 {
 	bConnectToLocatorAsClient = bInConnectToLocatorAsClient;
 
@@ -219,11 +219,11 @@ void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken, bool b
 
 	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &PITParams))
 	{
-		Worker_Alpha_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialWorkerConnection::OnPlayerIdentityToken);
+		Worker_Alpha_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &RealWorkerConnection::OnPlayerIdentityToken);
 	}
 }
 
-Worker_ConnectionFuture* USpatialWorkerConnection::ConnectToReceptionist(uint32 PlayInEditorID, bool bConnectAsClient)
+Worker_ConnectionFuture* RealWorkerConnection::ConnectToReceptionist(uint32 PlayInEditorID, bool bConnectAsClient)
 {
 #if WITH_EDITOR
 	SpatialGDKServices::InitWorkers(bConnectAsClient, PlayInEditorID, ReceptionistConfig.WorkerId);
@@ -240,7 +240,7 @@ Worker_ConnectionFuture* USpatialWorkerConnection::ConnectToReceptionist(uint32 
 	return ConnectionFuture;
 }
 
-Worker_ConnectionFuture* USpatialWorkerConnection::ConnectToLocator(bool bConnectAsClient)
+Worker_ConnectionFuture* RealWorkerConnection::ConnectToLocator(bool bConnectAsClient)
 {
 	LocatorConfig.PreConnectInit(bConnectAsClient);
 
@@ -264,12 +264,12 @@ Worker_ConnectionFuture* USpatialWorkerConnection::ConnectToLocator(bool bConnec
 	return ConnectionFuture;
 }
 
-ESpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
+ESpatialConnectionType RealWorkerConnection::GetConnectionType() const
 {
 	return ConnectionType;
 }
 
-void USpatialWorkerConnection::SetConnectionType(ESpatialConnectionType InConnectionType)
+void RealWorkerConnection::SetConnectionType(ESpatialConnectionType InConnectionType)
 {
 	// The locator config may not have been initialized
 	check(!(InConnectionType == ESpatialConnectionType::Locator && LocatorConfig.LocatorHost.IsEmpty()))
@@ -277,7 +277,7 @@ void USpatialWorkerConnection::SetConnectionType(ESpatialConnectionType InConnec
 	ConnectionType = InConnectionType;
 }
 
-void USpatialWorkerConnection::GetErrorCodeAndMessage(uint8_t& OutConnectionStatusCode, FString& OutErrorMessage) const
+void RealWorkerConnection::GetErrorCodeAndMessage(uint8_t& OutConnectionStatusCode, FString& OutErrorMessage) const
 {
 	if (WorkerConnection != nullptr)
 	{
@@ -286,7 +286,7 @@ void USpatialWorkerConnection::GetErrorCodeAndMessage(uint8_t& OutConnectionStat
 	}
 }
 
-TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
+TArray<Worker_OpList*> RealWorkerConnection::GetOpList()
 {
 	TArray<Worker_OpList*> OpLists;
 	while (!OpListQueue.IsEmpty())
@@ -299,87 +299,87 @@ TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
 	return OpLists;
 }
 
-Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
+Worker_RequestId RealWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
 {
 	QueueOutgoingMessage<FReserveEntityIdsRequest>(NumOfEntities);
 	return NextRequestId++;
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId)
+Worker_RequestId RealWorkerConnection::SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId)
 {
 	QueueOutgoingMessage<FCreateEntityRequest>(MoveTemp(Components), EntityId);
 	return NextRequestId++;
 }
 
-Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
+Worker_RequestId RealWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
 	QueueOutgoingMessage<FDeleteEntityRequest>(EntityId);
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData)
+void RealWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData)
 {
 	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData);
 }
 
-void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void RealWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
 }
 
-void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key)
+void RealWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key)
 {
 	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate, Key);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
+Worker_RequestId RealWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
 {
 	QueueOutgoingMessage<FCommandRequest>(EntityId, *Request, CommandId);
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
+void RealWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
 {
 	QueueOutgoingMessage<FCommandResponse>(RequestId, *Response);
 }
 
-void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
+void RealWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
 	QueueOutgoingMessage<FCommandFailure>(RequestId, Message);
 }
 
-void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const FName& LoggerName, const TCHAR* Message)
+void RealWorkerConnection::SendLogMessage(const uint8_t Level, const FName& LoggerName, const TCHAR* Message)
 {
 	QueueOutgoingMessage<FLogMessage>(Level, LoggerName, Message);
 }
 
-void USpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
+void RealWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
 {
 	QueueOutgoingMessage<FComponentInterest>(EntityId, MoveTemp(ComponentInterest));
 }
 
-Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
+Worker_RequestId RealWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
 {
 	QueueOutgoingMessage<FEntityQueryRequest>(*EntityQuery);
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendMetrics(const SpatialMetrics& Metrics)
+void RealWorkerConnection::SendMetrics(const SpatialMetrics& Metrics)
 {
 	QueueOutgoingMessage<FMetrics>(Metrics);
 }
 
-PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const
+PhysicalWorkerName RealWorkerConnection::GetWorkerId() const
 {
 	return PhysicalWorkerName(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
 }
 
-const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
+const TArray<FString>& RealWorkerConnection::GetWorkerAttributes() const
 {
 	return CachedWorkerAttributes;
 }
 
-void USpatialWorkerConnection::CacheWorkerAttributes()
+void RealWorkerConnection::CacheWorkerAttributes()
 {
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(WorkerConnection);
 
@@ -396,7 +396,7 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	}
 }
 
-void USpatialWorkerConnection::QueueLatestOpList()
+void RealWorkerConnection::QueueLatestOpList()
 {
 	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
 	if (OpList->op_count > 0)
@@ -409,7 +409,7 @@ void USpatialWorkerConnection::QueueLatestOpList()
 	}
 }
 
-void USpatialWorkerConnection::ProcessOutgoingMessages()
+void RealWorkerConnection::ProcessOutgoingMessages()
 {
 	while (!OutgoingMessagesQueue.IsEmpty())
 	{
@@ -601,7 +601,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 }
 
 template <typename T, typename... ArgsType>
-void USpatialWorkerConnection::QueueOutgoingMessage(ArgsType&&... Args)
+void RealWorkerConnection::QueueOutgoingMessage(ArgsType&&... Args)
 {
 	// TODO UNR-1271: As later optimization, we can change the queue to hold a union
 	// of all outgoing message types, rather than having a pointer.

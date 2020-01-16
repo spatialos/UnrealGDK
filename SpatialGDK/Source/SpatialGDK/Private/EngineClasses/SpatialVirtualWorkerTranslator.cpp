@@ -19,7 +19,7 @@ SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator()
 void SpatialVirtualWorkerTranslator::Init(UAbstractLBStrategy* InLoadBalanceStrategy,
 	USpatialStaticComponentView* InStaticComponentView,
 	USpatialReceiver* InReceiver,
-	UWorkerConnection* InConnection,
+	USpatialWorkerConnection* InConnection,
 	PhysicalWorkerName InWorkerId)
 {
 	LoadBalanceStrategy = InLoadBalanceStrategy;

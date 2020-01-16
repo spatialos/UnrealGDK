@@ -8,20 +8,20 @@
 #include "HAL/RunnableThread.h"
 #include "Async/Async.h"
 
-UWorkerConnection::UWorkerConnection(const FObjectInitializer & ObjectInitializer /*= FObjectInitializer::Get()*/)
+USpatialWorkerConnection::USpatialWorkerConnection(const FObjectInitializer & ObjectInitializer /*= FObjectInitializer::Get()*/)
 {
-	WorkerConnectionCallbacks = NewObject<UWorkerConnectionCallbacks>();
-	WorkerConnectionImpl = MakeUnique<USpatialWorkerConnection>();
+	WorkerConnectionCallbacks = NewObject<USpatialWorkerConnectionCallbacks>();
+	WorkerConnectionImpl = MakeUnique<RealWorkerConnection>();
 }
 
-void UWorkerConnection::FinishDestroy()
+void USpatialWorkerConnection::FinishDestroy()
 {
 	DestroyConnection();
 
 	Super::FinishDestroy();
 }
 
-void UWorkerConnection::DestroyConnection()
+void USpatialWorkerConnection::DestroyConnection()
 {
 	Stop();
 	if (OpsProcessingThread != nullptr)
@@ -41,97 +41,97 @@ void UWorkerConnection::DestroyConnection()
 	KeepRunning.AtomicSet(true);
 }
 
-PhysicalWorkerName UWorkerConnection::GetWorkerId() const
+PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const
 {
 	return WorkerConnectionImpl->GetWorkerId();
 }
 
-void UWorkerConnection::CacheWorkerAttributes()
+void USpatialWorkerConnection::CacheWorkerAttributes()
 {
 	WorkerConnectionImpl->CacheWorkerAttributes();
 }
 
-Worker_RequestId UWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
+Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
 {
 	return WorkerConnectionImpl->SendCommandRequest(EntityId, Request, CommandId);
 }
 
-void UWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key /*= USpatialLatencyTracer::InvalidTraceKey*/)
+void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key /*= USpatialLatencyTracer::InvalidTraceKey*/)
 {
 	WorkerConnectionImpl->SendComponentUpdate(EntityId, ComponentUpdate, Key);
 }
 
-Worker_RequestId UWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
+Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
 {
 	return WorkerConnectionImpl->SendEntityQueryRequest(EntityQuery);
 }
 
-Worker_RequestId UWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
+Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
 {
 	return WorkerConnectionImpl->SendReserveEntityIdsRequest(NumOfEntities);
 }
 
-Worker_RequestId UWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
+Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
 	return WorkerConnectionImpl->SendDeleteEntityRequest(EntityId);
 }
 
-Worker_RequestId UWorkerConnection::SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId)
+Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId)
 {
 	return WorkerConnectionImpl->SendCreateEntityRequest(MoveTemp(Components), EntityId);
 }
 
-void UWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData)
+void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData)
 {
 	WorkerConnectionImpl->SendAddComponent(EntityId, ComponentData);
 }
 
-void UWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	WorkerConnectionImpl->SendRemoveComponent(EntityId, ComponentId);
 }
 
-void UWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
+void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
 {
 	WorkerConnectionImpl->SendCommandResponse(RequestId, Response);
 }
 
-void UWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
+void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
 	WorkerConnectionImpl->SendCommandFailure(RequestId, Message);
 }
 
-void UWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
+void USpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
 {
 	WorkerConnectionImpl->SendComponentInterest(EntityId, MoveTemp(ComponentInterest));
 }
 
-void UWorkerConnection::SendMetrics(const SpatialGDK::SpatialMetrics& Metrics)
+void USpatialWorkerConnection::SendMetrics(const SpatialGDK::SpatialMetrics& Metrics)
 {
 	WorkerConnectionImpl->SendMetrics(Metrics);
 }
 
-void UWorkerConnection::SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message)
+void USpatialWorkerConnection::SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message)
 {
 	WorkerConnectionImpl->SendLogMessage(Level, LoggerName, Message);
 }
 
-const TArray<FString>& UWorkerConnection::GetWorkerAttributes() const
+const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 {
 	return WorkerConnectionImpl->GetWorkerAttributes();
 }
 
-void UWorkerConnection::SetConnectionType(ESpatialConnectionType InConnectionType)
+void USpatialWorkerConnection::SetConnectionType(ESpatialConnectionType InConnectionType)
 {
 	WorkerConnectionImpl->SetConnectionType(InConnectionType);
 }
 
-void UWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID)
+void USpatialWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID)
 {
 	if (bIsConnected)
 	{
 		check(bInitAsClient == bConnectAsClient);
-		AsyncTask(ENamedThreads::GameThread, [WeakThis = TWeakObjectPtr<UWorkerConnection>(this)]
+		AsyncTask(ENamedThreads::GameThread, [WeakThis = TWeakObjectPtr<USpatialWorkerConnection>(this)]
 			{
 				if (WeakThis.IsValid())
 				{
@@ -156,10 +156,10 @@ void UWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID)
 	}
 	else
 	{
-		TWeakObjectPtr<UWorkerConnection> WeakWorkerConnection(this);
+		TWeakObjectPtr<USpatialWorkerConnection> WeakWorkerConnection(this);
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [PlayInEditorID, bInitAsClient, WeakWorkerConnection]
 		{
-			UWorkerConnection* WorkerConnection = WeakWorkerConnection.Get();
+			USpatialWorkerConnection* WorkerConnection = WeakWorkerConnection.Get();
 			if (WorkerConnection == nullptr)
 			{
 				return;
@@ -171,7 +171,7 @@ void UWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID)
 			{
 				AsyncTask(ENamedThreads::GameThread, [WeakWorkerConnection, NewCAPIWorkerConnection]
 				{
-					UWorkerConnection* WorkerConnection = WeakWorkerConnection.Get();
+					USpatialWorkerConnection* WorkerConnection = WeakWorkerConnection.Get();
 					if (WorkerConnection == nullptr)
 					{
 						return;
@@ -191,17 +191,17 @@ void UWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID)
 	}
 }
 
-bool UWorkerConnection::IsConnected() const
+bool USpatialWorkerConnection::IsConnected() const
 {
 	return bIsConnected;
 }
 
-TArray<Worker_OpList*> UWorkerConnection::GetOpList()
+TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
 {
 	return WorkerConnectionImpl->GetOpList();
 }
 
-void UWorkerConnection::InitializeOpsProcessingThread()
+void USpatialWorkerConnection::InitializeOpsProcessingThread()
 {
 	check(IsInGameThread());
 
@@ -209,7 +209,7 @@ void UWorkerConnection::InitializeOpsProcessingThread()
 	check(OpsProcessingThread);
 }
 
-void UWorkerConnection::OnConnectionSuccess()
+void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
 
@@ -221,7 +221,7 @@ void UWorkerConnection::OnConnectionSuccess()
 	WorkerConnectionCallbacks->OnConnectedCallback.ExecuteIfBound();
 }
 
-void UWorkerConnection::OnConnectionFailure()
+void USpatialWorkerConnection::OnConnectionFailure()
 {
 	bIsConnected = false;
 
@@ -231,14 +231,14 @@ void UWorkerConnection::OnConnectionFailure()
 	WorkerConnectionCallbacks->OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 }
 
-bool UWorkerConnection::Init()
+bool USpatialWorkerConnection::Init()
 {
 	OpsUpdateInterval = 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
 
 	return true;
 }
 
-uint32 UWorkerConnection::Run()
+uint32 USpatialWorkerConnection::Run()
 {
 	while (KeepRunning)
 	{
@@ -252,7 +252,7 @@ uint32 UWorkerConnection::Run()
 	return 0;
 }
 
-void UWorkerConnection::Stop()
+void USpatialWorkerConnection::Stop()
 {
 	KeepRunning.AtomicSet(false);
 }

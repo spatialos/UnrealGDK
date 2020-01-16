@@ -18,11 +18,11 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
-class SPATIALGDK_API USpatialWorkerConnection
+class SPATIALGDK_API RealWorkerConnection
 {
 public:
 	// TODO(Alex): is it called properly?
-	~USpatialWorkerConnection();
+	~RealWorkerConnection();
 	void DestroyConnection();
 
 	Worker_Connection* Connect(uint32 PlayInEditorID, bool bConnectAsClient);

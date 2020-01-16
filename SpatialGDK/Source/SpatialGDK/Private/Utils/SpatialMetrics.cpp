@@ -13,7 +13,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
 
-void USpatialMetrics::Init(UWorkerConnection* InConnection,
+void USpatialMetrics::Init(USpatialWorkerConnection* InConnection,
 	float InNetServerMaxTickRate, bool bInIsServer)
 {
 	Connection = InConnection;

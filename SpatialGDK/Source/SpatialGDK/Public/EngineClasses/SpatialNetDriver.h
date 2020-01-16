@@ -37,7 +37,7 @@ class USpatialPlayerSpawner;
 class USpatialReceiver;
 class USpatialSender;
 class USpatialStaticComponentView;
-class UWorkerConnection;
+class USpatialWorkerConnection;
 class USpatialWorkerFlags;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
@@ -122,7 +122,7 @@ public:
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 
 	UPROPERTY()
-	UWorkerConnection* Connection;
+	USpatialWorkerConnection* Connection;
 	UPROPERTY()
 	USpatialSender* Sender;
 	UPROPERTY()

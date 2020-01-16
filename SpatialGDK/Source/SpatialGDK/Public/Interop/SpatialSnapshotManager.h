@@ -11,7 +11,7 @@
 
 class UGlobalStateManager;
 class USpatialReceiver;
-class UWorkerConnection;
+class USpatialWorkerConnection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSnapshotManager, Log, All)
 
@@ -22,15 +22,15 @@ class SPATIALGDK_API SpatialSnapshotManager
 public:
 	SpatialSnapshotManager();
 
-	void Init(UWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager, USpatialReceiver* InReceiver);
+	void Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager, USpatialReceiver* InReceiver);
 
 	void WorldWipe(const PostWorldWipeDelegate& Delegate);
 	void LoadSnapshot(const FString& SnapshotName);
 
 private:
-	static void DeleteEntities(const Worker_EntityQueryResponseOp& Op, TWeakObjectPtr<UWorkerConnection> Connection);
+	static void DeleteEntities(const Worker_EntityQueryResponseOp& Op, TWeakObjectPtr<USpatialWorkerConnection> Connection);
 
-	TWeakObjectPtr<UWorkerConnection> Connection;
+	TWeakObjectPtr<USpatialWorkerConnection> Connection;
 	TWeakObjectPtr<UGlobalStateManager> GlobalStateManager;
 	TWeakObjectPtr<USpatialReceiver> Receiver;
 };

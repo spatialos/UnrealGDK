@@ -73,7 +73,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 
 void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 {
-	SpatialConnection = NewObject<UWorkerConnection>(this);
+	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
 
 #if TRACE_LIB_ACTIVE
 	SpatialConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);

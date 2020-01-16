@@ -18,7 +18,7 @@ SpatialSnapshotManager::SpatialSnapshotManager()
 	, Receiver(nullptr)
 {}
 
-void SpatialSnapshotManager::Init(UWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager, USpatialReceiver* InReceiver)
+void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager, USpatialReceiver* InReceiver)
 {
 	check(InConnection != nullptr);
 	Connection = InConnection;
@@ -75,7 +75,7 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 	Receiver->AddEntityQueryDelegate(RequestID, WorldQueryDelegate);
 }
 
-void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op, TWeakObjectPtr<UWorkerConnection> Connection)
+void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op, TWeakObjectPtr<USpatialWorkerConnection> Connection)
 {
 	UE_LOG(LogSnapshotManager, Log, TEXT("Deleting %u entities."), Op.result_count);
 
