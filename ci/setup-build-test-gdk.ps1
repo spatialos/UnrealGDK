@@ -28,7 +28,7 @@ class TestSuite {
   }
 }
 
-[string]$test_repo_branch = "feature/ci"
+[string]$test_repo_branch = "master"
 [bool]$slow_networking_tests = $False
 
 # Allow overriding testing branch via environment variable
