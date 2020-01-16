@@ -13,6 +13,8 @@
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/SCompoundWidget.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSimulatedPlayerDeployment, Log, All);
+
 class SWindow;
 
 enum class ECheckBoxState : uint8;
@@ -34,11 +36,14 @@ public:
 	void Construct(const FArguments& InArgs);
 
 private:
+
 	/** The parent window of this widget */
 	TWeakPtr<SWindow> ParentWindowPtr;
 
 	/** Pointer to the SpatialGDK editor */
 	TWeakPtr<FSpatialGDKEditor> SpatialGDKEditorPtr;
+
+	TFuture<bool> AttemptSpatialAuthResult;
 
 	/** Delegate to commit assembly name */
 	void OnDeploymentAssemblyCommited(const FText& InText, ETextCommit::Type InCommitType);
@@ -69,6 +74,9 @@ private:
 
 	/** Delegate to commit the number of Simulated Players */
 	void OnNumberOfSimulatedPlayersCommited(uint32 NewValue);
+
+	/** Function to attempt authentication with spatial. This is required to launch a deployment */
+	static bool AttemptSpatialAuth();
 
 	/** Delegate called when the user clicks the 'Launch Simulated Player Deployment' button */
 	FReply OnLaunchClicked();
