@@ -85,7 +85,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool IsLatencyTraceActive(UObject* WorldContextObject);
 
-	static TraceKey InvalidTraceKey;
+	static const TraceKey InvalidTraceKey;
 
 #if TRACE_LIB_ACTIVE
 
