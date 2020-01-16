@@ -92,7 +92,7 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the
 	translator->ApplyVirtualWorkerManagerData(ComponentObject);
 	
 	TestTrue("There is a mapping for virtual worker 1", translator->GetPhysicalWorkerForVirtualWorker(1) != nullptr);
-	TestTrue("Virtual worker 1 is UnsetWorkerName", translator->GetPhysicalWorkerForVirtualWorker(1)->Equals("SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME"));
+	TestTrue("Virtual worker 1 is UnsetWorkerName", translator->GetPhysicalWorkerForVirtualWorker(1)->Equals(SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME));
 
 	TestTrue("There is a mapping for virtual worker 2", translator->GetPhysicalWorkerForVirtualWorker(2) != nullptr);
 	TestTrue("VirtualWorker 2 is VW_F", translator->GetPhysicalWorkerForVirtualWorker(2)->Equals("VW_F"));
