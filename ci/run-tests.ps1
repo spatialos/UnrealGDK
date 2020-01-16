@@ -69,7 +69,7 @@ Echo "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
 try {
-    Wait-Process -Timeout 1200 -InputObject $run_tests_proc
+    Wait-Process -Timeout 1800 -InputObject $run_tests_proc
 }
 catch {
     buildkite-agent artifact upload "$log_file_path" # If the tests timed out, upload the log and throw an error

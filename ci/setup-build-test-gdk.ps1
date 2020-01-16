@@ -45,10 +45,9 @@ $tests = @(
 )
 
 if($slow_networking_tests) {
-  # Do we want to run the tests on the SpatialNetworkingMap with native networking?
-  # $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaShortNetworkingTestResults", "/Game/SpatialNetworkingMap", $False)
   $tests[0].tests_path += "+/Game/NetworkingMap"
-  $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaNetworkingSlowTestResults", "/Game/NetworkingMap", $False)
+  $tests[0].test_results_dir = "SpatialTestResults"
+  $tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaTestResults", "/Game/NetworkingMap", $False)
 }
 
 . "$PSScriptRoot\common.ps1"
