@@ -34,6 +34,12 @@ DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 DECLARE_CYCLE_STAT(TEXT("ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ServerProcessOwnershipChange"), STAT_ServerProcessOwnershipChange, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ClientProcessOwnershipChange"), STAT_ClientProcessOwnershipChange, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("GetOwnerWorkerAttribute"), STAT_GetOwnerWorkerAttribute, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("CallUpdateEntityACLs"), STAT_CallUpdateEntityACLs, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("OnUpdateEntityACLSuccess"), STAT_OnUpdateEntityACLSuccess, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("IsAuthoritativeServer"), STAT_IsAuthoritativeServer, STATGROUP_SpatialNet);
 
 namespace
 {
@@ -82,6 +88,104 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 	SendingRepState->HistoryEnd = SendingRepState->HistoryStart + NewHistoryCount;
 }
 } // end anonymous namespace
+
+bool FSpatialObjectRepState::MoveMappedObjectToUnmapped_r(const FUnrealObjectRef& ObjRef, FObjectReferencesMap& ObjectReferencesMap)
+{
+	bool bFoundRef = false;
+
+	for (auto& ObjReferencePair : ObjectReferencesMap)
+	{
+		FObjectReferences& ObjReferences = ObjReferencePair.Value;
+
+		if (ObjReferences.Array != NULL)
+		{
+			if (MoveMappedObjectToUnmapped_r(ObjRef, *ObjReferences.Array))
+			{
+				bFoundRef = true;
+			}
+			continue;
+		}
+
+		if (ObjReferences.MappedRefs.Contains(ObjRef))
+		{
+			ObjReferences.MappedRefs.Remove(ObjRef);
+			ObjReferences.UnresolvedRefs.Add(ObjRef);
+			bFoundRef = true;
+		}
+	}
+
+	return bFoundRef;
+}
+
+bool FSpatialObjectRepState::MoveMappedObjectToUnmapped(const FUnrealObjectRef& ObjRef)
+{
+	if (MoveMappedObjectToUnmapped_r(ObjRef, ReferenceMap))
+	{
+		UnresolvedRefs.Add(ObjRef);
+		return true;
+	}
+	return false;
+}
+
+void FSpatialObjectRepState::GatherObjectRef(TSet<FUnrealObjectRef>& OutReferenced, TSet<FUnrealObjectRef>& OutUnresolved, const FObjectReferences& CurReferences) const
+{
+	if (CurReferences.Array)
+	{
+		for (auto const& Entry : *CurReferences.Array)
+		{
+			GatherObjectRef(OutReferenced, OutUnresolved, Entry.Value);
+		}
+	}
+
+	OutUnresolved.Append(CurReferences.UnresolvedRefs);
+
+	// Add both kind of references to OutReferenced map.
+	// It is simpler to manage the Ref to RepState map that way by not requiring strict partitioning between both sets.
+	OutReferenced.Append(CurReferences.UnresolvedRefs);
+	OutReferenced.Append(CurReferences.MappedRefs);
+}
+
+void FSpatialObjectRepState::UpdateRefToRepStateMap(FObjectToRepStateMap& RepStateMap)
+{
+	// Inspired by FObjectReplicator::UpdateGuidToReplicatorMap
+	UnresolvedRefs.Empty();
+
+	TSet< FUnrealObjectRef > LocalReferencedObj;
+	for (auto& Entry : ReferenceMap)
+	{
+		GatherObjectRef(LocalReferencedObj, UnresolvedRefs, Entry.Value);
+	}
+
+	// TODO : Support references in structures updated by deltas. UNR-2556
+	// Look for the code iterating over LifetimeCustomDeltaProperties in the equivalent FObjectReplicator method.
+
+	// Go over all referenced guids, and make sure we're tracking them in the GuidToReplicatorMap
+	for (const FUnrealObjectRef& Ref : LocalReferencedObj)
+	{
+		if (!ReferencedObj.Contains(Ref))
+		{
+			RepStateMap.FindOrAdd(Ref).Add(ThisObj);
+		}
+	}
+
+	// Remove any guids that we were previously tracking but no longer should
+	for (const FUnrealObjectRef& Ref : ReferencedObj)
+	{
+		if (!LocalReferencedObj.Contains(Ref))
+		{
+			TSet<FChannelObjectPair>& RepStatesWithRef = RepStateMap.FindChecked(Ref);
+
+			RepStatesWithRef.Remove(ThisObj);
+
+			if (RepStatesWithRef.Num() == 0)
+			{
+				RepStateMap.Remove(Ref);
+			}
+		}
+	}
+
+	ReferencedObj = MoveTemp(LocalReferencedObj);
+}
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
@@ -185,9 +289,9 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 			Receiver->ClearPendingRPCs(EntityId);
 			Sender->ClearPendingRPCs(EntityId);
 		}
-
-		NetDriver->RemoveActorChannel(EntityId);
+		NetDriver->RemoveActorChannel(EntityId, *this);
 	}
+
 
 	return UActorChannel::CleanUp(bForDestroy, CloseReason);
 }
@@ -207,7 +311,7 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 		NetDriver->RegisterDormantEntityId(EntityId);
 	}
 
-	NetDriver->RemoveActorChannel(EntityId);
+	NetDriver->RemoveActorChannel(EntityId, *this);
 
 	return Super::Close(Reason);
 }
@@ -547,8 +651,11 @@ int64 USpatialActorChannel::ReplicateActor()
 			if (!RepComp.Value()->GetWeakObjectPtr().IsValid())
 			{
 				FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromNetGUID(RepComp.Value().Get().ObjectNetGUID);
+
 				if (ObjectRef.IsValid())
 				{
+					OnSubobjectDeleted(ObjectRef, RepComp.Key());
+
 					Sender->SendRemoveComponent(EntityId, NetDriver->ClassInfoManager->GetClassInfoByComponentId(ObjectRef.Offset));
 				}
 
@@ -788,7 +895,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 bool USpatialActorChannel::ReadyForDormancy(bool bSuppressLogs /*= false*/)
 {
  	// Check Receiver doesn't have any pending operations for this channel
- 	if (Receiver->IsPendingOpsOnChannel(this))
+ 	if (Receiver->IsPendingOpsOnChannel(*this))
  	{
  		return false;
  	}
@@ -1003,11 +1110,6 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 #endif
 
 	Replicator.CallRepNotifies(false);
-
-	if (!TargetObject->IsPendingKill())
-	{
-		TargetObject->PostRepNotifies();
-	}
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
@@ -1138,6 +1240,12 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 				continue;
 			}
 
+			// Skip only when there are unresolved refs (FObjectReferencesMap entry contains both mapped and unresolved references).
+			if (ObjRef.Value.UnresolvedRefs.Num() == 0)
+			{
+				continue;
+			}
+
 			bool bIsSameRepNotify = RepLayout.Parents[ObjRef.Value.ParentIndex].Property == Property;
 			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1 || Cast<UArrayProperty>(Property) != nullptr;
 			if (bIsSameRepNotify && !bIsArray)
@@ -1152,9 +1260,13 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 
 void USpatialActorChannel::ServerProcessOwnershipChange()
 {
-	if (!IsAuthoritativeServer())
+	SCOPE_CYCLE_COUNTER(STAT_ServerProcessOwnershipChange);
 	{
-		return;
+		SCOPE_CYCLE_COUNTER(STAT_IsAuthoritativeServer);
+		if (!IsAuthoritativeServer())
+		{
+			return;
+		}
 	}
 
 	UpdateEntityACLToNewOwner();
@@ -1172,7 +1284,11 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 void USpatialActorChannel::UpdateEntityACLToNewOwner()
 {
-	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
+	FString NewOwnerWorkerAttribute;
+	{
+		SCOPE_CYCLE_COUNTER(STAT_GetOwnerWorkerAttribute);
+		NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
+	}
 
 	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
 	{
@@ -1187,9 +1303,21 @@ void USpatialActorChannel::UpdateEntityACLToNewOwner()
 
 void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ClientProcessOwnershipChange);
 	if (bNewNetOwned != bNetOwned)
 	{
 		bNetOwned = bNewNetOwned;
 		Sender->SendComponentInterestForActor(this, GetEntityId(), bNetOwned);
+	}
+}
+void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object)
+{
+	CreateSubObjects.Remove(Object);
+
+	Receiver->MoveMappedObjectToUnmapped(ObjectRef);
+	if (FSpatialObjectRepState* SubObjectRefMap = ObjectReferenceMap.Find(Object))
+	{
+		Receiver->CleanupRepStateMap(*SubObjectRefMap);
+		ObjectReferenceMap.Remove(Object);
 	}
 }
