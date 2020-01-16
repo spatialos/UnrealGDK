@@ -217,7 +217,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_IsLocked_is_
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_IsLocked_is_called_THEN_returns__true_with_one_valid_lock_token)
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -232,8 +232,33 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false, 0));
-	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "GIVEN_an_actor_has_not_been_locked_WHEN_AcquireLock_is_called_THEN_returns_a_valid_token"));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "DEBUG: GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseAllLocks(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false, 0));
+
+	return true;
+}
+
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	Worker_EntityId EntityId = 1;
+	Worker_Authority EntityAuthority = Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE;
+	VirtualWorkerId VirtWorkerId = 1;
+	SpatialGDK::ComponentStorageBase* AuthorityIntentData = new SpatialGDK::ComponentStorage<SpatialGDK::AuthorityIntent>(SpatialGDK::AuthorityIntent(VirtWorkerId));
+
+	TSharedPtr<TestData> Data = MakeNewTestData(EntityId, EntityAuthority, AuthorityIntentData, VirtWorkerId);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "DEBUG: GIVEN_AcquireLock_and_ReleaseLock_are_called_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "DEBUG 2: GIVEN_AcquireLock_and_ReleaseLock_are_called_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true, 2));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseAllLocks(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false, 0));
 
