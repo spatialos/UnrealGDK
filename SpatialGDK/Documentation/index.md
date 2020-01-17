@@ -19,7 +19,8 @@ SpatialOS provides:<br/>
 
 Multiserver functionality is currently available through server **offloading** (available in alpha), in which Unreal server functionality is split between multiple servers and those servers compute different functionality across the whole game world.
 
-In the future, it will also be available through server **zoning**, in which the game world is split into several geographical areas and each area has a dedicated Unreal server computing all the functionality for it. For more information on multiserver zoning availability, see the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1).
+* multiserver **zoning** (available In future releases of the GDK), in which the game world is split into several geographical areas and each area has a dedicated Unreal server computing all the functionality for it. 
+<br/>For more information on multiserver zoning availability, see the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1).
 
 ## Find out more
 
@@ -50,4 +51,3 @@ _2019-10-18 Page updated with editorial review: removed mention of the deprecate
 _2019-08-09 Page updated with editorial review_</br>
 _2019-08-08 Page updated with editorial review: renamed "multiserver shooter tutorial" to "multiserver zoning tutorial"_ </br>
 _2019-07-31 Updated with limited editorial review_
-
