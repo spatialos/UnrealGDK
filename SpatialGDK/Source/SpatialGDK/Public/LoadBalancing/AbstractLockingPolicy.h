@@ -19,7 +19,7 @@ class SPATIALGDK_API UAbstractLockingPolicy : public UObject
 	GENERATED_BODY()
 
 public:
-	virtual void Init(USpatialStaticComponentView* InStaticComponentView, UAbstractPackageMapClient* InPackageMap, TSharedPtr<AbstractVirtualWorkerTranslator> InVirtualWorkerTranslator) {
+	virtual void Init(USpatialStaticComponentView* InStaticComponentView, UAbstractPackageMapClient* InPackageMap, AbstractVirtualWorkerTranslator* InVirtualWorkerTranslator) {
 		StaticComponentView = InStaticComponentView;
 		PackageMap = InPackageMap;
 		VirtualWorkerTranslator = InVirtualWorkerTranslator;
@@ -31,5 +31,5 @@ public:
 protected:
 	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
 	TWeakObjectPtr<UAbstractPackageMapClient> PackageMap;
-	TWeakPtr<AbstractVirtualWorkerTranslator> VirtualWorkerTranslator;
+	AbstractVirtualWorkerTranslator* VirtualWorkerTranslator;
 };

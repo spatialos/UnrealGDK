@@ -35,7 +35,7 @@ struct TestData
 	UReferenceCountedLockingPolicy* LockingPolicy;
 	USpatialStaticComponentView* StaticComponentView;
 	UAbstractPackageMapClient* PackageMap;
-	TSharedPtr<AbstractVirtualWorkerTranslator> VirtualWorkerTranslator;
+	AbstractVirtualWorkerTranslator* VirtualWorkerTranslator;
 };
 
 struct TestDataDeleter
@@ -61,7 +61,7 @@ TSharedPtr<TestData> MakeNewTestData(Worker_EntityId EntityId, Worker_Authority 
 	PackageMap->Init(EntityId);
 	Data->PackageMap = PackageMap;
 
-	TSharedPtr<USpatialVirtualWorkerTranslatorMock> VirtualWorkerTranslator = MakeShared<USpatialVirtualWorkerTranslatorMock>();
+	USpatialVirtualWorkerTranslatorMock* VirtualWorkerTranslator = new USpatialVirtualWorkerTranslatorMock();
 	VirtualWorkerTranslator->Init(VirtWorkerId);
 	Data->VirtualWorkerTranslator = VirtualWorkerTranslator;
 

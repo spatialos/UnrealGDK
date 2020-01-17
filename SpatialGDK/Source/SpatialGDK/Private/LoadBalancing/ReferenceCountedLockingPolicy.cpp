@@ -35,8 +35,8 @@ bool UReferenceCountedLockingPolicy::CanAcquireLock(AActor* Actor) const
 		return false;
 	}
 
-	check(VirtualWorkerTranslator.IsValid());
-	const bool bHasAuthorityIntent = VirtualWorkerTranslator.Pin()->GetLocalVirtualWorkerId() ==
+	check(VirtualWorkerTranslator != nullptr);
+	const bool bHasAuthorityIntent = VirtualWorkerTranslator->GetLocalVirtualWorkerId() ==
 		StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId)->VirtualWorkerId;
 	if (!bHasAuthorityIntent)
 	{

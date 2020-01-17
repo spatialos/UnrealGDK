@@ -10,13 +10,13 @@ DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
 using namespace SpatialGDK;
 
-SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, TSharedPtr<SpatialVirtualWorkerTranslator> InVirtualWorkerTranslator)
+SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
 	: WorkerId(InWorkerId)
 	, StaticComponentView(InStaticComponentView)
 	, VirtualWorkerTranslator(InVirtualWorkerTranslator)
 {
 	check(InStaticComponentView != nullptr);
-	check(InVirtualWorkerTranslator.IsValid());
+	check(InVirtualWorkerTranslator != nullptr);
 }
 
 void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
@@ -46,8 +46,8 @@ void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp
 			return;
 		}
 
-		check(VirtualWorkerTranslator.IsValid());
-		const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator.Pin()->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		check(VirtualWorkerTranslator != nullptr);
+		const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (OwningWorkerId != nullptr &&
 			*OwningWorkerId == WorkerId &&
 			StaticComponentView->GetAuthority(AuthOp.entity_id, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
@@ -105,8 +105,8 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 			continue;
 		}
 
-		check(VirtualWorkerTranslator.IsValid());
-		const PhysicalWorkerName* DestinationWorkerId = VirtualWorkerTranslator.Pin()->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
+		check(VirtualWorkerTranslator != nullptr);
+		const PhysicalWorkerName* DestinationWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (DestinationWorkerId == nullptr)
 		{
 			const int32 WarnOnAttemptNum = 5;
