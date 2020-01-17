@@ -496,6 +496,11 @@ uint32 USpatialClassInfoManager::GetComponentIdForNetCullDistance(float NetCullD
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
+bool USpatialClassInfoManager::IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const
+{
+	return SchemaDatabase->NetCullDistanceComponentIds.Contains(ComponentId);
+}
+
 void USpatialClassInfoManager::QuitGame()
 {
 #if WITH_EDITOR

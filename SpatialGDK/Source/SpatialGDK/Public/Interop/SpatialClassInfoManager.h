@@ -118,6 +118,7 @@ public:
 
 	TArray<float> GetNetCullDistances() const;
 	uint32 GetComponentIdForNetCullDistance(float NetCullDistance) const;
+	bool IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const;
 
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;

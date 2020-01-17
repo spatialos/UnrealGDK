@@ -96,6 +96,9 @@ public:
 	TMap<float, uint32> NetCullDistanceToComponentId;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TSet<uint32> NetCullDistanceComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FString> ComponentIdToClassPath;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)

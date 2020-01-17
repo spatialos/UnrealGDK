@@ -198,7 +198,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	}
 
-	if (ClassInfoManager->IsSublevelComponent(Op.data.component_id))
+	if (	ClassInfoManager->IsSublevelComponent(Op.data.component_id)
+		||	ClassInfoManager->IsNetCullDistanceComponent(Op.data.component_id))
 	{
 		return;
 	}
@@ -734,7 +735,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Potentially we could split out the initial actor state and the initial component state
 		for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 		{
-			if (ClassInfoManager->IsSublevelComponent(PendingAddComponent.ComponentId))
+			if (	ClassInfoManager->IsSublevelComponent(PendingAddComponent.ComponentId)
+				||	ClassInfoManager->IsNetCullDistanceComponent(PendingAddComponent.ComponentId))
 			{
 				continue;
 			}
@@ -1360,7 +1362,8 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	if (ClassInfoManager->IsSublevelComponent(Op.update.component_id))
+	if (	ClassInfoManager->IsSublevelComponent(Op.update.component_id)
+		||	ClassInfoManager->IsNetCullDistanceComponent(Op.update.component_id))
 	{
 		return;
 	}

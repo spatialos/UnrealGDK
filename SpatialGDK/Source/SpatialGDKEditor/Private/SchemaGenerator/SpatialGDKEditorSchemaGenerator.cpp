@@ -56,6 +56,7 @@ TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 
 // QBI
 TMap<float, uint32> NetCullDistanceToComponentId;
+TSet<uint32> NetCullDistanceComponentIds;
 
 const FString RelativeSchemaDatabaseFilePath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH), FPackageName::GetAssetPackageExtension());
 
@@ -379,6 +380,7 @@ void GenerateSchemaForNCDs(const FString& SchemaOutputPath)
 		if (NCDComponent.Value == 0)
 		{
 			NCDComponent.Value = IdGenerator.Next();
+			NetCullDistanceComponentIds.Add(NCDComponent.Value);
 		}
 
 		Writer.PrintNewLine();
@@ -449,6 +451,7 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->SubobjectClassPathToSchema = SubobjectClassPathToSchema;
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
 	SchemaDatabase->NetCullDistanceToComponentId = NetCullDistanceToComponentId;
+	SchemaDatabase->NetCullDistanceComponentIds = NetCullDistanceComponentIds;
 	SchemaDatabase->ComponentIdToClassPath = CreateComponentIdToClassPathMap();
 	SchemaDatabase->LevelComponentIds = LevelComponentIds;
 
@@ -620,6 +623,7 @@ void ResetSchemaGeneratorState()
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 	SchemaGeneratedClasses.Empty();
 	NetCullDistanceToComponentId.Empty();
+	NetCullDistanceComponentIds.Empty();
 }
 
  void ResetSchemaGeneratorStateAndCleanupFolders()
@@ -661,6 +665,7 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 		NetCullDistanceToComponentId = SchemaDatabase->NetCullDistanceToComponentId;
+		NetCullDistanceComponentIds = SchemaDatabase->NetCullDistanceComponentIds;
 
 		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
 		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
