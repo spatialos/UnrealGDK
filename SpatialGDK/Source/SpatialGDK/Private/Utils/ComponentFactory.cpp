@@ -328,7 +328,7 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 		}
 	}
 
-	checkf(OutLatencyTraceIds != nullptr || ComponentDatas.Num() == OutLatencyTraceIds->Num(), TEXT("Latency tracing keys array count does not match the component datas."));
+	checkf(OutLatencyTraceIds == nullptr || ComponentDatas.Num() == OutLatencyTraceIds->Num(), TEXT("Latency tracing keys array count does not match the component datas."));
 	return ComponentDatas;
 }
 
@@ -431,7 +431,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 		}
 	}
 
-	checkf(OutLatencyTraceIds != nullptr || ComponentUpdates.Num() == OutLatencyTraceIds->Num(), TEXT("Latency tracing keys array count does not match the component updates."));
+	checkf(OutLatencyTraceIds == nullptr || ComponentUpdates.Num() == OutLatencyTraceIds->Num(), TEXT("Latency tracing keys array count does not match the component updates."));
 	return ComponentUpdates;
 }
 
