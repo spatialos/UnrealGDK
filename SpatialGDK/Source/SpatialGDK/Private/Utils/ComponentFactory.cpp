@@ -146,7 +146,7 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
 
 #if TRACE_LIB_ACTIVE
-		if (LatencyTracer != nullptr)
+		if (LatencyTracer != nullptr && OutLatencyTraceId != nullptr)
 		{
 			TraceKey TraceId = LatencyTracer->RetrievePendingTrace(Object, PropertyInfo.Property);
 			if (TraceId != USpatialLatencyTracer::InvalidTraceKey)
