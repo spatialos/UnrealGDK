@@ -5,8 +5,7 @@
 #include "Interop/Connection/EditorWorkerController.h"
 #endif
 
-// TODO(Alex): Move Callbacks Def elsewhere to avoid this include
-#include "SpatialWorkerConnection.h"
+#include "SpatialWorkerConnectionCallbacks.h"
 
 #include "Async/Async.h"
 #include "Misc/Paths.h"
