@@ -219,7 +219,7 @@ bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSnapshotForMap(FSpatialGDKEd
 bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchema(FSpatialGDKEditor& InSpatialGDKEditor)
 {
 	bool bSchemaGenSuccess;
-	if (InSpatialGDKEditor.GenerateSchema(true))
+	if (InSpatialGDKEditor.GenerateSchema(FSpatialGDKEditor::Full))
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Completed!"));
 		bSchemaGenSuccess = true;

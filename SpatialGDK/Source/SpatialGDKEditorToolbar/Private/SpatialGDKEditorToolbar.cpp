@@ -165,6 +165,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator));
 
 	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaMinimal,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::SchemaGenerateMinimalButtonClicked),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator));
+
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked));
 
@@ -291,6 +296,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuCont
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKSchemaOptionsHeader", "Schema Generation"));
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaFull);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaMinimal);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase);
 	}
 	MenuBuilder.EndSection();
@@ -335,7 +341,24 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 {
 	GenerateSchema(true);
-}		
+}
+
+void FSpatialGDKEditorToolbarModule::SchemaGenerateMinimalButtonClicked()
+{
+	LocalDeploymentManager->SetRedeployRequired();
+
+	OnShowTaskStartNotification("Generating Schema (Minimal)");
+
+	if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::Minimal))
+	{
+		OnShowSuccessNotification("Minimal Schema Generation completed!");
+	}
+	else
+	{
+		OnShowFailedNotification("Minimal Schema Generation failed");
+		bSchemaBuildError = true;
+	}
+}
 
 void FSpatialGDKEditorToolbarModule::OnShowTaskStartNotification(const FString& NotificationText)
 {
@@ -831,7 +854,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	{
 		OnShowTaskStartNotification("Initial Schema Generation");
 
-		if (SpatialGDKEditorInstance->GenerateSchema(true))
+		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::Full))
 		{
 			OnShowSuccessNotification("Initial Schema Generation completed!");
 		}
@@ -845,7 +868,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	{
 		OnShowTaskStartNotification("Generating Schema (Full)");
 
-		if (SpatialGDKEditorInstance->GenerateSchema(true))
+		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::Full))
 		{
 			OnShowSuccessNotification("Full Schema Generation completed!");
 		}
@@ -859,7 +882,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	{
 		OnShowTaskStartNotification("Generating Schema (Incremental)");
 
-		if (SpatialGDKEditorInstance->GenerateSchema(false))
+		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::Loaded))
 		{
 			OnShowSuccessNotification("Incremental Schema Generation completed!");
 		}

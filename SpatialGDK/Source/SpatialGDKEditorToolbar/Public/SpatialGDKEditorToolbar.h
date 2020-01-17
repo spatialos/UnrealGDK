@@ -81,6 +81,7 @@ private:
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
 	void SchemaGenerateFullButtonClicked();
+	void SchemaGenerateMinimalButtonClicked();
 	void DeleteSchemaDatabaseButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 

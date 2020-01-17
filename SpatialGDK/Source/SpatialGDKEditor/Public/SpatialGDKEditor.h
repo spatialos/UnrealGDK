@@ -17,7 +17,14 @@ public:
 	{
 	}
 
-	bool GenerateSchema(bool bFullScan);
+	enum SchemaGenerationScope
+	{
+		Loaded,
+		Full,
+		Minimal
+	};
+
+	bool GenerateSchema(SchemaGenerationScope Scope);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
 	void LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 	void StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);

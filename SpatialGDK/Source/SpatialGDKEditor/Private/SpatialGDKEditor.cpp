@@ -26,7 +26,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditor"
 
-bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
+bool FSpatialGDKEditor::GenerateSchema(SchemaGenerationScope Scope)
 {
 	if (bSchemaGeneratorRunning)
 	{
@@ -77,7 +77,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	}
 
 	TArray<TStrongObjectPtr<UObject>> LoadedAssets;
-	if (bFullScan)
+	if (Scope == Full)
 	{
 		Progress.EnterProgressFrame(80.f);
 		if (!LoadPotentialAssets(LoadedAssets))
@@ -97,7 +97,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
 	}
 
-	if (bFullScan)
+	if (Scope == Full || Scope == Minimal)
 	{
 		// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
 		FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
@@ -107,8 +107,8 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		Schema::CreateGeneratedSchemaFolder();
 	}
 
-	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
-	bool bResult = Schema::SpatialGDKGenerateSchema();
+	Progress.EnterProgressFrame(Scope == Full ? 10.f : 100.f);
+	bool bResult = Scope == Minimal ? Schema::SpatialGDKGenerateMinimalSchema() : Schema::SpatialGDKGenerateSchema();
 	
 	// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
 	if (ErroredBlueprints.Num() > 0)
@@ -120,7 +120,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		}
 	}
 
-	if (bFullScan)
+	if (Scope == Full)
 	{
 		Progress.EnterProgressFrame(10.f);
 		LoadedAssets.Empty();

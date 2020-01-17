@@ -802,6 +802,25 @@ bool RunSchemaCompiler()
 	}
 }
 
+bool SpatialGDKGenerateMinimalSchema()
+{
+	SchemaGeneratedClasses.Empty();
+
+	TArray<UObject*> MinClasses;
+	MinClasses.Add(UObject::StaticClass());
+	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses(MinClasses), GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder()))
+	{
+		return false;
+	}
+
+	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
+	{
+		return false;
+	}
+
+	return RunSchemaCompiler();
+}
+
 bool SpatialGDKGenerateSchema()
 {
 	SchemaGeneratedClasses.Empty();
