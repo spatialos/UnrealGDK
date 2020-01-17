@@ -4,7 +4,6 @@
 
 #include "Schema/Component.h"
 #include "Schema/StandardLibrary.h"
-#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_schema.h>

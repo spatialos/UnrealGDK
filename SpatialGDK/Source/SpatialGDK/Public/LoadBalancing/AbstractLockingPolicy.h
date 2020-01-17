@@ -13,7 +13,7 @@
 
 #include "AbstractLockingPolicy.generated.h"
 
-UCLASS()
+UCLASS(abstract)
 class SPATIALGDK_API UAbstractLockingPolicy : public UObject
 {
 	GENERATED_BODY()
