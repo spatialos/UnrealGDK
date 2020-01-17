@@ -110,6 +110,14 @@ Foreach ($test in $test_results_obj.tests) {
 	}
 }
 
+# Count the number of Project (functional) tests in order to report this
+$num_project_tests = 0
+Foreach ($test in $test_results_obj.tests) {
+	if ($test.fulltestPath.Contains("Project.")) {
+		$num_project_tests += 1
+	}
+}
+
 # Define and upload test summary JSON artifact for longer-term test metric tracking (see upload-test-metrics.sh)
 $test_summary = [pscustomobject]@{
     time = Get-Date -UFormat %s
@@ -120,6 +128,8 @@ $test_summary = [pscustomobject]@{
     tests_duration_seconds = $test_results_obj.totalDuration
     num_tests = $total_tests_run
     num_gdk_tests = $num_gdk_tests
+    num_project_tests = $num_project_tests
+    test_result_directory_name = Split-Path $test_result_dir -Leaf
 }
 $test_summary | ConvertTo-Json -Compress | Set-Content -Path "$test_result_dir\test_summary_$env:BUILDKITE_STEP_ID.json"
 
