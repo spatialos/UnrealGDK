@@ -94,7 +94,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	FEditorDelegates::PostPIEStarted.AddLambda([this](bool bIsSimulatingInEditor)
 	{
-		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GIsAutomationTesting)
+		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
 			LocalDeploymentManager->GetLocalDeploymentStatus();
@@ -105,7 +105,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
-		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GIsAutomationTesting)
+		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			LocalDeploymentManager->TryStopLocalDeployment();
 		}
