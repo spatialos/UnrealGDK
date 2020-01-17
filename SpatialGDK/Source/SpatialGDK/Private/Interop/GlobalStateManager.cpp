@@ -410,6 +410,29 @@ bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId) const
 	return false;
 }
 
+void UGlobalStateManager::SetDeploymentState()
+{
+	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
+
+	// Send the component update that we can now accept players.
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting deployment URL to '%s'"), *NetDriver->GetWorld()->URL.Map);
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting schema hash to '%u'"), NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
+
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate();
+	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	// Set the map URL on the GSM.
+	AddStringToSchema(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID, NetDriver->GetWorld()->URL.Map);
+
+	// Set the schema hash for connecting workers to check against
+	Schema_AddUint32(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH, NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
+
+	// Component updates are short circuited so we set the updated state here and then send the component update.
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+}
+
 void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 {
 	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
@@ -465,6 +488,7 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		{
 			GlobalStateManagerEntityId = AuthOp.entity_id;
+			SetDeploymentState();
 			SetAcceptingPlayers(true);
 			break;
 		}
