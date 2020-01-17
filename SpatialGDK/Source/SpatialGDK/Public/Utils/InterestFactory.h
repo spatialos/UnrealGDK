@@ -28,11 +28,6 @@ public:
 	static Interest CreateServerWorkerInterest();
 
 private:
-	static QueryConstraint GetDefaultCheckoutRadiusConstraint();
-	static TMap<UClass*, float> GetActorTypeToRadius();
-	static TMap<float, TArray<UClass*>> DedupeDistancesAcrossActorTypes(const TMap<UClass*, float> ComponentSetToRadius);
-	static TArray<QueryConstraint> BuildNonDefaultActorCheckoutConstraints(const TMap<float, TArray<UClass*>> DistanceToActorTypes, USpatialClassInfoManager* ClassInfoManager);
-
 	Interest CreateInterest() const;
 
 	// Only uses Defined Constraint
@@ -54,7 +49,6 @@ private:
 	QueryConstraint CreateLevelConstraints() const;
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
-	static void AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint, USpatialClassInfoManager* ClassInfoManager);
 
 	AActor* Actor;
 	const FClassInfo& Info;
