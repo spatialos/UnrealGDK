@@ -214,13 +214,14 @@ TMap<float, TArray<UClass*>> InterestFactory::DedupeDistancesAcrossActorTypes(TM
 	TMap<float, TArray<UClass*>> RadiusToActorTypes;
 	for (const auto& InterestDistance : ActorTypeToRadius)
 	{
-		TArray<UClass*> ActorTypes;
-		if (RadiusToActorTypes.Contains(InterestDistance.Value))
+		if (!RadiusToActorTypes.Contains(InterestDistance.Value))
 		{
-			ActorTypes = RadiusToActorTypes[InterestDistance.Value];
+			TArray<UClass*> NewActorTypes;
+			RadiusToActorTypes.Add(InterestDistance.Value, NewActorTypes);
 		}
+		
+		auto& ActorTypes = RadiusToActorTypes[InterestDistance.Value];
 		ActorTypes.Add(InterestDistance.Key);
-		RadiusToActorTypes.Add(InterestDistance.Value, ActorTypes);
 	}
 	return RadiusToActorTypes;
 }
