@@ -43,14 +43,4 @@ private:
 	T data;
 };
 
-template <typename T>
-static T* GetComponentStorageData(SpatialGDK::ComponentStorageBase* StorageBase)
-{
-	if (StorageBase == nullptr)
-	{
-		return nullptr;
-	}
-	return &(static_cast<SpatialGDK::ComponentStorage<T>*>(StorageBase)->Get());
-}
-
 } // namespace SpatialGDK

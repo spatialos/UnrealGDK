@@ -6,7 +6,6 @@
 #include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
-#include "Schema/Component.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -393,13 +392,13 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
 			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *EntityIdSubobjectRef.ToString());
 
-			// This will be null when being used in the snapshot generator
+		// This will be null when being used in the snapshot generator
 #if WITH_EDITOR
-			if (Receiver != nullptr)
+		if (Receiver != nullptr)
 #endif
-			{
-				Receiver->ResolvePendingOperations(Subobject, EntityIdSubobjectRef);
-			}
+		{
+			Receiver->ResolvePendingOperations(Subobject, EntityIdSubobjectRef);
+		}
 	}
 
 	return NetGUID;
@@ -458,7 +457,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
-	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialGDK::GetComponentStorageData<SpatialGDK::UnrealMetadata>(SpatialNetDriver->StaticComponentView->GetComponentData(EntityId, SpatialGDK::UnrealMetadata::ComponentId));
+	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<SpatialGDK::UnrealMetadata>(EntityId);
 
 	// If UnrealMetadata is nullptr (can happen if the editor is closing down) just return.
 	if (UnrealMetadata == nullptr)
@@ -537,7 +536,7 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 	}
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
-	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialGDK::GetComponentStorageData<SpatialGDK::UnrealMetadata>(SpatialNetDriver->StaticComponentView->GetComponentData(SubobjectRef.Entity, SpatialGDK::UnrealMetadata::ComponentId));
+	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<SpatialGDK::UnrealMetadata>(SubobjectRef.Entity);
 
 	// If UnrealMetadata is nullptr (can happen if the editor is closing down) just return.
 	if (UnrealMetadata == nullptr)

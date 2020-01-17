@@ -126,49 +126,54 @@ bool FWaitForActor::Update()
 	return (IsValid(Actor) && Actor->IsActorInitialized() && Actor->HasActorBegunPlay());
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_FOUR_PARAMETER(FAcquireLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, Handle, FString, DebugString);
+DEFINE_LATENT_AUTOMATION_COMMAND_FOUR_PARAMETER(FAcquireLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DebugString);
 bool FAcquireLock::Update()
 {
-	AActor* Actor = Data->TestActors[Handle];
-	ActorLockToken Token = Data->LockingPolicy->AcquireLock(Actor, DebugString);
+	AActor* Actor = Data->TestActors[ActorHandle];
+	const ActorLockToken Token = Data->LockingPolicy->AcquireLock(Actor, DebugString);
 
 	// If the token returned is valid, it MUST be unique
 	if (Token != SpatialConstants::INVALID_ACTOR_LOCK_TOKEN)
 	{
-		for (auto& ActorLockingTokens : Data->TestActorToLockingTokens)
+		for (const TPair<AActor*, TArray<TPair<ActorLockToken, FString>>>& ActorLockingTokenAndDebugStrings : Data->TestActorToLockingTokenAndDebugStrings)
 		{
-			if (ActorLockingTokens.Value.Contains(Token))
+			const TArray<TPair<ActorLockToken, FString>>& LockingTokensAndDebugStrings = ActorLockingTokenAndDebugStrings.Value;
+			bool TokenAlreadyExists = LockingTokensAndDebugStrings.ContainsByPredicate([Token](const TPair<ActorLockToken, FString>& Data)
+			{
+				return Token == Data.Key;
+			});
+			if (TokenAlreadyExists)
 			{
 				Test->AddError(FString::Printf(TEXT("AcquireLock returned a valid ActorLockToken that had already been assigned. Token: %d"), Token));
 			}
 		}
 	}
 
-	TSet<ActorLockToken>& ActorLockTokens = Data->TestActorToLockingTokenAndDebugStrings.FindOrAdd(Actor);
-	ActorLockTokens.Emplace(Token, DebugString);
+	TArray<TPair<ActorLockToken, FString>>& ActorLockTokens = Data->TestActorToLockingTokenAndDebugStrings.FindOrAdd(Actor);
+	ActorLockTokens.Emplace(TPairInitializer<ActorLockToken, FString>(Token, DebugString));
 
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_FOUR_PARAMETER(FReleaseLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, Handle, FString, LockDebugString);
+DEFINE_LATENT_AUTOMATION_COMMAND_FOUR_PARAMETER(FReleaseLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, LockDebugString);
 bool FReleaseLock::Update()
 {
-	AActor* Actor = Data->TestActors[ActorHandle];
+	const AActor* Actor = Data->TestActors[ActorHandle];
 
 	// Find lock token based on relevant lock debug string
-
+	FString& LockDebugStringRef = LockDebugString;
 	TArray<TPair<ActorLockToken, FString>>* LockTokenAndDebugStrings = Data->TestActorToLockingTokenAndDebugStrings.Find(Actor);
-	int32 TokenIndex = LockTokenAndDebugStrings->IndexOfByPredicate([LockDebugString](const TPair<ActorLockToken, FString>& Data)
+	int32 TokenIndex = LockTokenAndDebugStrings->IndexOfByPredicate([this](const TPair<ActorLockToken, FString>& Data)
 	{
-		return Data.Value.Equals(LockDebugString);
+		return Data.Value == LockDebugString;
 	});
 
-	bool bLockFound = TokenIndex == INDEX_NONE;
-	Test->TestTrue(FString::Printf(TEXT("Found value lock token? %d"), bLockFound), bLockFound);
+	bool bLockFound = TokenIndex != INDEX_NONE;
+	Test->TestTrue(FString::Printf(TEXT("Found valid lock token? %d"), bLockFound), bLockFound);
 
-	ActorLockToken Token = LockTokenAndDebugStrings[TokenIndex]
+	TPair<ActorLockToken, FString>& LockTokenAndDebugString = (*LockTokenAndDebugStrings)[TokenIndex];
 
-	Data->LockingPolicy->ReleaseLock(Token);
+	Data->LockingPolicy->ReleaseLock(LockTokenAndDebugString.Key);
 
 	LockTokenAndDebugStrings->RemoveAt(TokenIndex);
 
@@ -177,6 +182,8 @@ bool FReleaseLock::Update()
 	{
 		Data->TestActorToLockingTokenAndDebugStrings.Remove(Actor);
 	}
+
+	return true;
 }
 
 DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FTestIsLocked, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, Handle, bool, bIsLockedExpected, int32, LockTokenCountExpected);
@@ -189,8 +196,7 @@ bool FTestIsLocked::Update()
 	int32 LockTokenCount = 0;
 	if (bIsLocked)
 	{
-		LockTokens = Data->TestActorToLockingTokens[Actor];
-		LockTokenCount = LockTokens.Num();
+		LockTokenCount = Data->TestActorToLockingTokenAndDebugStrings[Actor].Num();
 	}
 	
 	Test->TestEqual(FString::Printf(TEXT("Is locked. Actual: %d. Expected: %d"), bIsLocked, bIsLockedExpected), bIsLocked, bIsLockedExpected);

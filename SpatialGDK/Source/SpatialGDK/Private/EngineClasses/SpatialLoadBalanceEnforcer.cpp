@@ -36,7 +36,7 @@ void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp
 	if (AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID &&
 		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = SpatialGDK::GetComponentStorageData<SpatialGDK::AuthorityIntent>(StaticComponentView->GetComponentData(AuthOp.entity_id, AuthOp.component_id));
+		const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(AuthOp.entity_id);
 		if (AuthorityIntentComponent == nullptr)
 		{
 			// TODO(zoning): There are still some entities being created without an authority intent component.
@@ -89,7 +89,7 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 
 	for (WriteAuthAssignmentRequest& Request : AclWriteAuthAssignmentRequests)
 	{
- 		const AuthorityIntent* AuthorityIntentComponent = SpatialGDK::GetComponentStorageData<SpatialGDK::AuthorityIntent>(StaticComponentView->GetComponentData(Request.EntityId, SpatialGDK::AuthorityIntent::ComponentId));
+		const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
 		if (AuthorityIntentComponent == nullptr)
 		{
 			// TODO(zoning): Not sure whether this should be possible or not. Remove if we don't see the warning again.

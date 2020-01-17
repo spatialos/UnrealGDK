@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
 #include "Schema/Component.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
@@ -11,8 +9,6 @@
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-
-#include "UObject/Object.h"
 
 #include "SpatialStaticComponentView.generated.h"
 
@@ -25,13 +21,14 @@ public:
 	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
-	SpatialGDK::ComponentStorageBase* GetComponentData(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+	template <typename T>
+	T* GetComponentData(Worker_EntityId EntityId) const
 	{
 		if (const auto* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 		{
-			if (const TUniquePtr<SpatialGDK::ComponentStorageBase>* Component = ComponentStorageMap->Find(ComponentId))
+			if (const TUniquePtr<SpatialGDK::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
 			{
-				return Component->Get();
+				return &(static_cast<SpatialGDK::ComponentStorage<T>*>(Component->Get())->Get());
 			}
 		}
 

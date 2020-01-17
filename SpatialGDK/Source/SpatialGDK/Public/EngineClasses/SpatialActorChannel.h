@@ -160,7 +160,7 @@ public:
 	{
 		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
 
-		if (const SpatialGDK::EntityAcl* EntityACL = SpatialGDK::GetComponentStorageData<SpatialGDK::EntityAcl>(NetDriver->StaticComponentView->GetComponentData(EntityId, SpatialGDK::EntityAcl::ComponentId)))
+		if (const SpatialGDK::EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId))
 		{
 			if (const WorkerRequirementSet* WorkerRequirementsSet = EntityACL->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers)))
 			{

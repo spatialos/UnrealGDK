@@ -8,10 +8,12 @@
 #include "SpatialConstants.h"
 
 #include "GameFramework/Actor.h"
+#include "Templates/SharedPointer.h"
+#include "UObject/WeakObjectPtrTemplates.h"
 
 #include "AbstractLockingPolicy.generated.h"
 
-UCLASS(abstract)
+UCLASS()
 class SPATIALGDK_API UAbstractLockingPolicy : public UObject
 {
 	GENERATED_BODY()
@@ -22,7 +24,7 @@ public:
 		PackageMap = InPackageMap;
 		VirtualWorkerTranslator = InVirtualWorkerTranslator;
 	};
-	virtual ActorLockToken AcquireLock(AActor* Actor, FString LockName = "") PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLock, return -1;);
+	virtual ActorLockToken AcquireLock(AActor* Actor, FString LockName = "") PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLock, return SpatialConstants::INVALID_ENTITY_ID;);
 	virtual void ReleaseLock(ActorLockToken Token) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLock, return;);
 	virtual bool IsLocked(const AActor* Actor) const PURE_VIRTUAL(UAbstractLockingPolicy::IsLocked, return false;);
 
