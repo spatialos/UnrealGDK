@@ -185,6 +185,7 @@ void ASpatialDebugger::OnRep_SetWorkerRegions()
 		{
 			AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
 			WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionData.Extents);
+			WorkerRegion->SetActorEnableCollision(false);
 		}
 	}
 }

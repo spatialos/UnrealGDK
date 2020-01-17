@@ -52,11 +52,13 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - You can now access the worker flags via `USpatialStatics::GetWorkerFlag` instead of `USpatialWorkerFlags::GetWorkerFlag`.
 - Fix crash in SpatialDebugger when GDK-space load balancing is disabled.
 - Fixed issue where schema database failed to load previous saved state when working in editor.
+- Attempting to launch a cloud deployment will now run the spatial auth process as it is required. Previously the deployment would simply fail.
 - Minor spelling fix to connection log message.
 - Added %s token to debug strings in GlobalStateManager to display actor class name in log.
 - The server no longer crashes, when received RPCs are processed recursively.
 - Fix to serialize SoftObjectPointers when they are not resolved yet.
 - Fix to handle replicated properties depending on asynchronously loaded packages.
+- Fix to component interest constraints constructed from schema.
 - Track properties containing references to replicated actors, in order to resolve them again if the actor they reference moves out and back into relevance.
 
 ## [`0.8.0-preview`] - 2019-12-17
