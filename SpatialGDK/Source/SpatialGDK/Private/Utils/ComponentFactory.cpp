@@ -67,7 +67,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				TraceKey TraceId = LatencyTracer->RetrievePendingTrace(Object, Cmd.Property);
 				if (TraceId == USpatialLatencyTracer::InvalidTraceKey)
 				{
-					// Possibly sending a nested property? 
+					// Check for sending a nested property
 					TraceId = LatencyTracer->RetrievePendingTrace(Object, Parent.Property);
 				}
 				if (TraceId != USpatialLatencyTracer::InvalidTraceKey)
