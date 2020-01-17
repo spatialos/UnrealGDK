@@ -404,6 +404,10 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 {
 	UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
+	ActorClassPathToSchema.KeySort([](const FString& LHS, const FString& RHS) { return LHS < RHS; });
+	SubobjectClassPathToSchema.KeySort([](const FString& LHS, const FString& RHS) { return LHS < RHS; });
+	LevelPathToComponentId.KeySort([](const FString& LHS, const FString& RHS) { return LHS < RHS; });
+
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 	SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
 	SchemaDatabase->ActorClassPathToSchema = ActorClassPathToSchema;
