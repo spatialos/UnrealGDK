@@ -302,6 +302,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			FQueuedUpdate& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
 			UpdatesQueuedUntilAuthority.ComponentUpdates.Add(Update);
 #if TRACE_LIB_ACTIVE
+			// TODO: Clean this up by creating a composite type which pairs the update with the key UNR-2726
 			UpdatesQueuedUntilAuthority.LatencyKeys.Add(LatencyKey);
 #endif
 			continue;
