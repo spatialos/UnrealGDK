@@ -69,6 +69,8 @@ Write-Output "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
 try {
+    # Give the Unreal Editor 30 minutes to run the tests, otherwise kill it
+    # This is so we can get some logs out of it, before we are cancelled by buildkite
     Wait-Process -Timeout 1800 -InputObject $run_tests_proc
 }
 catch {
