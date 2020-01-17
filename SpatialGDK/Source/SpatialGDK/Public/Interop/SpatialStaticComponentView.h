@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 
-#include "Interop/AbstractStaticComponentView.h"
 #include "Schema/Component.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
@@ -13,18 +12,20 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "UObject/Object.h"
+
 #include "SpatialStaticComponentView.generated.h"
 
 UCLASS()
-class SPATIALGDK_API USpatialStaticComponentView : public UAbstractStaticComponentView
+class SPATIALGDK_API USpatialStaticComponentView : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	virtual Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override;
-	virtual bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override;
+	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
-	virtual SpatialGDK::ComponentStorageBase* GetComponentData(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override
+	SpatialGDK::ComponentStorageBase* GetComponentData(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
 	{
 		if (const auto* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 		{
