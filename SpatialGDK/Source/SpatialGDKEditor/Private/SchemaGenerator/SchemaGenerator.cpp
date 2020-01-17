@@ -233,18 +233,8 @@ void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUn
 
 // Generates schema for all statically attached subobjects on an Actor.
 void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo,
-									 FString SchemaPath, FActorSchemaData& ActorSchemaData, const FActorSchemaData* ExistingSchemaData)
+									 FCodeWriter& Writer, FActorSchemaData& ActorSchemaData, const FActorSchemaData* ExistingSchemaData)
 {
-	FCodeWriter Writer;
-
-	Writer.Printf(R"""(
-		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-		// Note that this file has been generated automatically
-		package unreal.generated.{0}.subobjects;)""",
-				  *ClassPathToSchemaName[ActorClass->GetPathName()].ToLower());
-
-	Writer.PrintNewLine();
-
 	GenerateSubobjectSchemaForActorIncludes(Writer, TypeInfo);
 
 	FSubobjectMap Subobjects = GetAllSubobjects(TypeInfo);
@@ -260,6 +250,16 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 
 		if (SchemaGeneratedClasses.Contains(SubobjectClass))
 		{
+			if (!bHasComponents)
+			{
+				Writer.Printf(R"""(
+					// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+					// Note that this file has been generated automatically
+					package unreal.generated.{0}.subobjects;)""",
+					*ClassPathToSchemaName[ActorClass->GetPathName()].ToLower());
+
+				Writer.PrintNewLine();
+			}
 			bHasComponents = true;
 
 			const FActorSpecificSubobjectSchemaData* ExistingSubobjectSchemaData = nullptr;
@@ -287,11 +287,6 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 		uint32 SubobjectOffset = SubobjectData.SchemaComponents[SCHEMA_Data];
 		check(SubobjectOffset != 0);
 		ActorSchemaData.SubobjectData.Add(SubobjectOffset, SubobjectData);
-	}
-
-	if (bHasComponents)
-	{
-		Writer.WriteToFile(FString::Printf(TEXT("%s%sComponents.schema"), *SchemaPath, *ClassPathToSchemaName[ActorClass->GetPathName()]));
 	}
 }
 
@@ -357,6 +352,13 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 {
 	FCodeWriter Writer;
 
+	GenerateSubobjectSchema(IdGenerator, Class, TypeInfo, Writer);
+
+	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
+}
+
+void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FCodeWriter& Writer)
+{
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
@@ -545,16 +547,29 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		SubobjectSchemaData.DynamicSubobjectComponents.Add(MoveTemp(DynamicSubobjectComponents));
 	}
 
-	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
 	SubobjectSchemaData.GeneratedSchemaName = ClassPathToSchemaName[Class->GetPathName()];
 	SubobjectClassPathToSchema.Add(Class->GetPathName(), SubobjectSchemaData);
 }
 
+
+
 void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
 {
-	const FActorSchemaData* const SchemaData = ActorClassPathToSchema.Find(Class->GetPathName());
-
 	FCodeWriter Writer;
+	FCodeWriter SubobjectsWriter;
+
+	GenerateActorSchema(IdGenerator, Class, TypeInfo, Writer, SubobjectsWriter);
+
+	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
+	if (!SubobjectsWriter.GetOutput().IsEmpty())
+	{
+		SubobjectsWriter.WriteToFile(FString::Printf(TEXT("%s%sComponents.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
+	}
+}
+
+void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FCodeWriter& Writer, FCodeWriter& SubobjectsWriter)
+{
+	const FActorSchemaData* const SchemaData = ActorClassPathToSchema.Find(Class->GetPathName());
 
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -655,7 +670,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		Writer.Outdent().Print("}");
 	}
 
-	GenerateSubobjectSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath, ActorSchemaData,
+	GenerateSubobjectSchemaForActor(IdGenerator, Class, TypeInfo, SubobjectsWriter, ActorSchemaData,
 									ActorClassPathToSchema.Find(Class->GetPathName()));
 
 	ActorClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
@@ -677,8 +692,6 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 			NetCullDistanceToComponentId.Add(NCD, 0);
 		}
 	}
-
-	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
 }
 
 void GenerateRPCEndpointsSchema(FString SchemaPath)

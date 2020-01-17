@@ -45,6 +45,8 @@ public:
 	FCodeWriter(const FCodeWriter& other) = delete;
 	FCodeWriter& operator=(const FCodeWriter& other) = delete;
 
+	const FString& GetOutput() const { return OutputSource; }
+
 private:
 	FString OutputSource;
 	int Scope;

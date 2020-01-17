@@ -19,10 +19,17 @@ extern TMap<FString, Worker_ComponentId> LevelPathToComponentId;
 extern TMap<ESchemaComponentType, TSet<Worker_ComponentId>> SchemaComponentTypeToComponents;
 extern TMap<float, Worker_ComponentId> NetCullDistanceToComponentId;
 
+
+
 // Generates schema for an Actor
 void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);
 // Generates schema for a Subobject class - the schema type and the dynamic schema components
 void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);
+
+// Generates schema for an Actor
+void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FCodeWriter& Writer, FCodeWriter& SubObjectsWriter);
+// Generates schema for a Subobject class - the schema type and the dynamic schema components
+void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FCodeWriter& Writer);
 
 // Generates schema for RPC endpoints.
 void GenerateRPCEndpointsSchema(FString SchemaPath);

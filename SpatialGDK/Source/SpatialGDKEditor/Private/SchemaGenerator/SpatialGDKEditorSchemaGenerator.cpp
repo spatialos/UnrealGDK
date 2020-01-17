@@ -39,6 +39,10 @@
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/SchemaDatabase.h"
 
+
+#include "Cache/SchemaDCCPlugin.h"
+#include "DerivedDataCache/Public/DerivedDataCacheInterface.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKSchemaGenerator"
 
@@ -1424,6 +1428,31 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 
 	for (const auto& Class : Classes)
 	{
+		FSchemaClassCache* SchemaClassBuilder = new FSchemaClassCache(Class);
+		TArray<uint8> OutData;
+		bool Computed = false;
+		if (GetDerivedDataCacheRef().GetSynchronous(SchemaClassBuilder, OutData, &Computed))
+		{
+			if (Computed)
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Generated and cached data for class %s"), *Class->GetName());
+			}
+			else
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Found cached data for class %s"), *Class->GetName());
+				FString OutActor;
+				FString OutSubobject;
+				if (FSchemaClassCache::ReadCachedData(OutData, OutActor, OutSubobject) != FSchemaClassCache::OutputType::Empty)
+				{
+					UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("%s"), *OutActor);
+				}
+				else
+				{
+					UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Class %s has an empty schema"), *Class->GetName());
+				}
+			}
+		}
+
 		if (SchemaGeneratedClasses.Contains(Class))
 		{
 			continue;
