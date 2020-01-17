@@ -55,6 +55,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, Cmd.Property);
 				if (OutLatencyTraceId == USpatialLatencyTracer::InvalidTraceKey)
 				{
+					// Check for sending a nested property
 					OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, Parent.Property);
 				}
 			}
@@ -301,7 +302,7 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	{
 		TraceKey Trace = USpatialLatencyTracer::InvalidTraceKey;
 		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_Data], Object, RepChangeState, SCHEMA_Data, Trace));
-		if (OutLatencyTraceIds)
+		if (OutLatencyTraceIds != nullptr)
 		{
 			OutLatencyTraceIds->Add(Trace);
 		}
@@ -311,7 +312,7 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	{
 		TraceKey Trace = USpatialLatencyTracer::InvalidTraceKey;
 		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, RepChangeState, SCHEMA_OwnerOnly, Trace));
-		if (OutLatencyTraceIds)
+		if (OutLatencyTraceIds != nullptr)
 		{
 			OutLatencyTraceIds->Add(Trace);
 		}
@@ -321,13 +322,13 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	{
 		TraceKey Trace = USpatialLatencyTracer::InvalidTraceKey;
 		ComponentDatas.Add(CreateHandoverComponentData(Info.SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState, Trace));
-		if (OutLatencyTraceIds)
+		if (OutLatencyTraceIds != nullptr)
 		{
 			OutLatencyTraceIds->Add(Trace);
 		}
 	}
 
-	checkf(!OutLatencyTraceIds || ComponentDatas.Num() == OutLatencyTraceIds->Num(), TEXT("Latency tracing keys array count does not match the component datas."));
+	checkf(OutLatencyTraceIds != nullptr || ComponentDatas.Num() == OutLatencyTraceIds->Num(), TEXT("Latency tracing keys array count does not match the component datas."));
 	return ComponentDatas;
 }
 
@@ -378,7 +379,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(MultiClientUpdate);
-				if (OutLatencyTraceIds)
+				if (OutLatencyTraceIds != nullptr)
 				{
 					OutLatencyTraceIds->Add(LatencyKey);
 				}
@@ -393,7 +394,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(SingleClientUpdate);
-				if (OutLatencyTraceIds)
+				if (OutLatencyTraceIds != nullptr)
 				{
 					OutLatencyTraceIds->Add(LatencyKey);
 				}
@@ -411,7 +412,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(HandoverUpdate);
-				if (OutLatencyTraceIds)
+				if (OutLatencyTraceIds != nullptr)
 				{
 					OutLatencyTraceIds->Add(LatencyKey);
 				}
@@ -424,13 +425,13 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	{
 		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
 		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());
-		if (OutLatencyTraceIds)
+		if (OutLatencyTraceIds != nullptr)
 		{
 			OutLatencyTraceIds->Add(USpatialLatencyTracer::InvalidTraceKey); // Interest not tracked 
 		}
 	}
 
-	checkf(!OutLatencyTraceIds || ComponentUpdates.Num() == OutLatencyTraceIds->Num(), TEXT("Latency tracing keys array count does not match the component updates."));
+	checkf(OutLatencyTraceIds != nullptr || ComponentUpdates.Num() == OutLatencyTraceIds->Num(), TEXT("Latency tracing keys array count does not match the component updates."));
 	return ComponentUpdates;
 }
 

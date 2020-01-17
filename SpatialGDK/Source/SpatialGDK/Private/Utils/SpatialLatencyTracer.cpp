@@ -303,11 +303,11 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	}
 }
 
-bool USpatialLatencyTracer::BeginLatencyTraceRPC_Internal(const AActor* Actor, const FString& FunctionOrProperty, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
+bool USpatialLatencyTracer::BeginLatencyTraceRPC_Internal(const AActor* Actor, const FString& Function, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
 {
 	FScopeLock Lock(&Mutex);
 
-	TraceKey Key = CreateNewTraceEntryRPC(Actor, FunctionOrProperty);
+	TraceKey Key = CreateNewTraceEntryRPC(Actor, Function);
 	if (Key == InvalidTraceKey)
 	{
 		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Failed to create Actor/Func trace (%s)"), *WorkerId, *TraceDesc);
@@ -317,7 +317,7 @@ bool USpatialLatencyTracer::BeginLatencyTraceRPC_Internal(const AActor* Actor, c
 	FString SpanMsg = FormatMessage(TraceDesc);
 	TraceSpan NewTrace = improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*SpanMsg), nullptr);
 
-	WriteKeyFrameToTrace(&NewTrace, FString::Printf(TEXT("Begin trace : %s"), *FunctionOrProperty));
+	WriteKeyFrameToTrace(&NewTrace, FString::Printf(TEXT("Begin trace : %s"), *Function));
 
 	// For non-spatial tracing
 	const improbable::trace::SpanContext& TraceContext = NewTrace.context();

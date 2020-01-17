@@ -237,10 +237,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentDatas.Add(Heartbeat().CreateHeartbeatData());
 	}
 
-	USpatialLatencyTracer* Tracer = nullptr;
-#if TRACE_LIB_ACTIVE
-	Tracer = USpatialLatencyTracer::GetTracer(Actor);
-#endif
+	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Actor);
 
 	ComponentFactory DataFactory(false, NetDriver, Tracer);
 
@@ -343,7 +340,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-		TraceKey LatencyKey; // Currently untracked
+		TraceKey LatencyKey; // Currently untracked. Will be dealt with by UNR-2726 
 		Worker_ComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges, LatencyKey);
 		ComponentDatas.Add(SubobjectHandoverData);
 

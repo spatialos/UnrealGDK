@@ -127,7 +127,7 @@ private:
 	bool IsLatencyTraceActive_Internal();
 
 	TraceKey CreateNewTraceEntryRPC(const AActor* Actor, const FString& FunctionName);
-	TraceKey CreateNewTraceEntryProperty(const AActor* Actor, const FString& FunctionName);
+	TraceKey CreateNewTraceEntryProperty(const AActor* Actor, const FString& PropertyName);
 
 	TraceKey GenerateNewTraceKey();
 	TraceSpan* GetActiveTrace();
