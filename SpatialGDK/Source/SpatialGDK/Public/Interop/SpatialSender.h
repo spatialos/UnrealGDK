@@ -59,7 +59,9 @@ struct FPendingRPC
 struct FQueuedUpdate
 {
 	TArray<Worker_ComponentUpdate> ComponentUpdates;
+#if TRACE_LIB_ACTIVE
 	TArray<TraceKey> LatencyKeys;
+#endif
 };
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel

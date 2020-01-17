@@ -119,10 +119,7 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-	USpatialLatencyTracer* Tracer = nullptr;
-#if TRACE_LIB_ACTIVE
-	Tracer = USpatialLatencyTracer::GetTracer(Subobject);
-#endif
+	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Subobject);
 	ComponentFactory DataFactory(false, NetDriver, Tracer);
 
 	TArray<TraceKey>* TraceKeysPtr = nullptr;
@@ -138,7 +135,11 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 		Worker_ComponentData& ComponentData = SubobjectDatas[i];
 		TraceKey LatencyKey = TraceKeysPtr ? (*TraceKeysPtr)[i] : USpatialLatencyTracer::InvalidTraceKey;
 
-		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData, LatencyKey);
+#if TRACE_LIB_ACTIVE
+		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData, TraceKeys[i]);
+#else
+		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData);
+#endif
 	}
 
 	Channel->PendingDynamicSubobjects.Remove(TWeakObjectPtr<UObject>(Subobject));
@@ -273,10 +274,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
-	USpatialLatencyTracer* Tracer = nullptr;
-#if TRACE_LIB_ACTIVE
-	Tracer = USpatialLatencyTracer::GetTracer(Object);
-#endif
+	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Object);
 	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer);
 
 	TArray<TraceKey>* TraceKeysPtr = nullptr;
@@ -290,7 +288,11 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	for(int i = 0; i < ComponentUpdates.Num(); i++)
 	{
 		Worker_ComponentUpdate& Update = ComponentUpdates[i];
-		TraceKey LatencyKey = TraceKeysPtr ? (*TraceKeysPtr)[i] : USpatialLatencyTracer::InvalidTraceKey;
+		TraceKey LatencyKey = USpatialLatencyTracer::InvalidTraceKey;
+#if TRACE_LIB_ACTIVE
+		checkf(TraceKeys.Num() == ComponentUpdates.Num(), TEXT("Trace keys does not match the component updates for tracing."));
+		LatencyKey = TraceKeys[i];
+#endif
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, Update.component_id))
 		{
 			UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
@@ -300,7 +302,9 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			// Note: This will break in a multi-worker context, if we try to create an entity that we don't intend to have authority over. For this reason, this fix is only temporary.
 			FQueuedUpdate& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
 			UpdatesQueuedUntilAuthority.ComponentUpdates.Add(Update);
+#if TRACE_LIB_ACTIVE
 			UpdatesQueuedUntilAuthority.LatencyKeys.Add(LatencyKey);
+#endif
 			continue;
 		}
 
@@ -313,15 +317,20 @@ void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId
 {
 	if (FQueuedUpdate* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
 	{
+		TArray<Worker_ComponentUpdate>& Components = UpdatesQueuedUntilAuthority->ComponentUpdates;
+#if TRACE_LIB_ACTIVE
+		TArray<TraceKey>& LatencyKeys = UpdatesQueuedUntilAuthority->LatencyKeys;
+		checkf(Components.Num() == LatencyKeys.Num(), TEXT("Latency key pairs do not match the queued updates."));
+#endif
+
 		for (int i = 0; i < UpdatesQueuedUntilAuthority->ComponentUpdates.Num(); i++)
 		{
-			TArray<Worker_ComponentUpdate>& Components = UpdatesQueuedUntilAuthority->ComponentUpdates;
-			TArray<TraceKey>& LatencyKeys = UpdatesQueuedUntilAuthority->LatencyKeys;
-
-			checkf(LatencyKeys.Num() == 0 || Components.Num() == LatencyKeys.Num(), TEXT("Queued component updates should match the number of latency keys"));
-
-			TraceKey LatencyKey = LatencyKeys.Num() ? LatencyKeys[i] : USpatialLatencyTracer::InvalidTraceKey;
-			Connection->SendComponentUpdate(EntityId, &Components[i], LatencyKey);
+#if TRACE_LIB_ACTIVE
+			Connection->SendComponentUpdate(EntityId, &Components[i], LatencyKeys[i]);
+#else
+			Connection->SendComponentUpdate(EntityId, &Components[i]);
+#endif
+			
 		}
 		UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
 	}

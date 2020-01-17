@@ -62,7 +62,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 			const FRepParentCmd& Parent = Changes.RepLayout.Parents[Cmd.ParentIndex];
 
 #if TRACE_LIB_ACTIVE
-			if (LatencyTracer != nullptr)
+			if (LatencyTracer != nullptr && OutLatencyTraceId != nullptr)
 			{
 				TraceKey TraceId = LatencyTracer->RetrievePendingTrace(Object, Cmd.Property);
 				if (TraceId == USpatialLatencyTracer::InvalidTraceKey)
