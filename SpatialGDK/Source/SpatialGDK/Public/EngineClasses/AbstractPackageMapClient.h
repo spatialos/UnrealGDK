@@ -10,7 +10,7 @@
 
 #include "AbstractPackageMapClient.generated.h"
 
-UCLASS()
+UCLASS(abstract)
 class SPATIALGDK_API UAbstractPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()
