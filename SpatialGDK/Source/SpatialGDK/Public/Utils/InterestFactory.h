@@ -15,13 +15,12 @@ DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 
 namespace SpatialGDK
 {
-
-void GatherClientInterestDistances();
-
 class SPATIALGDK_API InterestFactory
 {
 public:
 	InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
+
+	static void CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
 
 	Worker_ComponentData CreateInterestData() const;
 	Worker_ComponentUpdate CreateInterestUpdate() const;
@@ -29,6 +28,11 @@ public:
 	static Interest CreateServerWorkerInterest();
 
 private:
+	static QueryConstraint GetDefaultCheckoutRadiusConstraint();
+	static TMap<UClass*, float> GetActorTypeToRadius();
+	static TMap<float, TArray<UClass*>> DedupeDistancesAcrossActorTypes(TMap<UClass*, float> ComponentSetToRadius);
+	static TArray<QueryConstraint> BuildNonDefaultActorCheckoutConstraints(TMap<float, TArray<UClass*>> DistanceToActorTypes, USpatialClassInfoManager* ClassInfoManager);
+
 	Interest CreateInterest() const;
 
 	// Only uses Defined Constraint
@@ -50,7 +54,7 @@ private:
 	QueryConstraint CreateLevelConstraints() const;
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
-	void AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint) const;
+	static void AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint, USpatialClassInfoManager* ClassInfoManager);
 
 	AActor* Actor;
 	const FClassInfo& Info;
