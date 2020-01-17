@@ -20,18 +20,6 @@
 
 DEFINE_LOG_CATEGORY(LogComponentFactory);
 
-namespace
-{
-	TraceKey* AllocateTraceKey(TArray<TraceKey>* Array)
-	{
-		if (Array != nullptr)
-		{
-			Array->Add(USpatialLatencyTracer::InvalidTraceKey);
-			return &(*Array)[Array->Num() - 1];
-		}
-		return nullptr;
-	}
-}
 namespace SpatialGDK
 {
 
@@ -320,17 +308,32 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 
 	if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_Data], Object, RepChangeState, SCHEMA_Data, AllocateTraceKey(OutLatencyTraceIds)));
+		TraceKey Trace = USpatialLatencyTracer::InvalidTraceKey;
+		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_Data], Object, RepChangeState, SCHEMA_Data, &Trace));
+		if (OutLatencyTraceIds)
+		{
+			OutLatencyTraceIds->Add(Trace);
+		}
 	}
 
 	if (Info.SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, RepChangeState, SCHEMA_OwnerOnly, AllocateTraceKey(OutLatencyTraceIds)));
+		TraceKey Trace = USpatialLatencyTracer::InvalidTraceKey;
+		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, RepChangeState, SCHEMA_OwnerOnly, &Trace));
+		if (OutLatencyTraceIds)
+		{
+			OutLatencyTraceIds->Add(Trace);
+		}
 	}
 
 	if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(CreateHandoverComponentData(Info.SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState, AllocateTraceKey(OutLatencyTraceIds)));
+		TraceKey Trace = USpatialLatencyTracer::InvalidTraceKey;
+		ComponentDatas.Add(CreateHandoverComponentData(Info.SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState, &Trace));
+		if (OutLatencyTraceIds)
+		{
+			OutLatencyTraceIds->Add(Trace);
+		}
 	}
 
 	checkf(!OutLatencyTraceIds || ComponentDatas.Num() == OutLatencyTraceIds->Num(), TEXT("Latency tracing keys array count does not match the component datas."));
@@ -430,7 +433,10 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	{
 		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
 		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());
-		AllocateTraceKey(OutLatencyTraceIds); // Allocate a dummy key for the interest update
+		if (OutLatencyTraceIds)
+		{
+			OutLatencyTraceIds->Add(USpatialLatencyTracer::InvalidTraceKey); // Interest not tracked 
+		}
 	}
 
 	checkf(!OutLatencyTraceIds || ComponentUpdates.Num() == OutLatencyTraceIds->Num(), TEXT("Latency tracing keys array count does not match the component updates."));
