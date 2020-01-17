@@ -723,6 +723,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		if (!PackageMap->ResolveEntityActor(EntityActor, EntityId))
 		{
+			EntityActor->Destroy(true);
+			Channel->Close(EChannelCloseReason::Destroyed);
 			return;
 		}
 
