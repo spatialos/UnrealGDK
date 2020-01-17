@@ -53,6 +53,10 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 			if (LatencyTracer != nullptr)
 			{
 				OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, Cmd.Property);
+				if (OutLatencyTraceId == USpatialLatencyTracer::InvalidTraceKey)
+				{
+					OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, Parent.Property);
+				}
 			}
 #endif
 			if (GetGroupFromCondition(Parent.Condition) == PropertyGroup)

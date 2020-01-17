@@ -132,13 +132,13 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	for (int i = 0; i < SubobjectDatas.Num(); i++)
 	{
 		Worker_ComponentData& ComponentData = SubobjectDatas[i];
-		TraceKey LatencyKey = (TraceKeysPtr != nullptr) ? (*TraceKeysPtr)[i] : USpatialLatencyTracer::InvalidTraceKey;
+		TraceKey LatencyKey = USpatialLatencyTracer::InvalidTraceKey;
 
 #if TRACE_LIB_ACTIVE
-		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData, TraceKeys[i]);
-#else
-		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData);
+		LatencyKey = TraceKeys[i];
 #endif
+
+		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData, LatencyKey);
 	}
 
 	Channel->PendingDynamicSubobjects.Remove(TWeakObjectPtr<UObject>(Subobject));
@@ -325,12 +325,13 @@ void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId
 
 		for (int i = 0; i < UpdatesQueuedUntilAuthority->ComponentUpdates.Num(); i++)
 		{
+			TraceKey LatencyKey = USpatialLatencyTracer::InvalidTraceKey;
+
 #if TRACE_LIB_ACTIVE
-			Connection->SendComponentUpdate(EntityId, &Components[i], LatencyKeys[i]);
-#else
-			Connection->SendComponentUpdate(EntityId, &Components[i]);
+			LatencyKey = LatencyKeys[i];
 #endif
-			
+
+			Connection->SendComponentUpdate(EntityId, &Components[i], LatencyKey);			
 		}
 		UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
 	}
