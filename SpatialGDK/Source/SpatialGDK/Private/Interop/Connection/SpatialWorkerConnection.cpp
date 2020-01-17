@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-// TODO(Alex): move `Worker_` code to SpatialWorkerConnection
+// TODO(Alex): move `Worker_` code to RealWorkerConnection?
 #include "SpatialWorkerConnection.h"
 
 #include "RealWorkerConnection.h"
@@ -32,8 +32,6 @@ void USpatialWorkerConnection::DestroyConnection()
 
 	if (WorkerConnectionImpl != nullptr)
 	{
-		// TODO(Alex): is it needed
-		WorkerConnectionImpl->DestroyConnection();
 		WorkerConnectionImpl = nullptr;
 	}
 

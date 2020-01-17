@@ -2,7 +2,7 @@
 
 #pragma once
 
-// TODO(Alex): move include to .cpp
+// TODO(Alex): move include to .cpp, doesn't work? :(
 #include "RealWorkerConnection.h"
 
 #include "SpatialWorkerConnectionCallbacks.h"

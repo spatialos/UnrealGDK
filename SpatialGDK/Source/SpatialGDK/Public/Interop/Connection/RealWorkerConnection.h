@@ -24,7 +24,6 @@ class SPATIALGDK_API RealWorkerConnection
 {
 public:
 	RealWorkerConnection(FReceptionistConfig& InReceptionistConfig, FLocatorConfig& InLocatorConfig, USpatialWorkerConnectionCallbacks* InCallbacks);
-	// TODO(Alex): is it called properly?
 	~RealWorkerConnection();
 	void DestroyConnection();
 
