@@ -14,7 +14,7 @@ class TestSuite {
 	[ValidateNotNullOrEmpty()][string]$test_project_name
 	[ValidateNotNullOrEmpty()][string]$test_results_dir
 	[ValidateNotNullOrEmpty()][string]$tests_path
-	[bool]$run_with_spatial
+	[bool]                            $run_with_spatial
 
 	TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map, [string] $test_project_name, [string] $test_results_dir, [string] $tests_path, [bool] $run_with_spatial) {
 		$this.test_repo_url = $test_repo_url
@@ -28,8 +28,12 @@ class TestSuite {
 	}
 }
 
-[string]$test_repo_branch = "master"
-[bool]$slow_networking_tests = $False
+[string] $test_repo_url = "git@github.com:improbable/UnrealGDKEngineNetTest.git"
+[string] $test_repo_relative_uproject_path = "Game\EngineNetTest.uproject"
+[string] $test_repo_map = "NetworkingMap"
+[string] $test_project_name = "NetworkTestProject"
+[string] $test_repo_branch = "master"
+[bool]   $slow_networking_tests = $False
 
 # Allow overriding testing branch via environment variable
 if (Test-Path env:TEST_REPO_BRANCH) {
@@ -41,13 +45,13 @@ if ( ((Test-Path env:SLOW_NETWORKING_TESTS) -And ($env:SLOW_NETWORKING_TESTS -eq
 }
 
 $tests = @(
-	[TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "FastTestResults", "SpatialGDK+/Game/SpatialNetworkingMap", $True)
+	[TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "FastTestResults", "SpatialGDK+/Game/SpatialNetworkingMap", $True)
 )
 
 if ($slow_networking_tests) {
 	$tests[0].tests_path += "+/Game/NetworkingMap"
 	$tests[0].test_results_dir = "SpatialTestResults"
-	$tests += [TestSuite]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", "$test_repo_branch", "Game\EngineNetTest.uproject", "NetworkingMap", "NetworkTestProject", "VanillaTestResults", "/Game/NetworkingMap", $False)
+	$tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "VanillaTestResults", "/Game/NetworkingMap", $False)
 }
 
 . "$PSScriptRoot\common.ps1"
