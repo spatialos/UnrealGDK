@@ -32,6 +32,7 @@ namespace SpatialGDK
 void GatherClientInterestDistances()
 {
 	ClientInterestDistancesSquared.Empty();
+	CheckoutConstraints.Empty();
 
 	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
 	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
@@ -411,9 +412,9 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 					CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
 					CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
 
-					if (CreateCheckoutConstraints)
+					if (CreateCheckoutConstraints && Frequency != 1.0f)
 					{
-						CheckoutConstraints.Add({ CheckoutRadius, CheckoutRadiusConstraint });
+						CheckoutConstraints.Add({ Frequency, CheckoutRadiusConstraint });
 					}
 
 					if (Frequency == 1.0f)
