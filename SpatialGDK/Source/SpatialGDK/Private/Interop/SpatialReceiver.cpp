@@ -1767,7 +1767,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	}
 
 #if TRACE_LIB_ACTIVE
-	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(this);
+	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(TargetObject);
 	Tracer->MarkActiveLatencyTrace(Params.Payload.Trace);
 #endif
 
