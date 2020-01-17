@@ -2072,6 +2072,7 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId, USpatialAct
 	{
 		Receiver->CleanupRepStateMap(ChannelRefs.Value);
 	}
+	Channel.ObjectReferenceMap.Empty();
 
 	if (!EntityToActorChannel.Contains(EntityId))
 	{
