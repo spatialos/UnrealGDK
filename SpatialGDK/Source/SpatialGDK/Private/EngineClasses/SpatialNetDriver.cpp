@@ -1716,9 +1716,9 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+  const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady())
+	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady() && bIsReadyToStart)
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
@@ -1859,7 +1859,7 @@ void USpatialNetDriver::ProcessPendingDormancy()
 			USpatialActorChannel* Channel = PendingDormantChannel.Get();
 			if (Channel->Actor != nullptr)
 			{
-				if (Receiver->IsPendingOpsOnChannel(Channel))
+				if (Receiver->IsPendingOpsOnChannel(*Channel))
 				{
 					RemainingChannels.Emplace(PendingDormantChannel);
 					continue;
@@ -2073,8 +2073,13 @@ void USpatialNetDriver::AddActorChannel(Worker_EntityId EntityId, USpatialActorC
 	EntityToActorChannel.Add(EntityId, Channel);
 }
 
-void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId)
+void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId, USpatialActorChannel& Channel)
 {
+	for (auto& ChannelRefs : Channel.ObjectReferenceMap)
+	{
+		Receiver->CleanupRepStateMap(ChannelRefs.Value);
+	}
+
 	if (!EntityToActorChannel.Contains(EntityId))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("RemoveActorChannel: Failed to find entity/channel mapping for entity %lld."), EntityId);
@@ -2379,9 +2384,11 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 		(!VirtualWorkerTranslator.IsValid() || VirtualWorkerTranslator->IsReady()))
 	{
 		// Return whether or not we are ready to start
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
 		return true;
 	}
 
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Not yet ready to begin processing, still processing startup ops."));
 	return false;
 }
 
