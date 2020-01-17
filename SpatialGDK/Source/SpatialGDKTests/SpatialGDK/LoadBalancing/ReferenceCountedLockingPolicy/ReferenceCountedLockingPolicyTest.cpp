@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialGDKTests/SpatialGDK/LoadBalancing/ReferenceCountedLockingPolicy/SpatialPackageMapClientMock.h"
-#include "SpatialGDKTests/SpatialGDK/LoadBalancing/ReferenceCountedLockingPolicy/SpatialVirtualWorkerTranslatorMock.h"
-#include "SpatialGDKTests/SpatialGDK/LoadBalancing/ReferenceCountedLockingPolicy/SpatialStaticComponentViewMock.h"
+#include "SpatialPackageMapClientMock.h"
+#include "SpatialStaticComponentViewMock.h"
+#include "SpatialVirtualWorkerTranslatorMock.h"
 
 #include "EngineClasses/AbstractPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
