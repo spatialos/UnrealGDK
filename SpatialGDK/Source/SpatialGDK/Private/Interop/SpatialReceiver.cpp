@@ -40,6 +40,10 @@ DECLARE_CYCLE_STAT(TEXT("Receiver AddEntity"), STAT_ReceiverAddEntity, STATGROUP
 DECLARE_CYCLE_STAT(TEXT("Receiver RemoveEntity"), STAT_ReceiverRemoveEntity, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver AddComponent"), STAT_ReceiverAddComponent, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver ComponentUpdate"), STAT_ReceiverComponentUpdate, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver ApplyData"), STAT_ReceiverApplyData, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver ApplyHandover"), STAT_ReceiverApplyHandover, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver HandleRPC"), STAT_ReceiverHandleRPC, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver HandleRPCLegacy"), STAT_ReceiverHandleRPCLegacy, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver CommandRequest"), STAT_ReceiverCommandRequest, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver CommandResponse"), STAT_ReceiverCommandResponse, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver AuthorityChange"), STAT_ReceiverAuthChange, STATGROUP_SpatialNet);
@@ -1419,10 +1423,12 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 
 	if (Category == ESchemaComponentType::SCHEMA_Data || Category == ESchemaComponentType::SCHEMA_OwnerOnly)
 	{
+		SCOPE_CYCLE_COUNTER(STAT_ReceiverApplyData);
 		ApplyComponentUpdate(Op.update, *TargetObject, *Channel, /* bIsHandover */ false);
 	}
 	else if (Category == ESchemaComponentType::SCHEMA_Handover)
 	{
+		SCOPE_CYCLE_COUNTER(STAT_ReceiverApplyHandover);
 		if (!NetDriver->IsServer())
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping Handover component because we're a client."), Op.entity_id, Op.update.component_id);
@@ -1439,6 +1445,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 
 void USpatialReceiver::HandleRPCLegacy(const Worker_ComponentUpdateOp& Op)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverHandleRPCLegacy);
 	Worker_EntityId EntityId = Op.entity_id;
 
 	// If the update is to the client rpc endpoint, then the handler should have authority over the server rpc endpoint component and vice versa
@@ -1508,6 +1515,7 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 
 void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverHandleRPC);
 	if (!GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers || RPCService == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::HandleRPC: Received component update on ring buffer component but ring buffers not enabled! Entity: %lld, Component: %d"), Op.entity_id, Op.update.component_id);
