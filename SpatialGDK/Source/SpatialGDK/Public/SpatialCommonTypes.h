@@ -23,4 +23,13 @@ using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
 using FChannelObjectPair = TPair<TWeakObjectPtr<class USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FObjectReferencesMap = TMap<int32, struct FObjectReferences>;
 using FReliableRPCMap = TMap<Worker_RequestId_Key, TSharedRef<struct FReliableRPCForRetry>>;
+
+// TODO(Alex): move it elsewhere?
+enum class ESpatialConnectionType
+{
+	Receptionist,
+	LegacyLocator,
+	Locator
+};
+
 using FObjectToRepStateMap = TMap <struct FUnrealObjectRef, TSet<FChannelObjectPair> >;

@@ -96,11 +96,11 @@ bool FSetupWorkerConnection::Update()
 	const FURL TestURL = {};
 	FString WorkerType = "AutomationWorker";
 
-	Connection->OnConnectedCallback.BindLambda([bConnectAsClient = this->bConnectAsClient]()
+	Connection->Callbacks->OnConnectedCallback.BindLambda([bConnectAsClient = this->bConnectAsClient]()
 	{
 		ConnectionProcessed(bConnectAsClient);
 	});
-	Connection->OnFailedToConnectCallback.BindLambda([bConnectAsClient = this->bConnectAsClient](uint8_t ErrorCode, const FString& ErrorMessage)
+	Connection->Callbacks->OnFailedToConnectCallback.BindLambda([bConnectAsClient = this->bConnectAsClient](uint8_t ErrorCode, const FString& ErrorMessage)
 	{
 		ConnectionProcessed(bConnectAsClient);
 	});

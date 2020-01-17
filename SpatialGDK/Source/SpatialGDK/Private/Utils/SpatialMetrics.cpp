@@ -6,6 +6,8 @@
 #include "EngineGlobals.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
+// TODO(Alex): Do we need this include?
+//#include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/SchemaUtils.h"
 
