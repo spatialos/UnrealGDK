@@ -6,7 +6,7 @@ param(
     [string] $test_repo_map,
     [string] $report_output_path,
     [string] $tests_path = "SpatialGDK",
-    [bool] $run_with_spatial = $false
+    [bool] $run_with_spatial = $False
 )
 
 # This resolves a path to be absolute, without actually reading the filesystem.
@@ -20,15 +20,15 @@ function Force-ResolvePath {
 
 if ($run_with_spatial) {
     # Generate schema and snapshots
-    Echo "Generating snapshot and schema for testing project"
-    $commandlet_process = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
+    Write-Output "Generating snapshot and schema for testing project"
+    Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
         "$uproject_path", `
-        "-NoShaderCompile", ` # Prevent shader compilation
-        "-nopause", ` # Close the unreal log window automatically on exit
-        "-nosplash", ` # No splash screen
-        "-unattended", ` # Disable anything requiring user feedback
-        "-nullRHI", ` # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
-        "-run=GenerateSchemaAndSnapshots", ` # Run the commandlet
+        "-NoShaderCompile", # Prevent shader compilation
+        "-nopause", # Close the unreal log window automatically on exit
+        "-nosplash", # No splash screen
+        "-unattended", # Disable anything requiring user feedback
+        "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+        "-run=GenerateSchemaAndSnapshots", # Run the commandlet
         "-MapPaths=`"$test_repo_map`"" ` # Which maps to run the commandlet for
     )
 
@@ -58,14 +58,14 @@ $cmd_args_list = @( `
     "-nopause", ` # Close the unreal log window automatically on exit
     "-nosplash", ` # No splash screen
     "-unattended", ` # Disable anything requiring user feedback
-    "-nullRHI" # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+    "-nullRHI" ` # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
 )
 
-if($run_with_spatial) {
+if ($run_with_spatial) {
     $cmd_args_list += "-OverrideSpatialNetworking=$run_with_spatial" # A parameter to switch beetween different networking implementations
 }
 
-Echo "Running $($ue_path_absolute) $($cmd_args_list)"
+Write-Output "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
 try {
