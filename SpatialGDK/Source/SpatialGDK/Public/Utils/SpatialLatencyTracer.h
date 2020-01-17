@@ -69,7 +69,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static void RegisterProject(UObject* WorldContextObject, const FString& ProjectId);
 
-	// Set a prefix to be used for all span names. No whitespace is generated (e.g. "prefix(WorkerID) Actual Message Here").
+	// Set a prefix to be used for all span names. Resulting uploaded span names are of the format "PREFIX(WORKER_ID) : USER_SPECIFIED_NAME".
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static void SetMessagePrefix(const FString& NewMessagePrefix);
 
