@@ -31,7 +31,7 @@ ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNet
 	, LatencyTracer(InLatencyTracer)
 { }
 
-bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TraceKey* OutLatencyTraceId /*= nullptr*/, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
+bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TraceKey& OutLatencyTraceId, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
 {
 	bool bWroteSomething = false;
 
@@ -50,18 +50,9 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 			const FRepParentCmd& Parent = Changes.RepLayout.Parents[Cmd.ParentIndex];
 
 #if TRACE_LIB_ACTIVE
-			if (LatencyTracer != nullptr && OutLatencyTraceId != nullptr)
+			if (LatencyTracer != nullptr)
 			{
-				TraceKey TraceId = LatencyTracer->RetrievePendingTrace(Object, Cmd.Property);
-				if (TraceId == USpatialLatencyTracer::InvalidTraceKey)
-				{
-					// Check for sending a nested property
-					TraceId = LatencyTracer->RetrievePendingTrace(Object, Parent.Property);
-				}
-				if (TraceId != USpatialLatencyTracer::InvalidTraceKey)
-				{
-					*OutLatencyTraceId = TraceId;
-				}
+				OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, Cmd.Property);
 			}
 #endif
 			if (GetGroupFromCondition(Parent.Condition) == PropertyGroup)
@@ -122,7 +113,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 	return bWroteSomething;
 }
 
-bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TraceKey* OutLatencyTraceId, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
+bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TraceKey& OutLatencyTraceId, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
 {
 	bool bWroteSomething = false;
 
@@ -134,13 +125,9 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
 
 #if TRACE_LIB_ACTIVE
-		if (LatencyTracer != nullptr && OutLatencyTraceId != nullptr)
+		if (LatencyTracer != nullptr)
 		{
-			TraceKey TraceId = LatencyTracer->RetrievePendingTrace(Object, PropertyInfo.Property);
-			if (TraceId != USpatialLatencyTracer::InvalidTraceKey)
-			{
-				*OutLatencyTraceId = TraceId;
-			}
+			OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, PropertyInfo.Property);
 		}
 #endif
 		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, ClearedIds);
@@ -309,7 +296,7 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		TraceKey Trace = USpatialLatencyTracer::InvalidTraceKey;
-		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_Data], Object, RepChangeState, SCHEMA_Data, &Trace));
+		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_Data], Object, RepChangeState, SCHEMA_Data, Trace));
 		if (OutLatencyTraceIds)
 		{
 			OutLatencyTraceIds->Add(Trace);
@@ -319,7 +306,7 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	if (Info.SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		TraceKey Trace = USpatialLatencyTracer::InvalidTraceKey;
-		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, RepChangeState, SCHEMA_OwnerOnly, &Trace));
+		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, RepChangeState, SCHEMA_OwnerOnly, Trace));
 		if (OutLatencyTraceIds)
 		{
 			OutLatencyTraceIds->Add(Trace);
@@ -329,7 +316,7 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		TraceKey Trace = USpatialLatencyTracer::InvalidTraceKey;
-		ComponentDatas.Add(CreateHandoverComponentData(Info.SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState, &Trace));
+		ComponentDatas.Add(CreateHandoverComponentData(Info.SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState, Trace));
 		if (OutLatencyTraceIds)
 		{
 			OutLatencyTraceIds->Add(Trace);
@@ -340,7 +327,7 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	return ComponentDatas;
 }
 
-Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, TraceKey* OutLatencyTraceId /*= nullptr*/)
+Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, TraceKey& OutLatencyTraceId)
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
@@ -363,7 +350,7 @@ Worker_ComponentData ComponentFactory::CreateEmptyComponentData(Worker_Component
 	return ComponentData;
 }
 
-Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, TraceKey* OutLatencyTraceId /* = nullptr */)
+Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, TraceKey& OutLatencyTraceId)
 {
 	Worker_ComponentData ComponentData = CreateEmptyComponentData(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
@@ -383,7 +370,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 		{
 			TraceKey LatencyKey = USpatialLatencyTracer::InvalidTraceKey;
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_Data], Object, *RepChangeState, SCHEMA_Data, bWroteSomething, &LatencyKey);
+			Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_Data], Object, *RepChangeState, SCHEMA_Data, bWroteSomething, LatencyKey);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(MultiClientUpdate);
@@ -398,7 +385,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 		{
 			TraceKey LatencyKey = USpatialLatencyTracer::InvalidTraceKey;
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, *RepChangeState, SCHEMA_OwnerOnly, bWroteSomething, &LatencyKey);
+			Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, *RepChangeState, SCHEMA_OwnerOnly, bWroteSomething, LatencyKey);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(SingleClientUpdate);
@@ -416,7 +403,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 		{
 			TraceKey LatencyKey = USpatialLatencyTracer::InvalidTraceKey;
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info.SchemaComponents[SCHEMA_Handover], Object, Info, *HandoverChangeState, bWroteSomething, &LatencyKey);
+			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info.SchemaComponents[SCHEMA_Handover], Object, Info, *HandoverChangeState, bWroteSomething, LatencyKey);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(HandoverUpdate);
@@ -443,7 +430,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	return ComponentUpdates;
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool& bWroteSomething, TraceKey* OutLatencyTraceId /*= nullptr*/)
+Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool& bWroteSomething, TraceKey& OutLatencyTraceId)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -468,7 +455,7 @@ Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	return ComponentUpdate;
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool& bWroteSomething, TraceKey* OutLatencyTraceId /* = nullptr */)
+Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool& bWroteSomething, TraceKey& OutLatencyTraceId)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
