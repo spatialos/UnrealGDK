@@ -287,11 +287,6 @@ void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*
 		const SpatialGDK::FAddComponent* ComponentAdd = static_cast<const SpatialGDK::FAddComponent*>(Message);
 		WriteToLatencyTrace(ComponentAdd->Trace, TEXT("Moved componentAdd to Worker queue"));
 	}
-	else if (Message->Type == SpatialGDK::EOutgoingMessageType::CreateEntityRequest)
-	{
-		const SpatialGDK::FCreateEntityRequest* EntityRequest = static_cast<const SpatialGDK::FCreateEntityRequest*>(Message);
-		WriteToLatencyTrace(EntityRequest->Trace, TEXT("Moved entity request to Worker queue"));
-	}
 }
 
 void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage* Message)
@@ -305,11 +300,6 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	{
 		const SpatialGDK::FAddComponent* ComponentAdd = static_cast<const SpatialGDK::FAddComponent*>(Message);
 		EndLatencyTrace(ComponentAdd->Trace, TEXT("Sent componentAdd to Worker SDK"));
-	}
-	else if (Message->Type == SpatialGDK::EOutgoingMessageType::CreateEntityRequest)
-	{
-		const SpatialGDK::FCreateEntityRequest* EntityRequest = static_cast<const SpatialGDK::FCreateEntityRequest*>(Message);
-		WriteToLatencyTrace(EntityRequest->Trace, TEXT("Sent createEntity to Worker SDK"));
 	}
 }
 
