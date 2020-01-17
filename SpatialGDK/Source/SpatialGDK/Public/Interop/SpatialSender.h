@@ -85,6 +85,7 @@ public:
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
 	void SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info);
 	void SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info);
+	void SendInterestComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void RetireEntity(const Worker_EntityId EntityId);

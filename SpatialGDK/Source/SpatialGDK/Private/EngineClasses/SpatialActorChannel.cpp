@@ -1280,6 +1280,29 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 			Channel->ServerProcessOwnershipChange();
 		}
 	}
+
+	const Worker_ComponentId DesiredInterestComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
+
+	auto FindCurrentNCDComponent = [this]()
+	{
+		for (const auto& Entry : NetDriver->ClassInfoManager->SchemaDatabase->NetCullDistanceToComponentId)
+		{
+			if (NetDriver->StaticComponentView->HasComponent(EntityId, Entry.Value))
+			{
+				return Entry.Value;
+			}
+		}
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	};
+
+	const Worker_ComponentId CurrentInterestComponentId = NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID) ?
+		SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID :
+		FindCurrentNCDComponent();
+
+	if (CurrentInterestComponentId != DesiredInterestComponentId)
+	{
+		Sender->SendInterestComponentChange(EntityId, CurrentInterestComponentId, DesiredInterestComponentId);
+	}
 }
 
 void USpatialActorChannel::UpdateEntityACLToNewOwner()
