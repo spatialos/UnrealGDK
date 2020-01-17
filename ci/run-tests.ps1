@@ -6,7 +6,7 @@ param(
     [string] $test_repo_map,
     [string] $report_output_path,
     [string] $tests_path = "SpatialGDK",
-    [bool] $run_with_spatial = $False
+    [bool]   $run_with_spatial = $False
 )
 
 # This resolves a path to be absolute, without actually reading the filesystem.
