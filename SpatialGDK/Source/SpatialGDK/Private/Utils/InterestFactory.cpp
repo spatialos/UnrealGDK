@@ -58,7 +58,7 @@ void InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoMana
 	// Add all the different actor queries to the overall checkout constraint.
 	for (auto& ActorCheckoutConstraint : CheckoutRadiusConstraints)
 	{
-		ClientCheckoutRadiusConstraint.OrConstraint.Add(ActorCheckoutConstraint);
+		CheckoutRadiusConstraint.OrConstraint.Add(ActorCheckoutConstraint);
 	}
 	ClientCheckoutRadiusConstraint = CheckoutRadiusConstraint;
 }
@@ -208,15 +208,20 @@ TMap<UClass*, float> InterestFactory::GetActorTypeToRadius()
 	return ActorComponentSetToDistance;
 }
 
-TMap<float, TArray<UClass*>> InterestFactory::DedupeDistancesAcrossActorTypes(TMap<UClass*, float> ComponentSetToRadius)
+TMap<float, TArray<UClass*>> InterestFactory::DedupeDistancesAcrossActorTypes(TMap<UClass*, float> ActorTypeToRadius)
 {
-	TMap<float, TArray<UClass*>> DistanceToActorTypes;
-	for (const auto& InterestDistance : ComponentSetToRadius)
+	TMap<float, TArray<UClass*>> RadiusToActorTypes;
+	for (const auto& InterestDistance : ActorTypeToRadius)
 	{
-		TArray<UClass*>& ActorTypes = DistanceToActorTypes[InterestDistance.Value];
+		TArray<UClass*> ActorTypes;
+		if (RadiusToActorTypes.Contains(InterestDistance.Value))
+		{
+			ActorTypes = RadiusToActorTypes[InterestDistance.Value];
+		}
 		ActorTypes.Add(InterestDistance.Key);
+		RadiusToActorTypes.Add(InterestDistance.Value, ActorTypes);
 	}
-	return DistanceToActorTypes;
+	return RadiusToActorTypes;
 }
 
 TArray<QueryConstraint> InterestFactory::BuildNonDefaultActorCheckoutConstraints(TMap<float, TArray<UClass*>> DistanceToActorTypes, USpatialClassInfoManager* ClassInfoManager)
@@ -231,20 +236,12 @@ TArray<QueryConstraint> InterestFactory::BuildNonDefaultActorCheckoutConstraints
 		CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
 
 		QueryConstraint ActorTypesConstraint;
-		if (ActorTypesConstraint.IsValid())
+		for (const auto ActorType : DistanceActorsPair.Value)
 		{
-			for (const auto& ActorType : DistanceActorsPair.Value)
-			{
-				for (const auto& componentId : ClassInfoManager->GetComponentIdsForClassHierarchy(*ActorType))
-				{
-					QueryConstraint ActorTypeConstraint;
-					ActorTypeConstraint.ComponentConstraint = componentId;
-					ActorTypesConstraint.OrConstraint.Add(ActorTypeConstraint);
-				}
-			}
-			CheckoutRadiusConstraint.AndConstraint.Add(ActorTypesConstraint);
+			AddTypeHierarchyToConstraint(*ActorType, ActorTypesConstraint, ClassInfoManager);
 		}
-
+		CheckoutRadiusConstraint.AndConstraint.Add(ActorTypesConstraint);
+		
 		CheckoutConstraints.Add(CheckoutRadiusConstraint);
 	}
 	return CheckoutConstraints;
