@@ -76,8 +76,8 @@ void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
 
 #if TRACE_LIB_ACTIVE
-	SpatialConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
-	SpatialConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
+	SpatialConnection->Callbacks->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
+	SpatialConnection->Callbacks->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
 #endif
 }
 

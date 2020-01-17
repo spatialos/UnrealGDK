@@ -5,6 +5,9 @@
 #include "Interop/Connection/EditorWorkerController.h"
 #endif
 
+// TODO(Alex): Move Callbacks Def elsewhere to avoid this include
+#include "SpatialWorkerConnection.h"
+
 #include "Async/Async.h"
 #include "Misc/Paths.h"
 
@@ -85,9 +88,10 @@ struct ConfigureConnection
 #endif
 };
 
-RealWorkerConnection::RealWorkerConnection(FReceptionistConfig& InReceptionistConfig, FLocatorConfig& InLocatorConfig)
+RealWorkerConnection::RealWorkerConnection(FReceptionistConfig& InReceptionistConfig, FLocatorConfig& InLocatorConfig, USpatialWorkerConnectionCallbacks* InCallbacks)
 	: ReceptionistConfig(InReceptionistConfig)
 	, LocatorConfig(InLocatorConfig)
+	, Callbacks(InCallbacks)
 {
 }
 
@@ -422,8 +426,7 @@ void RealWorkerConnection::ProcessOutgoingMessages()
 		TUniquePtr<FOutgoingMessage> OutgoingMessage;
 		OutgoingMessagesQueue.Dequeue(OutgoingMessage);
 
-		// TODO(Alex): fix these
-		//OnDequeueMessage.Broadcast(OutgoingMessage.Get());
+		Callbacks->OnDequeueMessage.Broadcast(OutgoingMessage.Get());
 
 		static const Worker_UpdateParameters DisableLoopback{ /*loopback*/ WORKER_COMPONENT_UPDATE_LOOPBACK_NONE };
 
@@ -612,7 +615,6 @@ void RealWorkerConnection::QueueOutgoingMessage(ArgsType&&... Args)
 	// TODO UNR-1271: As later optimization, we can change the queue to hold a union
 	// of all outgoing message types, rather than having a pointer.
 	auto Message = MakeUnique<T>(Forward<ArgsType>(Args)...);
-	// TODO(Alex): fix it
-	//OnEnqueueMessage.Broadcast(Message.Get());
+	Callbacks->OnEnqueueMessage.Broadcast(Message.Get());
 	OutgoingMessagesQueue.Enqueue(MoveTemp(Message));
 }

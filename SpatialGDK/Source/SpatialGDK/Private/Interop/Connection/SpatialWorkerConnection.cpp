@@ -11,7 +11,7 @@
 USpatialWorkerConnection::USpatialWorkerConnection(const FObjectInitializer & ObjectInitializer /*= FObjectInitializer::Get()*/)
 {
 	Callbacks = NewObject<USpatialWorkerConnectionCallbacks>();
-	WorkerConnectionImpl = MakeUnique<RealWorkerConnection>(ReceptionistConfig, LocatorConfig);
+	WorkerConnectionImpl = MakeUnique<RealWorkerConnection>(ReceptionistConfig, LocatorConfig, Callbacks);
 }
 
 void USpatialWorkerConnection::FinishDestroy()

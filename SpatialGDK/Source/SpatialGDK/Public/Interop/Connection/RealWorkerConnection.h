@@ -18,10 +18,12 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
+class USpatialWorkerConnectionCallbacks;
+
 class SPATIALGDK_API RealWorkerConnection
 {
 public:
-	RealWorkerConnection(FReceptionistConfig& InReceptionistConfig, FLocatorConfig& InLocatorConfig);
+	RealWorkerConnection(FReceptionistConfig& InReceptionistConfig, FLocatorConfig& InLocatorConfig, USpatialWorkerConnectionCallbacks* InCallbacks);
 	// TODO(Alex): is it called properly?
 	~RealWorkerConnection();
 	void DestroyConnection();
@@ -106,4 +108,6 @@ private:
 	Worker_RequestId NextRequestId = 0;
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
+
+	USpatialWorkerConnectionCallbacks* Callbacks = nullptr;
 };

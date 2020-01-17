@@ -29,7 +29,6 @@ class SPATIALGDK_API USpatialWorkerConnectionCallbacks : public UObject
 	GENERATED_BODY()
 
 public:
-	// TODO(Alex): fix these!
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnEnqueueMessage OnEnqueueMessage;
 
