@@ -50,6 +50,7 @@ public:
 
 	void GetErrorCodeAndMessage(uint8_t& OutConnectionStatusCode, FString& OutErrorMessage) const;
 
+	// TODO(Alex): remove duplication!
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
