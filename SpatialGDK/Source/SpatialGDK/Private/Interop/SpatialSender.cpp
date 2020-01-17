@@ -119,8 +119,7 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Subobject);
-	ComponentFactory DataFactory(false, NetDriver, Tracer);
+	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
 
 	TArray<TraceKey>* TraceKeysPtr = nullptr;
 #if TRACE_LIB_ACTIVE
@@ -133,7 +132,7 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	for (int i = 0; i < SubobjectDatas.Num(); i++)
 	{
 		Worker_ComponentData& ComponentData = SubobjectDatas[i];
-		TraceKey LatencyKey = TraceKeysPtr ? (*TraceKeysPtr)[i] : USpatialLatencyTracer::InvalidTraceKey;
+		TraceKey LatencyKey = (TraceKeysPtr != nullptr) ? (*TraceKeysPtr)[i] : USpatialLatencyTracer::InvalidTraceKey;
 
 #if TRACE_LIB_ACTIVE
 		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData, TraceKeys[i]);
