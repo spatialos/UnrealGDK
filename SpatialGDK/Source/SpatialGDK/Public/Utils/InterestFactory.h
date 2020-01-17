@@ -30,8 +30,8 @@ public:
 private:
 	static QueryConstraint GetDefaultCheckoutRadiusConstraint();
 	static TMap<UClass*, float> GetActorTypeToRadius();
-	static TMap<float, TArray<UClass*>> DedupeDistancesAcrossActorTypes(TMap<UClass*, float> ComponentSetToRadius);
-	static TArray<QueryConstraint> BuildNonDefaultActorCheckoutConstraints(TMap<float, TArray<UClass*>> DistanceToActorTypes, USpatialClassInfoManager* ClassInfoManager);
+	static TMap<float, TArray<UClass*>> DedupeDistancesAcrossActorTypes(const TMap<UClass*, float> ComponentSetToRadius);
+	static TArray<QueryConstraint> BuildNonDefaultActorCheckoutConstraints(const TMap<float, TArray<UClass*>> DistanceToActorTypes, USpatialClassInfoManager* ClassInfoManager);
 
 	Interest CreateInterest() const;
 
