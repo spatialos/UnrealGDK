@@ -24,7 +24,7 @@ namespace
 {
 	TraceKey* AllocateTraceKey(TArray<TraceKey>* Array)
 	{
-		if (Array)
+		if (Array != nullptr)
 		{
 			Array->Add(USpatialLatencyTracer::InvalidTraceKey);
 			return &(*Array)[Array->Num() - 1];
