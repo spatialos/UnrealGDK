@@ -85,6 +85,12 @@ struct ConfigureConnection
 #endif
 };
 
+RealWorkerConnection::RealWorkerConnection(FReceptionistConfig& InReceptionistConfig, FLocatorConfig& InLocatorConfig)
+	: ReceptionistConfig(InReceptionistConfig)
+	, LocatorConfig(InLocatorConfig)
+{
+}
+
 RealWorkerConnection::~RealWorkerConnection()
 {
 	// TODO(Alex): could be unsafe, since not sure if OpsProcessingThread has been executed

@@ -21,6 +21,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 class SPATIALGDK_API RealWorkerConnection
 {
 public:
+	RealWorkerConnection(FReceptionistConfig& InReceptionistConfig, FLocatorConfig& InLocatorConfig);
 	// TODO(Alex): is it called properly?
 	~RealWorkerConnection();
 	void DestroyConnection();
@@ -50,9 +51,9 @@ public:
 
 	void GetErrorCodeAndMessage(uint8_t& OutConnectionStatusCode, FString& OutErrorMessage) const;
 
-	// TODO(Alex): remove duplication!
-	FReceptionistConfig ReceptionistConfig;
-	FLocatorConfig LocatorConfig;
+	// TODO(Alex): remove duplication! Can it be const?
+	FReceptionistConfig& ReceptionistConfig;
+	FLocatorConfig& LocatorConfig;
 
 private:
 	// TODO(Alex): hide it back
@@ -88,9 +89,9 @@ private:
 private:
 	// TODO(Alex): hide back?
 public:
-	Worker_Connection* WorkerConnection;
+	Worker_Connection* WorkerConnection = nullptr;
 private:
-	Worker_Locator* WorkerLocator;
+	Worker_Locator* WorkerLocator = nullptr;
 
 	// TODO(Alex): not nice to have this variable
 	bool bConnectToLocatorAsClient = false;
