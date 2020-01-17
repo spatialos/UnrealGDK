@@ -19,7 +19,7 @@ DEFINE_LOG_CATEGORY(LogInterestFactory);
 namespace SpatialGDK
 {
 // The checkout radius constraint is built once for all actors in CreateCheckoutRadiusConstraint as it is equivalent for all actors.
-// It is built once per game initialisation, so will be overridden in subsequent PiE runs.
+// It is built once per net driver initialisation.
 static QueryConstraint ClientCheckoutRadiusConstraint;
 
 InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
