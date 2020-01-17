@@ -29,7 +29,7 @@ if (Test-Path "$test_result_dir\index.html" -PathType Leaf) {
 
     for ($i = 0; $i -lt $replacement_strings.length; $i = $i + 2) {
         $first = $replacement_strings[$i]
-        $second = $replacement_strings[$i+1]
+        $second = $replacement_strings[$i + 1]
         ((Get-Content -Path "$test_result_dir\index.html" -Raw) -Replace $first, $second) | Set-Content -Path "$test_result_dir\index.html"
     }
 
@@ -71,31 +71,31 @@ $total_tests_succeeded = $test_results_obj.succeeded + $test_results_obj.succeed
 $total_tests_run = $total_tests_succeeded + $test_results_obj.failed
 $slack_attachment = [ordered]@{
     fallback = "Find the test results at $test_results_url"
-    color = $(if ($tests_passed) {"good"} else {"danger"})
-    fields = @(
-             @{
-                value = "*$env:ENGINE_COMMIT_HASH* $(Split-Path $test_result_dir -Leaf)"
-                short = $true
-            }
-            @{
-                value = "Passed $total_tests_succeeded / $total_tests_run tests."
-                short = $true
-            }
-        )
-    actions = @(
-            @{
-                type = "button"
-                text = ":bar_chart: Test results"
-                url = "$test_results_url"
-                style = "primary"
-            }
-            @{
-                type = "button"
-                text = ":page_with_curl: Test log"
-                url = "$test_log_url"
-                style = "primary"
-            }
-        )
+    color    = $(if ($tests_passed) { "good" } else { "danger" })
+    fields   = @(
+        @{
+            value = "*$env:ENGINE_COMMIT_HASH* $(Split-Path $test_result_dir -Leaf)"
+            short = $True
+        }
+        @{
+            value = "Passed $total_tests_succeeded / $total_tests_run tests."
+            short = $True
+        }
+    )
+    actions  = @(
+        @{
+            type  = "button"
+            text  = ":bar_chart: Test results"
+            url   = "$test_results_url"
+            style = "primary"
+        }
+        @{
+            type  = "button"
+            text  = ":page_with_curl: Test log"
+            url   = "$test_log_url"
+            style = "primary"
+        }
+    )
 }
 
 $slack_attachment | ConvertTo-Json | Set-Content -Path "$test_result_dir\slack_attachment_$env:BUILDKITE_STEP_ID.json"
@@ -105,21 +105,31 @@ buildkite-agent artifact upload "$test_result_dir\slack_attachment_$env:BUILDKIT
 # Count the number of SpatialGDK tests in order to report this
 $num_gdk_tests = 0
 Foreach ($test in $test_results_obj.tests) {
-	if ($test.fulltestPath.Contains("SpatialGDK.")) {
-		$num_gdk_tests += 1
-	}
+    if ($test.fulltestPath.Contains("SpatialGDK.")) {
+        $num_gdk_tests += 1
+    }
+}
+
+# Count the number of Project (functional) tests in order to report this
+$num_project_tests = 0
+Foreach ($test in $test_results_obj.tests) {
+    if ($test.fulltestPath.Contains("Project.")) {
+        $num_project_tests += 1
+    }
 }
 
 # Define and upload test summary JSON artifact for longer-term test metric tracking (see upload-test-metrics.sh)
 $test_summary = [pscustomobject]@{
-    time = Get-Date -UFormat %s
-    build_url = "$env:BUILDKITE_BUILD_URL"
-    platform = "$target_platform"
-    unreal_engine_commit = "$env:ENGINE_COMMIT_HASH"
-    passed_all_tests = $tests_passed
-    tests_duration_seconds = $test_results_obj.totalDuration
-    num_tests = $total_tests_run
-    num_gdk_tests = $num_gdk_tests
+    time                       = Get-Date -UFormat %s
+    build_url                  = "$env:BUILDKITE_BUILD_URL"
+    platform                   = "$target_platform"
+    unreal_engine_commit       = "$env:ENGINE_COMMIT_HASH"
+    passed_all_tests           = $tests_passed
+    tests_duration_seconds     = $test_results_obj.totalDuration
+    num_tests                  = $total_tests_run
+    num_gdk_tests              = $num_gdk_tests
+    num_project_tests          = $num_project_tests
+    test_result_directory_name = Split-Path $test_result_dir -Leaf
 }
 $test_summary | ConvertTo-Json -Compress | Set-Content -Path "$test_result_dir\test_summary_$env:BUILDKITE_STEP_ID.json"
 
