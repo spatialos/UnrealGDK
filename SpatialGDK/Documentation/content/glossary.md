@@ -455,7 +455,8 @@ You can also add additional non-Unreal server-worker types. For example, you cou
 > 
 > * [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
 > * [Offloading]({{urlRoot}}/content/workers/offloading-concept/)
-> * [Multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
+
+> **Note:** The GDK is not currently available for development with zoning. For more information on availability, see the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1).
 
 <!-- TODO How do you set up worker types in Unreal https://improbableio.atlassian.net/browse/DOC-1064 -->
 <!-- TODO Offloading info added here:  https://improbableio.atlassian.net/browse/DOC-1064 -->
@@ -486,15 +487,12 @@ Once you’ve chosen a label for the worker type (for example, myWorkerType), yo
 
 Zoning is one of the multiserver options for working with SpatialOS (the other option is [offloading](#offloading)). It involves splitting up the world into areas of [authority](#authority), with a different [server-worker instance](#server-workers) responsible for each. A server-worker instance can make updates only to Actors that are in its area of authority.
 
-> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
-<br><br>
-> **Find out more**
->
-> [multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
+> **Note:** The GDK is not currently available for development with zoning. For more information on availability, see the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1).
 
 <br/>
 <br/>------<br/>
-_2019-08-08 Page updated with editorial review: updated Actor groups, offloading, zoning, workers, authority_
+<br/>_2020-01-17 Page updated with editorial review: updated expectations on zoning availability_
+<br/>_2019-08-08 Page updated with editorial review: updated Actor groups, offloading, zoning, workers, authority_
 <br/>_2019-07-30 Page updated without editorial review: added Actor groups, offloading_
 <br/>_2019-06-15 Added layers, non-Unreal layers, network operations (ops)_
 <br/>_2019-03-15 Page updated with editorial review_

@@ -65,7 +65,7 @@ void TakeDamage(int Damage);
 For more information, see the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs).
 
 ### Actor handover
-If your game uses zoning, you need to make sure that entities can move seamlessly between areas of authority and the relevant server-worker instances can compute them. 
+If you game intends to use zoning, you need to make sure that entities can move seamlessly between areas of authority and the relevant server-worker instances can compute them. 
 
 In Unreal’s single-server architecture, authority over an Actor stays with the single server; an Actor’s properties never leave the server’s memory. With multiple server-worker instances in SpatialOS, authority needs to pass from one server-worker instance to another as an Actor moves around the game world. Passing authority, known as “Actor handover”, allows the second server-worker instance to continue where the first one left off. You set this up by adding the `Handover` tag to the Actor’s properties. 
 
@@ -75,10 +75,7 @@ In Unreal’s single-server architecture, authority over an Actor stays with the
 
 <%(Lightbox image="{{assetRoot}}assets/screen-grabs/moving-across-boundaries.gif")%>
 
-
  _An AI following a player across the boundary between two server-worker instances' areas of authority. To demonstrate Actor handover, the AI changes its material every time authority is handed over._
-
-See the [multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) for a tutorial that demonstrates this functionality.
 
 For more information, see the documentation on [Actor handover]({{urlRoot}}/content/actor-handover).
 
