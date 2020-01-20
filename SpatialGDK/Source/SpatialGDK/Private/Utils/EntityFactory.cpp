@@ -16,15 +16,16 @@
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Utils/ComponentFactory.h"
+#include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 
 #include "Engine.h"
- 
+
 namespace SpatialGDK
 {
- 
+
 EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService)
 	: NetDriver(InNetDriver)
 	, PackageMap(InPackageMap)
@@ -218,11 +219,20 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		VirtualWorkerId IntentVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
-		FColor IntentColor = NetDriver->SpatialDebugger->GetVirtualWorkerColor(IntentVirtualWorkerId);
-		SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, FColor::Magenta, IntentVirtualWorkerId, IntentColor, false);
+		if (SpatialSettings->bEnableUnrealLoadBalancer)
+		{
+			check(NetDriver->VirtualWorkerTranslator != nullptr);
 
-		ComponentDatas.Add(DebuggingInfo.CreateSpatialDebuggingData());
+			VirtualWorkerId IntentVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+
+			const PhysicalWorkerName* PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntentVirtualWorkerId);
+			FColor IntentColor = PhysicalWorkerName == nullptr ? FColor::Magenta : SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName);
+
+			SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, FColor::Magenta, IntentVirtualWorkerId, IntentColor, false);
+			ComponentDatas.Add(DebuggingInfo.CreateSpatialDebuggingData());
+		}
+
+		ComponentWriteAcl.Add(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	}
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
