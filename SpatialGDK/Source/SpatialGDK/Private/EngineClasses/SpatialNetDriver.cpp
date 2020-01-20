@@ -452,7 +452,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	CreateAndInitializeLoadBalancingClasses();
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		CreateAndInitializeLoadBalancingClasses();
+	}
 
 	if (SpatialSettings->bUseRPCRingBuffers)
 	{
@@ -478,12 +481,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 {
-	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialSettings->bEnableUnrealLoadBalancer == false)
-	{
-		return;
-	}
-
 	if (IsServer()) 
 	{
 		const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
