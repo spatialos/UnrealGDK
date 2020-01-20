@@ -17,7 +17,7 @@ QueryConstraint CheckoutRadiusConstraintUtils::GetDefaultCheckoutRadiusConstrain
 	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
 
 	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
-	const float DefaultCheckoutRadius = FMath::Sqrt(DefaultDistanceSquared / (100.0f * 100.0f));
+	const float DefaultCheckoutRadius = NetCullDistanceSquaredToSpatialDistance(DefaultDistanceSquared);
 
 	QueryConstraint DefaultCheckoutRadiusConstraint;
 	DefaultCheckoutRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ DefaultCheckoutRadius };
@@ -85,7 +85,7 @@ TMap<UClass*, float> CheckoutRadiusConstraintUtils::GetActorTypeToRadius()
 		check(ActorInterestDistance.Key);
 
 		// Spatial distance works in meters, whereas unreal distance works in cm^2. Here we do the dimensionally strange conversion between the two.
-		float SpatialDistance = FMath::Sqrt(ActorInterestDistance.Value / (100.f * 100.f));
+		float SpatialDistance = NetCullDistanceSquaredToSpatialDistance(ActorInterestDistance.Value);
 
 		bool bShouldAdd = true;
 		for (auto& OptimizedInterestDistance : ActorTypeToDistance)
@@ -144,6 +144,12 @@ TArray<QueryConstraint> CheckoutRadiusConstraintUtils::BuildNonDefaultActorCheck
 		CheckoutConstraints.Add(CheckoutRadiusConstraint);
 	}
 	return CheckoutConstraints;
+}
+
+float CheckoutRadiusConstraintUtils::NetCullDistanceSquaredToSpatialDistance(float NetCullDistanceSquared)
+{
+	// Spatial distance works in meters, whereas unreal distance works in cm^2. Here we do the dimensionally strange conversion between the two.
+	return FMath::Sqrt(NetCullDistanceSquared / (100.f * 100.f));
 }
 
 // The type hierarchy added here are the component IDs that represent the actor type hierarchy. These are added to the given constraint as:

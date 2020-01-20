@@ -18,6 +18,7 @@ public:
 	static TArray<QueryConstraint> BuildNonDefaultActorCheckoutConstraints(const TMap<float, TArray<UClass*>> DistanceToActorTypes, USpatialClassInfoManager* ClassInfoManager);
 
 private:
+	static float NetCullDistanceSquaredToSpatialDistance(float NetCullDistanceSquared);
 	static void AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint, USpatialClassInfoManager* ClassInfoManager);
 };
 
