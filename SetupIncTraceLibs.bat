@@ -1,3 +1,7 @@
+rem **** Warning - Experimental functionality ****
+rem This functionality is not supported for external users, and shouldn't be used.
+rem **** 
+
 @echo off
 
 set NO_PAUSE=1

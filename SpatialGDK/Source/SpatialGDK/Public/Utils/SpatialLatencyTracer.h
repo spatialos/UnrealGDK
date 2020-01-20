@@ -35,6 +35,8 @@ public:
 
 	//////////////////////////////////////////////////////////////////////////
 	//
+	// EXPERIMENTAL: This functionality is not currently supported for external users and shouldn't be used.
+	//
 	// USpatialLatencyTracer allows for tracing of gameplay events across multiple workers, from their user
 	// instigation, to their observed results. Each of these multi-worker events are tracked through `traces`
 	// which allow the user to see collected timings of these events in a single location. Key timings related
