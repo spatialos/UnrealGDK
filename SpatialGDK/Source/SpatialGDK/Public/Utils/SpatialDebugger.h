@@ -122,9 +122,6 @@ public:
 	UFUNCTION()
 	virtual void OnRep_SetWorkerRegions();
 
-	FColor GetServerWorkerColor(const Worker_EntityId EntityId) const;
-	FColor GetVirtualWorkerColor(const Worker_EntityId EntityId) const;
-
 private:
 
 	void LoadIcons();
@@ -139,6 +136,8 @@ private:
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
+	FColor GetServerWorkerColor(const Worker_EntityId EntityId) const;
+	FColor GetVirtualWorkerColor(const Worker_EntityId EntityId) const;
 	const FString& GetAuthoritativeWorkerFromACL(const Worker_EntityId EntityId) const;
 
 	bool GetLockStatus(const Worker_EntityId EntityId);
