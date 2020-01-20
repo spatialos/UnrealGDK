@@ -34,6 +34,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added the `bAsyncLoadNewClassesOnEntityCheckout` setting to SpatialGDKSettings that allows loading new classes asynchronously when checking out entities. This is off by default.
 - Added `IndexYFromSchema` functions for the `Coordinates`, `WorkerRequirementSet`, `FRotator`, and `FVector` classes. Remapped the `GetYFromSchema` functions for the same classes to invoke `IndexYFromSchema` internally, in line with other implementations of the pattern.
 - The logic responsible for taking an Actor and generating the array of Components that represents it as an Entity in SpatialOS has been extracted into `EntityFactory`.
+- Entries in the SchemaDatabase are now sorted to improve efficiancy when browsing the asset in the editor. Thank you to DW-Sebastien for this change.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
