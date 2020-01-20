@@ -9,6 +9,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerController.h"
 
 namespace SpatialGDK
 {
@@ -36,6 +37,17 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 	{
 		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();
 		Location = PawnRootComponent ? PawnRootComponent->GetComponentLocation() : FVector::ZeroVector;
+	}
+	else if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (PlayerController->IsInState(NAME_Spectating))
+		{
+			Location = PlayerController->LastSpectatorSyncLocation;
+		}
+		else
+		{
+			Location = PlayerController->GetFocalLocation();
+		}
 	}
 	else if (InActor->GetOwner() != nullptr && InActor->GetOwner()->GetIsReplicated())
 	{
