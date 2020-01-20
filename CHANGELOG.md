@@ -34,12 +34,14 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added the `bAsyncLoadNewClassesOnEntityCheckout` setting to SpatialGDKSettings that allows loading new classes asynchronously when checking out entities. This is off by default.
 - Added `IndexYFromSchema` functions for the `Coordinates`, `WorkerRequirementSet`, `FRotator`, and `FVector` classes. Remapped the `GetYFromSchema` functions for the same classes to invoke `IndexYFromSchema` internally, in line with other implementations of the pattern.
 - The logic responsible for taking an Actor and generating the array of Components that represents it as an Entity in SpatialOS has been extracted into `EntityFactory`.
+- Clients will now validate schema against the server and log a warning if they do not match.
 - Load Balancing Strategies and Locking Strategies can be set per-level using SpatialWorldSettings.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
 - Take into account OverrideSpatialNetworking command line argument as early as possible (LocalDeploymentManager used to query bSpatialNetworking before the command line was parsed).
 - Servers maintain interest in AlwaysRelevant Actors.
+- GetActorSpatialPosition now returns last spectator sync location while player is spectating.
 - The default cloud launch configuration is now empty.
 - Fixed an crash caused by attempting to read schema from an unloaded class.
 - Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.

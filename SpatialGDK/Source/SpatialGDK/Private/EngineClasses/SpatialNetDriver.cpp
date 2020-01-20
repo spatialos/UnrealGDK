@@ -10,6 +10,7 @@
 #include "EngineGlobals.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
+#include "Misc/MessageDialog.h"
 #include "Net/DataReplication.h"
 #include "Net/RepLayout.h"
 #include "SocketSubsystem.h"
@@ -563,6 +564,12 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
 	if (bWaitingToSpawn && ClientCanSendPlayerSpawnRequests())
 	{
+		uint32 ServerHash = GlobalStateManager->GetSchemaHash();
+		if (ClassInfoManager->SchemaDatabase->SchemaDescriptorHash != ServerHash) // Are we running with the same schema hash as the server?
+		{	
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Your clients Spatial schema does match the servers, this may cause problems. Client hash: '%u' Server hash: '%u'"), ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
+		}
+
 		UWorld* CurrentWorld = GetWorld();
 		const FString& DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
 		if (CurrentWorld == nullptr || CurrentWorld->RemovePIEPrefix(DeploymentMapURL) != CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map))
@@ -684,6 +691,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			// ServerTravel - Increment the session id, so users don't rejoin the old game.
 			GlobalStateManager->SetCanBeginPlay(true);
 			GlobalStateManager->TriggerBeginPlay();
+			GlobalStateManager->SetDeploymentState();
 			GlobalStateManager->SetAcceptingPlayers(true);
 			GlobalStateManager->IncrementSessionID();
 		}
