@@ -27,11 +27,13 @@
 namespace
 {
 
+using LockingTokenAndDebugString = TPair<ActorLockToken, FString>;
+
 struct TestData
 {
 	UWorld* TestWorld;
 	TMap<FName, AActor*> TestActors;
-	TMap<AActor*, TArray<TPair<ActorLockToken, FString>>> TestActorToLockingTokenAndDebugStrings;
+	TMap<AActor*, TArray<LockingTokenAndDebugString>> TestActorToLockingTokenAndDebugStrings;
 	UReferenceCountedLockingPolicy* LockingPolicy;
 	USpatialStaticComponentView* StaticComponentView;
 	UAbstractPackageMapClient* PackageMap;
@@ -135,10 +137,10 @@ bool FAcquireLock::Update()
 	// If the token returned is valid, it MUST be unique
 	if (Token != SpatialConstants::INVALID_ACTOR_LOCK_TOKEN)
 	{
-		for (const TPair<AActor*, TArray<TPair<ActorLockToken, FString>>>& ActorLockingTokenAndDebugStrings : Data->TestActorToLockingTokenAndDebugStrings)
+		for (const TPair<AActor*, TArray<LockingTokenAndDebugString>>& ActorLockingTokenAndDebugStrings : Data->TestActorToLockingTokenAndDebugStrings)
 		{
-			const TArray<TPair<ActorLockToken, FString>>& LockingTokensAndDebugStrings = ActorLockingTokenAndDebugStrings.Value;
-			bool TokenAlreadyExists = LockingTokensAndDebugStrings.ContainsByPredicate([Token](const TPair<ActorLockToken, FString>& Data)
+			const TArray<LockingTokenAndDebugString>& LockingTokensAndDebugStrings = ActorLockingTokenAndDebugStrings.Value;
+			bool TokenAlreadyExists = LockingTokensAndDebugStrings.ContainsByPredicate([Token](const LockingTokenAndDebugString& Data)
 			{
 				return Token == Data.Key;
 			});
@@ -149,7 +151,7 @@ bool FAcquireLock::Update()
 		}
 	}
 
-	TArray<TPair<ActorLockToken, FString>>& ActorLockTokens = Data->TestActorToLockingTokenAndDebugStrings.FindOrAdd(Actor);
+	TArray<LockingTokenAndDebugString>& ActorLockTokens = Data->TestActorToLockingTokenAndDebugStrings.FindOrAdd(Actor);
 	ActorLockTokens.Emplace(TPairInitializer<ActorLockToken, FString>(Token, DebugString));
 
 	return true;
@@ -161,8 +163,8 @@ bool FReleaseLock::Update()
 	const AActor* Actor = Data->TestActors[ActorHandle];
 
 	// Find lock token based on relevant lock debug string
-	TArray<TPair<ActorLockToken, FString>>* LockTokenAndDebugStrings = Data->TestActorToLockingTokenAndDebugStrings.Find(Actor);
-	int32 TokenIndex = LockTokenAndDebugStrings->IndexOfByPredicate([this](const TPair<ActorLockToken, FString>& Data)
+	TArray<LockingTokenAndDebugString>* LockTokenAndDebugStrings = Data->TestActorToLockingTokenAndDebugStrings.Find(Actor);
+	int32 TokenIndex = LockTokenAndDebugStrings->IndexOfByPredicate([this](const LockingTokenAndDebugString& Data)
 	{
 		return Data.Value == LockDebugString;
 	});
@@ -170,7 +172,7 @@ bool FReleaseLock::Update()
 	bool bLockFound = TokenIndex != INDEX_NONE;
 	Test->TestTrue(FString::Printf(TEXT("Found valid lock token? %d"), bLockFound), bLockFound);
 
-	TPair<ActorLockToken, FString>& LockTokenAndDebugString = (*LockTokenAndDebugStrings)[TokenIndex];
+	LockingTokenAndDebugString& LockTokenAndDebugString = (*LockTokenAndDebugStrings)[TokenIndex];
 
 	Data->LockingPolicy->ReleaseLock(LockTokenAndDebugString.Key);
 
