@@ -8,6 +8,6 @@
 class SPATIALGDK_API AbstractVirtualWorkerTranslator
 {
 public:
-	virtual ~AbstractVirtualWorkerTranslator() {};
+	virtual ~AbstractVirtualWorkerTranslator() = default;
 	virtual VirtualWorkerId GetLocalVirtualWorkerId() const PURE_VIRTUAL(AbstractVirtualWorkerTranslator::GetLocalVirtualWorkerId, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;);
 };
