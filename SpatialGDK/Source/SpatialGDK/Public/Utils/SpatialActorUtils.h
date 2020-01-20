@@ -29,6 +29,7 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 	FVector Location = FVector::ZeroVector;
 
 	// If the Actor is a Controller, use its Pawn's position,
+	// Otherwise if the Actor is a PlayerController, use its last spectator sync location, otherwise its focal point
 	// Otherwise if the Actor has an Owner, use its position.
 	// Otherwise if the Actor has a well defined location then use that
 	// Otherwise use the origin
