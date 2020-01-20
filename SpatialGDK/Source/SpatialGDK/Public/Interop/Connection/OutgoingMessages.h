@@ -77,14 +77,16 @@ struct FDeleteEntityRequest : FOutgoingMessage
 
 struct FAddComponent : FOutgoingMessage
 {
-	FAddComponent(Worker_EntityId InEntityId, const Worker_ComponentData& InData)
+	FAddComponent(Worker_EntityId InEntityId, const Worker_ComponentData& InData, const TraceKey InTrace)
 		: FOutgoingMessage(EOutgoingMessageType::AddComponent)
 		, EntityId(InEntityId)
 		, Data(InData)
+		, Trace(InTrace)
 	{}
 
 	Worker_EntityId EntityId;
 	Worker_ComponentData Data;
+	TraceKey Trace;
 };
 
 struct FRemoveComponent : FOutgoingMessage
