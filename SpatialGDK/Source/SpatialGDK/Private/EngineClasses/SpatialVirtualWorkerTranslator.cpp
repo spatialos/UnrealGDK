@@ -15,14 +15,14 @@ SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrate
 	USpatialReceiver* InReceiver,
 	USpatialWorkerConnection* InConnection,
 	PhysicalWorkerName InPhysicalWorkerName)
-	: bWorkerEntityQueryInFlight(false)
-	, bIsReady(false)
-	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-	, LoadBalanceStrategy(InLoadBalanceStrategy)
+	: LoadBalanceStrategy(InLoadBalanceStrategy)
 	, StaticComponentView(InStaticComponentView)
 	, Receiver(InReceiver)
 	, Connection(InConnection)
+	, bWorkerEntityQueryInFlight(false)
+	, bIsReady(false)
 	, LocalPhysicalWorkerName(InPhysicalWorkerName)
+	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 {}
 
 void SpatialVirtualWorkerTranslator::AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds)
