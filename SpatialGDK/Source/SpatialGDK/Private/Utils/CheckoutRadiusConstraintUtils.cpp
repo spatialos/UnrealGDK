@@ -27,8 +27,6 @@ QueryConstraint CheckoutRadiusConstraintUtils::GetDefaultCheckoutRadiusConstrain
 
 TMap<UClass*, float> CheckoutRadiusConstraintUtils::GetActorTypeToRadius()
 {
-	TMap<UClass*, float> ClientInterestDistancesSquared;
-
 	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
 	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
 	const float MaxDistanceSquared = GetDefault<USpatialGDKSettings>()->MaxNetCullDistanceSquared;
@@ -78,15 +76,21 @@ TMap<UClass*, float> CheckoutRadiusConstraintUtils::GetActorTypeToRadius()
 		return LHS.IsChildOf(&RHS);
 	});
 
+	TMap<UClass*, float> ActorTypeToDistance;
+
 	// If an actor's interest distance is smaller than that of a parent class, there's no need to add interest for that actor.
 	// Can't do inline removal since the sorted order is only guaranteed when the map isn't changed.
 	for (const auto& ActorInterestDistance : DiscoveredInterestDistancesSquared)
 	{
 		check(ActorInterestDistance.Key);
+
+		// Spatial distance works in meters, whereas unreal distance works in cm^2. Here we do the dimensionally strange conversion between the two.
+		float SpatialDistance = FMath::Sqrt(ActorInterestDistance.Value / (100.f * 100.f));
+
 		bool bShouldAdd = true;
-		for (auto& OptimizedInterestDistance : ClientInterestDistancesSquared)
+		for (auto& OptimizedInterestDistance : ActorTypeToDistance)
 		{
-			if (ActorInterestDistance.Key->IsChildOf(OptimizedInterestDistance.Key) && ActorInterestDistance.Value <= OptimizedInterestDistance.Value)
+			if (ActorInterestDistance.Key->IsChildOf(OptimizedInterestDistance.Key) && SpatialDistance <= OptimizedInterestDistance.Value)
 			{
 				// No need to add this interest distance since it's captured in the optimized map already.
 				bShouldAdd = false;
@@ -95,21 +99,11 @@ TMap<UClass*, float> CheckoutRadiusConstraintUtils::GetActorTypeToRadius()
 		}
 		if (bShouldAdd)
 		{
-			ClientInterestDistancesSquared.Add(ActorInterestDistance.Key, ActorInterestDistance.Value);
+			ActorTypeToDistance.Add(ActorInterestDistance.Key, SpatialDistance);
 		}
 	}
 
-	TMap<UClass*, float> ActorComponentSetToDistance;
-
-	for (const auto& ActorInterestDistance : ClientInterestDistancesSquared)
-	{
-		// Build a map from set of actor types to radius in meters
-		ActorComponentSetToDistance.Add(
-			ActorInterestDistance.Key,
-			FMath::Sqrt(ActorInterestDistance.Value / (100.0f * 100.0f)));
-	}
-
-	return ActorComponentSetToDistance;
+	return ActorTypeToDistance;
 }
 
 TMap<float, TArray<UClass*>> CheckoutRadiusConstraintUtils::DedupeDistancesAcrossActorTypes(TMap<UClass*, float> ActorTypeToRadius)

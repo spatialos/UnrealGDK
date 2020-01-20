@@ -20,7 +20,7 @@ namespace SpatialGDK
 {
 	CHECKOUT_RADIUS_CONSTRAINT_TEST(GIVEN_actor_type_to_radius_map_WHEN_radius_is_duplicated_THEN_correctly_dedupes)
 	{
-		float Radius = 5;
+		float Radius = 5.f;
 		TMap<UClass*, float> Map;
 		UClass* Class1 = NewObject<UClass>();
 		UClass* Class2 = NewObject<UClass>();
@@ -44,8 +44,8 @@ namespace SpatialGDK
 
 	CHECKOUT_RADIUS_CONSTRAINT_TEST(GIVEN_actor_type_to_radius_map_WHEN_radius_is_not_duplicated_THEN_does_not_dedupe)
 	{
-		float Radius1 = 5;
-		float Radius2 = 6;
+		float Radius1 = 5.f;
+		float Radius2 = 6.f;
 		TMap<UClass*, float> Map;
 		UClass* Class1 = NewObject<UClass>();
 		UClass* Class2 = NewObject<UClass>();
