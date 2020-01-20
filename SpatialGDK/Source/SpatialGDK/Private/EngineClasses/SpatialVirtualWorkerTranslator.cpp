@@ -10,32 +10,20 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
-SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator()
-	: bWorkerEntityQueryInFlight(false)
-	, bIsReady(false)
-	, LocalPhysicalWorkerName(SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME)
-	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-{}
-
-void SpatialVirtualWorkerTranslator::Init(UAbstractLBStrategy* InLoadBalanceStrategy,
+SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy,
 	USpatialStaticComponentView* InStaticComponentView,
 	USpatialReceiver* InReceiver,
 	USpatialWorkerConnection* InConnection,
 	PhysicalWorkerName InPhysicalWorkerName)
-{
-	LoadBalanceStrategy = InLoadBalanceStrategy;
-
-	check(InStaticComponentView != nullptr);
-	StaticComponentView = InStaticComponentView;
-
-	check(InReceiver != nullptr);
-	Receiver = InReceiver;
-
-	check(InConnection != nullptr);
-	Connection = InConnection;
-
-	LocalPhysicalWorkerName = InPhysicalWorkerName;
-}
+	: bWorkerEntityQueryInFlight(false)
+	, bIsReady(false)
+	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+	, LoadBalanceStrategy(InLoadBalanceStrategy)
+	, StaticComponentView(InStaticComponentView)
+	, Receiver(InReceiver)
+	, Connection(InConnection)
+	, LocalPhysicalWorkerName(InPhysicalWorkerName)
+{}
 
 void SpatialVirtualWorkerTranslator::AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds)
 {

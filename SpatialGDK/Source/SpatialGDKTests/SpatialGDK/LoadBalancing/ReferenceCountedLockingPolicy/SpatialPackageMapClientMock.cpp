@@ -2,12 +2,12 @@
 
 #include "SpatialPackageMapClientMock.h"
 
-void USpatialPackageMapClientMock::Init(Worker_EntityId inReturnEntityId)
+void USpatialPackageMapClientMock::Init(Worker_EntityId InEntityId)
 {
-	ReturnEntityId = inReturnEntityId;
+	EntityId = InEntityId;
 }
 
 Worker_EntityId USpatialPackageMapClientMock::GetEntityIdFromObject(const UObject* Object)
 {
-	return ReturnEntityId;
+	return EntityId;
 }

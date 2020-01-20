@@ -7,7 +7,7 @@
 #include "SpatialConstants.h"
 #include "WorkerSDK/improbable/c_worker.h"
 
-void USpatialStaticComponentViewMock::Init(Worker_EntityId EntityId, Worker_Authority InAuthority, VirtualWorkerId VirtWorkerId)
+void USpatialStaticComponentViewMock::Init(Worker_EntityId EntityId, Worker_Authority Authority, VirtualWorkerId VirtWorkerId)
 {
 	Worker_AddComponentOp AddCompOp;
 	AddCompOp.entity_id = EntityId;
@@ -18,6 +18,6 @@ void USpatialStaticComponentViewMock::Init(Worker_EntityId EntityId, Worker_Auth
 	Worker_AuthorityChangeOp AuthChangeOp;
 	AuthChangeOp.entity_id = EntityId;
 	AuthChangeOp.component_id = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
-	AuthChangeOp.authority = WORKER_AUTHORITY_AUTHORITATIVE;
+	AuthChangeOp.authority = Authority;
 	OnAuthorityChange(AuthChangeOp);
 }

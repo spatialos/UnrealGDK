@@ -22,9 +22,8 @@ class USpatialWorkerConnection;
 class SPATIALGDK_API SpatialVirtualWorkerTranslator : public AbstractVirtualWorkerTranslator
 {
 public:
-	SpatialVirtualWorkerTranslator();
-
-	void Init(UAbstractLBStrategy* InLoadBalanceStrategy,
+	SpatialVirtualWorkerTranslator() = delete;
+	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy,
 		USpatialStaticComponentView* InStaticComponentView,
 		USpatialReceiver* InReceiver,
 		USpatialWorkerConnection* InConnection,

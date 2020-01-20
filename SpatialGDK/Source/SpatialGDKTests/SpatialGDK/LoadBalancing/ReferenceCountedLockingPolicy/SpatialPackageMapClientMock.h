@@ -13,10 +13,10 @@ class USpatialPackageMapClientMock : public UAbstractPackageMapClient
 	GENERATED_BODY()
 public:
 
-	void Init(Worker_EntityId inReturnEntityId);
+	void Init(Worker_EntityId EntityId);
 
 	virtual Worker_EntityId GetEntityIdFromObject(const UObject* Object) override;
 
 private:
-	Worker_EntityId ReturnEntityId;
+	Worker_EntityId EntityId;
 }; 

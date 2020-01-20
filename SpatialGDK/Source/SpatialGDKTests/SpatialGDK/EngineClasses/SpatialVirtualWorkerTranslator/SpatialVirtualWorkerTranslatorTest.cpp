@@ -15,7 +15,7 @@
 
 VIRTUALWORKERTRANSLATOR_TEST(Given_init_is_not_called_THEN_return_not_ready)
 {
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, nullptr, nullptr, nullptr, TEXT("TestWorkerName"));
 
 	TestFalse("Uninitialized Translator is not ready.", translator->IsReady());
 
@@ -25,7 +25,7 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_init_is_not_called_THEN_return_not_ready)
 VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings)
 {
 	// The class is initialized with no data.
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, nullptr, nullptr, nullptr, TEXT("TestWorkerName"));
 
 	TestTrue("Worker 1 doesn't exist", translator->GetPhysicalWorkerForVirtualWorker(1) == nullptr);
 
@@ -35,7 +35,7 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_nothing_has_changed_THEN_retu
 VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_receiving_incomplete_mapping_THEN_ignore_it)
 {
 	// The class is initialized with no data.
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, nullptr, nullptr, nullptr, TEXT("TestWorkerName"));
 
 	// Create a base mapping.
 	Worker_ComponentData Data = {};
@@ -68,7 +68,7 @@ VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_receiving_incomplete_mapping_
 VIRTUALWORKERTRANSLATOR_TEST(Given_no_mapping_WHEN_it_is_updated_THEN_return_the_updated_mapping)
 {
 	// The class is initialized with no data.
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, nullptr, nullptr, nullptr, TEXT("TestWorkerName"));
 
 	// Create a base mapping.
 	Worker_ComponentData Data = {};
