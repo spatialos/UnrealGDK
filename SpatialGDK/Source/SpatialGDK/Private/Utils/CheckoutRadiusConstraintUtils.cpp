@@ -13,10 +13,20 @@ namespace SpatialGDK
 
 QueryConstraint CheckoutRadiusConstraintUtils::GetDefaultCheckoutRadiusConstraint()
 {
+	const float MaxDistanceSquared = GetDefault<USpatialGDKSettings>()->MaxNetCullDistanceSquared;
+
 	// Use AActor's ClientInterestDistance for the default radius (all actors in that radius will be checked out)
 	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
 
-	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
+	float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
+
+	if (MaxDistanceSquared != 0.f && DefaultDistanceSquared > MaxDistanceSquared) {
+		UE_LOG(LogCheckoutRadiusConstraintUtils, Warning, TEXT("Default NetCullDistanceSquared is too large, clamping from %f to %f"),
+			DefaultDistanceSquared, MaxDistanceSquared);
+
+		DefaultDistanceSquared = MaxDistanceSquared;
+	}
+
 	const float DefaultCheckoutRadius = NetCullDistanceSquaredToSpatialDistance(DefaultDistanceSquared);
 
 	QueryConstraint DefaultCheckoutRadiusConstraint;
