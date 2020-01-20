@@ -40,7 +40,7 @@ if (Test-Path env:TEST_REPO_BRANCH) {
 	$test_repo_branch = $env:TEST_REPO_BRANCH
 }
 # Allow overriding running slow networking tests
-if ( ((Test-Path env:SLOW_NETWORKING_TESTS) -And ($env:SLOW_NETWORKING_TESTS -eq "true")) -Or ($env:NIGHTLY_BUILD -eq "true")) {
+if (((Test-Path env:SLOW_NETWORKING_TESTS) -And ($env:SLOW_NETWORKING_TESTS -eq "true")) -Or ($env:NIGHTLY_BUILD -eq "true")) {
 	$slow_networking_tests = $True
 }
 
@@ -140,4 +140,3 @@ Foreach ($test in $tests) {
 		Finish-Event "report-tests" "command"
 	}
 }
-
