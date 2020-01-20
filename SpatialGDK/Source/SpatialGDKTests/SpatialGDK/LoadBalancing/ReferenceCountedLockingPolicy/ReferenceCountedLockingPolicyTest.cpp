@@ -161,7 +161,6 @@ bool FReleaseLock::Update()
 	const AActor* Actor = Data->TestActors[ActorHandle];
 
 	// Find lock token based on relevant lock debug string
-	FString& LockDebugStringRef = LockDebugString;
 	TArray<TPair<ActorLockToken, FString>>* LockTokenAndDebugStrings = Data->TestActorToLockingTokenAndDebugStrings.Find(Actor);
 	int32 TokenIndex = LockTokenAndDebugStrings->IndexOfByPredicate([this](const TPair<ActorLockToken, FString>& Data)
 	{

@@ -19,12 +19,13 @@ class SPATIALGDK_API UAbstractLockingPolicy : public UObject
 	GENERATED_BODY()
 
 public:
-	virtual void Init(USpatialStaticComponentView* InStaticComponentView, UAbstractPackageMapClient* InPackageMap, AbstractVirtualWorkerTranslator* InVirtualWorkerTranslator) {
+	virtual void Init(USpatialStaticComponentView* InStaticComponentView, UAbstractPackageMapClient* InPackageMap, AbstractVirtualWorkerTranslator* InVirtualWorkerTranslator)
+	{
 		StaticComponentView = InStaticComponentView;
 		PackageMap = InPackageMap;
 		VirtualWorkerTranslator = InVirtualWorkerTranslator;
 	};
-	virtual ActorLockToken AcquireLock(AActor* Actor, FString LockName = "") PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLock, return SpatialConstants::INVALID_ENTITY_ID;);
+	virtual ActorLockToken AcquireLock(AActor* Actor, FString LockName = TEXT("")) PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLock, return SpatialConstants::INVALID_ENTITY_ID;);
 	virtual void ReleaseLock(ActorLockToken Token) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLock, return;);
 	virtual bool IsLocked(const AActor* Actor) const PURE_VIRTUAL(UAbstractLockingPolicy::IsLocked, return false;);
 

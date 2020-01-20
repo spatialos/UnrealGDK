@@ -708,8 +708,8 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 								*Function->GetName(),
 								*TargetActor->GetName(),
 								*ConnectionOwner->GetName()
-							)
-								bCanPackRPC = false;
+							);
+							bCanPackRPC = false;
 						}
 					}
 				}
