@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- Updated the version of the local API service used by the UnrealGDK.
 
 ## [`0.6.4`] - 2019-12-13
 ### Bug fixes: 
