@@ -2,12 +2,10 @@
 
 #include "SpatialVirtualWorkerTranslatorMock.h"
 
-void USpatialVirtualWorkerTranslatorMock::Init(VirtualWorkerId inVirtualWorkerId)
-{
-	ReturnVirtualWorkerId = inVirtualWorkerId;
-}
+USpatialVirtualWorkerTranslatorMock::USpatialVirtualWorkerTranslatorMock(VirtualWorkerId VirtWorkerId)
+	: VirtWorkerId( VirtWorkerId ) {}
 
 VirtualWorkerId USpatialVirtualWorkerTranslatorMock::GetLocalVirtualWorkerId() const
 {
-	return ReturnVirtualWorkerId;
+	return VirtWorkerId;
 }

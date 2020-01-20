@@ -8,11 +8,10 @@
 class USpatialVirtualWorkerTranslatorMock : public AbstractVirtualWorkerTranslator
 {
 public:
-
-	void Init(VirtualWorkerId inReturnVirtualWorkerId);
+	USpatialVirtualWorkerTranslatorMock(VirtualWorkerId VirtWorkerId);
 
 	virtual VirtualWorkerId GetLocalVirtualWorkerId() const override;
 
 private:
-	VirtualWorkerId ReturnVirtualWorkerId;
+	VirtualWorkerId VirtWorkerId;
 }; 

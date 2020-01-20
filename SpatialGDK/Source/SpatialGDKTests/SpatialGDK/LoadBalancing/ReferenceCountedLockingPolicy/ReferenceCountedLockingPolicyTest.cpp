@@ -58,17 +58,17 @@ TSharedPtr<TestData> MakeNewTestData(Worker_EntityId EntityId, Worker_Authority 
 	StaticComponentView->Init(EntityId, EntityAuthority, VirtWorkerId);
 
 	Data->StaticComponentView = StaticComponentView;
+	Data->StaticComponentView->AddToRoot();
 
 	USpatialPackageMapClientMock* PackageMap = NewObject<USpatialPackageMapClientMock>();
 	PackageMap->Init(EntityId);
 	Data->PackageMap = PackageMap;
+	Data->PackageMap->AddToRoot();
 
-	USpatialVirtualWorkerTranslatorMock* VirtualWorkerTranslator = new USpatialVirtualWorkerTranslatorMock();
-	VirtualWorkerTranslator->Init(VirtWorkerId);
-	Data->VirtualWorkerTranslator = VirtualWorkerTranslator;
+	Data->VirtualWorkerTranslator = new USpatialVirtualWorkerTranslatorMock(VirtWorkerId);
 
 	Data->LockingPolicy = NewObject<UReferenceCountedLockingPolicy>();
-	Data->LockingPolicy->Init(StaticComponentView, PackageMap, VirtualWorkerTranslator);
+	Data->LockingPolicy->Init(Data->StaticComponentView, Data->PackageMap, Data->VirtualWorkerTranslator);
 	Data->LockingPolicy->AddToRoot();
 	return Data;
 }
