@@ -488,4 +488,3 @@ Schema_ComponentData* SpatialRPCService::GetOrCreateComponentData(EntityComponen
 }
 
 } // namespace SpatialGDK
-

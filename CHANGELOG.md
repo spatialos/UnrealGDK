@@ -36,6 +36,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added `IndexYFromSchema` functions for the `Coordinates`, `WorkerRequirementSet`, `FRotator`, and `FVector` classes. Remapped the `GetYFromSchema` functions for the same classes to invoke `IndexYFromSchema` internally, in line with other implementations of the pattern.
 - The logic responsible for taking an Actor and generating the array of Components that represents it as an Entity in SpatialOS has been extracted into `EntityFactory`.
 - Clients will now validate schema against the server and log a warning if they do not match.
+- Entries in the SchemaDatabase are now sorted to improve efficiancy when browsing the asset in the editor. (DW-Sebastien)
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
@@ -62,6 +63,9 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fix to handle replicated properties depending on asynchronously loaded packages.
 - Fix to component interest constraints constructed from schema.
 - Track properties containing references to replicated actors, in order to resolve them again if the actor they reference moves out and back into relevance.
+
+### External contributors:
+@DW-Sebastien
 
 ## [`0.8.0-preview`] - 2019-12-17
 
