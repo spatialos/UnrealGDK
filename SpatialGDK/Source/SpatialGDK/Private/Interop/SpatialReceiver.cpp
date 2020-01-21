@@ -29,6 +29,7 @@
 #include "Utils/ComponentReader.h"
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
@@ -396,6 +397,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	if (LoadBalanceEnforcer != nullptr)
 	{
 		LoadBalanceEnforcer->AuthorityChanged(Op);
+	}
+
+	if (NetDriver->SpatialDebugger != nullptr)
+	{
+		NetDriver->SpatialDebugger->AuthorityChanged(Op);
 	}
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));
