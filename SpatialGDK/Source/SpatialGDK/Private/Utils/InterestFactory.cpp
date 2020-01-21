@@ -304,97 +304,35 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 		}
 	}
 
-	// Otherwise, return the previously computed checkout radius constraint.
-	return ClientCheckoutRadiusConstraint;
-
-
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	QueryConstraint CheckoutRadiusConstraints;
 
+	// Otherwise, return the previously computed checkout radius constraint.
 	if (!SpatialGDKSettings->bEnableNetCullDistanceInterest)
 	{
-		// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
-		//   - Checkout radius is a RelativeCylinder constraint on the player controller.
-		//   - NetCullDistanceSquared on AActor is used to define the default checkout radius with no other constraints.
-		//   - NetCullDistanceSquared on other actor types is used to define additional constraints if needed.
-		//   - If a subtype defines a radius smaller than a parent type, then its requirements are already captured.
-		//   - If a subtype defines a radius larger than all parent types, then it needs an additional constraint.
-		//   - Other than the default from AActor, all radius constraints also include Component constraints to
-		//     capture specific types, including all derived types of that actor.
-
-		const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
-		const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
-
-		// Use AActor's ClientInterestDistance for the default radius (all actors in that radius will be checked out)
-		const float DefaultCheckoutRadiusMeters = FMath::Sqrt(DefaultDistanceSquared / (100.0f * 100.0f));
-		QueryConstraint DefaultCheckoutRadiusConstraint;
-		DefaultCheckoutRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ DefaultCheckoutRadiusMeters };
-		CheckoutRadiusConstraints.OrConstraint.Add(DefaultCheckoutRadiusConstraint);
-
-		// For every interest distance that we still want, add a constraint with the distance for the actor type and all of its derived types.
-		for (const auto& InterestDistanceSquared : ClientInterestDistancesSquared)
-		{
-			QueryConstraint CheckoutRadiusConstraint;
-
-			QueryConstraint RadiusConstraint;
-			const float CheckoutRadiusMeters = FMath::Sqrt(InterestDistanceSquared.Value / (100.0f * 100.0f));
-			RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadiusMeters };
-			CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
-
-			QueryConstraint ActorTypeConstraint;
-			check(InterestDistanceSquared.Key);
-			AddTypeHierarchyToConstraint(*InterestDistanceSquared.Key, ActorTypeConstraint);
-			if (ActorTypeConstraint.IsValid())
-			{
-				CheckoutRadiusConstraint.AndConstraint.Add(ActorTypeConstraint);
-				CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
-			}
-		}
+		return ClientCheckoutRadiusConstraint;
 	}
-	else
+	
+	QueryConstraint CheckoutRadiusConstraints;
+
+	TArray<float> NetCullDistances = ClassInfoManager->GetNetCullDistances();
+	const bool CreateCheckoutConstraints = (CheckoutConstraints.Num() == 0);
+
+	for (float NetCullDistance : NetCullDistances)
 	{
-		TArray<float> NetCullDistances = ClassInfoManager->GetNetCullDistances();
-		const bool CreateCheckoutConstraints = (CheckoutConstraints.Num() == 0);
+		const float MaxCheckoutRadiusMeters = FMath::Sqrt(NetCullDistance / (100.0f * 100.0f));
+		const uint32 NCDComponentId = ClassInfoManager->GetComponentIdForNetCullDistance(NetCullDistance);
 
-		for (float NetCullDistance : NetCullDistances)
+		if (SpatialGDKSettings->bEnableNetCullDistanceFrequency)
 		{
-			const float MaxCheckoutRadiusMeters = FMath::Sqrt(NetCullDistance / (100.0f * 100.0f));
-			const uint32 NCDComponentId = ClassInfoManager->GetComponentIdForNetCullDistance(NetCullDistance);
-
-			if (SpatialGDKSettings->bEnableNetCullDistanceFrequency)
+			for (auto DistanceFrequencyPair : SpatialGDKSettings->InterestRangeFrequencyPairs)
 			{
-				for (auto DistanceFrequencyPair : SpatialGDKSettings->InterestRangeFrequencyPairs)
-				{
-					float DistanceRatio = DistanceFrequencyPair.Key;
-					float Frequency = DistanceFrequencyPair.Value;
+				float DistanceRatio = DistanceFrequencyPair.Key;
+				float Frequency = DistanceFrequencyPair.Value;
 
-					float CheckoutRadius = MaxCheckoutRadiusMeters * DistanceRatio;
+				float CheckoutRadius = MaxCheckoutRadiusMeters * DistanceRatio;
 
-					QueryConstraint RadiusConstraint;
-					RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
-
-					QueryConstraint ComponentConstraint;
-					ComponentConstraint.ComponentConstraint = NCDComponentId;
-
-					QueryConstraint CheckoutRadiusConstraint;
-					CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
-					CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
-
-					if (CreateCheckoutConstraints && Frequency != 1.0f)
-					{
-						CheckoutConstraints.Add({ Frequency, CheckoutRadiusConstraint });
-					}
-
-					if (Frequency == 1.0f)
-					{
-						CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
-					}
-				}
-			}
-			else
-			{
 				QueryConstraint RadiusConstraint;
-				RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ MaxCheckoutRadiusMeters };
+				RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
 
 				QueryConstraint ComponentConstraint;
 				ComponentConstraint.ComponentConstraint = NCDComponentId;
@@ -403,8 +341,30 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 				CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
 				CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
 
-				CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
+				if (CreateCheckoutConstraints && Frequency != 1.0f)
+				{
+					CheckoutConstraints.Add({ Frequency, CheckoutRadiusConstraint });
+				}
+
+				if (Frequency == 1.0f)
+				{
+					CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
+				}
 			}
+		}
+		else
+		{
+			QueryConstraint RadiusConstraint;
+			RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ MaxCheckoutRadiusMeters };
+
+			QueryConstraint ComponentConstraint;
+			ComponentConstraint.ComponentConstraint = NCDComponentId;
+
+			QueryConstraint CheckoutRadiusConstraint;
+			CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
+			CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
+
+			CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
 		}
 	}
 
