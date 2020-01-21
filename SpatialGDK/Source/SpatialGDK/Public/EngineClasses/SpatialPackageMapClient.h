@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/PackageMapClient.h"
 
+#include "EngineClasses/AbstractSpatialPackageMapClient.h"
 #include "Schema/UnrealMetadata.h"
 #include "Schema/UnrealObjectRef.h"
 
@@ -20,7 +21,7 @@ class UEntityPool;
 class FTimerManager;
 
 UCLASS()
-class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
+class SPATIALGDK_API USpatialPackageMapClient : public UAbstractSpatialPackageMapClient
 {
 	GENERATED_BODY()		
 public:
@@ -51,7 +52,7 @@ public:
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId& EntityId);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
-	Worker_EntityId GetEntityIdFromObject(const UObject* Object);
+	virtual Worker_EntityId GetEntityIdFromObject(const UObject* Object) override;
 
 	AActor* GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef);
 

@@ -22,7 +22,7 @@ public:
 		FString OwningWorkerId;
 	};
 
-	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);	
+	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
 	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
