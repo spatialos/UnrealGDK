@@ -64,7 +64,7 @@ void USpatialPingComponent::SetPingEnabled(bool bSetEnabled)
 	}
 
 	// Only execute on owning local client.
-	if (!OwningController->HasAuthority())
+	if (OwningController->IsNetMode(NM_Client) && OwningController->GetLocalRole() == ROLE_AutonomousProxy)
 	{
 		if (bSetEnabled && !bIsPingEnabled)
 		{
