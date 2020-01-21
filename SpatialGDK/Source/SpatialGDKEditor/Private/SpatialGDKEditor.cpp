@@ -250,6 +250,11 @@ FSpatialGDKEditor::ESchemaDatabaseValidationResult FSpatialGDKEditor::ValidateSc
 	return SpatialGDKEditor::Schema::ValidateSchemaDatabase();
 }
 
+#include "SchemaGenerator/Cache/AssetContentCacheDCCPlugin.h"
+#include "DerivedDataCache/Public/DerivedDataCacheInterface.h"
+
+FAssetContentIdentifierCache s_IDCache;
+
 bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets)
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
@@ -297,6 +302,28 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 		Progress.EnterProgressFrame(1, FText::Format(LOCTEXT("LoadingSingleAsset_Text", "Loading {0}"), FText::FromName(Data.AssetName)));
 
 		const FString* GeneratedClassPathPtr = nullptr;
+
+		FAssetSpatialContentCache* AssetContentCacheGenerator = new FAssetSpatialContentCache(Data.PackageName, s_IDCache);
+		TArray<uint8> OutData;
+		bool Computed = false;
+		if (GetDerivedDataCacheRef().GetSynchronous(AssetContentCacheGenerator, OutData, &Computed))
+		{
+			if (Computed)
+			{
+				UE_LOG(LogSpatialGDKEditor, Display, TEXT("Generated and cached asset data for package %s"), *Data.PackageName.ToString());
+			}
+			else
+			{
+				UE_LOG(LogSpatialGDKEditor, Display, TEXT("Found cached data for asset %s"), *Data.PackageName.ToString());
+
+				FSpatialAssetContentSummary CacheData = FAssetSpatialContentCache::ReadCachedData(OutData);
+
+				if (CacheData.SpatialClasses.Num() == 0)
+				{
+					UE_LOG(LogSpatialGDKEditor, Display, TEXT("Asset %s does not have class data"), *Data.PackageName.ToString());
+				}
+			}
+		}
 
 		FAssetDataTagMapSharedView::FFindTagResult GeneratedClassFindTagResult = Data.TagsAndValues.FindTag("GeneratedClass");
 		if (GeneratedClassFindTagResult.IsSet())
