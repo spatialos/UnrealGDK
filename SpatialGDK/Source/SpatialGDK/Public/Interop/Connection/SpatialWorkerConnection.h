@@ -48,8 +48,11 @@ public:
 	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
 	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
+
 	Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId);
+	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
 	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData);
+
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);

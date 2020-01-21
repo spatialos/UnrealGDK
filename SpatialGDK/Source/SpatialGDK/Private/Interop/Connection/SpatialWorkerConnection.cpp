@@ -79,9 +79,9 @@ Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<Worker
 	return WorkerConnectionImpl->SendCreateEntityRequest(MoveTemp(Components), EntityId);
 }
 
-void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData)
+void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key)
 {
-	WorkerConnectionImpl->SendAddComponent(EntityId, ComponentData);
+	WorkerConnectionImpl->SendAddComponent(EntityId, ComponentData, Key);
 }
 
 void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)

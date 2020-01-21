@@ -2,15 +2,16 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
 #include "Schema/Component.h"
 #include "Schema/StandardLibrary.h"
-#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+
+#include "Containers/Map.h"
+#include "Templates/UniquePtr.h"
+#include "UObject/Object.h"
 
 #include "SpatialStaticComponentView.generated.h"
 
