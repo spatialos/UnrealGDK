@@ -55,7 +55,6 @@ void InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoMana
 
 	if (!SpatialGDKSettings->bEnableNetCullDistanceInterest)
 	{
-
 		CheckoutRadiusConstraintRoot.OrConstraint.Add(CheckoutRadiusConstraintUtils::GetDefaultCheckoutRadiusConstraint());
 
 		// Get interest distances for each actor.
@@ -86,8 +85,26 @@ void InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoMana
 			const float MaxCheckoutRadiusMeters = CheckoutRadiusConstraintUtils::NetCullDistanceSquaredToSpatialDistance(NetCullDistance);
 			const uint32 NCDComponentId = ClassInfoManager->GetComponentIdForNetCullDistance(NetCullDistance);
 
+			QueryConstraint ComponentConstraint;
+			ComponentConstraint.ComponentConstraint = NCDComponentId;
+
 			if (SpatialGDKSettings->bEnableNetCullDistanceFrequency)
 			{
+				float FullFrequencyCheckoutRadius = MaxCheckoutRadiusMeters * SpatialGDKSettings->FullFrequencyNetCullDistanceRatio;
+
+				{
+					// Add default interest query which doesn't include a frequency
+					QueryConstraint RadiusConstraint;
+					RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ FullFrequencyCheckoutRadius };
+
+					QueryConstraint CheckoutRadiusConstraint;
+					CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
+					CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
+
+					CheckoutRadiusConstraintRoot.OrConstraint.Add(CheckoutRadiusConstraint);
+				}
+
+				// Add interest query for specified distance/frequency pairs
 				for (auto DistanceFrequencyPair : SpatialGDKSettings->InterestRangeFrequencyPairs)
 				{
 					float DistanceRatio = DistanceFrequencyPair.Key;
@@ -98,21 +115,11 @@ void InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoMana
 					QueryConstraint RadiusConstraint;
 					RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
 
-					QueryConstraint ComponentConstraint;
-					ComponentConstraint.ComponentConstraint = NCDComponentId;
-
 					QueryConstraint CheckoutRadiusConstraint;
 					CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
 					CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
 
-					if (Frequency == 1.0f)
-					{
-						CheckoutRadiusConstraintRoot.OrConstraint.Add(CheckoutRadiusConstraint);
-					}
-					else
-					{
-						CheckoutConstraints.Add({ Frequency, CheckoutRadiusConstraint });
-					}
+					CheckoutConstraints.Add({ Frequency, CheckoutRadiusConstraint });
 				}
 			}
 			else

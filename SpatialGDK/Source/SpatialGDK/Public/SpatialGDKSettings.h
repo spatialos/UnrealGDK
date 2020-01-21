@@ -274,6 +274,10 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Interest")
 	bool bEnableNetCullDistanceFrequency;
 
+	/** Full update frequency ratio of actor's net cull distance */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
+	float FullFrequencyNetCullDistanceRatio;
+
 	/** QBI pairs for ratio of - net cull distance : update frequency */
 	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
 	TMap<float, float> InterestRangeFrequencyPairs;
