@@ -4,7 +4,7 @@
 #include "SpatialStaticComponentViewMock.h"
 #include "SpatialVirtualWorkerTranslatorMock.h"
 
-#include "EngineClasses/AbstractPackageMapClient.h"
+#include "EngineClasses/AbstractSpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/ReferenceCountedLockingPolicy.h"
@@ -36,7 +36,7 @@ struct TestData
 	TMap<AActor*, TArray<LockingTokenAndDebugString>> TestActorToLockingTokenAndDebugStrings;
 	UReferenceCountedLockingPolicy* LockingPolicy;
 	USpatialStaticComponentView* StaticComponentView;
-	UAbstractPackageMapClient* PackageMap;
+	UAbstractSpatialPackageMapClient* PackageMap;
 	AbstractVirtualWorkerTranslator* VirtualWorkerTranslator;
 };
 

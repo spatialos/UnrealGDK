@@ -2,7 +2,7 @@
 
 #include "LoadBalancing/ReferenceCountedLockingPolicy.h"
 
-#include "EngineClasses/AbstractPackageMapClient.h"
+#include "EngineClasses/AbstractSpatialPackageMapClient.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Component.h"

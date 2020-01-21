@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "EngineClasses/AbstractPackageMapClient.h"
+#include "EngineClasses/AbstractSpatialPackageMapClient.h"
 #include "EngineClasses/AbstractVirtualWorkerTranslator.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "SpatialConstants.h"
@@ -19,7 +19,7 @@ class SPATIALGDK_API UAbstractLockingPolicy : public UObject
 	GENERATED_BODY()
 
 public:
-	virtual void Init(USpatialStaticComponentView* InStaticComponentView, UAbstractPackageMapClient* InPackageMap, AbstractVirtualWorkerTranslator* InVirtualWorkerTranslator)
+	virtual void Init(USpatialStaticComponentView* InStaticComponentView, UAbstractSpatialPackageMapClient* InPackageMap, AbstractVirtualWorkerTranslator* InVirtualWorkerTranslator)
 	{
 		StaticComponentView = InStaticComponentView;
 		PackageMap = InPackageMap;
@@ -31,6 +31,6 @@ public:
 
 protected:
 	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
-	TWeakObjectPtr<UAbstractPackageMapClient> PackageMap;
+	TWeakObjectPtr<UAbstractSpatialPackageMapClient> PackageMap;
 	AbstractVirtualWorkerTranslator* VirtualWorkerTranslator;
 };

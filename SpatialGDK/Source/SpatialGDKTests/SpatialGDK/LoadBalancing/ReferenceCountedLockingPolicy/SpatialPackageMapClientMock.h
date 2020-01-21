@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include "EngineClasses/AbstractPackageMapClient.h"
+#include "EngineClasses/AbstractSpatialPackageMapClient.h"
 #include "WorkerSDK/improbable/c_worker.h"
 
 #include "SpatialPackageMapClientMock.generated.h"
 
 UCLASS()
-class USpatialPackageMapClientMock : public UAbstractPackageMapClient
+class USpatialPackageMapClientMock : public UAbstractSpatialPackageMapClient
 {
 	GENERATED_BODY()
 public:
