@@ -46,6 +46,9 @@ TMap<FString, FActorSchemaData> ActorClassPathToSchema;
 TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
 uint32 NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 
+// Sets of data/owner only/handover components
+TMap<ESchemaComponentType, TSet<uint32>> SchemaComponentTypeToComponentSet;
+
 // LevelStreaming
 TMap<FString, uint32> LevelPathToComponentId;
 TSet<uint32> LevelComponentIds;
@@ -415,6 +418,9 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->SubobjectClassPathToSchema = SubobjectClassPathToSchema;
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
 	SchemaDatabase->ComponentIdToClassPath = CreateComponentIdToClassPathMap();
+	SchemaDatabase->DataComponentIds = SchemaComponentTypeToComponentSet[ESchemaComponentType::SCHEMA_Data];
+	SchemaDatabase->OwnerOnlyComponentIds = SchemaComponentTypeToComponentSet[ESchemaComponentType::SCHEMA_OwnerOnly];
+	SchemaDatabase->HandoverComponentIds = SchemaComponentTypeToComponentSet[ESchemaComponentType::SCHEMA_Handover];
 	SchemaDatabase->LevelComponentIds = LevelComponentIds;
 
 	FString CompiledSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
@@ -613,6 +619,7 @@ void ResetSchemaGeneratorState()
 {
 	ActorClassPathToSchema.Empty();
 	SubobjectClassPathToSchema.Empty();
+	SchemaComponentTypeToComponentSet.Empty();
 	LevelComponentIds.Empty();
 	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
@@ -655,6 +662,9 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 
 		ActorClassPathToSchema = SchemaDatabase->ActorClassPathToSchema;
 		SubobjectClassPathToSchema = SchemaDatabase->SubobjectClassPathToSchema;
+		SchemaComponentTypeToComponentSet[ESchemaComponentType::SCHEMA_Data] = SchemaDatabase->DataComponentIds;
+		SchemaComponentTypeToComponentSet[ESchemaComponentType::SCHEMA_OwnerOnly] = SchemaDatabase->OwnerOnlyComponentIds;
+		SchemaComponentTypeToComponentSet[ESchemaComponentType::SCHEMA_Handover] = SchemaDatabase->HandoverComponentIds;
 		LevelComponentIds = SchemaDatabase->LevelComponentIds;
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
