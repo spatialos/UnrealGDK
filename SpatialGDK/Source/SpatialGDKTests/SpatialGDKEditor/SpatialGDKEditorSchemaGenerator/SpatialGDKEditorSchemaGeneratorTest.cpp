@@ -843,6 +843,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 		"singleton.schema",
 		"spawndata.schema",
 		"spawner.schema",
+		"spatial_debugging.schema",
 		"tombstone.schema",
 		"unreal_metadata.schema",
 		"virtual_worker_translation.schema"
