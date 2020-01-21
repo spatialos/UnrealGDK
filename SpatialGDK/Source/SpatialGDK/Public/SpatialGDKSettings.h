@@ -2,10 +2,11 @@
 
 #pragma once
 
+#include "Utils/SpatialActorGroupManager.h"
+
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
-#include "Utils/SpatialActorGroupManager.h"
 
 #include "SpatialGDKSettings.generated.h"
 

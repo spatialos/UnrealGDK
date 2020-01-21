@@ -123,7 +123,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
-	// Initialize ActorGroupManager as it is a depdency of ClassInfoManager (see below)
+	// Initialize ActorGroupManager as it is a dependency of ClassInfoManager (see below)
 	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
 	ActorGroupManager->Init();
 
@@ -143,7 +143,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	if (!bInitAsClient)
 	{
-		GatherClientInterestDistances();
+		InterestFactory::CreateClientCheckoutRadiusConstraint(ClassInfoManager);
 	}
 
 #if WITH_EDITOR
@@ -494,6 +494,14 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->LoadBalanceStrategy);
 		}
 		LoadBalanceStrategy->Init(this);
+	}
+
+	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
+
+	if (IsServer())
+	{
+		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
 		if (WorldSettings == nullptr || WorldSettings->LockingPolicy == nullptr)
 		{
@@ -504,16 +512,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		{
 			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->LockingPolicy);
 		}
-	}
-
-	// TODO: this probably shouldn't exist on client workers in shipping builds. It's there right now for the SpatialDebugger.
-	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
-	VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
-
-	if (IsServer()) 
-	{
-		VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
-		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+		LockingPolicy->Init(StaticComponentView, PackageMap, VirtualWorkerTranslator.Get());
 	}
 }
 
