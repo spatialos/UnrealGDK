@@ -260,7 +260,7 @@ void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 	EntityActorMapping.Remove(EntityId);
 }
 
-void ASpatialDebugger::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
+void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const
 {
 	const bool bAuthoritative = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;
 
@@ -292,6 +292,21 @@ void ASpatialDebugger::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 			NetDriver->Connection->SendComponentUpdate(AuthOp.entity_id, &DebuggingUpdate);
 		}
 	}
+}
+
+void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
+{
+	SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
+	check(DebuggingInfo != nullptr);
+	DebuggingInfo->IntentVirtualWorkerId = NewIntentVirtualWorkerId;
+
+	const PhysicalWorkerName* NewAuthoritativePhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(NewIntentVirtualWorkerId);
+	check(NewAuthoritativePhysicalWorkerName != nullptr);
+
+	DebuggingInfo->IntentColor = SpatialGDK::GetColorForWorkerName(*NewAuthoritativePhysicalWorkerName);
+	Worker_ComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
+
 }
 
 

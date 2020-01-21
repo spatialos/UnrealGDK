@@ -122,7 +122,8 @@ public:
 	UFUNCTION()
 	virtual void OnRep_SetWorkerRegions();
 
-	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
+	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
+	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
 private:
 

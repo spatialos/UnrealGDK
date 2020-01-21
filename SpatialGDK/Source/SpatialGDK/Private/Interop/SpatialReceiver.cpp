@@ -401,7 +401,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		NetDriver->SpatialDebugger->AuthorityChanged(Op);
+		NetDriver->SpatialDebugger->ActorAuthorityChanged(Op);
 	}
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));

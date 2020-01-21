@@ -24,7 +24,6 @@
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
-#include "Schema/SpatialDebugging.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
@@ -36,6 +35,7 @@
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
+#include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
 
@@ -505,16 +505,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	// If the SpatialDebugger is enabled, also update the authority intent virtual worker ID and color.
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		SpatialDebugging* DebuggingInfo = StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
-		check(DebuggingInfo != nullptr);
-		DebuggingInfo->IntentVirtualWorkerId = NewAuthoritativeVirtualWorkerId;
-
-		const PhysicalWorkerName* NewAuthoritativePhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(NewAuthoritativeVirtualWorkerId);
-		check(NewAuthoritativePhysicalWorkerName != nullptr);
-
-		DebuggingInfo->IntentColor = SpatialGDK::GetColorForWorkerName(*NewAuthoritativePhysicalWorkerName);
-		Worker_ComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-		Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
+		NetDriver->SpatialDebugger->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
 	}
 
 	Worker_ComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
