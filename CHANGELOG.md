@@ -41,6 +41,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
 - Take into account OverrideSpatialNetworking command line argument as early as possible (LocalDeploymentManager used to query bSpatialNetworking before the command line was parsed).
 - Servers maintain interest in AlwaysRelevant Actors.
+- GetActorSpatialPosition now returns last spectator sync location while player is spectating.
 - The default cloud launch configuration is now empty.
 - Fixed an crash caused by attempting to read schema from an unloaded class.
 - Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
