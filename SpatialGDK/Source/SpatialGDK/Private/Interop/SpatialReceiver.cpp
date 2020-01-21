@@ -1079,7 +1079,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 		Channel.CreateSubObjects.Add(TargetObject.Get());
 	}
 
-	ApplyComponentData(Channel, *TargetObject , Data);
+	ApplyComponentData(Channel, *TargetObject, Data);
 }
 
 void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp& Op)

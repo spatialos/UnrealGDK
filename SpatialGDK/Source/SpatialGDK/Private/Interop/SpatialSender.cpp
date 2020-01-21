@@ -87,10 +87,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
- 
+
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
- 
+
 	return CreateEntityRequestId;
 }
 
@@ -119,13 +119,26 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-	ComponentFactory DataFactory(false, NetDriver);
+	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
 
-	TArray<Worker_ComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+	TArray<TraceKey>* TraceKeysPtr = nullptr;
+#if TRACE_LIB_ACTIVE
+	TArray<TraceKey> TraceKeys;
+	TraceKeysPtr = &TraceKeys;
+#endif
 
-	for (Worker_ComponentData& ComponentData : SubobjectDatas)
+	TArray<Worker_ComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, TraceKeysPtr);
+
+	for (int i = 0; i < SubobjectDatas.Num(); i++)
 	{
-		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData);
+		Worker_ComponentData& ComponentData = SubobjectDatas[i];
+		TraceKey LatencyKey = USpatialLatencyTracer::InvalidTraceKey;
+
+#if TRACE_LIB_ACTIVE
+		LatencyKey = TraceKeys[i];
+#endif
+
+		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData, LatencyKey);
 	}
 
 	Channel->PendingDynamicSubobjects.Remove(TWeakObjectPtr<UObject>(Subobject));
@@ -260,12 +273,25 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
-	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver);
+	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Object);
+	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer);
 
-	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges);
+	TArray<TraceKey>* TraceKeysPtr = nullptr;
+#if TRACE_LIB_ACTIVE
+	TArray<TraceKey> TraceKeys;
+	TraceKeysPtr = &TraceKeys;
+#endif
 
-	for (Worker_ComponentUpdate& Update : ComponentUpdates)
+	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, TraceKeysPtr);
+
+	for(int i = 0; i < ComponentUpdates.Num(); i++)
 	{
+		Worker_ComponentUpdate& Update = ComponentUpdates[i];
+		TraceKey LatencyKey = USpatialLatencyTracer::InvalidTraceKey;
+#if TRACE_LIB_ACTIVE
+		checkf(TraceKeys.Num() == ComponentUpdates.Num(), TEXT("Trace keys does not match the component updates for tracing."));
+		LatencyKey = TraceKeys[i];
+#endif
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, Update.component_id))
 		{
 			UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
@@ -273,23 +299,39 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			// This is a temporary fix. A task to improve this has been created: UNR-955
 			// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the update, to send upon receiving authority.
 			// Note: This will break in a multi-worker context, if we try to create an entity that we don't intend to have authority over. For this reason, this fix is only temporary.
-			TArray<Worker_ComponentUpdate>& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
-			UpdatesQueuedUntilAuthority.Add(Update);
+			FQueuedUpdate& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
+			UpdatesQueuedUntilAuthority.ComponentUpdates.Add(Update);
+#if TRACE_LIB_ACTIVE
+			// TODO: Clean this up by creating a composite type which pairs the update with the key UNR-2726
+			UpdatesQueuedUntilAuthority.LatencyKeys.Add(LatencyKey);
+#endif
 			continue;
 		}
 
-		Connection->SendComponentUpdate(EntityId, &Update);
+		Connection->SendComponentUpdate(EntityId, &Update, LatencyKey);
 	}
 }
 
 // Apply (and clean up) any updates queued, due to being sent previously when they didn't have authority.
 void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId)
 {
-	if (TArray<Worker_ComponentUpdate>* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
+	if (FQueuedUpdate* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
 	{
-		for (Worker_ComponentUpdate& Update : *UpdatesQueuedUntilAuthority)
+		TArray<Worker_ComponentUpdate>& Components = UpdatesQueuedUntilAuthority->ComponentUpdates;
+#if TRACE_LIB_ACTIVE
+		TArray<TraceKey>& LatencyKeys = UpdatesQueuedUntilAuthority->LatencyKeys;
+		checkf(Components.Num() == LatencyKeys.Num(), TEXT("Latency key pairs do not match the queued updates."));
+#endif
+
+		for (int i = 0; i < UpdatesQueuedUntilAuthority->ComponentUpdates.Num(); i++)
 		{
-			Connection->SendComponentUpdate(EntityId, &Update);
+			TraceKey LatencyKey = USpatialLatencyTracer::InvalidTraceKey;
+
+#if TRACE_LIB_ACTIVE
+			LatencyKey = LatencyKeys[i];
+#endif
+
+			Connection->SendComponentUpdate(EntityId, &Components[i], LatencyKey);			
 		}
 		UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
 	}
@@ -402,7 +444,7 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, con
 	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params);
 
 #if TRACE_LIB_ACTIVE
-	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), USpatialLatencyTracer::GetTracer(TargetObject)->GetTraceKey(TargetObject, Function));
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()), USpatialLatencyTracer::GetTracer(TargetObject)->RetrievePendingTrace(TargetObject, Function));
 #else
 	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 #endif
@@ -529,8 +571,8 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 #if !UE_BUILD_SHIPPING
 void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType)
 {
-		NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
-		NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
+	NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
+	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
 }
 #endif
 
@@ -666,7 +708,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 								*Function->GetName(),
 								*TargetActor->GetName(),
 								*ConnectionOwner->GetName()
-							)
+							);
 							bCanPackRPC = false;
 						}
 					}
@@ -878,7 +920,7 @@ Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 	ensure(TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
 	Payload.WriteToSchemaObject(EventData);
-	
+
 	return ComponentUpdate;
 }
 ERPCResult USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex)

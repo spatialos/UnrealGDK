@@ -88,6 +88,7 @@ Worker_ComponentData CreateDeploymentData()
 	AddStringToSchema(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID, "");
 	Schema_AddBool(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID, false);
 	Schema_AddInt32(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, 0);
+	Schema_AddUint32(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH, 0);
 
 	return DeploymentData;
 }
