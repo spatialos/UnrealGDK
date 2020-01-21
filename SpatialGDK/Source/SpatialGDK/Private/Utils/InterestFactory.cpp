@@ -23,15 +23,12 @@ namespace SpatialGDK
 // It is built once per net driver initialisation.
 static QueryConstraint ClientCheckoutRadiusConstraint;
 
-InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
-	: Actor(InActor)
-	, Info(InInfo)
-	, ClassInfoManager(InClassInfoManager)
-	, PackageMap(InPackageMap)
+InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager)
+	: ClassInfoManager(InClassInfoManager)
 {
 }
 
-void InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager)
+void InterestFactory::CreateClientCheckoutRadiusConstraint()
 {
 	// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
 	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
@@ -67,14 +64,24 @@ void InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoMana
 	ClientCheckoutRadiusConstraint = CheckoutRadiusConstraint;
 }
 
-Worker_ComponentData InterestFactory::CreateInterestData() const
+Worker_ComponentData InterestFactory::CreateInterestData(AActor* Actor, const FClassInfo& Info) const
 {
-	return CreateInterest().CreateInterestData();
+	return CreateInterest({ Actor, Info }).CreateInterestData();
 }
 
-Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
+Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* Actor) const
 {
-	return CreateInterest().CreateInterestUpdate();
+	return CreateInterestUpdate({ Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor) });
+}
+
+Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* Actor, const FClassInfo& Info) const
+{
+	return CreateInterestUpdate({ Actor, Info });
+}
+
+Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(const InterestRequest& Request) const
+{
+	return CreateInterest(Request).CreateInterestUpdate();
 }
 
 Interest InterestFactory::CreateServerWorkerInterest()
@@ -111,24 +118,24 @@ Interest InterestFactory::CreateServerWorkerInterest()
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreateInterest() const
+Interest InterestFactory::CreateInterest(const InterestRequest& Request) const
 {
 	if (GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
 	{
-		if (Actor->GetNetConnection() != nullptr)
+		if (Request.Actor->GetNetConnection() != nullptr)
 		{
-			return CreatePlayerOwnedActorInterest();
+			return CreatePlayerOwnedActorInterest(Request);
 		}
 		else
 		{
-			return CreateActorInterest();
+			return CreateActorInterest(Request);
 		}
 	}
 	else
 	{
-		if (Actor->IsA(APlayerController::StaticClass()))
+		if (Request.Actor->IsA(APlayerController::StaticClass()))
 		{
-			return CreatePlayerOwnedActorInterest();
+			return CreatePlayerOwnedActorInterest(Request);
 		}
 		else
 		{
@@ -137,11 +144,11 @@ Interest InterestFactory::CreateInterest() const
 	}
 }
 
-Interest InterestFactory::CreateActorInterest() const
+Interest InterestFactory::CreateActorInterest(const InterestRequest& Request) const
 {
 	Interest NewInterest;
 
-	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints();
+	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints(Request);
 
 	if (!SystemConstraints.IsValid())
 	{
@@ -163,9 +170,9 @@ Interest InterestFactory::CreateActorInterest() const
 	return NewInterest;
 }
 
-Interest InterestFactory::CreatePlayerOwnedActorInterest() const
+Interest InterestFactory::CreatePlayerOwnedActorInterest(const InterestRequest& Request) const
 {
-	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints();
+	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints(Request);
 
 	// Servers only need the defined constraints
 	Query ServerQuery;
@@ -176,7 +183,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	ServerComponentInterest.Queries.Add(ServerQuery);
 
 	// Clients should only check out entities that are in loaded sublevels
-	QueryConstraint LevelConstraints = CreateLevelConstraints();
+	QueryConstraint LevelConstraints = CreateLevelConstraints(Request);
 
 	QueryConstraint ClientConstraint;
 
@@ -197,7 +204,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	ComponentInterest ClientComponentInterest;
 	ClientComponentInterest.Queries.Add(ClientQuery);
 
-	AddUserDefinedQueries(LevelConstraints, ClientComponentInterest.Queries);
+	AddUserDefinedQueries(Request, LevelConstraints, ClientComponentInterest.Queries);
 
 	Interest NewInterest;
 	// Server Interest
@@ -214,27 +221,27 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	return NewInterest;
 }
 
-void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
+void InterestFactory::AddUserDefinedQueries(const InterestRequest& Request, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
 {
-	check(Actor);
+	check(Request.Actor);
 	check(ClassInfoManager);
 
 	TArray<UActorInterestComponent*> ActorInterestComponents;
-	Actor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
+	Request.Actor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
 	if (ActorInterestComponents.Num() == 1)
 	{
 		ActorInterestComponents[0]->CreateQueries(*ClassInfoManager, LevelConstraints, OutQueries);
 	}
 	else if (ActorInterestComponents.Num() > 1)
 	{
-		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestQueryComponent"), *Actor->GetPathName());
+		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestQueryComponent"), *Request.Actor->GetPathName());
 	}
 }
 
-QueryConstraint InterestFactory::CreateSystemDefinedConstraints() const
+QueryConstraint InterestFactory::CreateSystemDefinedConstraints(const InterestRequest& Request) const
 {
-	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraints();
-	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint();
+	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraints(Request);
+	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint(Request);
 	QueryConstraint AlwaysRelevantConstraint = CreateAlwaysRelevantConstraint();
 
 	QueryConstraint SystemDefinedConstraints;
@@ -257,13 +264,13 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints() const
 	return SystemDefinedConstraints;
 }
 
-QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
+QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints(const InterestRequest& Request) const
 {
 	// If the actor has a component to specify interest and that indicates that we shouldn't generate
 	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
 	// there is at most one ActorInterestQueryComponent.
 	TArray<UActorInterestComponent*> ActorInterestComponents;
-	Actor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
+	Request.Actor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
 	if (ActorInterestComponents.Num() == 1)
 	{
 		const UActorInterestComponent* ActorInterest = ActorInterestComponents[0];
@@ -278,13 +285,13 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 	return ClientCheckoutRadiusConstraint;
 }
 
-QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint() const
+QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const InterestRequest& Request) const
 {
 	QueryConstraint AlwaysInterestedConstraint;
 
-	for (const FInterestPropertyInfo& PropertyInfo : Info.InterestProperties)
+	for (const FInterestPropertyInfo& PropertyInfo : Request.Info.InterestProperties)
 	{
-		uint8* Data = (uint8*)Actor + PropertyInfo.Offset;
+		uint8* Data = (uint8*)Request.Actor + PropertyInfo.Offset;
 		if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(PropertyInfo.Property))
 		{
 			AddObjectToConstraint(ObjectProperty, Data, AlwaysInterestedConstraint);
@@ -328,6 +335,12 @@ QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint()
 
 void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const
 {
+	if (PackageMap == nullptr)
+	{
+		UE_LOG(LogInterestFactory, Error, TEXT("Trying to add object to interest constraint without a valid PackageMap. Has SetPackageMap been called?"));
+		return;
+	}
+
 	UObject* ObjectOfInterest = Property->GetObjectPropertyValue(Data);
 
 	if (ObjectOfInterest == nullptr)
@@ -347,7 +360,7 @@ void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8
 	OutConstraint.OrConstraint.Add(EntityIdConstraint);
 }
 
-QueryConstraint InterestFactory::CreateLevelConstraints() const
+QueryConstraint InterestFactory::CreateLevelConstraints(const InterestRequest& Request) const
 {
 	QueryConstraint LevelConstraint;
 
@@ -355,7 +368,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints() const
 	DefaultConstraint.ComponentConstraint = SpatialConstants::NOT_STREAMED_COMPONENT_ID;
 	LevelConstraint.OrConstraint.Add(DefaultConstraint);
 
-	UNetConnection* Connection = Actor->GetNetConnection();
+	UNetConnection* Connection = Request.Actor->GetNetConnection();
 	check(Connection);
 	APlayerController* PlayerController = Connection->GetPlayerController(nullptr);
 	check(PlayerController);
@@ -375,7 +388,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints() const
 		else
 		{
 			UE_LOG(LogInterestFactory, Error, TEXT("Error creating query constraints for Actor %s. "
-				"Could not find Streaming Level Component for Level %s. Have you generated schema?"), *Actor->GetName(), *LevelPath.ToString());
+				"Could not find Streaming Level Component for Level %s. Have you generated schema?"), *Request.Actor->GetName(), *LevelPath.ToString());
 		}
 	}
 

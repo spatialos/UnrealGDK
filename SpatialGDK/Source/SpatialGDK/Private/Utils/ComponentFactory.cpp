@@ -23,12 +23,13 @@ DEFINE_LOG_CATEGORY(LogComponentFactory);
 namespace SpatialGDK
 {
 
-ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* InLatencyTracer)
+ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* InLatencyTracer, const InterestFactory* InInterestFactory)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, bInterestHasChanged(bInterestDirty)
 	, LatencyTracer(InLatencyTracer)
+	, SpatialInterestFactory(InInterestFactory)
 { }
 
 bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TraceKey& OutLatencyTraceId, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
@@ -423,11 +424,14 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	// Only support Interest for Actors for now.
 	if (Object->IsA<AActor>() && bInterestHasChanged)
 	{
-		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
-		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());
-		if (OutLatencyTraceIds != nullptr)
+		if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver))
 		{
-			OutLatencyTraceIds->Add(USpatialLatencyTracer::InvalidTraceKey); // Interest not tracked 
+			Worker_ComponentUpdate Update = SpatialInterestFactory->CreateInterestUpdate(Cast<AActor>(Object), Info);
+			ComponentUpdates.Add(Update);
+			if (OutLatencyTraceIds != nullptr)
+			{
+				OutLatencyTraceIds->Add(USpatialLatencyTracer::InvalidTraceKey); // Interest not tracked
+			}
 		}
 	}
 

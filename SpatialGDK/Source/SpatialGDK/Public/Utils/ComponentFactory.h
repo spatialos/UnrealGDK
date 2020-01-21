@@ -11,6 +11,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogComponentFactory, Log, All);
 
+
 class USpatialNetDriver;
 class USpatialPackageMap;
 class USpatialClassInfoManager;
@@ -24,11 +25,12 @@ enum EReplicatedPropertyGroup : uint32;
 
 namespace SpatialGDK
 {
+class InterestFactory;
 
 class SPATIALGDK_API ComponentFactory
 {
 public:
-	ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* LatencyTracer);
+	ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* LatencyTracer, const InterestFactory* InInterestFactory);
 
 	TArray<Worker_ComponentData> CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState, TArray<TraceKey>* OutLatencyTraceId = nullptr);
 	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState, TArray<TraceKey>* OutLatencyTraceId = nullptr);
@@ -56,6 +58,7 @@ private:
 	bool bInterestHasChanged;
 
 	USpatialLatencyTracer* LatencyTracer;
+	const InterestFactory* SpatialInterestFactory;
 };
 
 } // namespace SpatialGDK

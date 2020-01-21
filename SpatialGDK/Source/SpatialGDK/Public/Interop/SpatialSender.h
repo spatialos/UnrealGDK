@@ -21,6 +21,11 @@ using namespace SpatialGDK;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
+namespace SpatialGDK
+{
+	class InterestFactory;
+}
+
 class USpatialActorChannel;
 class SpatialDispatcher;
 class USpatialNetDriver;
@@ -76,7 +81,7 @@ class SPATIALGDK_API USpatialSender : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, const SpatialGDK::InterestFactory* InInterestFactory);
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
@@ -169,6 +174,7 @@ private:
 	USpatialClassInfoManager* ClassInfoManager;
 
 	SpatialActorGroupManager* ActorGroupManager;
+	const SpatialGDK::InterestFactory* SpatialInterestFactory;
 
 	FTimerManager* TimerManager;
 

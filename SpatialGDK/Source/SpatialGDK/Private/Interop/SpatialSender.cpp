@@ -64,7 +64,7 @@ FPendingRPC::FPendingRPC(FPendingRPC&& Other)
 {
 }
 
-void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService)
+void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, const SpatialGDK::InterestFactory* InInterestFactory)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -76,13 +76,14 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	ActorGroupManager = InNetDriver->ActorGroupManager.Get();
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
+	SpatialInterestFactory = InInterestFactory;
 
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
 }
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 {
-	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService, SpatialInterestFactory);
 	TArray<Worker_ComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs);
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
@@ -119,7 +120,7 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
+	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject), SpatialInterestFactory);
 
 	TArray<TraceKey>* TraceKeysPtr = nullptr;
 #if TRACE_LIB_ACTIVE
@@ -274,7 +275,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Object);
-	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer);
+	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer, SpatialInterestFactory);
 
 	TArray<TraceKey>* TraceKeysPtr = nullptr;
 #if TRACE_LIB_ACTIVE
@@ -1029,9 +1030,7 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 		return;
 	}
 
-	InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), NetDriver->ClassInfoManager, NetDriver->PackageMap);
-	Worker_ComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
-
+	Worker_ComponentUpdate Update = SpatialInterestFactory->CreateInterestUpdate(Actor);
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
