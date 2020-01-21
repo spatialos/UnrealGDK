@@ -481,9 +481,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 {
+	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 	if (IsServer()) 
 	{
-		const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
 		if (WorldSettings == nullptr || WorldSettings->LoadBalanceStrategy == nullptr)
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
