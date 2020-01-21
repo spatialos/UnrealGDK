@@ -635,7 +635,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 		}
 		else
 		{
-			if (NetDriver->VirtualWorkerTranslator != nullptr)
+			if (NetDriver->VirtualWorkerTranslator.IsValid())
 			{
 				ApplyVirtualWorkerMappingFromQueryResponse(Op);
 			}
@@ -649,7 +649,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 
 void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
-	check(NetDriver->VirtualWorkerTranslator != nullptr);
+	check(NetDriver->VirtualWorkerTranslator.IsValid());
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
 	{
 		Worker_ComponentData Data = Op.results[0].components[i];
