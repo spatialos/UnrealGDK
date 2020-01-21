@@ -24,5 +24,4 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 // Generates schema for RPC endpoints.
 void GenerateRPCEndpointsSchema(FString SchemaPath);
 
-private:
-	void AddComponentId(uint32 ComponentId, uint32 (&SchemaComponents)[ESchemaComponentType::SCHEMA_Count], ESchemaComponentType ComponentType);
+void AddComponentId(uint32 ComponentId, uint32 (&SchemaComponents)[ESchemaComponentType::SCHEMA_Count], ESchemaComponentType ComponentType);

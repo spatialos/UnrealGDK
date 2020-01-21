@@ -662,9 +662,10 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 
 		ActorClassPathToSchema = SchemaDatabase->ActorClassPathToSchema;
 		SubobjectClassPathToSchema = SchemaDatabase->SubobjectClassPathToSchema;
-		SchemaComponentTypeToComponentSet[ESchemaComponentType::SCHEMA_Data] = SchemaDatabase->DataComponentIds;
-		SchemaComponentTypeToComponentSet[ESchemaComponentType::SCHEMA_OwnerOnly] = SchemaDatabase->OwnerOnlyComponentIds;
-		SchemaComponentTypeToComponentSet[ESchemaComponentType::SCHEMA_Handover] = SchemaDatabase->HandoverComponentIds;
+		SchemaComponentTypeToComponentSet.Empty();
+		SchemaComponentTypeToComponentSet.Add(ESchemaComponentType::SCHEMA_Data, SchemaDatabase->DataComponentIds);
+		SchemaComponentTypeToComponentSet.Add(ESchemaComponentType::SCHEMA_OwnerOnly, SchemaDatabase->OwnerOnlyComponentIds);
+		SchemaComponentTypeToComponentSet.Add(ESchemaComponentType::SCHEMA_Handover, SchemaDatabase->HandoverComponentIds);
 		LevelComponentIds = SchemaDatabase->LevelComponentIds;
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
