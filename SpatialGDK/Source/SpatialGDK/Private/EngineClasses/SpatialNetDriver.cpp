@@ -122,7 +122,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
-	// Initialize ActorGroupManager as it is a depdency of ClassInfoManager (see below)
+	// Initialize ActorGroupManager as it is a dependency of ClassInfoManager (see below)
 	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
 	ActorGroupManager->Init();
 
@@ -142,7 +142,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	if (!bInitAsClient)
 	{
-		GatherClientInterestDistances();
+		InterestFactory::CreateClientCheckoutRadiusConstraint(ClassInfoManager);
 	}
 
 #if WITH_EDITOR
