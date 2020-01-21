@@ -466,6 +466,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 				LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
 			}
 			LoadBalanceStrategy->Init(this);
+		}
+
+		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
+
+		if (IsServer())
+		{
+			VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+			LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
 			if (SpatialSettings->LockingPolicy == nullptr)
 			{
@@ -476,15 +484,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			{
 				LockingPolicy = NewObject<UAbstractLockingPolicy>(this, SpatialSettings->LockingPolicy);
 			}
-		}
-
-		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
-		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
-
-		if (IsServer()) 
-		{
-			VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
-			LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+			LockingPolicy->Init(StaticComponentView, PackageMap, VirtualWorkerTranslator.Get());
 		}
 	}
 

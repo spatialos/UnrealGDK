@@ -2,12 +2,13 @@
 
 #pragma once
 
+#include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/AbstractLockingPolicy.h"
+#include "Utils/SpatialActorGroupManager.h"
+
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
-#include "Utils/SpatialActorGroupManager.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
-#include "LoadBalancing/AbstractLockingPolicy.h"
 
 #include "SpatialGDKSettings.generated.h"
 

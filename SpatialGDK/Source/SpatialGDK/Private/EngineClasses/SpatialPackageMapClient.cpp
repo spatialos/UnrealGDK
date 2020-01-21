@@ -392,13 +392,13 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
 			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *EntityIdSubobjectRef.ToString());
 
-			// This will be null when being used in the snapshot generator
+		// This will be null when being used in the snapshot generator
 #if WITH_EDITOR
-			if (Receiver != nullptr)
+		if (Receiver != nullptr)
 #endif
-			{
-				Receiver->ResolvePendingOperations(Subobject, EntityIdSubobjectRef);
-			}
+		{
+			Receiver->ResolvePendingOperations(Subobject, EntityIdSubobjectRef);
+		}
 	}
 
 	return NetGUID;
