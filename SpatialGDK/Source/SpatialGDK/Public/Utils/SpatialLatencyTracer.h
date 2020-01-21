@@ -87,7 +87,7 @@ public:
 	static bool ContinueLatencyTraceProperty(UObject* WorldContextObject, const AActor* Actor, const FString& Property, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool ContinueLatencyTraceKeyed(UObject* WorldContextObject, const AActor* Actor, const FString& Property, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutContinuedLatencyPayload);
+	static bool ContinueLatencyTraceKeyed(UObject* WorldContextObject, const AActor* Actor, const FString& Key, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
 	// End a latency trace. This needs to be called within the receiving end of the traced networked event (ie. an rpc)
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
@@ -96,6 +96,10 @@ public:
 	// Returns if we're in the receiving section of a network trace. If this is true, it's valid to continue or end it.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool IsLatencyTraceActive(UObject* WorldContextObject);
+
+	// Returns a previously saved payload from ContinueLatencyTraceKeyed
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static FSpatialLatencyPayload RetrievePayload(UObject* WorldContextObject, const AActor* Actor, const FString& Key);
 
 	static const TraceKey InvalidTraceKey;
 
@@ -107,6 +111,7 @@ public:
 	bool IsValidKey(TraceKey Key);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const UFunction* Function);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const UProperty* Property);
+	TraceKey RetrievePendingTrace(const UObject* Obj, const FString& Key);
 
 	void MarkActiveLatencyTrace(const TraceKey Key);
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);
@@ -143,6 +148,8 @@ private:
 	bool BeginLatencyTrace_Internal(const AActor* Actor, const FString& Target, TraceType::Type Type, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, TraceType::Type Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue);
 	bool EndLatencyTrace_Internal(const FSpatialLatencyPayload& LatencyPayload);
+
+	FSpatialLatencyPayload RetrievePayload_Internal(const UObject* Actor, const FString& Key);
 
 	bool IsLatencyTraceActive_Internal();
 
