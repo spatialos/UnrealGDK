@@ -135,25 +135,22 @@ private:
 	using ActorEventKey = TPair<const AActor*, FString>;
 	using TraceSpan = improbable::trace::Span;
 
-	struct TraceType
+	enum class TraceType
 	{
-		enum Type
-		{
-			RPC,
-			Property,
-			Keyed
-		};
+		RPC,
+		Property,
+		Keyed
 	};
 
-	bool BeginLatencyTrace_Internal(const AActor* Actor, const FString& Target, TraceType::Type Type, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
-	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, TraceType::Type Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue);
+	bool BeginLatencyTrace_Internal(const AActor* Actor, const FString& Target, TraceType Type, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
+	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, TraceType Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue);
 	bool EndLatencyTrace_Internal(const FSpatialLatencyPayload& LatencyPayload);
 
 	FSpatialLatencyPayload RetrievePayload_Internal(const UObject* Actor, const FString& Key);
 
 	bool IsLatencyTraceActive_Internal();
 
-	TraceKey CreateNewTraceEntry(const AActor* Actor, const FString& Target, TraceType::Type Type);
+	TraceKey CreateNewTraceEntry(const AActor* Actor, const FString& Target, TraceType Type);
 
 	TraceKey GenerateNewTraceKey();
 	TraceSpan* GetActiveTrace();

@@ -372,7 +372,7 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	}
 }
 
-bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const AActor* Actor, const FString& Target, TraceType::Type Type, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
+bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const AActor* Actor, const FString& Target, TraceType Type, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -409,7 +409,7 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const AActor* Actor, cons
 	return true;
 }
 
-bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, TraceType::Type Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue)
+bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, TraceType Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue)
 {
 	if (Actor == nullptr)
 	{
@@ -499,7 +499,7 @@ void USpatialLatencyTracer::ClearTrackingInformation()
 	TrackingKeyedEvents.Reset();
 }
 
-TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& Target, TraceType::Type Type)
+TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& Target, TraceType Type)
 {
 	if (Actor == nullptr)
 	{
