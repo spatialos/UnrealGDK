@@ -18,7 +18,7 @@ common: &common
   retry:
     automatic:
       - <<: *agent_transients
-  timeout_in_minutes: 60
+  timeout_in_minutes: 120
   plugins:
     - ca-johnson/taskkill#v4.1: ~
 
