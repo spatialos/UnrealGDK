@@ -20,7 +20,8 @@ QueryConstraint CheckoutRadiusConstraintUtils::GetDefaultCheckoutRadiusConstrain
 
 	float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
 
-	if (MaxDistanceSquared != 0.f && DefaultDistanceSquared > MaxDistanceSquared) {
+	if (MaxDistanceSquared != 0.f && DefaultDistanceSquared > MaxDistanceSquared)
+	{
 		UE_LOG(LogCheckoutRadiusConstraintUtils, Warning, TEXT("Default NetCullDistanceSquared is too large, clamping from %f to %f"),
 			DefaultDistanceSquared, MaxDistanceSquared);
 
