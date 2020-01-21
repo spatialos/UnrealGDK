@@ -226,9 +226,10 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 			VirtualWorkerId IntentVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
 
 			const PhysicalWorkerName* PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntentVirtualWorkerId);
-			FColor IntentColor = PhysicalWorkerName == nullptr ? FColor::Magenta : SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName);
+			FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
+			FColor IntentColor = PhysicalWorkerName == nullptr ? InvalidServerTintColor : SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName);
 
-			SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, FColor::Magenta, IntentVirtualWorkerId, IntentColor, false);
+			SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntentVirtualWorkerId, IntentColor, false);
 			ComponentDatas.Add(DebuggingInfo.CreateSpatialDebuggingData());
 		}
 
