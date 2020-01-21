@@ -326,9 +326,9 @@ Worker_RequestId RealWorkerConnection::SendDeleteEntityRequest(Worker_EntityId E
 	return NextRequestId++;
 }
 
-void RealWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData)
+void RealWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key)
 {
-	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData);
+	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData, Key);
 }
 
 void RealWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
