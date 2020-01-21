@@ -383,7 +383,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 
 void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 {
-	if (LocalPawn == nullptr ||	LocalPlayerController == nullptr ||	LocalPlayerState == nullptr)
+	if (LocalPawn == nullptr || LocalPlayerController == nullptr || LocalPlayerState == nullptr)
 	{
 		return;
 	}
