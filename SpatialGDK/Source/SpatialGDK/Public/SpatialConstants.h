@@ -69,8 +69,7 @@ enum EntityIds
 	INVALID_ENTITY_ID = 0,
 	INITIAL_SPAWNER_ENTITY_ID = 1,
 	INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
-	// TODO(UNR-2213): Decide whether the translator should be on the GSM or separate.
-	INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
+	INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = 3,
 	FIRST_AVAILABLE_ENTITY_ID = 4,
 };
 
@@ -121,6 +120,7 @@ const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
 const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID							= 3;
+const Schema_FieldId DEPLOYMENT_MAP_SCHEMA_HASH							= 4;
 
 const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
 
@@ -178,6 +178,7 @@ const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
 const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
 const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID							= 1;
 const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME						= 2;
+const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerName");
 
 // WorkerEntity Field IDs.
 const Schema_FieldId WORKER_ID_ID										= 1;

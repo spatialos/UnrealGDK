@@ -10,6 +10,7 @@
 #include "EngineGlobals.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
+#include "Misc/MessageDialog.h"
 #include "Net/DataReplication.h"
 #include "Net/RepLayout.h"
 #include "SocketSubsystem.h"
@@ -121,7 +122,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
-	// Initialize ActorGroupManager as it is a depdency of ClassInfoManager (see below)
+	// Initialize ActorGroupManager as it is a dependency of ClassInfoManager (see below)
 	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
 	ActorGroupManager->Init();
 
@@ -141,7 +142,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	if (!bInitAsClient)
 	{
-		GatherClientInterestDistances();
+		InterestFactory::CreateClientCheckoutRadiusConstraint(ClassInfoManager);
 	}
 
 #if WITH_EDITOR
@@ -552,6 +553,12 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
 	if (bWaitingToSpawn && ClientCanSendPlayerSpawnRequests())
 	{
+		uint32 ServerHash = GlobalStateManager->GetSchemaHash();
+		if (ClassInfoManager->SchemaDatabase->SchemaDescriptorHash != ServerHash) // Are we running with the same schema hash as the server?
+		{	
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Your clients Spatial schema does match the servers, this may cause problems. Client hash: '%u' Server hash: '%u'"), ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
+		}
+
 		UWorld* CurrentWorld = GetWorld();
 		const FString& DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
 		if (CurrentWorld == nullptr || CurrentWorld->RemovePIEPrefix(DeploymentMapURL) != CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map))
@@ -673,6 +680,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			// ServerTravel - Increment the session id, so users don't rejoin the old game.
 			GlobalStateManager->SetCanBeginPlay(true);
 			GlobalStateManager->TriggerBeginPlay();
+			GlobalStateManager->SetDeploymentState();
 			GlobalStateManager->SetAcceptingPlayers(true);
 			GlobalStateManager->IncrementSessionID();
 		}
@@ -1709,9 +1717,9 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+  const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady())
+	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady() && bIsReadyToStart)
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
@@ -2072,6 +2080,7 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId, USpatialAct
 	{
 		Receiver->CleanupRepStateMap(ChannelRefs.Value);
 	}
+	Channel.ObjectReferenceMap.Empty();
 
 	if (!EntityToActorChannel.Contains(EntityId))
 	{
@@ -2377,9 +2386,11 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 		(!VirtualWorkerTranslator.IsValid() || VirtualWorkerTranslator->IsReady()))
 	{
 		// Return whether or not we are ready to start
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
 		return true;
 	}
 
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Not yet ready to begin processing, still processing startup ops."));
 	return false;
 }
 

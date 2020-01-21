@@ -126,14 +126,14 @@ public:
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
 
+	void QuitGame();
+
 private:
 	void CreateClassInfoForClass(UClass* Class);
 	void TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId);
 
 	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
-
-	void QuitGame();
 
 private:
 	UPROPERTY()
