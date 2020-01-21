@@ -141,5 +141,6 @@ public class SpatialGDK : ModuleRules
             Log.TraceInformation("Didn't find trace libraries at {0} and {1}, disabling trace functionality.", TraceStaticLibPath, TraceDynamicLibPath);
             PublicDefinitions.Add("TRACE_LIB_ACTIVE=0");
         }
+        OptimizeCode = CodeOptimization.Never;
     }
 }

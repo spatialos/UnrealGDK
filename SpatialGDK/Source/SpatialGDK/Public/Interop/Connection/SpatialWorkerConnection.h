@@ -43,11 +43,11 @@ public:
 	// Worker Connection Interface
 	TArray<Worker_OpList*> GetOpList();
 	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);
-	Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId);
+	Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData>&& Components, const Worker_EntityId* EntityId);
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
-	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
+	void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData);
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
+	void SendComponentUpdate(Worker_EntityId EntityId, const FWorkerComponentUpdate* ComponentUpdate);
 	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);

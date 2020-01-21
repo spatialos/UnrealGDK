@@ -16,6 +16,7 @@ using VirtualWorkerId = uint32;
 using PhysicalWorkerName = FString;
 using ActorLockToken = int64;
 using TraceKey = int32;
+constexpr TraceKey InvalidTraceKey = -1;
 
 using WorkerAttributeSet = TArray<FString>;
 using WorkerRequirementSet = TArray<WorkerAttributeSet>;
@@ -26,3 +27,34 @@ using FObjectReferencesMap = TMap<int32, struct FObjectReferences>;
 using FReliableRPCMap = TMap<Worker_RequestId_Key, TSharedRef<struct FReliableRPCForRetry>>;
 
 using FObjectToRepStateMap = TMap <struct FUnrealObjectRef, TSet<FChannelObjectPair> >;
+
+struct FWorkerComponentData
+{
+	FWorkerComponentData() = default;
+	FWorkerComponentData(const Worker_ComponentData& InData, TraceKey InTrace = InvalidTraceKey)
+		: Data(InData)
+#if TRACE_LIB_ACTIVE
+		, Trace(InTrace)
+#endif
+	{}
+
+	Worker_ComponentData Data{};
+#if TRACE_LIB_ACTIVE
+	TraceKey Trace{ InvalidTraceKey };
+#endif
+};
+struct FWorkerComponentUpdate
+{
+	FWorkerComponentUpdate() = default;
+	FWorkerComponentUpdate(const Worker_ComponentUpdate& InUpdate, TraceKey InTrace = InvalidTraceKey)
+		: Update(InUpdate)
+#if TRACE_LIB_ACTIVE
+		, Trace(InTrace)
+#endif
+	{}
+
+	Worker_ComponentUpdate Update{};
+#if TRACE_LIB_ACTIVE
+	TraceKey Trace{ InvalidTraceKey };
+#endif
+};

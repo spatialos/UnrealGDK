@@ -171,7 +171,7 @@ bool CompareSchemaObjectToSendAndPayload(Schema_Object* SchemaObject, const Spat
 
 bool CompareUpdateToSendAndEntityPayload(SpatialGDK::SpatialRPCService::UpdateToSend& Update, const EntityPayload& EntityPayloadItem, ERPCType RPCType, uint64 RPCId)
 {
-	return CompareSchemaObjectToSendAndPayload(Schema_GetComponentUpdateFields(Update.Update.schema_type), EntityPayloadItem.Payload, RPCType, RPCId) &&
+	return CompareSchemaObjectToSendAndPayload(Schema_GetComponentUpdateFields(Update.UpdateObj.Update.schema_type), EntityPayloadItem.Payload, RPCType, RPCId) &&
 		Update.EntityId == EntityPayloadItem.EntityId;
 }
 
@@ -503,12 +503,12 @@ RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_WHEN_return_false_from_extract_callback_
 
 	bool bTestPassed = false;
 	SpatialGDK::SpatialRPCService::UpdateToSend* Update = UpdateToSendArray.FindByPredicate([](const SpatialGDK::SpatialRPCService::UpdateToSend& Update) {
-		return (Update.Update.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
+		return (Update.UpdateObj.Update.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
 	});
 
 	if (Update != nullptr)
 	{
-		const Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update->Update.schema_type);
+		const Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update->UpdateObj.Update.schema_type);
 		uint64 Ack = 0;
 		SpatialGDK::RPCRingBufferUtils::ReadAckFromSchema(ComponentObject, ERPCType::ClientReliable, Ack);
 		bTestPassed = MaxRPCsToProccess == Ack;

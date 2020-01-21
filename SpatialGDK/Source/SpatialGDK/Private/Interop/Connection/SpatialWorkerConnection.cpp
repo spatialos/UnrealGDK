@@ -351,7 +351,7 @@ Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t 
 	return NextRequestId++;
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId)
+Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData>&& Components, const Worker_EntityId* EntityId)
 {
 	QueueOutgoingMessage<FCreateEntityRequest>(MoveTemp(Components), EntityId);
 	return NextRequestId++;
@@ -363,9 +363,9 @@ Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_Entity
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key)
+void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData)
 {
-	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData, Key);
+	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData);
 }
 
 void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
@@ -373,9 +373,9 @@ void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Wor
 	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
 }
 
-void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key)
+void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const FWorkerComponentUpdate* ComponentUpdate)
 {
-	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate, Key);
+	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate);
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
@@ -539,11 +539,27 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FCreateEntityRequest* Message = static_cast<FCreateEntityRequest*>(OutgoingMessage.Get());
 
+#if TRACE_LIB_ACTIVE
+			// Unfortunately we have to unpack the data here
+			TArray<Worker_ComponentData> Data;
+			Data.SetNum(Message->Components.Num());
+			for(int i = 0, Num = Message->Components.Num(); i < Num; i++)
+			{
+				Data[i] = Message->Components[i].Data;
+			}
+			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
+				Data.Num(),
+				Data.GetData(),
+				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
+				nullptr);
+#else
+			static_assert(sizeof(FWorkerComponentData) == sizeof(Worker_ComponentData), "Size requirement not met for data in CreateEntity request");
 			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
 				Message->Components.Num(),
 				Message->Components.GetData(),
 				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
 				nullptr);
+#endif
 			break;
 		}
 		case EOutgoingMessageType::DeleteEntityRequest:
@@ -561,7 +577,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 
 			Worker_Connection_SendAddComponent(WorkerConnection,
 				Message->EntityId,
-				&Message->Data,
+				&Message->Data.Data,
 				&DisableLoopback);
 			break;
 		}
@@ -581,7 +597,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 
 			Worker_Connection_SendComponentUpdate(WorkerConnection,
 				Message->EntityId,
-				&Message->Update,
+				&Message->UpdateObj.Update,
 				&DisableLoopback);
 
 			break;

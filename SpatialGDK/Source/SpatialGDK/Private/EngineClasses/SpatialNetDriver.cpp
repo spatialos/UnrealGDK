@@ -1762,6 +1762,11 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	TimerManager.Tick(DeltaTime);
 
 	Super::TickFlush(DeltaTime);
+
+	if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(this))
+	{
+		Tracer->TickFrame();
+	}
 }
 
 USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
@@ -2152,7 +2157,8 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 			Worker_AddComponentOp AddComponentOp{};
 			AddComponentOp.entity_id = EntityId;
 			AddComponentOp.data = SpatialGDK::Dormant().CreateData();
-			Connection->SendAddComponent(AddComponentOp.entity_id, &AddComponentOp.data);
+			FWorkerComponentData ComponentDataWrapper{ AddComponentOp.data };
+			Connection->SendAddComponent(AddComponentOp.entity_id, &ComponentDataWrapper);
 			StaticComponentView->OnAddComponent(AddComponentOp);
 		}
 	}

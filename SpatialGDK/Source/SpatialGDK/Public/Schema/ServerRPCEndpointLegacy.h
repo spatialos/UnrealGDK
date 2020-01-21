@@ -33,15 +33,17 @@ struct ServerRPCEndpointLegacy : Component
 		}
 	}
 
-	Worker_ComponentData CreateRPCEndpointData()
+	FWorkerComponentData CreateRPCEndpointData()
 	{
-		Worker_ComponentData Data{};
+		FWorkerComponentData DataWrapper{};
+		Worker_ComponentData& Data = DataWrapper.Data;
+
 		Data.component_id = ComponentId;
 		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 		Schema_AddBool(ComponentObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID, bReady);
 
-		return Data;
+		return DataWrapper;
 	}
 
 	Worker_ComponentUpdate CreateRPCEndpointUpdate()

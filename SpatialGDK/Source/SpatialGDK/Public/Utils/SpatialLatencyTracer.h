@@ -114,11 +114,27 @@ public:
 	void OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*);
 	void OnDequeueMessage(const SpatialGDK::FOutgoingMessage*);
 
+	void TickFrame(); // For internal timeout tracking
+
 private:
 
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
 	using ActorPropertyKey = TPair<const AActor*, const UProperty*>;
 	using TraceSpan = improbable::trace::Span;
+
+	struct FSpanContext
+	{
+		FSpanContext(const FSpanContext&) = delete;
+		FSpanContext(FSpanContext&&) = default;
+
+		FSpanContext(TraceSpan&& InSpan)
+			: Span(MoveTemp(InSpan))
+			, NumFramesOpen(0)
+		{}
+
+		TraceSpan Span;
+		uint32 NumFramesOpen;
+	};
 
 	bool BeginLatencyTraceRPC_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 	bool ContinueLatencyTraceRPC_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue);
@@ -147,9 +163,9 @@ private:
 	TraceKey NextTraceKey = 1;
 
 	FCriticalSection Mutex; // This mutex is to protect modifications to the containers below
-	TMap<ActorFuncKey, TraceKey> TrackingTraces;
+	TMap<ActorFuncKey, TraceKey> TrackingFunctions;
 	TMap<ActorPropertyKey, TraceKey> TrackingProperties;
-	TMap<TraceKey, TraceSpan> TraceMap;
+	TMap<TraceKey, FSpanContext> TraceMap;
 
 public:
 

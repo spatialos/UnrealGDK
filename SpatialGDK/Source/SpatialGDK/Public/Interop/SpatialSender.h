@@ -56,18 +56,11 @@ struct FPendingRPC
 	Schema_EntityId Entity;
 };
 
-struct FQueuedUpdate
-{
-	TArray<Worker_ComponentUpdate> ComponentUpdates;
-#if TRACE_LIB_ACTIVE
-	TArray<TraceKey> LatencyKeys;
-#endif
-};
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation>;
-using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, FQueuedUpdate>;
+using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>>;
 using FChannelsToUpdatePosition = TSet<TWeakObjectPtr<USpatialActorChannel>>;
 
 UCLASS()
@@ -132,7 +125,7 @@ public:
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
-	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
+	FWorkerComponentData CreateLevelComponentData(AActor* Actor);
 
 	void AddTombstoneToEntity(const Worker_EntityId EntityId);
 
