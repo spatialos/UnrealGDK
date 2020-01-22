@@ -6,7 +6,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialRPCService.h"
-#include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
@@ -137,11 +136,11 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 	}
 
-	// Add all Interest component ID to allow us to change it if needed.
+	// Add all Interest component IDs to allow us to change it if needed.
 	ComponentWriteAcl.Add(SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	for (const auto& Entry : ClassInfoManager->SchemaDatabase->NetCullDistanceToComponentId)
+	for (auto ComponentId : ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
 	{
-		ComponentWriteAcl.Add(Entry.Value, AuthoritativeWorkerRequirementSet);
+		ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
 	}
 
 	uint32 ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
@@ -233,7 +232,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	if (Actor->NetDormancy >= DORM_DormantAll)
 	{
-		ComponentDatas.Add(Dormant().CreateData());
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID));
 	}
 
 	if (Actor->IsA<APlayerController>())

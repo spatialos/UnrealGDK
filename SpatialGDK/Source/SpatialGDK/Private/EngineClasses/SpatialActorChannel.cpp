@@ -21,7 +21,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "Schema/AlwaysRelevant.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "SpatialConstants.h"
@@ -1285,11 +1284,11 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 	auto FindCurrentNCDComponent = [this]()
 	{
-		for (const auto& Entry : NetDriver->ClassInfoManager->SchemaDatabase->NetCullDistanceToComponentId)
+		for (auto ComponentId : NetDriver->ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
 		{
-			if (NetDriver->StaticComponentView->HasComponent(EntityId, Entry.Value))
+			if (NetDriver->StaticComponentView->HasComponent(EntityId, ComponentId))
 			{
-				return Entry.Value;
+				return ComponentId;
 			}
 		}
 		return SpatialConstants::INVALID_COMPONENT_ID;

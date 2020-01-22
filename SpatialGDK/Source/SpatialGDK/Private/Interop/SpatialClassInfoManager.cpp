@@ -501,6 +501,11 @@ bool USpatialClassInfoManager::IsNetCullDistanceComponent(Worker_ComponentId Com
 	return SchemaDatabase->NetCullDistanceComponentIds.Contains(ComponentId);
 }
 
+bool USpatialClassInfoManager::IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const
+{
+	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId);
+}
+
 void USpatialClassInfoManager::QuitGame()
 {
 #if WITH_EDITOR
@@ -517,12 +522,9 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 {
 	check(Actor);
 	const AActor* ActorForRelevancy = Actor;
-	while (ActorForRelevancy->GetOwner() && ActorForRelevancy->bNetUseOwnerRelevancy)
+	// bAlwaysRelevant takes precedence over bNetUseOwnerRelevancy - see AActor::IsNetRelevantFor
+	while (!ActorForRelevancy->bAlwaysRelevant && ActorForRelevancy->bNetUseOwnerRelevancy && ActorForRelevancy->GetOwner())
 	{
-		if (ActorForRelevancy->bAlwaysRelevant)
-		{
-			break;
-		}
 		ActorForRelevancy = ActorForRelevancy->GetOwner();
 	}
 

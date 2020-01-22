@@ -127,9 +127,6 @@ void InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoMana
 				QueryConstraint RadiusConstraint;
 				RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ MaxCheckoutRadiusMeters };
 
-				QueryConstraint ComponentConstraint;
-				ComponentConstraint.ComponentConstraint = NCDComponentId;
-
 				QueryConstraint CheckoutRadiusConstraint;
 				CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
 				CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
@@ -369,8 +366,6 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 			return QueryConstraint{};
 		}
 	}
-
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	// Otherwise, return the previously computed checkout radius constraint.
 	return ClientCheckoutRadiusConstraint;

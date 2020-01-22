@@ -15,7 +15,6 @@
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
 #include "Net/NetworkProfiler.h"
-#include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Heartbeat.h"
