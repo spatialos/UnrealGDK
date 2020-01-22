@@ -530,13 +530,10 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 			{
-				if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+				// Soft handover isn't supported currently.
+				if (Op.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 				{
-					ActorChannel->ClientProcessOwnershipChange(true);
-				}
-				else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
-				{
-					ActorChannel->ClientProcessOwnershipChange(false);
+					ActorChannel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
 				}
 			}
 
