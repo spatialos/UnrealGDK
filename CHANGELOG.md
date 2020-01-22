@@ -37,6 +37,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Clients will now validate schema against the server and log a warning if they do not match.
 - Entries in the SchemaDatabase are now sorted to improve efficiancy when browsing the asset in the editor. (DW-Sebastien)
 - Load Balancing Strategies and Locking Strategies can be set per-level using SpatialWorldSettings.
+- Batch Spatial Position Updates now defaults to false.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
