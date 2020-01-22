@@ -87,10 +87,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
- 
+
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
- 
+
 	return CreateEntityRequestId;
 }
 
@@ -599,8 +599,8 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 #if !UE_BUILD_SHIPPING
 void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType)
 {
-		NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
-		NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
+	NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
+	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
 }
 #endif
 
@@ -736,7 +736,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 								*Function->GetName(),
 								*TargetActor->GetName(),
 								*ConnectionOwner->GetName()
-							)
+							);
 							bCanPackRPC = false;
 						}
 					}
@@ -948,7 +948,7 @@ Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 	ensure(TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
 	Payload.WriteToSchemaObject(EventData);
-	
+
 	return ComponentUpdate;
 }
 ERPCResult USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex)

@@ -427,7 +427,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		return 0;
 	}
-	
+
 	check(Actor);
 	check(!Closing);
 	check(Connection);
@@ -511,7 +511,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			UpdateSpatialPositionWithFrequencyCheck();
 		}
 	}
-	
+
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
@@ -866,7 +866,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Attempted to replicate an invalid ObjectRef. This may be a dynamic component that couldn't attach: %s"), *Object->GetName());
 			return false;
 		}
-		
+
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
 		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr);
 
@@ -894,11 +894,11 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 
 bool USpatialActorChannel::ReadyForDormancy(bool bSuppressLogs /*= false*/)
 {
- 	// Check Receiver doesn't have any pending operations for this channel
- 	if (Receiver->IsPendingOpsOnChannel(*this))
- 	{
- 		return false;
- 	}
+	// Check Receiver doesn't have any pending operations for this channel
+	if (Receiver->IsPendingOpsOnChannel(*this))
+	{
+		return false;
+	}
 
 	// Hasn't been waiting for dormancy long enough allow dormancy, soft attempt to prevent dormancy thrashing
 	if (FramesTillDormancyAllowed > 0)
@@ -1060,7 +1060,7 @@ bool USpatialActorChannel::TryResolveActor()
 	{
 		return false;
 	}
-	
+
 	// If a Singleton was created, update the GSM with the proper Id.
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{

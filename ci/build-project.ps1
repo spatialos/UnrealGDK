@@ -37,7 +37,7 @@ if ($lastExitCode -ne 0) {
 }
 
 Write-Output "Building project"
-$build_configuration = $build_state + $(If ("$build_target" -eq "") {""} Else {" $build_target"})
+$build_configuration = $build_state + $(If ("$build_target" -eq "") { "" } Else { " $build_target" })
 & "$msbuild_exe" `
     "/nologo" `
     "$($test_repo_uproject_path.Replace(".uproject", ".sln"))" `
