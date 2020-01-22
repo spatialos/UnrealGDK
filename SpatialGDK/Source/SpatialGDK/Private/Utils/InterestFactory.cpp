@@ -113,27 +113,13 @@ Interest InterestFactory::CreateServerWorkerInterest()
 
 Interest InterestFactory::CreateInterest() const
 {
-	if (GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
+	if (Actor->IsA(APlayerController::StaticClass()))
 	{
-		if (Actor->GetNetConnection() != nullptr)
-		{
-			return CreatePlayerOwnedActorInterest();
-		}
-		else
-		{
-			return CreateActorInterest();
-		}
+		return CreatePlayerOwnedActorInterest();
 	}
 	else
 	{
-		if (Actor->IsA(APlayerController::StaticClass()))
-		{
-			return CreatePlayerOwnedActorInterest();
-		}
-		else
-		{
-			return Interest{};
-		}
+		return Interest{};
 	}
 }
 
@@ -192,7 +178,22 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 
 	Query ClientQuery;
 	ClientQuery.Constraint = ClientConstraint;
-	ClientQuery.FullSnapshotResult = true;
+
+	TSet<uint32> ResultType;
+
+	ResultType.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID);
+	ResultType.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID);
+	ResultType.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY);
+	ResultType.Add(SpatialConstants::MULTICAST_RPCS_COMPONENT_ID);
+	ResultType.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID);
+
+	// NEED SOME OF THESE (find why, shouldn't need)
+	ResultType.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID); // need
+
+	ResultType.Append(ClassInfoManager->SchemaDatabase->DataComponentIds);
+
+	ClientQuery.ResultComponentId = ResultType.Array();
+	//ClientQuery.FullSnapshotResult = true;
 
 	ComponentInterest ClientComponentInterest;
 	ClientComponentInterest.Queries.Add(ClientQuery);
