@@ -92,6 +92,25 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 		});
 	}
 
+	FEditorDelegates::PostPIEStarted.AddLambda([this](bool bIsSimulatingInEditor)
+	{
+		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		{
+			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
+			LocalDeploymentManager->GetLocalDeploymentStatus();
+
+			VerifyAndStartDeployment();
+		}
+	});
+
+	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor)
+	{
+		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		{
+			LocalDeploymentManager->TryStopLocalDeployment();
+		}
+	});
+
 	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
 }
 

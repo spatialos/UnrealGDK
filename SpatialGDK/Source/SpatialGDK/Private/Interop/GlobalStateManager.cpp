@@ -259,7 +259,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 
 	Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
 
-	if (StaticComponentView->GetAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (StaticComponentView->HasAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID))
 	{
 		SingletonActor->Role = ROLE_Authority;
 		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
@@ -334,7 +334,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 		{
 			check(NetDriver->PackageMap->GetObjectFromEntityId(*SingletonEntityId) == nullptr);
 			NetDriver->PackageMap->ResolveEntityActor(SingletonActor, *SingletonEntityId);
-			if (StaticComponentView->GetAuthority(*SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) != WORKER_AUTHORITY_AUTHORITATIVE)
+			if (!StaticComponentView->HasAuthority(*SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID))
 			{
 				SingletonActor->Role = ROLE_SimulatedProxy;
 				SingletonActor->RemoteRole = ROLE_Authority;
@@ -635,7 +635,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 		}
 		else
 		{
-			if (NetDriver->VirtualWorkerTranslator != nullptr)
+			if (NetDriver->VirtualWorkerTranslator.IsValid())
 			{
 				ApplyVirtualWorkerMappingFromQueryResponse(Op);
 			}
@@ -649,7 +649,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 
 void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
-	check(NetDriver->VirtualWorkerTranslator != nullptr);
+	check(NetDriver->VirtualWorkerTranslator.IsValid());
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
 	{
 		Worker_ComponentData Data = Op.results[0].components[i];
