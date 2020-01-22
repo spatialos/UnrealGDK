@@ -123,8 +123,8 @@ private:
 	void CreateClassInfoForClass(UClass* Class);
 	void TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId);
 
-	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
-	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
+	void FinishConstructingActorClassInfo(UClass* Class, TSharedRef<FClassInfo>& Info);
+	void FinishConstructingSubobjectClassInfo(UClass* Class, TSharedRef<FClassInfo>& Info);
 
 	void QuitGame();
 

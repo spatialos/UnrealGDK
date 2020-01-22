@@ -2,6 +2,8 @@
 
 #include "Tests/TestDefinitions.h"
 
+#if 0
+
 #include "SchemaGenObjectStub.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKServicesConstants.h"
@@ -992,3 +994,4 @@ SCHEMA_GENERATOR_TEST(GIVEN_no_schema_exists_WHEN_generating_schema_for_rpc_endp
 
 	return true;
 }
+#endif

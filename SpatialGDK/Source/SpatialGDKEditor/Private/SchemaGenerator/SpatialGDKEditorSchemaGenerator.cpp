@@ -405,12 +405,7 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 	UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
-	SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
-	SchemaDatabase->ActorClassPathToSchema = ActorClassPathToSchema;
-	SchemaDatabase->SubobjectClassPathToSchema = SubobjectClassPathToSchema;
-	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
-	SchemaDatabase->ComponentIdToClassPath = CreateComponentIdToClassPathMap();
-	SchemaDatabase->LevelComponentIds = LevelComponentIds;
+	SchemaDatabase->Set(ActorClassPathToSchema, SubobjectClassPathToSchema, LevelPathToComponentId, CreateComponentIdToClassPathMap(), LevelComponentIds, NextAvailableComponentId);
 
 	FAssetRegistryModule::AssetCreated(SchemaDatabase);
 	SchemaDatabase->MarkPackageDirty();
@@ -615,11 +610,11 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 			return false;
 		}
 
-		ActorClassPathToSchema = SchemaDatabase->ActorClassPathToSchema;
-		SubobjectClassPathToSchema = SchemaDatabase->SubobjectClassPathToSchema;
-		LevelComponentIds = SchemaDatabase->LevelComponentIds;
-		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
-		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
+		ActorClassPathToSchema = SchemaDatabase->GetActorClassPathToSchema();
+		SubobjectClassPathToSchema = SchemaDatabase->GetSubobjectClassPathToSchema();
+		LevelComponentIds = SchemaDatabase->GetLevelComponentIds();
+		LevelPathToComponentId = SchemaDatabase->GetLevelPathToComponentId();
+		NextAvailableComponentId = SchemaDatabase->GetNextAvailableComponentId();
 
 		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
 		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
