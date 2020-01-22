@@ -21,7 +21,6 @@ class SPATIALGDK_API USpatialStaticComponentView : public UObject
 	GENERATED_BODY()
 
 public:
-	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
 	template <typename T>
@@ -49,6 +48,8 @@ public:
 	void GetEntityIds(TArray<Worker_EntityId_Key>& OutEntityIds) const { EntityComponentMap.GetKeys(OutEntityIds); }
 
 private:
+	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, TUniquePtr<SpatialGDK::ComponentStorageBase>>> EntityComponentMap;
 };
