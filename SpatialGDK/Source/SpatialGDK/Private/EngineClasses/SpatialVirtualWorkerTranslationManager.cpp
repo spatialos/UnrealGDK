@@ -16,6 +16,7 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(
 	: Receiver(InReceiver)
 	, Connection(InConnection)
 	, Translator(InTranslator)
+	, bWorkerEntityQueryInFlight(false)
 {}
 
 void SpatialVirtualWorkerTranslationManager::AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds)
