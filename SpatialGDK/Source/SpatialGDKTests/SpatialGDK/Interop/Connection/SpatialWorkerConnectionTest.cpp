@@ -30,49 +30,6 @@ void ConnectionProcessed(bool bConnectAsClient)
 		bServerConnectionProcessed = true;
 	}
 }
-
-void StartSetupConnectionConfigFromURL(USpatialWorkerConnection* Connection, const FURL& URL, bool& bOutUseReceptionist)
-{
-	bOutUseReceptionist = (URL.Host != SpatialConstants::LOCATOR_HOST) && !URL.HasOption(TEXT("locator"));
-	if (bOutUseReceptionist)
-	{
-		Connection->ReceptionistConfig.SetReceptionistHost(URL.Host);
-	}
-	else
-	{
-		FLocatorConfig& LocatorConfig = Connection->LocatorConfig;
-		LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
-		LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
-	}
-}
-
-void FinishSetupConnectionConfig(USpatialWorkerConnection* Connection, const FString& WorkerType, const FURL& URL, bool bUseReceptionist)
-{
-	// Finish setup for the config objects regardless of loading from command line or URL
-	if (bUseReceptionist)
-	{
-		// Use Receptionist
-		Connection->SetConnectionType(ESpatialConnectionType::Receptionist);
-
-		FReceptionistConfig& ReceptionistConfig = Connection->ReceptionistConfig;
-		ReceptionistConfig.WorkerType = WorkerType;
-
-		const TCHAR* UseExternalIpForBridge = TEXT("useExternalIpForBridge");
-		if (URL.HasOption(UseExternalIpForBridge))
-		{
-			FString UseExternalIpOption = URL.GetOption(UseExternalIpForBridge, TEXT(""));
-			ReceptionistConfig.UseExternalIp = !UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase);
-		}
-	}
-	else
-	{
-		// Use Locator
-		Connection->SetConnectionType(ESpatialConnectionType::Locator);
-		FLocatorConfig& LocatorConfig = Connection->LocatorConfig;
-		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorConfig.LocatorHost);
-		LocatorConfig.WorkerType = WorkerType;
-	}
-}
 } // anonymous namespace
 
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForSeconds, double, Seconds);
@@ -105,8 +62,8 @@ bool FSetupWorkerConnection::Update()
 		ConnectionProcessed(bConnectAsClient);
 	});
 	bool bUseReceptionist = false;
-	StartSetupConnectionConfigFromURL(Connection, TestURL, bUseReceptionist);
-	FinishSetupConnectionConfig(Connection, WorkerType, TestURL, bUseReceptionist);
+	Connection->StartSetupConnectionConfigFromURL(TestURL, bUseReceptionist);
+	Connection->FinishSetupConnectionConfig(TestURL, bUseReceptionist, WorkerType);
 	int32 PlayInEditorID = 0;
 #if WITH_EDITOR
 	Connection->Connect(bConnectAsClient, PlayInEditorID);
