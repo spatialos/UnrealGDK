@@ -117,7 +117,11 @@ void SpatialVirtualWorkerTranslationManager::QueryForWorkerEntities()
 {
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Sending query for WorkerEntities"));
 
-	checkf(!bWorkerEntityQueryInFlight, TEXT("Trying to query for worker entities while a previous query is still in flight!"));
+	if (bWorkerEntityQueryInFlight)
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Trying to query for worker entities while a previous query is still in flight!"));
+		return;
+	}
 
 	// Create a query for all the system entities which represent workers. This will be used
 	// to find physical workers which the virtual workers will map to.
