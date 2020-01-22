@@ -577,7 +577,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	}
 	else
 	{
-		Info = TryResolveNewDynamicSubobjectAndGetClassInfo(Object);
+		Info = NetDriver->PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(Object, EntityId, NetDriver->ClassInfoManager);
 
 		if (Info == nullptr)
 		{
@@ -619,14 +619,6 @@ bool USpatialActorChannel::IsListening() const
 	}
 
 	return false;
-}
-
-const FClassInfo* USpatialActorChannel::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
-{
-	const FClassInfo* Info = NetDriver->ClassInfoManager->GetClassInfoForNewSubobject(Object, EntityId, NetDriver->PackageMap);
-	NetDriver->PackageMap->ResolveSubobject(Object, NetDriver->PackageMap->GetUnrealObjectRefForSubobject(EntityId, Info));
-
-	return Info;
 }
 
 bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicationFlags& RepFlags)

@@ -115,6 +115,8 @@ public:
 
 	uint32 GetComponentIdFromLevelPath(const FString& LevelPath);
 	bool IsSublevelComponent(Worker_ComponentId ComponentId);
+
+	// Tries to find ClassInfo corresponding to an unused dynamic subobject on the given entity
 	const FClassInfo* GetClassInfoForNewSubobject(UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient);
 
 	UPROPERTY()

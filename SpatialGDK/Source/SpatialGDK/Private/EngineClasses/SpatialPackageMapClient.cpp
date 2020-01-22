@@ -295,9 +295,17 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 	return true;
 }
 
-FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefForSubobject(Worker_EntityId EntityId, const FClassInfo* Info)
+const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object, Worker_EntityId EntityId, USpatialClassInfoManager* ClassInfoManager)
 {
-	return FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]);
+	const FClassInfo* Info = ClassInfoManager->GetClassInfoForNewSubobject(Object, EntityId, this);
+
+	// If we don't get the info, an error is logged in the above function, that we have exceeded the maximum number of dynamic subobjects on the entity
+	if (Info)
+	{
+		ResolveSubobject(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
+	}
+
+	return Info;
 }
 
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)

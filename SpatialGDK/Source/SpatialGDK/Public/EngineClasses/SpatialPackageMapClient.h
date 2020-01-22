@@ -62,12 +62,9 @@ public:
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
-	static FUnrealObjectRef GetUnrealObjectRefForSubobject(Worker_EntityId EntityId, const FClassInfo* Info);
+	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object, Worker_EntityId EntityId, USpatialClassInfoManager* ClassInfoManager);
 
 private:
-	UPROPERTY()
-	USpatialClassInfoManager* ClassInfoManager;
-
 	UPROPERTY()
 	UEntityPool* EntityPool;
 
