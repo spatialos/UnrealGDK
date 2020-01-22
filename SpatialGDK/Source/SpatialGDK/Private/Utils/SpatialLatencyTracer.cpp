@@ -72,34 +72,12 @@ void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const F
 #endif // TRACE_LIB_ACTIVE
 }
 
-bool USpatialLatencyTracer::BeginLatencyTraceRPC(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
+bool USpatialLatencyTracer::BeginLatencyTrace(UObject* WorldContextObject, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
 {
 #if TRACE_LIB_ACTIVE
 	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
 	{
-		return Tracer->BeginLatencyTrace_Internal(Actor, FunctionName, ETraceType::RPC, TraceDesc, OutLatencyPayload);
-	}
-#endif // TRACE_LIB_ACTIVE
-	return false;
-}
-
-bool USpatialLatencyTracer::BeginLatencyTraceProperty(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
-{
-#if TRACE_LIB_ACTIVE
-	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
-	{
-		return Tracer->BeginLatencyTrace_Internal(Actor, FunctionName, ETraceType::Property, TraceDesc, OutLatencyPayload);
-	}
-#endif // TRACE_LIB_ACTIVE
-	return false;
-}
-
-bool USpatialLatencyTracer::BeginLatencyTraceKeyed(UObject* WorldContextObject, const AActor* Actor, const FString& EventName, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
-{
-#if TRACE_LIB_ACTIVE
-	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
-	{
-		return Tracer->BeginLatencyTrace_Internal(Actor, EventName, ETraceType::Keyed, TraceDesc, OutLatencyPayload);
+		return Tracer->BeginLatencyTrace_Internal(TraceDesc, OutLatencyPayload);
 	}
 #endif // TRACE_LIB_ACTIVE
 	return false;
@@ -127,12 +105,12 @@ bool USpatialLatencyTracer::ContinueLatencyTraceProperty(UObject* WorldContextOb
 	return false;
 }
 
-bool USpatialLatencyTracer::ContinueLatencyTraceKeyed(UObject* WorldContextObject, const AActor* Actor, const FString& Key, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutLatencyPayloadContinue)
+bool USpatialLatencyTracer::ContinueLatencyTraceTagged(UObject* WorldContextObject, const AActor* Actor, const FString& Key, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutLatencyPayloadContinue)
 {
 #if TRACE_LIB_ACTIVE
 	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
 	{
-		return Tracer->ContinueLatencyTrace_Internal(Actor, Key, ETraceType::Keyed, TraceDesc, LatencyPayLoad, OutLatencyPayloadContinue);
+		return Tracer->ContinueLatencyTrace_Internal(Actor, Key, ETraceType::Tagged, TraceDesc, LatencyPayLoad, OutLatencyPayloadContinue);
 	}
 #endif // TRACE_LIB_ACTIVE
 	return false;
@@ -219,7 +197,7 @@ TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const F
 
 	ActorEventKey EventKey{ Cast<AActor>(Obj), Key };
 	TraceKey ReturnKey = InvalidTraceKey;
-	TrackingKeyedEvents.RemoveAndCopyValue(EventKey, ReturnKey);
+	TrackingTaggedEvents.RemoveAndCopyValue(EventKey, ReturnKey);
 	return ReturnKey;
 }
 
@@ -372,22 +350,12 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	}
 }
 
-bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType Type, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
+bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
 {
 	FScopeLock Lock(&Mutex);
 
-	TraceKey Key = CreateNewTraceEntry(Actor, Target, Type);
-
-	if (Key == InvalidTraceKey)
-	{
-		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Failed to create Actor/Func trace (%s)"), *WorkerId, *TraceDesc);
-		return false;
-	}
-
 	FString SpanMsg = FormatMessage(TraceDesc);
 	TraceSpan NewTrace = improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*SpanMsg), nullptr);
-
-	WriteKeyFrameToTrace(&NewTrace, FString::Printf(TEXT("Begin trace : %s"), *Target));
 
 	// For non-spatial tracing
 	const improbable::trace::SpanContext& TraceContext = NewTrace.context();
@@ -396,14 +364,6 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const AActor* Actor, cons
 		TArray<uint8> TraceBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.trace_id()[0], sizeof(improbable::trace::TraceId));
 		TArray<uint8> SpanBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.span_id()[0], sizeof(improbable::trace::SpanId));
 		OutLatencyPayload = FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes));
-	}
-
-	TraceMap.Add(Key, MoveTemp(NewTrace));
-
-	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
-	{
-		// We can't do any deeper tracing in the stack here so terminate these traces here
-		ClearTrackingInformation();
 	}
 
 	return true;
@@ -496,7 +456,7 @@ void USpatialLatencyTracer::ClearTrackingInformation()
 	TraceMap.Reset();
 	TrackingTraces.Reset();
 	TrackingProperties.Reset();
-	TrackingKeyedEvents.Reset();
+	TrackingTaggedEvents.Reset();
 }
 
 TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& Target, ETraceType Type)
@@ -536,13 +496,13 @@ TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const F
 				UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorProperty already exists for trace"), *WorkerId);
 			}
 			break;
-		case ETraceType::Keyed:
+		case ETraceType::Tagged:
 			{
 				ActorEventKey Key{ Actor, Target };
-				if (TrackingKeyedEvents.Find(Key) == nullptr)
+				if (TrackingTaggedEvents.Find(Key) == nullptr)
 				{
 					const TraceKey _TraceKey = GenerateNewTraceKey();
-					TrackingKeyedEvents.Add(Key, _TraceKey);
+					TrackingTaggedEvents.Add(Key, _TraceKey);
 					return _TraceKey;
 				}
 				UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorProperty already exists for trace"), *WorkerId);

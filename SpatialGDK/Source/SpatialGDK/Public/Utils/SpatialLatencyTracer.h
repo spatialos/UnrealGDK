@@ -69,15 +69,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static void RegisterProject(UObject* WorldContextObject, const FString& ProjectId);
 
-	// Start a latency trace. This will start the latency timer and attach it to a specific RPC.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool BeginLatencyTraceRPC(UObject* WorldContextObject, const AActor* Actor, const FString& Function, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
-
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool BeginLatencyTraceProperty(UObject* WorldContextObject, const AActor* Actor, const FString& Function, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
-
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool BeginLatencyTraceKeyed(UObject* WorldContextObject, const AActor* Actor, const FString& Function, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
+	static bool BeginLatencyTrace(UObject* WorldContextObject, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 
 	// Hook into an existing latency trace, and pipe the trace to another outgoing networking event
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
@@ -87,7 +80,7 @@ public:
 	static bool ContinueLatencyTraceProperty(UObject* WorldContextObject, const AActor* Actor, const FString& Property, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool ContinueLatencyTraceKeyed(UObject* WorldContextObject, const AActor* Actor, const FString& Key, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutContinuedLatencyPayload);
+	static bool ContinueLatencyTraceTagged(UObject* WorldContextObject, const AActor* Actor, const FString& Key, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
 	// End a latency trace. This needs to be called within the receiving end of the traced networked event (ie. an rpc)
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
@@ -139,10 +132,10 @@ private:
 	{
 		RPC,
 		Property,
-		Keyed
+		Tagged
 	};
 
-	bool BeginLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType Type, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
+	bool BeginLatencyTrace_Internal(const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue);
 	bool EndLatencyTrace_Internal(const FSpatialLatencyPayload& LatencyPayload);
 
@@ -172,7 +165,7 @@ private:
 	FCriticalSection Mutex; // This mutex is to protect modifications to the containers below
 	TMap<ActorFuncKey, TraceKey> TrackingTraces;
 	TMap<ActorPropertyKey, TraceKey> TrackingProperties;
-	TMap<ActorEventKey, TraceKey> TrackingKeyedEvents;
+	TMap<ActorEventKey, TraceKey> TrackingTaggedEvents;
 	TMap<TraceKey, TraceSpan> TraceMap;
 
 public:
