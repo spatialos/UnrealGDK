@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
@@ -9,10 +8,8 @@
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
 SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy,
-	USpatialStaticComponentView* InStaticComponentView,
 	PhysicalWorkerName InPhysicalWorkerName)
 	: LoadBalanceStrategy(InLoadBalanceStrategy)
-	, StaticComponentView(InStaticComponentView)
 	, bIsReady(false)
 	, LocalPhysicalWorkerName(InPhysicalWorkerName)
 	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)

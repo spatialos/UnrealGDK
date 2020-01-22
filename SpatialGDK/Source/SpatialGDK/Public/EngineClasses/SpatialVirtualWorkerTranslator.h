@@ -15,15 +15,12 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslator, Log, All)
 
 class UAbstractLBStrategy;
-class USpatialStaticComponentView;
-class USpatialReceiver;
 
 class SPATIALGDK_API SpatialVirtualWorkerTranslator : public AbstractVirtualWorkerTranslator
 {
 public:
 	SpatialVirtualWorkerTranslator() = delete;
 	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy,
-		USpatialStaticComponentView* InStaticComponentView,
 		PhysicalWorkerName InPhysicalWorkerName);
 
 	// Returns true if the Translator has received the information needed to map virtual workers to physical workers.
@@ -44,7 +41,6 @@ public:
 
 private:
 	TWeakObjectPtr<UAbstractLBStrategy> LoadBalanceStrategy;
-	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
 
 	TMap<VirtualWorkerId, PhysicalWorkerName> VirtualToPhysicalWorkerMapping;
 

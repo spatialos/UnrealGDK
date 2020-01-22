@@ -496,7 +496,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		LoadBalanceStrategy->Init(this);
 	}
 
-	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, StaticComponentView, Connection->GetWorkerId());
+	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
 	if (IsServer())
 	{

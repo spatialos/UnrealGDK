@@ -391,7 +391,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		NetDriver->InitializeVirtualWorkerTranslationManager();
-		check(NetDriver->VirtualWorkerTranslationManager != nullptr);
 		NetDriver->VirtualWorkerTranslationManager->AuthorityChanged(Op);
 	}
 
