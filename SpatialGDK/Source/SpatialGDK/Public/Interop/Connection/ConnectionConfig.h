@@ -95,9 +95,19 @@ struct FReceptionistConfig : public FConnectionConfig
 struct FLocatorConfig : public FConnectionConfig
 {
 	FLocatorConfig()
-		: LocatorHost(SpatialConstants::LOCATOR_HOST) {
+	{
 		const TCHAR* CommandLine = FCommandLine::Get();
-		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
+		if (!FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost))
+		{
+			if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
+			{
+				LocatorHost = SpatialConstants::LOCATOR_HOST_CN;
+			}
+			else 
+			{
+				LocatorHost = SpatialConstants::LOCATOR_HOST;
+			}
+		}
 		FParse::Value(CommandLine, TEXT("playerIdentityToken"), PlayerIdentityToken);
 		FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
 	}
