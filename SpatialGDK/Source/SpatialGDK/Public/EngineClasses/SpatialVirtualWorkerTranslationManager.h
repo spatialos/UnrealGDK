@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
 #include "Containers/Queue.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
+
+#include "CoreMinimal.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 
