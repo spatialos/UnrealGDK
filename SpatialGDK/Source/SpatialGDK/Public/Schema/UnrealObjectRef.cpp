@@ -66,8 +66,6 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 
 	if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())
 	{
-		UE_LOG(LogTemp, Log, TEXT("FromObjectPtr: %s"), *ObjectValue->GetName());
-
 		FNetworkGUID NetGUID;
 		if (ObjectValue->IsSupportedForNetworking())
 		{
@@ -147,8 +145,6 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 			}
 		}
 	}
-
-	if(ObjectValue != nullptr) UE_LOG(LogTemp, Log, TEXT("FromObjectPtr: %s (late)"), *ObjectRef.ToString());
 
 	return ObjectRef;
 }
