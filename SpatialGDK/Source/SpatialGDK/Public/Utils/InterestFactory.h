@@ -48,6 +48,9 @@ private:
 	// Only checkout entities that are in loaded sublevels
 	QueryConstraint CreateLevelConstraints() const;
 
+	// Builds the result type of necessary components for clients to see on NON-AUTHORITATIVE entities
+	TArray<uint32> CreateClientResultType() const;
+
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
 	AActor* Actor;

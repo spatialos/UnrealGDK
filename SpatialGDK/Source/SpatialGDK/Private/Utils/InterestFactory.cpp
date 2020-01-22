@@ -179,21 +179,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	Query ClientQuery;
 	ClientQuery.Constraint = ClientConstraint;
 
-	TSet<uint32> ResultType;
-
-	ResultType.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID);
-	ResultType.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID);
-	ResultType.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY);
-	ResultType.Add(SpatialConstants::MULTICAST_RPCS_COMPONENT_ID);
-	ResultType.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID);
-
-	// NEED SOME OF THESE (find why, shouldn't need)
-	ResultType.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID); // need
-
-	ResultType.Append(ClassInfoManager->SchemaDatabase->DataComponentIds);
-
-	ClientQuery.ResultComponentId = ResultType.Array();
-	//ClientQuery.FullSnapshotResult = true;
+	ClientQuery.ResultComponentId = CreateClientResultType();
 
 	ComponentInterest ClientComponentInterest;
 	ClientComponentInterest.Queries.Add(ClientQuery);
@@ -381,6 +367,24 @@ QueryConstraint InterestFactory::CreateLevelConstraints() const
 	}
 
 	return LevelConstraint;
+}
+
+TArray<uint32> InterestFactory::CreateClientResultType() const
+{
+	TArray<uint32> ResultType;
+
+	ResultType.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID);
+	ResultType.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID);
+	ResultType.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY);
+	ResultType.Add(SpatialConstants::MULTICAST_RPCS_COMPONENT_ID);
+	ResultType.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID);
+
+	// TODO: breaks without this, but shouldn't need it. Figure out why
+	ResultType.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID); 
+
+	ResultType.Append(ClassInfoManager->SchemaDatabase->DataComponentIds.Array());
+
+	return ResultType;
 }
 
 } // namespace SpatialGDK
