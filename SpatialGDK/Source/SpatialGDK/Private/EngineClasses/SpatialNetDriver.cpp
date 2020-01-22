@@ -140,12 +140,12 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	//Init InterestFactory
-	SpatialInterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager);
+	// Init InterestFactory
+	InterestFactory = MakeUnique<SpatialGDK::SpatialInterestFactory>(ClassInfoManager);
 
 	if (!bInitAsClient)
 	{
-		SpatialInterestFactory->CreateClientCheckoutRadiusConstraint();
+		InterestFactory->CreateClientCheckoutRadiusConstraint();
 	}
 
 #if WITH_EDITOR
@@ -465,7 +465,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
-	Sender->Init(this, &TimerManager, RPCService.Get(), SpatialInterestFactory.Get());
+	Sender->Init(this, &TimerManager, RPCService.Get(), InterestFactory.Get());
 	Receiver->Init(this, &TimerManager, RPCService.Get());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
@@ -481,7 +481,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PackageMap->Init(this, &TimerManager);
 
 	// Pass the PackageMap to the InterestFactory. The PackageMap was not available to pass when the InterestFactory was created.
-	SpatialInterestFactory->SetPackageMap(PackageMap);
+	InterestFactory->SetPackageMap(PackageMap);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()

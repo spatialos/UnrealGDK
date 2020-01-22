@@ -11,14 +11,14 @@ class USpatialClassInfoManager;
 class USpatialPackageMapClient;
 class AActor;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialInterestFactory, Log, All);
 
 namespace SpatialGDK
 {
-class SPATIALGDK_API InterestFactory
+class SPATIALGDK_API SpatialInterestFactory
 {
 public:
-	InterestFactory(USpatialClassInfoManager* InClassInfoManager);
+	SpatialInterestFactory(USpatialClassInfoManager* InClassInfoManager);
 
 	void SetPackageMap(USpatialPackageMapClient* InPackageMap) { PackageMap = InPackageMap; }
 

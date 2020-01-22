@@ -15,7 +15,7 @@ class USpatialPackageMapClient;
  
 namespace SpatialGDK
 {
-class InterestFactory;
+class SpatialInterestFactory;
 class SpatialRPCService;	
 
 struct RPCsOnEntityCreation;
@@ -24,7 +24,7 @@ using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntit
 class SPATIALGDK_API EntityFactory
 {
 public:
-	EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService, const InterestFactory* InInterestFactory);
+	EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService, const SpatialInterestFactory* InInterestFactory);
  
 	TArray<Worker_ComponentData> CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs);
  
@@ -33,6 +33,6 @@ private:
 	USpatialPackageMapClient* PackageMap;
 	USpatialClassInfoManager* ClassInfoManager;
 	SpatialRPCService* RPCService;
-	const InterestFactory* SpatialInterestFactory;
+	const SpatialInterestFactory* InterestFactory;
 };
 }

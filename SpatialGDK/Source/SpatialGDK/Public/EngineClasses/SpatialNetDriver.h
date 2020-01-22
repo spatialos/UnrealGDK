@@ -151,7 +151,7 @@ public:
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
 
-	TUniquePtr<SpatialGDK::InterestFactory> SpatialInterestFactory;
+	TUniquePtr<SpatialGDK::SpatialInterestFactory> InterestFactory;
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
