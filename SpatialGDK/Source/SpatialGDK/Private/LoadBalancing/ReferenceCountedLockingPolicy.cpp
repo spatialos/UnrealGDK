@@ -28,7 +28,7 @@ bool UReferenceCountedLockingPolicy::CanAcquireLock(AActor* Actor) const
 	}
 
 	check(StaticComponentView.IsValid());
-	const bool bHasAuthority = StaticComponentView.Get()->GetAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE;
+	const bool bHasAuthority = StaticComponentView.Get()->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 	if (!bHasAuthority)
 	{
 		UE_LOG(LogReferenceCountedLockingPolicy, Warning, TEXT("Can not lock actor migration. Do not have authority. Actor: %s"), *Actor->GetName());
