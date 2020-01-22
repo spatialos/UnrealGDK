@@ -536,7 +536,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 				}
 				else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 				{
-					ActorChannel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
+					ActorChannel->ClientProcessOwnershipChange(false);
 				}
 			}
 
