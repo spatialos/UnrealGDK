@@ -1,5 +1,6 @@
 rem **** Warning - Experimental functionality ****
-rem This functionality is not supported for external users, and shouldn't be used.
+rem We do not support this functionality currently: Do not use it unless you are Improbable staff.
+
 rem **** 
 
 @echo off

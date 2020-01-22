@@ -35,7 +35,7 @@ public:
 
 	//////////////////////////////////////////////////////////////////////////
 	//
-	// EXPERIMENTAL: This functionality is not currently supported for external users and shouldn't be used.
+	// EXPERIMENTAL: We do not support this functionality currently: Do not use it unless you are Improbable staff.
 	//
 	// USpatialLatencyTracer allows for tracing of gameplay events across multiple workers, from their user
 	// instigation, to their observed results. Each of these multi-worker events are tracked through `traces`
