@@ -479,11 +479,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		}
 
 		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
-		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Receiver, Connection, Connection->GetWorkerId());
+		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Connection->GetWorkerId());
 
 		if (IsServer()) 
 		{
-			VirtualWorkerTranslator->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
 			LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 		}
 	}
@@ -2477,4 +2476,13 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 		}
 	}
 	return FUnrealObjectRef::NULL_OBJECT_REF;
+}
+
+// This is only called if this worker has been selected by SpatialOS to be authoritative
+// fr the TranslationManager, otherwise the manager will never be instantiated.
+void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
+{
+	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>();
+	VirtualWorkerTranslationManager->Init(Receiver, Connection, VirtualWorkerTranslator.Get());
+	VirtualWorkerTranslationManager->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
 }

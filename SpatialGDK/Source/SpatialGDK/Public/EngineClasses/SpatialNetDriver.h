@@ -3,6 +3,7 @@
 #pragma once
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialDispatcher.h"
@@ -153,6 +154,10 @@ public:
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+
+	// If this worker is authoritative over the translation, the manager will be instantiated.
+	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
+	void InitializeVirtualWorkerTranslationManager();
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
