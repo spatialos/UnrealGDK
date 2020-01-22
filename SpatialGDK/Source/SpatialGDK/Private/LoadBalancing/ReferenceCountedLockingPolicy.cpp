@@ -27,7 +27,7 @@ bool UReferenceCountedLockingPolicy::CanAcquireLock(AActor* Actor) const
 		return false;
 	}
 
-  check(StaticComponentView.IsValid());
+	check(StaticComponentView.IsValid());
 	const bool bHasAuthority = StaticComponentView.Get()->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 	if (!bHasAuthority)
 	{
