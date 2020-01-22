@@ -15,6 +15,7 @@
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+#include <functional>
 
 #include "SpatialWorkerConnection.generated.h"
 
@@ -27,6 +28,8 @@ enum class ESpatialConnectionType
 	Locator
 };
 
+typedef std::function<bool(const Worker_Alpha_LoginTokensResponse*)> LoginTokenCb;
+
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 {
@@ -35,6 +38,11 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
+    
+    /// Caller can register an callback by using this function.
+    /// It will be trigered when SpatialWorkerConnection receive Login Token.
+    /// @param cb - callback function.
+    void RegisterOnLoginTokensCb(const LoginTokenCb& cb) {LoginTokenCb_ = cb;};
 
 	void Connect(bool bConnectAsClient, uint32 PlayInEditorID);
 
@@ -101,6 +109,7 @@ private:
 	void StartDevelopmentAuth(FString DevAuthToken);
 	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
 	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
+    void OnLoginTokens(const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
 	template <typename T, typename... ArgsType>
 	void QueueOutgoingMessage(ArgsType&&... Args);
@@ -125,4 +134,6 @@ private:
 	Worker_RequestId NextRequestId = 0;
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
+    
+    LoginTokenCb    LoginTokenCb_ = NULL;
 };

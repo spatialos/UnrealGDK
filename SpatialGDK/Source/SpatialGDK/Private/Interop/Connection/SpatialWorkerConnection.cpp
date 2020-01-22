@@ -182,25 +182,36 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 
 	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
-	const FString& DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
-	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
-	if (DeploymentToConnect.IsEmpty())
-	{
-		Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
-	}
-	else
-	{
-		for (uint32 i = 0; i < LoginTokens->login_token_count; i++)
-		{
-			FString DeploymentName = FString(LoginTokens->login_tokens[i].deployment_name);
-			if (DeploymentToConnect.Compare(DeploymentName) == 0)
-			{
-				Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
-				break;
-			}
-		}
-	}
-	Connection->ConnectToLocator();
+    Connection->OnLoginTokens(LoginTokens);
+}
+
+void USpatialWorkerConnection::OnLoginTokens(const Worker_Alpha_LoginTokensResponse* LoginTokens)
+{
+    // Only LoginTokenCb_ is null ptr or the logic register by caller return false, the function will go to following code.
+    if (LoginTokenCb_ && LoginTokenCb_(LoginTokens))
+    {
+        return;
+    }
+    
+    const FString& DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
+    // If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
+    if (DeploymentToConnect.IsEmpty())
+    {
+        LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
+    }
+    else
+    {
+        for (uint32 i = 0; i < LoginTokens->login_token_count; i++)
+        {
+            FString DeploymentName = FString(LoginTokens->login_tokens[i].deployment_name);
+            if (DeploymentToConnect.Compare(DeploymentName) == 0)
+            {
+                LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
+                break;
+            }
+        }
+    }
+    ConnectToLocator();
 }
 
 void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
