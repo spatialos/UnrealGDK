@@ -9,24 +9,14 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslationManager);
 
-SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager()
-	: bWorkerEntityQueryInFlight(false)
-{}
-
-void SpatialVirtualWorkerTranslationManager::Init(
+SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(
 	USpatialReceiver* InReceiver,
 	USpatialWorkerConnection* InConnection,
 	SpatialVirtualWorkerTranslator* InTranslator)
-{
-	check(InReceiver != nullptr);
-	Receiver = InReceiver;
-
-	check(InConnection != nullptr);
-	Connection = InConnection;
-
-	check(InTranslator != nullptr);
-	Translator = InTranslator;
-}
+	: Receiver(InReceiver)
+	, Connection(InConnection)
+	, Translator(InTranslator)
+{}
 
 void SpatialVirtualWorkerTranslationManager::AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds)
 {
@@ -46,22 +36,18 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Autho
 	if (!bAuthoritative)
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Lost authority over the translation mapping. This is not supported."));
+		return;
 	}
 
-	if (AuthOp.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
-	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Authority over the VirtualWorkerTranslationManager has changed. This worker %s authority."), bAuthoritative ? TEXT("now has") : TEXT("does not have"));
+	check(AuthOp.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("This worker now has authority over the VirtualWorker translation."));
 
-		if (bAuthoritative)
-		{
-			// TODO(zoning): The prototype had an unassigned workers list. Need to follow up with Tim/Chris about whether
-			// that is necessary or we can continue to use the (possibly) stale list until we receive the query response.
+	// TODO(zoning): The prototype had an unassigned workers list. Need to follow up with Tim/Chris about whether
+	// that is necessary or we can continue to use the (possibly) stale list until we receive the query response.
 
-			// Query for all connection entities, so we can detect if some worker has died and needs to be updated in
-			// the mapping.
-			QueryForWorkerEntities();
-		}
-	}
+	// Query for all connection entities, so we can detect if some worker has died and needs to be updated in
+	// the mapping.
+	QueryForWorkerEntities();
 }
 
 // For each entry in the map, write a VirtualWorkerMapping type object to the Schema object.
@@ -107,11 +93,9 @@ void SpatialVirtualWorkerTranslationManager::ConstructVirtualWorkerMappingFromQu
 }
 
 // This will be called on the worker authoritative for the translation mapping to push the new version of the map
-// to the spatialOS storage.
+// to the SpatialOS storage.
 void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate()
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("SendVirtualWorkerMappingUpdate"));
-
 	// Construct the mapping update based on the local virtual worker to physical worker mapping.
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
@@ -125,6 +109,7 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate()
 
 	// The Translator on the worker which hosts the manager won't get the component update notification,
 	// so send it across directly.
+	check(Translator != nullptr);
 	Translator->ApplyVirtualWorkerManagerData(UpdateObject);
 }
 
@@ -148,9 +133,8 @@ void SpatialVirtualWorkerTranslationManager::QueryForWorkerEntities()
 	WorkerEntityQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	// Make the query.
-	Worker_RequestId RequestID;
 	check(Connection.IsValid());
-	RequestID = Connection->SendEntityQueryRequest(&WorkerEntityQuery);
+	Worker_RequestId RequestID = Connection->SendEntityQueryRequest(&WorkerEntityQuery);
 	bWorkerEntityQueryInFlight = true;
 
 	// Register a method to handle the query response.
@@ -191,8 +175,6 @@ void SpatialVirtualWorkerTranslationManager::WorkerEntityQueryDelegate(const Wor
 
 void SpatialVirtualWorkerTranslationManager::AssignWorker(const PhysicalWorkerName& Name)
 {
-	check(!UnassignedVirtualWorkers.IsEmpty());
-
 	// Get a VirtualWorkerId from the list of unassigned work.
 	VirtualWorkerId Id;
 	UnassignedVirtualWorkers.Dequeue(Id);

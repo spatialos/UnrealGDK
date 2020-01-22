@@ -2486,10 +2486,9 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 }
 
 // This is only called if this worker has been selected by SpatialOS to be authoritative
-// fr the TranslationManager, otherwise the manager will never be instantiated.
+// for the TranslationManager, otherwise the manager will never be instantiated.
 void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
 {
-	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>();
-	VirtualWorkerTranslationManager->Init(Receiver, Connection, VirtualWorkerTranslator.Get());
+	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
 	VirtualWorkerTranslationManager->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
 }

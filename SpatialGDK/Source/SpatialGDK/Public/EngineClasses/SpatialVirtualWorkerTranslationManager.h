@@ -35,9 +35,7 @@ class USpatialWorkerConnection;
 class SPATIALGDK_API SpatialVirtualWorkerTranslationManager
 {
 public:
-	SpatialVirtualWorkerTranslationManager();
-
-	void Init(USpatialReceiver* InReceiver,
+	SpatialVirtualWorkerTranslationManager(USpatialReceiver* InReceiver,
 		USpatialWorkerConnection* InConnection,
 		SpatialVirtualWorkerTranslator* InTranslator);
 

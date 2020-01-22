@@ -22,7 +22,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_test_THEN_pass)
 // 	USpatialWorkerConnection* Connection = NewObject<USpatialWorkerConnection>();
 // 	USpatialReceiver* Receiver = NewObject<USpatialReceiver>();
 
-	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>();
+// 	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>();
 
 	return true;
 }
