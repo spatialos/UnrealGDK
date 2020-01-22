@@ -157,6 +157,17 @@ bool FSendDeleteEntityRequest::Update()
 	return true;
 }
 
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendCommandRequest, USpatialWorkerConnection*, Connection);
+bool FSendCommandRequest::Update()
+{
+	const Worker_EntityId EntityId = 0;
+	Worker_CommandRequest CommandRequest = {};
+	uint32_t CommandId = 0;
+	Connection->SendCommandRequest(EntityId, &CommandRequest, CommandId);
+
+	return true;
+}
+
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FFindWorkerResponseOfType, FAutomationTestBase*, Test, USpatialWorkerConnection*, Connection, uint8_t, ExpectedOpType);
 bool FFindWorkerResponseOfType::Update()
 {
@@ -182,7 +193,7 @@ bool FFindWorkerResponseOfType::Update()
 
 	if (bFoundOpOfExpectedType || bReachedTimeout)
 	{
-		Test->TestTrue(TEXT("Received Worker Repsonse of expected type"), bFoundOpOfExpectedType);
+		Test->TestTrue(TEXT("Received Worker Response of expected type"), bFoundOpOfExpectedType);
 		return true;
 	}
 	else
@@ -335,26 +346,34 @@ WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_delete_entity_request_s
 	return true;
 }
 
-/*
-	virtual void FinishDestroy() override;
-	void DestroyConnection();
-	PhysicalWorkerName GetWorkerId() const;
-	void CacheWorkerAttributes();
-	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
-	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
-	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
-	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
-	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
-	void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest);
-	void SendMetrics(const SpatialGDK::SpatialMetrics& Metrics);
-	void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message);
-	const TArray<FString>& GetWorkerAttributes() const;
-	void SetConnectionType(ESpatialConnectionType InConnectionType);
-	void Connect(bool bInitAsClient, uint32 PlayInEditorID);
-	TArray<Worker_OpList*> GetOpList();
-	USpatialWorkerConnectionCallbacks* Callbacks;
-*/
+WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_command_request_sent_THEN_command_request_response_received)
+{
+	// GIVEN
+	FDeploymentFixture Deployment(this);
+	FConnectionsFixture Connections;
 
-	//C:\Dev\UnrealEngine\Engine\Binaries\Win64\UE4Editor-Cmd.exe "C:\Dev\UnrealGDKTestGyms\Game\GDKTestGyms.uproject" -unattended -nopause -NullRHI -log -log=RunTests.log -ExecCmds="Automation RunTests SpatialWorkerConnection; Quit"
+	// WHEN
+	ADD_LATENT_AUTOMATION_COMMAND(FSendCommandRequest(Connections.ClientConnection));
+	ADD_LATENT_AUTOMATION_COMMAND(FSendCommandRequest(Connections.ServerConnection));
+
+	// THEN
+	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, Connections.ServerConnection, WORKER_OP_TYPE_COMMAND_RESPONSE));
+	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, Connections.ClientConnection, WORKER_OP_TYPE_COMMAND_RESPONSE));
+
+	return true;
+}
+
+WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_doing_nothing_THEN_metrics_received)
+{
+	// GIVEN
+	FDeploymentFixture Deployment(this);
+	FConnectionsFixture Connections;
+
+	// WHEN
+
+	// THEN
+	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, Connections.ServerConnection, WORKER_OP_TYPE_METRICS));
+	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, Connections.ClientConnection, WORKER_OP_TYPE_METRICS));
+
+	return true;
+}
