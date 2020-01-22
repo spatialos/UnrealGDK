@@ -373,6 +373,7 @@ TArray<uint32> InterestFactory::CreateClientResultType() const
 {
 	TArray<uint32> ResultType;
 
+	// Add the required unreal components
 	ResultType.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID);
 	ResultType.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID);
 	ResultType.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY);
@@ -382,6 +383,7 @@ TArray<uint32> InterestFactory::CreateClientResultType() const
 	// TODO: breaks without this, but shouldn't need it. Figure out why
 	ResultType.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID); 
 
+	// Add all data components- clients don't need to see handover or owner only components on other entities.
 	ResultType.Append(ClassInfoManager->SchemaDatabase->DataComponentIds.Array());
 
 	return ResultType;
