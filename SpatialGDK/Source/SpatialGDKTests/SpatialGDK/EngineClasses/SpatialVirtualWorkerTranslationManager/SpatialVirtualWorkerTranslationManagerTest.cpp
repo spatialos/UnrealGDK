@@ -18,7 +18,7 @@
 
 VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_test_THEN_pass)
 {
-	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
 // 	USpatialWorkerConnection* Connection = NewObject<USpatialWorkerConnection>();
 // 	USpatialReceiver* Receiver = NewObject<USpatialReceiver>();
 
