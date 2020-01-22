@@ -732,7 +732,12 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			return;
 		}
 
-		PackageMap->ResolveEntityActor(EntityActor, EntityId);
+		if (!PackageMap->ResolveEntityActor(EntityActor, EntityId))
+		{
+			EntityActor->Destroy(true);
+			Channel->Close(EChannelCloseReason::Destroyed);
+			return;
+		}
 
 #if ENGINE_MINOR_VERSION <= 22
 		Channel->SetChannelActor(EntityActor);
@@ -1081,7 +1086,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 		Channel.CreateSubObjects.Add(TargetObject.Get());
 	}
 
-	ApplyComponentData(Channel, *TargetObject , Data);
+	ApplyComponentData(Channel, *TargetObject, Data);
 }
 
 void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp& Op)
