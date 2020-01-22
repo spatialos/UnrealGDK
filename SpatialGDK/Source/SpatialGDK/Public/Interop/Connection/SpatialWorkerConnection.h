@@ -42,7 +42,7 @@ public:
     /// Caller can register an callback by using this function.
     /// It will be trigered when SpatialWorkerConnection receive Login Token.
     /// @param cb - callback function.
-    void RegisterOnLoginTokensCb(const LoginTokenCb& cb) {LoginTokenCb_ = cb;};
+	void RegisterOnLoginTokensCb(const LoginTokenCb& cb) {LoginTokenCb_ = cb;};
 
 	void Connect(bool bConnectAsClient, uint32 PlayInEditorID);
 
@@ -109,7 +109,7 @@ private:
 	void StartDevelopmentAuth(FString DevAuthToken);
 	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
 	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
-    void OnLoginTokens(const Worker_Alpha_LoginTokensResponse* LoginTokens);
+	void OnLoginTokens(const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
 	template <typename T, typename... ArgsType>
 	void QueueOutgoingMessage(ArgsType&&... Args);
@@ -134,6 +134,6 @@ private:
 	Worker_RequestId NextRequestId = 0;
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
-    
-    LoginTokenCb    LoginTokenCb_ = NULL;
+	
+	LoginTokenCb    LoginTokenCb_ = nullptr;
 };
