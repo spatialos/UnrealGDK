@@ -2489,6 +2489,10 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 // for the TranslationManager, otherwise the manager will never be instantiated.
 void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
 {
-	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
-	VirtualWorkerTranslationManager->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
+		VirtualWorkerTranslationManager->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+	}
 }
