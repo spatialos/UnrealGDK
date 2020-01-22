@@ -266,8 +266,6 @@ private:
 #endif
 
 	void StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist);
-	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
-	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
 
 	void MakePlayerSpawnRequest();
 

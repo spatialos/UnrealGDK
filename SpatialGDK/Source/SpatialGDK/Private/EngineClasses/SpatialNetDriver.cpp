@@ -223,50 +223,6 @@ void USpatialNetDriver::StartSetupConnectionConfigFromCommandLine(bool& bOutSucc
 	}
 }
 
-void USpatialNetDriver::StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist)
-{
-	bOutUseReceptionist = !(URL.Host == SpatialConstants::LOCATOR_HOST || URL.HasOption(TEXT("locator")));
-	if (bOutUseReceptionist)
-	{
-		Connection->ReceptionistConfig.SetReceptionistHost(URL.Host);
-	}
-	else
-	{
-		FLocatorConfig& LocatorConfig = Connection->LocatorConfig;
-		LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
-		LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
-	}
-}
-
-void USpatialNetDriver::FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist)
-{
-	// Finish setup for the config objects regardless of loading from command line or URL
-	USpatialGameInstance* GameInstance = GetGameInstance();
-	if (bUseReceptionist)
-	{
-		// Use Receptionist
-		Connection->SetConnectionType(ESpatialConnectionType::Receptionist);
-
-		FReceptionistConfig& ReceptionistConfig = Connection->ReceptionistConfig;
-		ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
-
-		const TCHAR* UseExternalIpForBridge = TEXT("useExternalIpForBridge");
-		if (URL.HasOption(UseExternalIpForBridge))
-		{
-			FString UseExternalIpOption = URL.GetOption(UseExternalIpForBridge, TEXT(""));
-			ReceptionistConfig.UseExternalIp = !UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase);
-		}
-	}
-	else
-	{
-		// Use Locator
-		Connection->SetConnectionType(ESpatialConnectionType::Locator);
-		FLocatorConfig& LocatorConfig = Connection->LocatorConfig;
-		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorConfig.LocatorHost);
-		LocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
-	}
-}
-
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 {
 	USpatialGameInstance* GameInstance = GetGameInstance();
@@ -332,10 +288,11 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	if (bShouldLoadFromURL)
 	{
-		StartSetupConnectionConfigFromURL(URL, bUseReceptionist);
+		Connection->StartSetupConnectionConfigFromURL(URL, bUseReceptionist);
 	}
 
-	FinishSetupConnectionConfig(URL, bUseReceptionist);
+	const FString& WorkerType = GameInstance->GetSpatialWorkerType().ToString();
+	Connection->FinishSetupConnectionConfig(URL, bUseReceptionist, WorkerType);
 
 #if WITH_EDITOR
 	Connection->Connect(bConnectAsClient, PlayInEditorID);
