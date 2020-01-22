@@ -295,6 +295,11 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 	return true;
 }
 
+FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefForSubobject(Worker_EntityId EntityId, const FClassInfo* Info)
+{
+	return FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]);
+}
+
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {

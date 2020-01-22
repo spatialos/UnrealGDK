@@ -467,6 +467,34 @@ bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentI
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
 }
 
+const FClassInfo * USpatialClassInfoManager::GetClassInfoForNewSubobject(UObject * Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient)
+{
+	const FClassInfo* Info = nullptr;
+
+	const FClassInfo& SubobjectInfo = GetOrCreateClassInfoByClass(Object->GetClass());
+
+	// Find the first ClassInfo relating to a dynamic subobject
+	// which has not been used on this entity.
+	for (const auto& DynamicSubobjectInfo : SubobjectInfo.DynamicSubobjectInfo)
+	{
+		if (!PackageMapClient->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data])).IsValid())
+		{
+			Info = &DynamicSubobjectInfo.Get();
+			break;
+		}
+	}
+
+	// If all ClassInfos are used up, we error.
+	if (Info == nullptr)
+	{
+		AActor* Actor = Cast<AActor>(PackageMapClient->GetObjectFromEntityId(EntityId));
+		UE_LOG(LogSpatialPackageMap, Error, TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
+			" the max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), Actor ? *Actor->GetName() : TEXT("null"));
+	}
+
+	return Info;
+}
+
 void USpatialClassInfoManager::QuitGame()
 {
 #if WITH_EDITOR

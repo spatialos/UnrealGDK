@@ -3,6 +3,8 @@
 #include "Schema/UnrealObjectRef.h"
 
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "SpatialConstants.h"
+#include "EngineClasses/SpatialActorChannel.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealObjectRef, Log, All);
@@ -64,6 +66,8 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 
 	if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())
 	{
+		UE_LOG(LogTemp, Log, TEXT("FromObjectPtr: %s"), *ObjectValue->GetName());
+
 		FNetworkGUID NetGUID;
 		if (ObjectValue->IsSupportedForNetworking())
 		{
@@ -122,12 +126,29 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 					}
 				}
 
-				// Unresolved object. 
-				UE_LOG(LogUnrealObjectRef, Verbose, TEXT("FUnrealObjectRef::FromObjectPtr: ObjectValue is unresolved! %s"), *ObjectValue->GetName());
+				// Check if the object is a newly referenced dynamic subobject, in which case we can create the object ref if we have the entity id of the parent actor.
+				if (ObjectValue->IsA<UActorComponent>() && PackageMap->GetEntityIdFromObject(ObjectValue->GetTypedOuter<AActor>()) != SpatialConstants::INVALID_ENTITY_ID)
+				{
+					// This is very hacky, refactor
+					AActor* Actor = ObjectValue->GetTypedOuter<AActor>();
+					Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+					USpatialActorChannel* Channel = Cast<USpatialNetDriver>(Actor->GetNetDriver())->GetActorChannelByEntityId(EntityId);
+					const FClassInfo* Info = Channel->TryResolveNewDynamicSubobjectAndGetClassInfo(ObjectValue);
+					ObjectRef = PackageMap->GetUnrealObjectRefForSubobject(EntityId, Info);
+					if (ObjectRef.IsValid())
+					{
+						return ObjectRef;
+					}
+				}
+
+				// Unresolved object.
+				UE_LOG(LogUnrealObjectRef, Warning, TEXT("FUnrealObjectRef::FromObjectPtr: ObjectValue is unresolved! %s"), *ObjectValue->GetName());
 				ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 			}
 		}
 	}
+
+	if(ObjectValue != nullptr) UE_LOG(LogTemp, Log, TEXT("FromObjectPtr: %s (late)"), *ObjectRef.ToString());
 
 	return ObjectRef;
 }

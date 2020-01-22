@@ -115,6 +115,7 @@ public:
 
 	uint32 GetComponentIdFromLevelPath(const FString& LevelPath);
 	bool IsSublevelComponent(Worker_ComponentId ComponentId);
+	const FClassInfo* GetClassInfoForNewSubobject(UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient);
 
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
