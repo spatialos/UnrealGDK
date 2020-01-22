@@ -117,6 +117,10 @@ Interest InterestFactory::CreateInterest() const
 	{
 		return CreatePlayerOwnedActorInterest();
 	}
+	else if (GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
+	{
+		return CreateActorInterest();
+	}
 	else
 	{
 		return Interest{};
