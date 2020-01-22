@@ -183,7 +183,15 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	Query ClientQuery;
 	ClientQuery.Constraint = ClientConstraint;
 
-	ClientQuery.ResultComponentId = CreateClientResultType();
+	if (GetDefault<USpatialGDKSettings>()->bEnableGranularResultTypes)
+	{
+		ClientQuery.ResultComponentId = CreateClientResultType();
+	}
+	else
+	{
+		ClientQuery.FullSnapshotResult = true;
+	}
+	
 
 	ComponentInterest ClientComponentInterest;
 	ClientComponentInterest.Queries.Add(ClientQuery);
