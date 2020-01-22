@@ -297,6 +297,12 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 
 const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object, Worker_EntityId EntityId, USpatialClassInfoManager* ClassInfoManager)
 {
+	FUnrealObjectRef Ref = GetUnrealObjectRefFromObject(Object);
+	if (Ref.IsValid())
+	{
+		UE_LOG(LogSpatialPackageMap, Error, TEXT("Trying to resolve a dynamic subobject twice! Object %s, EntityId %d."), Object ? *Object->GetName() : TEXT("null"), EntityId);
+	}
+
 	const FClassInfo* Info = ClassInfoManager->GetClassInfoForNewSubobject(Object, EntityId, this);
 
 	// If we don't get the info, an error is logged in the above function, that we have exceeded the maximum number of dynamic subobjects on the entity
