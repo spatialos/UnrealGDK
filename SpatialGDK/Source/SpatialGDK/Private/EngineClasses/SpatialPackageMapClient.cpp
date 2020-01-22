@@ -301,7 +301,7 @@ const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetC
 	if (Ref.IsValid())
 	{
 		UE_LOG(LogSpatialPackageMap, Error, TEXT("Trying to resolve a dynamic subobject twice! Object %s, EntityId %d."), Object ? *Object->GetName() : TEXT("null"), EntityId);
-		return;
+		return nullptr;
 	}
 
 	const FClassInfo* Info = ClassInfoManager->GetClassInfoForNewSubobject(Object, EntityId, this);
