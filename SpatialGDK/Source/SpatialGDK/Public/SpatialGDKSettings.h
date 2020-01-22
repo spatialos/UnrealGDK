@@ -2,12 +2,11 @@
 
 #pragma once
 
+#include "Utils/SpatialActorGroupManager.h"
+
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
-#include "Utils/SpatialActorGroupManager.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
-#include "LoadBalancing/AbstractLockingPolicy.h"
 
 #include "SpatialGDKSettings.generated.h"
 
@@ -219,12 +218,6 @@ public:
 	/** EXPERIMENTAL: Worker type to assign for load balancing. */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
 	FWorkerType LoadBalancingWorkerType;
-
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-	TSubclassOf<UAbstractLBStrategy> LoadBalanceStrategy;
-
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
 	bool bUseRPCRingBuffers;

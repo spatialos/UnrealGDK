@@ -208,6 +208,7 @@ private:
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
+	void CreateAndInitializeLoadBalancingClasses();
 
 	void CreateServerSpatialOSNetConnection();
 	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor);
@@ -265,8 +266,6 @@ private:
 #endif
 
 	void StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist);
-	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
-	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
 
 	void MakePlayerSpawnRequest();
 
