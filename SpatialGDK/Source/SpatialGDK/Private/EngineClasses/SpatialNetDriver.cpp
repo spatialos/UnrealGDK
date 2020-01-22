@@ -511,7 +511,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	PackageMap->Init(this, &TimerManager);
 
-	//Pass the PackageMap to the InterestFactory. The PackageMap was not available to pass when the InterestFactory was created.
+	// Pass the PackageMap to the InterestFactory. The PackageMap was not available to pass when the InterestFactory was created.
 	SpatialInterestFactory->SetPackageMap(PackageMap);
 }
 

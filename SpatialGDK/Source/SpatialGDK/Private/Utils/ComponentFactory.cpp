@@ -424,14 +424,11 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	// Only support Interest for Actors for now.
 	if (Object->IsA<AActor>() && bInterestHasChanged)
 	{
-		if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver))
+		Worker_ComponentUpdate Update = SpatialInterestFactory->CreateInterestUpdate(Cast<AActor>(Object), Info);
+		ComponentUpdates.Add(Update);
+		if (OutLatencyTraceIds != nullptr)
 		{
-			Worker_ComponentUpdate Update = SpatialInterestFactory->CreateInterestUpdate(Cast<AActor>(Object), Info);
-			ComponentUpdates.Add(Update);
-			if (OutLatencyTraceIds != nullptr)
-			{
-				OutLatencyTraceIds->Add(USpatialLatencyTracer::InvalidTraceKey); // Interest not tracked
-			}
+			OutLatencyTraceIds->Add(USpatialLatencyTracer::InvalidTraceKey); // Interest not tracked
 		}
 	}
 

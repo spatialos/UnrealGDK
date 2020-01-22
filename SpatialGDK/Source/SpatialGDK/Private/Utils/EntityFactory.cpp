@@ -248,11 +248,8 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 	ComponentDatas.Append(DynamicComponentDatas);
 
-	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver))
-	{
-		Worker_ComponentData Data = SpatialInterestFactory->CreateInterestData(Actor, Info);
-		ComponentDatas.Add(Data);
-	}
+	Worker_ComponentData Data = SpatialInterestFactory->CreateInterestData(Actor, Info);
+	ComponentDatas.Add(Data);
 
 	if (SpatialSettings->bUseRPCRingBuffers && RPCService != nullptr)
 	{
