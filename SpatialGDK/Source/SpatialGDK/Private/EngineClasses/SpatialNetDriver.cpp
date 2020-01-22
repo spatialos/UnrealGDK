@@ -21,6 +21,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialClassInfoManager.h"
@@ -122,7 +123,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
-	// Initialize ActorGroupManager as it is a depdency of ClassInfoManager (see below)
+	// Initialize ActorGroupManager as it is a dependency of ClassInfoManager (see below)
 	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
 	ActorGroupManager->Init();
 
@@ -142,7 +143,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	if (!bInitAsClient)
 	{
-		GatherClientInterestDistances();
+		InterestFactory::CreateClientCheckoutRadiusConstraint(ClassInfoManager);
 	}
 
 #if WITH_EDITOR
@@ -453,38 +454,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		if (IsServer()) 
-		{
-			if (SpatialSettings->LoadBalanceStrategy == nullptr)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
-				LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
-			}
-			else
-			{
-				// TODO: zoning - Move to AWorldSettings subclass [UNR-2386]
-				LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, SpatialSettings->LoadBalanceStrategy);
-			}
-			LoadBalanceStrategy->Init(this);
-
-			if (SpatialSettings->LockingPolicy == nullptr)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
-				LockingPolicy = NewObject<UReferenceCountedLockingPolicy>(this);
-			}
-			else
-			{
-				LockingPolicy = NewObject<UAbstractLockingPolicy>(this, SpatialSettings->LockingPolicy);
-			}
-		}
-
-		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>();
-		VirtualWorkerTranslator->Init(LoadBalanceStrategy, StaticComponentView, Connection->GetWorkerId());
-
-		if (IsServer()) 
-		{
-			LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
-		}
+		CreateAndInitializeLoadBalancingClasses();
 	}
 
 	if (SpatialSettings->bUseRPCRingBuffers)
@@ -508,6 +478,43 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	PackageMap->Init(this, &TimerManager);
 }
+
+void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
+{
+	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
+	if (IsServer()) 
+	{
+		if (WorldSettings == nullptr || WorldSettings->LoadBalanceStrategy == nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+			LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
+		}
+		else
+		{
+			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->LoadBalanceStrategy);
+		}
+		LoadBalanceStrategy->Init(this);
+	}
+
+	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, StaticComponentView, Connection->GetWorkerId());
+
+	if (IsServer())
+	{
+		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
+
+		if (WorldSettings == nullptr || WorldSettings->LockingPolicy == nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
+			LockingPolicy = NewObject<UReferenceCountedLockingPolicy>(this);
+		}
+		else
+		{
+			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->LockingPolicy);
+		}
+		LockingPolicy->Init(StaticComponentView, PackageMap, VirtualWorkerTranslator.Get());
+	}
+}
+
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 {

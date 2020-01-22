@@ -8,23 +8,15 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
-SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator()
-	: bIsReady(false)
-	, LocalPhysicalWorkerName(SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME)
-	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-{}
-
-void SpatialVirtualWorkerTranslator::Init(UAbstractLBStrategy* InLoadBalanceStrategy,
+SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy,
 	USpatialStaticComponentView* InStaticComponentView,
 	PhysicalWorkerName InPhysicalWorkerName)
-{
-	LoadBalanceStrategy = InLoadBalanceStrategy;
-
-	check(InStaticComponentView != nullptr);
-	StaticComponentView = InStaticComponentView;
-
-	LocalPhysicalWorkerName = InPhysicalWorkerName;
-}
+	: LoadBalanceStrategy(InLoadBalanceStrategy)
+	, StaticComponentView(InStaticComponentView)
+	, bIsReady(false)
+	, LocalPhysicalWorkerName(InPhysicalWorkerName)
+	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+{}
 
 const PhysicalWorkerName* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVirtualWorker(VirtualWorkerId Id) const
 {

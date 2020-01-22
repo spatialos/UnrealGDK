@@ -2,13 +2,15 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
+#include "EngineClasses/AbstractVirtualWorkerTranslator.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
+
+#include "Containers/Queue.h"
+#include "CoreMinimal.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslator, Log, All)
 
@@ -16,12 +18,11 @@ class UAbstractLBStrategy;
 class USpatialStaticComponentView;
 class USpatialReceiver;
 
-class SPATIALGDK_API SpatialVirtualWorkerTranslator
+class SPATIALGDK_API SpatialVirtualWorkerTranslator : public AbstractVirtualWorkerTranslator
 {
 public:
-	SpatialVirtualWorkerTranslator();
-
-	void Init(UAbstractLBStrategy* InLoadBalanceStrategy,
+	SpatialVirtualWorkerTranslator() = delete;
+	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy,
 		USpatialStaticComponentView* InStaticComponentView,
 		PhysicalWorkerName InPhysicalWorkerName);
 
@@ -29,7 +30,7 @@ public:
 	// Currently that is only the number of virtual workers desired.
 	bool IsReady() const { return bIsReady; }
 
-	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; }
+	virtual VirtualWorkerId GetLocalVirtualWorkerId() const override { return LocalVirtualWorkerId; }
 	PhysicalWorkerName GetLocalPhysicalWorkerName() const { return LocalPhysicalWorkerName; }
 
 	// Returns the name of the worker currently assigned to VirtualWorkerId id or nullptr if there is
