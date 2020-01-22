@@ -124,11 +124,9 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 
 	TArray<FWorkerComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 
-	for (int i = 0; i < SubobjectDatas.Num(); i++)
+	for (FWorkerComponentData& ComponentData : SubobjectDatas)
 	{
-		FWorkerComponentData ComponentDataWrapper = {};
-		ComponentDataWrapper.Data = SubobjectDatas[i].Data;
-		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentDataWrapper);
+		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData);
 	}
 
 	Channel->PendingDynamicSubobjects.Remove(TWeakObjectPtr<UObject>(Subobject));
@@ -163,8 +161,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 		}
 	});
 
-	FWorkerComponentUpdate Update;
-	Update.Update = EntityACL->CreateEntityAclUpdate();
+	FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 	Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
 }
 
@@ -269,10 +266,8 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	TArray<FWorkerComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges);
 
-	for(int i = 0; i < ComponentUpdates.Num(); i++)
+	for (FWorkerComponentUpdate& Update : ComponentUpdates)
 	{
-		FWorkerComponentUpdate& UpdateWrapper = ComponentUpdates[i];
-		Worker_ComponentUpdate& Update = UpdateWrapper.Update;
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, Update.component_id))
 		{
 			UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
@@ -281,11 +276,11 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the update, to send upon receiving authority.
 			// Note: This will break in a multi-worker context, if we try to create an entity that we don't intend to have authority over. For this reason, this fix is only temporary.
 			TArray<FWorkerComponentUpdate>& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
-			UpdatesQueuedUntilAuthority.Add(UpdateWrapper);
+			UpdatesQueuedUntilAuthority.Add(Update);
 			continue;
 		}
 
-		Connection->SendComponentUpdate(EntityId, &UpdateWrapper);
+		Connection->SendComponentUpdate(EntityId, &Update);
 	}
 }
 
@@ -317,8 +312,7 @@ void USpatialSender::FlushPackedRPCs()
 		Worker_EntityId PlayerControllerEntityId = It.Key;
 		const TArray<FPendingRPC>& PendingRPCArray = It.Value;
 
-		FWorkerComponentUpdate ComponentUpdateWrapper = {};
-		Worker_ComponentUpdate& ComponentUpdate = ComponentUpdateWrapper.Update;
+		FWorkerComponentUpdate ComponentUpdate = {};
 
 		Worker_ComponentId ComponentId = NetDriver->IsServer() ? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 		ComponentUpdate.component_id = ComponentId;
@@ -335,7 +329,7 @@ void USpatialSender::FlushPackedRPCs()
 			Schema_AddEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID, RPC.Entity);
 		}
 
-		Connection->SendComponentUpdate(PlayerControllerEntityId, &ComponentUpdateWrapper);
+		Connection->SendComponentUpdate(PlayerControllerEntityId, &ComponentUpdate);
 	}
 
 	RPCsToPack.Empty();

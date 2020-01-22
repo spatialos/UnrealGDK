@@ -180,15 +180,14 @@ void UGlobalStateManager::SendShutdownAdditionalServersEvent()
 		return;
 	}
 
-	FWorkerComponentUpdate ComponentUpdateWrapper = {};
-	Worker_ComponentUpdate& ComponentUpdate = ComponentUpdateWrapper.Update;
+	FWorkerComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
 	Schema_AddObject(EventsObject, SpatialConstants::SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID);
 
-	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &ComponentUpdateWrapper);
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &ComponentUpdate);
 }
 #endif // WITH_EDITOR
 
@@ -382,15 +381,14 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 		return;
 	}
 
-	FWorkerComponentUpdate UpdateWrapper = {};
-	Worker_ComponentUpdate& Update = UpdateWrapper.Update;
+	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	AddStringToEntityMapToSchema(UpdateObject, 1, SingletonNameToEntityId);
 
-	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &UpdateWrapper);
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
 bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId) const
@@ -411,8 +409,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 
 	// Send the component update that we can now accept players.
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
-	FWorkerComponentUpdate UpdateWrapper = {};
-	Worker_ComponentUpdate& Update = UpdateWrapper.Update;
+	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -425,15 +422,14 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 
 	// Component updates are short circuited so we set the updated state here and then send the component update.
 	bAcceptingPlayers = bInAcceptingPlayers;
-	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &UpdateWrapper);
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
 void UGlobalStateManager::SetCanBeginPlay(const bool bInCanBeginPlay)
 {
 	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
 
-	FWorkerComponentUpdate UpdateWrapper = {};
-	Worker_ComponentUpdate& Update = UpdateWrapper.Update;
+	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -441,7 +437,7 @@ void UGlobalStateManager::SetCanBeginPlay(const bool bInCanBeginPlay)
 	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bInCanBeginPlay));
 
 	bCanBeginPlay = bInCanBeginPlay;
-	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &UpdateWrapper);
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
 void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
@@ -511,13 +507,12 @@ void UGlobalStateManager::ResetGSM()
 	SetCanBeginPlay(false);
 
 	// Reset the Singleton map so Singletons are recreated.
-	FWorkerComponentUpdate UpdateWrapper;
-	Worker_ComponentUpdate& Update = UpdateWrapper.Update;
+	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
 
-	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &UpdateWrapper);
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
 void UGlobalStateManager::BeginDestroy()
@@ -534,13 +529,12 @@ void UGlobalStateManager::BeginDestroy()
 			SetCanBeginPlay(false);
 
 			// Reset the Singleton map so Singletons are recreated.
-			FWorkerComponentUpdate UpdateWrapper = {};
-			Worker_ComponentUpdate& Update = UpdateWrapper.Update;
+			FWorkerComponentUpdate Update = {};
 			Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 			Update.schema_type = Schema_CreateComponentUpdate();
 			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
 
-			NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &UpdateWrapper);
+			NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 		}
 	}
 #endif
@@ -698,13 +692,12 @@ void UGlobalStateManager::IncrementSessionID()
 
 void UGlobalStateManager::SendSessionIdUpdate()
 {
-	FWorkerComponentUpdate UpdateWrapper = {};
-	Worker_ComponentUpdate& Update = UpdateWrapper.Update;
+	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, DeploymentSessionId);
 
-	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &UpdateWrapper);
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }

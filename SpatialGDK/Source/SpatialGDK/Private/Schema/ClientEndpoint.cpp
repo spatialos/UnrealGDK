@@ -12,7 +12,7 @@ ClientEndpoint::ClientEndpoint(const Worker_ComponentData& Data)
 	ReadFromSchema(Schema_GetComponentDataFields(Data.schema_type));
 }
 
-void ClientEndpoint::ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
+void ClientEndpoint::ApplyComponentUpdate(const FWorkerComponentUpdate& Update)
 {
 	ReadFromSchema(Schema_GetComponentUpdateFields(Update.schema_type));
 }

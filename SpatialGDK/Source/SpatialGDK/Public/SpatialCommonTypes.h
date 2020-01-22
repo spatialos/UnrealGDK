@@ -28,33 +28,33 @@ using FReliableRPCMap = TMap<Worker_RequestId_Key, TSharedRef<struct FReliableRP
 
 using FObjectToRepStateMap = TMap <struct FUnrealObjectRef, TSet<FChannelObjectPair> >;
 
-struct FWorkerComponentData
+#if TRACE_LIB_ACTIVE
+// Extend the worker types to also include some latency tracking info
+struct FWorkerComponentData : public Worker_ComponentData
 {
 	FWorkerComponentData() = default;
-	FWorkerComponentData(const Worker_ComponentData& InData, TraceKey InTrace = InvalidTraceKey)
-		: Data(InData)
-#if TRACE_LIB_ACTIVE
-		, Trace(InTrace)
-#endif
-	{}
 
-	Worker_ComponentData Data{};
-#if TRACE_LIB_ACTIVE
+	FWorkerComponentData(const Worker_ComponentData& Data)
+		: Worker_ComponentData(Data) {}
+
+	FWorkerComponentData(Worker_ComponentData&& Data)
+		: Worker_ComponentData(MoveTemp(Data)) {}
+
 	TraceKey Trace{ InvalidTraceKey };
-#endif
 };
-struct FWorkerComponentUpdate
+struct FWorkerComponentUpdate : public Worker_ComponentUpdate
 {
 	FWorkerComponentUpdate() = default;
-	FWorkerComponentUpdate(const Worker_ComponentUpdate& InUpdate, TraceKey InTrace = InvalidTraceKey)
-		: Update(InUpdate)
-#if TRACE_LIB_ACTIVE
-		, Trace(InTrace)
-#endif
-	{}
 
-	Worker_ComponentUpdate Update{};
-#if TRACE_LIB_ACTIVE
+	FWorkerComponentUpdate(const Worker_ComponentUpdate& Update)
+		: Worker_ComponentUpdate(Update) {}
+
+	FWorkerComponentUpdate(Worker_ComponentUpdate&& Update)
+		: Worker_ComponentUpdate(MoveTemp(Update)) {}
+
 	TraceKey Trace{ InvalidTraceKey };
-#endif
 };
+#else
+using FWorkerComponentData = Worker_ComponentData;
+using FWorkerComponentUpdate = Worker_ComponentUpdate;
+#endif

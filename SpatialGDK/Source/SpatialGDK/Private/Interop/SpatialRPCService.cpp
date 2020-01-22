@@ -173,8 +173,8 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 	{
 		SpatialRPCService::UpdateToSend& UpdateToSend = UpdatesToSend.AddZeroed_GetRef();
 		UpdateToSend.EntityId = It.Key.EntityId;
-		UpdateToSend.UpdateObj.Update.component_id = It.Key.ComponentId;
-		UpdateToSend.UpdateObj.Update.schema_type = It.Value;
+		UpdateToSend.UpdateObj.component_id = It.Key.ComponentId;
+		UpdateToSend.UpdateObj.schema_type = It.Value;
 	}
 
 	PendingComponentUpdatesToSend.Empty();

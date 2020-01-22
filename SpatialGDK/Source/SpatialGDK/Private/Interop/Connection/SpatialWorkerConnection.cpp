@@ -545,7 +545,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			Data.SetNum(Message->Components.Num());
 			for(int i = 0, Num = Message->Components.Num(); i < Num; i++)
 			{
-				Data[i] = Message->Components[i].Data;
+				Data[i] = Message->Components[i]; // Intentional slicing
 			}
 			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
 				Data.Num(),
@@ -577,7 +577,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 
 			Worker_Connection_SendAddComponent(WorkerConnection,
 				Message->EntityId,
-				&Message->Data.Data,
+				&Message->Data,
 				&DisableLoopback);
 			break;
 		}
@@ -597,7 +597,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 
 			Worker_Connection_SendComponentUpdate(WorkerConnection,
 				Message->EntityId,
-				&Message->UpdateObj.Update,
+				&Message->UpdateObj,
 				&DisableLoopback);
 
 			break;

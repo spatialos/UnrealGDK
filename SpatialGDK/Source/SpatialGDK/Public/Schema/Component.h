@@ -4,6 +4,7 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 #include "CoreMinimal.h"
+#include "SpatialCommonTypes.h"
 
 namespace SpatialGDK
 {
@@ -11,7 +12,7 @@ namespace SpatialGDK
 struct Component
 {
 	virtual ~Component() {}
-	virtual void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) {}
+	virtual void ApplyComponentUpdate(const FWorkerComponentUpdate& Update) {}
 };
 
 class ComponentStorageBase

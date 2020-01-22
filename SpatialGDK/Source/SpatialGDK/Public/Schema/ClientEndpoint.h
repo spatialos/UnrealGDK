@@ -18,7 +18,7 @@ struct ClientEndpoint : Component
 
 	ClientEndpoint(const Worker_ComponentData& Data);
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
+	void ApplyComponentUpdate(const FWorkerComponentUpdate& Update) override;
 
 	RPCRingBuffer ReliableRPCBuffer;
 	RPCRingBuffer UnreliableRPCBuffer;

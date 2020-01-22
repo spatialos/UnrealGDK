@@ -1762,11 +1762,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	TimerManager.Tick(DeltaTime);
 
 	Super::TickFlush(DeltaTime);
-
-	if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(this))
-	{
-		Tracer->TickFrame();
-	}
 }
 
 USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const

@@ -1765,7 +1765,6 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 
 #if TRACE_LIB_ACTIVE
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(TargetObject);
-	Tracer->MarkActiveLatencyTrace(Params.Payload.Trace);
 #endif
 
 	ERPCResult Result = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
@@ -1775,7 +1774,31 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	{
 		Tracer->EndLatencyTrace(Params.Payload.Trace, TEXT("Unhandled trace - automatically ended"));
 	}
-	Tracer->MarkActiveLatencyTrace(USpatialLatencyTracer::InvalidTraceKey);
+	else
+	{
+		if (Params.Payload.Trace != USpatialLatencyTracer::InvalidTraceKey)
+		{
+			auto GetReasonString = [](ERPCResult Result) -> TCHAR*
+			{
+				switch (Result)
+				{
+				case ERPCResult::UnresolvedTargetObject: return TEXT("UnresolvedTargetObject");
+				case ERPCResult::MissingFunctionInfo: return TEXT("MissingFunctionInfo");
+				case ERPCResult::UnresolvedParameters: return TEXT("UnresolvedParameters");
+				case ERPCResult::NoActorChannel: return TEXT("NoActorChannel");
+				case ERPCResult::SpatialActorChannelNotListening: return TEXT("SpatialActorChannelNotListening");
+				case ERPCResult::NoNetConnection: return TEXT("NoNetConnection");
+				case ERPCResult::NoAuthority: return TEXT("NoAuthority");
+				case ERPCResult::InvalidRPCType: return TEXT("InvalidRPCType");
+				case ERPCResult::NoOwningController: return TEXT("NoOwningController");
+				case ERPCResult::NoControllerChannel: return TEXT("NoControllerChannel");
+				case ERPCResult::ControllerChannelNotListening: return TEXT("ControllerChannelNotListening");
+				default: return TEXT("Unknown");
+				}
+			};
+			Tracer->WriteToLatencyTrace(Params.Payload.Trace, FString::Printf(TEXT("RPC was not executed. Reason was: %s"), GetReasonString(Result)));
+		}
+	}
 #endif
 
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };

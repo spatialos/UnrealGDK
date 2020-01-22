@@ -199,8 +199,7 @@ void SpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 	check(StaticComponentView->HasAuthority(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID));
 
 	// Construct the mapping update based on the local virtual worker to physical worker mapping.
-	FWorkerComponentUpdate UpdateWrapper = {};
-	Worker_ComponentUpdate& Update = UpdateWrapper.Update;
+	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -208,7 +207,7 @@ void SpatialVirtualWorkerTranslator::SendVirtualWorkerMappingUpdate()
 	WriteMappingToSchema(UpdateObject);
 
 	check(Connection.IsValid());
-	Connection->SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, &UpdateWrapper);
+	Connection->SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, &Update);
 
 	// Broadcast locally since we won't receive the ComponentUpdate on this worker.
 	// This is disabled until the Enforcer is available to update ACLs.

@@ -423,7 +423,7 @@ struct Interest : Component
 		return ComponentInterestMap.Num() == 0;
 	}
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
+	void ApplyComponentUpdate(const FWorkerComponentUpdate& Update) override
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 

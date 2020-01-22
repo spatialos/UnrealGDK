@@ -18,7 +18,7 @@ struct MulticastRPCs : Component
 
 	MulticastRPCs(const Worker_ComponentData& Data);
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
+	void ApplyComponentUpdate(const FWorkerComponentUpdate& Update) override;
 
 	RPCRingBuffer MulticastRPCBuffer;
 	uint32 InitiallyPresentMulticastRPCsCount = 0;

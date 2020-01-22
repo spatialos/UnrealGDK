@@ -145,12 +145,11 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 			{
 				// Entity component data must be deep copied so that it can be used for CreateEntityRequest.
 				Schema_ComponentData* CopySchemaData = Schema_CopyComponentData(EntityToSpawn->components[i].schema_type);
-				FWorkerComponentData EntityComponentDataWrapper{};
-				Worker_ComponentData& EntityComponentData = EntityComponentDataWrapper.Data;
+				FWorkerComponentData EntityComponentData = {};
 
 				EntityComponentData.component_id = EntityToSpawn->components[i].component_id;
 				EntityComponentData.schema_type = CopySchemaData;
-				EntityComponents.Add(EntityComponentDataWrapper);
+				EntityComponents.Add(EntityComponentData);
 			}
 
 			EntitiesToSpawn.Add(EntityComponents);
@@ -183,9 +182,8 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 			Worker_EntityId ReservedEntityID = Op.first_entity_id + i;
 
 			// Check if this is the GSM
-			for (auto& ComponentDataWrapper : EntityToSpawn)
+			for (auto& ComponentData : EntityToSpawn)
 			{
-				auto& ComponentData = ComponentDataWrapper.Data;
 				if (ComponentData.component_id == SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID)
 				{
 					// Save the new GSM Entity ID.

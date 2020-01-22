@@ -46,24 +46,6 @@ namespace
 		return improbable::trace::SpanContext(_TraceId, _SpanId);
 	}
 #endif
-	template<typename KEY, typename VALUE>
-	TArray<KEY> FindAndRemoveValue(TMap<KEY, VALUE>& Map, const VALUE& Value)
-	{
-		// Remove from tracking arrays
-		TArray<KEY> KeysToErase;
-		for (auto& Pair : Map)
-		{
-			if (Pair.Get<1>() == Value)
-			{
-				KeysToErase.Push(Pair.Get<0>());
-			}
-		}
-		for (auto& Key : KeysToErase)
-		{
-			Map.Erase(Key);
-		}
-		return KeysToErase;
-	}
 }  // anonymous namespace
 
 const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
@@ -189,20 +171,13 @@ TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const U
 	return ReturnKey;
 }
 
-void USpatialLatencyTracer::MarkActiveLatencyTrace(const TraceKey Key)
-{
-	// We can safely set this to the active trace, even if Key is invalid, as other functionality
-	// is gated on the ActiveTraceKey being present in the TraceMap
-	ActiveTraceKey = Key;
-}
-
 void USpatialLatencyTracer::WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc)
 {
 	FScopeLock Lock(&Mutex);
 
-	if (FSpanContext* Trace = TraceMap.Find(Key))
+	if (TraceSpan* Trace = TraceMap.Find(Key))
 	{
-		WriteKeyFrameToTrace(&Trace->Span, TraceDesc);
+		WriteKeyFrameToTrace(Trace, TraceDesc);
 	}
 }
 
@@ -210,11 +185,11 @@ void USpatialLatencyTracer::EndLatencyTrace(const TraceKey Key, const FString& T
 {
 	FScopeLock Lock(&Mutex);
 
-	if (FSpanContext* Trace = TraceMap.Find(Key))
+	if (TraceSpan* Trace = TraceMap.Find(Key))
 	{
-		WriteKeyFrameToTrace(&Trace->Span, TraceDesc);
+		WriteKeyFrameToTrace(Trace, TraceDesc);
 
-		Trace->Span.End();
+		Trace->End();
 		TraceMap.Remove(Key);
 	}
 }
@@ -223,11 +198,11 @@ void USpatialLatencyTracer::WriteTraceToSchemaObject(const TraceKey Key, Schema_
 {
 	FScopeLock Lock(&Mutex);
 
-	if (FSpanContext* Trace = TraceMap.Find(Key))
+	if (TraceSpan* Trace = TraceMap.Find(Key))
 	{
 		Schema_Object* TraceObj = Schema_AddObject(Obj, FieldId);
 
-		const improbable::trace::SpanContext& TraceContext = Trace->Span.context();
+		const improbable::trace::SpanContext& TraceContext = Trace->context();
 		improbable::trace::TraceId _TraceId = TraceContext.trace_id();
 		improbable::trace::SpanId _SpanId = TraceContext.span_id();
 
@@ -253,7 +228,7 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, co
 		TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
 
 		const TraceKey Key = GenerateNewTraceKey();
-		TraceMap.Add(Key, FSpanContext{ MoveTemp(RetrieveTrace) });
+		TraceMap.Add(Key, MoveTemp(RetrieveTrace));
 
 		return Key;
 	}
@@ -283,7 +258,7 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSpatialPayload(const FSpatialLatenc
 	TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
 
 	const TraceKey Key = GenerateNewTraceKey();
-	TraceMap.Add(Key, FSpanContext{ MoveTemp(RetrieveTrace) });
+	TraceMap.Add(Key, MoveTemp(RetrieveTrace));
 
 	return Key;
 }
@@ -337,30 +312,6 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	}
 }
 
-void USpatialLatencyTracer::TickFrame()
-{
-	TArray<TraceKey> TracesToEnd;
-	for (auto& Pair : TraceMap)
-	{
-		FSpanContext& Context = Pair.Get<1>();
-		if (Context.NumFramesOpen > 10)
-		{
-			TracesToEnd.Push(Pair.Get<0>());
-		}
-		else
-		{
-			Context.NumFramesOpen++;
-		}
-	}
-	for (auto& Trace : TracesToEnd)
-	{
-		FindAndRemoveValue(TrackingFunctions, Trace);
-		FindAndRemoveValue(TrackingProperties, Trace);
-
-		EndLatencyTrace(Trace, TEXT("Terminating trace because it was abandoned"));
-	}
-}
-
 bool USpatialLatencyTracer::BeginLatencyTraceRPC_Internal(const AActor* Actor, const FString& Function, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
 {
 	FScopeLock Lock(&Mutex);
@@ -386,7 +337,7 @@ bool USpatialLatencyTracer::BeginLatencyTraceRPC_Internal(const AActor* Actor, c
 		OutLatencyPayload = FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes));
 	}
 
-	TraceMap.Add(Key, FSpanContext{ MoveTemp(NewTrace) });
+	TraceMap.Add(Key, MoveTemp(NewTrace));
 
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
@@ -406,7 +357,7 @@ bool USpatialLatencyTracer::ContinueLatencyTraceRPC_Internal(const AActor* Actor
 
 	FScopeLock Lock(&Mutex);
 		
-	TraceSpan* ActiveTrace = GetActiveTraceOrReadPayload(LatencyPayload);
+	TraceSpan* ActiveTrace = GetTraceFromPayload(LatencyPayload);
 	if (ActiveTrace == nullptr)
 	{
 		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : No active trace to continue (%s)"), *WorkerId, *TraceDesc);
@@ -434,7 +385,7 @@ bool USpatialLatencyTracer::ContinueLatencyTraceRPC_Internal(const AActor* Actor
 
 	// Move the active trace to a new tracked trace
 	TraceSpan TempSpan(MoveTemp(*ActiveTrace));
-	TraceMap.Add(Key, FSpanContext{ MoveTemp(TempSpan) });
+	TraceMap.Add(Key, MoveTemp(TempSpan));
 	TraceMap.Remove(ActiveTraceKey);
 	ActiveTraceKey = InvalidTraceKey;
 
@@ -456,7 +407,7 @@ bool USpatialLatencyTracer::ContinueLatencyTraceProperty_Internal(const AActor* 
 
 	FScopeLock Lock(&Mutex);
 
-	TraceSpan* ActiveTrace = GetActiveTraceOrReadPayload(LatencyPayload);
+	TraceSpan* ActiveTrace = GetTraceFromPayload(LatencyPayload);
 	if (ActiveTrace == nullptr)
 	{
 		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : No active trace to continue (%s)"), *WorkerId, *TraceDesc);
@@ -485,7 +436,7 @@ bool USpatialLatencyTracer::ContinueLatencyTraceProperty_Internal(const AActor* 
 	// Move the active trace to a new tracked trace
 	{
 		TraceSpan TempSpan(MoveTemp(*ActiveTrace)); // To avoid dereferencing a pointer in TraceMap whilst adding to it (use-after-free)
-		TraceMap.Add(Key, FSpanContext{ MoveTemp(TempSpan) });
+		TraceMap.Add(Key, MoveTemp(TempSpan));
 	}
 	TraceMap.Remove(ActiveTraceKey);
 	ActiveTraceKey = InvalidTraceKey;
@@ -503,7 +454,7 @@ bool USpatialLatencyTracer::EndLatencyTrace_Internal(const FSpatialLatencyPayloa
 {
 	FScopeLock Lock(&Mutex);
 
-	TraceSpan* ActiveTrace = GetActiveTraceOrReadPayload(LatencyPayload);
+	TraceSpan* ActiveTrace = GetTraceFromPayload(LatencyPayload);
 
 	if (ActiveTrace == nullptr)
 	{
@@ -593,33 +544,17 @@ TraceKey USpatialLatencyTracer::GenerateNewTraceKey()
 	return NextTraceKey++;
 }
 
-USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTrace()
+USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetTraceFromPayload(const FSpatialLatencyPayload& Payload)
 {
-	if (FSpanContext* Trace = TraceMap.Find(ActiveTraceKey))
+	// Try read the trace from the payload
+	TraceKey Key = ReadTraceFromSpatialPayload(Payload);
+	if (Key == InvalidTraceKey)
 	{
-		return &Trace->Span;
+		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Could not read trace from payload. The payload was likely invalid."), *WorkerId);
+		return nullptr;
 	}
-	return nullptr;
-}
 
-USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTraceOrReadPayload(const FSpatialLatencyPayload& Payload)
-{
-	USpatialLatencyTracer::TraceSpan* ActiveTrace = GetActiveTrace();
-	if (ActiveTrace == nullptr)
-	{
-		// Try read the trace from the payload
-		TraceKey Key = ReadTraceFromSpatialPayload(Payload);
-		if (Key != InvalidTraceKey)
-		{
-			MarkActiveLatencyTrace(Key);
-			ActiveTrace = GetActiveTrace();
-		}
-		else
-		{
-			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Could not read trace from payload. The payload was likely invalid."), *WorkerId);
-		}
-	}
-	return ActiveTrace;
+	return TraceMap.Find(Key);
 }
 
 void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc)

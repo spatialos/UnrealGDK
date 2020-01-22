@@ -98,7 +98,7 @@ struct EntityAcl : Component
 		}
 	}
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
+	void ApplyComponentUpdate(const FWorkerComponentUpdate& Update) override
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
@@ -205,16 +205,16 @@ struct Position : Component
 	Position(const Coordinates& InCoords)
 		: Coords(InCoords) {}
 
-	Position(const Worker_ComponentData& Data)
+	Position(const FWorkerComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		Coords = GetCoordinateFromSchema(ComponentObject, 1);
 	}
 
-	Worker_ComponentData CreatePositionData()
+	FWorkerComponentData CreatePositionData()
 	{
-		Worker_ComponentData Data = {};
+		FWorkerComponentData Data = {};
 		Data.component_id = ComponentId;
 		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
@@ -224,9 +224,9 @@ struct Position : Component
 		return Data;
 	}
 
-	static Worker_ComponentUpdate CreatePositionUpdate(const Coordinates& Coords)
+	static FWorkerComponentUpdate CreatePositionUpdate(const Coordinates& Coords)
 	{
-		Worker_ComponentUpdate ComponentUpdate = {};
+		FWorkerComponentUpdate ComponentUpdate = {};
 		ComponentUpdate.component_id = ComponentId;
 		ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
@@ -236,7 +236,7 @@ struct Position : Component
 		return ComponentUpdate;
 	}
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
+	void ApplyComponentUpdate(const FWorkerComponentUpdate& Update) override
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 		Schema_Object* CoordsObject = Schema_GetObject(ComponentObject, 1);
@@ -253,13 +253,13 @@ struct Persistence : Component
 	static const Worker_ComponentId ComponentId = SpatialConstants::PERSISTENCE_COMPONENT_ID;
 
 	Persistence() = default;
-	Persistence(const Worker_ComponentData& Data)
+	Persistence(const FWorkerComponentData& Data)
 	{
 	}
 
-	FORCEINLINE Worker_ComponentData CreatePersistenceData()
+	FORCEINLINE FWorkerComponentData CreatePersistenceData()
 	{
-		Worker_ComponentData Data = {};
+		FWorkerComponentData Data = {};
 		Data.component_id = ComponentId;
 		Data.schema_type = Schema_CreateComponentData();
 

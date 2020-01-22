@@ -24,7 +24,7 @@ struct ClientRPCEndpointLegacy : Component
 		bReady = GetBoolFromSchema(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
 	}
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
+	void ApplyComponentUpdate(const FWorkerComponentUpdate& Update) override
 	{
 		Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(Update.schema_type);
 		if (Schema_GetBoolCount(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
@@ -44,9 +44,9 @@ struct ClientRPCEndpointLegacy : Component
 		return Data;
 	}
 
-	Worker_ComponentUpdate CreateRPCEndpointUpdate()
+	FWorkerComponentUpdate CreateRPCEndpointUpdate()
 	{
-		Worker_ComponentUpdate Update{};
+		FWorkerComponentUpdate Update{};
 		Update.component_id = ComponentId;
 		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);

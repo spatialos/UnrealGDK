@@ -118,15 +118,14 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 			return;
 		}
 
-		FWorkerComponentUpdate UpdateWrapper = {};
-		Worker_ComponentUpdate& Update = UpdateWrapper.Update;
+		FWorkerComponentUpdate Update = {};
 		Update.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
 		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 		Schema_AddBool(ComponentObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID, true);
 
-		Cast<USpatialNetDriver>(Driver)->Connection->SendComponentUpdate(PlayerControllerEntity, &UpdateWrapper);
+		Cast<USpatialNetDriver>(Driver)->Connection->SendComponentUpdate(PlayerControllerEntity, &Update);
 	}
 	else
 	{
@@ -175,9 +174,8 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 	{
 		if (USpatialNetConnection* Connection = WeakThis.Get())
 		{
-			FWorkerComponentUpdate ComponentUpdateWrapper = {};
-			Worker_ComponentUpdate& ComponentUpdate = ComponentUpdateWrapper.Update;
-
+			FWorkerComponentUpdate ComponentUpdate = {};
+	
 			ComponentUpdate.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
 			ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
 			Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
@@ -186,7 +184,7 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 			USpatialWorkerConnection* WorkerConnection = Cast<USpatialNetDriver>(Connection->Driver)->Connection;
 			if (WorkerConnection->IsConnected())
 			{
-				WorkerConnection->SendComponentUpdate(Connection->PlayerControllerEntity, &ComponentUpdateWrapper);
+				WorkerConnection->SendComponentUpdate(Connection->PlayerControllerEntity, &ComponentUpdate);
 			}
 		}
 	}, GetDefault<USpatialGDKSettings>()->HeartbeatIntervalSeconds, true, 0.0f);

@@ -23,10 +23,10 @@ DEFINE_LOG_CATEGORY(LogComponentFactory);
 namespace
 {
 	template<typename T>
-	TraceKey* GetTracePtrFromType(T& Wrapper) // Just for ease for dealing with non-tracing builds
+	TraceKey* GetTracePtrFromType(T& Obj) // Just for ease for dealing with non-tracing builds
 	{
 #if TRACE_LIB_ACTIVE
-		return &Wrapper.Trace;
+		return &Obj.Trace;
 #endif
 		return nullptr;
 	}
@@ -333,8 +333,7 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 
 FWorkerComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup)
 {
-	FWorkerComponentData ComponentDataWrapper;
-	Worker_ComponentData& ComponentData = ComponentDataWrapper.Data;
+	FWorkerComponentData ComponentData = {};
 
 	ComponentData.component_id = ComponentId;
 	ComponentData.schema_type = Schema_CreateComponentData();
@@ -342,26 +341,25 @@ FWorkerComponentData ComponentFactory::CreateComponentData(Worker_ComponentId Co
 
 	// We're currently ignoring ClearedId fields, which is problematic if the initial replicated state
 	// is different to what the default state is (the client will have the incorrect data). UNR:959
-	FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true, GetTracePtrFromType(ComponentDataWrapper));
+	FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true, GetTracePtrFromType(ComponentData));
 
-	return ComponentDataWrapper;
+	return ComponentData;
 }
 
 FWorkerComponentData ComponentFactory::CreateEmptyComponentData(Worker_ComponentId ComponentId)
 {
-	FWorkerComponentData ComponentDataWrapper;
-	Worker_ComponentData& ComponentData = ComponentDataWrapper.Data;
+	FWorkerComponentData ComponentData = {};
 
 	ComponentData.component_id = ComponentId;
 	ComponentData.schema_type = Schema_CreateComponentData();
 
-	return ComponentDataWrapper;
+	return ComponentData;
 }
 
 FWorkerComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes)
 {
 	FWorkerComponentData ComponentData = CreateEmptyComponentData(ComponentId);
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.Data.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
 	FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, true,  GetTracePtrFromType(ComponentData));
 
@@ -412,7 +410,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	if (Object->IsA<AActor>() && bInterestHasChanged)
 	{
 		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
-		ComponentUpdates.Add(FWorkerComponentUpdate{ InterestUpdateFactory.CreateInterestUpdate() });
+		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());
 	}
 
 
@@ -421,8 +419,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 
 FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool& bWroteSomething)
 {
-	FWorkerComponentUpdate ComponentUpdateWrapper{};
-	Worker_ComponentUpdate& ComponentUpdate = ComponentUpdateWrapper.Update;
+	FWorkerComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = ComponentId;
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
@@ -430,7 +427,7 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTracePtrFromType(ComponentUpdateWrapper), &ClearedIds);
+	bWroteSomething = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTracePtrFromType(ComponentUpdate), &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
@@ -442,13 +439,12 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 	}
 
-	return ComponentUpdateWrapper;
+	return ComponentUpdate;
 }
 
 FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool& bWroteSomething)
 {
-	FWorkerComponentUpdate ComponentUpdateWrapper = {};
-	Worker_ComponentUpdate& ComponentUpdate = ComponentUpdateWrapper.Update;
+	FWorkerComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = ComponentId;
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
@@ -456,7 +452,7 @@ FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTracePtrFromType(ComponentUpdateWrapper), &ClearedIds);
+	bWroteSomething = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTracePtrFromType(ComponentUpdate), &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
@@ -468,7 +464,7 @@ FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 	}
 
-	return ComponentUpdateWrapper;
+	return ComponentUpdate;
 }
 
 } // namespace SpatialGDK

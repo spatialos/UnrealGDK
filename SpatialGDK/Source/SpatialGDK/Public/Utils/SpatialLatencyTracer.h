@@ -99,7 +99,6 @@ public:
 	TraceKey RetrievePendingTrace(const UObject* Obj, const UFunction* Function);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const UProperty* Property);
 
-	void MarkActiveLatencyTrace(const TraceKey Key);
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);
 	void EndLatencyTrace(const TraceKey Key, const FString& TraceDesc);
 
@@ -114,27 +113,11 @@ public:
 	void OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*);
 	void OnDequeueMessage(const SpatialGDK::FOutgoingMessage*);
 
-	void TickFrame(); // For internal timeout tracking
-
 private:
 
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
 	using ActorPropertyKey = TPair<const AActor*, const UProperty*>;
 	using TraceSpan = improbable::trace::Span;
-
-	struct FSpanContext
-	{
-		FSpanContext(const FSpanContext&) = delete;
-		FSpanContext(FSpanContext&&) = default;
-
-		FSpanContext(TraceSpan&& InSpan)
-			: Span(MoveTemp(InSpan))
-			, NumFramesOpen(0)
-		{}
-
-		TraceSpan Span;
-		uint32 NumFramesOpen;
-	};
 
 	bool BeginLatencyTraceRPC_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 	bool ContinueLatencyTraceRPC_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue);
@@ -146,8 +129,7 @@ private:
 	TraceKey CreateNewTraceEntryProperty(const AActor* Actor, const FString& PropertyName);
 
 	TraceKey GenerateNewTraceKey();
-	TraceSpan* GetActiveTrace();
-	TraceSpan* GetActiveTraceOrReadPayload(const FSpatialLatencyPayload& Payload);
+	TraceSpan* GetTraceFromPayload(const FSpatialLatencyPayload& Payload);
 
 	void WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc);
 	FString FormatMessage(const FString& Message) const;
@@ -159,13 +141,12 @@ private:
 	// This is used to track if there is an active trace within a currently processing network call. The user is
 	// able to hook into this active trace, and `continue` it to another network relevant call. If so, the
 	// ActiveTrace will be moved to another tracked trace.
-	TraceKey ActiveTraceKey;
 	TraceKey NextTraceKey = 1;
 
 	FCriticalSection Mutex; // This mutex is to protect modifications to the containers below
 	TMap<ActorFuncKey, TraceKey> TrackingFunctions;
 	TMap<ActorPropertyKey, TraceKey> TrackingProperties;
-	TMap<TraceKey, FSpanContext> TraceMap;
+	TMap<TraceKey, TraceSpan> TraceMap;
 
 public:
 
