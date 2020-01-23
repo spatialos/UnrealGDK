@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 20xx-xx-xx
 
+## [`0.8.1-preview`] - 2020-xx-xx
+
+### Bug fixes:
+- Replicated references to newly created dynamic subobjects should now be resolved correctly.
+
 ## [`0.8.0-preview`] - 2019-12-17
 
 ### Breaking Changes:
