@@ -12,6 +12,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
 
+class ASpatialDebugger;
+
 /**
  * Enum that maps Unreal's log verbosity to allow use in settings.
 **/
@@ -218,8 +220,8 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
 
-	UPROPERTY(EditAnywhere, config, Category = "Debug", meta=(MetaClass="SpatialDebugger"))
-	FSoftClassPath SpatialDebuggerClassPath;
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
+	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
 	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
