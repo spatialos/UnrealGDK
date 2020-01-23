@@ -37,6 +37,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The logic responsible for taking an Actor and generating the array of Components that represents it as an Entity in SpatialOS has been extracted into `EntityFactory`.
 - Clients will now validate schema against the server and log a warning if they do not match.
 - Entries in the SchemaDatabase are now sorted to improve efficiancy when browsing the asset in the editor. (DW-Sebastien)
+- Load Balancing Strategies and Locking Strategies can be set per-level using SpatialWorldSettings.
+- Batch Spatial Position Updates now defaults to false.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
@@ -63,6 +65,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fix to handle replicated properties depending on asynchronously loaded packages.
 - Fix to component interest constraints constructed from schema.
 - Track properties containing references to replicated actors, in order to resolve them again if the actor they reference moves out and back into relevance.
+- Fix problem where PIE sessions sometimes fail to start due to missing schema for SpatialDebugger blueprint
 
 ### External contributors:
 @DW-Sebastien
@@ -108,7 +111,7 @@ Features listed in the internal section are not ready to use but, in the spirit 
 
 ## [`0.7.1-preview`] - 2019-12-06
 
-### Bug fixes: 
+### Bug fixes:
 - The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
 
 ### Internal:
