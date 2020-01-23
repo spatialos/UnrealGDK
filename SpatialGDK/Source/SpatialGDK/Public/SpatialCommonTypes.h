@@ -31,12 +31,12 @@ using FObjectToRepStateMap = TMap <struct FUnrealObjectRef, TSet<FChannelObjectP
 template<typename T>
 struct FTrackableWorkerType : public T
 {
-	FWorkerComponentUpdate() = default;
+	FTrackableWorkerType() = default;
 
-	FWorkerComponentUpdate(const T& Update)
+	FTrackableWorkerType(const T& Update)
 		: T(Update) {}
 
-	FWorkerComponentUpdate(T&& Update)
+	FTrackableWorkerType(T&& Update)
 		: T(MoveTemp(Update)) {}
 
 #if TRACE_LIB_ACTIVE
