@@ -169,9 +169,10 @@ public:
 	bool bEnableServerQBI;
 
 	/** EXPERIMENTAL - Adds granular result types for client queries.
+	Granular here means specifically the required Unreal components for spawning other actors and all data type components.
 	Needs testing thoroughly before making default. May be replaced by component set result types instead. */
 	UPROPERTY(config)
-	bool bEnableGranularResultTypes;
+	bool bEnableClientResultTypes;
 
 	/** Pack RPCs sent during the same frame into a single update. */
 	UPROPERTY(config)
