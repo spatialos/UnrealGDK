@@ -32,6 +32,8 @@ void SpatialVirtualWorkerTranslationManager::AddVirtualWorkerIds(const TSet<Virt
 
 void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
+	check(AuthOp.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
+
 	const bool bAuthoritative = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;
 
 	if (!bAuthoritative)
@@ -40,7 +42,6 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Autho
 		return;
 	}
 
-	check(AuthOp.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("This worker now has authority over the VirtualWorker translation."));
 
 	// TODO(zoning): The prototype had an unassigned workers list. Need to follow up with Tim/Chris about whether
@@ -54,7 +55,7 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Autho
 // For each entry in the map, write a VirtualWorkerMapping type object to the Schema object.
 void SpatialVirtualWorkerTranslationManager::WriteMappingToSchema(Schema_Object* Object) const
 {
-	for (auto& Entry : VirtualToPhysicalWorkerMapping)
+	for (const auto& Entry : VirtualToPhysicalWorkerMapping)
 	{
 		Schema_Object* EntryObject = Schema_AddObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 		Schema_AddUint32(EntryObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, Entry.Key);

@@ -14,7 +14,6 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 
 class SpatialVirtualWorkerTranslator;
-class USpatialStaticComponentView;
 class USpatialReceiver;
 class USpatialWorkerConnection;
 
