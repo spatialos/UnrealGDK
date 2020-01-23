@@ -4,9 +4,9 @@
  
 #include "Core.h"
  
+#include <SpatialCommonTypes.h>
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-#include <SpatialCommonTypes.h>
 
 class USpatialActorChannel;
 class USpatialNetDriver;
