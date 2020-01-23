@@ -28,32 +28,21 @@ using FReliableRPCMap = TMap<Worker_RequestId_Key, TSharedRef<struct FReliableRP
 
 using FObjectToRepStateMap = TMap <struct FUnrealObjectRef, TSet<FChannelObjectPair> >;
 
-
-// Extend the worker types to also include some latency tracking info
-struct FWorkerComponentData : public Worker_ComponentData
-{
-	FWorkerComponentData() = default;
-
-	FWorkerComponentData(const Worker_ComponentData& Data)
-		: Worker_ComponentData(Data) {}
-
-	FWorkerComponentData(Worker_ComponentData&& Data)
-		: Worker_ComponentData(MoveTemp(Data)) {}
-#if TRACE_LIB_ACTIVE
-	TraceKey Trace{ InvalidTraceKey };
-#endif
-};
-struct FWorkerComponentUpdate : public Worker_ComponentUpdate
+template<typename T>
+struct FTrackableWorkerType : public T
 {
 	FWorkerComponentUpdate() = default;
 
-	FWorkerComponentUpdate(const Worker_ComponentUpdate& Update)
-		: Worker_ComponentUpdate(Update) {}
+	FWorkerComponentUpdate(const T& Update)
+		: T(Update) {}
 
-	FWorkerComponentUpdate(Worker_ComponentUpdate&& Update)
-		: Worker_ComponentUpdate(MoveTemp(Update)) {}
+	FWorkerComponentUpdate(T&& Update)
+		: T(MoveTemp(Update)) {}
 
 #if TRACE_LIB_ACTIVE
 	TraceKey Trace{ InvalidTraceKey };
 #endif
 };
+
+using FWorkerComponentUpdate = FTrackableWorkerType<Worker_ComponentUpdate>;
+using FWorkerComponentData = FTrackableWorkerType<Worker_ComponentData>;
