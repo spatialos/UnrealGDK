@@ -14,7 +14,7 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 
 class SpatialVirtualWorkerTranslator;
-class USpatialReceiver;
+class SpatialOSDispatcherInterface;
 class SpatialOSWorkerInterface;
 
 //
@@ -34,7 +34,7 @@ class SpatialOSWorkerInterface;
 class SPATIALGDK_API SpatialVirtualWorkerTranslationManager
 {
 public:
-	SpatialVirtualWorkerTranslationManager(USpatialReceiver* InReceiver,
+	SpatialVirtualWorkerTranslationManager(SpatialOSDispatcherInterface* InReceiver,
 		SpatialOSWorkerInterface* InConnection,
 		SpatialVirtualWorkerTranslator* InTranslator);
 
@@ -44,7 +44,7 @@ public:
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 
 private:
-	TWeakObjectPtr<USpatialReceiver> Receiver;
+	SpatialOSDispatcherInterface* Receiver;
 	SpatialOSWorkerInterface* Connection;
 
 	SpatialVirtualWorkerTranslator* Translator;

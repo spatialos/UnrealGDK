@@ -6,6 +6,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "SpatialConstants.h"
+#include "SpatialOSDispatcherMock.h"
 #include "SpatialOSWorkerConnectionMock.h"
 #include "Utils/SchemaUtils.h"
 #include "UObject/UObjectGlobals.h"
@@ -20,7 +21,8 @@
 VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_test_THEN_pass)
 {
 	TUniquePtr<SpatialOSWorkerConnectionMock> Connection = MakeUnique<SpatialOSWorkerConnectionMock>();
-	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(nullptr, Connection.Get(), nullptr);
+	TUniquePtr<SpatialOSDispatcherMock> Dispatcher = MakeUnique<SpatialOSDispatcherMock>();
+	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), nullptr);
 
 	Worker_AuthorityChangeOp Op;
 	Op.entity_id = SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID;

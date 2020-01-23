@@ -3,14 +3,14 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialOSDispatcherInterface.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslationManager);
 
 SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(
-	USpatialReceiver* InReceiver,
+	SpatialOSDispatcherInterface* InReceiver,
 	SpatialOSWorkerInterface* InConnection,
 	SpatialVirtualWorkerTranslator* InTranslator)
 	: Receiver(InReceiver)
@@ -146,7 +146,7 @@ void SpatialVirtualWorkerTranslationManager::QueryForWorkerEntities()
 	// Register a method to handle the query response.
 	EntityQueryDelegate WorkerEntityQueryDelegate;
 	WorkerEntityQueryDelegate.BindRaw(this, &SpatialVirtualWorkerTranslationManager::WorkerEntityQueryDelegate);
-	check(Receiver.IsValid());
+	check(Receiver != nullptr);
 	Receiver->AddEntityQueryDelegate(RequestID, WorkerEntityQueryDelegate);
 }
 
