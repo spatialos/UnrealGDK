@@ -62,7 +62,7 @@ public:
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
-	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object, Worker_EntityId EntityId, USpatialClassInfoManager* ClassInfoManager);
+	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
 private:
 	UPROPERTY()

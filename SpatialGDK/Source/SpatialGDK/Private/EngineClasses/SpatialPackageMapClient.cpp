@@ -295,24 +295,36 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 	return true;
 }
 
-const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object, Worker_EntityId EntityId, USpatialClassInfoManager* ClassInfoManager)
+const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
 {
-	FUnrealObjectRef Ref = GetUnrealObjectRefFromObject(Object);
-	if (Ref.IsValid())
+	AActor* Actor = Object->GetTypedOuter<AActor>();
+	TryResolveObjectAsEntity(Actor);	// Make sure the actor is resolved
+
+	Worker_EntityId EntityId = GetEntityIdFromObject(Actor);
+
+	if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogSpatialPackageMap, Error, TEXT("Trying to resolve a dynamic subobject twice! Object %s, EntityId %d."), Object ? *Object->GetName() : TEXT("null"), EntityId);
-		return nullptr;
+		FUnrealObjectRef Ref = GetUnrealObjectRefFromObject(Object);
+		if (Ref.IsValid())
+		{
+			UE_LOG(LogSpatialPackageMap, Error, TEXT("Trying to resolve a dynamic subobject twice! Object %s, Actor %s, EntityId %d."), *GetNameSafe(Object), *GetNameSafe(Actor), EntityId);
+			return nullptr;
+		}
+
+		const FClassInfo* Info = Cast<USpatialNetDriver>(GuidCache->Driver)->ClassInfoManager->GetClassInfoForNewSubobject(Object, EntityId, this);
+
+		// If we don't get the info, an error is logged in the above function, that we have exceeded the maximum number of dynamic subobjects on the entity
+		if (Info != nullptr)
+		{
+			ResolveSubobject(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
+		}
+
+		return Info;
 	}
 
-	const FClassInfo* Info = ClassInfoManager->GetClassInfoForNewSubobject(Object, EntityId, this);
+	UE_LOG(LogSpatialPackageMap, Error, TEXT("While trying to resolve a new dynamic subobject %s, the parent actor %s was not resolved."), *GetNameSafe(Object), *GetNameSafe(Actor));
 
-	// If we don't get the info, an error is logged in the above function, that we have exceeded the maximum number of dynamic subobjects on the entity
-	if (Info)
-	{
-		ResolveSubobject(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
-	}
-
-	return Info;
+	return nullptr;
 }
 
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)

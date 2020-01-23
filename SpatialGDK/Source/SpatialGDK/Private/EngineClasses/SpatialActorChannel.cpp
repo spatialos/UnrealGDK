@@ -577,7 +577,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	}
 	else
 	{
-		Info = NetDriver->PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(Object, EntityId, NetDriver->ClassInfoManager);
+		Info = NetDriver->PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(Object);
 
 		if (Info == nullptr)
 		{

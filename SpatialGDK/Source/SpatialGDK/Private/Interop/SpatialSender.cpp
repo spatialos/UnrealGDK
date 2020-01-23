@@ -285,7 +285,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			// If this object is not in the PackageMap, it has been dynamically created.
 			if (!PackageMap->GetUnrealObjectRefFromObject(Subobject).IsValid())
 			{
-				const FClassInfo* SubobjectInfo = NetDriver->PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(Subobject, Channel->GetEntityId(), NetDriver->ClassInfoManager);
+				const FClassInfo* SubobjectInfo = NetDriver->PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(Subobject);
 
 				if (SubobjectInfo == nullptr)
 				{
