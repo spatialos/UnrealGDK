@@ -487,7 +487,7 @@ const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UO
 	// If all ClassInfos are used up, we error.
 	if (Info == nullptr)
 	{
-		AActor* Actor = Cast<AActor>(PackageMapClient->GetObjectFromEntityId(EntityId));
+		const AActor* Actor = Cast<AActor>(PackageMapClient->GetObjectFromEntityId(EntityId));
 		UE_LOG(LogSpatialPackageMap, Error, TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
 			" the max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), *GetNameSafe(Actor));
 	}
