@@ -187,7 +187,7 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 
 void USpatialWorkerConnection::OnLoginTokens(const Worker_Alpha_LoginTokensResponse* LoginTokens)
 {
-	// Only LoginTokenCb_ is null ptr or the logic register by caller return false, the function will go to following code
+	// if LoginTokenCb_ is not null and it return true, the program would return back directly and ignore the rest logic, or else the function will execute original logic.
 	if (LoginTokenCb_ && LoginTokenCb_(LoginTokens))
 	{
 		return;

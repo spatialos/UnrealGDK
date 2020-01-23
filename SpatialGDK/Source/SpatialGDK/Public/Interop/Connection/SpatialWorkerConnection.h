@@ -39,8 +39,8 @@ public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
     
-    /// Caller can register an callback by using this function.
-    /// It will be trigered when SpatialWorkerConnection receive Login Token.
+    /// Register a callback using this function.
+    /// It will be triggered when receiving login tokens using the development authentication flow inside SpatialWorkerConnection.
     /// @param cb - callback function.
 	void RegisterOnLoginTokensCb(const LoginTokenCb& cb) {LoginTokenCb_ = cb;};
 
