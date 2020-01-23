@@ -8,7 +8,6 @@
 #include <WorkerSDK/improbable/c_worker.h>
 #include <SpatialCommonTypes.h>
 
-struct FWorkerComponentData;
 class USpatialActorChannel;
 class USpatialNetDriver;
 class USpatialPackageMap;
