@@ -15,7 +15,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 
 class SpatialVirtualWorkerTranslator;
 class USpatialReceiver;
-class USpatialWorkerConnection;
+class SpatialOSWorkerInterface;
 
 //
 // The Translation Manager is responsible for querying SpatialOS for all UnrealWorker worker
@@ -35,7 +35,7 @@ class SPATIALGDK_API SpatialVirtualWorkerTranslationManager
 {
 public:
 	SpatialVirtualWorkerTranslationManager(USpatialReceiver* InReceiver,
-		USpatialWorkerConnection* InConnection,
+		SpatialOSWorkerInterface* InConnection,
 		SpatialVirtualWorkerTranslator* InTranslator);
 
 	void AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds);
@@ -45,7 +45,7 @@ public:
 
 private:
 	TWeakObjectPtr<USpatialReceiver> Receiver;
-	TWeakObjectPtr<USpatialWorkerConnection> Connection;
+	SpatialOSWorkerInterface* Connection;
 
 	SpatialVirtualWorkerTranslator* Translator;
 
