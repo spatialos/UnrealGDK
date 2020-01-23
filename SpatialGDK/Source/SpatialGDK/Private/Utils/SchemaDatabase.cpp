@@ -9,8 +9,6 @@
 
 FActorSpecificSubobjectSchemaData FActorSpecificSubobjectSchemaData::Generate(FComponentIdGenerator& IdGenerator, const UClass* Class)
 {
-	//FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
-
 	FActorSpecificSubobjectSchemaData SubobjectData;
 	SubobjectData.ClassPath = Class->GetPathName();
 
@@ -237,19 +235,4 @@ uint32 USchemaDatabase::GetOrCreateLevelComponentId(const FString& Level)
 	NextAvailableComponentId = Gen.Peek();
 
 	return ComponentId;
-}
-	
-void USchemaDatabase::Set(TMap<FString, FActorSchemaData> InActorClassPathToSchema,
-	TMap<FString, FSubobjectSchemaData> InSubobjectClassPathToSchema,
-	TMap<FString, uint32> InLevelPathToComponentId,
-	TMap<uint32, FString> InComponentIdToClassPath,
-	TSet<uint32> InLevelComponentIds,
-	uint32 InNextAvailableComponentId)
-{
-	ActorClassPathToSchema = MoveTemp(InActorClassPathToSchema);
-	SubobjectClassPathToSchema = MoveTemp(InSubobjectClassPathToSchema);
-	LevelPathToComponentId = MoveTemp(InLevelPathToComponentId);
-	ComponentIdToClassPath = MoveTemp(InComponentIdToClassPath);
-	LevelComponentIds = MoveTemp(InLevelComponentIds);
-	NextAvailableComponentId = InNextAvailableComponentId;
 }

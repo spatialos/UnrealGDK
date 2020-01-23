@@ -162,6 +162,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (DisplayName = "Maximum Dynamically Attached Subobjects Per Class"))
 	uint32 MaxDynamicallyAttachedSubobjectsPerClass;
 
+	/** Allow on the fly schema data generation, only works with the Squid Runtime in a single process client-server setup */
+	UPROPERTY(EditAnywhere, Config, Category = "Schema Generation")
+	bool bAllowOnTheFlySchemaDataGeneration;
+
 	/** EXPERIMENTAL - This is a stop-gap until we can better define server interest on system entities.
 	Disabling this is not supported in a zoned-worker environment*/
 	UPROPERTY(config)

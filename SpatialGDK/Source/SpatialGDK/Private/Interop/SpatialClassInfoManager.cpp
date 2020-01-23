@@ -45,7 +45,7 @@ bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, SpatialAc
 
 bool USpatialClassInfoManager::ValidateOrExit_IsSupportedClass(const FString& PathName)
 {
-	if (false && !IsSupportedClass(PathName))
+	if (!IsSupportedClass(PathName))
 	{
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is marked as SpatialType, and schema has been generated."), *PathName);
 #if !UE_BUILD_SHIPPING
@@ -285,7 +285,7 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(UClass* Clas
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
 {
-	if (const FString* ClassPath = SchemaDatabase->GetComponentIdToClassPath().Find(ComponentId))
+	if (const FString* ClassPath = SchemaDatabase->ComponentIdToClassPath.Find(ComponentId))
 	{
 		if (UClass* Class = LoadObject<UClass>(nullptr, **ClassPath))
 		{
@@ -296,8 +296,13 @@ void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_Component
 
 bool USpatialClassInfoManager::IsSupportedClass(const FString& PathName) const
 {
-	//return SchemaDatabase->ActorClassPathToSchema.Contains(PathName) || SchemaDatabase->SubobjectClassPathToSchema.Contains(PathName);
-	return true;
+#if WITH_EDITOR
+	if (GetDefault<USpatialGDKSettings>()->bAllowOnTheFlySchemaDataGeneration)
+	{
+		return true;
+	}
+#endif
+	return SchemaDatabase->ActorClassPathToSchema.Contains(PathName) || SchemaDatabase->SubobjectClassPathToSchema.Contains(PathName);
 }
 
 const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* Class)
@@ -372,12 +377,17 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) const
 {
 	const FString ClassPath = Class.GetPathName();
-	const FActorSchemaData& ActorSchemaData = SchemaDatabase->GetOrCreateActorSchemaData(&Class);
-	//if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class.GetPathName()))
+#if WITH_EDITOR
+	if(GetDefault<USpatialGDKSettings>()->bAllowOnTheFlySchemaDataGeneration)
 	{
-		return ActorSchemaData.SchemaComponents[SCHEMA_Data];
+		return SchemaDatabase->GetOrCreateActorSchemaData(&Class).SchemaComponents[SCHEMA_Data];
 	}
-	//return SpatialConstants::INVALID_COMPONENT_ID;
+#endif
+	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class.GetPathName()))
+	{
+		return ActorSchemaData->SchemaComponents[SCHEMA_Data];
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
 TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes /* = true */) const
@@ -474,17 +484,22 @@ const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction*
 uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
 {
 	FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
-	uint32 ComponentId = SchemaDatabase->GetOrCreateLevelComponentId(CleanLevelPath);
-	//if (const uint32* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
+#if WITH_EDITOR
+	if (GetDefault<USpatialGDKSettings>()->bAllowOnTheFlySchemaDataGeneration)
 	{
-		return ComponentId;
+		return SchemaDatabase->GetOrCreateLevelComponentId(CleanLevelPath);
+	}
+#endif
+	if (const uint32* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
+	{
+		return *ComponentId;
 	}
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
 bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
 {
-	return SchemaDatabase->GetLevelComponentIds().Contains(ComponentId);
+	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
 }
 
 void USpatialClassInfoManager::QuitGame()

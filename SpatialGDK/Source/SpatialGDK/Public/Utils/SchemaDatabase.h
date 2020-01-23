@@ -10,7 +10,6 @@
 
 #include "SchemaDatabase.generated.h"
 
-struct FUnrealType;
 struct FComponentIdGenerator;
 
 // Schema data related to a default Subobject owned by a specific Actor class.
@@ -92,25 +91,10 @@ public:
 
 	USchemaDatabase() : NextAvailableComponentId(SpatialConstants::STARTING_GENERATED_COMPONENT_ID) {}
 
-	void Set(TMap<FString, FActorSchemaData> InActorClassPathToSchema,
-		TMap<FString, FSubobjectSchemaData> InSubobjectClassPathToSchema,
-		TMap<FString, uint32> InLevelPathToComponentId,
-		TMap<uint32, FString> InComponentIdToClassPath,
-		TSet<uint32> InLevelComponentIds,
-		uint32 InNextAvailableComponentId);
-
-	const TMap<FString, FActorSchemaData>& GetActorClassPathToSchema() const { return ActorClassPathToSchema; }
-	const TMap<FString, FSubobjectSchemaData>& GetSubobjectClassPathToSchema() const { return SubobjectClassPathToSchema; }
-	const TMap<FString, uint32>& GetLevelPathToComponentId() const { return LevelPathToComponentId;	}
-	const TMap<uint32, FString>& GetComponentIdToClassPath() const { return ComponentIdToClassPath; }
-	const TSet<uint32>& GetLevelComponentIds() const { return LevelComponentIds; }
-	uint32 GetNextAvailableComponentId() const { return NextAvailableComponentId; }
-
 	const FActorSchemaData& GetOrCreateActorSchemaData(const UClass* Class);
 	const FSubobjectSchemaData& GetOrCreateSubobjectSchemaData(const UClass* Class);
 	uint32 GetOrCreateLevelComponentId(const FString& Level);
 
-protected:
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<FString, FActorSchemaData> ActorClassPathToSchema;
 
