@@ -669,8 +669,8 @@ void GenerateRPCEndpointsSchema(FString SchemaPath)
 }
 
 // Add the component ID to the passed schema components array and the set of components of that type.
-void AddComponentId(uint32 ComponentId, uint32 (&SchemaComponents)[ESchemaComponentType::SCHEMA_Count], ESchemaComponentType ComponentType)
+void AddComponentId(const Worker_ComponentId ComponentId, Worker_ComponentId (&SchemaComponents)[ESchemaComponentType::SCHEMA_Count], const ESchemaComponentType ComponentType)
 {
 	SchemaComponents[ComponentType] = ComponentId;
-	SchemaComponentTypeToComponentSet[ComponentType].Add(ComponentId);
+	SchemaComponentTypeToComponents[ComponentType].Add(ComponentId);
 }

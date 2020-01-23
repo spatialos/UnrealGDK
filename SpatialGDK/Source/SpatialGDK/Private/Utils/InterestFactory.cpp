@@ -183,7 +183,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	Query ClientQuery;
 	ClientQuery.Constraint = ClientConstraint;
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableGranularResultTypes)
+	if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
 	{
 		ClientQuery.ResultComponentId = CreateClientResultType();
 	}
@@ -364,7 +364,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints() const
 	// Create component constraints for every loaded sublevel
 	for (const auto& LevelPath : LoadedLevels)
 	{
-		const uint32 ComponentId = ClassInfoManager->GetComponentIdFromLevelPath(LevelPath.ToString());
+		const Worker_ComponentId ComponentId = ClassInfoManager->GetComponentIdFromLevelPath(LevelPath.ToString());
 		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			QueryConstraint SpecificLevelConstraint;
@@ -381,22 +381,15 @@ QueryConstraint InterestFactory::CreateLevelConstraints() const
 	return LevelConstraint;
 }
 
-TArray<uint32> InterestFactory::CreateClientResultType() const
+TArray<Worker_ComponentId> InterestFactory::CreateClientResultType() const
 {
-	TArray<uint32> ResultType;
+	TArray<Worker_ComponentId> ResultType;
 
 	// Add the required unreal components
-	ResultType.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID);
-	ResultType.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID);
-	ResultType.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY);
-	ResultType.Add(SpatialConstants::MULTICAST_RPCS_COMPONENT_ID);
-	ResultType.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID);
-
-	// TODO: breaks without this, but shouldn't need it. Figure out why
-	ResultType.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID); 
+	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_CLIENT_INTEREST);
 
 	// Add all data components- clients don't need to see handover or owner only components on other entities.
-	ResultType.Append(ClassInfoManager->SchemaDatabase->DataComponentIds.Array());
+	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
 
 	return ResultType;
 }

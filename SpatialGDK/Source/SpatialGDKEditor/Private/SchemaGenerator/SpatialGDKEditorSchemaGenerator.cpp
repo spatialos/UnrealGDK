@@ -44,14 +44,14 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 TArray<UClass*> SchemaGeneratedClasses;
 TMap<FString, FActorSchemaData> ActorClassPathToSchema;
 TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
-uint32 NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
+Worker_ComponentId NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 
 // Sets of data/owner only/handover components
-TMap<ESchemaComponentType, TSet<uint32>> SchemaComponentTypeToComponentSet;
+TMap<ESchemaComponentType, TArray<Worker_ComponentId>> SchemaComponentTypeToComponents;
 
 // LevelStreaming
-TMap<FString, uint32> LevelPathToComponentId;
-TSet<uint32> LevelComponentIds;
+TMap<FString, Worker_ComponentId> LevelPathToComponentId;
+TArray<uint32> LevelComponentIds;
 
 // Prevent name collisions.
 TMap<FString, FString> ClassPathToSchemaName;
@@ -255,7 +255,7 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 	}
 }
 
-void WriteLevelComponent(FCodeWriter& Writer, FString LevelName, uint32 ComponentId, FString ClassPath)
+void WriteLevelComponent(FCodeWriter& Writer, FString LevelName, Worker_ComponentId ComponentId, FString ClassPath)
 {
 	Writer.PrintNewLine();
 	Writer.Printf("// {0}", *ClassPath);
@@ -318,7 +318,7 @@ SPATIALGDKEDITOR_API void GenerateSchemaForSublevels(const FString& SchemaOutput
 
 			for (int i = 0; i < LevelPaths.Num(); i++)
 			{
-				uint32 ComponentId = LevelPathToComponentId.FindRef(LevelPaths[i].ToString());
+				Worker_ComponentId ComponentId = LevelPathToComponentId.FindRef(LevelPaths[i].ToString());
 				if (ComponentId == 0)
 				{
 					ComponentId = IdGenerator.Next();
@@ -333,7 +333,7 @@ SPATIALGDKEDITOR_API void GenerateSchemaForSublevels(const FString& SchemaOutput
 		{
 			// Write a single component.
 			FString LevelPath = LevelNamesToPaths.FindRef(LevelName).ToString();
-			uint32 ComponentId = LevelPathToComponentId.FindRef(LevelPath);
+			Worker_ComponentId ComponentId = LevelPathToComponentId.FindRef(LevelPath);
 			if (ComponentId == 0)
 			{
 				ComponentId = IdGenerator.Next();
@@ -368,9 +368,9 @@ FString GenerateIntermediateDirectory()
 	return AbsoluteCombinedIntermediatePath;
 }
 
-TMap<uint32, FString> CreateComponentIdToClassPathMap()
+TMap<Worker_ComponentId, FString> CreateComponentIdToClassPathMap()
 {
-	TMap<uint32, FString> ComponentIdToClassPath;
+	TMap<Worker_ComponentId, FString> ComponentIdToClassPath;
 
 	for (const auto& ActorSchemaData : ActorClassPathToSchema)
 	{
@@ -418,9 +418,9 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->SubobjectClassPathToSchema = SubobjectClassPathToSchema;
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
 	SchemaDatabase->ComponentIdToClassPath = CreateComponentIdToClassPathMap();
-	SchemaDatabase->DataComponentIds = SchemaComponentTypeToComponentSet[ESchemaComponentType::SCHEMA_Data];
-	SchemaDatabase->OwnerOnlyComponentIds = SchemaComponentTypeToComponentSet[ESchemaComponentType::SCHEMA_OwnerOnly];
-	SchemaDatabase->HandoverComponentIds = SchemaComponentTypeToComponentSet[ESchemaComponentType::SCHEMA_Handover];
+	SchemaDatabase->DataComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Data];
+	SchemaDatabase->OwnerOnlyComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_OwnerOnly];
+	SchemaDatabase->HandoverComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Handover];
 	SchemaDatabase->LevelComponentIds = LevelComponentIds;
 
 	FString CompiledSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
@@ -619,10 +619,11 @@ void ResetSchemaGeneratorState()
 {
 	ActorClassPathToSchema.Empty();
 	SubobjectClassPathToSchema.Empty();
-	SchemaComponentTypeToComponentSet.Empty();
-	for (ESchemaComponentType type = ESchemaComponentType::SCHEMA_Begin; type < ESchemaComponentType::SCHEMA_Count; type = (ESchemaComponentType)(type + 1)) {
-		SchemaComponentTypeToComponentSet.Add(type, TSet<uint32>());
-	}
+	SchemaComponentTypeToComponents.Empty();
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+	{
+		SchemaComponentTypeToComponents.Add(Type, TArray<Worker_ComponentId>());
+	});
 	LevelComponentIds.Empty();
 	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
@@ -665,10 +666,10 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 
 		ActorClassPathToSchema = SchemaDatabase->ActorClassPathToSchema;
 		SubobjectClassPathToSchema = SchemaDatabase->SubobjectClassPathToSchema;
-		SchemaComponentTypeToComponentSet.Empty();
-		SchemaComponentTypeToComponentSet.Add(ESchemaComponentType::SCHEMA_Data, SchemaDatabase->DataComponentIds);
-		SchemaComponentTypeToComponentSet.Add(ESchemaComponentType::SCHEMA_OwnerOnly, SchemaDatabase->OwnerOnlyComponentIds);
-		SchemaComponentTypeToComponentSet.Add(ESchemaComponentType::SCHEMA_Handover, SchemaDatabase->HandoverComponentIds);
+		SchemaComponentTypeToComponents.Empty();
+		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_Data, SchemaDatabase->DataComponentIds);
+		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_OwnerOnly, SchemaDatabase->OwnerOnlyComponentIds);
+		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_Handover, SchemaDatabase->HandoverComponentIds);
 		LevelComponentIds = SchemaDatabase->LevelComponentIds;
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
