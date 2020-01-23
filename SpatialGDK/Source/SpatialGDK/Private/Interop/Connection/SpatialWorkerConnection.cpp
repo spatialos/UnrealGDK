@@ -182,13 +182,13 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 
 	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
-	Connection->OnLoginTokens(LoginTokens);
+	Connection->ProcessLoginTokensResponse(LoginTokens);
 }
 
-void USpatialWorkerConnection::OnLoginTokens(const Worker_Alpha_LoginTokensResponse* LoginTokens)
+void USpatialWorkerConnection::ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens)
 {
 	// if LoginTokenCb_ is not null and it return true, the program would return back directly and ignore the rest logic, or else the function will execute original logic.
-	if (LoginTokenCb_ && LoginTokenCb_(LoginTokens))
+	if (LoginTokenResCallback && LoginTokenResCallback(LoginTokens))
 	{
 		return;
 	}
