@@ -491,7 +491,7 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForComponent
 	case ESchemaComponentType::SCHEMA_Handover:
 		return SchemaDatabase->HandoverComponentIds;
 	default:
-		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Component type %d not recognised.", ComponentType));
+		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Component type %d not recognised."), ComponentType);
 		return TArray<Worker_ComponentId>();
 	}
 }
