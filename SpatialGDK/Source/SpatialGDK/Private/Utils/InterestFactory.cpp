@@ -107,10 +107,7 @@ void InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoMana
 				// Add interest query for specified distance/frequency pairs
 				for (auto DistanceFrequencyPair : SpatialGDKSettings->InterestRangeFrequencyPairs)
 				{
-					float DistanceRatio = DistanceFrequencyPair.Key;
-					float Frequency = DistanceFrequencyPair.Value;
-
-					float CheckoutRadius = MaxCheckoutRadiusMeters * DistanceRatio;
+					float CheckoutRadius = MaxCheckoutRadiusMeters * DistanceFrequencyPair.DistanceRatio;
 
 					QueryConstraint RadiusConstraint;
 					RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
@@ -119,7 +116,7 @@ void InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoMana
 					CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
 					CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
 
-					CheckoutConstraints.Add({ Frequency, CheckoutRadiusConstraint });
+					CheckoutConstraints.Add({ DistanceFrequencyPair.Frequency, CheckoutRadiusConstraint });
 				}
 			}
 			else

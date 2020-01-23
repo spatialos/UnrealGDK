@@ -30,6 +30,18 @@ namespace ESettingsWorkerLogVerbosity
 	};
 }
 
+USTRUCT()
+struct FDistanceFrequencyPair
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "SpatialGDK")
+	float DistanceRatio;
+
+	UPROPERTY(EditAnywhere, Category = "SpatialGDK")
+	float Frequency;
+};
+
 UCLASS(config = SpatialGDKSettings, defaultconfig)
 class SPATIALGDK_API USpatialGDKSettings : public UObject
 {
@@ -264,7 +276,7 @@ public:
 	bool bEnableNetCullDistanceInterest;
 
 	/** Enable to use interest frequency with bEnableNetCullDistanceInterest*/
-	UPROPERTY(EditAnywhere, Config, Category = "Interest")
+	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceInterest"))
 	bool bEnableNetCullDistanceFrequency;
 
 	/** Full update frequency ratio of actor's net cull distance */
@@ -273,5 +285,5 @@ public:
 
 	/** QBI pairs for ratio of - net cull distance : update frequency */
 	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
-	TMap<float, float> InterestRangeFrequencyPairs;
+	TArray<FDistanceFrequencyPair> InterestRangeFrequencyPairs;
 };
