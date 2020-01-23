@@ -118,7 +118,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 			return;
 		}
 
-		Worker_ComponentUpdate Update = {};
+		FWorkerComponentUpdate Update = {};
 		Update.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
 		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -174,7 +174,7 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 	{
 		if (USpatialNetConnection* Connection = WeakThis.Get())
 		{
-			Worker_ComponentUpdate ComponentUpdate = {};
+			FWorkerComponentUpdate ComponentUpdate = {};
 
 			ComponentUpdate.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
 			ComponentUpdate.schema_type = Schema_CreateComponentUpdate();

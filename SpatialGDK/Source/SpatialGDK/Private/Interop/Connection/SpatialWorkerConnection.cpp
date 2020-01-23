@@ -391,7 +391,7 @@ Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t 
 	return NextRequestId++;
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId)
+Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData>&& Components, const Worker_EntityId* EntityId)
 {
 	QueueOutgoingMessage<FCreateEntityRequest>(MoveTemp(Components), EntityId);
 	return NextRequestId++;
@@ -403,9 +403,9 @@ Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_Entity
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key)
+void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData)
 {
-	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData, Key);
+	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData);
 }
 
 void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
@@ -413,9 +413,9 @@ void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Wor
 	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
 }
 
-void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key)
+void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const FWorkerComponentUpdate* ComponentUpdate)
 {
-	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate, Key);
+	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate);
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
@@ -579,11 +579,25 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FCreateEntityRequest* Message = static_cast<FCreateEntityRequest*>(OutgoingMessage.Get());
 
+#if TRACE_LIB_ACTIVE
+			TArray<Worker_ComponentData> UnpackedComponentData;
+			UnpackedComponentData.SetNum(Message->Components.Num());
+			for (int i = 0, Num = Message->Components.Num(); i < Num; i++)
+			{
+				UnpackedComponentData[i] = Message->Components[i];
+			}
+			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
+				Message->Components.Num(),
+				UnpackedComponentData.GetData(),
+				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
+				nullptr);
+#else
 			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
 				Message->Components.Num(),
 				Message->Components.GetData(),
 				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
 				nullptr);
+#endif
 			break;
 		}
 		case EOutgoingMessageType::DeleteEntityRequest:
