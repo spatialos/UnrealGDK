@@ -18,8 +18,6 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialNetConnection);
 
-DECLARE_CYCLE_STAT(TEXT("UpdateLevelVisibility"), STAT_SpatialNetConnectionUpdateLevelVisibility, STATGROUP_SpatialNet);
-
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
@@ -73,8 +71,6 @@ int32 USpatialNetConnection::IsNetReady(bool Saturate)
 
 void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)
 {
-	SCOPE_CYCLE_COUNTER(STAT_SpatialNetConnectionUpdateLevelVisibility);
-
 	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
 
 	// We want to update our interest as fast as possible

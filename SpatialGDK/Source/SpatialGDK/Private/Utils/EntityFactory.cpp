@@ -23,12 +23,12 @@
 namespace SpatialGDK
 {
  
-EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService, const SpatialInterestFactory* InInterestFactory)
+EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService, const InterestFactory* InInterestFactory)
 	: NetDriver(InNetDriver)
 	, PackageMap(InPackageMap)
 	, ClassInfoManager(InClassInfoManager)
 	, RPCService(InRPCService)
-	, InterestFactory(InInterestFactory)
+	, SpatialInterestFactory(InInterestFactory)
 { }
  
 TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs)
@@ -240,7 +240,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Actor);
 
-	ComponentFactory DataFactory(false, NetDriver, Tracer, InterestFactory);
+	ComponentFactory DataFactory(false, NetDriver, Tracer, SpatialInterestFactory);
 
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
@@ -248,7 +248,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 	ComponentDatas.Append(DynamicComponentDatas);
 
-	Worker_ComponentData InterestComponentData = InterestFactory->CreateInterestData(Actor, Info);
+	Worker_ComponentData InterestComponentData = SpatialInterestFactory->CreateInterestData(Actor, Info);
 	ComponentDatas.Add(InterestComponentData);
 
 	if (SpatialSettings->bUseRPCRingBuffers && RPCService != nullptr)

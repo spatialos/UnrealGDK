@@ -44,7 +44,6 @@ using namespace SpatialGDK;
 DECLARE_CYCLE_STAT(TEXT("SendComponentUpdates"), STAT_SpatialSenderSendComponentUpdates, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ResetOutgoingUpdate"), STAT_SpatialSenderResetOutgoingUpdate, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("QueueOutgoingUpdate"), STAT_SpatialSenderQueueOutgoingUpdate, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("UpdateInterestComponent"), STAT_SpatialSenderUpdateInterestComponent, STATGROUP_SpatialNet);
 
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex)
 	: TargetObject(InTargetObject)
@@ -65,7 +64,7 @@ FPendingRPC::FPendingRPC(FPendingRPC&& Other)
 {
 }
 
-void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, const SpatialGDK::SpatialInterestFactory* InInterestFactory)
+void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService, const SpatialGDK::InterestFactory* InInterestFactory)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -77,14 +76,14 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	ActorGroupManager = InNetDriver->ActorGroupManager.Get();
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
-	InterestFactory = InInterestFactory;
+	SpatialInterestFactory = InInterestFactory;
 
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
 }
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 {
-	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService, InterestFactory);
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService, SpatialInterestFactory);
 	TArray<Worker_ComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs);
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
@@ -121,7 +120,7 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject), InterestFactory);
+	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject), SpatialInterestFactory);
 
 	TArray<TraceKey>* TraceKeysPtr = nullptr;
 #if TRACE_LIB_ACTIVE
@@ -207,7 +206,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(SpatialInterestFactory::CreateServerWorkerInterest().CreateInterestData());
+	Components.Add(InterestFactory::CreateServerWorkerInterest().CreateInterestData());
 
 	Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
@@ -276,7 +275,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Object);
-	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer, InterestFactory);
+	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer, SpatialInterestFactory);
 
 	TArray<TraceKey>* TraceKeysPtr = nullptr;
 #if TRACE_LIB_ACTIVE
@@ -1024,8 +1023,6 @@ bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& O
 
 void USpatialSender::UpdateInterestComponent(AActor* Actor)
 {
-	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderUpdateInterestComponent);
-
 	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
@@ -1033,7 +1030,7 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 		return;
 	}
 
-	Worker_ComponentUpdate Update = InterestFactory->CreateInterestUpdate(Actor);
+	Worker_ComponentUpdate Update = SpatialInterestFactory->CreateInterestUpdate(Actor);
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
