@@ -18,50 +18,40 @@ namespace SpatialGDK
 class SPATIALGDK_API InterestFactory
 {
 public:
-	InterestFactory(USpatialClassInfoManager* InClassInfoManager);
+	InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
 
-	void SetPackageMap(USpatialPackageMapClient* InPackageMap) { PackageMap = InPackageMap; }
+	static void CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
 
-	void CreateClientCheckoutRadiusConstraint();
-
-	Worker_ComponentData CreateInterestData(AActor* Actor, const FClassInfo& Info) const;
-	Worker_ComponentUpdate CreateInterestUpdate(AActor* Actor) const;
-	Worker_ComponentUpdate CreateInterestUpdate(AActor* Actor, const FClassInfo& Info) const;
+	Worker_ComponentData CreateInterestData() const;
+	Worker_ComponentUpdate CreateInterestUpdate() const;
 
 	static Interest CreateServerWorkerInterest();
 
 private:
-
-	struct InterestRequest
-	{
-		AActor* Actor;
-		const FClassInfo& Info;
-	};
-
-	Interest CreateInterest(const InterestRequest& Request) const;
-
-	Worker_ComponentUpdate CreateInterestUpdate(const InterestRequest& Request) const;
+	Interest CreateInterest() const;
 
 	// Only uses Defined Constraint
-	Interest CreateActorInterest(const InterestRequest& Request) const;
+	Interest CreateActorInterest() const;
 	// Defined Constraint AND Level Constraint
-	Interest CreatePlayerOwnedActorInterest(const InterestRequest& Request) const;
+	Interest CreatePlayerOwnedActorInterest() const;
 
-	void AddUserDefinedQueries(const InterestRequest& Request, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
+	void AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
 
 	// Checkout Constraint OR AlwaysInterested OR AlwaysRelevant Constraint
-	QueryConstraint CreateSystemDefinedConstraints(const InterestRequest& Request) const;
+	QueryConstraint CreateSystemDefinedConstraints() const;
 
 	// System Defined Constraints
-	QueryConstraint CreateCheckoutRadiusConstraints(const InterestRequest& Request) const;
-	QueryConstraint CreateAlwaysInterestedConstraint(const InterestRequest& Request) const;
+	QueryConstraint CreateCheckoutRadiusConstraints() const;
+	QueryConstraint CreateAlwaysInterestedConstraint() const;
 	static QueryConstraint CreateAlwaysRelevantConstraint();
 
 	// Only checkout entities that are in loaded sublevels
-	QueryConstraint CreateLevelConstraints(const InterestRequest& Request) const;
+	QueryConstraint CreateLevelConstraints() const;
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
+	AActor* Actor;
+	const FClassInfo& Info;
 	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;
 };

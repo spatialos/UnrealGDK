@@ -37,6 +37,7 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/EntityPool.h"
 #include "Utils/ErrorCodeRemapping.h"
+#include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
@@ -140,12 +141,9 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	//Init InterestFactory
-	SpatialInterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager);
-
 	if (!bInitAsClient)
 	{
-		SpatialInterestFactory->CreateClientCheckoutRadiusConstraint();
+		InterestFactory::CreateClientCheckoutRadiusConstraint(ClassInfoManager);
 	}
 
 #if WITH_EDITOR
@@ -465,7 +463,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
-	Sender->Init(this, &TimerManager, RPCService.Get(), SpatialInterestFactory.Get());
+	Sender->Init(this, &TimerManager, RPCService.Get());
 	Receiver->Init(this, &TimerManager, RPCService.Get());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
@@ -479,9 +477,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	check(NewPackageMap == PackageMap);
 
 	PackageMap->Init(this, &TimerManager);
-
-	// Pass the PackageMap to the InterestFactory. The PackageMap was not available to pass when the InterestFactory was created.
-	SpatialInterestFactory->SetPackageMap(PackageMap);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()

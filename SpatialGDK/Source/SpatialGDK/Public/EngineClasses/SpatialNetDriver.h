@@ -9,7 +9,6 @@
 #include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
-#include "Utils/InterestFactory.h"
 #include "Utils/SpatialActorGroupManager.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
@@ -151,7 +150,6 @@ public:
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
 
-	TUniquePtr<SpatialGDK::InterestFactory> SpatialInterestFactory;
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
