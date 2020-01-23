@@ -14,7 +14,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 
-class USpatialClassInfoManager;
 class USpatialNetDriver;
 class UEntityPool;
 class FTimerManager;

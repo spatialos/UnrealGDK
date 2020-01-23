@@ -3,8 +3,6 @@
 #include "Schema/UnrealObjectRef.h"
 
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "SpatialConstants.h"
-#include "EngineClasses/SpatialActorChannel.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealObjectRef, Log, All);
