@@ -676,6 +676,10 @@ int64 USpatialActorChannel::ReplicateActor()
 		if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
 			Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
+
+			// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy 
+			Actor->Role = ROLE_SimulatedProxy;
+			Actor->RemoteRole = ROLE_Authority;
 		}
 		else
 		{
