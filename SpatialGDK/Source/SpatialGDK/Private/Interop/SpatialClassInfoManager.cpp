@@ -494,7 +494,6 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForComponent
 		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Component type %d not recognised.", ComponentType));
 		return TArray<Worker_ComponentId>();
 	}
-	
 }
 
 void USpatialClassInfoManager::QuitGame()
