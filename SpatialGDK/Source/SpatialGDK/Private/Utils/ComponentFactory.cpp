@@ -427,8 +427,6 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());
 		if (OutLatencyTraceIds != nullptr)
 		{
-			InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
-			ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());
 			OutLatencyTraceIds->Add(USpatialLatencyTracer::InvalidTraceKey); // Interest not tracked 
 		}
 	}
