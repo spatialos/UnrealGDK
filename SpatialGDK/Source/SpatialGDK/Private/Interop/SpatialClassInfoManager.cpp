@@ -467,7 +467,7 @@ bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentI
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
 }
 
-const FClassInfo * USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject * Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient)
+const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject * Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient)
 {
 	const FClassInfo* Info = nullptr;
 
