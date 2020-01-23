@@ -620,6 +620,9 @@ void ResetSchemaGeneratorState()
 	ActorClassPathToSchema.Empty();
 	SubobjectClassPathToSchema.Empty();
 	SchemaComponentTypeToComponentSet.Empty();
+	for (ESchemaComponentType type = ESchemaComponentType::SCHEMA_Begin; type < ESchemaComponentType::SCHEMA_Count; type = (ESchemaComponentType)(type + 1)) {
+		SchemaComponentTypeToComponentSet.Add(type, TSet<uint32>());
+	}
 	LevelComponentIds.Empty();
 	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
