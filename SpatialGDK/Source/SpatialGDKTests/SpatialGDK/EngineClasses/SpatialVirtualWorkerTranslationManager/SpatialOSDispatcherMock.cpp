@@ -60,7 +60,9 @@ void SpatialOSDispatcherMock::AddPendingReliableRPC(Worker_RequestId RequestId, 
 {}
 
 void SpatialOSDispatcherMock::AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
-{}
+{
+	EntityQueryDelegates.Add(RequestId, Delegate);
+}
 
 void SpatialOSDispatcherMock::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate)
 {}
@@ -70,3 +72,8 @@ void SpatialOSDispatcherMock::AddCreateEntityDelegate(Worker_RequestId RequestId
 
 void SpatialOSDispatcherMock::OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {}
+
+EntityQueryDelegate* SpatialOSDispatcherMock::GetEntityQueryDelegate(Worker_RequestId RequestId)
+{
+	return EntityQueryDelegates.Find(RequestId);
+}

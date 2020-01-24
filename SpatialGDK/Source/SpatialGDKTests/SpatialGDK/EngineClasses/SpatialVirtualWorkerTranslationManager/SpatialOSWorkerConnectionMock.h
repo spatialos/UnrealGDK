@@ -11,6 +11,12 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+// The SpatialOSWorkerConnectionMock is intended to be a very minimal implementation of a WorkerConnection which just records then swallows
+// any data sent through it. It is intended to be extended with methods to query for what data has been sent through it.
+//
+// Only a few methods have meaningful implementations. You are intended to extend the implementations whenever needed
+// for testing code which uses the WorkerConnection.
+
 class SpatialOSWorkerConnectionMock : public SpatialOSWorkerInterface
 {
 public:
@@ -32,6 +38,9 @@ public:
 
 	// The following methods are used to query for state in tests.
 	const Worker_EntityQuery* GetLastEntityQuery();
+	void ClearLastEntityQuery();
+
+	Worker_RequestId GetLastRequestId();
 
 private:
 	Worker_RequestId NextRequestId;

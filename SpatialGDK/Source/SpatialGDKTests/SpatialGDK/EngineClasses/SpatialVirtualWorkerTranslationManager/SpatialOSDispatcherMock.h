@@ -4,10 +4,18 @@
 
 #include "Interop/SpatialOSDispatcherInterface.h"
 
+// The SpatialOSDispatcherMock is intended as a very minimal implementation which will acknowledge
+// and record any calls. It can then be used to unit test other classes and validate that given
+// particular inputs, they make calls to SpatialOS which are as expected.
+//
+// Currently, only a few methods below have implementations. Feel free to extend this mock as needed
+// for testing purposes.
+
 class SpatialOSDispatcherMock : public SpatialOSDispatcherInterface
 {
 public:
 	SpatialOSDispatcherMock();
+	virtual ~SpatialOSDispatcherMock() {}
 
 	// Dispatcher Calls
 	virtual void OnCriticalSection(bool InCriticalSection) override;
@@ -39,5 +47,9 @@ public:
 
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) override;
 
+	// Methods to extract information about calls made.
+	EntityQueryDelegate* GetEntityQueryDelegate(Worker_RequestId RequestId);
+
 private:
+	TMap<Worker_RequestId_Key, EntityQueryDelegate> EntityQueryDelegates;
 };

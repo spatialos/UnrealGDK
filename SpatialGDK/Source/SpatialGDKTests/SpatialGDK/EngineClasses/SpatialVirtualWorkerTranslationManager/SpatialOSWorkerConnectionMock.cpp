@@ -68,3 +68,13 @@ const Worker_EntityQuery* SpatialOSWorkerConnectionMock::GetLastEntityQuery()
 {
 	return LastEntityQuery;
 }
+
+void SpatialOSWorkerConnectionMock::ClearLastEntityQuery()
+{
+	LastEntityQuery = nullptr;
+}
+
+Worker_RequestId SpatialOSWorkerConnectionMock::GetLastRequestId()
+{
+	return NextRequestId - 1;
+}
