@@ -23,6 +23,9 @@ namespace SpatialGDK
 // It is built once per net driver initialisation.
 static QueryConstraint ClientCheckoutRadiusConstraint;
 
+// Cache the result type of client Interest queries.
+static TArray<Worker_ComponentId> ClientResultType;
+
 InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
 	: Actor(InActor)
 	, Info(InInfo)
@@ -31,7 +34,13 @@ InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpa
 {
 }
 
-void InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager)
+void InterestFactory::CreateAndCacheInterestState(USpatialClassInfoManager* ClassInfoManager)
+{
+	ClientCheckoutRadiusConstraint = CreateClientCheckoutRadiusConstraint(ClassInfoManager);
+	ClientResultType = CreateClientResultType(ClassInfoManager);
+}
+
+QueryConstraint InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager)
 {
 	// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
 	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
@@ -64,7 +73,20 @@ void InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoMana
 	{
 		CheckoutRadiusConstraint.OrConstraint.Add(ActorCheckoutConstraint);
 	}
-	ClientCheckoutRadiusConstraint = CheckoutRadiusConstraint;
+	return CheckoutRadiusConstraint;
+}
+
+TArray<Worker_ComponentId> InterestFactory::CreateClientResultType(USpatialClassInfoManager* ClassInfoManager)
+{
+	TArray<Worker_ComponentId> ResultType;
+
+	// Add the required unreal components
+	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_CLIENT_INTEREST);
+
+	// Add all data components- clients don't need to see handover or owner only components on other entities.
+	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
+
+	return ResultType;
 }
 
 Worker_ComponentData InterestFactory::CreateInterestData() const
@@ -185,7 +207,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 
 	if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
 	{
-		ClientQuery.ResultComponentId = CreateClientResultType();
+		ClientQuery.ResultComponentId = ClientResultType;
 	}
 	else
 	{
@@ -379,19 +401,6 @@ QueryConstraint InterestFactory::CreateLevelConstraints() const
 	}
 
 	return LevelConstraint;
-}
-
-TArray<Worker_ComponentId> InterestFactory::CreateClientResultType() const
-{
-	TArray<Worker_ComponentId> ResultType;
-
-	// Add the required unreal components
-	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_CLIENT_INTEREST);
-
-	// Add all data components- clients don't need to see handover or owner only components on other entities.
-	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
-
-	return ResultType;
 }
 
 } // namespace SpatialGDK
