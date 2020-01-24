@@ -22,6 +22,7 @@ class SpatialOSWorkerConnectionMock : public SpatialOSWorkerInterface
 public:
 	SpatialOSWorkerConnectionMock();
 
+	virtual TArray<Worker_OpList*> GetOpList() override;
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId) override;
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId) override;

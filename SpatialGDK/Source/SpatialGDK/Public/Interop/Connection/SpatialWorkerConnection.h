@@ -42,8 +42,7 @@ public:
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
 	// Worker Connection Interface
-	// virtual TArray<Worker_OpList*> GetOpList() override;
-	TArray<Worker_OpList*> GetOpList();
+	virtual TArray<Worker_OpList*> GetOpList() override;
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId) override;
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId) override;

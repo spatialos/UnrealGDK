@@ -14,6 +14,11 @@ SpatialOSWorkerConnectionMock::SpatialOSWorkerConnectionMock()
 	, LastEntityQuery(nullptr)
 {}
 
+TArray<Worker_OpList*> SpatialOSWorkerConnectionMock::GetOpList()
+{
+	return TArray<Worker_OpList*>();
+}
+
 Worker_RequestId SpatialOSWorkerConnectionMock::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
 {
 	return NextRequestId++;

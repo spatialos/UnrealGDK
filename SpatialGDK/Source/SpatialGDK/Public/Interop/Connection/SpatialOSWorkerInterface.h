@@ -15,7 +15,7 @@ public:
 // 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
 	// Worker Connection Interface
-	// virtual TArray<Worker_OpList*> GetOpList() PURE_VIRTUAL(AbstractSpatialWorkerConnection::GetOpList, return;);
+	virtual TArray<Worker_OpList*> GetOpList() PURE_VIRTUAL(AbstractSpatialWorkerConnection::GetOpList, return TArray<Worker_OpList*>(););
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendReserveEntityIdsRequest, return 0;);
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendCreateEntityRequest, return 0;);
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendDeleteEntityRequest, return 0;);
@@ -29,8 +29,5 @@ public:
 	virtual void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendEntityQueryRequest, return;);
 	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendEntityQueryRequest, return 0;);
 	virtual void SendMetrics(const SpatialGDK::SpatialMetrics& Metrics) PURE_VIRTUAL(AbstractSpatialWorkerConnection::SendMetrics, return;);
-
-// 	PhysicalWorkerName GetWorkerId() const;
-// 	const TArray<FString>& GetWorkerAttributes() const;
 };
 
