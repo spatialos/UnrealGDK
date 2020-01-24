@@ -5,7 +5,7 @@
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialCommonTypes.h"
 
-#include "AbilitySystemComponent.h"
+#include "GameplayAbilities/Public/AbilitySystemComponent.h"
 #include "Components/ActorComponent.h"
 #include "GameplayPrediction.h"
 
@@ -13,6 +13,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialAbilitySystemComponent, Log, All);
 
+UCLASS(ClassGroup = AbilitySystem, hidecategories = (Object, LOD, Lighting, Transform, Sockets, TextureStreaming), editinlinenew, meta = (BlueprintSpawnableComponent))
 class SPATIALGDK_API USpatialAbilitySystemComponent : public UAbilitySystemComponent
 {
 	GENERATED_BODY()
