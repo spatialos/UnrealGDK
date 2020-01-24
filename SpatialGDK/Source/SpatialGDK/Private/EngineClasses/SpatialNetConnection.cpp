@@ -18,6 +18,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialNetConnection);
 
+DECLARE_CYCLE_STAT(TEXT("UpdateLevelVisibility"), STAT_SpatialNetConnectionUpdateLevelVisibility, STATGROUP_SpatialNet);
+
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
@@ -71,12 +73,15 @@ int32 USpatialNetConnection::IsNetReady(bool Saturate)
 
 void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialNetConnectionUpdateLevelVisibility);
+
 	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
 
 	// We want to update our interest as fast as possible
 	// So we send an Interest update immediately.
-	UpdateActorInterest(Cast<AActor>(PlayerController));
-	UpdateActorInterest(Cast<AActor>(PlayerController->GetPawn()));
+
+	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
+	Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
 }
 
 void USpatialNetConnection::FlushDormancy(AActor* Actor)
@@ -89,22 +94,6 @@ void USpatialNetConnection::FlushDormancy(AActor* Actor)
 	{
 		const bool bMakeDormant = false;
 		Cast<USpatialNetDriver>(Driver)->RefreshActorDormancy(Actor, bMakeDormant);
-	}
-}
-
-void USpatialNetConnection::UpdateActorInterest(AActor* Actor)
-{
-	if (Actor == nullptr)
-	{
-		return;
-	}
-
-	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
-
-	Sender->UpdateInterestComponent(Actor);
-	for (const auto& Child : Actor->Children)
-	{
-		UpdateActorInterest(Child);
 	}
 }
 
