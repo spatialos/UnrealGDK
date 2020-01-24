@@ -4,7 +4,7 @@ package unreal;
 component SpatialDebugging {
      id = 9975;
 
-     // Id assigned to the Unreal server worker which should be authoritative for this entity.
+     // Id assigned to the Unreal server worker which is authoritative for this entity.
      // 0 is reserved as an invalid/unset value.
      uint32 authoritative_virtual_worker_id = 1;
 
