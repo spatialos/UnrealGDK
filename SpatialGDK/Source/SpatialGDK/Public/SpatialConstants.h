@@ -252,9 +252,6 @@ const FString ZoningAttribute = DefaultServerWorkerType.ToString();
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_CLIENT_INTEREST = TArray<Worker_ComponentId>
 {
-	// Unclear why ACL is required. TODO(UNR-2768): Remove this requirement
-	ENTITY_ACL_COMPONENT_ID,
-
 	UNREAL_METADATA_COMPONENT_ID,
 	SPAWN_DATA_COMPONENT_ID,
 	RPCS_ON_ENTITY_CREATION_ID,
