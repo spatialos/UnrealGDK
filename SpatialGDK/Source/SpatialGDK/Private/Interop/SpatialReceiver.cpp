@@ -29,6 +29,7 @@
 #include "Utils/ComponentReader.h"
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
@@ -162,6 +163,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
+	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -387,14 +389,22 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
-	if (NetDriver->VirtualWorkerTranslator)
+	if (NetDriver->VirtualWorkerTranslator != nullptr
+		&& Op.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID
+		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		NetDriver->VirtualWorkerTranslator->AuthorityChanged(Op);
+		NetDriver->InitializeVirtualWorkerTranslationManager();
+		NetDriver->VirtualWorkerTranslationManager->AuthorityChanged(Op);
 	}
 
 	if (LoadBalanceEnforcer != nullptr)
 	{
 		LoadBalanceEnforcer->AuthorityChanged(Op);
+	}
+
+	if (NetDriver->SpatialDebugger != nullptr)
+	{
+		NetDriver->SpatialDebugger->ActorAuthorityChanged(Op);
 	}
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));
@@ -530,7 +540,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 			{
-				ActorChannel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
+				// Soft handover isn't supported currently.
+				if (Op.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
+				{
+					ActorChannel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
+				}
 			}
 
 			// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
@@ -640,7 +654,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			"Entity id: %lld"), *NetDriver->Connection->GetWorkerId(), *EntityActor->GetName(), EntityId);
 
 		// Assume SimulatedProxy until we've been delegated Authority
-		bool bAuthority = StaticComponentView->GetAuthority(EntityId, Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
+		bool bAuthority = StaticComponentView->HasAuthority(EntityId, Position::ComponentId);
 		EntityActor->Role = bAuthority ? ROLE_Authority : ROLE_SimulatedProxy;
 		EntityActor->RemoteRole = bAuthority ? ROLE_SimulatedProxy : ROLE_Authority;
 		if (bAuthority)
@@ -725,7 +739,12 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			return;
 		}
 
-		PackageMap->ResolveEntityActor(EntityActor, EntityId);
+		if (!PackageMap->ResolveEntityActor(EntityActor, EntityId))
+		{
+			EntityActor->Destroy(true);
+			Channel->Close(EChannelCloseReason::Destroyed);
+			return;
+		}
 
 #if ENGINE_MINOR_VERSION <= 22
 		Channel->SetChannelActor(EntityActor);
@@ -1074,7 +1093,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 		Channel.CreateSubObjects.Add(TargetObject.Get());
 	}
 
-	ApplyComponentData(Channel, *TargetObject , Data);
+	ApplyComponentData(Channel, *TargetObject, Data);
 }
 
 void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp& Op)
@@ -1306,6 +1325,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
+	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
@@ -1456,7 +1476,7 @@ void USpatialReceiver::HandleRPCLegacy(const Worker_ComponentUpdateOp& Op)
 	// Multicast RPCs should be executed by whoever receives them.
 	if (Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY)
 	{
-		if (StaticComponentView->GetAuthority(Op.entity_id, RPCEndpointComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
+		if (!StaticComponentView->HasAuthority(Op.entity_id, RPCEndpointComponentId))
 		{
 			return;
 		}
@@ -1498,7 +1518,7 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 
 				// In a zoned multiworker scenario we might not have gained authority over the current entity in this bundle in time
 				// before processing so don't ApplyRPCs to an entity that we don't have authority over.
-				if (StaticComponentView->GetAuthority(ObjectRef.Entity, RPCEndpointComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
+				if (!StaticComponentView->HasAuthority(ObjectRef.Entity, RPCEndpointComponentId))
 				{
 					continue;
 				}

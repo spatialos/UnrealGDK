@@ -31,9 +31,11 @@
 #include "Utils/SpatialActorGroupManager.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityFactory.h"
+#include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
+#include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
 
@@ -44,6 +46,7 @@ using namespace SpatialGDK;
 DECLARE_CYCLE_STAT(TEXT("SendComponentUpdates"), STAT_SpatialSenderSendComponentUpdates, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ResetOutgoingUpdate"), STAT_SpatialSenderResetOutgoingUpdate, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("QueueOutgoingUpdate"), STAT_SpatialSenderQueueOutgoingUpdate, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("UpdateInterestComponent"), STAT_SpatialSenderUpdateInterestComponent, STATGROUP_SpatialNet);
 
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex)
 	: TargetObject(InTargetObject)
@@ -87,10 +90,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
- 
+
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
- 
+
 	return CreateEntityRequestId;
 }
 
@@ -484,7 +487,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 {
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-	check(NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID));
+	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID));
 
 	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
 	check(AuthorityIntentComponent != nullptr);
@@ -500,10 +503,16 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	UE_LOG(LogSpatialSender, Log, TEXT("(%s) Sending authority intent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
 		*NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
 
+	// If the SpatialDebugger is enabled, also update the authority intent virtual worker ID and color.
+	if (NetDriver->SpatialDebugger != nullptr)
+	{
+		NetDriver->SpatialDebugger->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
+	}
+
 	Worker_ComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
-	if (NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
 		// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
 		NetDriver->LoadBalanceEnforcer->QueueAclAssignmentRequest(EntityId);
@@ -571,8 +580,8 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 #if !UE_BUILD_SHIPPING
 void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType)
 {
-		NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
-		NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
+	NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
+	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
 }
 #endif
 
@@ -708,7 +717,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 								*Function->GetName(),
 								*TargetActor->GetName(),
 								*ConnectionOwner->GetName()
-							)
+							);
 							bCanPackRPC = false;
 						}
 					}
@@ -920,7 +929,7 @@ Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 	ensure(TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
 	Payload.WriteToSchemaObject(EventData);
-	
+
 	return ComponentUpdate;
 }
 ERPCResult USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex)
@@ -1022,10 +1031,12 @@ bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& O
 
 void USpatialSender::UpdateInterestComponent(AActor* Actor)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderUpdateInterestComponent);
+
 	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogSpatialSender, Verbose, TEXT("Attempted to update interest for non replicated actor: %s"), *Actor->GetName());
+		UE_LOG(LogSpatialSender, Verbose, TEXT("Attempted to update interest for non replicated actor: %s"), *GetNameSafe(Actor));
 		return;
 	}
 
