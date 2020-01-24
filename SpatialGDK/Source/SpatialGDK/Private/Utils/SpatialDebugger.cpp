@@ -7,6 +7,7 @@
 #include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/WorkerRegion.h"
 #include "Schema/AuthorityIntent.h"
+#include "Schema/SpatialDebugging.h"
 #include "SpatialCommonTypes.h"
 #include "Utils/InspectionColors.h"
 
@@ -259,6 +260,55 @@ void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 	EntityActorMapping.Remove(EntityId);
 }
 
+void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const
+{
+	const bool bAuthoritative = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;
+
+	if (bAuthoritative && AuthOp.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
+	{
+		if (NetDriver->VirtualWorkerTranslator == nullptr)
+		{
+			// Currently, there's nothing to display in the debugger other than load balancing information.
+			return;
+		}
+
+		VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+		FColor LocalVirtualWorkerColor = SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
+
+		SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(AuthOp.entity_id);
+		if (DebuggingInfo == nullptr)
+		{
+			// Some entities won't have debug info, so create it now.
+			SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, false);
+			Worker_ComponentData DebuggingData = NewDebuggingInfo.CreateSpatialDebuggingData();
+			NetDriver->Connection->SendAddComponent(AuthOp.entity_id, &DebuggingData);
+			return;
+		}
+		else
+		{
+			DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
+			DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
+			Worker_ComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+			NetDriver->Connection->SendComponentUpdate(AuthOp.entity_id, &DebuggingUpdate);
+		}
+	}
+}
+
+void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
+{
+	SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
+	check(DebuggingInfo != nullptr);
+	DebuggingInfo->IntentVirtualWorkerId = NewIntentVirtualWorkerId;
+
+	const PhysicalWorkerName* NewAuthoritativePhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(NewIntentVirtualWorkerId);
+	check(NewAuthoritativePhysicalWorkerName != nullptr);
+
+	DebuggingInfo->IntentColor = SpatialGDK::GetColorForWorkerName(*NewAuthoritativePhysicalWorkerName);
+	Worker_ComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
+}
+
+
 void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName)
 {
 	SCOPE_CYCLE_COUNTER(STAT_DrawTag);
@@ -266,10 +316,18 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	// TODO: Smarter positioning of elements so they're centered no matter how many are enabled https://improbableio.atlassian.net/browse/UNR-2360.
 	int32 HorizontalOffset = -32.0f;
 
+	check(NetDriver != nullptr && !NetDriver->IsServer());
+	if (!NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID))
+	{
+		return;
+	}
+
+	const SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
+
 	if (bShowLock)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
-		const bool bIsLocked = GetLockStatus(EntityId);
+		const bool bIsLocked = DebuggingInfo->IsLocked;
 		const EIcon LockIcon = bIsLocked ? ICON_LOCKED : ICON_UNLOCKED;
 
 		Canvas->SetDrawColor(FColor::White);
@@ -280,7 +338,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	if (bShowAuth)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
-		const FColor& ServerWorkerColor = GetServerWorkerColor(EntityId);
+		const FColor& ServerWorkerColor = DebuggingInfo->AuthoritativeColor;
 		Canvas->SetDrawColor(FColor::White);
 		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
 		HorizontalOffset += 16.0f;
@@ -292,7 +350,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	if (bShowAuthIntent)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
-		const FColor& VirtualWorkerColor = GetVirtualWorkerColor(EntityId);
+		const FColor& VirtualWorkerColor = DebuggingInfo->IntentColor;
 		Canvas->SetDrawColor(FColor::White);
 		Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
 		HorizontalOffset += 16.0f;
@@ -406,64 +464,6 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 			ScreenLocation.Y -= PLAYER_TAG_VERTICAL_OFFSET;
 		}
 	}
-}
-
-FColor ASpatialDebugger::GetVirtualWorkerColor(const Worker_EntityId EntityId) const
-{
-	check(NetDriver != nullptr && !NetDriver->IsServer());
-	if (!NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
-	{
-		return InvalidServerTintColor;
-	}
-	const AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
-	const int32 VirtualWorkerId = AuthorityIntentComponent->VirtualWorkerId;
-
-	const PhysicalWorkerName* PhysicalWorkerName = nullptr;
-	if (NetDriver->VirtualWorkerTranslator)
-	{
-		PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(VirtualWorkerId);
-	}
-
-	if (PhysicalWorkerName == nullptr)
-	{
-		// This can happen if the client hasn't yet received the VirtualWorkerTranslator mapping
-		return InvalidServerTintColor;
-	}
-	return SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName);
-}
-
-FColor ASpatialDebugger::GetServerWorkerColor(const Worker_EntityId EntityId) const
-{
-	check(NetDriver != nullptr && !NetDriver->IsServer());
-
-	const PhysicalWorkerName& AuthoritativeWorkerFromACL = GetAuthoritativeWorkerFromACL(EntityId);
-
-	const FString WorkerNamePrefix = FString{ "workerId:" };
-	if (!AuthoritativeWorkerFromACL.StartsWith(*WorkerNamePrefix)) {
-		// The ACL entry is not an explicit worker ID, this may happen at startup when it's just
-		// the UnrealWorker attribute, just return invalid for now.
-		return InvalidServerTintColor;
-	}
-	return SpatialGDK::GetColorForWorkerName(AuthoritativeWorkerFromACL.RightChop(WorkerNamePrefix.Len()));
-}
-
-const PhysicalWorkerName& ASpatialDebugger::GetAuthoritativeWorkerFromACL(const Worker_EntityId EntityId) const
-{
-	const SpatialGDK::EntityAcl* AclData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId);
-	const WorkerRequirementSet* WriteAcl = AclData->ComponentWriteAcl.Find(SpatialConstants::POSITION_COMPONENT_ID);
-
-	check(WriteAcl != nullptr);
-	check(WriteAcl->Num() == 1);
-	check((*WriteAcl)[0].Num() == 1);
-
-	return (*WriteAcl)[0][0];
-}
-
-// TODO: Implement once this functionality is available https://improbableio.atlassian.net/browse/UNR-2361.
-bool ASpatialDebugger::GetLockStatus(const Worker_EntityId Entityid)
-{
-	check(NetDriver != nullptr && !NetDriver->IsServer());
-	return false;
 }
 
 void ASpatialDebugger::SpatialToggleDebugger()
