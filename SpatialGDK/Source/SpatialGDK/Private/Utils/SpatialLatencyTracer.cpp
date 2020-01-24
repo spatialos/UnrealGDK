@@ -179,7 +179,7 @@ TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const U
 
 	ActorFuncKey FuncKey{ Cast<AActor>(Obj), Function };
 	TraceKey ReturnKey = InvalidTraceKey;
-	TrackingTraces.RemoveAndCopyValue(FuncKey, ReturnKey);
+	TrackingRPCs.RemoveAndCopyValue(FuncKey, ReturnKey);
 	return ReturnKey;
 }
 
@@ -456,7 +456,7 @@ bool USpatialLatencyTracer::IsLatencyTraceActive_Internal()
 void USpatialLatencyTracer::ClearTrackingInformation()
 {
 	TraceMap.Reset();
-	TrackingTraces.Reset();
+	TrackingRPCs.Reset();
 	TrackingProperties.Reset();
 	TrackingTags.Reset();
 }
@@ -476,10 +476,10 @@ TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const F
 			if (const UFunction* Function = ActorClass->FindFunctionByName(*Target))
 			{
 				ActorFuncKey Key{ Actor, Function };
-				if (TrackingTraces.Find(Key) == nullptr)
+				if (TrackingRPCs.Find(Key) == nullptr)
 				{
 					const TraceKey _TraceKey = GenerateNewTraceKey();
-					TrackingTraces.Add(Key, _TraceKey);
+					TrackingRPCs.Add(Key, _TraceKey);
 					return _TraceKey;
 				}
 				UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : ActorFunc already exists for trace"), *WorkerId);

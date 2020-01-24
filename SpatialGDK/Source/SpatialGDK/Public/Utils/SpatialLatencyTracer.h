@@ -128,7 +128,7 @@ private:
 	using ActorTagKey = TPair<const AActor*, FString>;
 	using TraceSpan = improbable::trace::Span;
 
-	enum class ETraceType
+	enum class ETraceType : uint8
 	{
 		RPC,
 		Property,
@@ -163,7 +163,7 @@ private:
 	TraceKey NextTraceKey = 1;
 
 	FCriticalSection Mutex; // This mutex is to protect modifications to the containers below
-	TMap<ActorFuncKey, TraceKey> TrackingTraces;
+	TMap<ActorFuncKey, TraceKey> TrackingRPCs;
 	TMap<ActorPropertyKey, TraceKey> TrackingProperties;
 	TMap<ActorTagKey, TraceKey> TrackingTags;
 	TMap<TraceKey, TraceSpan> TraceMap;
