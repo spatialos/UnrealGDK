@@ -484,9 +484,9 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForComponent
 {
 	switch (ComponentType)
 	{
-	case ESchemaComponentType::SCHEMA_Data :
+	case ESchemaComponentType::SCHEMA_Data:
 		return SchemaDatabase->DataComponentIds;
-	case ESchemaComponentType::SCHEMA_OwnerOnly :
+	case ESchemaComponentType::SCHEMA_OwnerOnly:
 		return SchemaDatabase->OwnerOnlyComponentIds;
 	case ESchemaComponentType::SCHEMA_Handover:
 		return SchemaDatabase->HandoverComponentIds;
