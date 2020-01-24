@@ -332,43 +332,62 @@ void USpatialWorkerConnection::SetConnectionType(ESpatialConnectionType InConnec
 	ConnectionType = InConnectionType;
 }
 
-void USpatialWorkerConnection::StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist)
+bool USpatialNetDriver::TrySetupConnectionConfigFromCommandLine()
 {
-	bOutUseReceptionist = !(URL.Host == SpatialConstants::LOCATOR_HOST || URL.HasOption(TEXT("locator")));
-	if (bOutUseReceptionist)
+	FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
+	bool bSuccessfullyLoaded = Connection->LocatorConfig.TryLoadCommandLineArgs();
+	if (bSuccessfullyLoaded)
 	{
-		ReceptionistConfig.SetReceptionistHost(URL.Host);
+		Connection->SetConnectionType(ESpatialConnectionType::Locator);
+		Connection->LocatorConfig.WorkerType = WorkerType;
 	}
 	else
 	{
-		LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
-		LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
+		bSuccessfullyLoaded = Connection->DevAuthConfig.TryLoadCommandLineArgs();
+		if (bSuccessfullyLoaded)
+		{
+			Connection->SetConnectionType(ESpatialConnectionType::DevAuthFlow);
+			Connection->DevAuthConfig.WorkerType = WorkerType;
+		}
+		else
+		{
+			bSuccessfullyLoaded = Connection->ReceptionistConfig.TryLoadCommandLineArgs();
+			Connection->SetConnectionType(ESpatialConnectionType::Receptionist);
+			Connection->ReceptionistConfig.WorkerType = WorkerType;
+		}
 	}
+
+	return bSuccessfullyLoaded;
 }
 
-void USpatialWorkerConnection::FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist, const FString& SpatialWorkerType)
+void USpatialNetDriver::SetupConnectionConfigFromURL(const FURL& URL)
 {
-	// Finish setup for the config objects regardless of loading from command line or URL
-	if (bUseReceptionist)
+	FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
+	if (URL.Host == SpatialConstants::LOCATOR_HOST && URL.HasOption(TEXT("locator")))
 	{
-		// Use Receptionist
-		SetConnectionType(ESpatialConnectionType::Receptionist);
-
-		ReceptionistConfig.WorkerType = SpatialWorkerType;
+		Connection->SetConnectionType(ESpatialConnectionType::Locator);
+		Connection->LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
+		Connection->LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
+		Connection->LocatorConfig.WorkerType = WorkerType;
+	}
+	else if (URL.Host == SpatialConstants::LOCATOR_HOST && URL.HasOption(TEXT("devauth")))
+	{
+		Connection->SetConnectionType(ESpatialConnectionType::DevAuthFlow);
+		Connection->DevAuthConfig.DevelopmentAuthToken = URL.GetOption(*SpatialConstants::URL_DEV_AUTH_OPTION, TEXT(""));
+		Connection->DevAuthConfig.WorkerType = WorkerType;
+	}
+	else
+	{
+		Connection->SetConnectionType(ESpatialConnectionType::Receptionist);
+		Connection->ReceptionistConfig.SetReceptionistHost(URL.Host);
+		Connection->ReceptionistConfig.WorkerType = WorkerType;
 
 		const TCHAR* UseExternalIpForBridge = TEXT("useExternalIpForBridge");
 		if (URL.HasOption(UseExternalIpForBridge))
 		{
 			FString UseExternalIpOption = URL.GetOption(UseExternalIpForBridge, TEXT(""));
-			ReceptionistConfig.UseExternalIp = !UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase);
+			Connection->ReceptionistConfig.UseExternalIp = !UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase);
 		}
-	}
-	else
-	{
-		// Use Locator
-		SetConnectionType(ESpatialConnectionType::Locator);
-		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorConfig.LocatorHost);
-		LocatorConfig.WorkerType = SpatialWorkerType;
 	}
 }
 

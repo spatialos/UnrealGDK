@@ -76,8 +76,8 @@ public:
 	DECLARE_DELEGATE_TwoParams(OnConnectionToSpatialOSFailedDelegate, uint8_t, const FString&);
 	OnConnectionToSpatialOSFailedDelegate OnFailedToConnectCallback;
 
-	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
-	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist, const FString& SpatialWorkerType);
+	bool TrySetupConnectionConfigFromCommandLine();
+	void SetupConnectionConfigFromURL(const FURL& URL);
 
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
