@@ -112,6 +112,7 @@ const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID        = 9979;
 const Worker_ComponentId CLIENT_ENDPOINT_COMPONENT_ID					= 9978;
 const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID					= 9977;
 const Worker_ComponentId MULTICAST_RPCS_COMPONENT_ID					= 9976;
+const Worker_ComponentId SPATIAL_DEBUGGING_COMPONENT_ID					= 9975;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -183,6 +184,13 @@ const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerNa
 // WorkerEntity Field IDs.
 const Schema_FieldId WORKER_ID_ID										= 1;
 const Schema_FieldId WORKER_TYPE_ID										= 2;
+
+// SpatialDebugger Field IDs.
+const Schema_FieldId SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID   = 1;
+const Schema_FieldId SPATIAL_DEBUGGING_AUTHORITATIVE_COLOR               = 2;
+const Schema_FieldId SPATIAL_DEBUGGING_INTENT_VIRTUAL_WORKER_ID          = 3;
+const Schema_FieldId SPATIAL_DEBUGGING_INTENT_COLOR                      = 4;
+const Schema_FieldId SPATIAL_DEBUGGING_IS_LOCKED                         = 5;
 
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
