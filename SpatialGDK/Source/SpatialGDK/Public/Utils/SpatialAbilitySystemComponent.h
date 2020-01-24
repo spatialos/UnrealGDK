@@ -32,5 +32,7 @@ private:
 	UAbstractLockingPolicy* LockingPolicy;
 	TMap<AbilityInstanceIdentifiers, ActorLockToken> AbilityInstanceToLockTokens;
 
-	void LockAbilityInstance(FPredictionKey InPredictionKey);
+	bool LockAbilityInstance(FPredictionKey InPredictionKey);
+	void BindUnlockToAbilityEnd(FPredictionKey InPredictionKey, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate);
+	bool UnlockAfterAbilityEnded(FPredictionKey InPredictionKey);
 };

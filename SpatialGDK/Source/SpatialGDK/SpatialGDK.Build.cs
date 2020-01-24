@@ -34,7 +34,8 @@ public class SpatialGDK : ModuleRules
                 "OnlineSubsystemUtils",
                 "InputCore",
                 "Sockets",
-                "GameplayAbilities"
+                "GameplayAbilities",
+                "GameplayTasks"
             });
 
 		if (Target.bBuildEditor)
