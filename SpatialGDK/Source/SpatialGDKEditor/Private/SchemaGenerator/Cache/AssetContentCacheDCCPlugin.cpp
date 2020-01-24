@@ -37,16 +37,51 @@ struct DepNode
 	TSet<FName> Dependencies;
 	TSet<FName> DependenciesToSatisfy;
 	TSet<FName> Dependents;
+	uint32 NodeId;
 	int32 Level = -1;
 };
 
+void GenerateViz(TMap<FName, DepNode*>& Packages)
+{
+	FString OutGraph;
+	OutGraph.Append("graph G {\n");
+	for (auto const& Entry : Packages)
+	{
+		FString NodeName = FString::Printf(TEXT("Node%i"), Entry.Value->NodeId);
+		OutGraph.Append(FString::Printf(TEXT("%s [label = \"%s\" ]\n"), *NodeName, *Entry.Key.ToString()));
+	}
+	for (auto const& Entry : Packages)
+	{
+		FString NodeName = FString::Printf(TEXT("Node%i"), Entry.Value->NodeId);
+		for (auto const& Dep : Entry.Value->Dependencies)
+		{
+			DepNode& Node = *Packages[Dep];
+			FString DepName = FString::Printf(TEXT("Node%i"), Node.NodeId);
+			OutGraph.Append(FString::Printf(TEXT("%s -> %s\n"), *NodeName, *DepName));
+		}
+	}
+
+	OutGraph.Append("}\n");
+
+	if (FArchive* OutFile = IFileManager::Get().CreateDebugFileWriter(TEXT("C:\\Dev\\DebugGraph.txt")))
+	{
+		*OutFile << OutGraph;
+
+		delete OutFile;
+	}
+}
+
 FMD5Hash GetFileHash(const FName& PackageName)
 {
-	FString FileName = FPackageName::LongPackageNameToFilename(PackageName.ToString());
+	FString FileName1 = FPackageName::LongPackageNameToFilename(PackageName.ToString());
 
-	if(IFileManager::Get().FileExists(*FileName))
+	FString FileName2;
+	FPackageName::FindPackageFileWithoutExtension(FileName1, FileName2);
+
+
+	if(IFileManager::Get().FileExists(*FileName2))
 	{
-		return FMD5Hash::HashFile(*FileName);
+		return FMD5Hash::HashFile(*FileName2);
 	}
 	else
 	{
@@ -73,7 +108,7 @@ TOptional<FMD5Hash> FAssetContentIdentifierCache::GetAssetIdentifier(FName Packa
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::Get().LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 	TArray<FName> Dependencies;
 
-	TMap<FName, DepNode> VisitedPackages;
+	TMap<FName, DepNode*> VisitedPackages;
 	TArray<FName> PackagesQueue;
 
 	PackagesQueue.Add(PackageName);
@@ -83,34 +118,49 @@ TOptional<FMD5Hash> FAssetContentIdentifierCache::GetAssetIdentifier(FName Packa
 	{
 		Dependencies.Empty();
 		FName CurPackage = PackagesQueue.Pop();
-		VisitedPackages.FindOrAdd(CurPackage);
+		DepNode* CurNode = (VisitedPackages.Find(CurPackage) ? *VisitedPackages.Find(CurPackage) : nullptr);
+		if (CurNode == nullptr)
+		{
+			CurNode = new DepNode;
+			CurNode->NodeId = VisitedPackages.Num();
+			VisitedPackages.Add(CurPackage, CurNode);
+		}
 
-		AssetRegistryModule.Get().GetDependencies(CurPackage, Dependencies);
+		if (AssetSignatures.Find(CurPackage))
+		{
+			CurNode->Level = 0;
+			RootPackages.Add(CurPackage);
+			continue;
+		}
+
+		AssetRegistryModule.Get().GetDependencies(CurPackage, Dependencies, EAssetRegistryDependencyType::Hard);
 
 		for (const FName& DepPackage : Dependencies)
 		{
 			if (DepPackage != PackageName)
 			{
 				bool bNewNode = false;
-				DepNode* Node = VisitedPackages.Find(DepPackage);
+				DepNode* Node = (VisitedPackages.Find(DepPackage) ? *VisitedPackages.Find(DepPackage) : nullptr);
 				if (Node == nullptr)
 				{
-					Node = &VisitedPackages.Add(PackageName, DepNode());
+					Node = new DepNode;
+					Node->NodeId = VisitedPackages.Num() - 1;
+					VisitedPackages.Add(DepPackage, Node);
 					bNewNode = true;
 				}
 
-				DepNode& CurNode = *VisitedPackages.Find(CurPackage);
-
 				Node->Dependents.Add(CurPackage);
-				CurNode.Dependencies.Add(DepPackage);
+				CurNode->Dependencies.Add(DepPackage);
+
+				if (bNewNode)
+				{
+					PackagesQueue.Add(DepPackage);
+				}
+
 				auto Res = AssetSignatures.Find(DepPackage);
 				if (Res == nullptr)
 				{
-					CurNode.DependenciesToSatisfy.Add(DepPackage);
-					if (bNewNode)
-					{
-						PackagesQueue.Add(DepPackage);
-					}
+					CurNode->DependenciesToSatisfy.Add(DepPackage);
 				}
 				else
 				{
@@ -122,14 +172,15 @@ TOptional<FMD5Hash> FAssetContentIdentifierCache::GetAssetIdentifier(FName Packa
 			}
 		}
 
-		DepNode& CurNode = *VisitedPackages.Find(CurPackage);
-
-		if (CurNode.DependenciesToSatisfy.Num() == 0)
+		if(CurNode->Dependencies.Num() == 0)
 		{
-			CurNode.Level = 0;
+			CurNode->Level = 0;
 			RootPackages.Add(CurPackage);
 		}
 	}
+
+	GenerateViz(VisitedPackages);
+
 	TSet<FName> Dependents;
 
 	if (RootPackages.Num() == 0)
@@ -141,7 +192,7 @@ TOptional<FMD5Hash> FAssetContentIdentifierCache::GetAssetIdentifier(FName Packa
 
 	for (auto& Package : RootPackages)
 	{
-		const DepNode& PackageNode = VisitedPackages[Package];
+		const DepNode& PackageNode = *VisitedPackages[Package];
 		if (AssetSignatures.Find(Package) == nullptr)
 		{
 			check(PackageNode.Dependencies.Num() == 0);
@@ -158,17 +209,17 @@ TOptional<FMD5Hash> FAssetContentIdentifierCache::GetAssetIdentifier(FName Packa
 			bReachedTop = RootPackages.Num() == 1 && RootPackages.Contains(PackageName);
 			for (auto& Package : RootPackages)
 			{
-				const DepNode& PackageNode = VisitedPackages[Package];
+				const DepNode& PackageNode = *VisitedPackages[Package];
 				for (auto& Dependent : PackageNode.Dependents)
 				{
-					DepNode& DependentNode = VisitedPackages[Dependent];
-					if (DependentNode.Level != -1 && DependentNode.Level < PackageNode.Level)
-					{
-						UE_LOG(LogUObjectGlobals, Warning, TEXT("Circular dependency between %s and %s"), *Package.ToString(), *Dependent.ToString());
-						AssetSignatures.Add(Dependent, TOptional<FMD5Hash>());
-						AssetSignatures.Add(Package, TOptional<FMD5Hash>());
-						return TOptional<FMD5Hash>();
-					}
+					DepNode& DependentNode = *VisitedPackages[Dependent];
+					//if (DependentNode.Level != -1 && DependentNode.Level < PackageNode.Level)
+					//{
+					//	UE_LOG(LogUObjectGlobals, Warning, TEXT("Circular dependency between %s and %s"), *Package.ToString(), *Dependent.ToString());
+					//	AssetSignatures.Add(Dependent, TOptional<FMD5Hash>());
+					//	AssetSignatures.Add(Package, TOptional<FMD5Hash>());
+					//	return TOptional<FMD5Hash>();
+					//}
 					DependentNode.Level = PackageNode.Level + 1;
 					DependentNode.DependenciesToSatisfy.Remove(Package);
 					if (DependentNode.DependenciesToSatisfy.Num() == 0)
@@ -194,7 +245,7 @@ TOptional<FMD5Hash> FAssetContentIdentifierCache::GetAssetIdentifier(FName Packa
 
 				ContentHash.AssetFileHash = GetFileHash(Package);
 
-				const DepNode& PackageNode = VisitedPackages[Package];
+				const DepNode& PackageNode = *VisitedPackages[Package];
 				for (auto& Dep : PackageNode.Dependencies)
 				{
 					if (auto Hash = AssetSignatures.FindOrAdd(Dep))
