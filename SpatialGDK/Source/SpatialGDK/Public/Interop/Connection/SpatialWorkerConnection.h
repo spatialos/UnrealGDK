@@ -24,7 +24,8 @@ enum class ESpatialConnectionType
 {
 	Receptionist,
 	LegacyLocator,
-	Locator
+	Locator,
+	DevAuthFlow
 };
 
 UCLASS()
@@ -63,6 +64,7 @@ public:
 
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
+	FDevAuthConfig DevAuthConfig;
 
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnEnqueueMessage OnEnqueueMessage;

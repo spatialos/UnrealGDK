@@ -163,6 +163,8 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID
 	case ESpatialConnectionType::Locator:
 		ConnectToLocator();
 		break;
+	case ESpatialConnectionType::DevAuthFlow:
+		StartDevelopmentAuth(DevAuthConfig.DevelopmentAuthToken);
 	}
 }
 
