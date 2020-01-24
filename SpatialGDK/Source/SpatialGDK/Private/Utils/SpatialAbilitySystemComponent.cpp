@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialAbilitySystemComponent.h"
+#include "Utils/SpatialAbilitySystemComponent.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialConstants.h"
@@ -14,7 +14,7 @@ void USpatialAbilitySystemComponent::BeginPlay()
 	LockingPolicy = bSpatialNetworkingEnabled ? Cast<USpatialNetDriver>(GetWorld()->NetDriver)->LockingPolicy : nullptr;
 }
 
-bool USpatialAbilitySystemComponent::InternalTryActivateAbility(FGameplayAbilitySpecHandle AbilityToActivate, FPredictionKey InPredictionKey = FPredictionKey(), UGameplayAbility ** OutInstancedAbility = nullptr, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate = nullptr, const FGameplayEventData* TriggerEventData = nullptr)
+bool USpatialAbilitySystemComponent::InternalTryActivateAbility(FGameplayAbilitySpecHandle AbilityToActivate, FPredictionKey InPredictionKey, UGameplayAbility ** OutInstancedAbility, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
 {
 	bool bAbilitySuccessfullyActivated = Super::InternalTryActivateAbility(AbilityToActivate, InPredictionKey, OutInstancedAbility, OnGameplayAbilityEndedDelegate, TriggerEventData);
 
