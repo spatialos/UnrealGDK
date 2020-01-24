@@ -41,6 +41,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Batch Spatial Position Updates now defaults to false.
 
 ## Bug fixes:
+- Fixed a bug that caused the local API service to memory leak.
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
 - Take into account OverrideSpatialNetworking command line argument as early as possible (LocalDeploymentManager used to query bSpatialNetworking before the command line was parsed).
 - Servers maintain interest in AlwaysRelevant Actors.
