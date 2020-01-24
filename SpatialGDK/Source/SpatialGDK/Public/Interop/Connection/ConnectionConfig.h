@@ -106,7 +106,7 @@ public:
 	{
 		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
-		bSuccess &= FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
+		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
 		bSuccess &= FParse::Value(CommandLine, TEXT("playerIdentityToken"), PlayerIdentityToken);
 		bSuccess &= FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
 		return bSuccess;
@@ -135,9 +135,9 @@ public:
 	{
 		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
-		bSuccess &= FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
-		bSuccess &= FParse::Value(CommandLine, TEXT("devAuthToken"), DevelopmentAuthToken);
-		FParse::Value(CommandLine, TEXT("deployment"), Deployment); // this is optional
+		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
+		FParse::Value(CommandLine, TEXT("deployment"), Deployment);
+		bSuccess = FParse::Value(CommandLine, TEXT("devAuthToken"), DevelopmentAuthToken);
 		return bSuccess;
 	}
 
