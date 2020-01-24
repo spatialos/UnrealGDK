@@ -771,7 +771,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		if (!NetDriver->IsServer())
 		{
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-			Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsOwnedByWorker());
+			// Don't send dynamic interest for this actor if it is otherwise handled by result types.
+			if (!SpatialGDKSettings->bEnableClientResultTypes)
+			{
+				Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsOwnedByWorker());
+			}
 
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 			// a player index. For now we don't support split screen, so the number is always 0.
@@ -1192,6 +1196,12 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId Ent
 		ApplyComponentData(*Channel, *Subobject, *AddComponent.Data->ComponentData);
 		PendingDynamicSubobjectComponents.Remove(EntityComponentPair);
 	});
+
+	// Don't send dynamic interest for this subobject if it is otherwise handled by result types.
+	if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
+	{
+		return;
+	}
 
 	// If on a client, we need to set up the proper component interest for the new subobject.
 	if (!NetDriver->IsServer())
