@@ -30,11 +30,6 @@ struct FConnectionConfig
 		FParse::Bool(CommandLine, TEXT("enableProtocolLogging"), EnableProtocolLoggingAtStartup);
 		FParse::Value(CommandLine, TEXT("protocolLoggingPrefix"), ProtocolLoggingPrefix);
         
-#if PLATFORM_IOS || PLATFORM_ANDROID
-		// On a mobile platform, you can only be a client worker, and therefore use the external IP.
-		WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
-		UseExternalIp = true;
-#endif
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString == TEXT("Tcp"))
@@ -120,6 +115,35 @@ public:
 	FString LocatorHost;
 	FString PlayerIdentityToken;
 	FString LoginToken;
+};
+
+class FDevAuthConfig : public FConnectionConfig
+{
+public:
+	FDevAuthConfig()
+	{
+		LoadDefaults();
+	}
+
+	void LoadDefaults()
+	{
+		UseExternalIp = true;
+		LocatorHost = SpatialConstants::LOCATOR_HOST;
+	}
+
+	bool TryLoadCommandLineArgs()
+	{
+		bool bSuccess = true;
+		const TCHAR* CommandLine = FCommandLine::Get();
+		bSuccess &= FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
+		bSuccess &= FParse::Value(CommandLine, TEXT("devAuthToken"), DevelopmentAuthToken);
+		FParse::Value(CommandLine, TEXT("deployment"), Deployment); // this is optional
+		return bSuccess;
+	}
+
+	FString LocatorHost;
+	FString DevelopmentAuthToken;
+	FString Deployment;
 };
 
 class FReceptionistConfig : public FConnectionConfig
