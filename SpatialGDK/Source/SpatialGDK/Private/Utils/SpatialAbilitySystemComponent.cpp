@@ -5,8 +5,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialConstants.h"
 
-
-
 DEFINE_LOG_CATEGORY(LogSpatialAbilitySystemComponent);
 
 void USpatialAbilitySystemComponent::BeginPlay()
@@ -52,5 +50,22 @@ bool USpatialAbilitySystemComponent::LockAbilityInstance(FPredictionKey InPredic
 bool USpatialAbilitySystemComponent::BindUnlockToAbilityEnd(FPredictionKey InPredictionKey, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate)
 {
 	check(OnGameplayAbilityEndedDelegate != nullptr);
-	OnGameplayAbilityEndedDelegate->BindUFunction()
+	OnGameplayAbilityEndedDelegate->BindLambda([this, InPredictionKey](UGameplayAbility* GameplayAbility)
+	{
+		this->UnlockAfterAbilityEnded(InPredictionKey);
+	});
+}
+
+void USpatialAbilitySystemComponent::UnlockAfterAbilityEnded(FPredictionKey InPredictionKey)
+{
+	uint16 KeyId = InPredictionKey.Current;
+	if (!AbilityInstanceToLockTokens.Contains(KeyId))
+	{
+		UE_LOG(LogSpatialAbilitySystemComponent, Error, TEXT("Tried to unlock after an ability ended but no lock token was found for the prediction key. Prediction key Id: %d", InPredictionKey.Current));
+		return false;
+	}
+
+	check(LockingPolicy != nullptr);
+	ActorLockToken LockToken = AbilityInstanceToLockTokens.FindAndRemoveChecked(KeyId);
+	LockingPolicy->ReleaseLock(LockToken);
 }
