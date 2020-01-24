@@ -51,7 +51,7 @@ TMap<ESchemaComponentType, TSet<Worker_ComponentId>> SchemaComponentTypeToCompon
 
 // LevelStreaming
 TMap<FString, Worker_ComponentId> LevelPathToComponentId;
-TArray<uint32> LevelComponentIds;
+TSet<Worker_ComponentId> LevelComponentIds;
 
 // Prevent name collisions.
 TMap<FString, FString> ClassPathToSchemaName;
@@ -421,7 +421,7 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->DataComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Data].Array();
 	SchemaDatabase->OwnerOnlyComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_OwnerOnly].Array();
 	SchemaDatabase->HandoverComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Handover].Array();
-	SchemaDatabase->LevelComponentIds = LevelComponentIds;
+	SchemaDatabase->LevelComponentIds = LevelComponentIds.Array();
 
 	FString CompiledSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
 
@@ -670,7 +670,7 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_Data, TSet<Worker_ComponentId>(SchemaDatabase->DataComponentIds));
 		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_OwnerOnly, TSet<Worker_ComponentId>(SchemaDatabase->OwnerOnlyComponentIds));
 		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_Handover, TSet<Worker_ComponentId>(SchemaDatabase->HandoverComponentIds));
-		LevelComponentIds = SchemaDatabase->LevelComponentIds;
+		LevelComponentIds = TSet<Worker_ComponentId>(SchemaDatabase->LevelComponentIds);
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 
