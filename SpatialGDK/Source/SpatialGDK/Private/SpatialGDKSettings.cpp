@@ -119,6 +119,12 @@ void USpatialGDKSettings::PostInitProperties()
 		}
 	}
 
+	if (!bEnableDynamicInterestOverrides && !bEnableClientResultTypes)
+	{
+		UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Dynamic interest overrides are disable, but client result types are also disabled. "
+			"Using dynamic interest overrides anyway. If you meant to turn off overrides, please enable client result types."));
+	}
+
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
 	PlayInSettings->bEnableOffloading = bEnableOffloading;
