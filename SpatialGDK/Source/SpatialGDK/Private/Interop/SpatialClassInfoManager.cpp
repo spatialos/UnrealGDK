@@ -313,8 +313,6 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject
 	}
 	else
 	{
-		check(Object->GetTypedOuter<AActor>() != nullptr);
-
 		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
 
 		check(ObjectRef.IsValid());
