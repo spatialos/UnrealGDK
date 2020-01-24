@@ -25,7 +25,7 @@ public:
 		PackageMap = InPackageMap;
 		VirtualWorkerTranslator = InVirtualWorkerTranslator;
 	};
-	virtual ActorLockToken AcquireLock(AActor* Actor, FString LockName = TEXT("")) PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLock, return SpatialConstants::INVALID_ENTITY_ID;);
+	virtual ActorLockToken AcquireLock(AActor* Actor, FString LockName = TEXT("")) PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLock, return SpatialConstants::INVALID_ACTOR_LOCK_TOKEN;);
 	virtual void ReleaseLock(ActorLockToken Token) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLock, return;);
 	virtual bool IsLocked(const AActor* Actor) const PURE_VIRTUAL(UAbstractLockingPolicy::IsLocked, return false;);
 
