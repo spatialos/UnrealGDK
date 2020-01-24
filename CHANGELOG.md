@@ -39,6 +39,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Load Balancing Strategies and Locking Strategies can be set per-level using SpatialWorldSettings.
 - Batch Spatial Position Updates now defaults to false.
 - Introduced experimental feature flag `bEnableClientResultTypes`, defaulting false. Flip this to true for client Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
+- Introduced experimental feature flag `bEnableDynamicInterestOverrides`, defaulting true. Flip this to false to disable interest overrides within the GDK. Must also have `bEnableClientResultTypes` set to true.
+
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
