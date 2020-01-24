@@ -4,8 +4,12 @@ All notable changes to the SpatialOS Game Development Kit for Unreal will be doc
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased-`x.y.z`] - 20xx-xx-xx
+## [Unreleased-`x.y.z`] - 2020-xx-xx
+### Features:
 - Updated the version of the local API service used by the UnrealGDK.
+
+### Bug fixes:
+- Fixed a bug that caused the local API service to memory leak.
 
 ## [`0.8.0-preview`] - 2019-12-17
 
