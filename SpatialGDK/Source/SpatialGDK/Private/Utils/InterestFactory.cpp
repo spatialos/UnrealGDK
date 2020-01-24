@@ -17,9 +17,6 @@
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
 
-DECLARE_STATS_GROUP(TEXT("InterestFactory"), STATGROUP_SpatialInterestFactory, STATCAT_Advanced);
-DECLARE_CYCLE_STAT(TEXT("AddUserDefinedQueries"), STAT_InterestFactoryAddUserDefinedQueries, STATGROUP_SpatialInterestFactory);
-
 namespace SpatialGDK
 {
 // The checkout radius constraint is built once for all actors in CreateCheckoutRadiusConstraint as it is equivalent for all actors.
@@ -217,46 +214,20 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	return NewInterest;
 }
 
-void InterestFactory::AddActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
+void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
 {
-	check(InActor);
+	check(Actor);
 	check(ClassInfoManager);
 
 	TArray<UActorInterestComponent*> ActorInterestComponents;
-	InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
+	Actor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
 	if (ActorInterestComponents.Num() == 1)
 	{
 		ActorInterestComponents[0]->CreateQueries(*ClassInfoManager, LevelConstraints, OutQueries);
 	}
 	else if (ActorInterestComponents.Num() > 1)
 	{
-		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestQueryComponent"), *InActor->GetPathName());
-	}
-}
-
-void InterestFactory::RecursivelyAddUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
-{
-	check(InActor);
-
-	AddActorUserDefinedQueries(InActor, LevelConstraints, OutQueries);
-	for (const auto* Child : InActor->Children)
-	{
-		RecursivelyAddUserDefinedQueries(Child, LevelConstraints, OutQueries);
-	}
-}
-
-void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
-{
-	SCOPE_CYCLE_COUNTER(STAT_InterestFactoryAddUserDefinedQueries);
-
-	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
-	{
-		RecursivelyAddUserDefinedQueries(Actor, LevelConstraints, OutQueries);
-		RecursivelyAddUserDefinedQueries(PlayerController->GetPawn(), LevelConstraints, OutQueries);
-	}
-	else
-	{
-		AddActorUserDefinedQueries(Actor, LevelConstraints, OutQueries);
+		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestQueryComponent"), *Actor->GetPathName());
 	}
 }
 
