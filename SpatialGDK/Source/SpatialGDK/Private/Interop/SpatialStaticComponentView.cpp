@@ -13,6 +13,7 @@
 #include "Schema/ServerEndpoint.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/Singleton.h"
+#include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 
@@ -98,6 +99,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::MulticastRPCs>>(Op.data);
 		break;
+	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::SpatialDebugging>>(Op.data);
+		break;
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.
 		Data = nullptr;
@@ -148,6 +152,9 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::MulticastRPCs>(Op.entity_id);
+		break;
+	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::SpatialDebugging>(Op.entity_id);
 		break;
 	default:
 		return;
