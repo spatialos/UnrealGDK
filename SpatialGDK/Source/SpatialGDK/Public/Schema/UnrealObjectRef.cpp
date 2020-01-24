@@ -123,7 +123,7 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 				}
 
 				// Check if the object is a newly referenced dynamic subobject, in which case we can create the object ref if we have the entity id of the parent actor.
-				if (ObjectValue->IsA<UActorComponent>())
+				if (!ObjectValue->IsA<AActor>())
 				{
 					PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(ObjectValue);
 					ObjectRef = PackageMap->GetUnrealObjectRefFromObject(ObjectValue); // This should now be valid, as we resolve the object in the line before
