@@ -20,7 +20,7 @@ class SPATIALGDK_API InterestFactory
 public:
 	InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
 
-	static void CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
+	static void CreateAndCacheInterestState(USpatialClassInfoManager* ClassInfoManager);
 
 	Worker_ComponentData CreateInterestData() const;
 	Worker_ComponentUpdate CreateInterestUpdate() const;
@@ -28,6 +28,11 @@ public:
 	static Interest CreateServerWorkerInterest();
 
 private:
+	// Build the checkout radius constraints for client workers
+	static QueryConstraint CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
+	// Builds the result type of necessary components for clients to see on NON-AUTHORITATIVE entities
+	static TArray<Worker_ComponentId> CreateClientResultType(USpatialClassInfoManager* ClassInfoManager);
+
 	Interest CreateInterest() const;
 
 	// Only uses Defined Constraint
@@ -46,7 +51,7 @@ private:
 	static QueryConstraint CreateAlwaysRelevantConstraint();
 
 	// Only checkout entities that are in loaded sublevels
-	QueryConstraint CreateLevelConstraints() const;
+	QueryConstraint CreateLevelConstraints() const;	
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 

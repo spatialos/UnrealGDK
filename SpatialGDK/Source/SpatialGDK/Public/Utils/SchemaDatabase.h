@@ -95,8 +95,18 @@ public:
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FString> ComponentIdToClassPath;
 
+	// These component ID lists for each data type are stored separately as you cannot have nested maps in a UPROPERTY
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	TSet<uint32> LevelComponentIds;
+	TArray<uint32> DataComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<uint32> OwnerOnlyComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<uint32> HandoverComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<uint32> LevelComponentIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 NextAvailableComponentId;
