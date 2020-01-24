@@ -38,6 +38,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Entries in the SchemaDatabase are now sorted to improve efficiancy when browsing the asset in the editor. (DW-Sebastien)
 - Load Balancing Strategies and Locking Strategies can be set per-level using SpatialWorldSettings.
 - Batch Spatial Position Updates now defaults to false.
+- Introduced experimental feature flag `bEnableClientResultTypes`, defaulting false. Flip this to true for client Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
