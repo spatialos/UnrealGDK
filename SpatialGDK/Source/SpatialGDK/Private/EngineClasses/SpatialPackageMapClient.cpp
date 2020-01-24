@@ -298,7 +298,6 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
 {
 	AActor* Actor = Object->GetTypedOuter<AActor>();
-	TryResolveObjectAsEntity(Actor);	// Make sure the actor is resolved
 
 	Worker_EntityId EntityId = GetEntityIdFromObject(Actor);
 
