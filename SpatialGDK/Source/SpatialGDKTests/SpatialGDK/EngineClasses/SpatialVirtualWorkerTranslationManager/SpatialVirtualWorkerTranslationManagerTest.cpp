@@ -116,7 +116,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_successful_query_without_enough_wor
 	return true;
 }
 
-VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_successful_query_with_enough_workers_THEN_do_not_query_again)
+VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_successful_query_with_invalid_workers_THEN_query_again)
 {
 	TUniquePtr<SpatialOSWorkerConnectionMock> Connection = MakeUnique<SpatialOSWorkerConnectionMock>();
 	TUniquePtr<SpatialOSDispatcherMock> Dispatcher = MakeUnique<SpatialOSDispatcherMock>();
