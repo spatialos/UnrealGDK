@@ -174,11 +174,6 @@ public:
 	UPROPERTY(config)
 	bool bEnableClientResultTypes;
 
-	/** Whether dynamic interest overrides are used to hide information clients should not see such as owner only components.
-	This flag can only be set to false if bEnableClientResultTypes is true. */
-	UPROPERTY(config)
-	bool bEnableDynamicInterestOverrides;
-
 	/** Pack RPCs sent during the same frame into a single update. */
 	UPROPERTY(config)
 	bool bPackRPCs;

@@ -36,8 +36,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, bEnableServerQBI(true)
-	, bEnableClientResultTypes(true)
-	, bEnableDynamicInterestOverrides(false)
+	, bEnableClientResultTypes(false)
 	, bPackRPCs(false)
 	, bUseDevelopmentAuthenticationFlow(false)
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
@@ -117,12 +116,6 @@ void USpatialGDKSettings::PostInitProperties()
 		{
 			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
 		}
-	}
-
-	if (!bEnableDynamicInterestOverrides && !bEnableClientResultTypes)
-	{
-		UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Dynamic interest overrides are disable, but client result types are also disabled. "
-			"Using dynamic interest overrides anyway. If you meant to turn off overrides, please enable client result types."));
 	}
 
 #if WITH_EDITOR

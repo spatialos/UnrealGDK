@@ -462,7 +462,6 @@ void USpatialSender::SendComponentInterestForActor(USpatialActorChannel* Channel
 
 void USpatialSender::SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned)
 {
-
 	checkf(!NetDriver->IsServer(), TEXT("Tried to set ComponentInterest on a server-worker. This should never happen!"));
 
 	TArray<Worker_InterestOverride> ComponentInterest;

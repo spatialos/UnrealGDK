@@ -771,9 +771,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		if (!NetDriver->IsServer())
 		{
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-			// Don't send dynamic interest for this actor if it is disabled and otherwise handled by result types.
-			auto Settings = GetDefault<USpatialGDKSettings>();
-			if (Settings->bEnableDynamicInterestOverrides || !Settings->bEnableClientResultTypes)
+			// Don't send dynamic interest for this actor if it is otherwise handled by result types.
+			if (!SpatialGDKSettings->bEnableClientResultTypes)
 			{
 				Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsOwnedByWorker());
 			}
@@ -1198,9 +1197,8 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId Ent
 		PendingDynamicSubobjectComponents.Remove(EntityComponentPair);
 	});
 
-	// Don't send dynamic interest for this subobject if it is disabled and otherwise handled by result types.
-	auto Settings = GetDefault<USpatialGDKSettings>();
-	if (!Settings->bEnableDynamicInterestOverrides && Settings->bEnableClientResultTypes)
+	// Don't send dynamic interest for this subobject if it is otherwise handled by result types.
+	if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
 	{
 		return;
 	}
