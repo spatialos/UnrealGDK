@@ -432,6 +432,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	check(NewPackageMap == PackageMap);
 
 	PackageMap->Init(this, &TimerManager);
+
+	SetupStatCollection();
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
@@ -508,6 +510,38 @@ void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()
 {
 	return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
+}
+
+void USpatialNetDriver::SetupStatCollection()
+{
+	const float FirstDelayTime = 0.0f;
+	const float DelayTime = 10.0f;
+	const bool bLoop = true;
+
+	FTimerHandle RetryTimer;
+	TimerManager.SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<USpatialNetDriver>(this)]()
+	{
+		if (WeakThis.IsValid())
+		{
+			if (USpatialNetDriver* NetDriver = WeakThis.Get())
+			{
+				FString ExecCommand;
+
+				if (NetDriver->bCollectingStats)
+				{
+					ExecCommand = TEXT("stat stopfile");
+				}
+				else
+				{
+					ExecCommand = TEXT("stat startfile");
+				}
+
+				GEngine->Exec(NetDriver->GetWorld(), *ExecCommand);
+
+				NetDriver->bCollectingStats = !NetDriver->bCollectingStats;
+			}
+		}
+	}, DelayTime, bLoop, FirstDelayTime);
 }
 
 void USpatialNetDriver::OnGSMQuerySuccess()
