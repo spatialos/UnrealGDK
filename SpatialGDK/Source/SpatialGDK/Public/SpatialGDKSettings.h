@@ -32,15 +32,15 @@ namespace ESettingsWorkerLogVerbosity
 	};
 }
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FDistanceFrequencyPair
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, Category = "SpatialGDK")
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "SpatialGDK")
 	float DistanceRatio;
 
-	UPROPERTY(EditAnywhere, Category = "SpatialGDK")
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "SpatialGDK")
 	float Frequency;
 };
 
