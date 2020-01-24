@@ -774,7 +774,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			// Don't send dynamic interest for this actor if it is otherwise handled by result types.
 			if (!SpatialGDKSettings->bEnableClientResultTypes)
 			{
-				Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsOwnedByWorker());
+				Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsAuthoritativeClient());
 			}
 
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
@@ -1206,7 +1206,7 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId Ent
 	// If on a client, we need to set up the proper component interest for the new subobject.
 	if (!NetDriver->IsServer())
 	{
-		Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsOwnedByWorker());
+		Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsAuthoritativeClient());
 	}
 }
 
