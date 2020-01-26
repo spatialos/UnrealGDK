@@ -27,8 +27,6 @@ enum class ESpatialConnectionType
 	Locator
 };
 
-typedef std::function<bool(const Worker_Alpha_LoginTokensResponse*)> LoginTokenCb;
-
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 {
