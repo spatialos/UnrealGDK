@@ -493,8 +493,8 @@ void SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited(ui
 
 bool SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth()
 {
-	bool UseChinaAuth = GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode().ToString() == TEXT("CN");
-	FString SpatialInfoArgs = UseChinaAuth ? TEXT("auth login --environment=cn-production") : TEXT("auth login");
+	bool bUseChinaAuth = GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode().ToString() == TEXT("CN");
+	FString SpatialInfoArgs = bUseChinaAuth ? TEXT("auth login --environment=cn-production") : TEXT("auth login");
 	FString SpatialInfoResult;
 	FString StdErr;
 	int32 ExitCode;

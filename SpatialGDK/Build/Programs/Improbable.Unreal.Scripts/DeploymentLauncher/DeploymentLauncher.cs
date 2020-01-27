@@ -26,6 +26,12 @@ namespace Improbable
         private const string CHINA_ENDPOINT_URL = "platform.api.spatialoschina.com";
         private const int CHINA_ENDPOINT_PORT = 443;
 
+        private static readonly string ChinaRefreshToken = File.ReadAllText(Path.Combine(Environment.ExpandEnvironmentVariables("%LOCALAPPDATA%"), ".improbable/oauth2/oauth2_refresh_token_cn-production"));
+
+        private static readonly PlatformRefreshTokenCredential ChinaCredentials = new PlatformRefreshTokenCredential(ChinaRefreshToken,
+            "https://auth.spatialoschina.com/auth/v1/authcode",
+            "https://auth.spatialoschina.com/auth/v1/token");
+
         private static string UploadSnapshot(SnapshotServiceClient client, string snapshotPath, string projectName,
             string deploymentName, string region)
         {
@@ -95,12 +101,6 @@ namespace Improbable
             }
             return null; // Use default
         }
-
-        static readonly string ChinaRefreshToken = File.ReadAllText(Path.Combine(Environment.ExpandEnvironmentVariables("%LOCALAPPDATA%"), ".improbable/oauth2/oauth2_refresh_token_cn-production"));
-
-        static readonly PlatformRefreshTokenCredential ChinaCredentials = new PlatformRefreshTokenCredential(ChinaRefreshToken,
-            "https://auth.spatialoschina.com/auth/v1/authcode",
-            "https://auth.spatialoschina.com/auth/v1/token");
 
         private static PlatformRefreshTokenCredential GetPlatformRefreshTokenCredential(string region)
         {
