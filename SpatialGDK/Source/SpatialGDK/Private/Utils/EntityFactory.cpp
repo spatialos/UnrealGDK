@@ -306,7 +306,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 			// If this object is not in the PackageMap, it has been dynamically created.
 			if (!PackageMap->GetUnrealObjectRefFromObject(Subobject).IsValid())
 			{
-				const FClassInfo* SubobjectInfo = Channel->TryResolveNewDynamicSubobjectAndGetClassInfo(Subobject);
+				const FClassInfo* SubobjectInfo = PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(Subobject);
 
 				if (SubobjectInfo == nullptr)
 				{
