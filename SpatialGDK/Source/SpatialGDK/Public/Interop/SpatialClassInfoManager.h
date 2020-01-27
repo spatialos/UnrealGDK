@@ -128,6 +128,9 @@ public:
 	// Used to check if component is used for qbi tracking only
 	bool IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const;
 
+	// Tries to find ClassInfo corresponding to an unused dynamic subobject on the given entity
+	const FClassInfo* GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient);
+
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
 

@@ -213,8 +213,12 @@ const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, 
 const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
 
-const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
-const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");
+const FString LOCATOR_HOST    = TEXT("locator.improbable.io");
+const FString LOCATOR_HOST_CN = TEXT("locator.spatialoschina.com");
+const uint16 LOCATOR_PORT     = 443;
+
+const FString AssemblyPattern   = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
+const FString ProjectPattern    = TEXT("^[a-z0-9_]{3,32}$");
 const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
 
 inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
@@ -226,9 +230,6 @@ inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 
 const FString LOCAL_HOST   = TEXT("127.0.0.1");
 const uint16  DEFAULT_PORT = 7777;
-
-const FString LOCATOR_HOST = TEXT("locator.improbable.io");
-const uint16  LOCATOR_PORT = 443;
 
 const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
@@ -303,3 +304,5 @@ FORCEINLINE Worker_ComponentId GetCrossServerRPCComponent(bool bUsingRingBuffers
 }
 
 } // ::SpatialConstants
+
+DECLARE_STATS_GROUP(TEXT("SpatialNet"), STATGROUP_SpatialNet, STATCAT_Advanced);
