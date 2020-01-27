@@ -13,16 +13,19 @@
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/Singleton.h"
+#include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Utils/ComponentFactory.h"
+#include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialActorUtils.h"
+#include "Utils/SpatialDebugger.h"
 
 #include "Engine.h"
- 
+
 namespace SpatialGDK
 {
- 
+
 EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService)
 	: NetDriver(InNetDriver)
 	, PackageMap(InPackageMap)
@@ -214,6 +217,25 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId()));
 	}
 
+	if (NetDriver->SpatialDebugger != nullptr)
+	{
+		if (SpatialSettings->bEnableUnrealLoadBalancer)
+		{
+			check(NetDriver->VirtualWorkerTranslator != nullptr);
+
+			VirtualWorkerId IntentVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+
+			const PhysicalWorkerName* PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntentVirtualWorkerId);
+			FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
+			FColor IntentColor = PhysicalWorkerName == nullptr ? InvalidServerTintColor : SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName);
+
+			SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntentVirtualWorkerId, IntentColor, false);
+			ComponentDatas.Add(DebuggingInfo.CreateSpatialDebuggingData());
+		}
+
+		ComponentWriteAcl.Add(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	}
+
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		ComponentDatas.Add(Singleton().CreateSingletonData());
@@ -284,7 +306,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 			// If this object is not in the PackageMap, it has been dynamically created.
 			if (!PackageMap->GetUnrealObjectRefFromObject(Subobject).IsValid())
 			{
-				const FClassInfo* SubobjectInfo = Channel->TryResolveNewDynamicSubobjectAndGetClassInfo(Subobject);
+				const FClassInfo* SubobjectInfo = PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(Subobject);
 
 				if (SubobjectInfo == nullptr)
 				{
