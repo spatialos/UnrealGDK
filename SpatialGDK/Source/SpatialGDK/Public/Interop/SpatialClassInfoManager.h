@@ -113,8 +113,10 @@ public:
 	
 	const FRPCInfo& GetRPCInfo(UObject* Object, UFunction* Function);
 
-	uint32 GetComponentIdFromLevelPath(const FString& LevelPath);
+	Worker_ComponentId GetComponentIdFromLevelPath(const FString& LevelPath);
 	bool IsSublevelComponent(Worker_ComponentId ComponentId);
+
+	TArray<Worker_ComponentId> GetComponentIdsForComponentType(const ESchemaComponentType ComponentType);
 
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;

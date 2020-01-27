@@ -174,7 +174,7 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.Printf("data unreal.generated.{0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
-		SubobjectData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = ComponentId;
+		AddComponentId(ComponentId, SubobjectData.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
 	}
 
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
@@ -199,7 +199,7 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.Printf("data unreal.generated.{0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
 
-		SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = ComponentId;
+		AddComponentId(ComponentId, SubobjectData.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
 	}
 
 	return SubobjectData;
@@ -500,7 +500,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, Class));
 			Writer.Outdent().Print("}");
 
-			DynamicSubobjectComponents.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = ComponentId;
+			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
 		}
 
 		if (HandoverData.Num() > 0)
@@ -525,7 +525,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("data {0};", *SchemaHandoverDataName(Class));
 			Writer.Outdent().Print("}");
 
-			DynamicSubobjectComponents.SchemaComponents[SCHEMA_Handover] = ComponentId;
+			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
 		}
 
 		SubobjectSchemaData.DynamicSubobjectComponents.Add(MoveTemp(DynamicSubobjectComponents));
@@ -595,7 +595,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
 
-		ActorSchemaData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = ComponentId;
+		AddComponentId(ComponentId, ActorSchemaData.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
 
 		int FieldCounter = 0;
 		for (auto& RepProp : RepData[Group])
@@ -629,7 +629,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
 
-		ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = ComponentId;
+		AddComponentId(ComponentId, ActorSchemaData.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
 
 		int FieldCounter = 0;
 		for (auto& Prop : HandoverData)
@@ -666,4 +666,11 @@ void GenerateRPCEndpointsSchema(FString SchemaPath)
 	GenerateRPCEndpoint(Writer, TEXT("MulticastRPCs"), SpatialConstants::MULTICAST_RPCS_COMPONENT_ID, { ERPCType::NetMulticast }, {});
 
 	Writer.WriteToFile(FString::Printf(TEXT("%srpc_endpoints.schema"), *SchemaPath));
+}
+
+// Add the component ID to the passed schema components array and the set of components of that type.
+void AddComponentId(const Worker_ComponentId ComponentId, ComponentIdPerType& SchemaComponents, const ESchemaComponentType ComponentType)
+{
+	SchemaComponents[ComponentType] = ComponentId;
+	SchemaComponentTypeToComponents[ComponentType].Add(ComponentId);
 }
