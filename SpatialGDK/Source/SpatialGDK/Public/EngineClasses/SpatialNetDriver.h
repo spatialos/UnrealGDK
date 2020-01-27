@@ -3,6 +3,7 @@
 #pragma once
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialDispatcher.h"
@@ -103,7 +104,7 @@ public:
 	void PostSpawnPlayerController(APlayerController* PlayerController, const FString& WorkerAttribute);
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
-	void RemoveActorChannel(Worker_EntityId EntityId);
+	void RemoveActorChannel(Worker_EntityId EntityId, USpatialActorChannel& Channel);
 	TMap<Worker_EntityId_Key, USpatialActorChannel*>& GetEntityToActorChannelMap();
 
 	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject);
@@ -158,6 +159,10 @@ public:
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
+	// If this worker is authoritative over the translation, the manager will be instantiated.
+	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
+	void InitializeVirtualWorkerTranslationManager();
+
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
@@ -208,6 +213,7 @@ private:
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
+	void CreateAndInitializeLoadBalancingClasses();
 
 	void CreateServerSpatialOSNetConnection();
 	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor);
@@ -265,8 +271,6 @@ private:
 #endif
 
 	void StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist);
-	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
-	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist);
 
 	void MakePlayerSpawnRequest();
 

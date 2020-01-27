@@ -15,12 +15,14 @@ using Worker_RequestId_Key = int64;
 using VirtualWorkerId = uint32;
 using PhysicalWorkerName = FString;
 using ActorLockToken = int64;
+using TraceKey = int32;
 
 using WorkerAttributeSet = TArray<FString>;
 using WorkerRequirementSet = TArray<WorkerAttributeSet>;
 using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
 
 using FChannelObjectPair = TPair<TWeakObjectPtr<class USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-struct FObjectReferences;
-using FObjectReferencesMap = TMap<int32, FObjectReferences>;
+using FObjectReferencesMap = TMap<int32, struct FObjectReferences>;
 using FReliableRPCMap = TMap<Worker_RequestId_Key, TSharedRef<struct FReliableRPCForRetry>>;
+
+using FObjectToRepStateMap = TMap <struct FUnrealObjectRef, TSet<FChannelObjectPair> >;

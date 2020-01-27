@@ -465,10 +465,10 @@ const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction*
 	return *RPCInfoPtr;
 }
 
-uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
+Worker_ComponentId USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
 {
 	FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
-	if (const uint32* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
+	if (const Worker_ComponentId* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
 	{
 		return *ComponentId;
 	}
@@ -478,6 +478,23 @@ uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& Leve
 bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
 {
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
+}
+
+TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType)
+{
+	switch (ComponentType)
+	{
+	case ESchemaComponentType::SCHEMA_Data:
+		return SchemaDatabase->DataComponentIds;
+	case ESchemaComponentType::SCHEMA_OwnerOnly:
+		return SchemaDatabase->OwnerOnlyComponentIds;
+	case ESchemaComponentType::SCHEMA_Handover:
+		return SchemaDatabase->HandoverComponentIds;
+	default:
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Component type %d not recognised."), ComponentType);
+		checkNoEntry();
+		return TArray<Worker_ComponentId>();
+	}
 }
 
 void USpatialClassInfoManager::QuitGame()

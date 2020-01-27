@@ -69,8 +69,7 @@ enum EntityIds
 	INVALID_ENTITY_ID = 0,
 	INITIAL_SPAWNER_ENTITY_ID = 1,
 	INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
-	// TODO(UNR-2213): Decide whether the translator should be on the GSM or separate.
-	INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
+	INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = 3,
 	FIRST_AVAILABLE_ENTITY_ID = 4,
 };
 
@@ -113,6 +112,7 @@ const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID        = 9979;
 const Worker_ComponentId CLIENT_ENDPOINT_COMPONENT_ID					= 9978;
 const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID					= 9977;
 const Worker_ComponentId MULTICAST_RPCS_COMPONENT_ID					= 9976;
+const Worker_ComponentId SPATIAL_DEBUGGING_COMPONENT_ID					= 9975;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -121,6 +121,7 @@ const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
 const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID							= 3;
+const Schema_FieldId DEPLOYMENT_MAP_SCHEMA_HASH							= 4;
 
 const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
 
@@ -178,10 +179,18 @@ const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
 const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
 const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID							= 1;
 const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME						= 2;
+const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerName");
 
 // WorkerEntity Field IDs.
 const Schema_FieldId WORKER_ID_ID										= 1;
 const Schema_FieldId WORKER_TYPE_ID										= 2;
+
+// SpatialDebugger Field IDs.
+const Schema_FieldId SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID   = 1;
+const Schema_FieldId SPATIAL_DEBUGGING_AUTHORITATIVE_COLOR               = 2;
+const Schema_FieldId SPATIAL_DEBUGGING_INTENT_VIRTUAL_WORKER_ID          = 3;
+const Schema_FieldId SPATIAL_DEBUGGING_INTENT_COLOR                      = 4;
+const Schema_FieldId SPATIAL_DEBUGGING_IS_LOCKED                         = 5;
 
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
@@ -239,6 +248,21 @@ const FString SCHEMA_DATABASE_FILE_PATH  = TEXT("Spatial/SchemaDatabase");
 const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 
 const FString ZoningAttribute = DefaultServerWorkerType.ToString();
+
+// A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_CLIENT_INTEREST = TArray<Worker_ComponentId>
+{
+	// Unclear why ACL is required. TODO(UNR-2768): Remove this requirement
+	ENTITY_ACL_COMPONENT_ID,
+
+	UNREAL_METADATA_COMPONENT_ID,
+	SPAWN_DATA_COMPONENT_ID,
+	RPCS_ON_ENTITY_CREATION_ID,
+	MULTICAST_RPCS_COMPONENT_ID,
+	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
+	SERVER_ENDPOINT_COMPONENT_ID,
+	SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+};
 
 FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {

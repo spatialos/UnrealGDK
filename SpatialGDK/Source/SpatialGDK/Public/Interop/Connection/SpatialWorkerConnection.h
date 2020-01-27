@@ -45,7 +45,7 @@ public:
 	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);
 	Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId);
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
-	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData);
+	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
 	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
@@ -75,6 +75,9 @@ public:
 
 	DECLARE_DELEGATE_TwoParams(OnConnectionToSpatialOSFailedDelegate, uint8_t, const FString&);
 	OnConnectionToSpatialOSFailedDelegate OnFailedToConnectCallback;
+
+	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
+	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist, const FString& SpatialWorkerType);
 
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);

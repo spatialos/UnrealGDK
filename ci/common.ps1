@@ -1,13 +1,14 @@
 function Write-Log() {
-  param(
-    [string] $msg,
-    [Parameter(Mandatory=$false)] [bool] $expand = $false
-  )
-  if ($expand) {
-      Write-Output "+++ $($msg)"
-  } else {
-      Write-Output "--- $($msg)"
-  }
+    param(
+        [string] $msg,
+        [Parameter(Mandatory = $False)] [bool] $expand = $False
+    )
+    if ($expand) {
+        Write-Output "+++ $($msg)"
+    }
+    else {
+        Write-Output "--- $($msg)"
+    }
 }
 
 function Start-Event() {
@@ -18,9 +19,9 @@ function Start-Event() {
 
     # Start this tracing span.
     Start-Process -NoNewWindow "imp-ci" -ArgumentList @(`
-        "events", "new", `
-        "--name", "$($event_name)", `
-        "--child-of", "$($event_parent)"
+            "events", "new", `
+            "--name", "$($event_name)", `
+            "--child-of", "$($event_parent)"
     ) | Out-Null
 
     Write-Log "$($event_name)"
@@ -34,9 +35,9 @@ function Finish-Event() {
 
     # Emit the end marker for this tracing span.
     Start-Process -NoNewWindow "imp-ci"  -ArgumentList @(`
-        "events", "new", `
-        "--name", "$($event_name)", `
-        "--child-of", "$($event_parent)"
+            "events", "new", `
+            "--name", "$($event_name)", `
+            "--child-of", "$($event_parent)"
     ) | Out-Null
 }
 

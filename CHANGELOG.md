@@ -5,20 +5,10 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2020-xx-xx
-- Minor spelling fix to connection log message
-- The GDK now uses SpatialOS `14.3.0`.
-- Added %s token to debug strings in GlobalStateManager to display actor class name in log
-- The server no longer crashes, when received RPCs are processed recursively.
-- DeploymentLauncher can parse a .pb.json launch configuration.
-- DeploymentLauncher can launch a Simulated Player deployment independently from the target deployment.
-Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>`
-- Added `IndexYFromSchema` functions for the `Coordinates`, `WorkerRequirementSet`, `FRotator`, and `FVector` classes. Remapped the `GetYFromSchema` functions for the same classes to invoke `IndexYFromSchema` internally, in line with other implementations of the pattern.
-- The logic responsible for taking an Actor and generating the array of Components that represents it as an Entity in SpatialOS has been extracted into `EntityFactory`.
-- Fix to serialize SoftObjectPointers when they are not resolved yet.
-- Fix to handle replicated properties depending on asynchronously loaded packages
-
 
 ### Features:
+- Updated the version of the local API service used by the UnrealGDK.
+- The GDK now uses SpatialOS `14.3.0`.
 - In local deployments of the Example Project you can now launch Simulated Players in one click. Running `LaunchSimPlayerClient.bat` will launch a single Simulated Player client. Running `Launch10SimPlayerClients.bat` will launch 10.
 - Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
 - Added support for the UE4 Network Profile to measure relative size of RPC and Actor replication data.
@@ -38,12 +28,27 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Enabled the SpatialOS toolbar for MacOS.
 - Added a menu item to push additional arguments for iOS devices.
 - Improved workflow around schema generation issues and launching local builds. A warning will now show if attempting to run a local deployment after a schema error.
+- DeploymentLauncher can parse a .pb.json launch configuration.
+- DeploymentLauncher can launch a Simulated Player deployment independently from the target deployment.
+Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>`
+- Added `HeartbeatTimeoutWithEditorSeconds` and use it if WITH_EDITOR is defined to prevent workers disconnecting when debugging while running in editor.
 - Added the `bAsyncLoadNewClassesOnEntityCheckout` setting to SpatialGDKSettings that allows loading new classes asynchronously when checking out entities. This is off by default.
+- Added `IndexYFromSchema` functions for the `Coordinates`, `WorkerRequirementSet`, `FRotator`, and `FVector` classes. Remapped the `GetYFromSchema` functions for the same classes to invoke `IndexYFromSchema` internally, in line with other implementations of the pattern.
+- The logic responsible for taking an Actor and generating the array of Components that represents it as an Entity in SpatialOS has been extracted into `EntityFactory`.
+- Clients will now validate schema against the server and log a warning if they do not match.
+- Entries in the SchemaDatabase are now sorted to improve efficiancy when browsing the asset in the editor. (DW-Sebastien)
+- Load Balancing Strategies and Locking Strategies can be set per-level using SpatialWorldSettings.
+- Batch Spatial Position Updates now defaults to false.
+- Introduced experimental feature flag `bEnableClientResultTypes`, defaulting false. Flip this to true for client Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
+- Dynamic interest overrides are disabled if the `bEnableClientResultTypes` flag is set to true. 
+
 
 ## Bug fixes:
+- Fixed a bug that caused the local API service to memory leak.
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
 - Take into account OverrideSpatialNetworking command line argument as early as possible (LocalDeploymentManager used to query bSpatialNetworking before the command line was parsed).
 - Servers maintain interest in AlwaysRelevant Actors.
+- GetActorSpatialPosition now returns last spectator sync location while player is spectating.
 - The default cloud launch configuration is now empty.
 - Fixed an crash caused by attempting to read schema from an unloaded class.
 - Unresolved object references in replicated arrays of structs should now be properly handled and eventually resolved.
@@ -56,6 +61,18 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - You can now access the worker flags via `USpatialStatics::GetWorkerFlag` instead of `USpatialWorkerFlags::GetWorkerFlag`.
 - Fix crash in SpatialDebugger when GDK-space load balancing is disabled.
 - Fixed issue where schema database failed to load previous saved state when working in editor.
+- Attempting to launch a cloud deployment will now run the spatial auth process as it is required. Previously the deployment would simply fail.
+- Minor spelling fix to connection log message.
+- Added %s token to debug strings in GlobalStateManager to display actor class name in log.
+- The server no longer crashes, when received RPCs are processed recursively.
+- Fix to serialize SoftObjectPointers when they are not resolved yet.
+- Fix to handle replicated properties depending on asynchronously loaded packages.
+- Fix to component interest constraints constructed from schema.
+- Track properties containing references to replicated actors, in order to resolve them again if the actor they reference moves out and back into relevance.
+- Fix problem where PIE sessions sometimes fail to start due to missing schema for SpatialDebugger blueprint
+
+### External contributors:
+@DW-Sebastien
 
 ## [`0.8.0-preview`] - 2019-12-17
 
@@ -98,7 +115,7 @@ Features listed in the internal section are not ready to use but, in the spirit 
 
 ## [`0.7.1-preview`] - 2019-12-06
 
-### Bug fixes: 
+### Bug fixes:
 - The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
 
 ### Internal:
