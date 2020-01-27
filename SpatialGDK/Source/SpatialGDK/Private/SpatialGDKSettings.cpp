@@ -119,6 +119,16 @@ void USpatialGDKSettings::PostInitProperties()
 		}
 	}
 
+	if (FParse::Param(CommandLine, TEXT("OverrideClientResultTypes")))
+	{
+		bEnableClientResultTypes = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideClientResultTypes="), bEnableClientResultTypes);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Client result types are %s."), bEnableClientResultTypes ? TEXT("enabled") : TEXT("disabled"));
+
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
 	PlayInSettings->bEnableOffloading = bEnableOffloading;
