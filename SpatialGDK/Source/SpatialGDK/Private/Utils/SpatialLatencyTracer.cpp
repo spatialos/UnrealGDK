@@ -304,6 +304,8 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSpatialPayload(const FSpatialLatenc
 
 FSpatialLatencyPayload USpatialLatencyTracer::RetrievePayload_Internal(const UObject* Obj, const FString& Key)
 {
+	FScopeLock Lock(&Mutex);
+
 	 TraceKey Trace = RetrievePendingTrace(Obj, Key);
 	 if (Trace != InvalidTraceKey)
 	 {
