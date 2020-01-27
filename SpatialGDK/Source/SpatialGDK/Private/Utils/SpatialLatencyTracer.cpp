@@ -13,6 +13,9 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialLatencyTracing);
 
+DECLARE_CYCLE_STAT(TEXT("ContinueLatencyTraceRPC_Internal"), STAT_ContinueLatencyTraceRPC_Internal, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("BeginLatencyTraceRPC_Internal"), STAT_BeginLatencyTraceRPC_Internal, STATGROUP_SpatialNet);
+
 namespace
 {
 	// Stream for piping trace lib output to UE output
@@ -356,6 +359,10 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 
 bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
 {
+	 
+	// TODO: UNR-2787 - Improve mutex-related latency
+	// This functions might spike because of the Mutex below
+	SCOPE_CYCLE_COUNTER(STAT_BeginLatencyTraceRPC_Internal);
 	FScopeLock Lock(&Mutex);
 
 	FString SpanMsg = FormatMessage(TraceDesc);
@@ -375,6 +382,9 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc,
 
 bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue)
 {
+	// TODO: UNR-2787 - Improve mutex-related latency
+	// This functions might spike because of the Mutex below
+	SCOPE_CYCLE_COUNTER(STAT_ContinueLatencyTraceRPC_Internal);
 	if (Actor == nullptr)
 	{
 		return InvalidTraceKey;
