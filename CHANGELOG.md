@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased-`x.y.z`] - 2020-xx-xx
 
 ### Features:
+- Updated the version of the local API service used by the UnrealGDK.
 - The GDK now uses SpatialOS `14.3.0`.
 - In local deployments of the Example Project you can now launch Simulated Players in one click. Running `LaunchSimPlayerClient.bat` will launch a single Simulated Player client. Running `Launch10SimPlayerClients.bat` will launch 10.
 - Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
@@ -43,6 +44,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 
 
 ## Bug fixes:
+- Fixed a bug that caused the local API service to memory leak.
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
 - Take into account OverrideSpatialNetworking command line argument as early as possible (LocalDeploymentManager used to query bSpatialNetworking before the command line was parsed).
 - Servers maintain interest in AlwaysRelevant Actors.
