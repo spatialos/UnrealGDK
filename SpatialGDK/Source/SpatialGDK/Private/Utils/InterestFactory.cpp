@@ -209,7 +209,7 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
 
 Interest InterestFactory::CreateServerWorkerInterest()
 {
-	QueryConstraint Constraint{};
+	QueryConstraint Constraint;
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
@@ -300,7 +300,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	// Clients should only check out entities that are in loaded sublevels
 	QueryConstraint LevelConstraints = CreateLevelConstraints();
 
-	QueryConstraint ClientConstraint{};
+	QueryConstraint ClientConstraint;
 
 	if (SystemConstraints.IsValid())
 	{
