@@ -133,6 +133,5 @@ private:
 	Worker_RequestId NextRequestId = 0;
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
-	
-	LoginTokenResponseCallback    LoginTokenResCallback;
+	LoginTokenResponseCallback LoginTokenResCallback;
 };
