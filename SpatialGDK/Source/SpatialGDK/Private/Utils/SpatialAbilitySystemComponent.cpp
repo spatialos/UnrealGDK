@@ -6,9 +6,9 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
-#include "GameplayAbility.h"
-#include "GameplayAbilitySpec.h"
-#include "GameplayAbilityTypes.h"
+#include "GameplayAbilities/Public/Abilities/GameplayAbility.h"
+#include "GameplayAbilities/Public/GameplayAbilitySpec.h"
+#include "GameplayAbilities/Public/Abilities/GameplayAbilityTypes.h"
 #include "GeneralProjectSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialAbilitySystemComponent);
