@@ -541,7 +541,7 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 	check(Actor);
 	const AActor* ActorForRelevancy = Actor;
 	// bAlwaysRelevant takes precedence over bNetUseOwnerRelevancy - see AActor::IsNetRelevantFor
-	while (!ActorForRelevancy->bAlwaysRelevant && ActorForRelevancy->bNetUseOwnerRelevancy && ActorForRelevancy->GetOwner())
+	while (!ActorForRelevancy->bAlwaysRelevant && ActorForRelevancy->bNetUseOwnerRelevancy && ActorForRelevancy->GetOwner() != nullptr)
 	{
 		ActorForRelevancy = ActorForRelevancy->GetOwner();
 	}
@@ -559,18 +559,18 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 			return NCDComponentId;
 		}
 
-		const AActor* DefaultActor = Actor->GetClass()->GetDefaultObject<AActor>();
-		if (Actor != DefaultActor && Actor->NetCullDistanceSquared != DefaultActor->NetCullDistanceSquared)
+		const AActor* DefaultActor = ActorForRelevancy->GetClass()->GetDefaultObject<AActor>();
+		if (ActorForRelevancy != DefaultActor && ActorForRelevancy->NetCullDistanceSquared != DefaultActor->NetCullDistanceSquared)
 		{
-			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s, because its Net Cull Distance is different from its default one."),
-				Actor->NetCullDistanceSquared, *Actor->GetPathName());
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s via %s, because its Net Cull Distance is different from its default one."),
+				ActorForRelevancy->NetCullDistanceSquared, *Actor->GetPathName(), *ActorForRelevancy->GetPathName());
 
 			return ComputeActorInterestComponentId(DefaultActor);
 		}
 		else
 		{
-			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s. Have you generated schema?"),
-				Actor->NetCullDistanceSquared, *Actor->GetPathName());
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s via %s. Have you generated schema?"),
+				ActorForRelevancy->NetCullDistanceSquared, *Actor->GetPathName(), *ActorForRelevancy->GetPathName());
 		}
 	}
 	return SpatialConstants::INVALID_COMPONENT_ID;

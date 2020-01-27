@@ -464,7 +464,7 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 	if (OldComponent != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		// No loopback, so simulate the operations locally.
-		Worker_RemoveComponentOp RemoveOp;
+		Worker_RemoveComponentOp RemoveOp{};
 		RemoveOp.entity_id = EntityId;
 		RemoveOp.component_id = OldComponent;
 		StaticComponentView->OnRemoveComponent(RemoveOp);
@@ -474,7 +474,7 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 
 	if (NewComponent != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		Worker_AddComponentOp AddOp;
+		Worker_AddComponentOp AddOp{};
 		AddOp.entity_id = EntityId;
 		AddOp.data.component_id = NewComponent;
 		AddOp.data.schema_type = nullptr;

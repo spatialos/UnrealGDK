@@ -306,11 +306,11 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 
 			if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
 			{
-				ClientQuery.ResultComponentId = ClientResultType;
+				NewQuery.ResultComponentId = ClientResultType;
 			}
 			else
 			{
-				ClientQuery.FullSnapshotResult = true;
+				NewQuery.FullSnapshotResult = true;
 			}
 
 			ClientComponentInterest.Queries.Add(NewQuery);

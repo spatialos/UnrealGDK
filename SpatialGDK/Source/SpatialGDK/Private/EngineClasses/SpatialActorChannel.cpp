@@ -1272,6 +1272,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	}
 
 	UpdateEntityACLToNewOwner();
+	UpdateInterestBucketComponentId();
 
 	for (AActor* Child : Actor->Children)
 	{
@@ -1282,7 +1283,29 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 			Channel->ServerProcessOwnershipChange();
 		}
 	}
+}
 
+void USpatialActorChannel::UpdateEntityACLToNewOwner()
+{
+	FString NewOwnerWorkerAttribute;
+	{
+		SCOPE_CYCLE_COUNTER(STAT_GetOwnerWorkerAttribute);
+		NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
+	}
+
+	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
+	{
+		bool bSuccess = Sender->UpdateEntityACLs(EntityId, NewOwnerWorkerAttribute);
+
+		if (bSuccess)
+		{
+			SavedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
+		}
+	}
+}
+
+void USpatialActorChannel::UpdateInterestBucketComponentId()
+{
 	const Worker_ComponentId DesiredInterestComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
 
 	auto FindCurrentNCDComponent = [this]()
@@ -1304,25 +1327,6 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	if (CurrentInterestComponentId != DesiredInterestComponentId)
 	{
 		Sender->SendInterestBucketComponentChange(EntityId, CurrentInterestComponentId, DesiredInterestComponentId);
-	}
-}
-
-void USpatialActorChannel::UpdateEntityACLToNewOwner()
-{
-	FString NewOwnerWorkerAttribute;
-	{
-		SCOPE_CYCLE_COUNTER(STAT_GetOwnerWorkerAttribute);
-		NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
-	}
-
-	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
-	{
-		bool bSuccess = Sender->UpdateEntityACLs(EntityId, NewOwnerWorkerAttribute);
-
-		if (bSuccess)
-		{
-			SavedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
-		}
 	}
 }
 
