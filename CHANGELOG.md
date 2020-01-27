@@ -72,6 +72,16 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 ### External contributors:
 @DW-Sebastien
 
+## [`0.8.1-preview`] - 2020-xx-xx
+### Adapted from 0.6.5
+### Internal:
+Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
+- **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
+- Local deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
+
+### Bug fixes:
+- Replicated references to newly created dynamic subobjects will now be resolved correctly.
+
 ## [`0.8.0-preview`] - 2019-12-17
 
 ### Breaking Changes:
@@ -89,7 +99,7 @@ For more information, check the [Keep your GDK up to date](https://docs.improbab
 - The modular-udp networking stack now uses compression by default.
 - Reduced network latency by switching off default rpc-packing. If you need this on by default, you can re-enable it by editing `SpatialGDKSettings.ini`
 - When you start a local deployment, the GDK now checks the port required by the runtime and, if it's in use, prompts you to kill that process.
-- You can now measure round-trip ping from a player controller to the server-woker that's currently authoritative over it using the configurable actor component 'SpatialPingComponent'. The latest ping value can be accessed through the component via 'GetPing()' or via the rolling average stored in 'PlayerState'.
+- You can now measure round-trip ping from a player controller to the server-worker that's currently authoritative over it using the configurable actor component 'SpatialPingComponent'. The latest ping value can be accessed through the component via 'GetPing()' or via the rolling average stored in 'PlayerState'.
 - You can disable the warnings that trigger when RPCs are processed with unresolved parameters using the `AllowUnresolvedParameters` function flag. This flag can be enabled through Blueprints or by adding a tag to the `UFUNCTION` macro.
 - Improved logging around entity creation.
 - Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK-preview).
@@ -113,6 +123,7 @@ Features listed in the internal section are not ready to use but, in the spirit 
 
 ## [`0.7.1-preview`] - 2019-12-06
 
+### Adapted from 0.6.3
 ### Bug fixes:
 - The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
 
@@ -184,6 +195,26 @@ Features listed in the internal section are not ready to use but, in the spirit 
 - When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
 - Fixed a crash upon checking out an actor with a deleted static subobject.
 - Fixed an issue where launching a cloud deployment with an invalid assembly name or deployment name wouldn't show a helpful error message.
+
+## [`0.6.5`] - 2020-01-13
+### Internal:
+Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
+- **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
+- Local deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
+
+## [`0.6.4`] - 2019-12-13
+### Bug fixes:
+- The Inspector button in the SpatialOS GDK for Unreal toolbar now opens the correct URL.
+
+## [`0.6.3`] - 2019-12-05
+### Bug fixes:
+- The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
+
+### Internal:
+Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
+- The GDK is now compatible with the `CN` launch region. When Improbable's online services are fully working in China, they will work with this version of the GDK. You will be able to create SpatialOS Deployments in China by specifying the `CN` region in the Deployment Launcher.
+- `Setup.bat` and `Setup.sh` both accept the `--china` flag, which will be required in order to run SpatialOS CLI commands in the `CN` region.
+- **SpatialOS GDK for Unreal** > **Editor Settings** now contains a **Region Settings** section. You will be required to set **Region where services are located** to `CN` in order to create SpatialOS Deployments in China.
 
 ## [`0.6.2`] - 2019-10-10
 
