@@ -27,6 +27,16 @@ namespace ESettingsWorkerLogVerbosity
 	};
 }
 
+UENUM()
+namespace EServicesRegion
+{
+	enum Type
+	{
+		Default,
+		CN
+	};
+}
+
 UCLASS(config = SpatialGDKSettings, defaultconfig)
 class SPATIALGDK_API USpatialGDKSettings : public UObject
 {
@@ -182,6 +192,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
 	FString DevelopmentDeploymentToConnect;
 
+	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
+	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
+
 	/** Single server worker type to launch when offloading is disabled, fallback server worker type when offloading is enabled (owns all actor classes by default). */
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
 	FWorkerType DefaultWorkerType;
@@ -209,4 +222,6 @@ public:
 	/** EXPERIMENTAL: Worker type to assign for load balancing. */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
 		FWorkerType LoadBalancingWorkerType;
+
+	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
 };

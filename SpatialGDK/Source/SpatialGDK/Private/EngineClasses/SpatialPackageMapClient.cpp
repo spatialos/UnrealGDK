@@ -295,6 +295,36 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 	return true;
 }
 
+const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
+{
+	AActor* Actor = Object ? Object->GetTypedOuter<AActor>() : nullptr;
+	Worker_EntityId EntityId = GetEntityIdFromObject(Actor);
+
+	if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		FUnrealObjectRef Ref = GetUnrealObjectRefFromObject(Object);
+		if (Ref.IsValid())
+		{
+			UE_LOG(LogSpatialPackageMap, Error, TEXT("Trying to resolve a dynamic subobject twice! Object %s, Actor %s, EntityId %d."), *GetNameSafe(Object), *GetNameSafe(Actor), EntityId);
+			return nullptr;
+		}
+
+		const FClassInfo* Info = Cast<USpatialNetDriver>(GuidCache->Driver)->ClassInfoManager->GetClassInfoForNewSubobject(Object, EntityId, this);
+
+		// If we don't get the info, an error is logged in the above function, that we have exceeded the maximum number of dynamic subobjects on the entity
+		if (Info != nullptr)
+		{
+			ResolveSubobject(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
+		}
+
+		return Info;
+	}
+
+	UE_LOG(LogSpatialPackageMap, Error, TEXT("While trying to resolve a new dynamic subobject %s, the parent actor %s was not resolved."), *GetNameSafe(Object), *GetNameSafe(Actor));
+
+	return nullptr;
+}
+
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
