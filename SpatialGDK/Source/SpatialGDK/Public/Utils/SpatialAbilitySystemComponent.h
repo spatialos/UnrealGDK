@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialCommonTypes.h"
 
 #include "Components/ActorComponent.h"
@@ -11,11 +10,12 @@
 
 #include "SpatialAbilitySystemComponent.generated.h"
 
+class UAbstractLockingPolicy;
 class UGameplayAbility;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialAbilitySystemComponent, Log, All);
 
-UCLASS()
+UCLASS(ClassGroup = AbilitySystem, hidecategories = (Object, LOD, Lighting, Transform, Sockets, TextureStreaming), editinlinenew, meta = (BlueprintSpawnableComponent))
 class SPATIALGDK_API USpatialAbilitySystemComponent : public UAbilitySystemComponent
 {
 	GENERATED_BODY()

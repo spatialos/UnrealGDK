@@ -3,6 +3,7 @@
 #include "Utils/SpatialAbilitySystemComponent.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
