@@ -235,6 +235,7 @@ void InterestFactory::AddActorUserDefinedQueries(const AActor* InActor, const Qu
 	else if (ActorInterestComponents.Num() > 1)
 	{
 		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestComponent"), *InActor->GetPathName());
+		checkNoEntry()
 	}
 
 	if (ResurseChildren)
