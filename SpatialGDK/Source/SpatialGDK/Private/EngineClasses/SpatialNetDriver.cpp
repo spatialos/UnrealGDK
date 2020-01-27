@@ -143,7 +143,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	if (!bInitAsClient)
 	{
-		InterestFactory::CreateClientCheckoutRadiusConstraint(ClassInfoManager);
+		InterestFactory::CreateAndCacheInterestState(ClassInfoManager);
 	}
 
 #if WITH_EDITOR
