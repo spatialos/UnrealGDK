@@ -304,3 +304,5 @@ FORCEINLINE Worker_ComponentId GetCrossServerRPCComponent(bool bUsingRingBuffers
 }
 
 } // ::SpatialConstants
+
+DECLARE_STATS_GROUP(TEXT("SpatialNet"), STATGROUP_SpatialNet, STATCAT_Advanced);

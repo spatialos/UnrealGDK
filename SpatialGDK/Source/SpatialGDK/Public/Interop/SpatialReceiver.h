@@ -115,7 +115,7 @@ private:
 	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp &Op, const Worker_ComponentId RPCEndpointComponentId, bool bPacked);
 	void HandleRPC(const Worker_ComponentUpdateOp& Op);
 
-	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel, const FClassInfo& ActorClassInfo);
+	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel, const FClassInfo& ActorClassInfo, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentData& Data);
 	
 	// This is called for AddComponentOps not in a critical section, which means they are not a part of the initial entity creation.
@@ -133,12 +133,10 @@ private:
 
 	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload InPayload);
 
-	void ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped);
 
-	void ProcessQueuedResolvedObjects();
 	void ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, SpatialGDK::RPCsOnEntityCreation& QueuedRPCs);
 	void UpdateShadowData(Worker_EntityId EntityId);
 	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
@@ -227,8 +225,6 @@ private:
 	// Useful to manage entities going in and out of interest, in order to recover references to actors.
 	FObjectToRepStateMap ObjectRefToRepStateMap;
 
-	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
-	
 	FRPCContainer IncomingRPCs;
 
 	bool bInCriticalSection;
