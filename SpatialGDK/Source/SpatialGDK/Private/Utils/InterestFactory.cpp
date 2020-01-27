@@ -217,7 +217,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	return NewInterest;
 }
 
-void InterestFactory::AddActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool ResurseChildren/*=false*/) const
+void InterestFactory::AddActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool RecurseChildren/*=false*/) const
 {
 	check(ClassInfoManager);
 
@@ -238,7 +238,7 @@ void InterestFactory::AddActorUserDefinedQueries(const AActor* InActor, const Qu
 		checkNoEntry()
 	}
 
-	if (ResurseChildren)
+	if (RecurseChildren)
 	{
 		for (const auto& Child : InActor->Children)
 		{
