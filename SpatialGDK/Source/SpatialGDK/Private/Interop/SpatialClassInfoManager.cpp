@@ -480,7 +480,7 @@ bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentI
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
 }
 
-TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType)
+const TArray<Worker_ComponentId>& USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const
 {
 	switch (ComponentType)
 	{
@@ -493,7 +493,8 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForComponent
 	default:
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Component type %d not recognised."), ComponentType);
 		checkNoEntry();
-		return TArray<Worker_ComponentId>();
+		static const TArray<Worker_ComponentId> EmptyArray;
+		return EmptyArray;
 	}
 }
 

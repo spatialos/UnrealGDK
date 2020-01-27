@@ -59,8 +59,8 @@ TMap<FString, FString> SchemaNameToClassPath;
 TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 
 // QBI
-TMap<float, uint32> NetCullDistanceToComponentId;
-TSet<uint32> NetCullDistanceComponentIds;
+TMap<float, Worker_ComponentId> NetCullDistanceToComponentId;
+TSet<Worker_ComponentId> NetCullDistanceComponentIds;
 
 const FString RelativeSchemaDatabaseFilePath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH), FPackageName::GetAssetPackageExtension());
 

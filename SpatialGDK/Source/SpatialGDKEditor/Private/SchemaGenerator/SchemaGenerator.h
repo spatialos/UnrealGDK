@@ -17,7 +17,7 @@ extern TMap<FString, FActorSchemaData> ActorClassPathToSchema;
 extern TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
 extern TMap<FString, Worker_ComponentId> LevelPathToComponentId;
 extern TMap<ESchemaComponentType, TSet<Worker_ComponentId>> SchemaComponentTypeToComponents;
-extern TMap<float, uint32> NetCullDistanceToComponentId;
+extern TMap<float, Worker_ComponentId> NetCullDistanceToComponentId;
 
 // Generates schema for an Actor
 void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);
