@@ -173,13 +173,16 @@ void FSpatialObjectRepState::UpdateRefToRepStateMap(FObjectToRepStateMap& RepSta
 	{
 		if (!LocalReferencedObj.Contains(Ref))
 		{
-			TSet<FChannelObjectPair>& RepStatesWithRef = RepStateMap.FindChecked(Ref);
+			TSet<FChannelObjectPair>* RepStatesWithRef = RepStateMap.Find(Ref);
 
-			RepStatesWithRef.Remove(ThisObj);
-
-			if (RepStatesWithRef.Num() == 0)
+			if (ensure(RepStatesWithRef))
 			{
-				RepStateMap.Remove(Ref);
+				RepStatesWithRef->Remove(ThisObj);
+
+				if (RepStatesWithRef->Num() == 0)
+				{
+					RepStateMap.Remove(Ref);
+				}
 			}
 		}
 	}
@@ -1311,6 +1314,11 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	if (bNewNetOwned != bNetOwned)
 	{
 		bNetOwned = bNewNetOwned;
+		// Don't send dynamic interest for this ownership change if it is otherwise handled by result types.
+		if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
+		{
+			return;		
+		}
 		Sender->SendComponentInterestForActor(this, GetEntityId(), bNetOwned);
 	}
 }
