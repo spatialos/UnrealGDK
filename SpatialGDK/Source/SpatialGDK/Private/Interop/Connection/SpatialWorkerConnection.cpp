@@ -94,12 +94,12 @@ void USpatialWorkerConnection::FinishDestroy()
 
 void USpatialWorkerConnection::DestroyConnection()
 {
-	Stop(); // Stop OpsProcessingThread
-	if (OpsProcessingThread != nullptr)
-	{
-		OpsProcessingThread->WaitForCompletion();
-		OpsProcessingThread = nullptr;
-	}
+	//Stop(); // Stop OpsProcessingThread
+	//if (OpsProcessingThread != nullptr)
+	//{
+	//	OpsProcessingThread->WaitForCompletion();
+	//	OpsProcessingThread = nullptr;
+	//}
 
 	if (WorkerConnection)
 	{
@@ -486,10 +486,10 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
 
-	if (OpsProcessingThread == nullptr)
-	{
-		InitializeOpsProcessingThread();
-	}
+	//if (OpsProcessingThread == nullptr)
+	//{
+	//	InitializeOpsProcessingThread();
+	//}
 
 	OnConnectedCallback.ExecuteIfBound();
 }
@@ -506,39 +506,39 @@ void USpatialWorkerConnection::OnConnectionFailure()
 	}
 }
 
-bool USpatialWorkerConnection::Init()
-{
-	OpsUpdateInterval = 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
+//bool USpatialWorkerConnection::Init()
+//{
+//	OpsUpdateInterval = 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
+//
+//	return true;
+//}
 
-	return true;
-}
+//uint32 USpatialWorkerConnection::Run()
+//{
+//	while (KeepRunning)
+//	{
+//		FPlatformProcess::Sleep(OpsUpdateInterval);
+//
+//		QueueLatestOpList();
+//
+//		ProcessOutgoingMessages();
+//	}
+//
+//	return 0;
+//}
 
-uint32 USpatialWorkerConnection::Run()
-{
-	while (KeepRunning)
-	{
-		FPlatformProcess::Sleep(OpsUpdateInterval);
+//void USpatialWorkerConnection::Stop()
+//{
+//	KeepRunning.AtomicSet(false);
+//}
 
-		QueueLatestOpList();
-
-		ProcessOutgoingMessages();
-	}
-
-	return 0;
-}
-
-void USpatialWorkerConnection::Stop()
-{
-	KeepRunning.AtomicSet(false);
-}
-
-void USpatialWorkerConnection::InitializeOpsProcessingThread()
-{
-	check(IsInGameThread());
-
-	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
-	check(OpsProcessingThread);
-}
+//void USpatialWorkerConnection::InitializeOpsProcessingThread()
+//{
+//	check(IsInGameThread());
+//
+//	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
+//	check(OpsProcessingThread);
+//}
 
 void USpatialWorkerConnection::QueueLatestOpList()
 {

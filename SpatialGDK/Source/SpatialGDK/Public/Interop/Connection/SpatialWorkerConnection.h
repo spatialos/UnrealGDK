@@ -28,7 +28,8 @@ enum class ESpatialConnectionType
 };
 
 UCLASS()
-class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
+//class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
+class SPATIALGDK_API USpatialWorkerConnection : public UObject
 {
 	GENERATED_BODY()
 
@@ -79,6 +80,9 @@ public:
 	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
 	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist, const FString& SpatialWorkerType);
 
+	void QueueLatestOpList();
+	void ProcessOutgoingMessages();
+
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator();
@@ -92,14 +96,12 @@ private:
 	void CacheWorkerAttributes();
 
 	// Begin FRunnable Interface
-	virtual bool Init() override;
-	virtual uint32 Run() override;
-	virtual void Stop() override;
+	//virtual bool Init() override;
+	//virtual uint32 Run() override;
+	//virtual void Stop() override;
 	// End FRunnable Interface
 
-	void InitializeOpsProcessingThread();
-	void QueueLatestOpList();
-	void ProcessOutgoingMessages();
+	//void InitializeOpsProcessingThread();
 
 	void StartDevelopmentAuth(FString DevAuthToken);
 	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);

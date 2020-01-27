@@ -1730,6 +1730,12 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	TimerManager.Tick(DeltaTime);
 
+	if (Connection != nullptr && Connection->IsConnected())
+	{
+		Connection->QueueLatestOpList();
+		Connection->ProcessOutgoingMessages();
+	}
+
 	Super::TickFlush(DeltaTime);
 }
 
