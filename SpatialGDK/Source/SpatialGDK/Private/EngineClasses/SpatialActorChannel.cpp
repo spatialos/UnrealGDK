@@ -173,13 +173,16 @@ void FSpatialObjectRepState::UpdateRefToRepStateMap(FObjectToRepStateMap& RepSta
 	{
 		if (!LocalReferencedObj.Contains(Ref))
 		{
-			TSet<FChannelObjectPair>& RepStatesWithRef = RepStateMap.FindChecked(Ref);
+			TSet<FChannelObjectPair>* RepStatesWithRef = RepStateMap.Find(Ref);
 
-			RepStatesWithRef.Remove(ThisObj);
-
-			if (RepStatesWithRef.Num() == 0)
+			if (ensure(RepStatesWithRef))
 			{
-				RepStateMap.Remove(Ref);
+				RepStatesWithRef->Remove(ThisObj);
+
+				if (RepStatesWithRef->Num() == 0)
+				{
+					RepStateMap.Remove(Ref);
+				}
 			}
 		}
 	}
@@ -676,6 +679,10 @@ int64 USpatialActorChannel::ReplicateActor()
 		if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
 			Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
+
+			// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy 
+			Actor->Role = ROLE_SimulatedProxy;
+			Actor->RemoteRole = ROLE_Authority;
 		}
 		else
 		{
@@ -712,7 +719,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	}
 	else
 	{
-		Info = TryResolveNewDynamicSubobjectAndGetClassInfo(Object);
+		Info = NetDriver->PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(Object);
 
 		if (Info == nullptr)
 		{
@@ -754,36 +761,6 @@ bool USpatialActorChannel::IsListening() const
 	}
 
 	return false;
-}
-
-const FClassInfo* USpatialActorChannel::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
-{
-	const FClassInfo* Info = nullptr;
-
-	const FClassInfo& SubobjectInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
-
-	// Find the first ClassInfo relating to a dynamic subobject
-	// which has not been used on this entity.
-	for (const auto& DynamicSubobjectInfo : SubobjectInfo.DynamicSubobjectInfo)
-	{
-		if (!NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data])).IsValid())
-		{
-			Info = &DynamicSubobjectInfo.Get();
-			break;
-		}
-	}
-
-	// If all ClassInfos are used up, we error.
-	if (Info == nullptr)
-	{
-		UE_LOG(LogSpatialActorChannel, Error, TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
-			" the max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), *Actor->GetName());
-		return Info;
-	}
-
-	NetDriver->PackageMap->ResolveSubobject(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
-
-	return Info;
 }
 
 bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicationFlags& RepFlags)
@@ -1307,6 +1284,11 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	if (bNewNetOwned != bNetOwned)
 	{
 		bNetOwned = bNewNetOwned;
+		// Don't send dynamic interest for this ownership change if it is otherwise handled by result types.
+		if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
+		{
+			return;		
+		}
 		Sender->SendComponentInterestForActor(this, GetEntityId(), bNetOwned);
 	}
 }

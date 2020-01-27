@@ -465,10 +465,10 @@ const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction*
 	return *RPCInfoPtr;
 }
 
-uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
+Worker_ComponentId USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
 {
 	FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
-	if (const uint32* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
+	if (const Worker_ComponentId* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
 	{
 		return *ComponentId;
 	}
@@ -478,6 +478,51 @@ uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& Leve
 bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
 {
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
+}
+
+TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType)
+{
+	switch (ComponentType)
+	{
+	case ESchemaComponentType::SCHEMA_Data:
+		return SchemaDatabase->DataComponentIds;
+	case ESchemaComponentType::SCHEMA_OwnerOnly:
+		return SchemaDatabase->OwnerOnlyComponentIds;
+	case ESchemaComponentType::SCHEMA_Handover:
+		return SchemaDatabase->HandoverComponentIds;
+	default:
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Component type %d not recognised."), ComponentType);
+		checkNoEntry();
+		return TArray<Worker_ComponentId>();
+	}
+}
+
+const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient)
+{
+	const FClassInfo* Info = nullptr;
+
+	const FClassInfo& SubobjectInfo = GetOrCreateClassInfoByClass(Object->GetClass());
+
+	// Find the first ClassInfo relating to a dynamic subobject
+	// which has not been used on this entity.
+	for (const auto& DynamicSubobjectInfo : SubobjectInfo.DynamicSubobjectInfo)
+	{
+		if (!PackageMapClient->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data])).IsValid())
+		{
+			Info = &DynamicSubobjectInfo.Get();
+			break;
+		}
+	}
+
+	// If all ClassInfos are used up, we error.
+	if (Info == nullptr)
+	{
+		const AActor* Actor = Cast<AActor>(PackageMapClient->GetObjectFromEntityId(EntityId));
+		UE_LOG(LogSpatialPackageMap, Error, TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
+			" the max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), *GetNameSafe(Actor));
+	}
+
+	return Info;
 }
 
 void USpatialClassInfoManager::QuitGame()

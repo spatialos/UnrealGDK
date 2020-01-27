@@ -213,8 +213,12 @@ const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, 
 const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
 
-const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
-const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");
+const FString LOCATOR_HOST    = TEXT("locator.improbable.io");
+const FString LOCATOR_HOST_CN = TEXT("locator.spatialoschina.com");
+const uint16 LOCATOR_PORT     = 443;
+
+const FString AssemblyPattern   = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
+const FString ProjectPattern    = TEXT("^[a-z0-9_]{3,32}$");
 const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
 
 inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
@@ -226,9 +230,6 @@ inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 
 const FString LOCAL_HOST   = TEXT("127.0.0.1");
 const uint16  DEFAULT_PORT = 7777;
-
-const FString LOCATOR_HOST = TEXT("locator.improbable.io");
-const uint16  LOCATOR_PORT = 443;
 
 const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
@@ -248,6 +249,21 @@ const FString SCHEMA_DATABASE_FILE_PATH  = TEXT("Spatial/SchemaDatabase");
 const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 
 const FString ZoningAttribute = DefaultServerWorkerType.ToString();
+
+// A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_CLIENT_INTEREST = TArray<Worker_ComponentId>
+{
+	// Unclear why ACL is required. TODO(UNR-2768): Remove this requirement
+	ENTITY_ACL_COMPONENT_ID,
+
+	UNREAL_METADATA_COMPONENT_ID,
+	SPAWN_DATA_COMPONENT_ID,
+	RPCS_ON_ENTITY_CREATION_ID,
+	MULTICAST_RPCS_COMPONENT_ID,
+	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
+	SERVER_ENDPOINT_COMPONENT_ID,
+	SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+};
 
 FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {
@@ -288,3 +304,5 @@ FORCEINLINE Worker_ComponentId GetCrossServerRPCComponent(bool bUsingRingBuffers
 }
 
 } // ::SpatialConstants
+
+DECLARE_STATS_GROUP(TEXT("SpatialNet"), STATGROUP_SpatialNet, STATCAT_Advanced);
