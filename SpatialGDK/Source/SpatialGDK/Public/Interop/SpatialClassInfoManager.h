@@ -118,6 +118,9 @@ public:
 
 	TArray<Worker_ComponentId> GetComponentIdsForComponentType(const ESchemaComponentType ComponentType);
 
+	// Tries to find ClassInfo corresponding to an unused dynamic subobject on the given entity
+	const FClassInfo* GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient);
+
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
 
