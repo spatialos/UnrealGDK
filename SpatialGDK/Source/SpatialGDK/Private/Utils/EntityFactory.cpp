@@ -141,12 +141,12 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	// Add all Interest component IDs to allow us to change it if needed.
 	ComponentWriteAcl.Add(SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	for (auto ComponentId : ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
+	for (const auto ComponentId : ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
 	{
 		ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
 	}
 
-	uint32 ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
+	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{

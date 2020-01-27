@@ -459,7 +459,7 @@ void USpatialSender::SendComponentInterestForActor(USpatialActorChannel* Channel
 	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterestForActor(Channel, bNetOwned));
 }
 
-void USpatialSender::SendInterestComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent)
+void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent)
 {
 	if (OldComponent != SpatialConstants::INVALID_COMPONENT_ID)
 	{

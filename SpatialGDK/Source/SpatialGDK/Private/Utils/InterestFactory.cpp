@@ -289,7 +289,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	AddUserDefinedQueries(LevelConstraints, ClientComponentInterest.Queries);
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialGDKSettings->bEnableNetCullDistanceInterest && SpatialGDKSettings->bEnableNetCullDistanceFrequency)
+	if (SpatialGDKSettings->bEnableNetCullDistanceFrequency)
 	{
 		for (auto RadiusCheckoutConstraints : CheckoutConstraints)
 		{
@@ -303,7 +303,15 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 			}
 
 			NewQuery.Frequency = RadiusCheckoutConstraints.Frequency;
-			NewQuery.FullSnapshotResult = true;
+
+			if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
+			{
+				ClientQuery.ResultComponentId = ClientResultType;
+			}
+			else
+			{
+				ClientQuery.FullSnapshotResult = true;
+			}
 
 			ClientComponentInterest.Queries.Add(NewQuery);
 		}

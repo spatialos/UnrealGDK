@@ -505,7 +505,7 @@ TArray<float> USpatialClassInfoManager::GetNetCullDistances() const
 	return NetCullDistances;
 }
 
-uint32 USpatialClassInfoManager::GetComponentIdForNetCullDistance(float NetCullDistance) const
+Worker_ComponentId USpatialClassInfoManager::GetComponentIdForNetCullDistance(float NetCullDistance) const
 {
 	if (const uint32* ComponentId = SchemaDatabase->NetCullDistanceToComponentId.Find(NetCullDistance))
 	{

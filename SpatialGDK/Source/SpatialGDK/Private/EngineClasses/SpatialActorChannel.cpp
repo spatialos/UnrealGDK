@@ -1287,7 +1287,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 	auto FindCurrentNCDComponent = [this]()
 	{
-		for (auto ComponentId : NetDriver->ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
+		for (const auto ComponentId : NetDriver->ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
 		{
 			if (NetDriver->StaticComponentView->HasComponent(EntityId, ComponentId))
 			{
@@ -1303,7 +1303,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 	if (CurrentInterestComponentId != DesiredInterestComponentId)
 	{
-		Sender->SendInterestComponentChange(EntityId, CurrentInterestComponentId, DesiredInterestComponentId);
+		Sender->SendInterestBucketComponentChange(EntityId, CurrentInterestComponentId, DesiredInterestComponentId);
 	}
 }
 
