@@ -497,7 +497,7 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForComponent
 	}
 }
 
-const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject * Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient)
+const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient)
 {
 	const FClassInfo* Info = nullptr;
 
