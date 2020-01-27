@@ -235,25 +235,27 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
+	FString SpatialWorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
 	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
 	{
 		GameInstance->SetFirstConnectionToSpatialOSAttempted();
-		if (!Connection->TrySetupConnectionConfigFromCommandLine())
+		if (!Connection->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
 		{
-			Connection->SetupConnectionConfigFromURL(URL);
+			Connection->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
 		}
 	}
 	else if (URL.Host == SpatialConstants::RECONNECT_USING_COMMANDLINE_ARGUMENTS)
 	{
-		if (!Connection->TrySetupConnectionConfigFromCommandLine())
+		if (!Connection->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
 		{
 			Connection->SetConnectionType(ESpatialConnectionType::Receptionist);
 			Connection->ReceptionistConfig.LoadDefaults();
+			Connection->ReceptionistConfig.WorkerType = SpatialWorkerType;
 		}
 	}
 	else
 	{
-		Connection->SetupConnectionConfigFromURL(URL);
+		Connection->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
 	}
 
 #if WITH_EDITOR
