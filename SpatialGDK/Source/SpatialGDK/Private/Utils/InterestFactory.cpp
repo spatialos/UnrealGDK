@@ -114,7 +114,7 @@ QueryConstraint InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialCl
 				}
 
 				// Add interest query for specified distance/frequency pairs
-				for (auto DistanceFrequencyPair : SpatialGDKSettings->InterestRangeFrequencyPairs)
+				for (const auto& DistanceFrequencyPair : SpatialGDKSettings->InterestRangeFrequencyPairs)
 				{
 					float CheckoutRadius = MaxCheckoutRadiusMeters * DistanceFrequencyPair.DistanceRatio;
 
@@ -291,7 +291,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bEnableNetCullDistanceFrequency)
 	{
-		for (auto RadiusCheckoutConstraints : CheckoutConstraints)
+		for (const auto& RadiusCheckoutConstraints : CheckoutConstraints)
 		{
 			SpatialGDK::Query NewQuery{};
 
