@@ -425,9 +425,9 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 
 	FString CompiledSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
 
-	// Generate has
+	// Generate hash
 	bool Result = false;
-	for (int i = 0; i < 2; i++)
+	for (int Retry = 0; Retry < 2; Retry++)
 	{
 		SchemaDatabase->SchemaDescriptorHash = 0;
 		FString DescriptorPath = FPaths::Combine(CompiledSchemaDir, TEXT("schema.descriptor"));
