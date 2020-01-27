@@ -96,7 +96,15 @@ public:
 	void LoadDefaults()
 	{
 		UseExternalIp = true;
-		LocatorHost = SpatialConstants::LOCATOR_HOST;
+
+		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
+		{
+			LocatorHost = SpatialConstants::LOCATOR_HOST_CN;
+		}
+		else
+		{
+			LocatorHost = SpatialConstants::LOCATOR_HOST;
+		}
 	}
 
 	bool TryLoadCommandLineArgs()
@@ -168,5 +176,4 @@ public:
 
 private:
 	FString ReceptionistHost;
-
 };
