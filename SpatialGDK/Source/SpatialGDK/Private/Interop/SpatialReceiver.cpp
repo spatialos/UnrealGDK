@@ -113,8 +113,6 @@ void USpatialReceiver::LeaveCriticalSection()
 	PendingAddEntities.Empty();
 	PendingAddComponents.Empty();
 	PendingAuthorityChanges.Empty();
-
-	ProcessQueuedResolvedObjects();
 }
 
 void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
@@ -752,6 +750,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
 #endif
 
+		TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
+
 		// Apply initial replicated properties.
 		// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
 		// Potentially we could split out the initial actor state and the initial component state
@@ -764,8 +764,14 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 			if (PendingAddComponent.EntityId == EntityId)
 			{
-				ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponent.Data->ComponentData, *Channel, ActorClassInfo);
+				ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponent.Data->ComponentData, *Channel, ActorClassInfo, ObjectsToResolvePendingOpsFor);
 			}
+		}
+
+		// Resolve things like RepNotify or RPCs after applying component data.
+		for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)
+		{
+			ResolvePendingOperations(ObjectToResolve.Key, ObjectToResolve.Value);
 		}
 
 		if (!NetDriver->IsServer())
@@ -1065,7 +1071,7 @@ FTransform USpatialReceiver::GetRelativeSpawnTransform(UClass* ActorClass, FTran
 	return NewTransform;
 }
 
-void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel, const FClassInfo& ActorClassInfo)
+void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel, const FClassInfo& ActorClassInfo, TArray<ObjectPtrRefPair>& OutObjectsToResolve)
 {
 	AActor* Actor = Channel.GetActor();
 
@@ -1077,7 +1083,8 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 		return;
 	}
 
-	TWeakObjectPtr<UObject> TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Offset));
+	FUnrealObjectRef TargetObjectRef(EntityId, Offset);
+	TWeakObjectPtr<UObject> TargetObject = PackageMap->GetObjectFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetObject.IsValid())
 	{
 		bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(Offset);
@@ -1092,12 +1099,14 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 
 		Actor->OnSubobjectCreatedFromReplication(TargetObject.Get());
 
-		PackageMap->ResolveSubobject(TargetObject.Get(), FUnrealObjectRef(EntityId, Offset));
+		PackageMap->ResolveSubobject(TargetObject.Get(), TargetObjectRef);
 
 		Channel.CreateSubObjects.Add(TargetObject.Get());
 	}
 
 	ApplyComponentData(Channel, *TargetObject, Data);
+
+	OutObjectsToResolve.Add(ObjectPtrRefPair(TargetObject.Get(), TargetObjectRef));
 }
 
 void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp& Op)
@@ -1177,7 +1186,8 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId Ent
 
 	Actor->OnSubobjectCreatedFromReplication(Subobject);
 
-	PackageMap->ResolveSubobject(Subobject, FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
+	FUnrealObjectRef SubobjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]);
+	PackageMap->ResolveSubobject(Subobject, SubobjectRef);
 
 	Channel->CreateSubObjects.Add(Subobject);
 
@@ -1196,6 +1206,9 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId Ent
 		ApplyComponentData(*Channel, *Subobject, *AddComponent.Data->ComponentData);
 		PendingDynamicSubobjectComponents.Remove(EntityComponentPair);
 	});
+
+	// Resolve things like RepNotify or RPCs after applying component data.
+	ResolvePendingOperations(Subobject, SubobjectRef);
 
 	// Don't send dynamic interest for this subobject if it is otherwise handled by result types.
 	if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
@@ -1958,15 +1971,6 @@ AActor* USpatialReceiver::FindSingletonActor(UClass* SingletonClass)
 	return nullptr;
 }
 
-void USpatialReceiver::ProcessQueuedResolvedObjects()
-{
-	for (TPair<UObject*, FUnrealObjectRef>& It : ResolvedObjectQueue)
-	{
-		ResolvePendingOperations_Internal(It.Key, It.Value);
-	}
-	ResolvedObjectQueue.Empty();
-}
-
 void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPCsOnEntityCreation& QueuedRPCs)
 {
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
@@ -1979,18 +1983,6 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPC
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
 		ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(RPC));
-	}
-}
-
-void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
-{
-	if (bInCriticalSection)
-	{
-		ResolvedObjectQueue.Add(TPair<UObject*, FUnrealObjectRef>{ Object, ObjectRef });
-	}
-	else
-	{
-		ResolvePendingOperations_Internal(Object, ObjectRef);
 	}
 }
 
@@ -2059,7 +2051,7 @@ bool USpatialReceiver::OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType R
 	return true;
 }
 
-void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)
+void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
