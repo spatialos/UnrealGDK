@@ -98,15 +98,13 @@ namespace Improbable
 
         static readonly string ChinaRefreshToken = File.ReadAllText(Path.Combine(Environment.ExpandEnvironmentVariables("%LOCALAPPDATA%"), ".improbable/oauth2/oauth2_refresh_token_cn-production"));
 
+        static readonly PlatformRefreshTokenCredential ChinaCredentials = new PlatformRefreshTokenCredential(ChinaRefreshToken,
+            "https://auth.spatialoschina.com/auth/v1/authcode",
+            "https://auth.spatialoschina.com/auth/v1/token");
+
         private static PlatformRefreshTokenCredential GetPlatformRefreshTokenCredential(string region)
         {
-            if(region == "CN")
-            {
-                return new PlatformRefreshTokenCredential(ChinaRefreshToken,
-                    "https://auth.spatialoschina.com/auth/v1/authcode",
-                    "https://auth.spatialoschina.com/auth/v1/token");
-            }
-            return null;
+            return region == "CN" ? ChinaCredentials : null;
         }
 
         private static int CreateDeployment(string[] args)
