@@ -13,7 +13,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialLatencyTracing);
 
-DECLARE_CYCLE_STAT(TEXT("ContinueLatencyTrace_Internal"), STAT_ContinueLatencyTraceRPC_Internal, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ContinueLatencyTraceRPC_Internal"), STAT_ContinueLatencyTraceRPC_Internal, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("BeginLatencyTraceRPC_Internal"), STAT_BeginLatencyTraceRPC_Internal, STATGROUP_SpatialNet);
 
 namespace
 {
@@ -307,6 +308,10 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 
 bool USpatialLatencyTracer::BeginLatencyTraceRPC_Internal(const AActor* Actor, const FString& Function, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
 {
+	 
+	// TODO: UNR-2787 - Improve mutex-related latency
+	// This functions might spike because of the Mutex below
+	SCOPE_CYCLE_COUNTER(STAT_BeginLatencyTraceRPC_Internal);
 	FScopeLock Lock(&Mutex);
 
 	TraceKey Key = CreateNewTraceEntryRPC(Actor, Function);
