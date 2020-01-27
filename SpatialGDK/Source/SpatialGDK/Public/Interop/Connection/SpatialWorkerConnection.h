@@ -62,6 +62,7 @@ public:
 
 	void SetConnectionType(ESpatialConnectionType InConnectionType);
 
+	// TODO: UNR-2753
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 	FDevAuthConfig DevAuthConfig;
