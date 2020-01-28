@@ -33,7 +33,7 @@ public class SpatialGDK : ModuleRules
                 "Projects",
                 "OnlineSubsystemUtils",
                 "InputCore",
-                "Sockets"
+                "Sockets",
             });
 
 		if (Target.bBuildEditor)
