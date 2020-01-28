@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2020-xx-xx
 
+### Breaking Changes:
+- Simulated Player worker configurations now require a dev auth token and deployment flag instead of a login token and player identity token. See the Example Project for an example of how to set this up.
+
 ### Features:
 - Updated the version of the local API service used by the UnrealGDK.
 - The GDK now uses SpatialOS `14.4.0`.
