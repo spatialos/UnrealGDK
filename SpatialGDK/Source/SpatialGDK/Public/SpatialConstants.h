@@ -261,6 +261,13 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_CLIENT_INTEREST = TArra
 	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY
 };
 
+// A list of components clients require on entities they are authoritative over.
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_CLIENT_AUTH = TArray<Worker_ComponentId>
+{
+	SERVER_ENDPOINT_COMPONENT_ID,
+	SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+};
+
 FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {
 	switch (RPCType)

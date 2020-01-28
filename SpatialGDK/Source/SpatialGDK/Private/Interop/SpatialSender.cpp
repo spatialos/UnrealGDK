@@ -1068,7 +1068,7 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 	}
 
 	InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), NetDriver->ClassInfoManager, NetDriver->PackageMap);
-	Worker_ComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
+	Worker_ComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate(EntityId);
 
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
