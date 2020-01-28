@@ -252,7 +252,8 @@ Interest InterestFactory::CreateInterest(Worker_EntityId EntityId) const
 		// Put the "main" interest queries on the player controller
 		AddPlayerControllerActorInterest(ResultInterest);
 	}
-	if (Actor->GetNetConnection() != nullptr && Settings->bEnableClientResultTypes)
+	const auto NetConn = Actor->GetNetConnection();
+	if (NetConn != nullptr && Settings->bEnableClientResultTypes)
 	{
 		AddClientSelfInterest(ResultInterest, EntityId);
 	}
@@ -353,7 +354,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& InInterest) con
 	}
 }
 
-void InterestFactory::AddClientSelfInterest(Interest InInterest, Worker_EntityId EntityId) const
+void InterestFactory::AddClientSelfInterest(Interest& InInterest, Worker_EntityId EntityId) const
 {
 	Query NewQuery;
 	NewQuery.Constraint.EntityIdConstraint = EntityId;
@@ -365,16 +366,13 @@ void InterestFactory::AddClientSelfInterest(Interest InInterest, Worker_EntityId
 
 void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& InInterest, const Worker_ComponentId ComponentId, const Query QueryToAdd)
 {
-	if (InInterest.ComponentInterestMap.Contains(ComponentId))
-	{
-		InInterest.ComponentInterestMap[ComponentId].Queries.Add(QueryToAdd);
-	}
-	else
+	if (!InInterest.ComponentInterestMap.Contains(ComponentId))
 	{
 		ComponentInterest NewComponentInterest;
-		NewComponentInterest.Queries.Add(QueryToAdd);
 		InInterest.ComponentInterestMap.Add(ComponentId, NewComponentInterest);
 	}
+	auto& Queries = InInterest.ComponentInterestMap[ComponentId].Queries;
+	Queries.Add(QueryToAdd);
 }
 
 void InterestFactory::GetActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const

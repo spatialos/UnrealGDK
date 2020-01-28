@@ -46,7 +46,7 @@ private:
 	// Defined Constraint AND Level Constraint
 	void AddPlayerControllerActorInterest(Interest& InInterest) const;
 	// The components clients need to see on entities they are have authority over.
-	void AddClientSelfInterest(Interest ResultInterest, Worker_EntityId EntityId) const;
+	void AddClientSelfInterest(Interest& InInterest, Worker_EntityId EntityId) const;
 
 	void GetActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const;
 	TArray<Query> GetUserDefinedQueries(const QueryConstraint& LevelConstraints) const;
