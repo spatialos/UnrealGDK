@@ -99,3 +99,5 @@ inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.bUseSingletonClassPath ? 1 : 0);
 	return Result;
 }
+
+using ObjectPtrRefPair = TPair<UObject*, FUnrealObjectRef>;
