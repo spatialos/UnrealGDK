@@ -480,6 +480,11 @@ bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentI
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
 }
 
+const TMap<float, Worker_ComponentId>& USpatialClassInfoManager::GetNetCullDistanceToComponentIds() const
+{
+	return SchemaDatabase->NetCullDistanceToComponentId;
+}
+
 const TArray<Worker_ComponentId>& USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const
 {
 	switch (ComponentType)
@@ -524,13 +529,6 @@ const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UO
 	}
 
 	return Info;
-}
-
-TArray<float> USpatialClassInfoManager::GetNetCullDistances() const
-{
-	TArray<float> NetCullDistances;
-	SchemaDatabase->NetCullDistanceToComponentId.GetKeys(NetCullDistances);
-	return NetCullDistances;
 }
 
 Worker_ComponentId USpatialClassInfoManager::GetComponentIdForNetCullDistance(float NetCullDistance) const
@@ -588,7 +586,7 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 		}
 
 		const AActor* DefaultActor = ActorForRelevancy->GetClass()->GetDefaultObject<AActor>();
-		if (ActorForRelevancy != DefaultActor && ActorForRelevancy->NetCullDistanceSquared != DefaultActor->NetCullDistanceSquared)
+		if (ActorForRelevancy->NetCullDistanceSquared != DefaultActor->NetCullDistanceSquared)
 		{
 			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s via %s, because its Net Cull Distance is different from its default one."),
 				ActorForRelevancy->NetCullDistanceSquared, *Actor->GetPathName(), *ActorForRelevancy->GetPathName());

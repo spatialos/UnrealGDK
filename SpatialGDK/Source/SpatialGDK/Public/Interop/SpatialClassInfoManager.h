@@ -116,7 +116,7 @@ public:
 	Worker_ComponentId GetComponentIdFromLevelPath(const FString& LevelPath) const;
 	bool IsSublevelComponent(Worker_ComponentId ComponentId) const;
 
-	TArray<float> GetNetCullDistances() const;
+	const TMap<float, Worker_ComponentId>& GetNetCullDistanceToComponentIds() const;
 
 	Worker_ComponentId GetComponentIdForNetCullDistance(float NetCullDistance) const;
 	Worker_ComponentId ComputeActorInterestComponentId(const AActor* Actor) const;

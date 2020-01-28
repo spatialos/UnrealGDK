@@ -24,6 +24,7 @@ struct FrequencyConstraint
 	float Frequency;
 	SpatialGDK::QueryConstraint Constraint;
 };
+// Used to cache checkout radius constraints with frequency settings, so queries can be quickly recreated.
 static TArray<FrequencyConstraint> CheckoutConstraints;
 
 // The checkout radius constraint is built once for all actors in CreateCheckoutRadiusConstraint as it is equivalent for all actors.
@@ -33,8 +34,56 @@ static QueryConstraint ClientCheckoutRadiusConstraint;
 // Cache the result type of client Interest queries.
 static TArray<Worker_ComponentId> ClientResultType;
 
-QueryConstraint CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager)
+InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
+	: Actor(InActor)
+	, Info(InInfo)
+	, ClassInfoManager(InClassInfoManager)
+	, PackageMap(InPackageMap)
 {
+}
+
+void InterestFactory::CreateAndCacheInterestState(USpatialClassInfoManager* ClassInfoManager)
+{
+	ClientCheckoutRadiusConstraint = CreateClientCheckoutRadiusConstraint(ClassInfoManager);
+	ClientResultType = CreateClientResultType(ClassInfoManager);
+}
+
+QueryConstraint InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager)
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	QueryConstraint CheckoutRadiusConstraint;
+	CheckoutConstraints.Empty();
+
+	if (!SpatialGDKSettings->bEnableNetCullDistanceInterest)
+	{
+		CheckoutRadiusConstraint = CreateLegacyNetCullDistanceConstraint(ClassInfoManager);
+	}
+	else
+	{
+		if (!SpatialGDKSettings->bEnableNetCullDistanceFrequency)
+		{
+			CheckoutRadiusConstraint = CreateNetCullDistanceConstraint(ClassInfoManager);
+		}
+		else
+		{
+			CheckoutRadiusConstraint = CreateNetCullDistanceConstraintWithFrequency(ClassInfoManager);
+		}
+	}
+
+	return CheckoutRadiusConstraint;
+}
+
+QueryConstraint InterestFactory::CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager)
+{
+	// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
+	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
+	//   - NetCullDistanceSquared on AActor is used to define the default checkout radius with no other constraints.
+	//   - NetCullDistanceSquared on other actor types is used to define additional constraints if needed.
+	//   - If a subtype defines a radius smaller than a parent type, then its requirements are already captured.
+	//   - If a subtype defines a radius larger than all parent types, then it needs an additional constraint.
+	//   - Other than the default from AActor, all radius constraints also include Component constraints to
+	//     capture specific types, including all derived types of that actor.
+
 	QueryConstraint CheckoutRadiusConstraint;
 
 	CheckoutRadiusConstraint.OrConstraint.Add(CheckoutRadiusConstraintUtils::GetDefaultCheckoutRadiusConstraint());
@@ -61,19 +110,18 @@ QueryConstraint CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* 
 	return CheckoutRadiusConstraint;
 }
 
-QueryConstraint CreateNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager)
+QueryConstraint InterestFactory::CreateNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager)
 {
 	QueryConstraint CheckoutRadiusConstraintRoot;
 
-	const TArray<float> NetCullDistances = ClassInfoManager->GetNetCullDistances();
+	const TMap<float, Worker_ComponentId>& NetCullDistancesToComponentIds = ClassInfoManager->GetNetCullDistanceToComponentIds();
 
-	for (float NetCullDistance : NetCullDistances)
+	for (const auto& DistanceComponentPair : NetCullDistancesToComponentIds)
 	{
-		const float MaxCheckoutRadiusMeters = CheckoutRadiusConstraintUtils::NetCullDistanceSquaredToSpatialDistance(NetCullDistance);
-		const uint32 NCDComponentId = ClassInfoManager->GetComponentIdForNetCullDistance(NetCullDistance);
+		const float MaxCheckoutRadiusMeters = CheckoutRadiusConstraintUtils::NetCullDistanceSquaredToSpatialDistance(DistanceComponentPair.Key);
 
 		QueryConstraint ComponentConstraint;
-		ComponentConstraint.ComponentConstraint = NCDComponentId;
+		ComponentConstraint.ComponentConstraint = DistanceComponentPair.Value;
 
 		QueryConstraint RadiusConstraint;
 		RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ MaxCheckoutRadiusMeters };
@@ -88,20 +136,19 @@ QueryConstraint CreateNetCullDistanceConstraint(USpatialClassInfoManager* ClassI
 	return CheckoutRadiusConstraintRoot;
 }
 
-QueryConstraint CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager)
+QueryConstraint InterestFactory::CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager)
 {
 	QueryConstraint CheckoutRadiusConstraintRoot;
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	const TArray<float> NetCullDistances = ClassInfoManager->GetNetCullDistances();
+	const TMap<float, Worker_ComponentId>& NetCullDistancesToComponentIds = ClassInfoManager->GetNetCullDistanceToComponentIds();
 
-	for (float NetCullDistance : NetCullDistances)
+	for (const auto& DistanceComponentPair : NetCullDistancesToComponentIds)
 	{
-		const float MaxCheckoutRadiusMeters = CheckoutRadiusConstraintUtils::NetCullDistanceSquaredToSpatialDistance(NetCullDistance);
-		const uint32 NCDComponentId = ClassInfoManager->GetComponentIdForNetCullDistance(NetCullDistance);
+		const float MaxCheckoutRadiusMeters = CheckoutRadiusConstraintUtils::NetCullDistanceSquaredToSpatialDistance(DistanceComponentPair.Key);
 
 		QueryConstraint ComponentConstraint;
-		ComponentConstraint.ComponentConstraint = NCDComponentId;
+		ComponentConstraint.ComponentConstraint = DistanceComponentPair.Value;
 
 		float FullFrequencyCheckoutRadius = MaxCheckoutRadiusMeters * SpatialGDKSettings->FullFrequencyNetCullDistanceRatio;
 
@@ -134,54 +181,6 @@ QueryConstraint CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoMa
 	}
 
 	return CheckoutRadiusConstraintRoot;
-}
-
-InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
-	: Actor(InActor)
-	, Info(InInfo)
-	, ClassInfoManager(InClassInfoManager)
-	, PackageMap(InPackageMap)
-{
-}
-
-void InterestFactory::CreateAndCacheInterestState(USpatialClassInfoManager* ClassInfoManager)
-{
-	ClientCheckoutRadiusConstraint = CreateClientCheckoutRadiusConstraint(ClassInfoManager);
-	ClientResultType = CreateClientResultType(ClassInfoManager);
-}
-
-QueryConstraint InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager)
-{
-	// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
-	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
-	//   - NetCullDistanceSquared on AActor is used to define the default checkout radius with no other constraints.
-	//   - NetCullDistanceSquared on other actor types is used to define additional constraints if needed.
-	//   - If a subtype defines a radius smaller than a parent type, then its requirements are already captured.
-	//   - If a subtype defines a radius larger than all parent types, then it needs an additional constraint.
-	//   - Other than the default from AActor, all radius constraints also include Component constraints to
-	//     capture specific types, including all derived types of that actor.
-
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	QueryConstraint CheckoutRadiusConstraint;
-	CheckoutConstraints.Empty();
-
-	if (!SpatialGDKSettings->bEnableNetCullDistanceInterest)
-	{
-		CheckoutRadiusConstraint = CreateLegacyNetCullDistanceConstraint(ClassInfoManager);
-	}
-	else
-	{
-		if (!SpatialGDKSettings->bEnableNetCullDistanceFrequency)
-		{
-			CheckoutRadiusConstraint = CreateNetCullDistanceConstraint(ClassInfoManager);
-		}
-		else
-		{
-			CheckoutRadiusConstraint = CreateNetCullDistanceConstraintWithFrequency(ClassInfoManager);
-		}
-	}
-
-	return CheckoutRadiusConstraint;
 }
 
 TArray<Worker_ComponentId> InterestFactory::CreateClientResultType(USpatialClassInfoManager* ClassInfoManager)
