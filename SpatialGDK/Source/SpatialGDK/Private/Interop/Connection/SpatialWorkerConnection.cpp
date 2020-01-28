@@ -366,7 +366,7 @@ void USpatialWorkerConnection::SetupConnectionConfigFromURL(const FURL& URL, con
 	if (URL.Host == SpatialConstants::LOCATOR_HOST && URL.HasOption(TEXT("locator")))
 	{
 		SetConnectionType(ESpatialConnectionType::Locator);
-		// TODO: We might add a feature wereby we get the locator host from the URL option.
+		// TODO: We might add a feature whereby we get the locator host from the URL option.
 		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorConfig.LocatorHost);
 		LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
 		LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
