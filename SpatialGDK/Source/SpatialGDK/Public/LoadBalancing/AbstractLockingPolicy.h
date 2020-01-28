@@ -28,8 +28,8 @@ public:
 		PackageMap = InPackageMap;
 		VirtualWorkerTranslator = InVirtualWorkerTranslator;
 
-		AcquireLockDelegate.BindUObject(this, &UAbstractLockingPolicy::AcquireLockFromEngineDelegate);
-		ReleaseLockDelegate.BindUObject(this, &UAbstractLockingPolicy::ReleaseLockFromEngineDelegate);
+		AcquireLockDelegate.BindUObject(this, &UAbstractLockingPolicy::AcquireLockFromDelegate);
+		ReleaseLockDelegate.BindUObject(this, &UAbstractLockingPolicy::ReleaseLockFromDelegate);
 	};
 	virtual ActorLockToken AcquireLock(AActor* Actor, FString LockName = TEXT("")) PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLock, return SpatialConstants::INVALID_ACTOR_LOCK_TOKEN;);
 	virtual void ReleaseLock(ActorLockToken Token) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLock, return;);
@@ -41,6 +41,6 @@ protected:
 	AbstractVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 private:
-	virtual bool AcquireLockFromEngineDelegate(AActor* ActorToLock, FString EngineLockIdentifier) PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLockFromEngineDelegate, return false;);
-	virtual void ReleaseLockFromEngineDelegate(FString EngineLockIdentifier) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLockFromEngineDelegate, return;);
+	virtual bool AcquireLockFromDelegate(AActor* ActorToLock, FString DelegateLockIdentifier) PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLockFromDelegate, return false;);
+	virtual void ReleaseLockFromDelegate(FString DelegateLockIdentifier) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLockFromDelegate, return;);
 };

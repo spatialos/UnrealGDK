@@ -128,7 +128,7 @@ void UReferenceCountedLockingPolicy::OnLockedActorDeleted(AActor* DestroyedActor
 	ActorToLockingState.Remove(DestroyedActor);
 }
 
-bool UReferenceCountedLockingPolicy::AcquireLockFromEngineDelegate(AActor* ActorToLock, FString EngineLockIdentifier)
+bool UReferenceCountedLockingPolicy::AcquireLockFromDelegate(AActor* ActorToLock, FString EngineLockIdentifier)
 {
 	ActorLockToken LockToken = AcquireLock(ActorToLock, EngineLockIdentifier);
 	if (LockToken == SpatialConstants::INVALID_ACTOR_LOCK_TOKEN)
@@ -137,13 +137,13 @@ bool UReferenceCountedLockingPolicy::AcquireLockFromEngineDelegate(AActor* Actor
 		return false;
 	}
 
-	check(!EngineLockingKeyToActorLockToken.Contains(EngineLockIdentifier));
-	EngineLockingKeyToActorLockToken.Add(EngineLockIdentifier, LockToken);
+	check(!DelegateLockingIdentifierToActorLockToken.Contains(EngineLockIdentifier));
+	DelegateLockingIdentifierToActorLockToken.Add(EngineLockIdentifier, LockToken);
 	return true;
 }
 
-void UReferenceCountedLockingPolicy::ReleaseLockFromEngineDelegate(FString EngineLockIdentifier)
+void UReferenceCountedLockingPolicy::ReleaseLockFromDelegate(FString EngineLockIdentifier)
 {
-	ActorLockToken LockToken = EngineLockingKeyToActorLockToken.FindAndRemoveChecked(EngineLockIdentifier);
+	ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(EngineLockIdentifier);
 	ReleaseLock(LockToken);
 }
