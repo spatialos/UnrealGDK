@@ -46,6 +46,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 	, bEnableUnrealLoadBalancer(false)
 	, bUseRPCRingBuffers(false)
+	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, DefaultRPCRingBufferSize(8)
 	, MaxRPCRingBufferSize(32)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data

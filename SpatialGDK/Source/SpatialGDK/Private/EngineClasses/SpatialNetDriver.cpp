@@ -1732,8 +1732,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	if (Connection != nullptr && Connection->IsConnected())
 	{
-		Connection->QueueLatestOpList();
-		Connection->ProcessOutgoingMessages();
+		Connection->Tick();
 	}
 
 	Super::TickFlush(DeltaTime);

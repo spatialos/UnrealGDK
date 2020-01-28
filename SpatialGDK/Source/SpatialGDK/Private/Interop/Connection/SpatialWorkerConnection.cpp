@@ -94,12 +94,16 @@ void USpatialWorkerConnection::FinishDestroy()
 
 void USpatialWorkerConnection::DestroyConnection()
 {
-	//Stop(); // Stop OpsProcessingThread
-	//if (OpsProcessingThread != nullptr)
-	//{
-	//	OpsProcessingThread->WaitForCompletion();
-	//	OpsProcessingThread = nullptr;
-	//}
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
+	{
+		Stop(); // Stop OpsProcessingThread
+		if (OpsProcessingThread != nullptr)
+		{
+			OpsProcessingThread->WaitForCompletion();
+			OpsProcessingThread = nullptr;
+		}
+	}
 
 	if (WorkerConnection)
 	{
@@ -372,6 +376,12 @@ void USpatialWorkerConnection::FinishSetupConnectionConfig(const FURL& URL, bool
 	}
 }
 
+void USpatialWorkerConnection::Tick()
+{
+	QueueLatestOpList();
+	ProcessOutgoingMessages();
+}
+
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
 {
 	TArray<Worker_OpList*> OpLists;
@@ -486,10 +496,14 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
 
-	//if (OpsProcessingThread == nullptr)
-	//{
-	//	InitializeOpsProcessingThread();
-	//}
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
+	{
+		if (OpsProcessingThread == nullptr)
+		{
+			InitializeOpsProcessingThread();
+		}
+	}
 
 	OnConnectedCallback.ExecuteIfBound();
 }
@@ -506,39 +520,36 @@ void USpatialWorkerConnection::OnConnectionFailure()
 	}
 }
 
-//bool USpatialWorkerConnection::Init()
-//{
-//	OpsUpdateInterval = 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
-//
-//	return true;
-//}
+bool USpatialWorkerConnection::Init()
+{
+	OpsUpdateInterval = 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
 
-//uint32 USpatialWorkerConnection::Run()
-//{
-//	while (KeepRunning)
-//	{
-//		FPlatformProcess::Sleep(OpsUpdateInterval);
-//
-//		QueueLatestOpList();
-//
-//		ProcessOutgoingMessages();
-//	}
-//
-//	return 0;
-//}
+	return true;
+}
 
-//void USpatialWorkerConnection::Stop()
-//{
-//	KeepRunning.AtomicSet(false);
-//}
+uint32 USpatialWorkerConnection::Run()
+{
+	while (KeepRunning)
+	{
+		FPlatformProcess::Sleep(OpsUpdateInterval);
+		Tick();
+	}
 
-//void USpatialWorkerConnection::InitializeOpsProcessingThread()
-//{
-//	check(IsInGameThread());
-//
-//	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
-//	check(OpsProcessingThread);
-//}
+	return 0;
+}
+
+void USpatialWorkerConnection::Stop()
+{
+	KeepRunning.AtomicSet(false);
+}
+
+void USpatialWorkerConnection::InitializeOpsProcessingThread()
+{
+	check(IsInGameThread());
+
+	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
+	check(OpsProcessingThread);
+}
 
 void USpatialWorkerConnection::QueueLatestOpList()
 {
