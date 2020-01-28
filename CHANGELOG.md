@@ -41,6 +41,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Batch Spatial Position Updates now defaults to false.
 - Introduced experimental feature flag `bEnableClientResultTypes`, defaulting false. Flip this to true for client Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
 - Dynamic interest overrides are disabled if the `bEnableClientResultTypes` flag is set to true. 
+- Added `bEnableNetCullDistanceInterest` (defaulted false) to enable client interest to be exposed through component tagging. This functionality has closer parity to native unreal client interest.
+- Added `bEnableNetCullDistanceFrequency` (defaulted false) to enable client interest queries to use frequency. This functionality is configured using `InterestRangeFrequencyPairs` and `FullFrequencyNetCullDistanceRatio`.
 
 
 ## Bug fixes:
@@ -69,7 +71,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fix to handle replicated properties depending on asynchronously loaded packages.
 - Fix to component interest constraints constructed from schema.
 - Track properties containing references to replicated actors, in order to resolve them again if the actor they reference moves out and back into relevance.
-- Fix problem where PIE sessions sometimes fail to start due to missing schema for SpatialDebugger blueprint
+- Fix problem where PIE sessions sometimes fail to start due to missing schema for SpatialDebugger blueprint.
+- Fixed an issue where newly created subobjects would have empty state when RepNotify was called for a property pointing to that subobject.
 
 ### External contributors:
 @DW-Sebastien

@@ -21,7 +21,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "Schema/AlwaysRelevant.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "SpatialConstants.h"
@@ -1247,6 +1246,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	}
 
 	UpdateEntityACLToNewOwner();
+	UpdateInterestBucketComponentId();
 
 	for (AActor* Child : Actor->Children)
 	{
@@ -1275,6 +1275,32 @@ void USpatialActorChannel::UpdateEntityACLToNewOwner()
 		{
 			SavedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
 		}
+	}
+}
+
+void USpatialActorChannel::UpdateInterestBucketComponentId()
+{
+	const Worker_ComponentId DesiredInterestComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
+
+	auto FindCurrentNCDComponent = [this]()
+	{
+		for (const auto ComponentId : NetDriver->ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
+		{
+			if (NetDriver->StaticComponentView->HasComponent(EntityId, ComponentId))
+			{
+				return ComponentId;
+			}
+		}
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	};
+
+	const Worker_ComponentId CurrentInterestComponentId = NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID) ?
+		SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID :
+		FindCurrentNCDComponent();
+
+	if (CurrentInterestComponentId != DesiredInterestComponentId)
+	{
+		Sender->SendInterestBucketComponentChange(EntityId, CurrentInterestComponentId, DesiredInterestComponentId);
 	}
 }
 

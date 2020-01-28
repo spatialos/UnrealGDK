@@ -8,6 +8,8 @@
 #include "Templates/SubclassOf.h"
 #include "UObject/TextProperty.h"
 
+#include "SpatialGDKSettings.h"
+
 #include "SpatialStatics.generated.h"
 
 class AActor;
@@ -86,6 +88,18 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool GetWorkerFlag(const UObject* WorldContextObject, const FString& InFlagName, FString& OutFlagValue);
+
+	/**
+	 * Returns the Net Cull Distance distance/frequency pairs used in client qbi-f
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	static TArray<FDistanceFrequencyPair> GetNCDDistanceRatios();
+
+	/**
+	 * Returns the full frequency net cull distance ratio used in client qbi-f
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	static float GetFullFrequencyNetCullDistanceRatio();
 
 private:
 
