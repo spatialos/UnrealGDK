@@ -47,7 +47,7 @@ namespace
 
 		FPlatformProcess::ExecProcess(TEXT("UE4Editor"), *CommandLineArgs, &ReturnCode, &StdOut, &StdErr);
 
-		Test.TestTrue("Sucessful run", ReturnCode == 0);
+		Test.TestTrue("Successful run", ReturnCode == 0);
 
 		auto ExtractFlag = [&](const FString& Pattern, bool& bFlag)
 		{
