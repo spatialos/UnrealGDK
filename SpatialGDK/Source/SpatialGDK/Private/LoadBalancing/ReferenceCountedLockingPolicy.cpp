@@ -128,22 +128,22 @@ void UReferenceCountedLockingPolicy::OnLockedActorDeleted(AActor* DestroyedActor
 	ActorToLockingState.Remove(DestroyedActor);
 }
 
-bool UReferenceCountedLockingPolicy::AcquireLockFromDelegate(AActor* ActorToLock, FString EngineLockIdentifier)
+bool UReferenceCountedLockingPolicy::AcquireLockFromDelegate(AActor* ActorToLock, FString DelegateLockIdentifier)
 {
-	ActorLockToken LockToken = AcquireLock(ActorToLock, EngineLockIdentifier);
+	ActorLockToken LockToken = AcquireLock(ActorToLock, DelegateLockIdentifier);
 	if (LockToken == SpatialConstants::INVALID_ACTOR_LOCK_TOKEN)
 	{
 		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("AcquireLock called from engine delegate returned an invalid token"));
 		return false;
 	}
 
-	check(!DelegateLockingIdentifierToActorLockToken.Contains(EngineLockIdentifier));
-	DelegateLockingIdentifierToActorLockToken.Add(EngineLockIdentifier, LockToken);
+	check(!DelegateLockingIdentifierToActorLockToken.Contains(DelegateLockIdentifier));
+	DelegateLockingIdentifierToActorLockToken.Add(DelegateLockIdentifier, LockToken);
 	return true;
 }
 
-void UReferenceCountedLockingPolicy::ReleaseLockFromDelegate(FString EngineLockIdentifier)
+void UReferenceCountedLockingPolicy::ReleaseLockFromDelegate(FString DelegateLockIdentifier)
 {
-	ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(EngineLockIdentifier);
+	ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(DelegateLockIdentifier);
 	ReleaseLock(LockToken);
 }
