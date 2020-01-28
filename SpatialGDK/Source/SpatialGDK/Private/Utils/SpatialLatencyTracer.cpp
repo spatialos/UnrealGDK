@@ -78,9 +78,10 @@ void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const F
 bool USpatialLatencyTracer::SetMessagePrefix(UObject* WorldContextObject, const FString& NewMessagePrefix)
 {
 #if TRACE_LIB_ACTIVE
-	USpatialLatencyTracer* tracer = GetTracer(WorldContextObject);
-	if (tracer != NULL) {
-		tracer->MessagePrefix = NewMessagePrefix;
+	USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject);
+	if (Tracer != NULL)
+	{
+		Tracer->MessagePrefix = NewMessagePrefix;
 		return true;
 	}
 #endif // TRACE_LIB_ACTIVE
