@@ -40,7 +40,7 @@ private:
 	// Defined Constraint AND Level Constraint
 	Interest CreatePlayerOwnedActorInterest() const;
 
-	void AddActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool RecurseChildren = false) const;
+	void AddActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const;
 	void AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
 
 	// Checkout Constraint OR AlwaysInterested OR AlwaysRelevant Constraint
