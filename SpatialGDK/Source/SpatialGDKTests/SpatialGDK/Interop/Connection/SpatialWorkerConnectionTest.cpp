@@ -61,9 +61,9 @@ bool FSetupWorkerConnection::Update()
 	{
 		ConnectionProcessed(bConnectAsClient);
 	});
-	bool bUseReceptionist = false;
-	Connection->StartSetupConnectionConfigFromURL(TestURL, bUseReceptionist);
-	Connection->FinishSetupConnectionConfig(TestURL, bUseReceptionist, WorkerType);
+
+	Connection->SetupConnectionConfigFromURL(TestURL, WorkerType);
+
 	int32 PlayInEditorID = 0;
 #if WITH_EDITOR
 	Connection->Connect(bConnectAsClient, PlayInEditorID);
