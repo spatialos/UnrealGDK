@@ -133,6 +133,34 @@ public:
 class FDevAuthConfig : public FConnectionConfig
 {
 public:
+	FDevAuthConfig()
+	{
+		LoadDefaults();
+	}
+
+	void LoadDefaults()
+	{
+		UseExternalIp = true;
+		LocatorHost = SpatialConstants::LOCATOR_HOST;
+	}
+
+	bool TryLoadCommandLineArgs()
+	{
+		bool bSuccess = true;
+		const TCHAR* CommandLine = FCommandLine::Get();
+		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
+		FParse::Value(CommandLine, TEXT("deployment"), Deployment);
+		bSuccess = FParse::Value(CommandLine, TEXT("devAuthToken"), DevelopmentAuthToken);
+		return bSuccess;
+	}
+
+	FString LocatorHost;
+	FString DevelopmentAuthToken;
+	FString Deployment;
+};
+
+{
+public:
 
 	virtual void LoadDefaults() override
 	{
