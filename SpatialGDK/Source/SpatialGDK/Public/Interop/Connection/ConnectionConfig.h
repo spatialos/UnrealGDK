@@ -128,8 +128,16 @@ public:
 	void LoadDefaults()
 	{
 		UseExternalIp = true;
-		LocatorHost = SpatialConstants::LOCATOR_HOST;
 		PlayerId = SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID;
+
+		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
+		{
+			LocatorHost = SpatialConstants::LOCATOR_HOST_CN;
+		}
+		else
+		{
+			LocatorHost = SpatialConstants::LOCATOR_HOST;
+		}
 	}
 
 	bool TryLoadCommandLineArgs()
