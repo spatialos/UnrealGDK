@@ -44,8 +44,6 @@ struct FConnectionConfig
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."), *LinkProtocolString);
 		}
-
-		LoadDefaults();
 	}
 
 	void PreConnectInit(const bool bConnectAsClient)
@@ -85,7 +83,6 @@ struct FConnectionConfig
 class FLocatorConfig : public FConnectionConfig
 {
 public:
-
 	FLocatorConfig()
 	{
 		LoadDefaults();
@@ -123,7 +120,6 @@ public:
 class FDevAuthConfig : public FConnectionConfig
 {
 public:
-
 	FDevAuthConfig()
 	{
 		LoadDefaults();
@@ -153,7 +149,6 @@ public:
 class FReceptionistConfig : public FConnectionConfig
 {
 public:
-
 	FReceptionistConfig()
 	{
 		LoadDefaults();
@@ -189,7 +184,6 @@ public:
 		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
 		return bSuccess;
 	}
-
 
 	void SetReceptionistHost(const FString& host)
 	{
