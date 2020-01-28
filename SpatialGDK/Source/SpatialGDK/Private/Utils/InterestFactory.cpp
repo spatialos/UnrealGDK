@@ -150,10 +150,10 @@ QueryConstraint InterestFactory::CreateNetCullDistanceConstraintWithFrequency(US
 		QueryConstraint ComponentConstraint;
 		ComponentConstraint.ComponentConstraint = DistanceComponentPair.Value;
 
-		float FullFrequencyCheckoutRadius = MaxCheckoutRadiusMeters * SpatialGDKSettings->FullFrequencyNetCullDistanceRatio;
-
 		{
 			// Add default interest query which doesn't include a frequency
+			float FullFrequencyCheckoutRadius = MaxCheckoutRadiusMeters * SpatialGDKSettings->FullFrequencyNetCullDistanceRatio;
+
 			QueryConstraint RadiusConstraint;
 			RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ FullFrequencyCheckoutRadius };
 
