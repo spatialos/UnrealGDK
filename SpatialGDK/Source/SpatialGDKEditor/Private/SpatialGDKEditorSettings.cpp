@@ -86,7 +86,7 @@ void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
 		RuntimeSettings->ServerWorkerTypes.Empty(WorkerTypes.Num());
 		RuntimeSettings->ServerWorkerTypes.Append(WorkerTypes);
 		RuntimeSettings->PostEditChange();
-		RuntimeSettings->SaveConfig(CPF_Config, *RuntimeSettings->GetDefaultConfigFilename());
+		RuntimeSettings->UpdateSinglePropertyInConfigFile(RuntimeSettings->GetClass()->FindPropertyByName(GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServerWorkerTypes)), RuntimeSettings->GetDefaultConfigFilename());
 	}
 }
 
