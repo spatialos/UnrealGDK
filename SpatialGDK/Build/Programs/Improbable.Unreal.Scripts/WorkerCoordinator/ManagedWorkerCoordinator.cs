@@ -169,7 +169,7 @@ namespace Improbable.WorkerCoordinator
                         { SimulatedPlayerWorkerNamePlaceholderArg, simulatedPlayerName },
                         { DevAuthTokenPlaceholderArg, devAuthTokenOpt.Value },
                         { TargetDeploymentPlaceholderArg, targetDeploymentOpt.Value }
-                });
+                    });
 
                     // Prepend the simulated player id as an argument to the start client script.
                     // This argument is consumed by the start client script and will not be passed to the client worker.
