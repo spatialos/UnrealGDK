@@ -84,7 +84,7 @@ public:
 
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
-	void ConnectToLocator();
+	void ConnectToLocator(const FLocatorConfig* InLocatorConfig);
 	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 
 	void OnConnectionSuccess();
