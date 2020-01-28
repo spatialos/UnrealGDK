@@ -22,8 +22,8 @@ public:
 
 	static void CreateAndCacheInterestState(USpatialClassInfoManager* ClassInfoManager);
 
-	Worker_ComponentData CreateInterestData() const;
-	Worker_ComponentUpdate CreateInterestUpdate() const;
+	Worker_ComponentData CreateInterestData(Worker_EntityId EntityId) const;
+	Worker_ComponentUpdate CreateInterestUpdate(Worker_EntityId EntityId) const;
 
 	static Interest CreateServerWorkerInterest();
 
@@ -39,12 +39,13 @@ private:
 	
 
 
-	Interest CreateInterest() const;
+	Interest CreateInterest(Worker_EntityId EntityId) const;
 
 	// Only uses Defined Constraint
-	Interest CreateActorInterest() const;
+	Interest CreateActorInterest(Worker_EntityId EntityId) const;
 	// Defined Constraint AND Level Constraint
-	Interest CreatePlayerOwnedActorInterest() const;
+	Interest CreatePlayerControllerActorInterest(Worker_EntityId EntityId) const;
+	// Self 
 
 	void AddActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const;
 	void AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const;

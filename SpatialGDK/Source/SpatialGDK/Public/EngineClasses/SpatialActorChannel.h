@@ -187,7 +187,7 @@ public:
 	virtual int64 Close(EChannelCloseReason Reason) override;
 	// End UChannel interface
 
-	// Begin UActorChannel inteface
+	// Begin UActorChannel interface
 	virtual int64 ReplicateActor() override;
 #if ENGINE_MINOR_VERSION <= 22
 	virtual void SetChannelActor(AActor* InActor) override;
