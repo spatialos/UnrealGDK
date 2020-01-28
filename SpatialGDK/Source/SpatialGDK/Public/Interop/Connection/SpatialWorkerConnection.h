@@ -62,6 +62,8 @@ public:
 
 	void SetConnectionType(ESpatialConnectionType InConnectionType);
 
+	FConnectionConfig* GetConnectionConfig(ESpatialConnectionType InConnectionType);
+
 	// TODO: UNR-2753
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
@@ -92,6 +94,8 @@ private:
 
 	ESpatialConnectionType GetConnectionType() const;
 
+	static ESpatialConnectionType GetSpatialConnectionTypeFromCommandLine();
+
 	void CacheWorkerAttributes();
 
 	// Begin FRunnable Interface
@@ -104,7 +108,7 @@ private:
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
 
-	void StartDevelopmentAuth(FString DevAuthToken);
+	void StartDevelopmentAuth(const FString& DevAuthToken);
 	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
 	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
 

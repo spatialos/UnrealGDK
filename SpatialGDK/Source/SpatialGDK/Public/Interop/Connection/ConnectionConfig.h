@@ -29,7 +29,7 @@ struct FConnectionConfig
 		FParse::Bool(CommandLine, TEXT("useExternalIpForBridge"), UseExternalIp);
 		FParse::Bool(CommandLine, TEXT("enableProtocolLogging"), EnableProtocolLoggingAtStartup);
 		FParse::Value(CommandLine, TEXT("protocolLoggingPrefix"), ProtocolLoggingPrefix);
-        
+
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString == TEXT("Tcp"))
@@ -45,6 +45,8 @@ struct FConnectionConfig
 			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."), *LinkProtocolString);
 		}
 	}
+
+	virtual ~FConnectionConfig() {};
 
 	void PreConnectInit(const bool bConnectAsClient)
 	{
@@ -67,6 +69,8 @@ struct FConnectionConfig
 		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 	}
 
+	virtual bool TryLoadCommandLineArgs() = 0;
+
 	FString WorkerId;
 	FString WorkerType;
 	bool UseExternalIp;
@@ -83,6 +87,7 @@ struct FConnectionConfig
 class FLocatorConfig : public FConnectionConfig
 {
 public:
+
 	FLocatorConfig()
 	{
 		LoadDefaults();
@@ -102,13 +107,22 @@ public:
 		}
 	}
 
-	bool TryLoadCommandLineArgs()
+	bool TryLoadCommandLineArgs() override
 	{
 		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
 		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
 		bSuccess &= FParse::Value(CommandLine, TEXT("playerIdentityToken"), PlayerIdentityToken);
 		bSuccess &= FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
+		return bSuccess;
+	}
+
+	static bool CanParseCommandLineArgs()
+	{
+		bool bSuccess = true;
+		const TCHAR* CommandLine = FCommandLine::Get();
+		bSuccess &= FParse::Param(CommandLine, TEXT("playerIdentityToken"));
+		bSuccess &= FParse::Param(CommandLine, TEXT("loginToken"));
 		return bSuccess;
 	}
 
@@ -120,6 +134,7 @@ public:
 class FDevAuthConfig : public FConnectionConfig
 {
 public:
+
 	FDevAuthConfig()
 	{
 		LoadDefaults();
@@ -131,7 +146,7 @@ public:
 		LocatorHost = SpatialConstants::LOCATOR_HOST;
 	}
 
-	bool TryLoadCommandLineArgs()
+	bool TryLoadCommandLineArgs() override
 	{
 		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
@@ -139,6 +154,12 @@ public:
 		FParse::Value(CommandLine, TEXT("deployment"), Deployment);
 		bSuccess = FParse::Value(CommandLine, TEXT("devAuthToken"), DevelopmentAuthToken);
 		return bSuccess;
+	}
+
+	static bool CanParseCommandLineArgs()
+	{
+		const TCHAR* CommandLine = FCommandLine::Get();
+		return FParse::Param(CommandLine, TEXT("devAuthToken"));
 	}
 
 	FString LocatorHost;
@@ -149,6 +170,7 @@ public:
 class FReceptionistConfig : public FConnectionConfig
 {
 public:
+
 	FReceptionistConfig()
 	{
 		LoadDefaults();
@@ -160,7 +182,7 @@ public:
 		SetReceptionistHost(GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost);
 	}
 
-	bool TryLoadCommandLineArgs()
+	bool TryLoadCommandLineArgs() override
 	{
 		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
