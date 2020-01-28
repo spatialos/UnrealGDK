@@ -247,7 +247,6 @@ public:
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
 
 	bool IsListening() const;
-	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
 	// Call when a subobject is deleted to unmap its references and cleanup its cached informations.
 	void OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object);

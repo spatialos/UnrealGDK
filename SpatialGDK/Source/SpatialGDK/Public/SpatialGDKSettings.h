@@ -32,6 +32,16 @@ namespace ESettingsWorkerLogVerbosity
 	};
 }
 
+UENUM()
+namespace EServicesRegion
+{
+	enum Type
+	{
+		Default,
+		CN
+	};
+}
+
 UCLASS(config = SpatialGDKSettings, defaultconfig)
 class SPATIALGDK_API USpatialGDKSettings : public UObject
 {
@@ -168,6 +178,12 @@ public:
 	UPROPERTY(config)
 	bool bEnableServerQBI;
 
+	/** EXPERIMENTAL - Adds granular result types for client queries.
+	Granular here means specifically the required Unreal components for spawning other actors and all data type components.
+	Needs testing thoroughly before making default. May be replaced by component set result types instead. */
+	UPROPERTY(config)
+	bool bEnableClientResultTypes;
+
 	/** Pack RPCs sent during the same frame into a single update. */
 	UPROPERTY(config)
 	bool bPackRPCs;
@@ -187,6 +203,9 @@ public:
 	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	FString DevelopmentDeploymentToConnect;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
+	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
 	/** Single server worker type to launch when offloading is disabled, fallback server worker type when offloading is enabled (owns all actor classes by default). */
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
@@ -260,4 +279,6 @@ public:
 	/** Do async loading for new classes when checking out entities. */
 	UPROPERTY(Config)
 	bool bAsyncLoadNewClassesOnEntityCheckout;
+
+	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
 };

@@ -17,6 +17,7 @@
 #include "Engine/Engine.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/DefaultPawn.h"
+#include "Improbable/SpatialEngineDelegates.h"
 #include "Tests/AutomationCommon.h"
 #include "Templates/SharedPointer.h"
 #include "UObject/UObjectGlobals.h"
@@ -38,6 +39,8 @@ struct TestData
 	USpatialStaticComponentView* StaticComponentView;
 	UAbstractSpatialPackageMapClient* PackageMap;
 	AbstractVirtualWorkerTranslator* VirtualWorkerTranslator;
+	SpatialDelegates::FAcquireLockDelegate AcquireLockDelegate;
+	SpatialDelegates::FReleaseLockDelegate ReleaseLockDelegate;
 };
 
 struct TestDataDeleter
@@ -68,8 +71,9 @@ TSharedPtr<TestData> MakeNewTestData(Worker_EntityId EntityId, Worker_Authority 
 	Data->VirtualWorkerTranslator = new USpatialVirtualWorkerTranslatorMock(VirtWorkerId);
 
 	Data->LockingPolicy = NewObject<UReferenceCountedLockingPolicy>();
-	Data->LockingPolicy->Init(Data->StaticComponentView, Data->PackageMap, Data->VirtualWorkerTranslator);
+	Data->LockingPolicy->Init(Data->StaticComponentView, Data->PackageMap, Data->VirtualWorkerTranslator, Data->AcquireLockDelegate, Data->ReleaseLockDelegate);
 	Data->LockingPolicy->AddToRoot();
+
 	return Data;
 }
 
@@ -157,6 +161,26 @@ bool FAcquireLock::Update()
 	return true;
 }
 
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FAcquireLockViaDelegate, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DelegateLockIdentifier);
+bool FAcquireLockViaDelegate::Update()
+{
+	AActor* Actor = Data->TestActors[ActorHandle];
+
+	check(Data->AcquireLockDelegate.IsBound());
+	Data->AcquireLockDelegate.Execute(Actor, DelegateLockIdentifier);
+
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FReleaseLockViaDelegate, TSharedPtr<TestData>, Data, FString, DelegateLockIdentifier);
+bool FReleaseLockViaDelegate::Update()
+{
+	check(Data->ReleaseLockDelegate.IsBound());
+	Data->ReleaseLockDelegate.Execute(DelegateLockIdentifier);
+
+	return true;
+}
+
 DEFINE_LATENT_AUTOMATION_COMMAND_FOUR_PARAMETER(FReleaseLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, LockDebugString);
 bool FReleaseLock::Update()
 {
@@ -187,21 +211,12 @@ bool FReleaseLock::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FTestIsLocked, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, Handle, bool, bIsLockedExpected, int32, LockTokenCountExpected);
+DEFINE_LATENT_AUTOMATION_COMMAND_FOUR_PARAMETER(FTestIsLocked, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, Handle, bool, bIsLockedExpected);
 bool FTestIsLocked::Update()
 {
 	const AActor* Actor = Data->TestActors[Handle];
 	const bool bIsLocked = Data->LockingPolicy->IsLocked(Actor);
-
-	TSet<ActorLockToken> LockTokens;
-	int32 LockTokenCount = 0;
-	if (bIsLocked)
-	{
-		LockTokenCount = Data->TestActorToLockingTokenAndDebugStrings[Actor].Num();
-	}
-	
 	Test->TestEqual(FString::Printf(TEXT("Is locked. Actual: %d. Expected: %d"), bIsLocked, bIsLockedExpected), bIsLocked, bIsLockedExpected);
-	Test->TestEqual(FString::Printf(TEXT("Lock count. Actual: %d. Expected: %d"), LockTokenCount, LockTokenCountExpected), LockTokenCount, LockTokenCountExpected);
 	return true;
 }
 
@@ -216,7 +231,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLoc
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
-	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 
 	return true;
 }
@@ -234,9 +249,9 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_IsLocked_is_
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
-	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "First lock"));
-	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 
 	return true;
 }
@@ -254,11 +269,11 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
-	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "First lock"));
-	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock"));
-	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 
 	return true;
 }
@@ -276,15 +291,42 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
-	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "First lock"));
-	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "Second lock"));
-	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true, 2));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock"));
-	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true, 1));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "Second lock"));
-	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 
 	return true;
 }
+
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	Worker_EntityId EntityId = 1;
+	Worker_Authority EntityAuthority = Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE;
+	VirtualWorkerId VirtWorkerId = 1;
+
+	TSharedPtr<TestData> Data = MakeNewTestData(EntityId, EntityAuthority, VirtWorkerId);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(Data, "Actor", "First lock"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(Data, "Actor", "Second lock"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(Data, "First lock"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(Data, "Second lock"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+
+	return true;
+}
+

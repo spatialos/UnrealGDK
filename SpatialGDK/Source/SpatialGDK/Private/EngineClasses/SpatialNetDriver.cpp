@@ -143,7 +143,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	if (!bInitAsClient)
 	{
-		InterestFactory::CreateClientCheckoutRadiusConstraint(ClassInfoManager);
+		InterestFactory::CreateAndCacheInterestState(ClassInfoManager);
 	}
 
 #if WITH_EDITOR
@@ -204,25 +204,6 @@ USpatialGameInstance* USpatialNetDriver::GetGameInstance() const
 	return GameInstance;
 }
 
-
-void USpatialNetDriver::StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist)
-{
-	USpatialGameInstance* GameInstance = GetGameInstance();
-
-	FString CommandLineLocatorHost;
-	FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), CommandLineLocatorHost);
-	if (!CommandLineLocatorHost.IsEmpty())
-	{
-		bOutSuccessfullyLoaded = Connection->LocatorConfig.TryLoadCommandLineArgs();
-		bOutUseReceptionist = false;
-	}
-	else
-	{
-		bOutSuccessfullyLoaded = Connection->ReceptionistConfig.TryLoadCommandLineArgs();
-		bOutUseReceptionist = true;
-	}
-}
-
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 {
 	USpatialGameInstance* GameInstance = GetGameInstance();
@@ -252,47 +233,30 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	Connection->OnConnectedCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSSucceeded);
 	Connection->OnFailedToConnectCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed);
 
-	bool bUseReceptionist = true;
-	bool bShouldLoadFromURL = true;
-
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
+	FString SpatialWorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
 	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
 	{
-		bool bSuccessfullyLoadedFromCommandLine;
-		StartSetupConnectionConfigFromCommandLine(bSuccessfullyLoadedFromCommandLine, bUseReceptionist);
-		bShouldLoadFromURL = !bSuccessfullyLoadedFromCommandLine;
 		GameInstance->SetFirstConnectionToSpatialOSAttempted();
+		if (!Connection->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
+		{
+			Connection->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
+		}
 	}
 	else if (URL.Host == SpatialConstants::RECONNECT_USING_COMMANDLINE_ARGUMENTS)
 	{
-		bool bSuccessfullyLoadedFromCommandLine;
-		StartSetupConnectionConfigFromCommandLine(bSuccessfullyLoadedFromCommandLine, bUseReceptionist);
-
-		if (!bSuccessfullyLoadedFromCommandLine)
+		if (!Connection->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
 		{
-			if (bUseReceptionist)
-			{
-				Connection->ReceptionistConfig.LoadDefaults();
-			}
-			else
-			{
-				Connection->LocatorConfig.LoadDefaults();
-			}
+			Connection->SetConnectionType(ESpatialConnectionType::Receptionist);
+			Connection->ReceptionistConfig.LoadDefaults();
+			Connection->ReceptionistConfig.WorkerType = SpatialWorkerType;
 		}
-
-		// Setting bShouldLoadFromURL to false is important here because if we fail to load command line args,
-		// we do not want to set the ReceptionistConfig URL to SpatialConstants::RECONNECT_USING_COMMANDLINE_ARGUMENTS.
-		bShouldLoadFromURL = false;
 	}
-
-	if (bShouldLoadFromURL)
+	else
 	{
-		Connection->StartSetupConnectionConfigFromURL(URL, bUseReceptionist);
+		Connection->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
 	}
-
-	const FString& WorkerType = GameInstance->GetSpatialWorkerType().ToString();
-	Connection->FinishSetupConnectionConfig(URL, bUseReceptionist, WorkerType);
 
 #if WITH_EDITOR
 	Connection->Connect(bConnectAsClient, PlayInEditorID);
@@ -466,7 +430,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		{
 			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->LockingPolicy);
 		}
-		LockingPolicy->Init(StaticComponentView, PackageMap, VirtualWorkerTranslator.Get());
+		LockingPolicy->Init(StaticComponentView, PackageMap, VirtualWorkerTranslator.Get(), AcquireLockDelegate, ReleaseLockDelegate);
 	}
 }
 

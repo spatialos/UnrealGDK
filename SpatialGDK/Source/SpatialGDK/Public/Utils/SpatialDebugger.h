@@ -122,6 +122,9 @@ public:
 	UFUNCTION()
 	virtual void OnRep_SetWorkerRegions();
 
+	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
+	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
+
 private:
 
 	void LoadIcons();
@@ -135,12 +138,6 @@ private:
 
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
-
-	FColor GetServerWorkerColor(const Worker_EntityId EntityId) const;
-	FColor GetVirtualWorkerColor(const Worker_EntityId EntityId) const;
-	const FString& GetAuthoritativeWorkerFromACL(const Worker_EntityId EntityId) const;
-
-	bool GetLockStatus(const Worker_EntityId EntityId);
 
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;

@@ -7,7 +7,7 @@
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Component.h"
 
-#include "GameFramework/Actor.h"
+#include "Improbable/SpatialEngineDelegates.h"
 
 DEFINE_LOG_CATEGORY(LogReferenceCountedLockingPolicy);
 
@@ -126,4 +126,24 @@ void UReferenceCountedLockingPolicy::OnLockedActorDeleted(AActor* DestroyedActor
 		TokenToNameAndActor.Remove(Token);
 	}
 	ActorToLockingState.Remove(DestroyedActor);
+}
+
+bool UReferenceCountedLockingPolicy::AcquireLockFromDelegate(AActor* ActorToLock, FString EngineLockIdentifier)
+{
+	ActorLockToken LockToken = AcquireLock(ActorToLock, EngineLockIdentifier);
+	if (LockToken == SpatialConstants::INVALID_ACTOR_LOCK_TOKEN)
+	{
+		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("AcquireLock called from engine delegate returned an invalid token"));
+		return false;
+	}
+
+	check(!DelegateLockingIdentifierToActorLockToken.Contains(EngineLockIdentifier));
+	DelegateLockingIdentifierToActorLockToken.Add(EngineLockIdentifier, LockToken);
+	return true;
+}
+
+void UReferenceCountedLockingPolicy::ReleaseLockFromDelegate(FString EngineLockIdentifier)
+{
+	ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(EngineLockIdentifier);
+	ReleaseLock(LockToken);
 }

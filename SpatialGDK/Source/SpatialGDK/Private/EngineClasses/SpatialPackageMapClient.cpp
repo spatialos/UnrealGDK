@@ -321,6 +321,36 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 	return !bUnresolved;
 }
 
+const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
+{
+	AActor* Actor = Object ? Object->GetTypedOuter<AActor>() : nullptr;
+	Worker_EntityId EntityId = GetEntityIdFromObject(Actor);
+
+	if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		FUnrealObjectRef Ref = GetUnrealObjectRefFromObject(Object);
+		if (Ref.IsValid())
+		{
+			UE_LOG(LogSpatialPackageMap, Error, TEXT("Trying to resolve a dynamic subobject twice! Object %s, Actor %s, EntityId %d."), *GetNameSafe(Object), *GetNameSafe(Actor), EntityId);
+			return nullptr;
+		}
+
+		const FClassInfo* Info = Cast<USpatialNetDriver>(GuidCache->Driver)->ClassInfoManager->GetClassInfoForNewSubobject(Object, EntityId, this);
+
+		// If we don't get the info, an error is logged in the above function, that we have exceeded the maximum number of dynamic subobjects on the entity
+		if (Info != nullptr)
+		{
+			ResolveSubobject(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
+		}
+
+		return Info;
+	}
+
+	UE_LOG(LogSpatialPackageMap, Error, TEXT("While trying to resolve a new dynamic subobject %s, the parent actor %s was not resolved."), *GetNameSafe(Object), *GetNameSafe(Actor));
+
+	return nullptr;
+}
+
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
@@ -363,14 +393,6 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
 		*Actor->GetName(), *NetGUID.ToString(), EntityId);
 
-	// This will be null when being used in the snapshot generator
-#if WITH_EDITOR
-	if (Receiver != nullptr)
-#endif
-	{
-		Receiver->ResolvePendingOperations(Actor, EntityObjectRef);
-	}
-
 	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 	const SubobjectToOffsetMap& SubobjectToOffset = SpatialGDK::CreateOffsetMapFromActor(Actor, Info);
 
@@ -408,14 +430,6 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 
 		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
 			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *EntityIdSubobjectRef.ToString());
-
-		// This will be null when being used in the snapshot generator
-#if WITH_EDITOR
-		if (Receiver != nullptr)
-#endif
-		{
-			Receiver->ResolvePendingOperations(Subobject, EntityIdSubobjectRef);
-		}
 	}
 
 	return NetGUID;
@@ -425,8 +439,6 @@ void FSpatialNetGUIDCache::AssignNewSubobjectNetGUID(UObject* Subobject, const F
 {
 	FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
 	RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
-
-	Cast<USpatialNetDriver>(Driver)->Receiver->ResolvePendingOperations(Subobject, SubobjectRef);
 }
 
 // Recursively assign netguids to the outer chain of a UObject. Then associate them with their Spatial representation (FUnrealObjectRef)
