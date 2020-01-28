@@ -159,8 +159,6 @@ private:
 
 	void ClearTrackingInformation();
 
-	// GetTracer may return null during startup, so store MessagePrefix statically to ensure success of SetMessagePrefix
-	static FString MessagePrefix;
 	FString WorkerId;
 
 	// This is used to track if there is an active trace within a currently processing network call. The user is

@@ -36,6 +36,7 @@ namespace
 	};
 
 	UEStream Stream;
+	FString MessagePrefix;
 
 #if TRACE_LIB_ACTIVE
 	improbable::trace::SpanContext ReadSpanContext(const void* TraceBytes, const void* SpanBytes)
@@ -177,8 +178,6 @@ USpatialLatencyTracer* USpatialLatencyTracer::GetTracer(UObject* WorldContextObj
 }
 
 #if TRACE_LIB_ACTIVE
-FString USpatialLatencyTracer::MessagePrefix = TEXT("");
-
 bool USpatialLatencyTracer::IsValidKey(const TraceKey Key)
 {
 	FScopeLock Lock(&Mutex);
