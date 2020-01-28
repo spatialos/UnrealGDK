@@ -430,7 +430,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		{
 			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->LockingPolicy);
 		}
-		LockingPolicy->Init(StaticComponentView, PackageMap, VirtualWorkerTranslator.Get());
+		LockingPolicy->Init(StaticComponentView, PackageMap, VirtualWorkerTranslator.Get(), AcquireLockDelegate, ReleaseLockDelegate);
 	}
 }
 

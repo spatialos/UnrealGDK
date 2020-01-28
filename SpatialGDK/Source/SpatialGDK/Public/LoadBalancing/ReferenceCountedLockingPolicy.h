@@ -42,8 +42,12 @@ private:
 
 	bool CanAcquireLock(AActor* Actor) const;
 
+	virtual bool AcquireLockFromEngineDelegate(AActor* ActorToLock, FString EngineLockIdentifier) override;
+	virtual void ReleaseLockFromEngineDelegate(FString EngineLockIdentifier) override;
+
 	TMap<const AActor*, MigrationLockElement> ActorToLockingState;
 	TMap<ActorLockToken, LockNameAndActor> TokenToNameAndActor;
+	TMap<FString, ActorLockToken> EngineLockingKeyToActorLockToken;
 
 	ActorLockToken NextToken = 1;
 };
