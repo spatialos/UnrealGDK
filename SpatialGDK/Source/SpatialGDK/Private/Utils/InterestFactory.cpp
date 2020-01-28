@@ -31,7 +31,7 @@ struct FrequencyConstraint
 static TArray<FrequencyConstraint> CheckoutConstraints;
 
 // The checkout radius constraint is built once for all actors in CreateCheckoutRadiusConstraint as it is equivalent for all actors.
-// It is built once per net driver initialisation.
+// It is built once per net driver initialization.
 static QueryConstraint ClientCheckoutRadiusConstraint;
 
 // Cache the result type of client Interest queries.
@@ -98,8 +98,8 @@ QueryConstraint InterestFactory::CreateLegacyNetCullDistanceConstraint(USpatialC
 	TMap<float, TArray<UClass*>> DistanceToActorTypeComponents = CheckoutRadiusConstraintUtils::DedupeDistancesAcrossActorTypes(
 		ActorComponentSetToRadius);
 
-	// The previously built map dedupes spatial constraints. Now the actual query constraints can be built of the form:
-	// OR(AND(cyl(radius), OR(actor 1 components, actor 2 components, ...)), ...)
+	// The previously built map removes duplicates of spatial constraints. Now the actual query constraints can be built of the form:
+	// OR(AND(cylinder(radius), OR(actor 1 components, actor 2 components, ...)), ...)
 	// which is equivalent to having a separate spatial query for each actor type if the radius is the same.
 	TArray<QueryConstraint> CheckoutRadiusConstraints = CheckoutRadiusConstraintUtils::BuildNonDefaultActorCheckoutConstraints(
 		DistanceToActorTypeComponents, ClassInfoManager);
@@ -245,30 +245,32 @@ Interest InterestFactory::CreateServerWorkerInterest()
 
 Interest InterestFactory::CreateInterest(Worker_EntityId EntityId) const
 {
+	const auto Settings = GetDefault<USpatialGDKSettings>();
+	Interest ResultInterest;
 	if (Actor->IsA(APlayerController::StaticClass()))
 	{
 		// Put the "main" interest queries on the player controller
-		return CreatePlayerControllerActorInterest(EntityId);
+		AddPlayerControllerActorInterest(ResultInterest);
 	}
-	else if (GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
+	if (Actor->GetNetConnection() != nullptr && Settings->bEnableClientResultTypes)
 	{
-		return CreateActorInterest(EntityId);
+		AddClientSelfInterest(ResultInterest, EntityId);
 	}
-	else
+	if (Settings->bEnableServerQBI)
 	{
-		return Interest{};
+		// If we have server QBI, every actor needs a query for the server.
+		AddActorInterest(ResultInterest);
 	}
+	return ResultInterest;
 }
 
-Interest InterestFactory::CreateActorInterest(Worker_EntityId EntityId) const
+void InterestFactory::AddActorInterest(Interest& InInterest) const
 {
-	Interest NewInterest;
-
 	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints();
 
 	if (!SystemConstraints.IsValid())
 	{
-		return NewInterest;
+		return;
 	}
 
 	Query NewQuery;
@@ -277,30 +279,18 @@ Interest InterestFactory::CreateActorInterest(Worker_EntityId EntityId) const
 	// e.g. Handover, OwnerOnly, etc.
 	NewQuery.FullSnapshotResult = true;
 
-	ComponentInterest NewComponentInterest;
-	NewComponentInterest.Queries.Add(NewQuery);
-
-	// Server Interest
-	NewInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, NewComponentInterest);
-
-	return NewInterest;
+	AddComponentQueryPairToInterestComponent(InInterest, SpatialConstants::POSITION_COMPONENT_ID, NewQuery);
 }
 
-Interest InterestFactory::CreatePlayerControllerActorInterest(Worker_EntityId EntityId) const
+void InterestFactory::AddPlayerControllerActorInterest(Interest& InInterest) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
+	const Worker_ComponentId ClientEndpointComponentId = SpatialConstants::GetClientAuthorityComponent(SpatialGDKSettings->bUseRPCRingBuffers);
+
 	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints();
 
-	// Servers only need the defined constraints
-	Query ServerQuery;
-	ServerQuery.Constraint = SystemConstraints;
-	ServerQuery.FullSnapshotResult = true;
-
-	ComponentInterest ServerComponentInterest;
-	ServerComponentInterest.Queries.Add(ServerQuery);
-
-	// Clients should only check out entities that are in loaded sublevels
+	// Clients should only check out entities that are in loaded sub-levels
 	QueryConstraint LevelConstraints = CreateLevelConstraints();
 
 	QueryConstraint ClientConstraint;
@@ -326,12 +316,13 @@ Interest InterestFactory::CreatePlayerControllerActorInterest(Worker_EntityId En
 	{
 		ClientQuery.FullSnapshotResult = true;
 	}
-	
 
-	ComponentInterest ClientComponentInterest;
-	ClientComponentInterest.Queries.Add(ClientQuery);
+	AddComponentQueryPairToInterestComponent(InInterest, ClientEndpointComponentId, ClientQuery);
 
-	AddUserDefinedQueries(LevelConstraints, ClientComponentInterest.Queries);
+	TArray<Query> UserQueries = GetUserDefinedQueries(LevelConstraints);
+	for (const auto UserQuery : UserQueries) {
+		AddComponentQueryPairToInterestComponent(InInterest, ClientEndpointComponentId, UserQuery);
+	}
 
 	if (SpatialGDKSettings->bEnableNetCullDistanceFrequency)
 	{
@@ -357,27 +348,38 @@ Interest InterestFactory::CreatePlayerControllerActorInterest(Worker_EntityId En
 				NewQuery.FullSnapshotResult = true;
 			}
 
-			ClientComponentInterest.Queries.Add(NewQuery);
+			AddComponentQueryPairToInterestComponent(InInterest, ClientEndpointComponentId, NewQuery);
 		}
 	}
-
-	Interest NewInterest;
-	// Server Interest
-	if (SystemConstraints.IsValid() && SpatialGDKSettings->bEnableServerQBI)
-	{
-		NewInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, ServerComponentInterest);
-	}
-	// Client Interest
-	if (ClientConstraint.IsValid())
-	{
-		NewInterest.ComponentInterestMap.Add(SpatialConstants::GetClientAuthorityComponent(SpatialGDKSettings->bUseRPCRingBuffers), ClientComponentInterest);
-	}
-
-	return NewInterest;
 }
 
-void InterestFactory::AddActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const
+void InterestFactory::AddClientSelfInterest(Interest InInterest, Worker_EntityId EntityId) const
 {
+	Query NewQuery;
+	NewQuery.Constraint.EntityIdConstraint = EntityId;
+
+	NewQuery.ResultComponentId = SpatialConstants::REQUIRED_COMPONENTS_FOR_CLIENT_AUTH;
+
+	AddComponentQueryPairToInterestComponent(InInterest, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers), NewQuery);
+}
+
+void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& InInterest, const Worker_ComponentId ComponentId, const Query QueryToAdd)
+{
+	if (InInterest.ComponentInterestMap.Contains(ComponentId))
+	{
+		InInterest.ComponentInterestMap[ComponentId].Queries.Add(QueryToAdd);
+	}
+	else
+	{
+		ComponentInterest NewComponentInterest;
+		NewComponentInterest.Queries.Add(QueryToAdd);
+		InInterest.ComponentInterestMap.Add(ComponentId, NewComponentInterest);
+	}
+}
+
+void InterestFactory::GetActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const
+{
+	TArray<Query> OutQueries;
 	check(ClassInfoManager);
 
 	if (InActor == nullptr)
@@ -401,24 +403,28 @@ void InterestFactory::AddActorUserDefinedQueries(const AActor* InActor, const Qu
 	{
 		for (const auto& Child : InActor->Children)
 		{
-			AddActorUserDefinedQueries(Child, LevelConstraints, OutQueries, true);
+			GetActorUserDefinedQueries(Child, LevelConstraints, OutQueries, true);
 		}
 	}
 }
 
-void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
+TArray<Query> InterestFactory::GetUserDefinedQueries(const QueryConstraint& LevelConstraints) const
 {
 	SCOPE_CYCLE_COUNTER(STAT_InterestFactoryAddUserDefinedQueries);
 
+	TArray<Query> Queries;
+
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
-		AddActorUserDefinedQueries(Actor, LevelConstraints, OutQueries, true);
-		AddActorUserDefinedQueries(PlayerController->GetPawn(), LevelConstraints, OutQueries, true);
+		GetActorUserDefinedQueries(Actor, LevelConstraints, Queries, true);
+		GetActorUserDefinedQueries(PlayerController->GetPawn(), LevelConstraints, Queries, true);
 	}
 	else
 	{
-		AddActorUserDefinedQueries(Actor, LevelConstraints, OutQueries, false);
+		GetActorUserDefinedQueries(Actor, LevelConstraints, Queries, false);
 	}
+
+	return Queries;
 }
 
 QueryConstraint InterestFactory::CreateSystemDefinedConstraints() const

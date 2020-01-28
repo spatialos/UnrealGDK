@@ -424,7 +424,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	if (Object->IsA<AActor>() && bInterestHasChanged)
 	{
 		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
-		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());
+		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate(EntityId));
 		if (OutLatencyTraceIds != nullptr)
 		{
 			OutLatencyTraceIds->Add(USpatialLatencyTracer::InvalidTraceKey); // Interest not tracked 

@@ -42,13 +42,16 @@ private:
 	Interest CreateInterest(Worker_EntityId EntityId) const;
 
 	// Only uses Defined Constraint
-	Interest CreateActorInterest(Worker_EntityId EntityId) const;
+	void AddActorInterest(Interest& InInterest) const;
 	// Defined Constraint AND Level Constraint
-	Interest CreatePlayerControllerActorInterest(Worker_EntityId EntityId) const;
-	// Self 
+	void AddPlayerControllerActorInterest(Interest& InInterest) const;
+	// The components clients need to see on entities they are have authority over.
+	void AddClientSelfInterest(Interest ResultInterest, Worker_EntityId EntityId) const;
 
-	void AddActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const;
-	void AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
+	void GetActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const;
+	TArray<Query> GetUserDefinedQueries(const QueryConstraint& LevelConstraints) const;
+
+	static void AddComponentQueryPairToInterestComponent(Interest& InInterest, const Worker_ComponentId ComponentId, const Query QueryToAdd);
 
 	// Checkout Constraint OR AlwaysInterested OR AlwaysRelevant Constraint
 	QueryConstraint CreateSystemDefinedConstraints() const;
@@ -58,7 +61,7 @@ private:
 	QueryConstraint CreateAlwaysInterestedConstraint() const;
 	static QueryConstraint CreateAlwaysRelevantConstraint();
 
-	// Only checkout entities that are in loaded sublevels
+	// Only checkout entities that are in loaded sub-levels
 	QueryConstraint CreateLevelConstraints() const;	
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
