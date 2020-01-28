@@ -34,7 +34,6 @@ namespace Improbable.WorkerCoordinator
         private const string TargetDeploymentPlaceholderArg = "<TARGET_DEPLOYMENT>";
 
         private const string CoordinatorWorkerType = "SimulatedPlayerCoordinator";
-        private const string SimulatedPlayerWorkerType = "UnrealClient";
         private const string SimulatedPlayerFilename = "StartSimulatedClient.sh";
 
         private static Random Random;
@@ -167,9 +166,9 @@ namespace Improbable.WorkerCoordinator
                 if (devAuthTokenOpt.HasValue && targetDeploymentOpt.HasValue)
                 {
                     string[] simulatedPlayerArgs = Util.ReplacePlaceholderArgs(SimulatedPlayerArgs, new Dictionary<string, string>() {
-                    { SimulatedPlayerWorkerNamePlaceholderArg, simulatedPlayerName },
-                    { DevAuthTokenPlaceholderArg, devAuthTokenOpt.Value },
-                    { TargetDeploymentPlaceholderArg, targetDeploymentOpt.Value }
+                        { SimulatedPlayerWorkerNamePlaceholderArg, simulatedPlayerName },
+                        { DevAuthTokenPlaceholderArg, devAuthTokenOpt.Value },
+                        { TargetDeploymentPlaceholderArg, targetDeploymentOpt.Value }
                 });
 
                     // Prepend the simulated player id as an argument to the start client script.
