@@ -29,7 +29,7 @@ struct FConnectionConfig
 		FParse::Bool(CommandLine, TEXT("useExternalIpForBridge"), UseExternalIp);
 		FParse::Bool(CommandLine, TEXT("enableProtocolLogging"), EnableProtocolLoggingAtStartup);
 		FParse::Value(CommandLine, TEXT("protocolLoggingPrefix"), ProtocolLoggingPrefix);
-
+        
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString == TEXT("Tcp"))
@@ -44,9 +44,11 @@ struct FConnectionConfig
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."), *LinkProtocolString);
 		}
+
+		LoadDefaults();
 	}
 
-	virtual ~FConnectionConfig() {};
+	virtual ~FConnectionConfig();
 
 	void PreConnectInit(const bool bConnectAsClient)
 	{
@@ -69,6 +71,7 @@ struct FConnectionConfig
 		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 	}
 
+	virtual void LoadDefaults() = 0;
 	virtual bool TryLoadCommandLineArgs() = 0;
 
 	FString WorkerId;
@@ -88,12 +91,7 @@ class FLocatorConfig : public FConnectionConfig
 {
 public:
 
-	FLocatorConfig()
-	{
-		LoadDefaults();
-	}
-
-	void LoadDefaults()
+	virtual void LoadDefaults() override
 	{
 		UseExternalIp = true;
 
@@ -107,7 +105,7 @@ public:
 		}
 	}
 
-	bool TryLoadCommandLineArgs() override
+	virtual bool TryLoadCommandLineArgs() override
 	{
 		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
@@ -121,6 +119,7 @@ public:
 	{
 		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
+		bSuccess &= FParse::Param(CommandLine, TEXT("locatorHost"));
 		bSuccess &= FParse::Param(CommandLine, TEXT("playerIdentityToken"));
 		bSuccess &= FParse::Param(CommandLine, TEXT("loginToken"));
 		return bSuccess;
@@ -135,18 +134,13 @@ class FDevAuthConfig : public FConnectionConfig
 {
 public:
 
-	FDevAuthConfig()
-	{
-		LoadDefaults();
-	}
-
-	void LoadDefaults()
+	virtual void LoadDefaults() override
 	{
 		UseExternalIp = true;
 		LocatorHost = SpatialConstants::LOCATOR_HOST;
 	}
 
-	bool TryLoadCommandLineArgs() override
+	virtual bool TryLoadCommandLineArgs() override
 	{
 		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
@@ -171,18 +165,13 @@ class FReceptionistConfig : public FConnectionConfig
 {
 public:
 
-	FReceptionistConfig()
-	{
-		LoadDefaults();
-	}
-
-	void LoadDefaults()
+	virtual void LoadDefaults() override
 	{
 		ReceptionistPort = SpatialConstants::DEFAULT_PORT;
 		SetReceptionistHost(GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost);
 	}
 
-	bool TryLoadCommandLineArgs() override
+	virtual bool TryLoadCommandLineArgs() override
 	{
 		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
@@ -205,6 +194,12 @@ public:
 
 		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
 		return bSuccess;
+	}
+
+	static bool CanParseCommandLineArgs()
+	{
+		const TCHAR* CommandLine = FCommandLine::Get();
+		return FParse::Param(CommandLine, TEXT("receptionistHost"));
 	}
 
 	void SetReceptionistHost(const FString& host)

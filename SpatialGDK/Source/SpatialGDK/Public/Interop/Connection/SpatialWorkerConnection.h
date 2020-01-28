@@ -62,8 +62,6 @@ public:
 
 	void SetConnectionType(ESpatialConnectionType InConnectionType);
 
-	FConnectionConfig* GetConnectionConfig(ESpatialConnectionType InConnectionType);
-
 	// TODO: UNR-2753
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
@@ -93,8 +91,6 @@ private:
 	void OnConnectionFailure();
 
 	ESpatialConnectionType GetConnectionType() const;
-
-	static ESpatialConnectionType GetSpatialConnectionTypeFromCommandLine();
 
 	void CacheWorkerAttributes();
 

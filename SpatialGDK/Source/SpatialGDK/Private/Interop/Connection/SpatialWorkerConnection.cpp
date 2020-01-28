@@ -326,8 +326,6 @@ ESpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 	return ConnectionType;
 }
 
-
-
 void USpatialWorkerConnection::SetConnectionType(ESpatialConnectionType InConnectionType)
 {
 	// The locator config may not have been initialized
@@ -336,50 +334,31 @@ void USpatialWorkerConnection::SetConnectionType(ESpatialConnectionType InConnec
 	ConnectionType = InConnectionType;
 }
 
-FConnectionConfig* USpatialWorkerConnection::GetConnectionConfig(ESpatialConnectionType InConnectionType)
-{
-	switch (InConnectionType)
-	{
-	case ESpatialConnectionType::Locator:
-		return &LocatorConfig;
-		break;
-	case ESpatialConnectionType::Receptionist:
-		return &ReceptionistConfig;
-		break;
-	case ESpatialConnectionType::DevAuthFlow:
-		return &DevAuthConfig;
-		break;
-	default:
-		return nullptr;
-		break;
-	}
-}
-
-ESpatialConnectionType USpatialWorkerConnection::GetSpatialConnectionTypeFromCommandLine()
-{
-	if (FLocatorConfig::CanParseCommandLineArgs())
-	{
-		return ESpatialConnectionType::Locator;
-	}
-	if (FDevAuthConfig::CanParseCommandLineArgs())
-	{
-		return ESpatialConnectionType::DevAuthFlow;
-	}
-	return ESpatialConnectionType::Receptionist;
-}
-
 bool USpatialWorkerConnection::TrySetupConnectionConfigFromCommandLine(const FString& SpatialWorkerType)
 {
-	ESpatialConnectionType SpatialConnectionType = GetSpatialConnectionTypeFromCommandLine();
-	SetConnectionType(SpatialConnectionType);
-
-	if (FConnectionConfig* ConnectionConfig = GetConnectionConfig(SpatialConnectionType))
+	bool bSuccessfullyLoaded = LocatorConfig.TryLoadCommandLineArgs();
+	if (bSuccessfullyLoaded)
 	{
-		ConnectionConfig->WorkerType = SpatialWorkerType;
-		return ConnectionConfig->TryLoadCommandLineArgs();
+		SetConnectionType(ESpatialConnectionType::Locator);
+		LocatorConfig.WorkerType = SpatialWorkerType;
+	}
+	else
+	{
+		bSuccessfullyLoaded = DevAuthConfig.TryLoadCommandLineArgs();
+		if (bSuccessfullyLoaded)
+		{
+			SetConnectionType(ESpatialConnectionType::DevAuthFlow);
+			DevAuthConfig.WorkerType = SpatialWorkerType;
+		}
+		else
+		{
+			bSuccessfullyLoaded = ReceptionistConfig.TryLoadCommandLineArgs();
+			SetConnectionType(ESpatialConnectionType::Receptionist);
+			ReceptionistConfig.WorkerType = SpatialWorkerType;
+		}
 	}
 
-	return false;
+	return bSuccessfullyLoaded;
 }
 
 void USpatialWorkerConnection::SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType)
