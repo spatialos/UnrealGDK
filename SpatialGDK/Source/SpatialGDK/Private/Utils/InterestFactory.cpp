@@ -196,14 +196,14 @@ TArray<Worker_ComponentId> InterestFactory::CreateClientResultType(USpatialClass
 	return ResultType;
 }
 
-Worker_ComponentData InterestFactory::CreateInterestData() const
+Worker_ComponentData InterestFactory::CreateInterestData(Worker_EntityId EntityId) const
 {
-	return CreateInterest().CreateInterestData();
+	return CreateInterest(EntityId).CreateInterestData();
 }
 
-Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
+Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(Worker_EntityId EntityId) const
 {
-	return CreateInterest().CreateInterestUpdate();
+	return CreateInterest(EntityId).CreateInterestUpdate();
 }
 
 Interest InterestFactory::CreateServerWorkerInterest()
@@ -240,15 +240,16 @@ Interest InterestFactory::CreateServerWorkerInterest()
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreateInterest() const
+Interest InterestFactory::CreateInterest(Worker_EntityId EntityId) const
 {
 	if (Actor->IsA(APlayerController::StaticClass()))
 	{
-		return CreatePlayerOwnedActorInterest();
+		// Put the "main" interest queries on the player controller
+		return CreatePlayerControllerActorInterest(EntityId);
 	}
 	else if (GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
 	{
-		return CreateActorInterest();
+		return CreateActorInterest(EntityId);
 	}
 	else
 	{
@@ -256,7 +257,7 @@ Interest InterestFactory::CreateInterest() const
 	}
 }
 
-Interest InterestFactory::CreateActorInterest() const
+Interest InterestFactory::CreateActorInterest(Worker_EntityId EntityId) const
 {
 	Interest NewInterest;
 
@@ -282,7 +283,7 @@ Interest InterestFactory::CreateActorInterest() const
 	return NewInterest;
 }
 
-Interest InterestFactory::CreatePlayerOwnedActorInterest() const
+Interest InterestFactory::CreatePlayerControllerActorInterest(Worker_EntityId EntityId) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
