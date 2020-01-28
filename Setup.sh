@@ -31,8 +31,6 @@ do
     shift
 done
 
-
-
 echo "Setup the git hooks"
 if [[ -e .git/hooks ]]; then
     # Remove the old post-checkout hook.
