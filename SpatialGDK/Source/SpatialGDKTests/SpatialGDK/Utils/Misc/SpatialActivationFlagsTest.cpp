@@ -47,7 +47,7 @@ namespace
 
 		FPlatformProcess::ExecProcess(TEXT("UE4Editor"), *CommandLineArgs, &ReturnCode, &StdOut, &StdErr);
 
-		Test.TestTrue("Sucessful run", ReturnCode == 0);
+		Test.TestTrue("Successful run", ReturnCode == 0);
 
 		auto ExtractFlag = [&](const FString& Pattern, bool& bFlag)
 		{
@@ -100,6 +100,7 @@ struct SpatialActivationFlagTestFixture
 	}
 
 	FString CommandLineArgs;
+	TFuture<ReportedFlags> CheckResult;
 
 private:
 	FString ProjectPath;
@@ -109,64 +110,71 @@ private:
 	bool bSavedFlagValue;
 };
 
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FRunSubProcessCommand, FAutomationTestBase*, Test, TSharedPtr<SpatialActivationFlagTestFixture>, Fixture, bool, ExpectedValue);
+bool FRunSubProcessCommand::Update()
+{
+	if (!Fixture->CheckResult.IsValid())
+	{
+		Fixture->CheckResult = Async(EAsyncExecution::Thread, TFunction<ReportedFlags()>([&] {return RunSubProcessAndExtractFlags(*Test, Fixture->CommandLineArgs); }));
+	}
+
+	if (!Fixture->CheckResult.IsReady())
+	{
+		return false;
+	}
+	ReportedFlags Flags = Fixture->CheckResult.Get();
+
+	Test->TestTrue("Settings applied", Flags.bEarliestFlag == ExpectedValue);
+	Test->TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
+
+	return true;
+}
+
+
 GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_False)
 {
-	SpatialActivationFlagTestFixture TestFixture(*this);
+	auto TestFixture = MakeShared<SpatialActivationFlagTestFixture>(*this);
+	TestFixture->ChangeSetting(false);
 
-	TestFixture.ChangeSetting(false);
-
-	ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, TestFixture.CommandLineArgs);
-
-	TestTrue("Settings applied", Flags.bEarliestFlag == false);
-	TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
+	ADD_LATENT_AUTOMATION_COMMAND(FRunSubProcessCommand(this, TestFixture, false));
 
 	return true;
 }
 
 GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationSetting_True)
 {
-	SpatialActivationFlagTestFixture TestFixture(*this);
+	auto TestFixture = MakeShared<SpatialActivationFlagTestFixture>(*this);
+	TestFixture->ChangeSetting(true);
 
-	TestFixture.ChangeSetting(true);
-
-	ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, TestFixture.CommandLineArgs);
-
-	TestTrue("Settings applied", Flags.bEarliestFlag == true);
-	TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
+	ADD_LATENT_AUTOMATION_COMMAND(FRunSubProcessCommand(this, TestFixture, true));
 
 	return true;
 }
 
 GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_True)
 {
-	SpatialActivationFlagTestFixture TestFixture(*this);
+	auto TestFixture = MakeShared<SpatialActivationFlagTestFixture>(*this);
+	TestFixture->ChangeSetting(false);
 
-	TestFixture.ChangeSetting(false);
-
-	FString CommandLineOverride = TestFixture.CommandLineArgs;
+	FString CommandLineOverride = TestFixture->CommandLineArgs;
 	CommandLineOverride.Append(" -OverrideSpatialNetworking=true");
+	TestFixture->CommandLineArgs = CommandLineOverride;
 
-	ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, CommandLineOverride);
-
-	TestTrue("Override applied", Flags.bEarliestFlag == true);
-	TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
+	ADD_LATENT_AUTOMATION_COMMAND(FRunSubProcessCommand(this, TestFixture, true));
 
 	return true;
 }
 
 GDK_TEST(Core, UGeneralProjectSettings, SpatialActivationOverride_False)
 {
-	SpatialActivationFlagTestFixture TestFixture(*this);
+	auto TestFixture = MakeShared<SpatialActivationFlagTestFixture>(*this);
+	TestFixture->ChangeSetting(false);
 
-	TestFixture.ChangeSetting(true);
-
-	FString CommandLineOverride = TestFixture.CommandLineArgs;
+	FString CommandLineOverride = TestFixture->CommandLineArgs;
 	CommandLineOverride.Append(" -OverrideSpatialNetworking=false");
+	TestFixture->CommandLineArgs = CommandLineOverride;
 
-	ReportedFlags Flags = RunSubProcessAndExtractFlags(*this, CommandLineOverride);
-
-	TestTrue("Override applied", Flags.bEarliestFlag == false);
-	TestTrue("Expected early value", Flags.bCurrentFlag == Flags.bEarliestFlag);
+	ADD_LATENT_AUTOMATION_COMMAND(FRunSubProcessCommand(this, TestFixture, false));
 
 	return true;
 }
