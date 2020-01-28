@@ -94,15 +94,11 @@ void USpatialWorkerConnection::FinishDestroy()
 
 void USpatialWorkerConnection::DestroyConnection()
 {
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
+	Stop(); // Stop OpsProcessingThread
+	if (OpsProcessingThread != nullptr)
 	{
-		Stop(); // Stop OpsProcessingThread
-		if (OpsProcessingThread != nullptr)
-		{
-			OpsProcessingThread->WaitForCompletion();
-			OpsProcessingThread = nullptr;
-		}
+		OpsProcessingThread->WaitForCompletion();
+		OpsProcessingThread = nullptr;
 	}
 
 	if (WorkerConnection)
@@ -529,6 +525,9 @@ bool USpatialWorkerConnection::Init()
 
 uint32 USpatialWorkerConnection::Run()
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	check(!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread);
+
 	while (KeepRunning)
 	{
 		FPlatformProcess::Sleep(OpsUpdateInterval);

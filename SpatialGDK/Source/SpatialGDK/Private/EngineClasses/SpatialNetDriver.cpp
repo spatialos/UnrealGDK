@@ -1730,9 +1730,12 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	TimerManager.Tick(DeltaTime);
 
-	if (Connection != nullptr && Connection->IsConnected())
+	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 	{
-		Connection->Tick();
+		if (Connection != nullptr && Connection->IsConnected())
+		{
+			Connection->Tick();
+		}
 	}
 
 	Super::TickFlush(DeltaTime);
