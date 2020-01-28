@@ -375,6 +375,8 @@ void USpatialWorkerConnection::SetupConnectionConfigFromURL(const FURL& URL, con
 	else if (URL.Host == SpatialConstants::LOCATOR_HOST && URL.HasOption(TEXT("devauth")))
 	{
 		SetConnectionType(ESpatialConnectionType::DevAuthFlow);
+		// TODO: Also set the locator host of DevAuthConfig from URL.
+		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), DevAuthConfig.LocatorHost);
 		DevAuthConfig.DevelopmentAuthToken = URL.GetOption(*SpatialConstants::URL_DEV_AUTH_OPTION, TEXT(""));
 		DevAuthConfig.WorkerType = SpatialWorkerType;
 	}
