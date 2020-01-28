@@ -26,7 +26,6 @@ namespace Improbable
         private const string CHINA_ENDPOINT_URL = "platform.api.spatialoschina.com";
         private const int CHINA_ENDPOINT_PORT = 443;
 
-        // TODO: UNR-2793 - This will only work on windows
         private static readonly string ChinaRefreshToken = File.ReadAllText(Path.Combine(Environment.ExpandEnvironmentVariables("%LOCALAPPDATA%"), ".improbable/oauth2/oauth2_refresh_token_cn-production"));
 
         private static readonly PlatformRefreshTokenCredential ChinaCredentials = new PlatformRefreshTokenCredential(ChinaRefreshToken,
