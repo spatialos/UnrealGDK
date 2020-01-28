@@ -73,7 +73,7 @@ public:
 
 	// Set a prefix to be used for all span names. Resulting uploaded span names are of the format "PREFIX(WORKER_ID) : USER_SPECIFIED_NAME".
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static void SetMessagePrefix(const FString& NewMessagePrefix);
+	static bool SetMessagePrefix(UObject* WorldContextObject, const FString& NewMessagePrefix);
 
 	// Start a latency trace. This will start the latency timer and attach it to a specific RPC.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
@@ -160,6 +160,7 @@ private:
 	void ClearTrackingInformation();
 
 	FString WorkerId;
+	FString MessagePrefix;
 
 	// This is used to track if there is an active trace within a currently processing network call. The user is
 	// able to hook into this active trace, and `continue` it to another network relevant call. If so, the

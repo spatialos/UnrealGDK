@@ -36,7 +36,6 @@ namespace
 	};
 
 	UEStream Stream;
-	FString MessagePrefix;
 
 #if TRACE_LIB_ACTIVE
 	improbable::trace::SpanContext ReadSpanContext(const void* TraceBytes, const void* SpanBytes)
@@ -76,11 +75,16 @@ void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const F
 #endif // TRACE_LIB_ACTIVE
 }
 
-void USpatialLatencyTracer::SetMessagePrefix(const FString& NewMessagePrefix)
+bool USpatialLatencyTracer::SetMessagePrefix(UObject* WorldContextObject, const FString& NewMessagePrefix)
 {
 #if TRACE_LIB_ACTIVE
-	MessagePrefix = NewMessagePrefix;
+	USpatialLatencyTracer* tracer = GetTracer(WorldContextObject);
+	if (tracer != NULL) {
+		tracer->MessagePrefix = NewMessagePrefix;
+		return true;
+	}
 #endif // TRACE_LIB_ACTIVE
+	return false;
 }
 
 bool USpatialLatencyTracer::BeginLatencyTrace(UObject* WorldContextObject, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
