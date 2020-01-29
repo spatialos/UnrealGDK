@@ -260,27 +260,31 @@ Interest InterestFactory::CreateServerWorkerInterest()
 
 Interest InterestFactory::CreateInterest(Worker_EntityId EntityId) const
 {
-	const auto Settings = GetDefault<USpatialGDKSettings>();
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	Interest ResultInterest;
+
 	if (Actor->IsA(APlayerController::StaticClass()))
 	{
 		// Put the "main" interest queries on the player controller
 		AddPlayerControllerActorInterest(ResultInterest);
 	}
+
 	if (Actor->GetNetConnection() != nullptr && Settings->bEnableClientResultTypes)
 	{
 		// Clients need to see owner only and server RPC components on entities they have authority over
 		AddClientSelfInterest(ResultInterest, EntityId);
 	}
+
 	if (Settings->bEnableServerQBI)
 	{
 		// If we have server QBI, every actor needs a query for the server
 		AddActorInterest(ResultInterest);
 	}
+
 	return ResultInterest;
 }
 
-void InterestFactory::AddActorInterest(Interest& InInterest) const
+void InterestFactory::AddActorInterest(Interest& OutInterest) const
 {
 	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints();
 
@@ -295,10 +299,10 @@ void InterestFactory::AddActorInterest(Interest& InInterest) const
 	// e.g. Handover, OwnerOnly, etc.
 	NewQuery.FullSnapshotResult = true;
 
-	AddComponentQueryPairToInterestComponent(InInterest, SpatialConstants::POSITION_COMPONENT_ID, NewQuery);
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, NewQuery);
 }
 
-void InterestFactory::AddPlayerControllerActorInterest(Interest& InInterest) const
+void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -333,11 +337,12 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& InInterest) con
 		ClientQuery.FullSnapshotResult = true;
 	}
 
-	AddComponentQueryPairToInterestComponent(InInterest, ClientEndpointComponentId, ClientQuery);
+	AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, ClientQuery);
 
 	TArray<Query> UserQueries = GetUserDefinedQueries(LevelConstraints);
-	for (const auto UserQuery : UserQueries) {
-		AddComponentQueryPairToInterestComponent(InInterest, ClientEndpointComponentId, UserQuery);
+	for (const auto UserQuery : UserQueries)
+	{
+		AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, UserQuery);
 	}
 
 	if (SpatialGDKSettings->bEnableNetCullDistanceFrequency)
@@ -364,12 +369,12 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& InInterest) con
 				NewQuery.FullSnapshotResult = true;
 			}
 
-			AddComponentQueryPairToInterestComponent(InInterest, ClientEndpointComponentId, NewQuery);
+			AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, NewQuery);
 		}
 	}
 }
 
-void InterestFactory::AddClientSelfInterest(Interest& InInterest, Worker_EntityId EntityId) const
+void InterestFactory::AddClientSelfInterest(Interest& OutInterest, Worker_EntityId EntityId) const
 {
 	Query NewQuery;
 	// Just an entity ID constraint is fine, as clients should not become authoritative over entities outside their loaded levels
@@ -377,17 +382,17 @@ void InterestFactory::AddClientSelfInterest(Interest& InInterest, Worker_EntityI
 
 	NewQuery.ResultComponentId = ClientAuthResultType;
 
-	AddComponentQueryPairToInterestComponent(InInterest, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers), NewQuery);
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers), NewQuery);
 }
 
-void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& InInterest, const Worker_ComponentId ComponentId, const Query QueryToAdd)
+void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd)
 {
-	if (!InInterest.ComponentInterestMap.Contains(ComponentId))
+	if (!OutInterest.ComponentInterestMap.Contains(ComponentId))
 	{
 		ComponentInterest NewComponentInterest;
-		InInterest.ComponentInterestMap.Add(ComponentId, NewComponentInterest);
+		OutInterest.ComponentInterestMap.Add(ComponentId, NewComponentInterest);
 	}
-	auto& Queries = InInterest.ComponentInterestMap[ComponentId].Queries;
+	auto& Queries = OutInterest.ComponentInterestMap[ComponentId].Queries;
 	Queries.Add(QueryToAdd);
 }
 
