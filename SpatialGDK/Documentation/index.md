@@ -18,9 +18,10 @@ SpatialOS provides:<br/>
 ## Multiserver networking
 
 SpatialOS has two types of multiserver networking:
-* Server **offloading** (available in the GDK in alpha), in which Unreal server functionality is split between multiple servers and those servers compute different functionality across the whole game world.
 
-* multiserver **zoning** (available In future releases of the GDK), in which the game world is split into several geographical areas and each area has a dedicated Unreal server computing all the functionality for it. 
+* Multiserver **offloading** (available in the GDK in alpha), in which Unreal server functionality is split between multiple servers and those servers compute different functionality across the whole game world.
+
+* Multiserver **zoning** (available In future releases of the GDK), in which the game world is split into several geographical areas and each area has a dedicated Unreal server computing all the functionality for it. 
 <br/>For more information on multiserver zoning availability, see the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1).
 
 ## Find out more
