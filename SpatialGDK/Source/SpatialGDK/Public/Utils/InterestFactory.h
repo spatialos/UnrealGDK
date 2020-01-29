@@ -35,8 +35,8 @@ private:
 	static QueryConstraint CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager);
 
 	// Builds the result types of necessary components for clients
-	static TArray<Worker_ComponentId> CreateClientInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	static TArray<Worker_ComponentId> CreateClientAuthResultType(USpatialClassInfoManager* ClassInfoManager);
+	static TArray<Worker_ComponentId> CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	static TArray<Worker_ComponentId> CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
 
 	Interest CreateInterest(Worker_EntityId EntityId) const;
 
