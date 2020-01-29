@@ -262,7 +262,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(uint32 PlayInEditorID)
 	FinishConnecting(ConnectionFuture);
 }
 
-void USpatialWorkerConnection::ConnectToLocator(const FLocatorConfig* InLocatorConfig)
+void USpatialWorkerConnection::ConnectToLocator(FLocatorConfig* InLocatorConfig)
 {
 	if (InLocatorConfig == nullptr)
 	{
@@ -270,7 +270,7 @@ void USpatialWorkerConnection::ConnectToLocator(const FLocatorConfig* InLocatorC
 		return;
 	}
 
-	LocatorConfig.PreConnectInit(bConnectAsClient);
+	InLocatorConfig->PreConnectInit(bConnectAsClient);
 
 	ConfigureConnection ConnectionConfig(*InLocatorConfig);
 
