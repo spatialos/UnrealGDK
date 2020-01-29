@@ -313,8 +313,11 @@ Interest InterestFactory::CreateInterest() const
 		AddActorInterest(ResultInterest);
 	}
 
-	// Every actor needs a self query for the server to the client RPC endpoint
-
+	if (Settings->bEnableServerResultTypes)
+	{
+		// Every actor needs a self query for the server to the client RPC endpoint
+		AddServerSelfInterest(ResultInterest);
+	}
 
 	return ResultInterest;
 }
