@@ -599,24 +599,24 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			FCreateEntityRequest* Message = static_cast<FCreateEntityRequest*>(OutgoingMessage.Get());
 
 #if TRACE_LIB_ACTIVE
+			// We have to unpack these as Worker_ComponentData is not the same as FWorkerComponentData
 			TArray<Worker_ComponentData> UnpackedComponentData;
 			UnpackedComponentData.SetNum(Message->Components.Num());
 			for (int i = 0, Num = Message->Components.Num(); i < Num; i++)
 			{
 				UnpackedComponentData[i] = Message->Components[i];
 			}
-			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
-				Message->Components.Num(),
-				UnpackedComponentData.GetData(),
-				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
-				nullptr);
+			Worker_ComponentData* DataPtr = UnpackedComponentData.GetData();
+			uint32 ComponentCount = Message->Components.Num();
 #else
+			Worker_ComponentData* DataPtr = Message->Components.GetData();
+			uint32 ComponentCount = Message->Components.Num();
+#endif
 			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
-				Message->Components.Num(),
-				Message->Components.GetData(),
+				ComponentCount,
+				DataPtr,
 				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
 				nullptr);
-#endif
 			break;
 		}
 		case EOutgoingMessageType::DeleteEntityRequest:

@@ -346,7 +346,7 @@ void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*
 		const SpatialGDK::FCreateEntityRequest* CreateEntityRequest = static_cast<const SpatialGDK::FCreateEntityRequest*>(Message);
 		for (auto& Component : CreateEntityRequest->Components)
 		{
-			EndLatencyTrace(Component.Trace, TEXT("Moved createEntityRequest to Worker queue"));
+			WriteToLatencyTrace(Component.Trace, TEXT("Moved createEntityRequest to Worker queue"));
 		}
 	}
 }
