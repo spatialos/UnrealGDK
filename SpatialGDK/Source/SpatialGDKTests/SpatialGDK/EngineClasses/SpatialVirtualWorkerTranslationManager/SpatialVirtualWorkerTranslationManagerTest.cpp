@@ -6,8 +6,8 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "SpatialConstants.h"
-#include "SpatialOSDispatcherMock.h"
-#include "SpatialOSWorkerConnectionMock.h"
+#include "SpatialGDKTests/SpatialGDK/Interop/Connection/SpatialOSWorkerInterface/SpatialOSWorkerConnectionSpy.h"
+#include "SpatialGDKTests/SpatialGDK/Interop/SpatialOSDispatcherInterface/SpatialOSDispatcherSpy.h"
 #include "Utils/SchemaUtils.h"
 #include "UObject/UObjectGlobals.h"
 
@@ -23,7 +23,7 @@ namespace
 // Given a TranslationManager, Dispatcher, and Connection, give the TranslationManager authority
 // so that it registers a QueryDelegate with the Dispatcher Mock, then query for that Delegate
 // and return it so that tests can focus on the Delegate's correctness.
-EntityQueryDelegate* SetupQueryDelegateTests(SpatialVirtualWorkerTranslationManager* Manager, SpatialOSDispatcherMock* Dispatcher, SpatialOSWorkerConnectionMock* Connection)
+EntityQueryDelegate* SetupQueryDelegateTests(SpatialVirtualWorkerTranslationManager* Manager, SpatialOSDispatcherSpy* Dispatcher, SpatialOSWorkerConnectionSpy* Connection)
 {
 	// Build an authority change op which gives the worker authority over the translation.
 	Worker_AuthorityChangeOp QueryOp;
@@ -44,8 +44,8 @@ EntityQueryDelegate* SetupQueryDelegateTests(SpatialVirtualWorkerTranslationMana
 
 VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_an_authority_change_THEN_query_for_worker_entities_when_appropriate)
 {
-	TUniquePtr<SpatialOSWorkerConnectionMock> Connection = MakeUnique<SpatialOSWorkerConnectionMock>();
-	TUniquePtr<SpatialOSDispatcherMock> Dispatcher = MakeUnique<SpatialOSDispatcherMock>();
+	TUniquePtr<SpatialOSWorkerConnectionSpy> Connection = MakeUnique<SpatialOSWorkerConnectionSpy>();
+	TUniquePtr<SpatialOSDispatcherSpy> Dispatcher = MakeUnique<SpatialOSDispatcherSpy>();
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), nullptr);
 
 	// Build an authority change op which gives the worker authority over the translation.
@@ -69,8 +69,8 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_an_authority_change_THEN_query_for_wo
 
 VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_failed_query_response_THEN_query_again)
 {
-	TUniquePtr<SpatialOSWorkerConnectionMock> Connection = MakeUnique<SpatialOSWorkerConnectionMock>();
-	TUniquePtr<SpatialOSDispatcherMock> Dispatcher = MakeUnique<SpatialOSDispatcherMock>();
+	TUniquePtr<SpatialOSWorkerConnectionSpy> Connection = MakeUnique<SpatialOSWorkerConnectionSpy>();
+	TUniquePtr<SpatialOSDispatcherSpy> Dispatcher = MakeUnique<SpatialOSDispatcherSpy>();
 	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), Translator.Get());
 
@@ -93,8 +93,8 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_failed_query_response_THEN_query_ag
 
 VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_successful_query_without_enough_workers_THEN_query_again)
 {
-	TUniquePtr<SpatialOSWorkerConnectionMock> Connection = MakeUnique<SpatialOSWorkerConnectionMock>();
-	TUniquePtr<SpatialOSDispatcherMock> Dispatcher = MakeUnique<SpatialOSDispatcherMock>();
+	TUniquePtr<SpatialOSWorkerConnectionSpy> Connection = MakeUnique<SpatialOSWorkerConnectionSpy>();
+	TUniquePtr<SpatialOSDispatcherSpy> Dispatcher = MakeUnique<SpatialOSDispatcherSpy>();
 	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), Translator.Get());
 
@@ -118,8 +118,8 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_successful_query_without_enough_wor
 
 VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_successful_query_with_invalid_workers_THEN_query_again)
 {
-	TUniquePtr<SpatialOSWorkerConnectionMock> Connection = MakeUnique<SpatialOSWorkerConnectionMock>();
-	TUniquePtr<SpatialOSDispatcherMock> Dispatcher = MakeUnique<SpatialOSDispatcherMock>();
+	TUniquePtr<SpatialOSWorkerConnectionSpy> Connection = MakeUnique<SpatialOSWorkerConnectionSpy>();
+	TUniquePtr<SpatialOSDispatcherSpy> Dispatcher = MakeUnique<SpatialOSDispatcherSpy>();
 	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), Translator.Get());
 
