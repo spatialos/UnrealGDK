@@ -42,8 +42,8 @@ private:
 
 	bool CanAcquireLock(AActor* Actor) const;
 
-	virtual bool AcquireLockFromDelegate(AActor* ActorToLock, FString DelegateLockIdentifier) override;
-	virtual void ReleaseLockFromDelegate(FString DelegateLockIdentifier) override;
+	virtual bool AcquireLockFromDelegate(AActor* ActorToLock, FString const& DelegateLockIdentifier) override;
+	virtual void ReleaseLockFromDelegate(AActor* ActorToRelease, FString const& DelegateLockIdentifier) override;
 
 	TMap<const AActor*, MigrationLockElement> ActorToLockingState;
 	TMap<ActorLockToken, LockNameAndActor> TokenToNameAndActor;

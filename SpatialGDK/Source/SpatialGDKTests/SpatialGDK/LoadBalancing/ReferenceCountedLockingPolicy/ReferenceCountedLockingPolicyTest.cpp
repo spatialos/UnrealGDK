@@ -172,11 +172,13 @@ bool FAcquireLockViaDelegate::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FReleaseLockViaDelegate, TSharedPtr<TestData>, Data, FString, DelegateLockIdentifier);
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FReleaseLockViaDelegate, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DelegateLockIdentifier);
 bool FReleaseLockViaDelegate::Update()
 {
+	AActor* Actor = Data->TestActors[ActorHandle];
+
 	check(Data->ReleaseLockDelegate.IsBound());
-	Data->ReleaseLockDelegate.Execute(DelegateLockIdentifier);
+	Data->ReleaseLockDelegate.Execute(Actor, DelegateLockIdentifier);
 
 	return true;
 }
@@ -322,9 +324,9 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_a
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(Data, "Actor", "Second lock"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(Data, "First lock"));
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(Data, "Actor", "First lock"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(Data, "Second lock"));
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(Data, "Actor", "Second lock"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 
 	return true;
