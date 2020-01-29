@@ -161,26 +161,28 @@ bool FAcquireLock::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FAcquireLockViaDelegate, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DelegateLockIdentifier);
+DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FAcquireLockViaDelegate, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DelegateLockIdentifier, bool, ExpectSuccess);
 bool FAcquireLockViaDelegate::Update()
 {
 	AActor* Actor = Data->TestActors[ActorHandle];
 
 	check(Data->AcquireLockDelegate.IsBound());
 	bool AcquireLockSucceeded = Data->AcquireLockDelegate.Execute(Actor, DelegateLockIdentifier);
+	Test->TestTrue(FString::Printf(TEXT("%s acquired lock via delegate for identifier %s?"), ExpectSuccess ? TEXT("Successfully") : TEXT("Unsuccessfully"), *DelegateLockIdentifier), AcquireLockSucceeded == ExpectSuccess);
 
-	return AcquireLockSucceeded;
+	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FReleaseLockViaDelegate, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DelegateLockIdentifier);
+DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FReleaseLockViaDelegate, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DelegateLockIdentifier, bool, ExpectSuccess);
 bool FReleaseLockViaDelegate::Update()
 {
 	AActor* Actor = Data->TestActors[ActorHandle];
 
 	check(Data->ReleaseLockDelegate.IsBound());
 	bool ReleaseLockSucceeded = Data->ReleaseLockDelegate.Execute(Actor, DelegateLockIdentifier);
+	Test->TestTrue(FString::Printf(TEXT("%s released lock via delegate for identifier %s?"), ExpectSuccess ? TEXT("Successfully") : TEXT("Unsuccessfully"), *DelegateLockIdentifier), ReleaseLockSucceeded == ExpectSuccess);
 
-	return ReleaseLockSucceeded;
+	return true;
 }
 
 DEFINE_LATENT_AUTOMATION_COMMAND_FOUR_PARAMETER(FReleaseLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, LockDebugString);
@@ -320,15 +322,33 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_a
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(Data, "Actor", "First lock"));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(this, Data, "Actor", "First lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(Data, "Actor", "Second lock"));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(this, Data, "Actor", "Second lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(Data, "Actor", "First lock"));
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "First lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(Data, "Actor", "Second lock"));
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "Second lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 
 	return true;
 }
 
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_is_executed_THEN_ReleaseLock_delegate_returns_false)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	Worker_EntityId EntityId = 1;
+	Worker_Authority EntityAuthority = Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE;
+	VirtualWorkerId VirtWorkerId = 1;
+
+	TSharedPtr<TestData> Data = MakeNewTestData(EntityId, EntityAuthority, VirtWorkerId);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "First lock", false));
+
+	return true;
+}
