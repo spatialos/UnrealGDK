@@ -41,13 +41,13 @@ private:
 	Interest CreateInterest(Worker_EntityId EntityId) const;
 
 	// Only uses Defined Constraint
-	void AddActorInterest(Interest& InInterest) const;
+	void AddActorInterest(Interest& OutInterest) const;
 	// Defined Constraint AND Level Constraint
-	void AddPlayerControllerActorInterest(Interest& InInterest) const;
+	void AddPlayerControllerActorInterest(Interest& OutInterest) const;
 	// The components clients need to see on entities they are have authority over.
-	void AddClientSelfInterest(Interest& InInterest, Worker_EntityId EntityId) const;
+	void AddClientSelfInterest(Interest& OutInterest, Worker_EntityId EntityId) const;
 
-	static void AddComponentQueryPairToInterestComponent(Interest& InInterest, const Worker_ComponentId ComponentId, const Query QueryToAdd);
+	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd);
 
 	TArray<Query> GetUserDefinedQueries(const QueryConstraint& LevelConstraints) const;
 
