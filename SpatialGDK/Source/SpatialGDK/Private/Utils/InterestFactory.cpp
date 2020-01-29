@@ -230,9 +230,9 @@ Interest InterestFactory::CreateServerWorkerInterest()
 	QueryConstraint Constraint;
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
+	if (SpatialGDKSettings->bEnableServerQBI)
 	{
-		UE_LOG(LogInterestFactory, Warning, TEXT("For performance reasons, it's recommended to disable server QBI when using offloading"));
+		UE_LOG(LogInterestFactory, Warning, TEXT("For performance reasons, it's recommended to disable server QBI"));
 	}
 
 	if (!SpatialGDKSettings->bEnableServerQBI)
