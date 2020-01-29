@@ -38,9 +38,10 @@ static QueryConstraint ClientCheckoutRadiusConstraint;
 static TArray<Worker_ComponentId> ClientNonAuthInterestResultType;
 static TArray<Worker_ComponentId> ClientAuthInterestResultType;
 
-InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
+InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId EntityId, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
 	: Actor(InActor)
 	, Info(InInfo)
+	, EntityId(EntityId)
 	, ClassInfoManager(InClassInfoManager)
 	, PackageMap(InPackageMap)
 {
@@ -214,14 +215,14 @@ TArray<Worker_ComponentId> InterestFactory::CreateClientAuthInterestResultType(U
 	return ResultType;
 }
 
-Worker_ComponentData InterestFactory::CreateInterestData(const Worker_EntityId EntityId) const
+Worker_ComponentData InterestFactory::CreateInterestData() const
 {
-	return CreateInterest(EntityId).CreateInterestData();
+	return CreateInterest().CreateInterestData();
 }
 
-Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(const Worker_EntityId EntityId) const
+Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
 {
-	return CreateInterest(EntityId).CreateInterestUpdate();
+	return CreateInterest().CreateInterestUpdate();
 }
 
 Interest InterestFactory::CreateServerWorkerInterest()
@@ -258,7 +259,7 @@ Interest InterestFactory::CreateServerWorkerInterest()
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreateInterest(const Worker_EntityId EntityId) const
+Interest InterestFactory::CreateInterest() const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	Interest ResultInterest;
@@ -272,7 +273,7 @@ Interest InterestFactory::CreateInterest(const Worker_EntityId EntityId) const
 	if (Actor->GetNetConnection() != nullptr && Settings->bEnableClientResultTypes)
 	{
 		// Clients need to see owner only and server RPC components on entities they have authority over
-		AddClientSelfInterest(ResultInterest, EntityId);
+		AddClientSelfInterest(ResultInterest);
 	}
 
 	if (Settings->bEnableServerQBI)
@@ -374,7 +375,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 	}
 }
 
-void InterestFactory::AddClientSelfInterest(Interest& OutInterest, const Worker_EntityId EntityId) const
+void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 {
 	Query NewQuery;
 	// Just an entity ID constraint is fine, as clients should not become authoritative over entities outside their loaded levels
