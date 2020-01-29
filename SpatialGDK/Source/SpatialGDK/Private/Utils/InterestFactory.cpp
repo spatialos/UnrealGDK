@@ -38,10 +38,10 @@ static QueryConstraint ClientCheckoutRadiusConstraint;
 static TArray<Worker_ComponentId> ClientNonAuthInterestResultType;
 static TArray<Worker_ComponentId> ClientAuthInterestResultType;
 
-InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId EntityId, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
+InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
 	: Actor(InActor)
 	, Info(InInfo)
-	, EntityId(EntityId)
+	, EntityId(InEntityId)
 	, ClassInfoManager(InClassInfoManager)
 	, PackageMap(InPackageMap)
 {
