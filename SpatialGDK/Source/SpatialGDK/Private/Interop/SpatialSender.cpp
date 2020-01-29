@@ -15,7 +15,6 @@
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
 #include "Net/NetworkProfiler.h"
-#include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Heartbeat.h"
@@ -419,6 +418,34 @@ void USpatialSender::SendComponentInterestForActor(USpatialActorChannel* Channel
 	checkf(!NetDriver->IsServer(), TEXT("Tried to set ComponentInterest on a server-worker. This should never happen!"));
 
 	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterestForActor(Channel, bNetOwned));
+}
+
+void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent)
+{
+	if (OldComponent != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		// No loopback, so simulate the operations locally.
+		Worker_RemoveComponentOp RemoveOp{};
+		RemoveOp.entity_id = EntityId;
+		RemoveOp.component_id = OldComponent;
+		StaticComponentView->OnRemoveComponent(RemoveOp);
+
+		Connection->SendRemoveComponent(EntityId, OldComponent);
+	}
+
+	if (NewComponent != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		Worker_AddComponentOp AddOp{};
+		AddOp.entity_id = EntityId;
+		AddOp.data.component_id = NewComponent;
+		AddOp.data.schema_type = nullptr;
+		AddOp.data.user_handle = nullptr;
+
+		StaticComponentView->OnAddComponent(AddOp);
+
+		Worker_ComponentData NewComponentData = ComponentFactory::CreateEmptyComponentData(NewComponent);
+		Connection->SendAddComponent(EntityId, &NewComponentData);
+	}
 }
 
 void USpatialSender::SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned)

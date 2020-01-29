@@ -24,7 +24,8 @@ enum class ESpatialConnectionType
 {
 	Receptionist,
 	LegacyLocator,
-	Locator
+	Locator,
+	DevAuthFlow
 };
 
 UCLASS()
@@ -61,8 +62,10 @@ public:
 
 	void SetConnectionType(ESpatialConnectionType InConnectionType);
 
+	// TODO: UNR-2753
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
+	FDevAuthConfig DevAuthConfig;
 
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnEnqueueMessage OnEnqueueMessage;
@@ -76,8 +79,8 @@ public:
 	DECLARE_DELEGATE_TwoParams(OnConnectionToSpatialOSFailedDelegate, uint8_t, const FString&);
 	OnConnectionToSpatialOSFailedDelegate OnFailedToConnectCallback;
 
-	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
-	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist, const FString& SpatialWorkerType);
+	bool TrySetupConnectionConfigFromCommandLine(const FString& SpatialWorkerType);
+	void SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType);
 
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);

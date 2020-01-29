@@ -42,6 +42,18 @@ namespace EServicesRegion
 	};
 }
 
+USTRUCT(BlueprintType)
+struct FDistanceFrequencyPair
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "SpatialGDK")
+	float DistanceRatio;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "SpatialGDK")
+	float Frequency;
+};
+
 UCLASS(config = SpatialGDKSettings, defaultconfig)
 class SPATIALGDK_API USpatialGDKSettings : public UObject
 {
@@ -281,4 +293,20 @@ public:
 	bool bAsyncLoadNewClassesOnEntityCheckout;
 
 	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
+
+	/** Enable to use the new net cull distance component tagging form of interest */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest")
+	bool bEnableNetCullDistanceInterest;
+
+	/** Enable to use interest frequency with bEnableNetCullDistanceInterest*/
+	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceInterest"))
+	bool bEnableNetCullDistanceFrequency;
+
+	/** Full update frequency ratio of actor's net cull distance */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
+	float FullFrequencyNetCullDistanceRatio;
+
+	/** QBI pairs for ratio of - net cull distance : update frequency */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
+	TArray<FDistanceFrequencyPair> InterestRangeFrequencyPairs;
 };
