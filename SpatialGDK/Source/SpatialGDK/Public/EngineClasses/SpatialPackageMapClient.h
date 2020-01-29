@@ -75,6 +75,8 @@ private:
 
 	// Entities that have been assigned on this server and not created yet
 	TSet<Worker_EntityId_Key> PendingCreationEntityIds;
+
+	friend class ContainerMemoryTracker;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
@@ -111,5 +113,7 @@ private:
 
 	TMap<FNetworkGUID, FUnrealObjectRef> NetGUIDToUnrealObjectRef;
 	TMap<FUnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
+
+	friend class ContainerMemoryTracker;
 };
 

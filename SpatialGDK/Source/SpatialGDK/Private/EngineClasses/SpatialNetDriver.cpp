@@ -396,6 +396,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	check(NewPackageMap == PackageMap);
 
 	PackageMap->Init(this, &TimerManager);
+
+	MemTracker = MakeUnique<ContainerMemoryTracker>(this);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
@@ -1693,6 +1695,11 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	ProcessPendingDormancy();
 
 	TimerManager.Tick(DeltaTime);
+
+	if (MemTracker.IsValid())
+	{
+		MemTracker->Tick(DeltaTime);
+	}
 
 	Super::TickFlush(DeltaTime);
 }

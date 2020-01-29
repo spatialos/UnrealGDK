@@ -263,4 +263,6 @@ private:
 	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
 	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
 	// END TODO
+
+	friend class ContainerMemoryTracker;
 };

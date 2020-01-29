@@ -185,4 +185,6 @@ private:
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 
 	TMap<Worker_EntityId_Key, TArray<FPendingRPC>> RPCsToPack;
+
+	friend class ContainerMemoryTracker;
 };

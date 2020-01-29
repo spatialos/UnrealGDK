@@ -10,6 +10,7 @@
 #include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
+#include "Utils/ContainerMemoryTracker.h"
 #include "Utils/SpatialActorGroupManager.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
@@ -276,4 +277,7 @@ private:
 	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
 	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
 	bool ClientCanSendPlayerSpawnRequests();
+
+	friend class ContainerMemoryTracker;
+	TUniquePtr<ContainerMemoryTracker> MemTracker;
 };
