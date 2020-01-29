@@ -15,8 +15,6 @@ class SPATIALGDKTESTS_API ULBStrategySpy : public UAbstractLBStrategy
 	GENERATED_BODY()
 
 public:
-	ULBStrategySpy() = default;
-
 	VirtualWorkerId GetVirtualWorkerId() const
 	{
 		return LocalVirtualWorkerId;
