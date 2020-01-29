@@ -145,16 +145,16 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	FTimespan Duration = FDateTime::Now() - StartTime;
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Schema Generation Finished in %.2f seconds"), Duration.GetTotalSeconds());
-	
-	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
-	{
-		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to save schema database."));
-		return 0;
-	}
 
 	if (!RunSchemaCompiler())
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to run schema compiler."));
+		return 0;
+	} 
+
+	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
+	{
+		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to save schema database."));
 		return 0;
 	}
 

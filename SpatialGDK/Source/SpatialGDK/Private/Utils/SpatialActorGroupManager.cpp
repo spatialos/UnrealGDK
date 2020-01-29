@@ -37,11 +37,12 @@ FName SpatialActorGroupManager::GetActorGroupForClass(const TSubclassOf<AActor> 
 	{
 		if (const FName* ActorGroup = ClassPathToActorGroup.Find(ClassPtr))
 		{
+			FName ActorGroupHolder = *ActorGroup;
 			if (FoundClass != Class)
 			{
-				ClassPathToActorGroup.Add(TSoftClassPtr<AActor>(Class), *ActorGroup);
+				ClassPathToActorGroup.Add(TSoftClassPtr<AActor>(Class), ActorGroupHolder);
 			}
-			return *ActorGroup;
+			return ActorGroupHolder;
 		}
 
 		FoundClass = FoundClass->GetSuperClass();
