@@ -146,9 +146,11 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID
 	}
 
 	bConnectAsClient = bInitAsClient;
+
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
 	{
+		DevAuthConfig.Deployment = SpatialGDKSettings->DevelopmentDeploymentToConnect;
 		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
 		LocatorConfig.UseExternalIp = true;
 		StartDevelopmentAuth(SpatialGDKSettings->DevelopmentAuthenticationToken);
@@ -184,7 +186,7 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 
 	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
-	const FString& DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
+	const FString& DeploymentToConnect = Connection->DevAuthConfig.Deployment;
 	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
 	if (DeploymentToConnect.IsEmpty())
 	{

@@ -38,7 +38,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableServerQBI(true)
 	, bEnableClientResultTypes(false)
 	, bPackRPCs(false)
-	, bUseDevelopmentAuthenticationFlow(false)
 	, ServicesRegion(EServicesRegion::Default)
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
 	, bEnableOffloading(false)
@@ -59,6 +58,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableNetCullDistanceInterest(false)
 	, bEnableNetCullDistanceFrequency(false)
 	, FullFrequencyNetCullDistanceRatio(1.0f)
+	, bUseDevelopmentAuthenticationFlow(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
