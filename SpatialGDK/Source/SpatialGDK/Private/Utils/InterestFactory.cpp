@@ -395,7 +395,7 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 
 TArray<Query> InterestFactory::GetUserDefinedQueries(const QueryConstraint& LevelConstraints) const
 {
-	TArray<Query> OutQueries;
+	TArray<Query> Queries;
 	check(Actor);
 	check(ClassInfoManager);
 
@@ -403,14 +403,14 @@ TArray<Query> InterestFactory::GetUserDefinedQueries(const QueryConstraint& Leve
 	Actor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
 	if (ActorInterestComponents.Num() == 1)
 	{
-		ActorInterestComponents[0]->CreateQueries(*ClassInfoManager, LevelConstraints, OutQueries);
+		ActorInterestComponents[0]->CreateQueries(*ClassInfoManager, LevelConstraints, Queries);
 	}
 	else if (ActorInterestComponents.Num() > 1)
 	{
 		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestQueryComponent"), *Actor->GetPathName());
 	}
 
-	return OutQueries;
+	return Queries;
 }
 
 QueryConstraint InterestFactory::CreateSystemDefinedConstraints() const
