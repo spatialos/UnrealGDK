@@ -39,7 +39,7 @@ Before you start to use offloading in your game, make sure that you’re familia
 ### Zoning
 Zoning is another multiserver option for working with SpatialOS. It works differently from [offloading](#offloading). Zoning involves sharing the server computation load by splitting up the world into areas of authority, with a different server-worker instance responsible for the computation of each area. A server-worker instance can make updates only to Actors that are in its area of authority.
 
-> **Note:** Support for zoning is currently in pre-alpha. We invite you to try out the [multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
+> **Note:** The GDK is not currently available for development with zoning. For more information on availability, see the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1).
 
 ### Cross-server RPCs
 To facilitate zoning, we created the concept of a cross-server RPC to make updates to Actors, known as “entities” in SpatialOS. This is a type of RPC that enables a server-worker instance  which does not have authority over an entity to tell the server-worker instance that does have authority over that entity to make an update to it. This is necessary if you’re using zoning because areas of authority mean that one server-worker instance can't make updates to every entity in the world; it can make updates only to the entities in its area of authority.
@@ -65,7 +65,7 @@ void TakeDamage(int Damage);
 For more information, see the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs).
 
 ### Actor handover
-If your game uses zoning, you need to make sure that entities can move seamlessly between areas of authority and the relevant server-worker instances can compute them. 
+If you game intends to use zoning, you need to make sure that entities can move seamlessly between areas of authority and the relevant server-worker instances can compute them. 
 
 In Unreal’s single-server architecture, authority over an Actor stays with the single server; an Actor’s properties never leave the server’s memory. With multiple server-worker instances in SpatialOS, authority needs to pass from one server-worker instance to another as an Actor moves around the game world. Passing authority, known as “Actor handover”, allows the second server-worker instance to continue where the first one left off. You set this up by adding the `Handover` tag to the Actor’s properties. 
 
@@ -75,10 +75,7 @@ In Unreal’s single-server architecture, authority over an Actor stays with the
 
 <%(Lightbox image="{{assetRoot}}assets/screen-grabs/moving-across-boundaries.gif")%>
 
-
  _An AI following a player across the boundary between two server-worker instances' areas of authority. To demonstrate Actor handover, the AI changes its material every time authority is handed over._
-
-See the [multiserver zoning tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) for a tutorial that demonstrates this functionality.
 
 For more information, see the documentation on [Actor handover]({{urlRoot}}/content/actor-handover).
 
@@ -107,6 +104,7 @@ For more information, see the documentation on [non-Unreal server-worker types](
 
 
 <br/>------------<br/>
+_2020-01-17 Page updated with editorial review: updated expectations on zoning maturity_</br>
 _2019-08-08 Page updated with editorial review: updated offloading, Actor groups, zoning_</br>
 _2019-07-31 Page updated with limited editorial review: added Actor throttling_<br/>
 _2019-07-26 Page updated with limited editorial review: added offloading and Actor groups_<br/>
