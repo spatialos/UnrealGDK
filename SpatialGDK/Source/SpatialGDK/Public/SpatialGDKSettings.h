@@ -196,6 +196,12 @@ public:
 	UPROPERTY(config)
 	bool bEnableClientResultTypes;
 
+	/** EXPERIMENTAL - Adds granular result types for server queries.
+	Granular here means specifically the required Unreal components for spawning other actors and all data type components.
+	Needs testing thoroughly before making default. May be replaced by component set result types instead. */
+	UPROPERTY(config)
+	bool bEnableServerResultTypes;
+
 	/** Pack RPCs sent during the same frame into a single update. */
 	UPROPERTY(config)
 	bool bPackRPCs;

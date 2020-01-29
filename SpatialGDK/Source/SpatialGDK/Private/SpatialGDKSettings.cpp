@@ -37,6 +37,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, bEnableServerQBI(true)
 	, bEnableClientResultTypes(false)
+	, bEnableServerResultTypes(false)
 	, bPackRPCs(false)
 	, bUseDevelopmentAuthenticationFlow(false)
 	, ServicesRegion(EServicesRegion::Default)
