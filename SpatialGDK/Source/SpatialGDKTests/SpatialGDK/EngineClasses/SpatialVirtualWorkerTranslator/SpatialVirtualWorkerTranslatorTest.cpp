@@ -279,7 +279,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_try_to_change_local
 	SpatialGDK::AddStringToSchema(SecondValidDataFirstEntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, "ValidWorkerOne");
 
 	// Apply valid mapping to the translator.
-	AddExpectedError(TEXT("(ValidWorkerOne) Received invalid mapping, likely due to PiE restart, will wait for a valid version."), EAutomationExpectedErrorFlags::Contains, 1);
+	AddExpectedError(TEXT("Received mapping containing a new and updated virtual worker ID, this shouldn't happen."), EAutomationExpectedErrorFlags::Contains, 1);
 	translator->ApplyVirtualWorkerManagerData(SecondValidDataObject);
 
 	// Translator should return the values from the original mapping
