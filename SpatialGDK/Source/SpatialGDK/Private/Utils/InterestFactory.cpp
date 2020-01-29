@@ -17,6 +17,9 @@
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
 
+DECLARE_STATS_GROUP(TEXT("InterestFactory"), STATGROUP_SpatialInterestFactory, STATCAT_Advanced);
+DECLARE_CYCLE_STAT(TEXT("AddUserDefinedQueries"), STAT_InterestFactoryAddUserDefinedQueries, STATGROUP_SpatialInterestFactory);
+
 namespace SpatialGDK
 {
 struct FrequencyConstraint
@@ -372,20 +375,48 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	return NewInterest;
 }
 
-void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
+void InterestFactory::AddActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const
 {
-	check(Actor);
 	check(ClassInfoManager);
 
+	if (InActor == nullptr)
+	{
+		return;
+	}
+
 	TArray<UActorInterestComponent*> ActorInterestComponents;
-	Actor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
+	InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
 	if (ActorInterestComponents.Num() == 1)
 	{
 		ActorInterestComponents[0]->CreateQueries(*ClassInfoManager, LevelConstraints, OutQueries);
 	}
 	else if (ActorInterestComponents.Num() > 1)
 	{
-		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestQueryComponent"), *Actor->GetPathName());
+		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestComponent"), *InActor->GetPathName());
+		checkNoEntry()
+	}
+
+	if (bRecurseChildren)
+	{
+		for (const auto& Child : InActor->Children)
+		{
+			AddActorUserDefinedQueries(Child, LevelConstraints, OutQueries, true);
+		}
+	}
+}
+
+void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
+{
+	SCOPE_CYCLE_COUNTER(STAT_InterestFactoryAddUserDefinedQueries);
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+	{
+		AddActorUserDefinedQueries(Actor, LevelConstraints, OutQueries, true);
+		AddActorUserDefinedQueries(PlayerController->GetPawn(), LevelConstraints, OutQueries, true);
+	}
+	else
+	{
+		AddActorUserDefinedQueries(Actor, LevelConstraints, OutQueries, false);
 	}
 }
 
