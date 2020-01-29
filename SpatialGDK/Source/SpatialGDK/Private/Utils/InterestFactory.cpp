@@ -398,7 +398,7 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 
 void InterestFactory::GetActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const
 {
-	TArray<Query> OutQueries;
+	TArray<Query> Queries;
 	check(ClassInfoManager);
 
 	if (InActor == nullptr)
@@ -410,7 +410,7 @@ void InterestFactory::GetActorUserDefinedQueries(const AActor* InActor, const Qu
 	InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
 	if (ActorInterestComponents.Num() == 1)
 	{
-		ActorInterestComponents[0]->CreateQueries(*ClassInfoManager, LevelConstraints, OutQueries);
+		ActorInterestComponents[0]->CreateQueries(*ClassInfoManager, LevelConstraints, Queries);
 	}
 	else if (ActorInterestComponents.Num() > 1)
 	{
