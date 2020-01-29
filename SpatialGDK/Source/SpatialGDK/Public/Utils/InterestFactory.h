@@ -22,8 +22,8 @@ public:
 
 	static void CreateAndCacheInterestState(USpatialClassInfoManager* ClassInfoManager);
 
-	Worker_ComponentData CreateInterestData(Worker_EntityId EntityId) const;
-	Worker_ComponentUpdate CreateInterestUpdate(Worker_EntityId EntityId) const;
+	Worker_ComponentData CreateInterestData(const Worker_EntityId EntityId) const;
+	Worker_ComponentUpdate CreateInterestUpdate(const Worker_EntityId EntityId) const;
 
 	static Interest CreateServerWorkerInterest();
 
@@ -38,14 +38,14 @@ private:
 	static TArray<Worker_ComponentId> CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
 	static TArray<Worker_ComponentId> CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
 
-	Interest CreateInterest(Worker_EntityId EntityId) const;
+	Interest CreateInterest(const Worker_EntityId EntityId) const;
 
 	// Only uses Defined Constraint
 	void AddActorInterest(Interest& OutInterest) const;
 	// Defined Constraint AND Level Constraint
 	void AddPlayerControllerActorInterest(Interest& OutInterest) const;
 	// The components clients need to see on entities they are have authority over.
-	void AddClientSelfInterest(Interest& OutInterest, Worker_EntityId EntityId) const;
+	void AddClientSelfInterest(Interest& OutInterest, const Worker_EntityId EntityId) const;
 
 	void GetActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const;
 	TArray<Query> GetUserDefinedQueries(const QueryConstraint& LevelConstraints) const;

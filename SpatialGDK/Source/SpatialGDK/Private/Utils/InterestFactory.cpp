@@ -214,12 +214,12 @@ TArray<Worker_ComponentId> InterestFactory::CreateClientAuthInterestResultType(U
 	return ResultType;
 }
 
-Worker_ComponentData InterestFactory::CreateInterestData(Worker_EntityId EntityId) const
+Worker_ComponentData InterestFactory::CreateInterestData(const Worker_EntityId EntityId) const
 {
 	return CreateInterest(EntityId).CreateInterestData();
 }
 
-Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(Worker_EntityId EntityId) const
+Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(const Worker_EntityId EntityId) const
 {
 	return CreateInterest(EntityId).CreateInterestUpdate();
 }
@@ -258,7 +258,7 @@ Interest InterestFactory::CreateServerWorkerInterest()
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreateInterest(Worker_EntityId EntityId) const
+Interest InterestFactory::CreateInterest(const Worker_EntityId EntityId) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	Interest ResultInterest;
@@ -340,7 +340,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 	AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, ClientQuery);
 
 	TArray<Query> UserQueries = GetUserDefinedQueries(LevelConstraints);
-	for (const auto UserQuery : UserQueries)
+	for (const auto& UserQuery : UserQueries)
 	{
 		AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, UserQuery);
 	}
@@ -374,7 +374,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 	}
 }
 
-void InterestFactory::AddClientSelfInterest(Interest& OutInterest, Worker_EntityId EntityId) const
+void InterestFactory::AddClientSelfInterest(Interest& OutInterest, const Worker_EntityId EntityId) const
 {
 	Query NewQuery;
 	// Just an entity ID constraint is fine, as clients should not become authoritative over entities outside their loaded levels
