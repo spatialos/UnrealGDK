@@ -158,7 +158,31 @@ public:
 	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
 	FORCEINLINE bool IsAuthoritativeClient() const
 	{
-		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers));
+		if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
+		{
+			return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers));
+		}
+
+		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
+
+		if (const SpatialGDK::EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId))
+		{
+			if (const WorkerRequirementSet* WorkerRequirementsSet = EntityACL->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers)))
+			{
+				for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
+				{
+					for (const FString& Attribute : AttributeSet)
+					{
+						if (WorkerAttributes.Contains(Attribute))
+						{
+							return true;
+						}
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 
 	FORCEINLINE bool IsAuthoritativeServer() const
