@@ -41,6 +41,6 @@ protected:
 	AbstractVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 private:
-	virtual bool AcquireLockFromDelegate(AActor* ActorToLock, FString const& DelegateLockIdentifier) PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLockFromDelegate, return false;);
-	virtual void ReleaseLockFromDelegate(AActor* ActorToRelease, FString const& DelegateLockIdentifier) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLockFromDelegate, return;);
+	virtual bool AcquireLockFromDelegate(AActor* ActorToLock, const FString& DelegateLockIdentifier) PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLockFromDelegate, return false;);
+	virtual void ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLockFromDelegate, return;);
 };
