@@ -272,7 +272,14 @@ Interest InterestFactory::CreateServerWorkerInterest()
 
 	Query Query;
 	Query.Constraint = Constraint;
-	Query.FullSnapshotResult = true;
+	if (SpatialGDKSettings->bEnableServerResultTypes)
+	{
+		Query.ResultComponentId = ServerNonAuthInterestResultType;
+	}
+	else
+	{
+		Query.FullSnapshotResult = true;
+	}
 
 	ComponentInterest Queries;
 	Queries.Queries.Add(Query);
