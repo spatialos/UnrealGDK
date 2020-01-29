@@ -106,7 +106,7 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		// Component is not hand written, but we still want to know the existence of it on this entity.
 		Data = nullptr;
 	}
-	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = std::move(Data);
+	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = MoveTemp(Data);
 }
 
 void USpatialStaticComponentView::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
