@@ -31,8 +31,9 @@ static TArray<FrequencyConstraint> CheckoutConstraints;
 // It is built once per net driver initialization.
 static QueryConstraint ClientCheckoutRadiusConstraint;
 
-// Cache the result type of client Interest queries.
-static TArray<Worker_ComponentId> ClientResultType;
+// Cache the result types of client queries.
+static TArray<Worker_ComponentId> ClientInterestResultType;
+static TArray<Worker_ComponentId> ClientAuthResultType;
 
 InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
 	: Actor(InActor)
@@ -45,7 +46,8 @@ InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpa
 void InterestFactory::CreateAndCacheInterestState(USpatialClassInfoManager* ClassInfoManager)
 {
 	ClientCheckoutRadiusConstraint = CreateClientCheckoutRadiusConstraint(ClassInfoManager);
-	ClientResultType = CreateClientResultType(ClassInfoManager);
+	ClientInterestResultType = CreateClientInterestResultType(ClassInfoManager);
+	ClientAuthResultType = CreateClientAuthResultType(ClassInfoManager);
 }
 
 QueryConstraint InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager)
@@ -183,7 +185,7 @@ QueryConstraint InterestFactory::CreateNetCullDistanceConstraintWithFrequency(US
 	return CheckoutRadiusConstraintRoot;
 }
 
-TArray<Worker_ComponentId> InterestFactory::CreateClientResultType(USpatialClassInfoManager* ClassInfoManager)
+TArray<Worker_ComponentId> InterestFactory::CreateClientInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
 	TArray<Worker_ComponentId> ResultType;
 
@@ -192,6 +194,19 @@ TArray<Worker_ComponentId> InterestFactory::CreateClientResultType(USpatialClass
 
 	// Add all data components- clients don't need to see handover or owner only components on other entities.
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
+
+	return ResultType;
+}
+
+TArray<Worker_ComponentId> InterestFactory::CreateClientAuthResultType(USpatialClassInfoManager* ClassInfoManager)
+{
+	TArray<Worker_ComponentId> ResultType;
+
+	// Add the required unreal components
+	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_CLIENT_AUTH);
+
+	// Add all owner only components
+	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
 
 	return ResultType;
 }
@@ -308,7 +323,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& InInterest) con
 
 	if (SpatialGDKSettings->bEnableClientResultTypes)
 	{
-		ClientQuery.ResultComponentId = ClientResultType;
+		ClientQuery.ResultComponentId = ClientInterestResultType;
 	}
 	else
 	{
@@ -339,7 +354,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& InInterest) con
 
 			if (SpatialGDKSettings->bEnableClientResultTypes)
 			{
-				NewQuery.ResultComponentId = ClientResultType;
+				NewQuery.ResultComponentId = ClientInterestResultType;
 			}
 			else
 			{
@@ -356,7 +371,7 @@ void InterestFactory::AddClientSelfInterest(Interest& InInterest, Worker_EntityI
 	Query NewQuery;
 	NewQuery.Constraint.EntityIdConstraint = EntityId;
 
-	NewQuery.ResultComponentId = SpatialConstants::REQUIRED_COMPONENTS_FOR_CLIENT_AUTH;
+	NewQuery.ResultComponentId = ClientAuthResultType;
 
 	AddComponentQueryPairToInterestComponent(InInterest, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers), NewQuery);
 }

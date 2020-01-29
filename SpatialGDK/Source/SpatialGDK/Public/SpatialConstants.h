@@ -258,11 +258,10 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_CLIENT_INTEREST = TArra
 	SPAWN_DATA_COMPONENT_ID,
 	RPCS_ON_ENTITY_CREATION_ID,
 	MULTICAST_RPCS_COMPONENT_ID,
-	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
-	HEARTBEAT_COMPONENT_ID
+	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY
 };
 
-// A list of components clients require on entities they are authoritative over.
+// A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest query.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_CLIENT_AUTH = TArray<Worker_ComponentId>
 {
 	SERVER_ENDPOINT_COMPONENT_ID,
