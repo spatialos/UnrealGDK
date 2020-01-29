@@ -313,7 +313,7 @@ Interest InterestFactory::CreateInterest() const
 		AddActorInterest(ResultInterest);
 	}
 
-	// Every actor needs a self query for server to the client RPC endpoint
+	// Every actor needs a self query for the server to the client RPC endpoint
 
 
 	return ResultInterest;
@@ -418,6 +418,16 @@ void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 	NewQuery.ResultComponentId = ClientAuthInterestResultType;
 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers), NewQuery);
+}
+
+void InterestFactory::AddServerSelfInterest(Interest& OutInterest) const
+{
+	Query NewQuery;
+	NewQuery.Constraint.EntityIdConstraint = EntityId;
+
+	NewQuery.ResultComponentId = ServerAuthInterestResultType;
+
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, NewQuery);
 }
 
 void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd)
