@@ -19,7 +19,6 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
-#include "Schema/AlwaysRelevant.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/SpawnData.h"
@@ -202,7 +201,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	}
 
-	if (ClassInfoManager->IsSublevelComponent(Op.data.component_id))
+	if (ClassInfoManager->IsGeneratedQBIMarkerComponent(Op.data.component_id))
 	{
 		return;
 	}
@@ -757,7 +756,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Potentially we could split out the initial actor state and the initial component state
 		for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 		{
-			if (ClassInfoManager->IsSublevelComponent(PendingAddComponent.ComponentId))
+			if (ClassInfoManager->IsGeneratedQBIMarkerComponent(PendingAddComponent.ComponentId))
 			{
 				continue;
 			}
@@ -1407,7 +1406,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	if (ClassInfoManager->IsSublevelComponent(Op.update.component_id))
+	if (ClassInfoManager->IsGeneratedQBIMarkerComponent(Op.update.component_id))
 	{
 		return;
 	}
@@ -1416,7 +1415,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	if (Channel == nullptr)
 	{
 		// If there is no actor channel as a result of the actor being dormant, then assume the actor is about to become active.
-		if (const Dormant* DormantComponent = StaticComponentView->GetComponentData<Dormant>(Op.entity_id))
+		if (StaticComponentView->HasComponent(Op.entity_id, SpatialConstants::DORMANT_COMPONENT_ID))
 		{
 			if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id)))
 			{

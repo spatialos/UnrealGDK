@@ -269,8 +269,6 @@ private:
 	TArray<Worker_EntityId> TombstonedEntities;
 #endif
 
-	void StartSetupConnectionConfigFromCommandLine(bool& bOutSuccessfullyLoaded, bool& bOutUseReceptionist);
-
 	void MakePlayerSpawnRequest();
 
 	FUnrealObjectRef GetCurrentPlayerControllerRef();
