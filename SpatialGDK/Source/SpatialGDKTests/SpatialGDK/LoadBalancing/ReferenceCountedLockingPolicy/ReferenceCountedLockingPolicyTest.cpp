@@ -167,9 +167,9 @@ bool FAcquireLockViaDelegate::Update()
 	AActor* Actor = Data->TestActors[ActorHandle];
 
 	check(Data->AcquireLockDelegate.IsBound());
-	Data->AcquireLockDelegate.Execute(Actor, DelegateLockIdentifier);
+	bool AcquireLockSucceeded = Data->AcquireLockDelegate.Execute(Actor, DelegateLockIdentifier);
 
-	return true;
+	return AcquireLockSucceeded;
 }
 
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FReleaseLockViaDelegate, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DelegateLockIdentifier);
