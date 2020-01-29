@@ -13,6 +13,7 @@
 #include "SpatialGDKEditorToolbar.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
+#include "SpatialGDKSettings.h"
 #include "Async/Async.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "Textures/SlateIcon.h"
@@ -493,8 +494,7 @@ void SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited(ui
 
 bool SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth()
 {
-	bool bUseChinaAuth = GetDefault<USpatialGDKEditorSettings>()->GetPrimaryRegionCode().ToString() == TEXT("CN");
-	FString SpatialInfoArgs = bUseChinaAuth ? TEXT("auth login --environment=cn-production") : TEXT("auth login");
+	FString SpatialInfoArgs = GetDefault<USpatialGDKSettings>()->IsRunningInChina() ? TEXT("auth login --environment=cn-production") : TEXT("auth login");
 	FString SpatialInfoResult;
 	FString StdErr;
 	int32 ExitCode;
