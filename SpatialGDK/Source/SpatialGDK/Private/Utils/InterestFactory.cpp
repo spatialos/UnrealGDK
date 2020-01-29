@@ -393,8 +393,7 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 		ComponentInterest NewComponentInterest;
 		OutInterest.ComponentInterestMap.Add(ComponentId, NewComponentInterest);
 	}
-	auto& Queries = OutInterest.ComponentInterestMap[ComponentId].Queries;
-	Queries.Add(QueryToAdd);
+	OutInterest.ComponentInterestMap[ComponentId].Queries.Add(QueryToAdd);
 }
 
 void InterestFactory::GetActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const
