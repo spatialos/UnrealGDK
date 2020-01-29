@@ -25,6 +25,10 @@ namespace SpatialGDKEditor
 		SPATIALGDKEDITOR_API void GenerateSchemaForRPCEndpoints();
 
 		SPATIALGDKEDITOR_API void GenerateSchemaForRPCEndpoints(const FString& SchemaOutputPath);
+
+		SPATIALGDKEDITOR_API void GenerateSchemaForNCDs();
+
+		SPATIALGDKEDITOR_API void GenerateSchemaForNCDs(const FString& SchemaOutputPath);
 		
 		SPATIALGDKEDITOR_API bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName);
 

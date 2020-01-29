@@ -30,8 +30,14 @@ public:
 private:
 	// Build the checkout radius constraints for client workers
 	static QueryConstraint CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
+	static QueryConstraint CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager);
+	static QueryConstraint CreateNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager);
+	static QueryConstraint CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager);
+
 	// Builds the result type of necessary components for clients to see on NON-AUTHORITATIVE entities
 	static TArray<Worker_ComponentId> CreateClientResultType(USpatialClassInfoManager* ClassInfoManager);
+	
+
 
 	Interest CreateInterest() const;
 

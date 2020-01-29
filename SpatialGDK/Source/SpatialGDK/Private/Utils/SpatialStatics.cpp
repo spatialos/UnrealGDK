@@ -60,6 +60,16 @@ bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& 
 	return false;
 }
 
+TArray<FDistanceFrequencyPair> USpatialStatics::GetNCDDistanceRatios()
+{
+	return GetDefault<USpatialGDKSettings>()->InterestRangeFrequencyPairs;
+}
+
+float USpatialStatics::GetFullFrequencyNetCullDistanceRatio()
+{
+	return GetDefault<USpatialGDKSettings>()->FullFrequencyNetCullDistanceRatio;
+}
+
 bool USpatialStatics::IsSpatialOffloadingEnabled()
 {
     return IsSpatialNetworkingEnabled() && GetDefault<USpatialGDKSettings>()->bEnableOffloading;
