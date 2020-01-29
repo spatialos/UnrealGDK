@@ -38,6 +38,7 @@ private:
 	static TArray<Worker_ComponentId> CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
 	static TArray<Worker_ComponentId> CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
 	static TArray<Worker_ComponentId> CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	static TArray<Worker_ComponentId> CreateServerAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
 
 	Interest CreateInterest() const;
 
