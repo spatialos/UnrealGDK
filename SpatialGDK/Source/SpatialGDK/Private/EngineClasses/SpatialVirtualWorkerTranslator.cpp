@@ -46,6 +46,12 @@ bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object) const
 		Schema_Object* MappingObject = Schema_IndexObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);
 		if (SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME) == LocalPhysicalWorkerName)
 		{
+			VirtualWorkerId ReceivedVirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
+			if (LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID && LocalVirtualWorkerId != ReceivedVirtualWorkerId)
+			{
+				UE_LOG(LogSpatialVirtualWorkerTranslator, Error, TEXT("(%s) Received mapping containing a new and updated virtual worker ID, this shouldn't happen."), *LocalPhysicalWorkerName);
+				return false;
+			}
 			return true;
 		}
 	}
