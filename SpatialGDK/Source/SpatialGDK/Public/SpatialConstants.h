@@ -252,7 +252,7 @@ const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 const FString ZoningAttribute = DefaultServerWorkerType.ToString();
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_CLIENT_INTEREST = TArray<Worker_ComponentId>
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
 {
 	UNREAL_METADATA_COMPONENT_ID,
 	SPAWN_DATA_COMPONENT_ID,
@@ -262,7 +262,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_CLIENT_INTEREST = TArra
 };
 
 // A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest query.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_CLIENT_AUTH = TArray<Worker_ComponentId>
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
 {
 	SERVER_ENDPOINT_COMPONENT_ID,
 	SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY

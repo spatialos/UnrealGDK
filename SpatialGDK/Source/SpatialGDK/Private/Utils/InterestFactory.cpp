@@ -32,8 +32,8 @@ static TArray<FrequencyConstraint> CheckoutConstraints;
 static QueryConstraint ClientCheckoutRadiusConstraint;
 
 // Cache the result types of client queries.
-static TArray<Worker_ComponentId> ClientInterestResultType;
-static TArray<Worker_ComponentId> ClientAuthResultType;
+static TArray<Worker_ComponentId> ClientNonAuthInterestResultType;
+static TArray<Worker_ComponentId> ClientAuthInterestResultType;
 
 InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
 	: Actor(InActor)
@@ -46,8 +46,8 @@ InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpa
 void InterestFactory::CreateAndCacheInterestState(USpatialClassInfoManager* ClassInfoManager)
 {
 	ClientCheckoutRadiusConstraint = CreateClientCheckoutRadiusConstraint(ClassInfoManager);
-	ClientInterestResultType = CreateClientInterestResultType(ClassInfoManager);
-	ClientAuthResultType = CreateClientAuthResultType(ClassInfoManager);
+	ClientNonAuthInterestResultType = CreateClientNonAuthInterestResultType(ClassInfoManager);
+	ClientAuthInterestResultType = CreateClientAuthInterestResultType(ClassInfoManager);
 }
 
 QueryConstraint InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager)
@@ -185,12 +185,12 @@ QueryConstraint InterestFactory::CreateNetCullDistanceConstraintWithFrequency(US
 	return CheckoutRadiusConstraintRoot;
 }
 
-TArray<Worker_ComponentId> InterestFactory::CreateClientInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+TArray<Worker_ComponentId> InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
 	TArray<Worker_ComponentId> ResultType;
 
 	// Add the required unreal components
-	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_CLIENT_INTEREST);
+	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
 
 	// Add all data components- clients don't need to see handover or owner only components on other entities.
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
@@ -198,12 +198,12 @@ TArray<Worker_ComponentId> InterestFactory::CreateClientInterestResultType(USpat
 	return ResultType;
 }
 
-TArray<Worker_ComponentId> InterestFactory::CreateClientAuthResultType(USpatialClassInfoManager* ClassInfoManager)
+TArray<Worker_ComponentId> InterestFactory::CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
 	TArray<Worker_ComponentId> ResultType;
 
 	// Add the required unreal components
-	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_CLIENT_AUTH);
+	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST);
 
 	// Add all owner only components
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
@@ -327,7 +327,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 
 	if (SpatialGDKSettings->bEnableClientResultTypes)
 	{
-		ClientQuery.ResultComponentId = ClientInterestResultType;
+		ClientQuery.ResultComponentId = ClientNonAuthInterestResultType;
 	}
 	else
 	{
@@ -359,7 +359,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 
 			if (SpatialGDKSettings->bEnableClientResultTypes)
 			{
-				NewQuery.ResultComponentId = ClientInterestResultType;
+				NewQuery.ResultComponentId = ClientNonAuthInterestResultType;
 			}
 			else
 			{
@@ -377,7 +377,7 @@ void InterestFactory::AddClientSelfInterest(Interest& OutInterest, Worker_Entity
 	// Just an entity ID constraint is fine, as clients should not become authoritative over entities outside their loaded levels
 	NewQuery.Constraint.EntityIdConstraint = EntityId;
 
-	NewQuery.ResultComponentId = ClientAuthResultType;
+	NewQuery.ResultComponentId = ClientAuthInterestResultType;
 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers), NewQuery);
 }
