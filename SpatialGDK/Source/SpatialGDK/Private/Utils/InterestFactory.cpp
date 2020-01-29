@@ -267,14 +267,14 @@ Interest InterestFactory::CreateInterest(Worker_EntityId EntityId) const
 		// Put the "main" interest queries on the player controller
 		AddPlayerControllerActorInterest(ResultInterest);
 	}
-	const auto NetConn = Actor->GetNetConnection();
-	if (NetConn != nullptr && Settings->bEnableClientResultTypes)
+	if (Actor->GetNetConnection() != nullptr && Settings->bEnableClientResultTypes)
 	{
+		// Clients need to see owner only and server RPC components on entities they have authority over
 		AddClientSelfInterest(ResultInterest, EntityId);
 	}
 	if (Settings->bEnableServerQBI)
 	{
-		// If we have server QBI, every actor needs a query for the server.
+		// If we have server QBI, every actor needs a query for the server
 		AddActorInterest(ResultInterest);
 	}
 	return ResultInterest;
@@ -372,6 +372,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& InInterest) con
 void InterestFactory::AddClientSelfInterest(Interest& InInterest, Worker_EntityId EntityId) const
 {
 	Query NewQuery;
+	// Just an entity ID constraint is fine, as clients should not become authoritative over entities outside their loaded levels
 	NewQuery.Constraint.EntityIdConstraint = EntityId;
 
 	NewQuery.ResultComponentId = ClientAuthResultType;
