@@ -64,12 +64,19 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 #if TRACE_LIB_ACTIVE
 			if (LatencyTracer != nullptr && OutLatencyTraceId != nullptr)
 			{
-				*OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, Cmd.Property);
-				if (*OutLatencyTraceId == USpatialLatencyTracer::InvalidTraceKey)
+				TraceKey PropertyKey = USpatialLatencyTracer::InvalidTraceKey;
+				PropertyKey = LatencyTracer->RetrievePendingTrace(Object, Cmd.Property);
+				if (PropertyKey == USpatialLatencyTracer::InvalidTraceKey)
 				{
 					// Check for sending a nested property
-					*OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, Parent.Property);
+					PropertyKey = LatencyTracer->RetrievePendingTrace(Object, Parent.Property);
 				}
+				// If we have already got a trace for this actor/component, we will end one of them here
+				if (*OutLatencyTraceId != USpatialLatencyTracer::InvalidTraceKey)
+				{
+					LatencyTracer->EndLatencyTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
+				}
+				*OutLatencyTraceId = PropertyKey;
 			}
 #endif
 			if (GetGroupFromCondition(Parent.Condition) == PropertyGroup)
@@ -144,6 +151,11 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 #if TRACE_LIB_ACTIVE
 		if (LatencyTracer != nullptr && OutLatencyTraceId != nullptr)
 		{
+			// If we have already got a trace for this actor/component, we will end one of them here
+			if (*OutLatencyTraceId != USpatialLatencyTracer::InvalidTraceKey)
+			{
+				LatencyTracer->EndLatencyTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
+			}
 			*OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, PropertyInfo.Property);
 		}
 #endif
