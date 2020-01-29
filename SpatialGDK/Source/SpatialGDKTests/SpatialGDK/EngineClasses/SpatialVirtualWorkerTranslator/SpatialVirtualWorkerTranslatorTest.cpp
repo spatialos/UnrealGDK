@@ -1,13 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "LBStrategySpy.h"
+
 #include "Tests/TestDefinitions.h"
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
+
+#include "Templates/UniquePtr.h"
 #include "UObject/UObjectGlobals.h"
 
-#include "CoreMinimal.h"
-
+#include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
 
 #define VIRTUALWORKERTRANSLATOR_TEST(TestName) \
@@ -15,38 +19,41 @@
 
 VIRTUALWORKERTRANSLATOR_TEST(GIVEN_init_is_not_called_THEN_return_not_ready)
 {
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
+	ULBStrategySpy* LBStrategySpy = NewObject<ULBStrategySpy>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategySpy, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
 
-	TestFalse("Translator without local virtual worker ID is not ready.", translator->IsReady());
+	TestFalse("Translator without local virtual worker ID is not ready.", Translator->IsReady());
+	TestTrue("LBStrategy spy reports an invalid virtual worker ID.", LBStrategySpy->GetVirtualWorkerId() == SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
 
 	return true;
 }
 
 VIRTUALWORKERTRANSLATOR_TEST(GIVEN_worker_name_specified_in_constructor_THEN_return_correct_local_worker_name)
 {
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, "my_worker_name");
+	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, "my_worker_name");
 
-	TestTrue("Local physical worker name returned correctly.", translator->GetLocalPhysicalWorkerName() == "my_worker_name");
+	TestTrue("Local physical worker name returned correctly.", Translator->GetLocalPhysicalWorkerName() == "my_worker_name");
 
 	return true;
 }
 
 VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_nothing_has_changed_THEN_return_no_mappings_and_unintialized_state)
 {
-	// The class is initialized with no data.
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
+	ULBStrategySpy* LBStrategySpy = NewObject<ULBStrategySpy>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategySpy, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
 
-	TestTrue("Worker 1 doesn't exist", translator->GetPhysicalWorkerForVirtualWorker(1) == nullptr);
-	TestTrue("Local virtual worker ID not known", translator->GetLocalVirtualWorkerId() == SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
-	TestFalse("Translator without local virtual worker ID is not ready.", translator->IsReady());
+	TestTrue("Worker 1 doesn't exist", Translator->GetPhysicalWorkerForVirtualWorker(1) == nullptr);
+	TestTrue("Local virtual worker ID not known", Translator->GetLocalVirtualWorkerId() == SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
+	TestFalse("Translator without local virtual worker ID is not ready.", Translator->IsReady());
+	TestTrue("LBStrategy spy reports an invalid virtual worker ID.", LBStrategySpy->GetVirtualWorkerId() == SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
 
 	return true;
 }
 
 VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_receiving_empty_mapping_THEN_ignore_it)
 {
-	// The class is initialized with no data.
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
+	ULBStrategySpy* LBStrategySpy = NewObject<ULBStrategySpy>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategySpy, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
 
 	// Create an empty mapping.
 	Worker_ComponentData Data = {};
@@ -56,18 +63,19 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_receiving_empty_mapping_THEN_
 
 	// Now apply the mapping to the translator and test the result. Because the mapping is empty,
 	// it should ignore the mapping and continue to report an empty mapping.
-	translator->ApplyVirtualWorkerManagerData(DataObject);
+	Translator->ApplyVirtualWorkerManagerData(DataObject);
 
-	TestTrue("Local virtual worker ID not known", translator->GetLocalVirtualWorkerId() == SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
-	TestFalse("Translator without local virtual worker ID is not ready.", translator->IsReady());
+	TestTrue("Local virtual worker ID not known", Translator->GetLocalVirtualWorkerId() == SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
+	TestFalse("Translator without local virtual worker ID is not ready.", Translator->IsReady());
+	TestTrue("LBStrategy spy reports an invalid virtual worker ID.", LBStrategySpy->GetVirtualWorkerId() == SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
 
 	return true;
 }
 
 VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_receiving_incomplete_mapping_THEN_ignore_it)
 {
-	// The class is initialized with no data.
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
+	ULBStrategySpy* LBStrategySpy = NewObject<ULBStrategySpy>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategySpy, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
 
 	// Create a base mapping.
 	Worker_ComponentData Data = {};
@@ -88,20 +96,21 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_receiving_incomplete_mapping_
 
 	// Now apply the mapping to the translator and test the result. Because the mapping doesn't have an entry for this translator,
 	// it should reject the mapping and continue to report an empty mapping.
-	translator->ApplyVirtualWorkerManagerData(DataObject);
+	Translator->ApplyVirtualWorkerManagerData(DataObject);
 
-	TestTrue("There is no mapping for virtual worker 1", translator->GetPhysicalWorkerForVirtualWorker(1) == nullptr);
-	TestTrue("There is no mapping for virtual worker 2", translator->GetPhysicalWorkerForVirtualWorker(2) == nullptr);
-	TestTrue("Local virtual worker ID not known", translator->GetLocalVirtualWorkerId() == SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
-	TestFalse("Translator without local virtual worker ID is not ready.", translator->IsReady());
+	TestTrue("There is no mapping for virtual worker 1", Translator->GetPhysicalWorkerForVirtualWorker(1) == nullptr);
+	TestTrue("There is no mapping for virtual worker 2", Translator->GetPhysicalWorkerForVirtualWorker(2) == nullptr);
+	TestTrue("Local virtual worker ID not known", Translator->GetLocalVirtualWorkerId() == SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
+	TestFalse("Translator without local virtual worker ID is not ready.", Translator->IsReady());
+	TestTrue("LBStrategy spy reports an invalid virtual worker ID.", LBStrategySpy->GetVirtualWorkerId() == SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
 
 	return true;
 }
 
 VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_a_valid_mapping_is_received_THEN_return_the_updated_mapping_and_become_ready)
 {
-	// The class is initialized with no data.
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
+	ULBStrategySpy* LBStrategySpy = NewObject<ULBStrategySpy>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategySpy, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
 
 	// Create a base mapping.
 	Worker_ComponentData Data = {};
@@ -121,26 +130,27 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_a_valid_mapping_is_received_T
 	SpatialGDK::AddStringToSchema(SecondEntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, "VW_F");
 
 	// Now apply the mapping to the translator and test the result.
-	translator->ApplyVirtualWorkerManagerData(DataObject);
+	Translator->ApplyVirtualWorkerManagerData(DataObject);
 	
-	TestTrue("There is a mapping for virtual worker 1", translator->GetPhysicalWorkerForVirtualWorker(1) != nullptr);
-	TestTrue("Virtual worker 1 is UnsetWorkerName", translator->GetPhysicalWorkerForVirtualWorker(1)->Equals(SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME));
+	TestTrue("There is a mapping for virtual worker 1", Translator->GetPhysicalWorkerForVirtualWorker(1) != nullptr);
+	TestTrue("Virtual worker 1 is UnsetWorkerName", Translator->GetPhysicalWorkerForVirtualWorker(1)->Equals(SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME));
 
-	TestTrue("There is a mapping for virtual worker 2", translator->GetPhysicalWorkerForVirtualWorker(2) != nullptr);
-	TestTrue("VirtualWorker 2 is VW_F", translator->GetPhysicalWorkerForVirtualWorker(2)->Equals("VW_F"));
+	TestTrue("There is a mapping for virtual worker 2", Translator->GetPhysicalWorkerForVirtualWorker(2) != nullptr);
+	TestTrue("VirtualWorker 2 is VW_F", Translator->GetPhysicalWorkerForVirtualWorker(2)->Equals("VW_F"));
 
-	TestTrue("There is no mapping for virtual worker 3", translator->GetPhysicalWorkerForVirtualWorker(3) == nullptr);
+	TestTrue("There is no mapping for virtual worker 3", Translator->GetPhysicalWorkerForVirtualWorker(3) == nullptr);
 
-	TestTrue("Local virtual worker ID is known", translator->GetLocalVirtualWorkerId() == 1);
-	TestTrue("Translator with local virtual worker ID is ready.", translator->IsReady());
+	TestTrue("Local virtual worker ID is known", Translator->GetLocalVirtualWorkerId() == 1);
+	TestTrue("Translator with local virtual worker ID is ready.", Translator->IsReady());
+	TestTrue("LBStrategy spy reports the correct virtual worker ID.", LBStrategySpy->GetVirtualWorkerId() == 1);
 
 	return true;
 }
 
 VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_an_invalid_mapping_is_received_THEN_ignore_it)
 {
-	// The class is initialized with no data.
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
+	ULBStrategySpy* LBStrategySpy = NewObject<ULBStrategySpy>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategySpy, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
 
 	// Create a base mapping.
 	Worker_ComponentData ValidData = {};
@@ -160,7 +170,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_an_invalid_mapping_
 	SpatialGDK::AddStringToSchema(SecondEntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, "VW_F");
 
 	// Apply valid mapping to the translator.
-	translator->ApplyVirtualWorkerManagerData(ValidDataObject);
+	Translator->ApplyVirtualWorkerManagerData(ValidDataObject);
 
 	// Create an empty mapping.
 	Worker_ComponentData EmptyData = {};
@@ -170,27 +180,28 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_an_invalid_mapping_
 
 	// Now apply the mapping to the translator and test the result. Because the mapping is empty,
 	// it should ignore the mapping and continue to report a valid mapping.
-	translator->ApplyVirtualWorkerManagerData(EmptyDataObject);
+	Translator->ApplyVirtualWorkerManagerData(EmptyDataObject);
 
 	// Translator should return the values from the initial valid mapping
-	TestTrue("There is a mapping for virtual worker 1", translator->GetPhysicalWorkerForVirtualWorker(1) != nullptr);
-	TestTrue("Virtual worker 1 is UnsetWorkerName", translator->GetPhysicalWorkerForVirtualWorker(1)->Equals(SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME));
+	TestTrue("There is a mapping for virtual worker 1", Translator->GetPhysicalWorkerForVirtualWorker(1) != nullptr);
+	TestTrue("Virtual worker 1 is UnsetWorkerName", Translator->GetPhysicalWorkerForVirtualWorker(1)->Equals(SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME));
 
-	TestTrue("There is a mapping for virtual worker 2", translator->GetPhysicalWorkerForVirtualWorker(2) != nullptr);
-	TestTrue("VirtualWorker 2 is VW_F", translator->GetPhysicalWorkerForVirtualWorker(2)->Equals("VW_F"));
+	TestTrue("There is a mapping for virtual worker 2", Translator->GetPhysicalWorkerForVirtualWorker(2) != nullptr);
+	TestTrue("VirtualWorker 2 is VW_F", Translator->GetPhysicalWorkerForVirtualWorker(2)->Equals("VW_F"));
 
-	TestTrue("There is no mapping for virtual worker 3", translator->GetPhysicalWorkerForVirtualWorker(3) == nullptr);
+	TestTrue("There is no mapping for virtual worker 3", Translator->GetPhysicalWorkerForVirtualWorker(3) == nullptr);
 
-	TestTrue("Local virtual worker ID is known", translator->GetLocalVirtualWorkerId() == 1);
-	TestTrue("Translator with local virtual worker ID is ready.", translator->IsReady());
+	TestTrue("Local virtual worker ID is known", Translator->GetLocalVirtualWorkerId() == 1);
+	TestTrue("Translator with local virtual worker ID is ready.", Translator->IsReady());
+	TestTrue("LBStrategy spy reports the correct virtual worker ID.", LBStrategySpy->GetVirtualWorkerId() == 1);
 
 	return true;
 }
 
 VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mapping_is_received_THEN_update_accordingly)
 {
-	// The class is initialized with no data.
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, "ValidWorkerOne");
+	ULBStrategySpy* LBStrategySpy = NewObject<ULBStrategySpy>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategySpy, "ValidWorkerOne");
 
 	// Create a valid initial mapping.
 	Worker_ComponentData FirstValidData = {};
@@ -210,7 +221,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mappi
 	SpatialGDK::AddStringToSchema(FirstValidSecondEntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, "ValidWorkerTwo");
 
 	// Apply valid mapping to the translator.
-	translator->ApplyVirtualWorkerManagerData(FirstValidDataObject);
+	Translator->ApplyVirtualWorkerManagerData(FirstValidDataObject);
 
 	// Create a second initial mapping.
 	Worker_ComponentData SecondValidData = {};
@@ -230,17 +241,18 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mappi
 	SpatialGDK::AddStringToSchema(SecondValidSecondEntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, "ValidWorkerThree");
 
 	// Apply valid mapping to the translator.
-	translator->ApplyVirtualWorkerManagerData(SecondValidDataObject);
+	Translator->ApplyVirtualWorkerManagerData(SecondValidDataObject);
 
 	// Translator should return the values from the new mapping
-	TestTrue("There is a mapping for virtual worker 1", translator->GetPhysicalWorkerForVirtualWorker(1) != nullptr);
-	TestTrue("Virtual worker 1 is ValidWorkerOne", translator->GetPhysicalWorkerForVirtualWorker(1)->Equals("ValidWorkerOne"));
+	TestTrue("There is a mapping for virtual worker 1", Translator->GetPhysicalWorkerForVirtualWorker(1) != nullptr);
+	TestTrue("Virtual worker 1 is ValidWorkerOne", Translator->GetPhysicalWorkerForVirtualWorker(1)->Equals("ValidWorkerOne"));
 
-	TestTrue("There is an updated mapping for virtual worker 2", translator->GetPhysicalWorkerForVirtualWorker(2) != nullptr);
-	TestTrue("VirtualWorker 2 is ValidWorkerThree", translator->GetPhysicalWorkerForVirtualWorker(2)->Equals("ValidWorkerThree"));
+	TestTrue("There is an updated mapping for virtual worker 2", Translator->GetPhysicalWorkerForVirtualWorker(2) != nullptr);
+	TestTrue("VirtualWorker 2 is ValidWorkerThree", Translator->GetPhysicalWorkerForVirtualWorker(2)->Equals("ValidWorkerThree"));
 
-	TestTrue("Local virtual worker ID is still known", translator->GetLocalVirtualWorkerId() == 1);
-	TestTrue("Translator with local virtual worker ID is still ready.", translator->IsReady());
+	TestTrue("Local virtual worker ID is still known", Translator->GetLocalVirtualWorkerId() == 1);
+	TestTrue("Translator with local virtual worker ID is still ready.", Translator->IsReady());
+	TestTrue("LBStrategy spy reports the correct virtual worker ID.", LBStrategySpy->GetVirtualWorkerId() == 1);
 
 	return true;
 }
@@ -248,8 +260,8 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mappi
 
 VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_try_to_change_local_virtual_worker_id_THEN_ignore_it)
 {
-	// The class is initialized with no data.
-	TUniquePtr<SpatialVirtualWorkerTranslator> translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, "ValidWorkerOne");
+	ULBStrategySpy* LBStrategySpy = NewObject<ULBStrategySpy>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategySpy, "ValidWorkerOne");
 
 	// Create a valid initial mapping.
 	Worker_ComponentData FirstValidData = {};
@@ -264,7 +276,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_try_to_change_local
 	SpatialGDK::AddStringToSchema(FirstValidDataFirstEntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, "ValidWorkerOne");
 
 	// Apply valid mapping to the translator.
-	translator->ApplyVirtualWorkerManagerData(FirstValidDataObject);
+	Translator->ApplyVirtualWorkerManagerData(FirstValidDataObject);
 
 	// Create a second initial mapping.
 	Worker_ComponentData SecondValidData = {};
@@ -280,16 +292,17 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_try_to_change_local
 
 	// Apply valid mapping to the translator.
 	AddExpectedError(TEXT("Received mapping containing a new and updated virtual worker ID, this shouldn't happen."), EAutomationExpectedErrorFlags::Contains, 1);
-	translator->ApplyVirtualWorkerManagerData(SecondValidDataObject);
+	Translator->ApplyVirtualWorkerManagerData(SecondValidDataObject);
 
 	// Translator should return the values from the original mapping
-	TestTrue("There is a mapping for virtual worker 1", translator->GetPhysicalWorkerForVirtualWorker(1) != nullptr);
-	TestTrue("Virtual worker 1 is ValidWorkerOne", translator->GetPhysicalWorkerForVirtualWorker(1)->Equals("ValidWorkerOne"));
+	TestTrue("There is a mapping for virtual worker 1", Translator->GetPhysicalWorkerForVirtualWorker(1) != nullptr);
+	TestTrue("Virtual worker 1 is ValidWorkerOne", Translator->GetPhysicalWorkerForVirtualWorker(1)->Equals("ValidWorkerOne"));
 
-	TestTrue("There is no mapping for virtual worker 2", translator->GetPhysicalWorkerForVirtualWorker(2) == nullptr);
+	TestTrue("There is no mapping for virtual worker 2", Translator->GetPhysicalWorkerForVirtualWorker(2) == nullptr);
 
-	TestTrue("Local virtual worker ID is still known", translator->GetLocalVirtualWorkerId() == 1);
-	TestTrue("Translator with local virtual worker ID is still ready.", translator->IsReady());
+	TestTrue("Local virtual worker ID is still known", Translator->GetLocalVirtualWorkerId() == 1);
+	TestTrue("Translator with local virtual worker ID is still ready.", Translator->IsReady());
+	TestTrue("LBStrategy spy reports the correct virtual worker ID.", LBStrategySpy->GetVirtualWorkerId() == 1);
 
 	return true;
 }
