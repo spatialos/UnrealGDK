@@ -178,9 +178,9 @@ bool FReleaseLockViaDelegate::Update()
 	AActor* Actor = Data->TestActors[ActorHandle];
 
 	check(Data->ReleaseLockDelegate.IsBound());
-	Data->ReleaseLockDelegate.Execute(Actor, DelegateLockIdentifier);
+	bool ReleaseLockSucceeded = Data->ReleaseLockDelegate.Execute(Actor, DelegateLockIdentifier);
 
-	return true;
+	return ReleaseLockSucceeded;
 }
 
 DEFINE_LATENT_AUTOMATION_COMMAND_FOUR_PARAMETER(FReleaseLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, LockDebugString);

@@ -32,7 +32,7 @@ public:
 		ReleaseLockDelegate.BindUObject(this, &UAbstractLockingPolicy::ReleaseLockFromDelegate);
 	};
 	virtual ActorLockToken AcquireLock(AActor* Actor, FString LockName = TEXT("")) PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLock, return SpatialConstants::INVALID_ACTOR_LOCK_TOKEN;);
-	virtual void ReleaseLock(ActorLockToken Token) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLock, return;);
+	virtual bool ReleaseLock(ActorLockToken Token) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLock, return false;);
 	virtual bool IsLocked(const AActor* Actor) const PURE_VIRTUAL(UAbstractLockingPolicy::IsLocked, return false;);
 
 protected:
@@ -42,5 +42,5 @@ protected:
 
 private:
 	virtual bool AcquireLockFromDelegate(AActor* ActorToLock, const FString& DelegateLockIdentifier) PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLockFromDelegate, return false;);
-	virtual void ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLockFromDelegate, return;);
+	virtual bool ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLockFromDelegate, return false;);
 };

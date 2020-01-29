@@ -75,14 +75,17 @@ ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(AActor* Actor, FStrin
 	return NextToken++;
 }
 
-void UReferenceCountedLockingPolicy::ReleaseLock(ActorLockToken Token)
+bool UReferenceCountedLockingPolicy::ReleaseLock(ActorLockToken Token)
 {
 	const auto NameAndActor = TokenToNameAndActor.FindAndRemoveChecked(Token);
 	const AActor* Actor = NameAndActor.Actor;
 	const FString& Name = NameAndActor.LockName;
 	UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Releasing actor migration lock. Actor: %s. Token: %d. Lock name: %s"), *Actor->GetName(), Token, *Name);
 
-	check(ActorToLockingState.Contains(Actor));
+	if (!ActorToLockingState.Contains(Actor))
+	{
+		return false;
+	}
 
 	{
 		// Reduce the reference count and erase the entry if reduced to 0.
@@ -99,6 +102,8 @@ void UReferenceCountedLockingPolicy::ReleaseLock(ActorLockToken Token)
 			--ActorLockingState.LockCount;
 		}
 	}
+
+	return true;
 }
 
 bool UReferenceCountedLockingPolicy::IsLocked(const AActor* Actor) const
@@ -142,8 +147,13 @@ bool UReferenceCountedLockingPolicy::AcquireLockFromDelegate(AActor* ActorToLock
 	return true;
 }
 
-void UReferenceCountedLockingPolicy::ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier)
+bool UReferenceCountedLockingPolicy::ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier)
 {
+	if (!DelegateLockingIdentifierToActorLockToken.Contains(DelegateLockIdentifier))
+	{
+		return false;
+	}
 	ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(DelegateLockIdentifier);
-	ReleaseLock(LockToken);
+	bool ReleaseSucceeded = ReleaseLock(LockToken);
+	return ReleaseSucceeded;
 }

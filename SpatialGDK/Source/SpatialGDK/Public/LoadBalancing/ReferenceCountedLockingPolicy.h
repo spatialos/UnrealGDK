@@ -20,7 +20,7 @@ public:
 	virtual ActorLockToken AcquireLock(AActor* Actor, FString DebugString = "") override;
 
 	// This should only be called during the lifetime of the locked actor
-	virtual void ReleaseLock(ActorLockToken Token) override;
+	virtual bool ReleaseLock(ActorLockToken Token) override;
 
 	virtual bool IsLocked(const AActor* Actor) const override;
 
@@ -42,8 +42,8 @@ private:
 
 	bool CanAcquireLock(AActor* Actor) const;
 
-	virtual bool AcquireLockFromDelegate(AActor* ActorToLock, const FString& DelegateLockIdentifier) override;
-	virtual void ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier) override;
+	virtual bool AcquireLockFromDelegate(AActor* ActorToLock,    const FString& DelegateLockIdentifier) override;
+	virtual bool ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier) override;
 
 	TMap<const AActor*, MigrationLockElement> ActorToLockingState;
 	TMap<ActorLockToken, LockNameAndActor> TokenToNameAndActor;
