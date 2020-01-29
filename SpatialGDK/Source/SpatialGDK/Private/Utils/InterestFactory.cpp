@@ -306,8 +306,6 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-	const Worker_ComponentId ClientEndpointComponentId = SpatialConstants::GetClientAuthorityComponent(SpatialGDKSettings->bUseRPCRingBuffers);
-
 	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints();
 
 	// Clients should only check out entities that are in loaded sub-levels
@@ -336,6 +334,8 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 	{
 		ClientQuery.FullSnapshotResult = true;
 	}
+
+	const Worker_ComponentId ClientEndpointComponentId = SpatialConstants::GetClientAuthorityComponent(SpatialGDKSettings->bUseRPCRingBuffers);
 
 	AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, ClientQuery);
 
@@ -398,7 +398,6 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 
 void InterestFactory::GetActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const
 {
-	TArray<Query> Queries;
 	check(ClassInfoManager);
 
 	if (InActor == nullptr)
@@ -410,7 +409,7 @@ void InterestFactory::GetActorUserDefinedQueries(const AActor* InActor, const Qu
 	InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
 	if (ActorInterestComponents.Num() == 1)
 	{
-		ActorInterestComponents[0]->CreateQueries(*ClassInfoManager, LevelConstraints, Queries);
+		ActorInterestComponents[0]->CreateQueries(*ClassInfoManager, LevelConstraints, OutQueries);
 	}
 	else if (ActorInterestComponents.Num() > 1)
 	{
