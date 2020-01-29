@@ -443,7 +443,7 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 
 		StaticComponentView->OnAddComponent(AddOp);
 
-		Worker_ComponentData NewComponentData = ComponentFactory::CreateEmptyComponentData(NewComponent);
+		FWorkerComponentData NewComponentData = ComponentFactory::CreateEmptyComponentData(NewComponent);
 		Connection->SendAddComponent(EntityId, &NewComponentData);
 	}
 }
