@@ -607,7 +607,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 				UnpackedComponentData[i] = Message->Components[i];
 			}
 			Worker_ComponentData* ComponentPtr = UnpackedComponentData.GetData();
-			uint32 ComponentCount = Message->Components.Num();
+			uint32 ComponentCount = UnpackedComponentData.Num();
 #else
 			Worker_ComponentData* ComponentPtr = Message->Components.GetData();
 			uint32 ComponentCount = Message->Components.Num();
