@@ -18,7 +18,7 @@ namespace SpatialGDK
 class SPATIALGDK_API InterestFactory
 {
 public:
-	InterestFactory(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId EntityId, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
+	InterestFactory(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
 
 	static void CreateAndCacheInterestState(USpatialClassInfoManager* ClassInfoManager);
 
