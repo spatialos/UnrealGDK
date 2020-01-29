@@ -235,9 +235,9 @@ Interest InterestFactory::CreateServerWorkerInterest()
 		UE_LOG(LogInterestFactory, Warning, TEXT("For performance reasons, it's recommended to disable server QBI when using offloading"));
 	}
 
-	if (!SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
+	if (!SpatialGDKSettings->bEnableServerQBI)
 	{
-		// In offloading scenarios, hijack the server worker entity to ensure each server has interest in all entities
+		// The server worker should have interest in all entities
 		Constraint.ComponentConstraint = SpatialConstants::POSITION_COMPONENT_ID;
 	}
 	else
