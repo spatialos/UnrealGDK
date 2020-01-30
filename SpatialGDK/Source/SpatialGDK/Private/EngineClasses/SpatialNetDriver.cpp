@@ -49,11 +49,11 @@
 #include "SpatialGDKServicesModule.h"
 #endif
 
+using SpatialGDK::ComponentFactory;
 using SpatialGDK::FindFirstOpOfType;
 using SpatialGDK::FindFirstOpOfTypeForComponent;
 using SpatialGDK::InterestFactory;
 using SpatialGDK::RPCPayload;
-using SpatialGDK::ComponentFactory;
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
