@@ -14,6 +14,7 @@
 #include "Schema/Singleton.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
+#include "Schema/Tombstone.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
@@ -21,7 +22,6 @@
 #include "Utils/SpatialDebugger.h"
 
 #include "Engine.h"
-#include "Schema/Tombstone.h"
 
 namespace SpatialGDK
 {
