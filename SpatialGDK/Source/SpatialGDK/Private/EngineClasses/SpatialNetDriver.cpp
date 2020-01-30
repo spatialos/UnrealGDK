@@ -2086,7 +2086,8 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 			Worker_AddComponentOp AddComponentOp{};
 			AddComponentOp.entity_id = EntityId;
 			AddComponentOp.data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID);
-			Connection->SendAddComponent(AddComponentOp.entity_id, &AddComponentOp.data);
+			FWorkerComponentData Data{ AddComponentOp.data };
+			Connection->SendAddComponent(AddComponentOp.entity_id, &Data);
 			StaticComponentView->OnAddComponent(AddComponentOp);
 		}
 	}
