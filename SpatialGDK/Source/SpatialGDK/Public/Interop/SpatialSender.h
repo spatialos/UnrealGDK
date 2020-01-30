@@ -90,6 +90,9 @@ public:
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void RetireEntity(const Worker_EntityId EntityId);
 
+	/** Creates an entity containing just a tombstone component and the minimal data to resolve an actor. */
+	void CreateTombstoneEntity(AActor* Actor);
+
 	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 
@@ -124,6 +127,20 @@ public:
 	bool ValidateOrExit_IsSupportedClass(const FString& PathName);
 
 private:
+	struct EntityComponentsDeleter
+	{
+		void operator()(TArray<Worker_ComponentData>* Components) const noexcept;
+	};
+
+	using EntityComponents = TUniquePtr<TArray<Worker_ComponentData>, EntityComponentsDeleter>;
+
+	// Create a copy of an array of components. Deep copies all Schema_ComponentData.
+	static TArray<Worker_ComponentData> CopyEntityComponentData(const EntityComponents& EntityComponents);
+
+	// Create an entity given a set of components and an ID. Retries with the same component data and entity ID on timeout.
+	// Requires that EntitiesBeingCreatedWithRetries contains the component data with the key of EntityId.
+	void CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName);
+
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
 	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
@@ -139,6 +156,7 @@ private:
 	ERPCResult AddPendingRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId RPCIndext);
 
 	TArray<Worker_InterestOverride> CreateComponentInterestForActor(USpatialActorChannel* Channel, bool bIsNetOwned);
+
 	// RPC Tracking
 #if !UE_BUILD_SHIPPING
 	void TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType);
@@ -161,6 +179,10 @@ private:
 
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
+
+	// Stores the component data of entities being created for which we need to persist the component data between retries.
+	// We can not have the response delegates own the data as they must be copyable.
+	TMap<Worker_EntityId_Key, EntityComponents> EntitiesBeingCreatedWithRetries;
 
 	SpatialActorGroupManager* ActorGroupManager;
 

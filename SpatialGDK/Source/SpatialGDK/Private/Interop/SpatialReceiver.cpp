@@ -827,7 +827,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
 	TWeakObjectPtr<UObject> WeakActor = PackageMap->GetObjectFromEntityId(EntityId);
 
-	// Actor has been destroyed already. Clean up surrounding bookkeeping.
+	// Actor has not been resolved yet or has already been destroyed. Clean up surrounding bookkeeping.
 	if (!WeakActor.IsValid())
 	{
 		DestroyActor(nullptr, EntityId);
@@ -1931,17 +1931,17 @@ void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TShared
 
 void USpatialReceiver::AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
 {
-	EntityQueryDelegates.Add(RequestId, Delegate);
+	EntityQueryDelegates.Add(RequestId, MoveTemp(Delegate));
 }
 
 void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate)
 {
-	ReserveEntityIDsDelegates.Add(RequestId, Delegate);
+	ReserveEntityIDsDelegates.Add(RequestId, MoveTemp(Delegate));
 }
 
-void USpatialReceiver::AddCreateEntityDelegate(Worker_RequestId RequestId, const CreateEntityDelegate& Delegate)
+void USpatialReceiver::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
 {
-	CreateEntityDelegates.Add(RequestId, Delegate);
+	CreateEntityDelegates.Emplace(RequestId, MoveTemp(Delegate));
 }
 
 TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
