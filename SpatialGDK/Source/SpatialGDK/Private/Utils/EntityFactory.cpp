@@ -6,7 +6,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialRPCService.h"
-#include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
@@ -33,7 +32,7 @@ EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapC
 	, RPCService(InRPCService)
 { }
  
-TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs)
+TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs)
 {
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
@@ -140,7 +139,14 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 	}
 
+	// Add all Interest component IDs to allow us to change it if needed.
 	ComponentWriteAcl.Add(SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	for (const auto ComponentId : ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
+	{
+		ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
+	}
+
+	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
@@ -201,7 +207,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		bNetStartup = Actor->bNetStartup;
 	}
 
-	TArray<Worker_ComponentData> ComponentDatas;
+	TArray<FWorkerComponentData> ComponentDatas;
 	ComponentDatas.Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
@@ -241,14 +247,14 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentDatas.Add(Singleton().CreateSingletonData());
 	}
 
-	if (Actor->bAlwaysRelevant)
+	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(AlwaysRelevant().CreateData());
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
 	}
 
 	if (Actor->NetDormancy >= DORM_DormantAll)
 	{
-		ComponentDatas.Add(Dormant().CreateData());
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID));
 	}
 
 	if (Actor->IsA<APlayerController>())
@@ -266,10 +272,10 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
 
-	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
+	TArray<FWorkerComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 	ComponentDatas.Append(DynamicComponentDatas);
 
-	InterestFactory InterestDataFactory(Actor, Info, ClassInfoManager, PackageMap);
+	InterestFactory InterestDataFactory(Actor, Info, EntityId, ClassInfoManager, PackageMap);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
 	if (SpatialSettings->bUseRPCRingBuffers && RPCService != nullptr)
@@ -328,7 +334,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-			TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+			TArray<FWorkerComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 			ComponentDatas.Append(ActorSubobjectDatas);
 		}
 	}
@@ -362,8 +368,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-		TraceKey LatencyKey; // Currently untracked. Will be dealt with by UNR-2726 
-		Worker_ComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges, LatencyKey);
+		FWorkerComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges);
 		ComponentDatas.Add(SubobjectHandoverData);
 
 		ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);

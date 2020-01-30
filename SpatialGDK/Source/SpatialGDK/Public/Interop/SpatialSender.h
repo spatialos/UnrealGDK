@@ -56,18 +56,11 @@ struct FPendingRPC
 	Schema_EntityId Entity;
 };
 
-struct FQueuedUpdate
-{
-	TArray<Worker_ComponentUpdate> ComponentUpdates;
-#if TRACE_LIB_ACTIVE
-	TArray<TraceKey> LatencyKeys;
-#endif
-};
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation>;
-using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, FQueuedUpdate>;
+using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>>;
 using FChannelsToUpdatePosition = TSet<TWeakObjectPtr<USpatialActorChannel>>;
 
 UCLASS()
@@ -92,6 +85,7 @@ public:
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
 	void SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info);
 	void SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info);
+	void SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void RetireEntity(const Worker_EntityId EntityId);

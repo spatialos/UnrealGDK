@@ -32,9 +32,9 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/ReferenceCountedLockingPolicy.h"
-#include "Schema/AlwaysRelevant.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/ComponentFactory.h"
 #include "Utils/EntityPool.h"
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/InterestFactory.h"
@@ -2085,8 +2085,9 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 		{
 			Worker_AddComponentOp AddComponentOp{};
 			AddComponentOp.entity_id = EntityId;
-			AddComponentOp.data = SpatialGDK::Dormant().CreateData();
-			Connection->SendAddComponent(AddComponentOp.entity_id, &AddComponentOp.data);
+			AddComponentOp.data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID);
+			FWorkerComponentData Data{ AddComponentOp.data };
+			Connection->SendAddComponent(AddComponentOp.entity_id, &Data);
 			StaticComponentView->OnAddComponent(AddComponentOp);
 		}
 	}

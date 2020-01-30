@@ -646,6 +646,22 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 
 	ActorClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
 
+	// Cache the NCD for this Actor
+	if (AActor* CDO = Class->GetDefaultObject<AActor>())
+	{
+		const float NCD = CDO->NetCullDistanceSquared;
+		if (NetCullDistanceToComponentId.Find(NCD) == nullptr)
+		{
+			if (FMath::FloorToFloat(NCD) != NCD)
+			{
+				UE_LOG(LogSchemaGenerator, Warning, TEXT("Fractional Net Cull Distance values are not supported and may result in incorrect behaviour. "
+					"Please modify class's (%s) Net Cull Distance Squared value (%f)"), *Class->GetPathName(), NCD);
+			}
+
+			NetCullDistanceToComponentId.Add(NCD, 0);
+		}
+	}
+
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
 }
 
