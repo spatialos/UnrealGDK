@@ -127,13 +127,13 @@ public:
 private:
 	struct EntityComponentsDeleter
 	{
-		void operator()(TArray<Worker_ComponentData>* Components) const noexcept;
+		void operator()(TArray<FWorkerComponentData>* Components) const noexcept;
 	};
 
-	using EntityComponents = TUniquePtr<TArray<Worker_ComponentData>, EntityComponentsDeleter>;
+	using EntityComponents = TUniquePtr<TArray<FWorkerComponentData>, EntityComponentsDeleter>;
 
 	// Create a copy of an array of components. Deep copies all Schema_ComponentData.
-	static TArray<Worker_ComponentData> CopyEntityComponentData(const EntityComponents& EntityComponents);
+	static TArray<FWorkerComponentData> CopyEntityComponentData(const EntityComponents& EntityComponents);
 
 	// Create an entity given a set of components and an ID. Retries with the same component data and entity ID on timeout.
 	// Requires that EntitiesBeingCreatedWithRetries contains the component data with the key of EntityId.

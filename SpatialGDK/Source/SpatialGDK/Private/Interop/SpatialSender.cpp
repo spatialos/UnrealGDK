@@ -251,14 +251,14 @@ bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
 	return ClassInfoManager->ValidateOrExit_IsSupportedClass(RemappedPathName);
 }
 
-void USpatialSender::EntityComponentsDeleter::operator()(TArray<Worker_ComponentData>* Components) const noexcept
+void USpatialSender::EntityComponentsDeleter::operator()(TArray<FWorkerComponentData>* Components) const noexcept
 {
 	if (Components == nullptr)
 	{
 		return;
 	}
 
-	for (Worker_ComponentData Component : *Components)
+	for (FWorkerComponentData Component : *Components)
 	{
 		Schema_DestroyComponentData(Component.schema_type);
 	}
@@ -266,11 +266,11 @@ void USpatialSender::EntityComponentsDeleter::operator()(TArray<Worker_Component
 	delete Components;
 }
 
-TArray<Worker_ComponentData> USpatialSender::CopyEntityComponentData(const EntityComponents& EntityComponents)
+TArray<FWorkerComponentData> USpatialSender::CopyEntityComponentData(const EntityComponents& EntityComponents)
 {
-	TArray<Worker_ComponentData> Copy;
+	TArray<FWorkerComponentData> Copy;
 	Copy.Reserve(EntityComponents->Num());
-	for (const Worker_ComponentData& Component : *EntityComponents)
+	for (const FWorkerComponentData& Component : *EntityComponents)
 	{
 		Copy.Emplace(Worker_ComponentData{
 			Component.reserved,
@@ -1173,7 +1173,7 @@ void USpatialSender::CreateTombstoneEntity(AActor* Actor)
 	GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
 	const TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
 
-	EntityComponents Components(new TArray<Worker_ComponentData>);
+	EntityComponents Components(new TArray<FWorkerComponentData>);
 	Components->Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreatePositionData());
 	Components->Add(Metadata(Class->GetName()).CreateMetadataData());
 	Components->Add(UnrealMetadata(StablyNamedObjectRef, GetOwnerWorkerAttribute(Actor), Class->GetPathName(), true).CreateUnrealMetadataData());
