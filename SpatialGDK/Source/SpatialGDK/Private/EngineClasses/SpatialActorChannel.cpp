@@ -1311,7 +1311,7 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	{
 		bNetOwned = bNewNetOwned;
 		// Don't send dynamic interest for this ownership change if it is otherwise handled by result types.
-		if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
+		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 		{
 			return;		
 		}

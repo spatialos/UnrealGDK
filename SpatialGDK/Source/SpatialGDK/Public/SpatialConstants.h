@@ -268,6 +268,27 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST = 
 	SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
 };
 
+// A list of components servers require on top of any generated data and handover components in order to handle non-authoritative actors correctly.
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST = TArray<Worker_ComponentId>
+{
+	UNREAL_METADATA_COMPONENT_ID,
+	SPAWN_DATA_COMPONENT_ID,
+	RPCS_ON_ENTITY_CREATION_ID,
+	MULTICAST_RPCS_COMPONENT_ID,
+	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
+	// Required for server to server RPCs. TODO(UNR-2815): split server to server RPCs into its own component
+	SERVER_ENDPOINT_COMPONENT_ID,
+	SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+};
+
+// A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest query.
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST = TArray<Worker_ComponentId>
+{
+	CLIENT_ENDPOINT_COMPONENT_ID,
+	CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
+	HEARTBEAT_COMPONENT_ID
+};
+
 FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {
 	switch (RPCType)

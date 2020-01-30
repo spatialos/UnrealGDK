@@ -36,7 +36,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, bEnableServerQBI(true)
-	, bEnableClientResultTypes(false)
+	, bEnableResultTypes(false)
 	, bPackRPCs(false)
 	, bUseDevelopmentAuthenticationFlow(false)
 	, ServicesRegion(EServicesRegion::Default)
@@ -122,15 +122,15 @@ void USpatialGDKSettings::PostInitProperties()
 		}
 	}
 
-	if (FParse::Param(CommandLine, TEXT("OverrideClientResultTypes")))
+	if (FParse::Param(CommandLine, TEXT("OverrideResultTypes")))
 	{
-		bEnableClientResultTypes = true;
+		bEnableResultTypes = true;
 	}
 	else
 	{
-		FParse::Bool(CommandLine, TEXT("OverrideClientResultTypes="), bEnableClientResultTypes);
+		FParse::Bool(CommandLine, TEXT("OverrideResultTypes="), bEnableResultTypes);
 	}
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Client result types are %s."), bEnableClientResultTypes ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Result types are %s."), bEnableResultTypes ? TEXT("enabled") : TEXT("disabled"));
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
