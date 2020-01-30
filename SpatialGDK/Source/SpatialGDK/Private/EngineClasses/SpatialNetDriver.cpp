@@ -830,10 +830,8 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 				UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Creating a tombstone entity for initially dormant statup actor. "
 					"Actor: %s."), *ThisActor->GetName());
 				Sender->CreateTombstoneEntity(ThisActor);
-				return;
 			}
-
-			if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
+			else if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
 			{
 				// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
 				if (!StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId))

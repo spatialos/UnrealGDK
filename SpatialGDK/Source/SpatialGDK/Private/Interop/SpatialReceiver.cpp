@@ -1941,7 +1941,7 @@ void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, R
 
 void USpatialReceiver::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
 {
-	CreateEntityDelegates.Emplace(RequestId, MoveTemp(Delegate));
+	CreateEntityDelegates.Add(RequestId, MoveTemp(Delegate));
 }
 
 TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
