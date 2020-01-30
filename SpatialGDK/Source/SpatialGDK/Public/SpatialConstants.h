@@ -265,7 +265,8 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
 {
 	SERVER_ENDPOINT_COMPONENT_ID,
-	SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+	SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
+	HEARTBEAT_COMPONENT_ID
 };
 
 // A list of components servers require on top of any generated data and handover components in order to handle non-authoritative actors correctly.
