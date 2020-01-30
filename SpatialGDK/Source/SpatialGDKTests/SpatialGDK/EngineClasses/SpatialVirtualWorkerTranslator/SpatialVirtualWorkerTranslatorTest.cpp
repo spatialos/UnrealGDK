@@ -77,9 +77,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_receiving_empty_mapping_THEN_
 
 	// Create an empty mapping.
 	Worker_ComponentData Data = {};
-	Data.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
-	Data.schema_type = Schema_CreateComponentData();
-	Schema_Object* DataObject = Schema_GetComponentDataFields(Data.schema_type);
+	Schema_Object* DataObject = CreateTranslationComponentDataFields(Data);
 
 	// Now apply the mapping to the translator and test the result. Because the mapping is empty,
 	// it should ignore the mapping and continue to report an empty mapping.
