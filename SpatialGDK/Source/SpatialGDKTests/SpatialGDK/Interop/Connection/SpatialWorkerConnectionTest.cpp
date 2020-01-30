@@ -159,8 +159,6 @@ bool FFindWorkerResponseOfType::Update()
 	}
 }
 
-struct FConnectionsFixture;
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetupConnectionFixture, USpatialWorkerConnection*, ServerConnection, USpatialWorkerConnection*, ClientConnection);
 DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FCleanupConnectionFixture, USpatialWorkerConnection*, ServerConnection, USpatialWorkerConnection*, ClientConnection);
 
 struct FConnectionsFixture
@@ -169,8 +167,9 @@ struct FConnectionsFixture
 		: ClientConnection(NewObject<USpatialWorkerConnection>())
 		, ServerConnection(NewObject<USpatialWorkerConnection>())
 	{
+		ClientConnection->AddToRoot();
+		ServerConnection->AddToRoot();
 		
-		ADD_LATENT_AUTOMATION_COMMAND(FSetupConnectionFixture(ServerConnection, ClientConnection));
 		ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnection, true));
 		ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ServerConnection, false));
 		ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
@@ -184,14 +183,6 @@ struct FConnectionsFixture
 	USpatialWorkerConnection* ClientConnection = nullptr;
 	USpatialWorkerConnection* ServerConnection = nullptr;
 };
-
-bool FSetupConnectionFixture::Update()
-{
-	ClientConnection->AddToRoot();
-	ServerConnection->AddToRoot();
-
-	return true;
-}
 
 bool FCleanupConnectionFixture::Update()
 {
