@@ -3,15 +3,15 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialOSDispatcherInterface.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslationManager);
 
 SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(
-	USpatialReceiver* InReceiver,
-	USpatialWorkerConnection* InConnection,
+	SpatialOSDispatcherInterface* InReceiver,
+	SpatialOSWorkerInterface* InConnection,
 	SpatialVirtualWorkerTranslator* InTranslator)
 	: Receiver(InReceiver)
 	, Connection(InConnection)
@@ -106,7 +106,7 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate()
 
 	WriteMappingToSchema(UpdateObject);
 
-	check(Connection.IsValid());
+	check(Connection != nullptr);
 	Connection->SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, &Update);
 
 	// The Translator on the worker which hosts the manager won't get the component update notification,
@@ -139,14 +139,14 @@ void SpatialVirtualWorkerTranslationManager::QueryForWorkerEntities()
 	WorkerEntityQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	// Make the query.
-	check(Connection.IsValid());
+	check(Connection != nullptr);
 	Worker_RequestId RequestID = Connection->SendEntityQueryRequest(&WorkerEntityQuery);
 	bWorkerEntityQueryInFlight = true;
 
 	// Register a method to handle the query response.
 	EntityQueryDelegate WorkerEntityQueryDelegate;
 	WorkerEntityQueryDelegate.BindRaw(this, &SpatialVirtualWorkerTranslationManager::WorkerEntityQueryDelegate);
-	check(Receiver.IsValid());
+	check(Receiver != nullptr);
 	Receiver->AddEntityQueryDelegate(RequestID, WorkerEntityQueryDelegate);
 }
 

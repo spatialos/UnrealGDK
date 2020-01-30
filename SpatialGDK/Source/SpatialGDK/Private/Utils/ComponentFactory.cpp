@@ -421,7 +421,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	// Only support Interest for Actors for now.
 	if (Object->IsA<AActor>() && bInterestHasChanged)
 	{
-		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, NetDriver->ClassInfoManager, NetDriver->PackageMap);
+		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, EntityId, NetDriver->ClassInfoManager, NetDriver->PackageMap);
 		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());
 	}
 
