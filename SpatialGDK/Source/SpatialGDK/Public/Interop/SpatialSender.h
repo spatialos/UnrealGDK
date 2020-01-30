@@ -88,7 +88,7 @@ public:
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void RetireEntity(const Worker_EntityId EntityId);
 
-	/** Creates an entity containing just a tombstone component and the minimal data to resolve an actor. */
+	// Creates an entity containing just a tombstone component and the minimal data to resolve an actor.
 	void CreateTombstoneEntity(AActor* Actor);
 
 	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
@@ -125,19 +125,13 @@ public:
 	bool ValidateOrExit_IsSupportedClass(const FString& PathName);
 
 private:
-	struct EntityComponentsDeleter
-	{
-		void operator()(TArray<FWorkerComponentData>* Components) const noexcept;
-	};
-
-	using EntityComponents = TUniquePtr<TArray<FWorkerComponentData>, EntityComponentsDeleter>;
-
 	// Create a copy of an array of components. Deep copies all Schema_ComponentData.
-	static TArray<FWorkerComponentData> CopyEntityComponentData(const EntityComponents& EntityComponents);
+	static TArray<FWorkerComponentData> CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents);
+	// Create a copy of an array of components. Deep copies all Schema_ComponentData.
+	static void DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents);
 
 	// Create an entity given a set of components and an ID. Retries with the same component data and entity ID on timeout.
-	// Requires that EntitiesBeingCreatedWithRetries contains the component data with the key of EntityId.
-	void CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName);
+	void CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> Components);
 
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
@@ -177,10 +171,6 @@ private:
 
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
-
-	// Stores the component data of entities being created for which we need to persist the component data between retries.
-	// We can not have the response delegates own the data as they must be copyable.
-	TMap<Worker_EntityId_Key, EntityComponents> EntitiesBeingCreatedWithRetries;
 
 	SpatialActorGroupManager* ActorGroupManager;
 

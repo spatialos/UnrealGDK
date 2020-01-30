@@ -21,14 +21,12 @@
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
-#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/SpatialActorGroupManager.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
@@ -251,26 +249,19 @@ bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
 	return ClassInfoManager->ValidateOrExit_IsSupportedClass(RemappedPathName);
 }
 
-void USpatialSender::EntityComponentsDeleter::operator()(TArray<FWorkerComponentData>* Components) const noexcept
+void USpatialSender::DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents)
 {
-	if (Components == nullptr)
-	{
-		return;
-	}
-
-	for (FWorkerComponentData Component : *Components)
+	for (FWorkerComponentData& Component : EntityComponents)
 	{
 		Schema_DestroyComponentData(Component.schema_type);
 	}
-
-	delete Components;
 }
 
-TArray<FWorkerComponentData> USpatialSender::CopyEntityComponentData(const EntityComponents& EntityComponents)
+TArray<FWorkerComponentData> USpatialSender::CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents)
 {
 	TArray<FWorkerComponentData> Copy;
-	Copy.Reserve(EntityComponents->Num());
-	for (const FWorkerComponentData& Component : *EntityComponents)
+	Copy.Reserve(EntityComponents.Num());
+	for (const FWorkerComponentData& Component : EntityComponents)
 	{
 		Copy.Emplace(Worker_ComponentData{
 			Component.reserved,
@@ -283,32 +274,30 @@ TArray<FWorkerComponentData> USpatialSender::CopyEntityComponentData(const Entit
 	return Copy;
 }
 
-void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName)
+void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> EntityComponents)
 {
-	const EntityComponents& Components = EntitiesBeingCreatedWithRetries[EntityId];
-	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(CopyEntityComponentData(Components), &EntityId);
+	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(CopyEntityComponentData(EntityComponents), &EntityId);
 
 	CreateEntityDelegate Delegate;
 
-	Delegate.BindLambda([this, EntityId, Name = MoveTemp(EntityName)](const Worker_CreateEntityResponseOp& Op) mutable
+	Delegate.BindLambda([this, EntityId, Name = MoveTemp(EntityName), Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable
 	{
-		const EntityComponents& Components = EntitiesBeingCreatedWithRetries[EntityId];
 		switch(Op.status_code)
 		{
 		case WORKER_STATUS_CODE_SUCCESS:
 			UE_LOG(LogSpatialSender, Log, TEXT("Created entity. "
 				"Entity name: %s, entity id: %lld"), *Name, EntityId);
-			EntitiesBeingCreatedWithRetries.Remove(EntityId);
+			DeleteEntityComponentData(Components);
 			break;
 		case WORKER_STATUS_CODE_TIMEOUT:
 			UE_LOG(LogSpatialSender, Log, TEXT("Timed out creating entity. Retrying. "
 				"Entity name: %s, entity id: %lld"), *Name, EntityId);
-			CreateEntityWithRetries(EntityId,  MoveTemp(Name));
+			CreateEntityWithRetries(EntityId,  MoveTemp(Name), MoveTemp(Components));
 			break;
 		default:
 			UE_LOG(LogSpatialSender, Log, TEXT("Failed to create entity. It might already be created. Not retrying. "
 				"Entity name: %s, entity id: %lld"), *Name, EntityId);
-			EntitiesBeingCreatedWithRetries.Remove(EntityId);
+			DeleteEntityComponentData(Components);
 			break;
 		}
 	});
@@ -1127,68 +1116,13 @@ void USpatialSender::CreateTombstoneEntity(AActor* Actor)
 	check(Actor->IsNetStartupActor());
 
 	const Worker_EntityId EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
-	const UClass* Class = Actor->GetClass();
 
-	// Construct an ACL for a read-only entity.
-	WorkerRequirementSet AnyServerRequirementSet;
-	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
+	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
 
-	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->ServerWorkerTypes)
-	{
-		WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
+	Components.Add(CreateLevelComponentData(Actor));
 
-		AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
-		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
-	}
-
-	// Add Zoning Attribute if we are using the load balancer.
-	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
-	{
-		const WorkerAttributeSet ZoningAttributeSet = { SpatialConstants::ZoningAttribute };
-		AnyServerRequirementSet.Add(ZoningAttributeSet);
-		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
-	}
-
-	WorkerRequirementSet ReadAcl;
-	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
-	{
-		ReadAcl = AnyServerRequirementSet;
-	}
-	else
-	{
-		ReadAcl = AnyServerOrClientRequirementSet;
-	}
-
-	// Get an stable object ref.
-	FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
-	if (OuterObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
-	{
-		const FNetworkGUID NetGUID = PackageMap->ResolveStablyNamedObject(Actor->GetOuter());
-		OuterObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
-	}
-
-	// No path in SpatialOS should contain a PIE prefix.
-	FString TempPath = Actor->GetFName().ToString();
-	GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
-	const TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
-
-	EntityComponents Components(new TArray<FWorkerComponentData>);
-	Components->Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreatePositionData());
-	Components->Add(Metadata(Class->GetName()).CreateMetadataData());
-	Components->Add(UnrealMetadata(StablyNamedObjectRef, GetOwnerWorkerAttribute(Actor), Class->GetPathName(), true).CreateUnrealMetadataData());
-	Components->Add(Tombstone().CreateData());
-	Components->Add(EntityAcl(ReadAcl, WriteAclMap()).CreateEntityAclData());
-	Components->Add(CreateLevelComponentData(Actor));
-
-	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
-	{
-		Components->Add(Persistence().CreatePersistenceData());
-	}
-
-	EntitiesBeingCreatedWithRetries.Emplace(EntityId, MoveTemp(Components));
-
-	CreateEntityWithRetries(EntityId, Actor->GetName());
+	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
 
 	UE_LOG(LogSpatialSender, Log, TEXT("Creating tombstone entity for actor. "
 		"Actor: %s. Entity ID: %d."), *Actor->GetName(), EntityId);
