@@ -606,15 +606,15 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			{
 				UnpackedComponentData[i] = Message->Components[i];
 			}
-			Worker_ComponentData* ComponentPtr = UnpackedComponentData.GetData();
+			Worker_ComponentData* ComponentData = UnpackedComponentData.GetData();
 			uint32 ComponentCount = UnpackedComponentData.Num();
 #else
-			Worker_ComponentData* ComponentPtr = Message->Components.GetData();
+			Worker_ComponentData* ComponentData = Message->Components.GetData();
 			uint32 ComponentCount = Message->Components.Num();
 #endif
 			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
 				ComponentCount,
-				ComponentPtr,
+				ComponentData,
 				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
 				nullptr);
 			break;

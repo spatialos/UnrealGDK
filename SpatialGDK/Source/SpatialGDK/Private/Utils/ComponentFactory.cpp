@@ -23,7 +23,7 @@ DEFINE_LOG_CATEGORY(LogComponentFactory);
 namespace
 {
 	template<typename T>
-	TraceKey* GetTraceKeyFromWorkerType(T& Obj)
+	TraceKey* GetTraceKeyFromComponentObject(T& Obj)
 	{
 #if TRACE_LIB_ACTIVE
 		return &Obj.Trace;
@@ -64,19 +64,23 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 #if TRACE_LIB_ACTIVE
 			if (LatencyTracer != nullptr && OutLatencyTraceId != nullptr)
 			{
-				TraceKey PropertyKey = USpatialLatencyTracer::InvalidTraceKey;
+				TraceKey PropertyKey = InvalidTraceKey;
 				PropertyKey = LatencyTracer->RetrievePendingTrace(Object, Cmd.Property);
-				if (PropertyKey == USpatialLatencyTracer::InvalidTraceKey)
+				if (PropertyKey == InvalidTraceKey)
 				{
 					// Check for sending a nested property
 					PropertyKey = LatencyTracer->RetrievePendingTrace(Object, Parent.Property);
 				}
-				// If we have already got a trace for this actor/component, we will end one of them here
-				if (*OutLatencyTraceId != USpatialLatencyTracer::InvalidTraceKey)
+				if (PropertyKey != InvalidTraceKey)
 				{
-					LatencyTracer->EndLatencyTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
+					// If we have already got a trace for this actor/component, we will end one of them here
+					if (*OutLatencyTraceId != InvalidTraceKey)
+					{
+						UE_LOG(LogSpatialNetSerialize, Warning, TEXT("%s property trace being dropped because too many active on this actor (%s)"), *Cmd.Property->GetName(), *Object->GetName());
+						LatencyTracer->EndLatencyTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
+					}
+					*OutLatencyTraceId = PropertyKey;
 				}
-				*OutLatencyTraceId = PropertyKey;
 			}
 #endif
 			if (GetGroupFromCondition(Parent.Condition) == PropertyGroup)
@@ -152,8 +156,9 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 		if (LatencyTracer != nullptr && OutLatencyTraceId != nullptr)
 		{
 			// If we have already got a trace for this actor/component, we will end one of them here
-			if (*OutLatencyTraceId != USpatialLatencyTracer::InvalidTraceKey)
+			if (*OutLatencyTraceId != InvalidTraceKey)
 			{
+				UE_LOG(LogSpatialNetSerialize, Warning, TEXT("%s handover trace being dropped because too many active on this actor (%s)"), *PropertyInfo.Property->GetName(), *Object->GetName());
 				LatencyTracer->EndLatencyTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
 			}
 			*OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, PropertyInfo.Property);
@@ -349,7 +354,7 @@ FWorkerComponentData ComponentFactory::CreateComponentData(Worker_ComponentId Co
 
 	// We're currently ignoring ClearedId fields, which is problematic if the initial replicated state
 	// is different to what the default state is (the client will have the incorrect data). UNR:959
-	FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true, GetTraceKeyFromWorkerType(ComponentData));
+	FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true, GetTraceKeyFromComponentObject(ComponentData));
 
 	return ComponentData;
 }
@@ -368,7 +373,7 @@ FWorkerComponentData ComponentFactory::CreateHandoverComponentData(Worker_Compon
 	FWorkerComponentData ComponentData = CreateEmptyComponentData(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, true, GetTraceKeyFromWorkerType(ComponentData));
+	FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, true, GetTraceKeyFromComponentObject(ComponentData));
 
 	return ComponentData;
 }
@@ -433,7 +438,7 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromWorkerType(ComponentUpdate), &ClearedIds);
+	bWroteSomething = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
@@ -458,7 +463,7 @@ FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromWorkerType(ComponentUpdate), &ClearedIds);
+	bWroteSomething = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
