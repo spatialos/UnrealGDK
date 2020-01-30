@@ -233,11 +233,16 @@ void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worke
 
 void USpatialWorkerConnection::StartDevelopmentAuth(const FString& DevAuthToken)
 {
+	FTCHARToUTF8 DAToken(*DevAuthToken);
+	FTCHARToUTF8 PlayerId(*DevAuthConfig.PlayerId);
+	FTCHARToUTF8 DisplayName(*DevAuthConfig.DisplayName);
+	FTCHARToUTF8 MetaData(*DevAuthConfig.MetaData);
+
 	Worker_Alpha_PlayerIdentityTokenRequest PITParams{};
-	PITParams.development_authentication_token = TCHAR_TO_UTF8(*DevAuthToken);
-	PITParams.player_id = TCHAR_TO_UTF8(*DevAuthConfig.PlayerId);
-	PITParams.display_name = TCHAR_TO_UTF8(*DevAuthConfig.DisplayName);
-	PITParams.metadata = TCHAR_TO_UTF8(*DevAuthConfig.MetaData);
+	PITParams.development_authentication_token = DAToken.Get();
+	PITParams.player_id = PlayerId.Get();
+	PITParams.display_name = DisplayName.Get();
+	PITParams.metadata = MetaData.Get();
 	PITParams.use_insecure_connection = false;
 
 	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &PITParams))
