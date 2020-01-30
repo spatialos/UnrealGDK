@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "SpatialCommonTypes.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "SpatialCommonTypes.h"
+
 #include "LBStrategySpy.generated.h"
 
 /**
