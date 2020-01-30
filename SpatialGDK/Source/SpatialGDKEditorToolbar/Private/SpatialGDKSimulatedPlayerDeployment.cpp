@@ -9,6 +9,7 @@
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Templates/SharedPointer.h"
+#include "SpatialCommandUtils.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorToolbar.h"
 #include "SpatialGDKServicesConstants.h"
@@ -492,23 +493,6 @@ void SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited(ui
 	SpatialGDKSettings->SetNumberOfSimulatedPlayers(NewValue);
 }
 
-bool SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth()
-{
-	FString SpatialInfoArgs = GetDefault<USpatialGDKSettings>()->IsRunningInChina() ? TEXT("auth login --environment=cn-production") : TEXT("auth login");
-	FString SpatialInfoResult;
-	FString StdErr;
-	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpatialExe, *SpatialInfoArgs, &ExitCode, &SpatialInfoResult, &StdErr);
-
-	bool bSuccess = ExitCode == 0;
-	if (!bSuccess)
-	{
-		UE_LOG(LogSpatialGDKSimulatedPlayerDeployment, Warning, TEXT("Spatial auth login failed. Error Code: %d, Error Message: %s"), ExitCode, *SpatialInfoResult);
-	}
-
-	return bSuccess;
-}
-
 FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -562,25 +546,22 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 	};
 
-	if (!AttemptSpatialAuthResult.IsReady() || AttemptSpatialAuthResult.Get() == false)
-	{
 #if ENGINE_MINOR_VERSION <= 22
-		AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth,
+	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
 #else
-		AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth,
+	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
 #endif
-			[this, LaunchCloudDeployment]()
-		{
-			if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
-			{
-				LaunchCloudDeployment();
-			}
-		});
-	}
-	else
+		[this, LaunchCloudDeployment]()
 	{
-		LaunchCloudDeployment();
-	}
+		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
+		{
+			LaunchCloudDeployment();
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial auth failed attempting to launch cloud deployment."));
+		}
+	});
 
 	return FReply::Handled();
 }
