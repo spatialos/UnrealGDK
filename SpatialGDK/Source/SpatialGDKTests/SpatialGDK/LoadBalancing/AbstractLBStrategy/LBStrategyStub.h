@@ -5,13 +5,13 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialCommonTypes.h"
 
-#include "LBStrategySpy.generated.h"
+#include "LBStrategyStub.generated.h"
 
 /**
  * This class is for testing purposes only.
  */
 UCLASS(HideDropdown)
-class SPATIALGDKTESTS_API ULBStrategySpy : public UAbstractLBStrategy
+class SPATIALGDKTESTS_API ULBStrategyStub : public UAbstractLBStrategy
 {
 	GENERATED_BODY()
 
