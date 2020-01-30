@@ -76,7 +76,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 					// If we have already got a trace for this actor/component, we will end one of them here
 					if (*OutLatencyTraceId != InvalidTraceKey)
 					{
-						UE_LOG(LogSpatialNetSerialize, Warning, TEXT("%s property trace being dropped because too many active on this actor (%s)"), *Cmd.Property->GetName(), *Object->GetName());
+						UE_LOG(LogComponentFactory, Warning, TEXT("%s property trace being dropped because too many active on this actor (%s)"), *Cmd.Property->GetName(), *Object->GetName());
 						LatencyTracer->EndLatencyTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
 					}
 					*OutLatencyTraceId = PropertyKey;
@@ -158,7 +158,7 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 			// If we have already got a trace for this actor/component, we will end one of them here
 			if (*OutLatencyTraceId != InvalidTraceKey)
 			{
-				UE_LOG(LogSpatialNetSerialize, Warning, TEXT("%s handover trace being dropped because too many active on this actor (%s)"), *PropertyInfo.Property->GetName(), *Object->GetName());
+				UE_LOG(LogComponentFactory, Warning, TEXT("%s handover trace being dropped because too many active on this actor (%s)"), *PropertyInfo.Property->GetName(), *Object->GetName());
 				LatencyTracer->EndLatencyTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
 			}
 			*OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, PropertyInfo.Property);
@@ -193,7 +193,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			// Check the success of the serialization and print a warning if it failed. This is how native handles failed serialization.
 			if (!bSuccess)
 			{
-				UE_LOG(LogSpatialNetSerialize, Warning, TEXT("AddProperty: NetSerialize %s failed."), *Struct->GetFullName());
+				UE_LOG(LogComponentFactory, Warning, TEXT("AddProperty: NetSerialize %s failed."), *Struct->GetFullName());
 				return;
 			}
 		}
