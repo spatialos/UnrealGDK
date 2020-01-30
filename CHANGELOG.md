@@ -47,6 +47,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added `bEnableNetCullDistanceInterest` (defaulted false) to enable client interest to be exposed through component tagging. This functionality has closer parity to native unreal client interest.
 - Added `bEnableNetCullDistanceFrequency` (defaulted false) to enable client interest queries to use frequency. This functionality is configured using `InterestRangeFrequencyPairs` and `FullFrequencyNetCullDistanceRatio`.
 - Added support for Android.
+- Introduced experimental feature flag `bEnableServerResultTypes`, defaulting false. Flip this to true for server Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
+
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
