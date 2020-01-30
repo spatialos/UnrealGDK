@@ -24,7 +24,7 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint3
 	return NextRequestId++;
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId)
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData>&& Components, const Worker_EntityId* EntityId)
 {
 	return NextRequestId++;
 }
@@ -34,13 +34,13 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_En
 	return NextRequestId++;
 }
 
-void SpatialOSWorkerConnectionSpy::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key)
+void SpatialOSWorkerConnectionSpy::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData)
 {}
 
 void SpatialOSWorkerConnectionSpy::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {}
 
-void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key)
+void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId, const FWorkerComponentUpdate* ComponentUpdate)
 {}
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)

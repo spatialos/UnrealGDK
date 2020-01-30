@@ -1825,7 +1825,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	{
 		Tracer->EndLatencyTrace(Params.Payload.Trace, TEXT("Unhandled trace - automatically ended"));
 	}
-	Tracer->MarkActiveLatencyTrace(USpatialLatencyTracer::InvalidTraceKey);
+	Tracer->MarkActiveLatencyTrace(InvalidTraceKey);
 #endif
 
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };
