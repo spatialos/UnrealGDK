@@ -81,14 +81,15 @@ void USpatialGDKSettings::PostInitProperties()
 	}
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Offloading is %s."), bEnableOffloading ? TEXT("enabled") : TEXT("disabled"));
 
-	if (FParse::Param(CommandLine, TEXT("OverrideServerInterest")))
-	{
-		bEnableServerQBI = true;
-	}
-	else
-	{
-		FParse::Bool(CommandLine, TEXT("OverrideServerInterest="), bEnableServerQBI);
-	}
+// 	if (FParse::Param(CommandLine, TEXT("OverrideServerInterest")))
+// 	{
+// 		bEnableServerQBI = true;
+// 	}
+// 	else
+// 	{
+// 		FParse::Bool(CommandLine, TEXT("OverrideServerInterest="), bEnableServerQBI);
+// 	}
+	bEnableServerQBI = false;
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Server interest is %s."), bEnableServerQBI ? TEXT("enabled") : TEXT("disabled"));
 
 	if (FParse::Param(CommandLine, TEXT("OverrideHandover")))
