@@ -114,17 +114,6 @@ bool FSendDeleteEntityRequest::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendCommandRequest, USpatialWorkerConnection*, Connection);
-bool FSendCommandRequest::Update()
-{
-	const Worker_EntityId EntityId = 0;
-	Worker_CommandRequest CommandRequest = {};
-	uint32_t CommandId = 0;
-	Connection->SendCommandRequest(EntityId, &CommandRequest, CommandId);
-
-	return true;
-}
-
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FFindWorkerResponseOfType, FAutomationTestBase*, Test, USpatialWorkerConnection*, Connection, uint8_t, ExpectedOpType);
 bool FFindWorkerResponseOfType::Update()
 {
@@ -290,38 +279,6 @@ WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_delete_entity_request_s
 	// THEN
 	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, Connections.ServerConnection, WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE));
 	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, Connections.ClientConnection, WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE));
-
-	return true;
-}
-
-WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_command_request_sent_THEN_command_request_response_received)
-{
-	// GIVEN
-	FDeploymentFixture Deployment(this);
-	FConnectionsFixture Connections;
-
-	// WHEN
-	ADD_LATENT_AUTOMATION_COMMAND(FSendCommandRequest(Connections.ClientConnection));
-	ADD_LATENT_AUTOMATION_COMMAND(FSendCommandRequest(Connections.ServerConnection));
-
-	// THEN
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, Connections.ServerConnection, WORKER_OP_TYPE_COMMAND_RESPONSE));
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, Connections.ClientConnection, WORKER_OP_TYPE_COMMAND_RESPONSE));
-
-	return true;
-}
-
-WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_doing_nothing_THEN_metrics_received)
-{
-	// GIVEN
-	FDeploymentFixture Deployment(this);
-	FConnectionsFixture Connections;
-
-	// WHEN
-
-	// THEN
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, Connections.ServerConnection, WORKER_OP_TYPE_METRICS));
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, Connections.ClientConnection, WORKER_OP_TYPE_METRICS));
 
 	return true;
 }
