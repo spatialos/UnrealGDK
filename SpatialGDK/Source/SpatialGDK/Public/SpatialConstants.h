@@ -242,6 +242,7 @@ const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 const FString RECONNECT_USING_COMMANDLINE_ARGUMENTS = TEXT("0.0.0.0");
 const FString URL_LOGIN_OPTION = TEXT("login=");
 const FString URL_PLAYER_IDENTITY_OPTION = TEXT("playeridentity=");
+const FString URL_DEV_AUTH_OPTION = TEXT("devauth=");
 
 const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
@@ -251,16 +252,18 @@ const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 const FString ZoningAttribute = DefaultServerWorkerType.ToString();
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_CLIENT_INTEREST = TArray<Worker_ComponentId>
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
 {
-	// Unclear why ACL is required. TODO(UNR-2768): Remove this requirement
-	ENTITY_ACL_COMPONENT_ID,
-
 	UNREAL_METADATA_COMPONENT_ID,
 	SPAWN_DATA_COMPONENT_ID,
 	RPCS_ON_ENTITY_CREATION_ID,
 	MULTICAST_RPCS_COMPONENT_ID,
-	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
+	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY
+};
+
+// A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest query.
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
+{
 	SERVER_ENDPOINT_COMPONENT_ID,
 	SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
 };

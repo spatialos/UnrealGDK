@@ -56,6 +56,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, UdpClientDownstreamUpdateIntervalMS(1)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
+	, bEnableNetCullDistanceInterest(false)
+	, bEnableNetCullDistanceFrequency(false)
+	, FullFrequencyNetCullDistanceRatio(1.0f)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -118,6 +121,16 @@ void USpatialGDKSettings::PostInitProperties()
 			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
 		}
 	}
+
+	if (FParse::Param(CommandLine, TEXT("OverrideClientResultTypes")))
+	{
+		bEnableClientResultTypes = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideClientResultTypes="), bEnableClientResultTypes);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Client result types are %s."), bEnableClientResultTypes ? TEXT("enabled") : TEXT("disabled"));
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
