@@ -141,6 +141,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 
 	GenerateSchemaForSublevels();
 	GenerateSchemaForRPCEndpoints();
+	GenerateSchemaForNCDs();
 
 	FTimespan Duration = FDateTime::Now() - StartTime;
 
