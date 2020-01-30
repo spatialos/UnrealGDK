@@ -187,7 +187,7 @@ void UGlobalStateManager::SendShutdownAdditionalServersEvent()
 		return;
 	}
 
-	Worker_ComponentUpdate ComponentUpdate = {};
+	FWorkerComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
@@ -388,7 +388,7 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 		return;
 	}
 
-	Worker_ComponentUpdate Update = {};
+	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -418,7 +418,7 @@ void UGlobalStateManager::SetDeploymentState()
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting deployment URL to '%s'"), *NetDriver->GetWorld()->URL.Map);
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting schema hash to '%u'"), NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
 
-	Worker_ComponentUpdate Update = {};
+	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -439,7 +439,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 
 	// Send the component update that we can now accept players.
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
-	Worker_ComponentUpdate Update = {};
+	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -462,7 +462,7 @@ void UGlobalStateManager::SetCanBeginPlay(const bool bInCanBeginPlay)
 {
 	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
 
-	Worker_ComponentUpdate Update = {};
+	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -541,7 +541,7 @@ void UGlobalStateManager::ResetGSM()
 	SetCanBeginPlay(false);
 
 	// Reset the Singleton map so Singletons are recreated.
-	Worker_ComponentUpdate Update = {};
+	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
@@ -563,7 +563,7 @@ void UGlobalStateManager::BeginDestroy()
 			SetCanBeginPlay(false);
 
 			// Reset the Singleton map so Singletons are recreated.
-			Worker_ComponentUpdate Update = {};
+			FWorkerComponentUpdate Update = {};
 			Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 			Update.schema_type = Schema_CreateComponentUpdate();
 			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
@@ -726,7 +726,7 @@ void UGlobalStateManager::IncrementSessionID()
 
 void UGlobalStateManager::SendSessionIdUpdate()
 {
-	Worker_ComponentUpdate Update = {};
+	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);

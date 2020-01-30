@@ -122,7 +122,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 		return;
 	}
 
-	TArray<TArray<Worker_ComponentData>> EntitiesToSpawn;
+	TArray<TArray<FWorkerComponentData>> EntitiesToSpawn;
 
 	// Get all of the entities from the snapshot.
 	while (Worker_SnapshotInputStream_HasNext(Snapshot) > 0)
@@ -140,12 +140,12 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 		Error = Worker_SnapshotInputStream_GetState(Snapshot).error_message;
 		if (Error.IsEmpty())
 		{
-			TArray<Worker_ComponentData> EntityComponents;
+			TArray<FWorkerComponentData> EntityComponents;
 			for (uint32_t i = 0; i < EntityToSpawn->component_count; ++i)
 			{
 				// Entity component data must be deep copied so that it can be used for CreateEntityRequest.
 				Schema_ComponentData* CopySchemaData = Schema_CopyComponentData(EntityToSpawn->components[i].schema_type);
-				Worker_ComponentData EntityComponentData{};
+				FWorkerComponentData EntityComponentData{};
 				EntityComponentData.component_id = EntityToSpawn->components[i].component_id;
 				EntityComponentData.schema_type = CopySchemaData;
 				EntityComponents.Add(EntityComponentData);
@@ -177,7 +177,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 		for (uint32_t i = 0; i < Op.number_of_entity_ids; i++)
 		{
 			// Get an entity to spawn and a reserved EntityID
-			TArray<Worker_ComponentData> EntityToSpawn = EntitiesToSpawn[i];
+			TArray<FWorkerComponentData> EntityToSpawn = EntitiesToSpawn[i];
 			Worker_EntityId ReservedEntityID = Op.first_entity_id + i;
 
 			// Check if this is the GSM
