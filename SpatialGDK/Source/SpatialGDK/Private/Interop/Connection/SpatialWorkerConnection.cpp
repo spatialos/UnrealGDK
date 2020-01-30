@@ -165,6 +165,7 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID
 		break;
 	case ESpatialConnectionType::DevAuthFlow:
 		StartDevelopmentAuth(DevAuthConfig.DevelopmentAuthToken);
+		break;
 	}
 }
 
