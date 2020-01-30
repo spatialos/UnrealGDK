@@ -16,12 +16,9 @@
 #include "Net/NetworkProfiler.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
-#include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
-#include "Schema/Singleton.h"
-#include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
@@ -29,7 +26,6 @@
 #include "Utils/SpatialActorGroupManager.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityFactory.h"
-#include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
@@ -280,7 +276,7 @@ TArray<Worker_ComponentData> USpatialSender::CopyEntityComponentData(const Entit
 			Component.reserved,
 			Component.component_id,
 			Schema_CopyComponentData(Component.schema_type),
-			nullptr
+			nullptr 
 		});
 	}
 

@@ -49,6 +49,12 @@
 #include "SpatialGDKServicesModule.h"
 #endif
 
+using SpatialGDK::FindFirstOpOfType;
+using SpatialGDK::FindFirstOpOfTypeForComponent;
+using SpatialGDK::InterestFactory;
+using SpatialGDK::RPCPayload;
+using SpatialGDK::ComponentFactory;
+
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
 DECLARE_CYCLE_STAT(TEXT("ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
