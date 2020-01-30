@@ -272,7 +272,7 @@ Interest InterestFactory::CreateServerWorkerInterest()
 
 	Query Query;
 	Query.Constraint = Constraint;
-	if (SpatialGDKSettings->bEnableServerResultTypes)
+	if (SpatialGDKSettings->bEnableResultTypes)
 	{
 		Query.ResultComponentId = ServerNonAuthInterestResultType;
 	}
@@ -301,7 +301,7 @@ Interest InterestFactory::CreateInterest() const
 		AddPlayerControllerActorInterest(ResultInterest);
 	}
 
-	if (Actor->GetNetConnection() != nullptr && Settings->bEnableClientResultTypes)
+	if (Actor->GetNetConnection() != nullptr && Settings->bEnableResultTypes)
 	{
 		// Clients need to see owner only and server RPC components on entities they have authority over
 		AddClientSelfInterest(ResultInterest);
@@ -313,7 +313,7 @@ Interest InterestFactory::CreateInterest() const
 		AddActorInterest(ResultInterest);
 	}
 
-	if (Settings->bEnableServerResultTypes)
+	if (Settings->bEnableResultTypes)
 	{
 		// Every actor needs a self query for the server to the client RPC endpoint
 		AddServerSelfInterest(ResultInterest);
@@ -364,7 +364,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 	Query ClientQuery;
 	ClientQuery.Constraint = ClientConstraint;
 
-	if (SpatialGDKSettings->bEnableClientResultTypes)
+	if (SpatialGDKSettings->bEnableResultTypes)
 	{
 		ClientQuery.ResultComponentId = ClientNonAuthInterestResultType;
 	}
@@ -398,7 +398,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 
 			NewQuery.Frequency = RadiusCheckoutConstraints.Frequency;
 
-			if (SpatialGDKSettings->bEnableClientResultTypes)
+			if (SpatialGDKSettings->bEnableResultTypes)
 			{
 				NewQuery.ResultComponentId = ClientNonAuthInterestResultType;
 			}

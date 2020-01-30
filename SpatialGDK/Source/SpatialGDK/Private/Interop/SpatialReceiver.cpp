@@ -777,7 +777,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
 			// Don't send dynamic interest for this actor if it is otherwise handled by result types.
-			if (!SpatialGDKSettings->bEnableClientResultTypes)
+			if (!SpatialGDKSettings->bEnableResultTypes)
 			{
 				Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsAuthoritativeClient());
 			}
@@ -1210,7 +1210,7 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId Ent
 	ResolvePendingOperations(Subobject, SubobjectRef);
 
 	// Don't send dynamic interest for this subobject if it is otherwise handled by result types.
-	if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
+	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 	{
 		return;
 	}
