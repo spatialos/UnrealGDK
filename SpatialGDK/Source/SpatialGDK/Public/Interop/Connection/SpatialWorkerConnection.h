@@ -6,6 +6,7 @@
 #include "HAL/Runnable.h"
 #include "HAL/ThreadSafeBool.h"
 
+#include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialCommonTypes.h"
@@ -29,7 +30,7 @@ enum class ESpatialConnectionType
 };
 
 UCLASS()
-class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
+class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable, public SpatialOSWorkerInterface
 {
 	GENERATED_BODY()
 
@@ -42,20 +43,20 @@ public:
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
 	// Worker Connection Interface
-	TArray<Worker_OpList*> GetOpList();
-	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);
-	Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId);
-	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
-	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
-	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
-	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
-	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
-	void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message);
-	void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest);
-	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
-	void SendMetrics(const SpatialGDK::SpatialMetrics& Metrics);
+	virtual TArray<Worker_OpList*> GetOpList() override;
+	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
+	virtual Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId) override;
+	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId) override;
+	virtual void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey) override;
+	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) override;
+	virtual void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey) override;
+	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId) override;
+	virtual void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response) override;
+	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message) override;
+	virtual void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) override;
+	virtual void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) override;
+	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
+	virtual void SendMetrics(const SpatialGDK::SpatialMetrics& Metrics) override;
 
 	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
