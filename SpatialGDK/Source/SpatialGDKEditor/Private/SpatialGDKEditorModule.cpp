@@ -4,6 +4,7 @@
 
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKEditorLayoutDetails.h"
 
 #include "ISettingsModule.h"
 #include "ISettingsContainer.h"
@@ -58,6 +59,7 @@ void FSpatialGDKEditorModule::RegisterSettings()
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	PropertyModule.RegisterCustomPropertyTypeLayout("WorkerType", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerTypeCustomization::MakeInstance));
+	PropertyModule.RegisterCustomClassLayout(USpatialGDKEditorSettings::StaticClass()->GetFName(), FOnGetDetailCustomizationInstance::CreateStatic(&FSpatialGDKEditorLayoutDetails::MakeInstance));
 }
 
 void FSpatialGDKEditorModule::UnregisterSettings()
