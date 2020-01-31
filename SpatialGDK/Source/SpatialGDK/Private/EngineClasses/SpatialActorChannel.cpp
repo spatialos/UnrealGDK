@@ -21,7 +21,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "Schema/AlwaysRelevant.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "SpatialConstants.h"
@@ -1101,7 +1100,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 	// True if the entity is in the worker's view.
 	// If this is the case then we know the entity was created and do not need to retry if the request timed-out.
-	const bool bEntityIsInView = NetDriver->StaticComponentView->HasComponent(Position::ComponentId, GetEntityId());
+	const bool bEntityIsInView = NetDriver->StaticComponentView->HasComponent(SpatialGDK::Position::ComponentId, GetEntityId());
 
 	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{
@@ -1170,7 +1169,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 	// Check that the Actor has moved sufficiently far to be updated
 	const float SpatialPositionThresholdSquared = FMath::Square(GetDefault<USpatialGDKSettings>()->PositionDistanceThreshold);
-	FVector ActorSpatialPosition = GetActorSpatialPosition(Actor);
+	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
 	if (FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate) < SpatialPositionThresholdSquared)
 	{
 		return;
@@ -1247,6 +1246,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	}
 
 	UpdateEntityACLToNewOwner();
+	UpdateInterestBucketComponentId();
 
 	for (AActor* Child : Actor->Children)
 	{
@@ -1278,6 +1278,32 @@ void USpatialActorChannel::UpdateEntityACLToNewOwner()
 	}
 }
 
+void USpatialActorChannel::UpdateInterestBucketComponentId()
+{
+	const Worker_ComponentId DesiredInterestComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
+
+	auto FindCurrentNCDComponent = [this]()
+	{
+		for (const auto ComponentId : NetDriver->ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
+		{
+			if (NetDriver->StaticComponentView->HasComponent(EntityId, ComponentId))
+			{
+				return ComponentId;
+			}
+		}
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	};
+
+	const Worker_ComponentId CurrentInterestComponentId = NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID) ?
+		SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID :
+		FindCurrentNCDComponent();
+
+	if (CurrentInterestComponentId != DesiredInterestComponentId)
+	{
+		Sender->SendInterestBucketComponentChange(EntityId, CurrentInterestComponentId, DesiredInterestComponentId);
+	}
+}
+
 void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ClientProcessOwnershipChange);
@@ -1285,7 +1311,7 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	{
 		bNetOwned = bNewNetOwned;
 		// Don't send dynamic interest for this ownership change if it is otherwise handled by result types.
-		if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
+		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 		{
 			return;		
 		}

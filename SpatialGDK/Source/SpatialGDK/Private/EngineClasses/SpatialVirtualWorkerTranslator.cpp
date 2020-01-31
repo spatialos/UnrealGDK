@@ -22,7 +22,7 @@ const PhysicalWorkerName* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVi
 
 void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject)
 {
-    UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) ApplyVirtualWorkerManagerData"), *LocalPhysicalWorkerName);
+    UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("ApplyVirtualWorkerManagerData"));
 
 	// The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID. 
 	ApplyMappingFromSchema(ComponentObject);
@@ -46,6 +46,12 @@ bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object) const
 		Schema_Object* MappingObject = Schema_IndexObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);
 		if (SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME) == LocalPhysicalWorkerName)
 		{
+			VirtualWorkerId ReceivedVirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
+			if (LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID && LocalVirtualWorkerId != ReceivedVirtualWorkerId)
+			{
+				UE_LOG(LogSpatialVirtualWorkerTranslator, Error, TEXT("Received mapping containing a new and updated virtual worker ID, this shouldn't happen."));
+				return false;
+			}
 			return true;
 		}
 	}
@@ -60,7 +66,7 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 {
 	if (!IsValidMapping(Object))
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) Received invalid mapping, likely due to PiE restart, will wait for a valid version."), *LocalPhysicalWorkerName);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Received invalid mapping, likely due to PiE restart, will wait for a valid version."));
 		return;
 	}
 

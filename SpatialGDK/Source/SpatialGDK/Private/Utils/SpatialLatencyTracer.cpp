@@ -51,8 +51,6 @@ namespace
 #endif
 }  // anonymous namespace
 
-const TraceKey USpatialLatencyTracer::InvalidTraceKey = -1;
-
 USpatialLatencyTracer::USpatialLatencyTracer()
 {
 #if TRACE_LIB_ACTIVE
@@ -73,6 +71,18 @@ void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const F
 
 	StdoutExporter::Register();
 #endif // TRACE_LIB_ACTIVE
+}
+
+bool USpatialLatencyTracer::SetMessagePrefix(UObject* WorldContextObject, const FString& NewMessagePrefix)
+{
+#if TRACE_LIB_ACTIVE
+	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
+	{
+		Tracer->MessagePrefix = NewMessagePrefix;
+		return true;
+	}
+#endif // TRACE_LIB_ACTIVE
+	return false;
 }
 
 bool USpatialLatencyTracer::BeginLatencyTrace(UObject* WorldContextObject, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
@@ -334,12 +344,20 @@ void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
-		WriteToLatencyTrace(ComponentUpdate->Trace, TEXT("Moved componentUpdate to Worker queue"));
+		WriteToLatencyTrace(ComponentUpdate->Update.Trace, TEXT("Moved componentUpdate to Worker queue"));
 	}
 	else if (Message->Type == SpatialGDK::EOutgoingMessageType::AddComponent)
 	{
 		const SpatialGDK::FAddComponent* ComponentAdd = static_cast<const SpatialGDK::FAddComponent*>(Message);
-		WriteToLatencyTrace(ComponentAdd->Trace, TEXT("Moved componentAdd to Worker queue"));
+		WriteToLatencyTrace(ComponentAdd->Data.Trace, TEXT("Moved componentAdd to Worker queue"));
+	}
+	else if (Message->Type == SpatialGDK::EOutgoingMessageType::CreateEntityRequest)
+	{
+		const SpatialGDK::FCreateEntityRequest* CreateEntityRequest = static_cast<const SpatialGDK::FCreateEntityRequest*>(Message);
+		for (auto& Component : CreateEntityRequest->Components)
+		{
+			WriteToLatencyTrace(Component.Trace, TEXT("Moved createEntityRequest to Worker queue"));
+		}
 	}
 }
 
@@ -348,12 +366,20 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
-		EndLatencyTrace(ComponentUpdate->Trace, TEXT("Sent componentUpdate to Worker SDK"));
+		EndLatencyTrace(ComponentUpdate->Update.Trace, TEXT("Sent componentUpdate to Worker SDK"));
 	}
 	else if (Message->Type == SpatialGDK::EOutgoingMessageType::AddComponent)
 	{
 		const SpatialGDK::FAddComponent* ComponentAdd = static_cast<const SpatialGDK::FAddComponent*>(Message);
-		EndLatencyTrace(ComponentAdd->Trace, TEXT("Sent componentAdd to Worker SDK"));
+		EndLatencyTrace(ComponentAdd->Data.Trace, TEXT("Sent componentAdd to Worker SDK"));
+	}
+	else if (Message->Type == SpatialGDK::EOutgoingMessageType::CreateEntityRequest)
+	{
+		const SpatialGDK::FCreateEntityRequest* CreateEntityRequest = static_cast<const SpatialGDK::FCreateEntityRequest*>(Message);
+		for (auto& Component : CreateEntityRequest->Components)
+		{
+			EndLatencyTrace(Component.Trace, TEXT("Sent createEntityRequest to Worker SDK"));
+		}
 	}
 }
 
@@ -569,7 +595,7 @@ void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const F
 
 FString USpatialLatencyTracer::FormatMessage(const FString& Message) const
 {
-	return FString::Printf(TEXT("(%s) : %s"), *WorkerId.Left(18), *Message);
+	return FString::Printf(TEXT("%s(%s) : %s"), *MessagePrefix, *WorkerId.Left(18), *Message);
 }
 
 #endif // TRACE_LIB_ACTIVE
