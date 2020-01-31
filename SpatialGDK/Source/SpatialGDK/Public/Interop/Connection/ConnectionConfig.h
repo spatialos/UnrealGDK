@@ -128,7 +128,16 @@ public:
 	void LoadDefaults()
 	{
 		UseExternalIp = true;
-		LocatorHost = SpatialConstants::LOCATOR_HOST;
+		PlayerId = SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID;
+
+		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
+		{
+			LocatorHost = SpatialConstants::LOCATOR_HOST_CN;
+		}
+		else
+		{
+			LocatorHost = SpatialConstants::LOCATOR_HOST;
+		}
 	}
 
 	bool TryLoadCommandLineArgs()
@@ -137,12 +146,18 @@ public:
 		const TCHAR* CommandLine = FCommandLine::Get();
 		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
 		FParse::Value(CommandLine, TEXT("deployment"), Deployment);
+		FParse::Value(CommandLine, TEXT("playerId"), PlayerId);
+		FParse::Value(CommandLine, TEXT("displayName"), DisplayName);
+		FParse::Value(CommandLine, TEXT("metaData"), MetaData);
 		bSuccess = FParse::Value(CommandLine, TEXT("devAuthToken"), DevelopmentAuthToken);
 		return bSuccess;
 	}
 
 	FString DevelopmentAuthToken;
 	FString Deployment;
+	FString PlayerId;
+	FString DisplayName;
+	FString MetaData;
 };
 
 class FReceptionistConfig : public FConnectionConfig
