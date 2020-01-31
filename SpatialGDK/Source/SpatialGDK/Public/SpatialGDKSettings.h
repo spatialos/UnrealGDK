@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "LoadBalancing/AbstractLBStrategy.h"
-#include "LoadBalancing/AbstractLockingPolicy.h"
 #include "Utils/SpatialActorGroupManager.h"
 
 #include "CoreMinimal.h"
@@ -13,6 +11,8 @@
 #include "SpatialGDKSettings.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
+
+class ASpatialDebugger;
 
 /**
  * Enum that maps Unreal's log verbosity to allow use in settings.
@@ -31,6 +31,28 @@ namespace ESettingsWorkerLogVerbosity
 		VeryVerbose,
 	};
 }
+
+UENUM()
+namespace EServicesRegion
+{
+	enum Type
+	{
+		Default,
+		CN
+	};
+}
+
+USTRUCT(BlueprintType)
+struct FDistanceFrequencyPair
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "SpatialGDK")
+	float DistanceRatio;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "SpatialGDK")
+	float Frequency;
+};
 
 UCLASS(config = SpatialGDKSettings, defaultconfig)
 class SPATIALGDK_API USpatialGDKSettings : public UObject
@@ -168,6 +190,12 @@ public:
 	UPROPERTY(config)
 	bool bEnableServerQBI;
 
+	/** EXPERIMENTAL - Adds granular result types for queries.
+	Granular here means specifically the required Unreal components for spawning other actors and all data type components.
+	Needs testing thoroughly before making default. May be replaced by component set result types instead. */
+	UPROPERTY(config)
+	bool bEnableResultTypes;
+
 	/** Pack RPCs sent during the same frame into a single update. */
 	UPROPERTY(config)
 	bool bPackRPCs;
@@ -176,17 +204,8 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection")
 	FString DefaultReceptionistHost;
 
-	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	bool bUseDevelopmentAuthenticationFlow;
-
-	/** The token created using 'spatial project auth dev-auth-token' */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	FString DevelopmentAuthenticationToken;
-
-	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	FString DevelopmentDeploymentToConnect;
+	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
+	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
 	/** Single server worker type to launch when offloading is disabled, fallback server worker type when offloading is enabled (owns all actor classes by default). */
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
@@ -208,8 +227,8 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
 
-	UPROPERTY(EditAnywhere, config, Category = "Debug", meta=(MetaClass="SpatialDebugger"))
-	FSoftClassPath SpatialDebuggerClassPath;
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
+	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
 	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
@@ -218,12 +237,6 @@ public:
 	/** EXPERIMENTAL: Worker type to assign for load balancing. */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
 	FWorkerType LoadBalancingWorkerType;
-
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-	TSubclassOf<UAbstractLBStrategy> LoadBalanceStrategy;
-
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
 	bool bUseRPCRingBuffers;
@@ -266,4 +279,28 @@ public:
 	/** Do async loading for new classes when checking out entities. */
 	UPROPERTY(Config)
 	bool bAsyncLoadNewClassesOnEntityCheckout;
+
+	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
+
+	/** Enable to use the new net cull distance component tagging form of interest */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest")
+	bool bEnableNetCullDistanceInterest;
+
+	/** Enable to use interest frequency with bEnableNetCullDistanceInterest*/
+	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceInterest"))
+	bool bEnableNetCullDistanceFrequency;
+
+	/** Full update frequency ratio of actor's net cull distance */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
+	float FullFrequencyNetCullDistanceRatio;
+
+	/** QBI pairs for ratio of - net cull distance : update frequency */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
+	TArray<FDistanceFrequencyPair> InterestRangeFrequencyPairs;
+
+public:
+	// UI Hidden settings passed through from SpatialGDKEditorSettings
+	bool bUseDevelopmentAuthenticationFlow;
+	FString DevelopmentAuthenticationToken;
+	FString DevelopmentDeploymentToConnect;
 };

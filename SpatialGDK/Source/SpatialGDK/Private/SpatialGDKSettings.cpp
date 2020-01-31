@@ -33,16 +33,16 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableMetricsDisplay(false)
 	, MetricsReportRate(2.0f)
 	, bUseFrameTimeAsLoad(false)
-	, bBatchSpatialPositionUpdates(true)
+	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, bEnableServerQBI(true)
+	, bEnableResultTypes(false)
 	, bPackRPCs(false)
-	, bUseDevelopmentAuthenticationFlow(false)
+	, ServicesRegion(EServicesRegion::Default)
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
 	, bEnableOffloading(false)
 	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
-	, SpatialDebuggerClassPath(TEXT("/SpatialGDK/SpatialDebugger/BP_SpatialDebugger.BP_SpatialDebugger_C"))
 	, bEnableUnrealLoadBalancer(false)
 	, bUseRPCRingBuffers(false)
 	, DefaultRPCRingBufferSize(8)
@@ -55,6 +55,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, UdpClientDownstreamUpdateIntervalMS(1)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
+	, bEnableNetCullDistanceInterest(false)
+	, bEnableNetCullDistanceFrequency(false)
+	, FullFrequencyNetCullDistanceRatio(1.0f)
+	, bUseDevelopmentAuthenticationFlow(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -117,6 +121,16 @@ void USpatialGDKSettings::PostInitProperties()
 			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
 		}
 	}
+
+	if (FParse::Param(CommandLine, TEXT("OverrideResultTypes")))
+	{
+		bEnableResultTypes = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideResultTypes="), bEnableResultTypes);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Result types are %s."), bEnableResultTypes ? TEXT("enabled") : TEXT("disabled"));
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();

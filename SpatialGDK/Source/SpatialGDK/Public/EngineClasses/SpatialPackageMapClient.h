@@ -15,7 +15,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 
-class USpatialClassInfoManager;
 class USpatialNetDriver;
 class UEntityPool;
 class FTimerManager;
@@ -33,7 +32,7 @@ public:
 	bool IsEntityIdPendingCreation(Worker_EntityId EntityId) const;
 	void RemovePendingCreationEntityId(Worker_EntityId EntityId);
 
-	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
+	bool ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
 	void ResolveSubobject(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
 	void RemoveEntityActor(Worker_EntityId EntityId);
@@ -63,13 +62,12 @@ public:
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
+	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
+
 	// Pending object references, being asynchronously loaded.
 	TSet<FNetworkGUID> PendingReferences;
 
 private:
-	UPROPERTY()
-	USpatialClassInfoManager* ClassInfoManager;
-
 	UPROPERTY()
 	UEntityPool* EntityPool;
 

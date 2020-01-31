@@ -223,16 +223,6 @@ namespace ERegionCode
 	};
 }
 
-UENUM()
-namespace EServicesRegion
-{
-	enum Type
-	{
-		Default,
-		CN
-	};
-}
-
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
@@ -248,6 +238,11 @@ private:
 
 	/** Set WorkerTypes in runtime settings. */
 	void SetRuntimeWorkerTypes();
+
+	/** Set DAT in runtime settings. */
+	void SetRuntimeUseDevelopmentAuthenticationFlow();
+	void SetRuntimeDevelopmentAuthenticationToken();
+	void SetRuntimeDevelopmentDeploymentToConnect();
 
 	/** Set WorkerTypesToLaunch in level editor play settings. */
 	void SetLevelEditorPlaySettingsWorkerTypes();
@@ -318,6 +313,20 @@ private:
 
 	const FString SimulatedPlayerLaunchConfigPath;
 
+public:
+	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
+		bool bUseDevelopmentAuthenticationFlow;
+
+	/** The token created using 'spatial project auth dev-auth-token' */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
+		FString DevelopmentAuthenticationToken;
+
+	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
+		FString DevelopmentDeploymentToConnect;
+
+private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
 
@@ -329,9 +338,6 @@ private:
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Number of simulated players"))
 		uint32 NumberOfSimulatedPlayers;
-
-	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
-	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsProjectNameValid(const FString& Name);
@@ -481,6 +487,4 @@ public:
 	}
 
 	bool IsDeploymentConfigurationValid() const;
-
-	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
 };

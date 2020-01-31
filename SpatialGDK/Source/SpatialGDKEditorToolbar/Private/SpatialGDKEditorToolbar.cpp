@@ -81,7 +81,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 	LocalDeploymentManager->SetAutoDeploy(SpatialGDKEditorSettings->bAutoStartLocalDeployment);
-	LocalDeploymentManager->SetInChina(SpatialGDKEditorSettings->IsRunningInChina());
+	LocalDeploymentManager->SetInChina(GetDefault<USpatialGDKSettings>()->IsRunningInChina());
 
 	// Bind the play button delegate to starting a local spatial deployment.
 	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && SpatialGDKEditorSettings->bAutoStartLocalDeployment)
@@ -91,6 +91,25 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 			VerifyAndStartDeployment();
 		});
 	}
+
+	FEditorDelegates::PostPIEStarted.AddLambda([this](bool bIsSimulatingInEditor)
+	{
+		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		{
+			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
+			LocalDeploymentManager->GetLocalDeploymentStatus();
+
+			VerifyAndStartDeployment();
+		}
+	});
+
+	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor)
+	{
+		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		{
+			LocalDeploymentManager->TryStopLocalDeployment();
+		}
+	});
 
 	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
 }
