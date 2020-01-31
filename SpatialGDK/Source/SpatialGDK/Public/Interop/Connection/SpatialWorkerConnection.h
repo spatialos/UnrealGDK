@@ -40,8 +40,8 @@ public:
     
     /// Register a callback using this function.
     /// It will be triggered when receiving login tokens using the development authentication flow inside SpatialWorkerConnection.
-    /// @param cb - callback function.
-	void RegisterOnLoginTokensCb(const LoginTokenResponseCallback& Callback) {LoginTokenResCallback = Callback;}
+    /// @param Callback - callback function.
+	void RegisterOnLoginTokensCallback(const LoginTokenResponseCallback& Callback) {LoginTokenResCallback = Callback;}
 
 	void Connect(bool bConnectAsClient, uint32 PlayInEditorID);
 
