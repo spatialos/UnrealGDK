@@ -71,6 +71,7 @@ FReply FSpatialGDKEditorLayoutDetails::ClickedOnButton()
 	{
 		SpatialGDKEditorSettings->DevelopmentAuthenticationToken = TokenSecret;
 		SpatialGDKEditorSettings->SaveConfig();
+		SpatialGDKEditorSettings->SetRuntimeDevelopmentAuthenticationToken();
 	}
 
 	return FReply::Handled();
