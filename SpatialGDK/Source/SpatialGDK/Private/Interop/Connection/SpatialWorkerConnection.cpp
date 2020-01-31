@@ -407,12 +407,6 @@ void USpatialWorkerConnection::SetupConnectionConfigFromURL(const FURL& URL, con
 	}
 }
 
-void USpatialWorkerConnection::Tick()
-{
-	QueueLatestOpList();
-	ProcessOutgoingMessages();
-}
-
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
 {
 	TArray<Worker_OpList*> OpLists;
@@ -566,7 +560,8 @@ uint32 USpatialWorkerConnection::Run()
 	while (KeepRunning)
 	{
 		FPlatformProcess::Sleep(OpsUpdateInterval);
-		Tick();
+		QueueLatestOpList();
+		ProcessOutgoingMessages();
 	}
 
 	return 0;
