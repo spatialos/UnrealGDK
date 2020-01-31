@@ -36,7 +36,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, bEnableServerQBI(true)
-	, bEnableClientResultTypes(false)
+	, bEnableResultTypes(false)
 	, bPackRPCs(false)
 	, ServicesRegion(EServicesRegion::Default)
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
@@ -121,6 +121,16 @@ void USpatialGDKSettings::PostInitProperties()
 			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
 		}
 	}
+
+	if (FParse::Param(CommandLine, TEXT("OverrideResultTypes")))
+	{
+		bEnableResultTypes = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideResultTypes="), bEnableResultTypes);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Result types are %s."), bEnableResultTypes ? TEXT("enabled") : TEXT("disabled"));
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
