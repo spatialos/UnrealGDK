@@ -19,6 +19,7 @@ BINARIES_DIR="$(pwd)/SpatialGDK/Binaries/ThirdParty/Improbable"
 SCHEMA_COPY_DIR="$(pwd)/../../../spatial/schema/unreal/gdk"
 SCHEMA_STD_COPY_DIR="$(pwd)/../../../spatial/build/dependencies/schema/standard_library"
 SPATIAL_DIR="$(pwd)/../../../spatial"
+DOWNLOAD_MOBILE=
 
 while test $# -gt 0
 do
@@ -76,7 +77,7 @@ spatial package retrieve schema      standard_library                        "${
 spatial package retrieve worker_sdk  c_headers                               "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip
 spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos            "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip
 
-if [[ -n DOWNLOAD_MOBILE ]];
+if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then
     spatial package retrieve worker_sdk  c-static-fullylinked-arm-clang-ios      "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
     spatial package retrieve worker_sdk  c-dynamic-arm64v8a-clang_ndk16b-android "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk16b-android.zip
@@ -94,7 +95,7 @@ unzip -oq "${CORE_SDK_DIR}"/schema/standard_library.zip                         
 unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip                               -d "${BINARIES_DIR}"/Headers/
 unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip            -d "${BINARIES_DIR}"/Mac/
 
-if [[ -n DOWNLOAD_MOBILE ]];
+if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then
     unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip      -d "${BINARIES_DIR}"/IOS/
     unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk16b-android.zip -d "${BINARIES_DIR}"/Android/arm64-v8a/
