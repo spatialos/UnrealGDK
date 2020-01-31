@@ -149,8 +149,8 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
 	{
-		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
-		LocatorConfig.UseExternalIp = true;
+		DevAuthConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
+		DevAuthConfig.UseExternalIp = true;
 		StartDevelopmentAuth(SpatialGDKSettings->DevelopmentAuthenticationToken);
 		return;
 	}
@@ -161,10 +161,11 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID
 		ConnectToReceptionist(PlayInEditorID);
 		break;
 	case ESpatialConnectionType::Locator:
-		ConnectToLocator();
+		ConnectToLocator(&LocatorConfig);
 		break;
 	case ESpatialConnectionType::DevAuthFlow:
 		StartDevelopmentAuth(DevAuthConfig.DevelopmentAuthToken);
+		break;
 	}
 }
 
@@ -188,7 +189,7 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
 	if (DeploymentToConnect.IsEmpty())
 	{
-		Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
+		Connection->DevAuthConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
 	}
 	else
 	{
@@ -197,12 +198,12 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 			FString DeploymentName = FString(LoginTokens->login_tokens[i].deployment_name);
 			if (DeploymentToConnect.Compare(DeploymentName) == 0)
 			{
-				Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
+				Connection->DevAuthConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
 				break;
 			}
 		}
 	}
-	Connection->ConnectToLocator();
+	Connection->ConnectToLocator(&Connection->DevAuthConfig);
 }
 
 void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
@@ -215,20 +216,20 @@ void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worke
 
 	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully received PIToken: %s"), UTF8_TO_TCHAR(PIToken->player_identity_token));
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
-	Connection->LocatorConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
+	Connection->DevAuthConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
 	Worker_Alpha_LoginTokensRequest LTParams{};
 	LTParams.player_identity_token = PIToken->player_identity_token;
-	FTCHARToUTF8 WorkerType(*Connection->LocatorConfig.WorkerType);
+	FTCHARToUTF8 WorkerType(*Connection->DevAuthConfig.WorkerType);
 	LTParams.worker_type = WorkerType.Get();
 	LTParams.use_insecure_connection = false;
 
-	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*Connection->LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
+	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*Connection->DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
 	{
 		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, Connection, &USpatialWorkerConnection::OnLoginTokens);
 	}
 }
 
-void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
+void USpatialWorkerConnection::StartDevelopmentAuth(const FString& DevAuthToken)
 {
 	Worker_Alpha_PlayerIdentityTokenRequest PITParams{};
 	FTCHARToUTF8 DAToken(*DevAuthToken);
@@ -239,7 +240,7 @@ void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
 	PITParams.metadata = "";
 	PITParams.use_insecure_connection = false;
 
-	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &PITParams))
+	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &PITParams))
 	{
 		Worker_Alpha_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialWorkerConnection::OnPlayerIdentityToken);
 	}
@@ -262,14 +263,20 @@ void USpatialWorkerConnection::ConnectToReceptionist(uint32 PlayInEditorID)
 	FinishConnecting(ConnectionFuture);
 }
 
-void USpatialWorkerConnection::ConnectToLocator()
+void USpatialWorkerConnection::ConnectToLocator(FLocatorConfig* InLocatorConfig)
 {
-	LocatorConfig.PreConnectInit(bConnectAsClient);
+	if (InLocatorConfig == nullptr)
+	{
+		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Trying to connect to locator with invalid locator config"));
+		return;
+	}
 
-	ConfigureConnection ConnectionConfig(LocatorConfig);
+	InLocatorConfig->PreConnectInit(bConnectAsClient);
 
-	FTCHARToUTF8 PlayerIdentityTokenCStr(*LocatorConfig.PlayerIdentityToken);
-	FTCHARToUTF8 LoginTokenCStr(*LocatorConfig.LoginToken);
+	ConfigureConnection ConnectionConfig(*InLocatorConfig);
+
+	FTCHARToUTF8 PlayerIdentityTokenCStr(*InLocatorConfig->PlayerIdentityToken);
+	FTCHARToUTF8 LoginTokenCStr(*InLocatorConfig->LoginToken);
 
 	Worker_LocatorParameters LocatorParams = {};
 	FString ProjectName;
@@ -280,7 +287,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 
 	// Connect to the locator on the default port(0 will choose the default)
-	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LocatorParams);
+	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*InLocatorConfig->LocatorHost), SpatialConstants::LOCATOR_PORT, &LocatorParams);
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionConfig.Params);
 
@@ -366,6 +373,8 @@ void USpatialWorkerConnection::SetupConnectionConfigFromURL(const FURL& URL, con
 	if (URL.Host == SpatialConstants::LOCATOR_HOST && URL.HasOption(TEXT("locator")))
 	{
 		SetConnectionType(ESpatialConnectionType::Locator);
+		// TODO: UNR-2811 We might add a feature whereby we get the locator host from the URL option.
+		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorConfig.LocatorHost);
 		LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
 		LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
 		LocatorConfig.WorkerType = SpatialWorkerType;
@@ -373,6 +382,8 @@ void USpatialWorkerConnection::SetupConnectionConfigFromURL(const FURL& URL, con
 	else if (URL.Host == SpatialConstants::LOCATOR_HOST && URL.HasOption(TEXT("devauth")))
 	{
 		SetConnectionType(ESpatialConnectionType::DevAuthFlow);
+		// TODO: UNR-2811 Also set the locator host of DevAuthConfig from URL.
+		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), DevAuthConfig.LocatorHost);
 		DevAuthConfig.DevelopmentAuthToken = URL.GetOption(*SpatialConstants::URL_DEV_AUTH_OPTION, TEXT(""));
 		DevAuthConfig.WorkerType = SpatialWorkerType;
 	}

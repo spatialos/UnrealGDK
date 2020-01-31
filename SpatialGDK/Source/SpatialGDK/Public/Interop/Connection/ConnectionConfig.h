@@ -117,7 +117,7 @@ public:
 	FString LoginToken;
 };
 
-class FDevAuthConfig : public FConnectionConfig
+class FDevAuthConfig : public FLocatorConfig
 {
 public:
 	FDevAuthConfig()
@@ -141,7 +141,6 @@ public:
 		return bSuccess;
 	}
 
-	FString LocatorHost;
 	FString DevelopmentAuthToken;
 	FString Deployment;
 };
