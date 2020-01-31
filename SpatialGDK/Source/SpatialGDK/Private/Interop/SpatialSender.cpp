@@ -255,6 +255,8 @@ void USpatialSender::DeleteEntityComponentData(TArray<FWorkerComponentData>& Ent
 	{
 		Schema_DestroyComponentData(Component.schema_type);
 	}
+
+	EntityComponents.Empty();
 }
 
 TArray<FWorkerComponentData> USpatialSender::CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents)
