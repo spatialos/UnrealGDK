@@ -47,7 +47,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added `bEnableNetCullDistanceFrequency` (defaulted false) to enable client interest queries to use frequency. This functionality is configured using `InterestRangeFrequencyPairs` and `FullFrequencyNetCullDistanceRatio`.
 - Added support for Android.
 - Introduced experimental feature flag `bEnableResultTypes`, defaulting false. Flip this to true for Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
-
+- Moved Dev Auth settings from runtime settings to editor settings.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
@@ -77,6 +77,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Track properties containing references to replicated actors, in order to resolve them again if the actor they reference moves out and back into relevance.
 - Fix problem where PIE sessions sometimes fail to start due to missing schema for SpatialDebugger blueprint.
 - Fixed an issue where newly created subobjects would have empty state when RepNotify was called for a property pointing to that subobject.
+- Fixed an issue where deleted, initially dormant startup actors would still be present on other workers.
 
 ### External contributors:
 @DW-Sebastien

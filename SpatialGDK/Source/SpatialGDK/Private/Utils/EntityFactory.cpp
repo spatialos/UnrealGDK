@@ -14,6 +14,7 @@
 #include "Schema/Singleton.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
+#include "Schema/Tombstone.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
@@ -378,4 +379,70 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
  
 	return ComponentDatas;
 }
+
+TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AActor* Actor)
+{
+	check(Actor->IsNetStartupActor());
+
+	const UClass* Class = Actor->GetClass();
+
+	// Construct an ACL for a read-only entity.
+	WorkerRequirementSet AnyServerRequirementSet;
+	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
+
+	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->ServerWorkerTypes)
+	{
+		WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
+
+		AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
+		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
+	}
+
+	// Add Zoning Attribute if we are using the load balancer.
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		const WorkerAttributeSet ZoningAttributeSet = { SpatialConstants::ZoningAttribute };
+		AnyServerRequirementSet.Add(ZoningAttributeSet);
+		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
+	}
+
+	WorkerRequirementSet ReadAcl;
+	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+	{
+		ReadAcl = AnyServerRequirementSet;
+	}
+	else
+	{
+		ReadAcl = AnyServerOrClientRequirementSet;
+	}
+
+	// Get a stable object ref.
+	FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
+	if (OuterObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+	{
+		const FNetworkGUID NetGUID = PackageMap->ResolveStablyNamedObject(Actor->GetOuter());
+		OuterObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+	}
+
+	// No path in SpatialOS should contain a PIE prefix.
+	FString TempPath = Actor->GetFName().ToString();
+	GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
+	const TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
+
+	TArray<FWorkerComponentData> Components;
+	Components.Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreatePositionData());
+	Components.Add(Metadata(Class->GetName()).CreateMetadataData());
+	Components.Add(UnrealMetadata(StablyNamedObjectRef, GetOwnerWorkerAttribute(Actor), Class->GetPathName(), true).CreateUnrealMetadataData());
+	Components.Add(Tombstone().CreateData());
+	Components.Add(EntityAcl(ReadAcl, WriteAclMap()).CreateEntityAclData());
+
+	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
+	{
+		Components.Add(Persistence().CreatePersistenceData());
+	}
+
+	return Components;
 }
+
+}  // namespace SpatialGDK
