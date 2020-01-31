@@ -158,7 +158,7 @@ public:
 	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
 	FORCEINLINE bool IsAuthoritativeClient() const
 	{
-		if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
+		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 		{
 			return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers));
 		}

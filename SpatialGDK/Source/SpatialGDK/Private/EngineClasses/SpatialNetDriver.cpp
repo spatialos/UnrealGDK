@@ -49,6 +49,12 @@
 #include "SpatialGDKServicesModule.h"
 #endif
 
+using SpatialGDK::ComponentFactory;
+using SpatialGDK::FindFirstOpOfType;
+using SpatialGDK::FindFirstOpOfTypeForComponent;
+using SpatialGDK::InterestFactory;
+using SpatialGDK::RPCPayload;
+
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
 DECLARE_CYCLE_STAT(TEXT("ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
@@ -813,6 +819,29 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 	if (bIsServer)
 	{
+		// Check if this is a dormant entity, and if so retire the entity
+		if (PackageMap != nullptr)
+		{
+			const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
+
+			// If the actor is an initially dormant startup actor that has not been replicated.
+			if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor())
+			{
+				UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Creating a tombstone entity for initially dormant statup actor. "
+					"Actor: %s."), *ThisActor->GetName());
+				Sender->CreateTombstoneEntity(ThisActor);
+			}
+			else if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
+			{
+				// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
+				if (!StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId))
+				{
+					UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId, *ThisActor->GetName());
+				}
+				Sender->RetireEntity(EntityId);
+			}
+		}
+
 		for (int32 i = ClientConnections.Num() - 1; i >= 0; i--)
 		{
 			UNetConnection* ClientConnection = ClientConnections[i];
@@ -831,21 +860,6 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 			// Remove it from any dormancy lists
 			ClientConnection->DormantReplicatorMap.Remove(ThisActor);
-		}
-
-		// Check if this is a dormant entity, and if so retire the entity
-		if (PackageMap != nullptr)
-		{
-			Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
-			if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
-			{
-				// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
-				if (!StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId))
-				{
-					UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId, *ThisActor->GetName());
-				}
-				Sender->RetireEntity(EntityId);
-			}
 		}
 	}
 
@@ -1638,26 +1652,14 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
 	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
 
-#if USE_SERVER_PERF_COUNTERS
-	double ServerReplicateActorsTimeMs = 0.0f;
-#endif // USE_SERVER_PERF_COUNTERS
-
-  const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady() && bIsReadyToStart)
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
 
-#if USE_SERVER_PERF_COUNTERS
-		double ServerReplicateActorsTimeStart = FPlatformTime::Seconds();
-#endif // USE_SERVER_PERF_COUNTERS
-
 		int32 Updated = ServerReplicateActors(DeltaTime);
-
-#if USE_SERVER_PERF_COUNTERS
-		ServerReplicateActorsTimeMs = (FPlatformTime::Seconds() - ServerReplicateActorsTimeStart) * 1000.0;
-#endif // USE_SERVER_PERF_COUNTERS
 
 		static int32 LastUpdateCount = 0;
 		// Only log the zero replicated actors once after replicating an actor

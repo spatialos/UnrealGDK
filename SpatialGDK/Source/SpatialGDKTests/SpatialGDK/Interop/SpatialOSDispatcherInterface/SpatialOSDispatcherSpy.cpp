@@ -67,7 +67,7 @@ void SpatialOSDispatcherSpy::AddEntityQueryDelegate(Worker_RequestId RequestId, 
 void SpatialOSDispatcherSpy::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate)
 {}
 
-void SpatialOSDispatcherSpy::AddCreateEntityDelegate(Worker_RequestId RequestId, const CreateEntityDelegate& Delegate)
+void SpatialOSDispatcherSpy::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
 {}
 
 void SpatialOSDispatcherSpy::OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)

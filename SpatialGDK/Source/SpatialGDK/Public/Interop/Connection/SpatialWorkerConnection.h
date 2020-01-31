@@ -85,7 +85,7 @@ public:
 
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
-	void ConnectToLocator();
+	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
 	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 
 	void OnConnectionSuccess();
@@ -105,7 +105,7 @@ private:
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
 
-	void StartDevelopmentAuth(FString DevAuthToken);
+	void StartDevelopmentAuth(const FString& DevAuthToken);
 	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
 	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
