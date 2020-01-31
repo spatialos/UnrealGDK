@@ -71,6 +71,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static void RegisterProject(UObject* WorldContextObject, const FString& ProjectId);
 
+	// Set a prefix to be used for all span names. Resulting uploaded span names are of the format "PREFIX(WORKER_ID) : USER_SPECIFIED_NAME".
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool SetMessagePrefix(UObject* WorldContextObject, const FString& NewMessagePrefix);
+
+	// Start a latency trace. This will start the latency timer and attach it to a specific RPC.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool BeginLatencyTrace(UObject* WorldContextObject, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 
@@ -95,8 +100,6 @@ public:
 	// Returns a previously saved payload from ContinueLatencyTraceKeyed
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static FSpatialLatencyPayload RetrievePayload(UObject* WorldContextObject, const AActor* Actor, const FString& Tag);
-
-	static const TraceKey InvalidTraceKey;
 
 	// Internal GDK usage, shouldn't be used by game code
 	static USpatialLatencyTracer* GetTracer(UObject* WorldContextObject);
@@ -157,6 +160,7 @@ private:
 	void ClearTrackingInformation();
 
 	FString WorkerId;
+	FString MessagePrefix;
 
 	// This is used to track if there is an active trace within a currently processing network call. The user is
 	// able to hook into this active trace, and `continue` it to another network relevant call. If so, the

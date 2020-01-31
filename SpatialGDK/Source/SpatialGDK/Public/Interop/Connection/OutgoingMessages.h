@@ -55,13 +55,13 @@ struct FReserveEntityIdsRequest : FOutgoingMessage
 
 struct FCreateEntityRequest : FOutgoingMessage
 {
-	FCreateEntityRequest(TArray<Worker_ComponentData>&& InComponents, const Worker_EntityId* InEntityId)
+	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const Worker_EntityId* InEntityId)
 		: FOutgoingMessage(EOutgoingMessageType::CreateEntityRequest)
 		, Components(MoveTemp(InComponents))
 		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<Worker_EntityId>())
 	{}
 
-	TArray<Worker_ComponentData> Components;
+	TArray<FWorkerComponentData> Components;
 	TOptional<Worker_EntityId> EntityId;
 };
 
@@ -77,16 +77,14 @@ struct FDeleteEntityRequest : FOutgoingMessage
 
 struct FAddComponent : FOutgoingMessage
 {
-	FAddComponent(Worker_EntityId InEntityId, const Worker_ComponentData& InData, const TraceKey InTrace)
+	FAddComponent(Worker_EntityId InEntityId, const FWorkerComponentData& InData)
 		: FOutgoingMessage(EOutgoingMessageType::AddComponent)
 		, EntityId(InEntityId)
 		, Data(InData)
-		, Trace(InTrace)
 	{}
 
 	Worker_EntityId EntityId;
-	Worker_ComponentData Data;
-	TraceKey Trace;
+	FWorkerComponentData Data;
 };
 
 struct FRemoveComponent : FOutgoingMessage
@@ -103,16 +101,14 @@ struct FRemoveComponent : FOutgoingMessage
 
 struct FComponentUpdate : FOutgoingMessage
 {
-	FComponentUpdate(Worker_EntityId InEntityId, const Worker_ComponentUpdate& InComponentUpdate, const TraceKey InTrace)
+	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentUpdate)
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)
-		, Trace(InTrace)
 	{}
 
 	Worker_EntityId EntityId;
-	Worker_ComponentUpdate Update;
-	TraceKey Trace;
+	FWorkerComponentUpdate Update;
 };
 
 struct FCommandRequest : FOutgoingMessage

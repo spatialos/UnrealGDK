@@ -777,9 +777,9 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
 			// Don't send dynamic interest for this actor if it is otherwise handled by result types.
-			if (!SpatialGDKSettings->bEnableClientResultTypes)
+			if (!SpatialGDKSettings->bEnableResultTypes)
 			{
-				Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsOwnedByWorker());
+				Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsAuthoritativeClient());
 			}
 
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
@@ -827,7 +827,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
 	TWeakObjectPtr<UObject> WeakActor = PackageMap->GetObjectFromEntityId(EntityId);
 
-	// Actor has been destroyed already. Clean up surrounding bookkeeping.
+	// Actor has not been resolved yet or has already been destroyed. Clean up surrounding bookkeeping.
 	if (!WeakActor.IsValid())
 	{
 		DestroyActor(nullptr, EntityId);
@@ -1210,7 +1210,7 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId Ent
 	ResolvePendingOperations(Subobject, SubobjectRef);
 
 	// Don't send dynamic interest for this subobject if it is otherwise handled by result types.
-	if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
+	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 	{
 		return;
 	}
@@ -1218,7 +1218,7 @@ void USpatialReceiver::AttachDynamicSubobject(AActor* Actor, Worker_EntityId Ent
 	// If on a client, we need to set up the proper component interest for the new subobject.
 	if (!NetDriver->IsServer())
 	{
-		Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsOwnedByWorker());
+		Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsAuthoritativeClient());
 	}
 }
 
@@ -1825,7 +1825,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 	{
 		Tracer->EndLatencyTrace(Params.Payload.Trace, TEXT("Unhandled trace - automatically ended"));
 	}
-	Tracer->MarkActiveLatencyTrace(USpatialLatencyTracer::InvalidTraceKey);
+	Tracer->MarkActiveLatencyTrace(InvalidTraceKey);
 #endif
 
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Receive, Result };
@@ -1931,17 +1931,17 @@ void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TShared
 
 void USpatialReceiver::AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
 {
-	EntityQueryDelegates.Add(RequestId, Delegate);
+	EntityQueryDelegates.Add(RequestId, MoveTemp(Delegate));
 }
 
 void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate)
 {
-	ReserveEntityIDsDelegates.Add(RequestId, Delegate);
+	ReserveEntityIDsDelegates.Add(RequestId, MoveTemp(Delegate));
 }
 
-void USpatialReceiver::AddCreateEntityDelegate(Worker_RequestId RequestId, const CreateEntityDelegate& Delegate)
+void USpatialReceiver::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
 {
-	CreateEntityDelegates.Add(RequestId, Delegate);
+	CreateEntityDelegates.Add(RequestId, MoveTemp(Delegate));
 }
 
 TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
