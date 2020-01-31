@@ -41,5 +41,5 @@ public:
 	virtual void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) PURE_VIRTUAL(SpatialOSDispatcherInterface::AddPendingReliableRPC, return;);
 	virtual void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate) PURE_VIRTUAL(SpatialOSDispatcherInterface::AddEntityQueryDelegate, return;);
 	virtual void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate) PURE_VIRTUAL(SpatialOSDispatcherInterface::AddReserveEntityIdsDelegate, return;);
-	virtual void AddCreateEntityDelegate(Worker_RequestId RequestId, const CreateEntityDelegate& Delegate) PURE_VIRTUAL(SpatialOSDispatcherInterface::AddCreateEntityDelegate, return;);
+	virtual void AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate) PURE_VIRTUAL(SpatialOSDispatcherInterface::AddCreateEntityDelegate, return;);
 };
