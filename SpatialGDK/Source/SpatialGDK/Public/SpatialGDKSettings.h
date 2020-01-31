@@ -204,18 +204,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection")
 	FString DefaultReceptionistHost;
 
-	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	bool bUseDevelopmentAuthenticationFlow;
-
-	/** The token created using 'spatial project auth dev-auth-token' */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	FString DevelopmentAuthenticationToken;
-
-	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	FString DevelopmentDeploymentToConnect;
-
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
@@ -309,4 +297,10 @@ public:
 	/** QBI pairs for ratio of - net cull distance : update frequency */
 	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
 	TArray<FDistanceFrequencyPair> InterestRangeFrequencyPairs;
+
+public:
+	// UI Hidden settings passed through from SpatialGDKEditorSettings
+	bool bUseDevelopmentAuthenticationFlow;
+	FString DevelopmentAuthenticationToken;
+	FString DevelopmentDeploymentToConnect;
 };

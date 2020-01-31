@@ -26,6 +26,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bAutoStartLocalDeployment(true)
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
+	, bUseDevelopmentAuthenticationFlow(false)
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
@@ -53,6 +54,18 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		SetRuntimeWorkerTypes();
 		SetLevelEditorPlaySettingsWorkerTypes();
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseDevelopmentAuthenticationFlow))
+	{
+		SetRuntimeUseDevelopmentAuthenticationFlow();
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, DevelopmentAuthenticationToken))
+	{
+		SetRuntimeDevelopmentAuthenticationToken();
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, DevelopmentDeploymentToConnect))
+	{
+		SetRuntimeDevelopmentDeploymentToConnect();
+	}
 }
 
 void USpatialGDKEditorSettings::PostInitProperties()
@@ -65,6 +78,9 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->SaveConfig();
 
 	SetRuntimeWorkerTypes();
+	SetRuntimeUseDevelopmentAuthenticationFlow();
+	SetRuntimeDevelopmentAuthenticationToken();
+	SetRuntimeDevelopmentDeploymentToConnect();
 	SetLevelEditorPlaySettingsWorkerTypes();
 }
 
@@ -88,6 +104,24 @@ void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
 		RuntimeSettings->PostEditChange();
 		RuntimeSettings->UpdateSinglePropertyInConfigFile(RuntimeSettings->GetClass()->FindPropertyByName(GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServerWorkerTypes)), RuntimeSettings->GetDefaultConfigFilename());
 	}
+}
+
+void USpatialGDKEditorSettings::SetRuntimeUseDevelopmentAuthenticationFlow()
+{
+	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+	RuntimeSettings->bUseDevelopmentAuthenticationFlow = bUseDevelopmentAuthenticationFlow;
+}
+
+void USpatialGDKEditorSettings::SetRuntimeDevelopmentAuthenticationToken()
+{
+	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+	RuntimeSettings->DevelopmentAuthenticationToken = DevelopmentAuthenticationToken;
+}
+
+void USpatialGDKEditorSettings::SetRuntimeDevelopmentDeploymentToConnect()
+{
+	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+	RuntimeSettings->DevelopmentDeploymentToConnect = DevelopmentDeploymentToConnect;
 }
 
 void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
