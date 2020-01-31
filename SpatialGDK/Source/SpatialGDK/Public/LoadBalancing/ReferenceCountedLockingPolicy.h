@@ -20,7 +20,7 @@ public:
 	virtual ActorLockToken AcquireLock(AActor* Actor, FString DebugString = "") override;
 
 	// This should only be called during the lifetime of the locked actor
-	virtual bool ReleaseLock(ActorLockToken Token) override;
+	virtual bool ReleaseLock(const ActorLockToken Token) override;
 
 	virtual bool IsLocked(const AActor* Actor) const override;
 

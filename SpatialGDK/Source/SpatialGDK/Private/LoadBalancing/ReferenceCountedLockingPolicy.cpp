@@ -75,7 +75,7 @@ ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(AActor* Actor, FStrin
 	return NextToken++;
 }
 
-bool UReferenceCountedLockingPolicy::ReleaseLock(ActorLockToken Token)
+bool UReferenceCountedLockingPolicy::ReleaseLock(const ActorLockToken Token)
 {
 	const LockNameAndActor* NameAndActor = TokenToNameAndActor.Find(Token);
 	if (NameAndActor == nullptr)
@@ -156,7 +156,7 @@ bool UReferenceCountedLockingPolicy::ReleaseLockFromDelegate(AActor* ActorToRele
 {
 	if (!DelegateLockingIdentifierToActorLockToken.Contains(DelegateLockIdentifier))
 	{
-		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Executed ReleaseLockDelegate for unidentified delegate lock identifier. Token: %d."), *DelegateLockIdentifier);
+		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Executed ReleaseLockDelegate for unidentified delegate lock identifier. Token: %s."), *DelegateLockIdentifier);
 		return false;
 	}
 	ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(DelegateLockIdentifier);
