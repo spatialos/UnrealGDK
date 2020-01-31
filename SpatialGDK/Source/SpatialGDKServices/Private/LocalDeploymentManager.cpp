@@ -15,6 +15,7 @@
 #include "Json/Public/Dom/JsonObject.h"
 #include "Misc/MessageDialog.h"
 #include "SpatialGDKServicesModule.h"
+#include "SpatialCommandUtils.h"
 #include "SocketSubsystem.h"
 #include "Sockets.h"
 #include "UObject/CoreNet.h"
@@ -328,66 +329,89 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	}
 
 	SnapshotName.RemoveFromEnd(TEXT(".snapshot"));
-	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json --starting-snapshot-id=\"%s\" %s"), *LaunchConfig, *FSpatialGDKServicesModule::GetProjectName(), *SnapshotName, *LaunchArgs);
 
-	FDateTime SpotCreateStart = FDateTime::Now();
-
-	FString SpotCreateResult;
-	FString StdErr;
-	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*FSpatialGDKServicesModule::GetSpotExe(), *SpotCreateArgs, &ExitCode, &SpotCreateResult, &StdErr);
-	bStartingDeployment = false;
-
-	if (ExitCode != ExitCodeSuccess)
+	auto FinishLocalDeployment = [this, SnapshotName, LaunchConfig, LaunchArgs]()
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Creation of local deployment failed. Result: %s - Error: %s"), *SpotCreateResult, *StdErr);
-		return false;
-	}
+		FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json --starting-snapshot-id=\"%s\" %s"), *LaunchConfig, *FSpatialGDKServicesModule::GetProjectName(), *SnapshotName, *LaunchArgs);
 
-	bool bSuccess = false;
+		FDateTime SpotCreateStart = FDateTime::Now();
 
-	TSharedPtr<FJsonObject> SpotJsonResult;
-	bool bParsingSuccess = FSpatialGDKServicesModule::ParseJson(SpotCreateResult, SpotJsonResult);
-	if (!bParsingSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot create result failed. Result: %s"), *SpotCreateResult);
-	}
+		FString SpotCreateResult;
+		FString StdErr;
+		int32 ExitCode;
+		FPlatformProcess::ExecProcess(*FSpatialGDKServicesModule::GetSpotExe(), *SpotCreateArgs, &ExitCode, &SpotCreateResult, &StdErr);
+		bStartingDeployment = false;
 
-	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
-	if (bParsingSuccess && !SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'content' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
-		bParsingSuccess = false;
-	}
-
-	FString DeploymentStatus;
-	if (bParsingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
-	{
-		if (DeploymentStatus == TEXT("RUNNING"))
+		if (ExitCode != ExitCodeSuccess)
 		{
-			FString DeploymentID = SpotJsonContent->Get()->GetStringField(TEXT("id"));
-			LocalRunningDeploymentID = DeploymentID;
-			bLocalDeploymentRunning = true;
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Creation of local deployment failed. Result: %s - Error: %s"), *SpotCreateResult, *StdErr);
+			return false;
+		}
 
-			FDateTime SpotCreateEnd = FDateTime::Now();
-			FTimespan Span = SpotCreateEnd - SpotCreateStart;
+		bool bSuccess = false;
 
-			OnDeploymentStart.Broadcast();
+		TSharedPtr<FJsonObject> SpotJsonResult;
+		bool bParsingSuccess = FSpatialGDKServicesModule::ParseJson(SpotCreateResult, SpotJsonResult);
+		if (!bParsingSuccess)
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot create result failed. Result: %s"), *SpotCreateResult);
+		}
 
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
-			bSuccess = true;
+		const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
+		if (bParsingSuccess && !SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'content' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
+			bParsingSuccess = false;
+		}
+
+		FString DeploymentStatus;
+		if (bParsingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
+		{
+			if (DeploymentStatus == TEXT("RUNNING"))
+			{
+				FString DeploymentID = SpotJsonContent->Get()->GetStringField(TEXT("id"));
+				LocalRunningDeploymentID = DeploymentID;
+				bLocalDeploymentRunning = true;
+
+				FDateTime SpotCreateEnd = FDateTime::Now();
+				FTimespan Span = SpotCreateEnd - SpotCreateStart;
+
+				OnDeploymentStart.Broadcast();
+
+				UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
+				bSuccess = true;
+			}
+			else
+			{
+				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Local deployment creation failed. Deployment status: %s"), *DeploymentStatus);
+			}
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Local deployment creation failed. Deployment status: %s"), *DeploymentStatus);
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
 		}
-	}
-	else
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
-	}
 
-	return bSuccess;
+		return true;
+	};
+
+#if ENGINE_MINOR_VERSION <= 22
+	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, [this]() { return SpatialCommandUtils::AttemptSpatialAuth(bIsInChina); },
+#else
+	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, [this]() { return SpatialCommandUtils::AttemptSpatialAuth(bIsInChina); },
+#endif
+		[this, FinishLocalDeployment]()
+	{
+		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
+		{
+			FinishLocalDeployment();
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial auth failed attempting to launch local deployment."));
+		}
+	});
+
+	return true;
 }
 
 bool FLocalDeploymentManager::TryStopLocalDeployment()

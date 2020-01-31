@@ -65,6 +65,8 @@ private:
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
+	TFuture<bool> AttemptSpatialAuthResult;
+
 	static const int32 ExitCodeSuccess = 0;
 	static const int32 ExitCodeNotRunning = 4;
 	static const int32 RequiredRuntimePort = 5301;
