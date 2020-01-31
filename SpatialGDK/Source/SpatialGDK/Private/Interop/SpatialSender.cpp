@@ -12,28 +12,21 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
 #include "Net/NetworkProfiler.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
-#include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
-#include "Schema/Singleton.h"
-#include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
-#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/SpatialActorGroupManager.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityFactory.h"
-#include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
@@ -197,7 +190,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(InterestFactory::CreateServerWorkerInterest().CreateInterestData());
 
-	Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
+	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
 	OnCreateWorkerEntityResponse.BindLambda([WeakSender = TWeakObjectPtr<USpatialSender>(this), AttemptCounter](const Worker_CreateEntityResponseOp& Op)
@@ -239,7 +232,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 	});
 
-	Receiver->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
+	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
 }
 
 void USpatialSender::ClearPendingRPCs(const Worker_EntityId EntityId)
@@ -254,6 +247,64 @@ bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
 	GEngine->NetworkRemapPath(NetDriver, RemappedPathName, false);
 
 	return ClassInfoManager->ValidateOrExit_IsSupportedClass(RemappedPathName);
+}
+
+void USpatialSender::DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents)
+{
+	for (FWorkerComponentData& Component : EntityComponents)
+	{
+		Schema_DestroyComponentData(Component.schema_type);
+	}
+
+	EntityComponents.Empty();
+}
+
+TArray<FWorkerComponentData> USpatialSender::CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents)
+{
+	TArray<FWorkerComponentData> Copy;
+	Copy.Reserve(EntityComponents.Num());
+	for (const FWorkerComponentData& Component : EntityComponents)
+	{
+		Copy.Emplace(Worker_ComponentData{
+			Component.reserved,
+			Component.component_id,
+			Schema_CopyComponentData(Component.schema_type),
+			nullptr 
+		});
+	}
+
+	return Copy;
+}
+
+void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> EntityComponents)
+{
+	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(CopyEntityComponentData(EntityComponents), &EntityId);
+
+	CreateEntityDelegate Delegate;
+
+	Delegate.BindLambda([this, EntityId, Name = MoveTemp(EntityName), Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable
+	{
+		switch(Op.status_code)
+		{
+		case WORKER_STATUS_CODE_SUCCESS:
+			UE_LOG(LogSpatialSender, Log, TEXT("Created entity. "
+				"Entity name: %s, entity id: %lld"), *Name, EntityId);
+			DeleteEntityComponentData(Components);
+			break;
+		case WORKER_STATUS_CODE_TIMEOUT:
+			UE_LOG(LogSpatialSender, Log, TEXT("Timed out creating entity. Retrying. "
+				"Entity name: %s, entity id: %lld"), *Name, EntityId);
+			CreateEntityWithRetries(EntityId,  MoveTemp(Name), MoveTemp(Components));
+			break;
+		default:
+			UE_LOG(LogSpatialSender, Log, TEXT("Failed to create entity. It might already be created. Not retrying. "
+				"Entity name: %s, entity id: %lld"), *Name, EntityId);
+			DeleteEntityComponentData(Components);
+			break;
+		}
+	});
+
+	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(Delegate));
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
@@ -1060,6 +1111,27 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId)
 	{
 		UE_LOG(LogSpatialSender, Warning, TEXT("RetireEntity: Couldn't get Actor from PackageMap for EntityId: %lld"), EntityId);
 	}
+}
+
+void USpatialSender::CreateTombstoneEntity(AActor* Actor)
+{
+	check(Actor->IsNetStartupActor());
+
+	const Worker_EntityId EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
+
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
+	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
+
+	Components.Add(CreateLevelComponentData(Actor));
+
+	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
+
+	UE_LOG(LogSpatialSender, Log, TEXT("Creating tombstone entity for actor. "
+		"Actor: %s. Entity ID: %d."), *Actor->GetName(), EntityId);
+
+#if WITH_EDITOR
+	NetDriver->TrackTombstone(EntityId);
+#endif
 }
 
 void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
