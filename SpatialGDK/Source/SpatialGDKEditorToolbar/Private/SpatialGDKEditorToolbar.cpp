@@ -671,17 +671,20 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			return;
 		}
 
-		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
-		const bool bLocalDeploymentStarted = LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, GetOptionalExposedRuntimeIP());
+		FLocalDeploymentManager::LocalDeploymentCallback CallBack = [this](bool bSuccess)
+		{
+			if (bSuccess)
+			{
+				OnShowSuccessNotification(TEXT("Local deployment started!"));
+			}
+			else
+			{
+				OnShowFailedNotification(TEXT("Local deployment failed to start"));
+			}
+		};
 
-		if (bLocalDeploymentStarted)
-		{
-			OnShowSuccessNotification(TEXT("Local deployment started!"));
-		}
-		else
-		{
-			OnShowFailedNotification(TEXT("Local deployment failed to start"));
-		}
+		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
+		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, GetOptionalExposedRuntimeIP(), CallBack);
 	});
 }
 

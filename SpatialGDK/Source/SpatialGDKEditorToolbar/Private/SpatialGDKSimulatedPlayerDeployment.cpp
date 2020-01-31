@@ -559,7 +559,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial auth failed attempting to launch cloud deployment."));
+			UE_LOG(LogSpatialGDKSimulatedPlayerDeployment, Error, TEXT("Spatial auth failed attempting to launch cloud deployment."));
 		}
 	});
 
