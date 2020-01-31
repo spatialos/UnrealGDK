@@ -83,7 +83,7 @@ public:
 	struct UpdateToSend
 	{
 		Worker_EntityId EntityId;
-		Worker_ComponentUpdate Update;
+		FWorkerComponentUpdate Update;
 	};
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
 	TArray<Worker_ComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);

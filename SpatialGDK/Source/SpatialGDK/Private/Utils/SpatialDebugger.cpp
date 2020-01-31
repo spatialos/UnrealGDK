@@ -280,7 +280,7 @@ void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& Aut
 		{
 			// Some entities won't have debug info, so create it now.
 			SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, false);
-			Worker_ComponentData DebuggingData = NewDebuggingInfo.CreateSpatialDebuggingData();
+			FWorkerComponentData DebuggingData = NewDebuggingInfo.CreateSpatialDebuggingData();
 			NetDriver->Connection->SendAddComponent(AuthOp.entity_id, &DebuggingData);
 			return;
 		}
@@ -288,7 +288,7 @@ void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& Aut
 		{
 			DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
 			DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
-			Worker_ComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+			FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
 			NetDriver->Connection->SendComponentUpdate(AuthOp.entity_id, &DebuggingUpdate);
 		}
 	}
@@ -304,7 +304,7 @@ void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, Vir
 	check(NewAuthoritativePhysicalWorkerName != nullptr);
 
 	DebuggingInfo->IntentColor = SpatialGDK::GetColorForWorkerName(*NewAuthoritativePhysicalWorkerName);
-	Worker_ComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 }
 
