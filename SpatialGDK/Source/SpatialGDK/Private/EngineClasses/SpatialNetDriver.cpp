@@ -1649,9 +1649,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 {
 	PollPendingLoads();
 
-	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
-	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
-
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady() && bIsReadyToStart)
@@ -1696,6 +1693,8 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	TimerManager.Tick(DeltaTime);
 
+	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
+	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
 	Super::TickFlush(DeltaTime);
 }
 
