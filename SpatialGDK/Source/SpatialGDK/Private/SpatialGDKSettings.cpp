@@ -123,13 +123,13 @@ void USpatialGDKSettings::PostInitProperties()
 		}
 	}
 
-	if (FParse::Param(CommandLine, TEXT("SpatialWorkerConnectionOnGameThread")))
+	if (FParse::Param(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread")))
 	{
 		bRunSpatialWorkerConnectionOnGameThread = true;
 	}
 	else
 	{
-		FParse::Bool(CommandLine, TEXT("SpatialWorkerConnectionOnGameThread="), bRunSpatialWorkerConnectionOnGameThread);
+		FParse::Bool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread="), bRunSpatialWorkerConnectionOnGameThread);
 	}
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("SpatialWorkerConnection on the Game thread is %s."), bRunSpatialWorkerConnectionOnGameThread ? TEXT("enabled") : TEXT("disabled"));
 

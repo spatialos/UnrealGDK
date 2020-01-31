@@ -241,7 +241,8 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
 	bool bUseRPCRingBuffers;
 
-	UPROPERTY(EditAnywhere, config, Category = "Threading")
+	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
+	UPROPERTY(Config)
 	bool bRunSpatialWorkerConnectionOnGameThread;
 
 private:
