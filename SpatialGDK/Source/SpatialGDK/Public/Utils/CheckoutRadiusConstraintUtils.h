@@ -16,9 +16,9 @@ public:
 	static TMap<UClass*, float> GetActorTypeToRadius();
 	static TMap<float, TArray<UClass*>> DedupeDistancesAcrossActorTypes(const TMap<UClass*, float> ComponentSetToRadius);
 	static TArray<QueryConstraint> BuildNonDefaultActorCheckoutConstraints(const TMap<float, TArray<UClass*>> DistanceToActorTypes, USpatialClassInfoManager* ClassInfoManager);
+	static float NetCullDistanceSquaredToSpatialDistance(float NetCullDistanceSquared);
 
 private:
-	static float NetCullDistanceSquaredToSpatialDistance(float NetCullDistanceSquared);
 	static void AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint, USpatialClassInfoManager* ClassInfoManager);
 };
 

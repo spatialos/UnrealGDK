@@ -6,23 +6,26 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialRPCService.h"
-#include "Schema/AlwaysRelevant.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/Singleton.h"
+#include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
+#include "Schema/Tombstone.h"
 #include "Utils/ComponentFactory.h"
+#include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialActorUtils.h"
+#include "Utils/SpatialDebugger.h"
 
 #include "Engine.h"
- 
+
 namespace SpatialGDK
 {
- 
+
 EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService)
 	: NetDriver(InNetDriver)
 	, PackageMap(InPackageMap)
@@ -30,7 +33,7 @@ EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapC
 	, RPCService(InRPCService)
 { }
  
-TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs)
+TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs)
 {
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
@@ -137,7 +140,14 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 	}
 
+	// Add all Interest component IDs to allow us to change it if needed.
 	ComponentWriteAcl.Add(SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	for (const auto ComponentId : ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
+	{
+		ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
+	}
+
+	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
@@ -198,7 +208,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		bNetStartup = Actor->bNetStartup;
 	}
 
-	TArray<Worker_ComponentData> ComponentDatas;
+	TArray<FWorkerComponentData> ComponentDatas;
 	ComponentDatas.Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
@@ -214,19 +224,38 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId()));
 	}
 
+	if (NetDriver->SpatialDebugger != nullptr)
+	{
+		if (SpatialSettings->bEnableUnrealLoadBalancer)
+		{
+			check(NetDriver->VirtualWorkerTranslator != nullptr);
+
+			VirtualWorkerId IntentVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+
+			const PhysicalWorkerName* PhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntentVirtualWorkerId);
+			FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
+			FColor IntentColor = PhysicalWorkerName == nullptr ? InvalidServerTintColor : SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName);
+
+			SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntentVirtualWorkerId, IntentColor, false);
+			ComponentDatas.Add(DebuggingInfo.CreateSpatialDebuggingData());
+		}
+
+		ComponentWriteAcl.Add(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	}
+
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		ComponentDatas.Add(Singleton().CreateSingletonData());
 	}
 
-	if (Actor->bAlwaysRelevant)
+	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(AlwaysRelevant().CreateData());
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
 	}
 
 	if (Actor->NetDormancy >= DORM_DormantAll)
 	{
-		ComponentDatas.Add(Dormant().CreateData());
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID));
 	}
 
 	if (Actor->IsA<APlayerController>())
@@ -244,10 +273,10 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
 
-	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
+	TArray<FWorkerComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 	ComponentDatas.Append(DynamicComponentDatas);
 
-	InterestFactory InterestDataFactory(Actor, Info, ClassInfoManager, PackageMap);
+	InterestFactory InterestDataFactory(Actor, Info, EntityId, ClassInfoManager, PackageMap);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
 	if (SpatialSettings->bUseRPCRingBuffers && RPCService != nullptr)
@@ -284,7 +313,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 			// If this object is not in the PackageMap, it has been dynamically created.
 			if (!PackageMap->GetUnrealObjectRefFromObject(Subobject).IsValid())
 			{
-				const FClassInfo* SubobjectInfo = Channel->TryResolveNewDynamicSubobjectAndGetClassInfo(Subobject);
+				const FClassInfo* SubobjectInfo = PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(Subobject);
 
 				if (SubobjectInfo == nullptr)
 				{
@@ -306,7 +335,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-			TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+			TArray<FWorkerComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 			ComponentDatas.Append(ActorSubobjectDatas);
 		}
 	}
@@ -340,8 +369,7 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-		TraceKey LatencyKey; // Currently untracked. Will be dealt with by UNR-2726 
-		Worker_ComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges, LatencyKey);
+		FWorkerComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges);
 		ComponentDatas.Add(SubobjectHandoverData);
 
 		ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);
@@ -351,4 +379,70 @@ TArray<Worker_ComponentData> EntityFactory::CreateEntityComponents(USpatialActor
  
 	return ComponentDatas;
 }
+
+TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AActor* Actor)
+{
+	check(Actor->IsNetStartupActor());
+
+	const UClass* Class = Actor->GetClass();
+
+	// Construct an ACL for a read-only entity.
+	WorkerRequirementSet AnyServerRequirementSet;
+	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
+
+	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->ServerWorkerTypes)
+	{
+		WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
+
+		AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
+		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
+	}
+
+	// Add Zoning Attribute if we are using the load balancer.
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		const WorkerAttributeSet ZoningAttributeSet = { SpatialConstants::ZoningAttribute };
+		AnyServerRequirementSet.Add(ZoningAttributeSet);
+		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
+	}
+
+	WorkerRequirementSet ReadAcl;
+	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+	{
+		ReadAcl = AnyServerRequirementSet;
+	}
+	else
+	{
+		ReadAcl = AnyServerOrClientRequirementSet;
+	}
+
+	// Get a stable object ref.
+	FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
+	if (OuterObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+	{
+		const FNetworkGUID NetGUID = PackageMap->ResolveStablyNamedObject(Actor->GetOuter());
+		OuterObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+	}
+
+	// No path in SpatialOS should contain a PIE prefix.
+	FString TempPath = Actor->GetFName().ToString();
+	GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
+	const TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
+
+	TArray<FWorkerComponentData> Components;
+	Components.Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreatePositionData());
+	Components.Add(Metadata(Class->GetName()).CreateMetadataData());
+	Components.Add(UnrealMetadata(StablyNamedObjectRef, GetOwnerWorkerAttribute(Actor), Class->GetPathName(), true).CreateUnrealMetadataData());
+	Components.Add(Tombstone().CreateData());
+	Components.Add(EntityAcl(ReadAcl, WriteAclMap()).CreateEntityAclData());
+
+	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
+	{
+		Components.Add(Persistence().CreatePersistenceData());
+	}
+
+	return Components;
 }
+
+}  // namespace SpatialGDK

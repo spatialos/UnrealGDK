@@ -35,6 +35,8 @@ public:
 
 	//////////////////////////////////////////////////////////////////////////
 	//
+	// EXPERIMENTAL: We do not support this functionality currently: Do not use it unless you are Improbable staff.
+	//
 	// USpatialLatencyTracer allows for tracing of gameplay events across multiple workers, from their user
 	// instigation, to their observed results. Each of these multi-worker events are tracked through `traces`
 	// which allow the user to see collected timings of these events in a single location. Key timings related
@@ -69,9 +71,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static void RegisterProject(UObject* WorldContextObject, const FString& ProjectId);
 
+	// Set a prefix to be used for all span names. Resulting uploaded span names are of the format "PREFIX(WORKER_ID) : USER_SPECIFIED_NAME".
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool SetMessagePrefix(UObject* WorldContextObject, const FString& NewMessagePrefix);
+
 	// Start a latency trace. This will start the latency timer and attach it to a specific RPC.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool BeginLatencyTraceRPC(UObject* WorldContextObject, const AActor* Actor, const FString& Function, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
+	static bool BeginLatencyTrace(UObject* WorldContextObject, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 
 	// Hook into an existing latency trace, and pipe the trace to another outgoing networking event
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
@@ -79,6 +85,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool ContinueLatencyTraceProperty(UObject* WorldContextObject, const AActor* Actor, const FString& Property, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutContinuedLatencyPayload);
+
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool ContinueLatencyTraceTagged(UObject* WorldContextObject, const AActor* Actor, const FString& Tag, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayLoad, FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
 	// End a latency trace. This needs to be called within the receiving end of the traced networked event (ie. an rpc)
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
@@ -88,7 +97,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool IsLatencyTraceActive(UObject* WorldContextObject);
 
-	static const TraceKey InvalidTraceKey;
+	// Returns a previously saved payload from ContinueLatencyTraceKeyed
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static FSpatialLatencyPayload RetrievePayload(UObject* WorldContextObject, const AActor* Actor, const FString& Tag);
 
 	// Internal GDK usage, shouldn't be used by game code
 	static USpatialLatencyTracer* GetTracer(UObject* WorldContextObject);
@@ -98,6 +109,7 @@ public:
 	bool IsValidKey(TraceKey Key);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const UFunction* Function);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const UProperty* Property);
+	TraceKey RetrievePendingTrace(const UObject* Obj, const FString& Tag);
 
 	void MarkActiveLatencyTrace(const TraceKey Key);
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);
@@ -118,16 +130,25 @@ private:
 
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
 	using ActorPropertyKey = TPair<const AActor*, const UProperty*>;
+	using ActorTagKey = TPair<const AActor*, FString>;
 	using TraceSpan = improbable::trace::Span;
 
-	bool BeginLatencyTraceRPC_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
-	bool ContinueLatencyTraceRPC_Internal(const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue);
-	bool ContinueLatencyTraceProperty_Internal(const AActor* Actor, const FString& PropertyName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue);
+	enum class ETraceType : uint8
+	{
+		RPC,
+		Property,
+		Tagged
+	};
+
+	bool BeginLatencyTrace_Internal(const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
+	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue);
 	bool EndLatencyTrace_Internal(const FSpatialLatencyPayload& LatencyPayload);
+
+	FSpatialLatencyPayload RetrievePayload_Internal(const UObject* Actor, const FString& Key);
+
 	bool IsLatencyTraceActive_Internal();
 
-	TraceKey CreateNewTraceEntryRPC(const AActor* Actor, const FString& FunctionName);
-	TraceKey CreateNewTraceEntryProperty(const AActor* Actor, const FString& PropertyName);
+	TraceKey CreateNewTraceEntry(const AActor* Actor, const FString& Target, ETraceType Type);
 
 	TraceKey GenerateNewTraceKey();
 	TraceSpan* GetActiveTrace();
@@ -139,6 +160,7 @@ private:
 	void ClearTrackingInformation();
 
 	FString WorkerId;
+	FString MessagePrefix;
 
 	// This is used to track if there is an active trace within a currently processing network call. The user is
 	// able to hook into this active trace, and `continue` it to another network relevant call. If so, the
@@ -147,8 +169,9 @@ private:
 	TraceKey NextTraceKey = 1;
 
 	FCriticalSection Mutex; // This mutex is to protect modifications to the containers below
-	TMap<ActorFuncKey, TraceKey> TrackingTraces;
+	TMap<ActorFuncKey, TraceKey> TrackingRPCs;
 	TMap<ActorPropertyKey, TraceKey> TrackingProperties;
+	TMap<ActorTagKey, TraceKey> TrackingTags;
 	TMap<TraceKey, TraceSpan> TraceMap;
 
 public:
