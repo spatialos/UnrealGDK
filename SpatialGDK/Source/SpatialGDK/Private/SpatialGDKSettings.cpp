@@ -45,6 +45,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 	, bEnableUnrealLoadBalancer(false)
 	, bUseRPCRingBuffers(false)
+	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, DefaultRPCRingBufferSize(8)
 	, MaxRPCRingBufferSize(32)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
@@ -121,6 +122,16 @@ void USpatialGDKSettings::PostInitProperties()
 			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
 		}
 	}
+
+	if (FParse::Param(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread")))
+	{
+		bRunSpatialWorkerConnectionOnGameThread = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread="), bRunSpatialWorkerConnectionOnGameThread);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("SpatialWorkerConnection on the Game thread is %s."), bRunSpatialWorkerConnectionOnGameThread ? TEXT("enabled") : TEXT("disabled"));
 
 	if (FParse::Param(CommandLine, TEXT("OverrideResultTypes")))
 	{

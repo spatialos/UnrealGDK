@@ -241,6 +241,10 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
 	bool bUseRPCRingBuffers;
 
+	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
+	UPROPERTY(Config)
+	bool bRunSpatialWorkerConnectionOnGameThread;
+
 private:
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "Default RPC Ring Buffer Size"))
 	uint32 DefaultRPCRingBufferSize;
