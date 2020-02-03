@@ -508,15 +508,15 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		return FReply::Handled();
 	}
 
+	if (ToolbarPtr)
+	{
+		ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
+	}
+
 	auto LaunchCloudDeployment = [this, ToolbarPtr]()
 	{
 		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
 		{
-			if (ToolbarPtr)
-			{
-				ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
-			}
-
 			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
 				FSimpleDelegate::CreateLambda([]()
 			{
@@ -550,7 +550,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 #else
 	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
 #endif
-		[this, LaunchCloudDeployment]()
+		[this, LaunchCloudDeployment, ToolbarPtr]()
 	{
 		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
 		{
@@ -558,7 +558,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKSimulatedPlayerDeployment, Error, TEXT("Spatial auth failed attempting to launch cloud deployment."));
+			ToolbarPtr->OnShowTaskStartNotification(TEXT("Spatial auth failed attempting to launch cloud deployment."));
 		}
 	});
 
