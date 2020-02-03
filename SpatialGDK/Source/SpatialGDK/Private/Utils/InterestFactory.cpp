@@ -228,6 +228,7 @@ TArray<Worker_ComponentId> InterestFactory::CreateServerNonAuthInterestResultTyp
 
 	// Add all data and handover components
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
+	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Handover));
 
 	return ResultType;
@@ -310,6 +311,7 @@ Interest InterestFactory::CreateInterest() const
 	if (Settings->bEnableServerQBI)
 	{
 		// If we have server QBI, every actor needs a query for the server
+		// TODO(jacques): Use worker interest instead (UNR-2656)
 		AddActorInterest(ResultInterest);
 	}
 
@@ -333,9 +335,14 @@ void InterestFactory::AddActorInterest(Interest& OutInterest) const
 
 	Query NewQuery;
 	NewQuery.Constraint = SystemConstraints;
-	// TODO: Make result type handle components certain workers shouldn't see
-	// e.g. Handover, OwnerOnly, etc.
-	NewQuery.FullSnapshotResult = true;
+	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
+	{
+		NewQuery.ResultComponentId = ServerNonAuthInterestResultType;
+	}
+	else
+	{
+		NewQuery.FullSnapshotResult = true;
+	}
 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, NewQuery);
 }
