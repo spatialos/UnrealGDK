@@ -241,7 +241,6 @@ private:
 
 	/** Set DAT in runtime settings. */
 	void SetRuntimeUseDevelopmentAuthenticationFlow();
-	void SetRuntimeDevelopmentAuthenticationToken();
 	void SetRuntimeDevelopmentDeploymentToConnect();
 
 	/** Set WorkerTypesToLaunch in level editor play settings. */
@@ -487,4 +486,6 @@ public:
 	}
 
 	bool IsDeploymentConfigurationValid() const;
+
+	void SetRuntimeDevelopmentAuthenticationToken();
 };

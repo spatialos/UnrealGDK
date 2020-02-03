@@ -45,6 +45,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 	, bEnableUnrealLoadBalancer(false)
 	, bUseRPCRingBuffers(false)
+	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, DefaultRPCRingBufferSize(8)
 	, MaxRPCRingBufferSize(32)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
@@ -122,6 +123,16 @@ void USpatialGDKSettings::PostInitProperties()
 		}
 	}
 
+	if (FParse::Param(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread")))
+	{
+		bRunSpatialWorkerConnectionOnGameThread = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread="), bRunSpatialWorkerConnectionOnGameThread);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("SpatialWorkerConnection on the Game thread is %s."), bRunSpatialWorkerConnectionOnGameThread ? TEXT("enabled") : TEXT("disabled"));
+
 	if (FParse::Param(CommandLine, TEXT("OverrideResultTypes")))
 	{
 		bEnableResultTypes = true;
@@ -131,6 +142,15 @@ void USpatialGDKSettings::PostInitProperties()
 		FParse::Bool(CommandLine, TEXT("OverrideResultTypes="), bEnableResultTypes);
 	}
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Result types are %s."), bEnableResultTypes ? TEXT("enabled") : TEXT("disabled"));
+
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Handover is %s."), bEnableHandover ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Server QBI is %s."), bEnableServerQBI ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("RPC ring buffers are %s."), bUseRPCRingBuffers ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("RPC packing is %s."), bPackRPCs ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Net Cull Distance interest is %s."), bEnableNetCullDistanceInterest ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Net Cull Distance interest with frequency is %s."), bEnableNetCullDistanceFrequency ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Use Is Actor Relevant For Connection is %s."), UseIsActorRelevantForConnection ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Batch Spatial Position Updates is %s."), bBatchSpatialPositionUpdates ? TEXT("enabled") : TEXT("disabled"));
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();

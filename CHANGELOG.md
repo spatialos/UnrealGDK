@@ -49,6 +49,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Introduced experimental feature flag `bEnableResultTypes`, defaulting false. Flip this to true for Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
 - Moved Dev Auth settings from runtime settings to editor settings.
 - Added the option to use the development authentication flow using the command line.
+- Added a button to generate the Development Authentication Token inside the Unreal Editor. To use it, navigate to **SpatialOS GDK for Unreal** > **Editor Settings** > **Cloud Connection**.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.

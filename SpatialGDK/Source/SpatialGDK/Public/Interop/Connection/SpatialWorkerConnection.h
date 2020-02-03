@@ -90,6 +90,9 @@ public:
 	bool TrySetupConnectionConfigFromCommandLine(const FString& SpatialWorkerType);
 	void SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType);
 
+	void QueueLatestOpList();
+	void ProcessOutgoingMessages();
+
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
@@ -109,8 +112,6 @@ private:
 	// End FRunnable Interface
 
 	void InitializeOpsProcessingThread();
-	void QueueLatestOpList();
-	void ProcessOutgoingMessages();
 
 	void StartDevelopmentAuth(const FString& DevAuthToken);
 	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
