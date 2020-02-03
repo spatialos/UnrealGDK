@@ -10,6 +10,8 @@
 #include "SpatialGDKServicesModule.h"
 #include "Serialization/JsonSerializer.h"
 #include "Widgets/Text/STextBlock.h"
+#include "Misc/MessageDialog.h"
+
 #include "Widgets/Input/SButton.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorLayoutDetails);
@@ -39,13 +41,17 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 
 FReply FSpatialGDKEditorLayoutDetails::ClickedOnButton()
 {
+
+
 	FString CreateDevAuthTokenResult;
 	int32 ExitCode;
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, TEXT("project auth dev-auth-token create --description=\"Unreal GDK Token\" --json_output"), SpatialGDKServicesConstants::SpatialOSDirectory, CreateDevAuthTokenResult, ExitCode);
 
 	if (ExitCode != 0)
 	{
-		UE_LOG(LogSpatialGDKEditorLayoutDetails, Warning, TEXT("Unable to generate a development authentication token. %s"), *CreateDevAuthTokenResult);
+		UE_LOG(LogSpatialGDKEditorLayoutDetails, Warning, TEXT("Unable to generate a development authentication token. Result: %s"), *CreateDevAuthTokenResult);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to generate a development authentication token. Result: %s"), *CreateDevAuthTokenResult)));
+		return FReply::Handled();
 	};
 
 	FString AuthResult;
@@ -60,7 +66,8 @@ FReply FSpatialGDKEditorLayoutDetails::ClickedOnButton()
 	TSharedPtr<FJsonObject> JsonRootObject;
 	if (!(FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid()))
 	{
-		UE_LOG(LogSpatialGDKEditorLayoutDetails, Warning, TEXT("Unable to parse the received development authentication token. %s"), *DevAuthTokenResult);
+		UE_LOG(LogSpatialGDKEditorLayoutDetails, Warning, TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult)));
 		return FReply::Handled();
 	}
 
