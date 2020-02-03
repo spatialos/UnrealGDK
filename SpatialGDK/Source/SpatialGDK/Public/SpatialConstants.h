@@ -242,7 +242,11 @@ const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 const FString RECONNECT_USING_COMMANDLINE_ARGUMENTS = TEXT("0.0.0.0");
 const FString URL_LOGIN_OPTION = TEXT("login=");
 const FString URL_PLAYER_IDENTITY_OPTION = TEXT("playeridentity=");
-const FString URL_DEV_AUTH_OPTION = TEXT("devauth=");
+const FString URL_DEV_AUTH_TOKEN_OPTION = TEXT("devauthtoken=");
+const FString URL_TARGET_DEPLOYMENT_OPTION = TEXT("deployment=");
+const FString URL_PLAYER_ID_OPTION = TEXT("playerid=");
+const FString URL_DISPLAY_NAME_OPTION = TEXT("displayname=");
+const FString URL_METADATA_OPTION = TEXT("metadata=");
 
 const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 
