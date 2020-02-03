@@ -151,6 +151,7 @@ void USpatialGDKSettings::PostInitProperties()
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Net Cull Distance interest with frequency is %s."), bEnableNetCullDistanceFrequency ? TEXT("enabled") : TEXT("disabled"));
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Use Is Actor Relevant For Connection is %s."), UseIsActorRelevantForConnection ? TEXT("enabled") : TEXT("disabled"));
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Batch Spatial Position Updates is %s."), bBatchSpatialPositionUpdates ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Run Spatial Worker Connection On Game Thread is %s."), bRunSpatialWorkerConnectionOnGameThread ? TEXT("enabled") : TEXT("disabled"));
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
