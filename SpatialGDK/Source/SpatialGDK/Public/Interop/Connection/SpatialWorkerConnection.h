@@ -37,6 +37,13 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
+	
+	using LoginTokenResponseCallback = TFunction<bool(const Worker_Alpha_LoginTokensResponse*)>;
+    
+    /// Register a callback using this function.
+    /// It will be triggered when receiving login tokens using the development authentication flow inside SpatialWorkerConnection.
+    /// @param Callback - callback function.
+	void RegisterOnLoginTokensCallback(const LoginTokenResponseCallback& Callback) {LoginTokenResCallback = Callback;}
 
 	void Connect(bool bConnectAsClient, uint32 PlayInEditorID);
 
@@ -108,6 +115,7 @@ private:
 	void StartDevelopmentAuth(const FString& DevAuthToken);
 	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
 	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
+	void ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
 	template <typename T, typename... ArgsType>
 	void QueueOutgoingMessage(ArgsType&&... Args);
@@ -132,4 +140,5 @@ private:
 	Worker_RequestId NextRequestId = 0;
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
+	LoginTokenResponseCallback LoginTokenResCallback;
 };
