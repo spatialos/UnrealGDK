@@ -380,7 +380,7 @@ void GenerateSchemaForNCDs(const FString& SchemaOutputPath)
 
 	for (auto& NCDComponent : NetCullDistanceToComponentId)
 	{
-		const FString ComponentName = FString::Printf(TEXT("NetCullDistanceSquared%u"), static_cast<uint32>(NCDComponent.Key));
+		const FString ComponentName = FString::Printf(TEXT("NetCullDistanceSquared%lld"), static_cast<uint64>(NCDComponent.Key));
 		if (NCDComponent.Value == 0)
 		{
 			NCDComponent.Value = IdGenerator.Next();
