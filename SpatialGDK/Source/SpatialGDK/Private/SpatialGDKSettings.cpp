@@ -132,6 +132,15 @@ void USpatialGDKSettings::PostInitProperties()
 	}
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Result types are %s."), bEnableResultTypes ? TEXT("enabled") : TEXT("disabled"));
 
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Handover is %s."), bEnableHandover ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Server QBI is %s."), bEnableServerQBI ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("RPC ring buffers are %s."), bUseRPCRingBuffers ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("RPC packing is %s."), bPackRPCs ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Net Cull Distance interest is %s."), bEnableNetCullDistanceInterest ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Net Cull Distance interest with frequency is %s."), bEnableNetCullDistanceFrequency ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Use Is Actor Relevant For Connection is %s."), UseIsActorRelevantForConnection ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Batch Spatial Position Updates is %s."), bBatchSpatialPositionUpdates ? TEXT("enabled") : TEXT("disabled"));
+
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
 	PlayInSettings->bEnableOffloading = bEnableOffloading;
