@@ -238,14 +238,18 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
 	FWorkerType LoadBalancingWorkerType;
 
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
-	bool bUseRPCRingBuffers;
-
 	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
 	UPROPERTY(Config)
 	bool bRunSpatialWorkerConnectionOnGameThread;
 
+	/** RPC ring buffers is enabled when either the matching setting is set, or zoning is enabled */
+	bool UseRPCRingBuffer() const;
+
 private:
+
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
+	bool bUseRPCRingBuffers;
+
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "Default RPC Ring Buffer Size"))
 	uint32 DefaultRPCRingBufferSize;
 

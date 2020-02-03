@@ -193,3 +193,8 @@ uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 
 	return DefaultRPCRingBufferSize;
 }
+
+bool USpatialGDKSettings::UseRPCRingBuffer() const
+{
+	return bUseRPCRingBuffers || bEnableUnrealLoadBalancer;
+}
