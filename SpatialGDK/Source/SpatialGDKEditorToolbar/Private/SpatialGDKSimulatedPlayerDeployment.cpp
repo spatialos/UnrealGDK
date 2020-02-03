@@ -9,7 +9,11 @@
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Templates/SharedPointer.h"
+#include "SpatialCommandUtils.h"
+#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
+#include "Async/Async.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "Textures/SlateIcon.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
@@ -505,38 +509,64 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		return FReply::Handled();
 	}
 
-	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
-		FNotificationInfo Info(FText::FromString(TEXT("Starting simulated player deployment...")));
-		Info.bUseSuccessFailIcons = true;
-		Info.bFireAndForget = false;
+	FNotificationInfo Info(FText::FromString(TEXT("Starting simulated player deployment...")));
+	Info.bUseSuccessFailIcons = true;
+	Info.bFireAndForget = false;
 
-		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
 
-		NotificationItem->SetCompletionState(SNotificationItem::CS_Pending);
+	NotificationItem->SetCompletionState(SNotificationItem::CS_Pending);
 
-		SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
-			FSimpleDelegate::CreateLambda([NotificationItem]() {
+	auto LaunchCloudDeployment = [this, NotificationItem]()
+	{
+		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
+
+			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
+				FSimpleDelegate::CreateLambda([NotificationItem]() {
 				NotificationItem->SetText(FText::FromString(TEXT("Successfully initiated launching of the cloud deployment.")));
 				NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
 				NotificationItem->SetExpireDuration(7.5f);
 				NotificationItem->ExpireAndFadeout();
 			}),
-			FSimpleDelegate::CreateLambda([NotificationItem]() {
+				FSimpleDelegate::CreateLambda([NotificationItem]() {
 				NotificationItem->SetText(FText::FromString(TEXT("Failed to launch the DeploymentLauncher script properly.")));
 				NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 				NotificationItem->SetExpireDuration(7.5f);
 				NotificationItem->ExpireAndFadeout();
 			})
-		);
-		return FReply::Handled();
-	}
+				);
+			return;
+		}
 
-	FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
-	Info.bUseSuccessFailIcons = true;
-	Info.ExpireDuration = 3.0f;
+		FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
+		Info.bUseSuccessFailIcons = true;
+		Info.ExpireDuration = 3.0f;
 
-	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-	NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+	};
+
+#if ENGINE_MINOR_VERSION <= 22
+	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
+#else
+	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
+#endif
+		[this, LaunchCloudDeployment]()
+	{
+		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
+		{
+			LaunchCloudDeployment();
+		}
+		else
+		{
+			FNotificationInfo Info(FText::FromString(TEXT("Spatial auth failed attempting to launch cloud deployment.")));
+			Info.bUseSuccessFailIcons = true;
+			Info.ExpireDuration = 3.0f;
+
+			TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+			NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+		}
+	});
 
 	return FReply::Handled();
 }

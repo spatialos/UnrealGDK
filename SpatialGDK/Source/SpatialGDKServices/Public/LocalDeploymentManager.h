@@ -21,7 +21,9 @@ public:
 
 	void SPATIALGDKSERVICES_API RefreshServiceStatus();
 
-	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs);
+	using LocalDeploymentCallback = TFunction<void(bool)>;
+
+	void SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, const LocalDeploymentCallback& CallBack);
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 
 	bool SPATIALGDKSERVICES_API TryStartSpatialService();
@@ -64,6 +66,10 @@ private:
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 	bool IsServiceInCorrectDirectory(const FString& ServiceStatusResult);
+
+	bool FinishLocalDeployment(FString LaunchConfig, FString LaunchArgs);
+
+	TFuture<bool> AttemptSpatialAuthResult;
 
 	static const int32 ExitCodeSuccess = 0;
 
