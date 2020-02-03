@@ -55,6 +55,13 @@ gosu $NEW_USER ""${{SCRIPT}}"" ""$@"" >> ""/improbable/logs/${{WORKER_ID}}.log""
 
         public const string SimulatedPlayerCoordinatorShellScript =
 @"#!/bin/sh
+
+# Some clients are quite large so in order to avoid running out of disk space on the node we attempt to delete the zip
+WORKER_ZIP_DIR=""/tmp/runner_source/""
+if [ -d ""$WORKER_ZIP_DIR"" ]; then
+  rm -rf ""$WORKER_ZIP_DIR""
+fi
+
 sleep 5
 
 chmod +x WorkerCoordinator.exe
