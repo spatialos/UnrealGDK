@@ -551,7 +551,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 #else
 	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
 #endif
-		[this, LaunchCloudDeployment]()
+		[this, LaunchCloudDeployment, NotificationItem]()
 	{
 		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
 		{
@@ -559,12 +559,10 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		}
 		else
 		{
-			FNotificationInfo Info(FText::FromString(TEXT("Spatial auth failed attempting to launch cloud deployment.")));
-			Info.bUseSuccessFailIcons = true;
-			Info.ExpireDuration = 3.0f;
-
-			TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+			NotificationItem->SetText(FText::FromString(TEXT("Spatial auth failed attempting to launch cloud deployment.")));
 			NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+			NotificationItem->SetExpireDuration(3.0f);
+			NotificationItem->ExpireAndFadeout();
 		}
 	});
 
