@@ -1325,8 +1325,6 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 #if ENGINE_MINOR_VERSION <= 22
 		RepLayout.InitShadowData(StaticBuffer, TargetObject->GetClass(), reinterpret_cast<uint8*>(TargetObject));
 #else
-		// TODO: UNR-2372 - Investigate not resetting the ShadowData.
-		StaticBuffer.Buffer.Empty();
 		RepLayout.InitRepStateStaticBuffer(StaticBuffer, reinterpret_cast<const uint8*>(TargetObject));
 #endif
 	}
