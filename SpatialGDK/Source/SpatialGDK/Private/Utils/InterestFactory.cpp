@@ -432,12 +432,17 @@ void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 
 void InterestFactory::AddServerSelfInterest(Interest& OutInterest) const
 {
-	Query NewQuery;
-	NewQuery.Constraint.EntityIdConstraint = EntityId;
+	// Add a query for components all servers need to read client data
+	Query ClientQuery;
+	ClientQuery.Constraint.EntityIdConstraint = EntityId;
+	ClientQuery.ResultComponentId = ServerAuthInterestResultType;
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ClientQuery);
 
-	NewQuery.ResultComponentId = ServerAuthInterestResultType;
-
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, NewQuery);
+	// Add a query for the load balancing worker (whoever is delegated the ACL) to read the authority intent
+	Query LoadBalanceQuery;
+	LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
+	LoadBalanceQuery.ResultComponentId = TArray<Worker_ComponentId>{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID };
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 }
 
 void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd)
