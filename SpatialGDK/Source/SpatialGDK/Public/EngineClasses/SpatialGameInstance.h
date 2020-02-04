@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+#include "Utils/SpatialActorGroupManager.h"
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
@@ -58,6 +59,8 @@ public:
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
 
+	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
+
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.
@@ -85,4 +88,6 @@ private:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
+	UFUNCTION()
+	void OnLevelInitializedNetworkActors(ULevel* Level, UWorld* OwningWorld);
 };

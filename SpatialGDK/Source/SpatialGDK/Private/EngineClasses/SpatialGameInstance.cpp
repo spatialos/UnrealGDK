@@ -16,9 +16,10 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
-#include "Utils/SpatialLatencyTracer.h"
+#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
@@ -171,6 +172,11 @@ void USpatialGameInstance::Init()
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
 	GlobalStateManager = NewObject<UGlobalStateManager>();
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
+
+	FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
+
+	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
+	ActorGroupManager->Init();
 }
 
 void USpatialGameInstance::HandleOnConnected()
@@ -190,4 +196,56 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 	SpatialLatencyTracer->ResetWorkerId();
 #endif
 	OnConnectionFailed.Broadcast(Reason);
+}
+
+void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld)
+{
+	const FString WorkerType = GetSpatialWorkerType().ToString();
+
+	if (OwningWorld != GetWorld())
+	{
+		// Not current world. Another server running in the same process.
+		return;
+	}
+
+	if (!OwningWorld->IsServer())
+	{
+		return;
+	}
+
+	if (!USpatialStatics::IsSpatialOffloadingEnabled())
+	{
+		return;
+	}
+
+	if (OwningWorld->WorldType != EWorldType::PIE
+		&& OwningWorld->WorldType != EWorldType::Game
+		&& OwningWorld->WorldType != EWorldType::GamePreview)
+	{
+		return;
+	}
+
+	for (int32 ActorIndex = 0; ActorIndex < LoadedLevel->Actors.Num(); ActorIndex++)
+	{
+		AActor* Actor = LoadedLevel->Actors[ActorIndex];
+		if (Actor == nullptr)
+		{
+			continue;
+		}
+
+		if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
+		{
+			if (!Actor->bNetLoadOnNonAuthServer)
+			{
+				Actor->Destroy();
+			}
+			else
+			{
+				UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s Not actor group owner of startup actor %s, Exchanging Roles"), *WorkerType, *GetPathNameSafe(Actor));
+				ENetRole Temp = Actor->Role;
+				Actor->Role = Actor->RemoteRole;
+				Actor->RemoteRole = Temp;
+			}
+		}
+	}
 }

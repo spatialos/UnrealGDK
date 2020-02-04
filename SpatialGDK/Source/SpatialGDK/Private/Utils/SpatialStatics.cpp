@@ -8,6 +8,7 @@
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "SpatialConstants.h"
+#include "EngineClasses/SpatialGameInstance.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/SpatialActorGroupManager.h"
 
@@ -22,10 +23,10 @@ SpatialActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* W
 {
 	if (const UWorld* World = WorldContext->GetWorld())
 	{
-		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+		if (const USpatialGameInstance* SpatialGameInstance = Cast<USpatialGameInstance>(World->GetGameInstance()))
 		{
-			check(SpatialNetDriver->ActorGroupManager.IsValid());
-			return SpatialNetDriver->ActorGroupManager.Get();
+			check(SpatialGameInstance->ActorGroupManager.IsValid());
+			return SpatialGameInstance->ActorGroupManager.Get();
 		}
 	}
 	return nullptr;
@@ -82,6 +83,11 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 		return false;
 	}
 
+	if (Actor->bUseNetOwnerActorGroup && Actor->GetOwner() != nullptr)
+	{
+		return IsActorGroupOwnerForActor(Actor->GetOwner());
+	}
+
 	return IsActorGroupOwnerForClass(Actor, Actor->GetClass());
 }
 
@@ -123,8 +129,13 @@ FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
 {
 	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(Actor))
 	{
-		UClass* ActorClass = Actor->GetClass();
-		return ActorGroupManager->GetActorGroupForClass(ActorClass);
+		const AActor* EffectiveActor = Actor;
+		while (EffectiveActor->bUseNetOwnerActorGroup && EffectiveActor->GetOwner() != nullptr)
+		{
+			EffectiveActor = EffectiveActor->GetOwner();
+		}
+
+		return ActorGroupManager->GetActorGroupForClass(EffectiveActor->GetClass());
 	}
 
 	return SpatialConstants::DefaultActorGroup;

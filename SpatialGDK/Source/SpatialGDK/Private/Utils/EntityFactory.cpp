@@ -26,10 +26,11 @@
 namespace SpatialGDK
 {
 
-EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService)
+EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialActorGroupManager* InActorGroupManager, SpatialRPCService* InRPCService)
 	: NetDriver(InNetDriver)
 	, PackageMap(InPackageMap)
 	, ClassInfoManager(InClassInfoManager)
+	, ActorGroupManager(InActorGroupManager)
 	, RPCService(InRPCService)
 { }
  
@@ -84,7 +85,14 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
-	const WorkerAttributeSet WorkerAttribute{ Info.WorkerType.ToString() };
+	FName EffectiveWorkerType = Info.WorkerType;
+
+	if (SpatialSettings->bEnableOffloading)
+	{
+		EffectiveWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(USpatialStatics::GetActorGroupForActor(Actor));
+	}
+
+	const WorkerAttributeSet WorkerAttribute{ EffectiveWorkerType.ToString() };
 	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
 
 	WriteAclMap ComponentWriteAcl;
@@ -121,7 +129,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	}
 	else
 	{
-		const WorkerAttributeSet ACLAttributeSet = { Info.WorkerType.ToString() };
+		const WorkerAttributeSet ACLAttributeSet = { EffectiveWorkerType.ToString() };
 		const WorkerRequirementSet ACLRequirementSet = { ACLAttributeSet };
 		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ACLRequirementSet);
 	}

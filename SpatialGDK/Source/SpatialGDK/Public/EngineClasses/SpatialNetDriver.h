@@ -150,9 +150,10 @@ public:
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
 
-	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+
+	SpatialActorGroupManager* ActorGroupManager;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
@@ -227,8 +228,7 @@ private:
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
 
-	UFUNCTION()
-	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
+	void OnActorSpawned(AActor* Actor);
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 

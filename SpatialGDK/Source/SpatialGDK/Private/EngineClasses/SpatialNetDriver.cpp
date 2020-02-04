@@ -101,7 +101,10 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
-	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
+	if (GetWorld() != nullptr)
+	{
+		GetWorld()->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateUObject(this, &USpatialNetDriver::OnActorSpawned));
+	}
 
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	// Copied from what the Engine does with UActorChannel
@@ -129,9 +132,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
-	// Initialize ActorGroupManager as it is a dependency of ClassInfoManager (see below)
-	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
-	ActorGroupManager->Init();
+	ActorGroupManager = GetGameInstance()->ActorGroupManager.Get();
 
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
 	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
@@ -141,7 +142,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 
 	// If it fails to load, don't attempt to connect to spatial.
-	if (!ClassInfoManager->TryInit(this, ActorGroupManager.Get()))
+	if (!ClassInfoManager->TryInit(this, ActorGroupManager))
 	{
 		Error = TEXT("Failed to load Spatial SchemaDatabase! Make sure that schema has been generated for your project");
 		return false;
@@ -587,6 +588,35 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 	GlobalStateManager->QueryGSM(QueryDelegate);
 }
 
+void USpatialNetDriver::OnActorSpawned(AActor* Actor)
+{
+	if (!Actor->GetIsReplicated())
+	{
+		return;
+	}
+
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton | SPATIALCLASS_NotSpatialType))
+	{
+		return;
+	}
+
+	if (Actor->GetLocalRole() != ROLE_Authority)
+	{
+		return;
+	}
+
+	if (USpatialStatics::IsActorGroupOwnerForActor(Actor))
+	{
+		return;
+	}
+
+	FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker %s spawned replicated actor %s (owner: %s) but is not actor group owner for actor group %s. The actor will be destroyed in 0.01s"),
+		*WorkerType, *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), *USpatialStatics::GetActorGroupForActor(Actor).ToString());
+	Actor->TearOff();
+	Actor->SetLifeSpan(0.01f);
+}
+
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
 	if (LoadedWorld == nullptr)
@@ -639,33 +669,6 @@ void USpatialNetDriver::MakePlayerSpawnRequest()
 		PlayerSpawner->SendPlayerSpawnRequest();
 		bWaitingToSpawn = false;
 		bPersistSpatialConnection = false;
-	}
-}
-
-void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
-{
-	// Callback got called on a World that's not associated with this NetDriver.
-	// Don't do anything.
-	if (OwningWorld != World)
-	{
-		return;
-	}
-
-	// If we have authority over the GSM when loading a sublevel, make sure we have authority
-	// over the actors in the sublevel.
-	if (GlobalStateManager != nullptr)
-	{
-		if (GlobalStateManager->HasAuthority())
-		{
-			for (auto Actor : LoadedLevel->Actors)
-			{
-				if (Actor->GetIsReplicated())
-				{
-					Actor->Role = ROLE_Authority;
-					Actor->RemoteRole = ROLE_SimulatedProxy;
-				}
-			}
-		}
 	}
 }
 
@@ -787,6 +790,9 @@ void USpatialNetDriver::BeginDestroy()
 		GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
 	}
 #endif
+
+	// null out reference to ActorGroupManger
+	ActorGroupManager = nullptr;
 }
 
 void USpatialNetDriver::PostInitProperties()

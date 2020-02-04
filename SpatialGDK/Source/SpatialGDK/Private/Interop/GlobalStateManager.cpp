@@ -23,6 +23,7 @@
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
 #include "Utils/EntityPool.h"
+#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
@@ -581,6 +582,11 @@ bool UGlobalStateManager::HasAuthority()
 
 void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 {
+	// This logic is not used in offloading.
+	if (USpatialStatics::IsSpatialOffloadingEnabled()) {
+		return;
+	}
+
 	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
 	{
 		AActor* Actor = *It;
