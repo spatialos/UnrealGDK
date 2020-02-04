@@ -21,12 +21,14 @@ FActorSpecificSubobjectSchemaData FActorSpecificSubobjectSchemaData::Generate(FC
 
 	return SubobjectData;
 }
-TMap<uint32, UClass*> GetAllSubobjects(UClass* Class)
+typedef TPair<UClass*, FName> SubobjectEntry;
+
+TMap<uint32, SubobjectEntry> GetAllSubobjects(UClass* Class)
 {
 	uint32 Offset = 1;
 
 	TSet<UObject*> SeenComponent;
-	TMap<uint32, UClass*> Subobjects;
+	TMap<uint32, SubobjectEntry> Subobjects;
 
 	// Iterate through each property in the struct.
 	for (TFieldIterator<UProperty> It(Class); It; ++It)
@@ -63,7 +65,7 @@ TMap<uint32, UClass*> GetAllSubobjects(UClass* Class)
 				{
 					if (!SeenComponent.Contains(Value))
 					{
-						Subobjects.Add(Offset, Value->GetClass());
+						Subobjects.Add(Offset, SubobjectEntry(Value->GetClass(), Value->GetFName() ));
 						SeenComponent.Add(Value);
 					}
 					++Offset;
@@ -92,7 +94,7 @@ TMap<uint32, UClass*> GetAllSubobjects(UClass* Class)
 
 							if (!SeenComponent.Contains(Value))
 							{
-								Subobjects.Add(Offset, Value->GetClass());
+								Subobjects.Add(Offset, SubobjectEntry( Value->GetClass(), ObjectProperty->GetFName() ));
 								SeenComponent.Add(Value);
 							}
 							++Offset;
@@ -124,14 +126,14 @@ FActorSchemaData FActorSchemaData::Generate(FComponentIdGenerator& IdGenerator, 
 
 	for (auto& It : Subobjects)
 	{
-		UClass* SubobjectClass = It.Value;
+		UClass* SubobjectClass = It.Value.Key;
 
 		FActorSpecificSubobjectSchemaData SubobjectData;
 		const FActorSpecificSubobjectSchemaData* ExistingSubobjectSchemaData = nullptr;
 		
 		SubobjectData = FActorSpecificSubobjectSchemaData::Generate(IdGenerator, SubobjectClass);
 
-		//SubobjectData.Name = SubobjectTypeInfo->Name;
+		SubobjectData.Name = It.Value.Value;
 		uint32 SubobjectOffset = SubobjectData.SchemaComponents[SCHEMA_Data];
 		check(SubobjectOffset != 0);
 		ActorSchemaData.SubobjectData.Add(SubobjectOffset, SubobjectData);
