@@ -341,23 +341,13 @@ void USpatialActorChannel::UpdateShadowData()
 	}
 
 	// Refresh shadow data when crossing over servers to prevent stale/out-of-date data.
-#if ENGINE_MINOR_VERSION <= 22
-	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), reinterpret_cast<uint8*>(Actor));
-#else
-	ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer.Buffer.Empty();
-	ActorReplicator->RepLayout->InitRepStateStaticBuffer(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, reinterpret_cast<const uint8*>(Actor));
-#endif
+	ResetShadowData(*ActorReplicator->RepLayout, ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor);
 
 	// Refresh the shadow data for all replicated components of this actor as well.
 	for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
 	{
 		FObjectReplicator& ComponentReplicator = FindOrCreateReplicator(ActorComponent).Get();
-#if ENGINE_MINOR_VERSION <= 22
-		ComponentReplicator.RepLayout->InitShadowData(ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, ActorComponent->GetClass(), reinterpret_cast<uint8*>(ActorComponent));
-#else
-		ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer.Buffer.Empty();
-		ComponentReplicator.RepLayout->InitRepStateStaticBuffer(ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, reinterpret_cast<const uint8*>(ActorComponent));
-#endif
+		ResetShadowData(*ComponentReplicator.RepLayout, ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, ActorComponent);
 	}
 }
 
@@ -1064,11 +1054,9 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PreNetReceive();
 #if ENGINE_MINOR_VERSION <= 22
-	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), reinterpret_cast<uint8*>(TargetObject));
+	ResetShadowData(*Replicator.RepLayout, Replicator.RepState->StaticBuffer, TargetObject);
 #else
-	// TODO: UNR-2372 - Investigate not resetting the ShadowData.
-	Replicator.RepState->GetReceivingRepState()->StaticBuffer.Buffer.Empty();
-	Replicator.RepLayout->InitRepStateStaticBuffer(Replicator.RepState->GetReceivingRepState()->StaticBuffer, reinterpret_cast<const uint8*>(TargetObject));
+	ResetShadowData(*Replicator.RepLayout, Replicator.RepState->GetReceivingRepState()->StaticBuffer, TargetObject);
 #endif
 
 	return &Replicator;
@@ -1327,5 +1315,23 @@ void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef,
 	{
 		Receiver->CleanupRepStateMap(*SubObjectRefMap);
 		ObjectReferenceMap.Remove(Object);
+	}
+}
+
+void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject)
+{
+	if (StaticBuffer.Num() == 0)
+	{
+#if ENGINE_MINOR_VERSION <= 22
+		RepLayout.InitShadowData(StaticBuffer, TargetObject->GetClass(), reinterpret_cast<uint8*>(TargetObject));
+#else
+		// TODO: UNR-2372 - Investigate not resetting the ShadowData.
+		StaticBuffer.Buffer.Empty();
+		RepLayout.InitRepStateStaticBuffer(StaticBuffer, reinterpret_cast<const uint8*>(TargetObject));
+#endif
+	}
+	else
+	{
+		RepLayout.CopyProperties(StaticBuffer, reinterpret_cast<uint8*>(TargetObject));
 	}
 }
