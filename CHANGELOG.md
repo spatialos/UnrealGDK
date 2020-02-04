@@ -80,7 +80,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fix problem where PIE sessions sometimes fail to start due to missing schema for SpatialDebugger blueprint.
 - Fixed an issue where newly created subobjects would have empty state when RepNotify was called for a property pointing to that subobject.
 - Fixed an issue where deleted, initially dormant startup actors would still be present on other workers.
-- Force activation of RPC ring buffer when load balancing is enabled, to mitigate the issue of lost RPC on authority transitions
+- Force activation of RPC ring buffer when load balancing is enabled, to allow RPC handover when authority changes
 
 ### External contributors:
 @DW-Sebastien

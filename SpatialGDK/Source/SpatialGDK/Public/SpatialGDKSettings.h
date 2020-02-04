@@ -242,26 +242,29 @@ public:
 	UPROPERTY(Config)
 	bool bRunSpatialWorkerConnectionOnGameThread;
 
-	/** RPC ring buffers is enabled when either the matching setting is set, or zoning is enabled */
+	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
 	bool UseRPCRingBuffer() const;
 
 private:
+#if WITH_EDITOR
+	bool CanEditChange(const UProperty* InProperty) const override;
+#endif
 
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
 	bool bUseRPCRingBuffers;
 
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "Default RPC Ring Buffer Size"))
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Default RPC Ring Buffer Size"))
 	uint32 DefaultRPCRingBufferSize;
 
 	/** Overrides default ring buffer size. */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "RPC Ring Buffer Size Map"))
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "RPC Ring Buffer Size Map"))
 	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
 
 public:
 	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
 
 	/** The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and break snapshot compatibility. */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "Max RPC Ring Buffer Size"))
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
 	uint32 MaxRPCRingBufferSize;
 
 	/** Only valid on Tcp connections - indicates if we should enable TCP_NODELAY - see c_worker.h */

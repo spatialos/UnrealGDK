@@ -182,6 +182,31 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 				"Failing to do will result in unintended behavior or crashes!"))));
 	}
 }
+
+bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
+{
+	if (!InProperty)
+	{
+		return false;
+	}
+
+	const FName Name = InProperty->GetFName();
+
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUseRPCRingBuffers))
+	{
+		return !bEnableUnrealLoadBalancer;
+	}
+
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultRPCRingBufferSize)
+	 || Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, RPCRingBufferSizeMap)
+	 || Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxRPCRingBufferSize))
+	{
+		return UseRPCRingBuffer();
+	}
+
+	return true;
+}
+
 #endif
 
 uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
@@ -194,7 +219,9 @@ uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 	return DefaultRPCRingBufferSize;
 }
 
+
 bool USpatialGDKSettings::UseRPCRingBuffer() const
 {
+	// RPC Ring buffer are necessary in order to do RPC handover, something legacy RPC does not handle.
 	return bUseRPCRingBuffers || bEnableUnrealLoadBalancer;
 }
