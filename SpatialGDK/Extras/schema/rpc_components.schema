@@ -18,6 +18,12 @@ component UnrealServerRPCEndpointLegacy {
     bool ready = 1;
     event UnrealRPCPayload server_to_client_rpc_event;
     event UnrealPackedRPCPayload packed_server_to_client_rpc;
+}
+
+component UnrealServerToServerRPCEndpointLegacy {
+    id = 9974;
+    // Set to true when authority is gained, indicating that RPCs can be received
+    bool ready = 1;
     command Void server_to_server_rpc_command(UnrealRPCPayload);
 }
 
