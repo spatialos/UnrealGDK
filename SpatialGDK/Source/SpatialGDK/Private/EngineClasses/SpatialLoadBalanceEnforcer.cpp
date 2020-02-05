@@ -21,10 +21,18 @@ SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName&
 
 void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
-	check(Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
+	check(Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 	if (StaticComponentView->HasAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
-		QueueAclAssignmentRequest(Op.entity_id);
+		const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Op.entity_id);
+		if (AuthorityIntentComponent != nullptr) {
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) OnAuthorityIntentComponentUpdated. EntityId: %lld. VirtualWorkerId: %d."), *WorkerId, Op.entity_id, AuthorityIntentComponent->VirtualWorkerId);
+			QueueAclAssignmentRequest(Op.entity_id);
+		}
+		else
+		{
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("EntityId: %lld. Authority intent componet in update is null."), Op.entity_id);
+		}
 	}
 }
 
@@ -42,7 +50,7 @@ void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp
 			// TODO(zoning): There are still some entities being created without an authority intent component.
 			// For example, the Unreal created worker entities don't have one. Even though those won't be able to
 			// transition, we should have the intent component on them for completeness.
-		 	UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Requested authority change for entity without AuthorityIntent component. EntityId: %lld"), AuthOp.entity_id);
+		 	UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("(%s) Requested authority change for entity without AuthorityIntent component. EntityId: %lld"), *WorkerId, AuthOp.entity_id);
 			return;
 		}
 
@@ -54,6 +62,7 @@ void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("No need to queue newly authoritative entity %lld because this worker is already authoritative."), AuthOp.entity_id);
 			return;
 		}
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) AuthorityChanged. EntityId: %lld"), *WorkerId, AuthOp.entity_id);
 		QueueAclAssignmentRequest(AuthOp.entity_id);
 	}
 }
@@ -92,7 +101,7 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 		if (AuthorityIntentComponent == nullptr)
 		{
 			// TODO(zoning): Not sure whether this should be possible or not. Remove if we don't see the warning again.
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Entity without AuthIntent component will not be processed. EntityId: %lld"), Request.EntityId);
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Entity without AuthIntent component will not be processed. EntityId: %lld"), *WorkerId, Request.EntityId);
 			CompletedRequests.Add(Request.EntityId);
 			continue;
 		}
@@ -122,6 +131,8 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 
 		if (StaticComponentView->HasAuthority(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 		{
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("Wrote update to the EntityACL to match the authority intent."
+				" Source worker ID: %s. Entity ID %lld. Desination worker ID: %s."), *WorkerId, Request.EntityId, **DestinationWorkerId);
 			PendingRequests.Push(AclWriteAuthorityRequest{ Request.EntityId, *DestinationWorkerId });
 		}
 		else

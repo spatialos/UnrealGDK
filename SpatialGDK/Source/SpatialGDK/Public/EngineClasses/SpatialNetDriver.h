@@ -30,6 +30,7 @@ class UEntityPool;
 class UGlobalStateManager;
 class USpatialActorChannel;
 class USpatialClassInfoManager;
+class USpatialConnectionManager;
 class USpatialGameInstance;
 class USpatialMetrics;
 class USpatialNetConnection;
@@ -123,6 +124,8 @@ public:
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
+	UPROPERTY()
+	USpatialConnectionManager* ConnectionManager;
 	UPROPERTY()
 	USpatialSender* Sender;
 	UPROPERTY()

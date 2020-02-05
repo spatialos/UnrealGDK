@@ -12,7 +12,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Utils/SpatialDebugger.h"
@@ -73,20 +73,15 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 
 void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 {
-	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
-
-#if TRACE_LIB_ACTIVE
-	SpatialConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
-	SpatialConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
-#endif
+	SpatialConnectionManager = NewObject<USpatialConnectionManager>(this);
 }
 
 void USpatialGameInstance::DestroySpatialWorkerConnection()
 {
-	if (SpatialConnection != nullptr)
+	if (SpatialConnectionManager != nullptr)
 	{
-		SpatialConnection->DestroyConnection();
-		SpatialConnection = nullptr;
+		SpatialConnectionManager->DestroyConnection();
+		SpatialConnectionManager = nullptr;
 	}
 }
 
@@ -176,9 +171,11 @@ void USpatialGameInstance::Init()
 void USpatialGameInstance::HandleOnConnected()
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Successfully connected to SpatialOS"));
-	SpatialWorkerId = SpatialConnection->GetWorkerId();
+	SpatialWorkerId = SpatialConnectionManager->GetWorkerId();
 #if TRACE_LIB_ACTIVE
 	SpatialLatencyTracer->SetWorkerId(SpatialWorkerId);
+// 	SpatialConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
+// 	SpatialConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
 #endif
 	OnConnected.Broadcast();
 }
