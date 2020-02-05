@@ -411,7 +411,14 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	{
 		if (WorldSettings == nullptr || WorldSettings->LoadBalanceStrategy == nullptr)
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+			if (WorldSettings == nullptr)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy. Using a 1x1 grid."));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+			}
 			LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
 		}
 		else
