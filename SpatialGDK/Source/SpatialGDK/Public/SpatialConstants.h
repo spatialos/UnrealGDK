@@ -124,6 +124,7 @@ const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID							= 3;
 const Schema_FieldId DEPLOYMENT_MAP_SCHEMA_HASH							= 4;
 
 const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
+const Schema_FieldId STARTUP_ACTOR_MANAGER_SPAWN_WITH_AUTH_EVENT_ID		= 1;
 
 const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID                      = 1;
 const Schema_FieldId ACTOR_TEAROFF_ID									= 3;

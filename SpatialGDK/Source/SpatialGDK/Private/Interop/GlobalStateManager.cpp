@@ -55,6 +55,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
   
 	bAcceptingPlayers = false;
 	bCanBeginPlay = false;
+	bCanSpawnWithAuthority = false;
 }
 
 void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& Data)
@@ -207,6 +208,16 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentU
 	{
 		const bool bCanBeginPlayUpdate = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 		ApplyCanBeginPlayUpdate(bCanBeginPlayUpdate);
+	}
+
+	// When the GSM-authoritative worker sets bCanBeginPlay true, it will also broadcast an event such that
+	// non-GSM-authoritative workers know that this is the start of a new deployment, i.e. not loaded from a
+	// snapshot, and so, if zoning is enabled, can check the lb strategy to see if they should have startup
+	// Actors call BeginPlay with Role_Authority.
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update.schema_type);
+	if (Schema_GetObjectCount(EventsObject, SpatialConstants::STARTUP_ACTOR_MANAGER_SPAWN_WITH_AUTH_EVENT_ID) == 1)
+	{
+		bCanSpawnWithAuthority = true;
 	}
 }
 
@@ -477,7 +488,17 @@ void UGlobalStateManager::SetCanBeginPlay(const bool bInCanBeginPlay)
 
 	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bInCanBeginPlay));
 
+	// If we're setting can begin play to true as the GSM-authoritative worker, we'll set an event to indicate
+	// to non-GSM-authoritative workers that, if zoning is enabled and the lb strategy permits, they can call
+	// BeginPlay on startup Actors with Role_Authority.
+	if (bInCanBeginPlay)
+	{
+		Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update.schema_type);
+		Schema_AddObject(EventsObject, SpatialConstants::STARTUP_ACTOR_MANAGER_SPAWN_WITH_AUTH_EVENT_ID);
+	}
+
 	bCanBeginPlay = bInCanBeginPlay;
+	bCanSpawnWithAuthority = true;
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
@@ -508,7 +529,7 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		{
 			// We can reach this point with bCanBeginPlay==true if the server
-			// that was authoritative over the GSM restarts.
+			// that was authoritative over the GSM restarts. In which case, we do nothing.
 			if (!bCanBeginPlay)
 			{
 				SetCanBeginPlay(true);
@@ -622,14 +643,17 @@ void UGlobalStateManager::TriggerBeginPlay()
 {
 	check(GetCanBeginPlay());
 
-	// TODO: Make this work with snapshot reloading
-	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority
+	if (bCanSpawnWithAuthority)
 	{
-		BecomeAuthoritativeOverActorsBasedOnLBStrategy();
-	}
-	else if (HasAuthority())
-	{
-		BecomeAuthoritativeOverAllActors();
+		if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+		{
+			BecomeAuthoritativeOverActorsBasedOnLBStrategy();
+		}
+		else if (HasAuthority())
+		{
+			BecomeAuthoritativeOverAllActors();
+		}
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();

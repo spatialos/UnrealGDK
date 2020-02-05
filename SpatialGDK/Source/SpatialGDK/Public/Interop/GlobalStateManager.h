@@ -91,6 +91,7 @@ private:
 
 	// Startup Actor Manager Component
 	bool bCanBeginPlay;
+	bool bCanSpawnWithAuthority;
 
 public:
 #if WITH_EDITOR
