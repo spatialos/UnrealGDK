@@ -38,7 +38,7 @@ void FSpatialGDKEditorModule::RegisterSettings()
 			LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS GDK for Unreal"));
 
 		ISettingsSectionPtr ServiceSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Service Settings",
-			LOCTEXT("SpatialServiceGeneralSettingsName", "Serivce Settings"),
+			LOCTEXT("SpatialServiceGeneralSettingsName", "Service Settings"),
 			LOCTEXT("SpatialServiceGeneralSettingsDescription", "Service configuration for the SpatialOS GDK for Unreal"),
 			GetMutableDefault<USpatialGDKServiceSettings>());
 
@@ -87,22 +87,18 @@ void FSpatialGDKEditorModule::UnregisterSettings()
 bool FSpatialGDKEditorModule::HandleServiceSettingsSaved()
 {
 	GetMutableDefault<USpatialGDKServiceSettings>()->SaveConfig();
-
 	return true;
 }
-
 
 bool FSpatialGDKEditorModule::HandleEditorSettingsSaved()
 {
 	GetMutableDefault<USpatialGDKEditorSettings>()->SaveConfig();
-
 	return true;
 }
 
 bool FSpatialGDKEditorModule::HandleRuntimeSettingsSaved()
 {
 	GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
-
 	return true;
 }
 

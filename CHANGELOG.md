@@ -50,7 +50,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Moved Dev Auth settings from runtime settings to editor settings.
 - Added the option to use the development authentication flow using the command line.
 - Added a button to generate the Development Authentication Token inside the Unreal Editor. To use it, navigate to **SpatialOS GDK for Unreal** > **Editor Settings** > **Cloud Connection**.
-- The Spatial output log will not automatically pop up at the end of a PIE session if it is not already open. This is to make spatial errors more obvious to customers. This functionality can be stopped by disabling OpenSpatialOutputLogOnPIESessionEnd in **Service Settings**. 
+- The Spatial output log will now automatically pop up at the end of a PIE session if it is not already open. This is to make spatial errors more obvious to customers. This functionality can be stopped by disabling OpenSpatialOutputLogOnPIESessionEnd in **Service Settings**. 
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
