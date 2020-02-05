@@ -18,6 +18,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Kismet/GameplayStatics.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -510,7 +511,9 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 			// that was authoritative over the GSM restarts.
 			if (!bCanBeginPlay)
 			{
-				BecomeAuthoritativeOverAllActors();
+				if (!GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+					BecomeAuthoritativeOverAllActors();
+				}
 				SetCanBeginPlay(true);
 			}
 
@@ -602,10 +605,27 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 	}
 }
 
+void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
+{
+	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
+	{
+		AActor* Actor = *It;
+		if (Actor != nullptr && !Actor->IsPendingKill())
+		{
+			if (Actor->GetIsReplicated() && NetDriver->LoadBalanceStrategy->ShouldRunBeginPlayWithAuthority(*Actor))
+			{
+				Actor->Role = ROLE_Authority;
+				Actor->RemoteRole = ROLE_SimulatedProxy;
+			}
+		}
+	}
+}
+
 void UGlobalStateManager::TriggerBeginPlay()
 {
 	check(GetCanBeginPlay());
 
+	BecomeAuthoritativeOverActorsBasedOnLBStrategy();
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
 }

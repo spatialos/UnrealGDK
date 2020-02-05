@@ -65,6 +65,12 @@ TSet<VirtualWorkerId> UGridBasedLBStrategy::GetVirtualWorkerIds() const
 	return TSet<VirtualWorkerId>(VirtualWorkerIds);
 }
 
+bool UGridBasedLBStrategy::ShouldRunBeginPlayWithAuthority(const AActor& Actor) const
+{
+	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
+	return IsInside(WorkerCells[LocalVirtualWorkerId - 1], Actor2DLocation);
+}
+
 bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const
 {
 	if (!IsReady())

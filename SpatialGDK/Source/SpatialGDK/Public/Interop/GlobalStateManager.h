@@ -107,6 +107,7 @@ private:
 	void ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate);
 
 	void BecomeAuthoritativeOverAllActors();
+	void BecomeAuthoritativeOverActorsBasedOnLBStrategy();
 
 #if WITH_EDITOR
 	void SendShutdownMultiProcessRequest();
