@@ -20,6 +20,7 @@ Features listed in the internal section are not ready to use but, in the spirit 
 
 ### Bug fixes:
 - Replicated references to newly created dynamic subobjects will now be resolved correctly.
+- Cloud deployment flow will now correctly report errors when a deployment fails to launch due to a missing assembly.
 
 ## [`0.8.0-preview`] - 2019-12-17
 
