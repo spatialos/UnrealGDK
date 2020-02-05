@@ -622,6 +622,22 @@ void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 	}
 }
 
+void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
+{
+	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
+	{
+		AActor* Actor = *It;
+		if (Actor != nullptr && !Actor->IsPendingKill())
+		{
+			if (Actor->GetIsReplicated() && NetDriver->LoadBalanceStrategy->ShouldRunBeginPlayWithAuthority(*Actor))
+			{
+				Actor->Role = ROLE_Authority;
+				Actor->RemoteRole = ROLE_SimulatedProxy;
+			}
+		}
+	}
+}
+
 void UGlobalStateManager::TriggerBeginPlay()
 {
 	const bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
@@ -643,6 +659,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 		}
 	}
 
+	BecomeAuthoritativeOverActorsBasedOnLBStrategy();
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
 }
