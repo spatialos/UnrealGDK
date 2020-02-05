@@ -382,7 +382,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		CreateAndInitializeLoadBalancingClasses();
 	}
 
-	if (SpatialSettings->bUseRPCRingBuffers)
+	if (SpatialSettings->UseRPCRingBuffer())
 	{
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView);
 	}
@@ -1699,7 +1699,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		Sender->FlushPackedRPCs();
 	}
 
-	if (SpatialGDKSettings->bUseRPCRingBuffers && Sender != nullptr)
+	if (SpatialGDKSettings->UseRPCRingBuffer() && Sender != nullptr)
 	{
 		Sender->FlushRPCService();
 	}
