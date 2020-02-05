@@ -512,6 +512,7 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 			if (!bCanBeginPlay)
 			{
 				if (!GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+				{
 					BecomeAuthoritativeOverAllActors();
 				}
 				SetCanBeginPlay(true);
