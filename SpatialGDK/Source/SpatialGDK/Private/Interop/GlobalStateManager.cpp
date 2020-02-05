@@ -629,7 +629,7 @@ void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 		AActor* Actor = *It;
 		if (Actor != nullptr && !Actor->IsPendingKill())
 		{
-			if (Actor->GetIsReplicated() && NetDriver->LoadBalanceStrategy->ShouldRunBeginPlayWithAuthority(*Actor))
+			if (Actor->GetIsReplicated() && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
 			{
 				Actor->Role = ROLE_Authority;
 				Actor->RemoteRole = ROLE_SimulatedProxy;
@@ -659,7 +659,16 @@ void UGlobalStateManager::TriggerBeginPlay()
 		}
 	}
 
-	BecomeAuthoritativeOverActorsBasedOnLBStrategy();
+	// TODO: Make this work with snapshot reloading
+	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	{
+		BecomeAuthoritativeOverActorsBasedOnLBStrategy();
+	}
+	else if (HasAuthority())
+	{
+		BecomeAuthoritativeOverAllActors();
+	}
+
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
 }
