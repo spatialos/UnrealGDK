@@ -228,7 +228,7 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 	RemoveActor(Op.entity_id);
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
-	if (GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers && RPCService != nullptr)
+	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
 	{
 		RPCService->OnRemoveEntity(Op.entity_id);
 	}
@@ -533,7 +533,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	}
 	else
 	{
-		if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers))
+		if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 		{
 			if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 			{
@@ -556,7 +556,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID ||
 		Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers && RPCService != nullptr)
+		if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
@@ -640,7 +640,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	if (SpatialGDKSettings->bUseRPCRingBuffers && RPCService != nullptr)
+	if (SpatialGDKSettings->UseRPCRingBuffer() && RPCService != nullptr)
 	{
 		RPCService->OnCheckoutEntity(EntityId);
 	}
@@ -1558,7 +1558,7 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverHandleRPC);
-	if (!GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers || RPCService == nullptr)
+	if (!GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() || RPCService == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::HandleRPC: Received component update on ring buffer component but ring buffers not enabled! Entity: %lld, Component: %d"), Op.entity_id, Op.update.component_id);
 		return;
