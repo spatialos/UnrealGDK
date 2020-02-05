@@ -449,7 +449,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	const bool bReplay = ActorWorld && ActorWorld->DemoNetDriver == Connection->GetDriver();
 
 	//////////////////////////////////////////////////////////////////////////
-	// Error and stat duplication from DataChannel::ReplicateActor()
+	// Begin - error and stat duplication from DataChannel::ReplicateActor()
 	if (!bReplay)
 	{
 		GNumReplicateActorCalls++;
@@ -480,7 +480,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		ensureMsgf(false, TEXT("%s"), *Error);
 		return 0;
 	}
-	// End error and stat duplication from DataChannel::ReplicateActor()
+	// End - error and stat duplication from DataChannel::ReplicateActor()
 	//////////////////////////////////////////////////////////////////////////
 
 	// Create an outgoing bunch (to satisfy some of the functions below).
