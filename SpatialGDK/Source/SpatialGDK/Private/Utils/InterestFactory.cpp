@@ -373,7 +373,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 		ClientQuery.FullSnapshotResult = true;
 	}
 
-	const Worker_ComponentId ClientEndpointComponentId = SpatialConstants::GetClientAuthorityComponent(SpatialGDKSettings->bUseRPCRingBuffers);
+	const Worker_ComponentId ClientEndpointComponentId = SpatialConstants::GetClientAuthorityComponent(SpatialGDKSettings->UseRPCRingBuffer());
 
 	AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, ClientQuery);
 
@@ -420,7 +420,7 @@ void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 
 	NewQuery.ResultComponentId = ClientAuthInterestResultType;
 
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers), NewQuery);
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()), NewQuery);
 }
 
 void InterestFactory::AddServerSelfInterest(Interest& OutInterest) const
