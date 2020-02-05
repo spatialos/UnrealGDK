@@ -345,6 +345,19 @@ private:
 	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath);
 
 public:
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Connect to a local deployment"))
+		bool bMobileConnectToLocalDeployment;
+
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Mobile Client Worker Type"))
+		FString MobileWorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
+
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (EditCondition = "bMobileConnectToLocalDeployment", DisplayName = "Runtime IP to local deployment"))
+		FString MobileRuntimeIP;
+
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Extra Command Line Arguments"))
+		FString MobileExtraCommandLineArgs;
+
+public:
 	/** If you have selected **Auto-generate launch configuration file**, you can change the default options in the file from the drop-down menu. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file options"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
