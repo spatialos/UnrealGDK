@@ -659,14 +659,17 @@ void UGlobalStateManager::TriggerBeginPlay()
 		}
 	}
 
-	// TODO: Make this work with snapshot reloading
-	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority
+	if (bCanSpawnWithAuthority)
 	{
-		BecomeAuthoritativeOverActorsBasedOnLBStrategy();
-	}
-	else if (HasAuthority())
-	{
-		BecomeAuthoritativeOverAllActors();
+		if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+		{
+			BecomeAuthoritativeOverActorsBasedOnLBStrategy();
+		}
+		else if (HasAuthority())
+		{
+			BecomeAuthoritativeOverAllActors();
+		}
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
