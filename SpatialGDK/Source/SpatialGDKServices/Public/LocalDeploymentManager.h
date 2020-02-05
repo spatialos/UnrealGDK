@@ -23,7 +23,7 @@ public:
 
 	using LocalDeploymentCallback = TFunction<void(bool)>;
 
-	void SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, const LocalDeploymentCallback& CallBack);
+	void SPATIALGDKSERVICES_API TryStartLocalDeployment(const FString& LaunchConfig, const FString& LaunchArgs, const LocalDeploymentCallback& CallBack);
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 
 	bool SPATIALGDKSERVICES_API TryStartSpatialService();
@@ -67,7 +67,7 @@ private:
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 	bool IsServiceInCorrectDirectory(const FString& ServiceStatusResult);
 
-	bool FinishLocalDeployment(FString LaunchConfig, FString LaunchArgs);
+	bool FinishLocalDeployment(const FString& LaunchConfig, const FString& LaunchArgs);
 
 	TFuture<bool> AttemptSpatialAuthResult;
 

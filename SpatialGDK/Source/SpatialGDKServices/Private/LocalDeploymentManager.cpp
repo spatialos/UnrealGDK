@@ -15,8 +15,8 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
-#include "SpatialGDKServicesModule.h"
 #include "SpatialCommandUtils.h"
+#include "SpatialGDKServicesModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
@@ -224,7 +224,7 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 	});
 }
 
-bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FString LaunchArgs)
+bool FLocalDeploymentManager::FinishLocalDeployment(const FString& LaunchConfig, const FString& LaunchArgs)
 {
 	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json %s"), *LaunchConfig, *ProjectName, *LaunchArgs);
 
@@ -288,7 +288,7 @@ bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FStrin
 	return true;
 }
 
-void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, const LocalDeploymentCallback& CallBack)
+void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfig, const FString& LaunchArgs, const LocalDeploymentCallback& CallBack)
 {
 	bRedeployRequired = false;
 

@@ -2,18 +2,19 @@
 
 #include "SpatialGDKSimulatedPlayerDeployment.h"
 
+#include "Async/Async.h"
 #include "DesktopPlatformModule.h"
 #include "EditorDirectories.h"
 #include "EditorStyleSet.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
-#include "Templates/SharedPointer.h"
+#include "Internationalization/Regex.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "SpatialCommandUtils.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
-#include "Async/Async.h"
-#include "Runtime/Launch/Resources/Version.h"
+#include "Templates/SharedPointer.h"
 #include "Textures/SlateIcon.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
@@ -27,8 +28,6 @@
 #include "Widgets/Layout/SWrapBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "Widgets/Text/STextBlock.h"
-
-#include "Internationalization/Regex.h"
 
 void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 {
@@ -546,11 +545,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 	};
 
-#if ENGINE_MINOR_VERSION <= 22
 	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
-#else
-	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
-#endif
 		[this, LaunchCloudDeployment, NotificationItem]()
 	{
 		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
@@ -577,7 +572,8 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnRefreshClicked()
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 {
-	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
+	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
+	{
 		FNotificationInfo Info(FText::FromString(TEXT("Stopping cloud deployment ...")));
 		Info.bUseSuccessFailIcons = true;
 		Info.bFireAndForget = false;
