@@ -203,6 +203,11 @@ TArray<Worker_ComponentId> InterestFactory::CreateClientNonAuthInterestResultTyp
 	// Add all data components- clients don't need to see handover or owner only components on other entities.
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
 
+	// In direct disagreement with the above comment, we add the owner only components as well.
+	// This is because GDK workers currently make assumptions about information being available at the point of possession.
+	// TODO(jacques): fix (unr-2865)
+	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
+
 	return ResultType;
 }
 
