@@ -40,8 +40,7 @@ public:
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;
 
-	virtual bool ShouldRunBeginPlayWithAuthority(const AActor& Actor) const override;
-	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const override;
+	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 /* End UAbstractLBStrategy Interface */
 
