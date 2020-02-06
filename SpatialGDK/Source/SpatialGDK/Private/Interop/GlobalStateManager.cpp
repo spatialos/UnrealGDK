@@ -81,8 +81,7 @@ void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentDat
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-	const bool bCanBeginPlayData = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
-	ApplyCanBeginPlayUpdate(bCanBeginPlayData);
+	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);;
 }
 
 void UGlobalStateManager::ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update)
@@ -204,26 +203,7 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentU
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID) == 1)
-	{
-		const bool bCanBeginPlayUpdate = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
-		ApplyCanBeginPlayUpdate(bCanBeginPlayUpdate);
-	}
-
-	// When the GSM-authoritative worker sets bCanBeginPlay true, it will also broadcast an event such that
-	// non-GSM-authoritative workers know that this is the start of a new deployment, i.e. not loaded from a
-	// snapshot, and so, if zoning is enabled, can check the lb strategy to see if they should have startup
-	// Actors call BeginPlay with Role_Authority.
-	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update.schema_type);
-	if (Schema_GetObjectCount(EventsObject, SpatialConstants::STARTUP_ACTOR_MANAGER_SPAWN_WITH_AUTH_EVENT_ID) == 1)
-	{
-		bCanSpawnWithAuthority = true;
-	}
-}
-
-void UGlobalStateManager::ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate)
-{
-	bCanBeginPlay = bCanBeginPlayUpdate;
+	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 }
 
 void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActorClass)
@@ -477,31 +457,6 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::SetCanBeginPlay(const bool bInCanBeginPlay)
-{
-	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
-
-	FWorkerComponentUpdate Update = {};
-	Update.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate();
-	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
-
-	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bInCanBeginPlay));
-
-	// If we're setting can begin play to true as the GSM-authoritative worker, we'll set an event to indicate
-	// to non-GSM-authoritative workers that, if zoning is enabled and the lb strategy permits, they can call
-	// BeginPlay on startup Actors with Role_Authority.
-	if (bInCanBeginPlay)
-	{
-		Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update.schema_type);
-		Schema_AddObject(EventsObject, SpatialConstants::STARTUP_ACTOR_MANAGER_SPAWN_WITH_AUTH_EVENT_ID);
-	}
-
-	bCanBeginPlay = bInCanBeginPlay;
-	bCanSpawnWithAuthority = true;
-	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
-}
-
 void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
 	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."), AuthOp.component_id,
@@ -528,23 +483,7 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 		}
 		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		{
-			// We can reach this point with bCanBeginPlay==true if the server
-			// that was authoritative over the GSM restarts. In which case, we do nothing.
-			if (!bCanBeginPlay)
-			{
-				// If the translator is not ready, that means server worker entities have not
-				// been spawned and so our CanBeginPlay update may not be received as a component
-				// update. We need this to indicate to non-GSM-authoritative workers that they
-				// can attempt to spawn startup Actors with authority if the lb strategy indicates
-				// this. Instead of calling SetCanBeginPlay here, we'll wait till the translator is
-				// ready.
-				if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer && !NetDriver->VirtualWorkerTranslator->IsReady())
-				{
-					return;
-				}
-				SetCanBeginPlay(true);
-			}
-
+			bCanSpawnWithAuthority = !bCanBeginPlay;
 			break;
 		}
 		default:
@@ -576,7 +515,7 @@ void UGlobalStateManager::ResetGSM()
 	SetAcceptingPlayers(false);
 
 	// Reset the BeginPlay flag so Startup Actors are properly managed.
-	SetCanBeginPlay(false);
+	SendCanBeginPlayUpdate(false);
 
 	// Reset the Singleton map so Singletons are recreated.
 	FWorkerComponentUpdate Update = {};
@@ -598,7 +537,7 @@ void UGlobalStateManager::BeginDestroy()
 		if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
 		{
 			// Reset the BeginPlay flag so Startup Actors are properly managed.
-			SetCanBeginPlay(false);
+			SendCanBeginPlayUpdate(false);
 
 			// Reset the Singleton map so Singletons are recreated.
 			FWorkerComponentUpdate Update = {};
@@ -606,13 +545,13 @@ void UGlobalStateManager::BeginDestroy()
 			Update.schema_type = Schema_CreateComponentUpdate();
 			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
 
-			NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+			NetDriver>Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 		}
 	}
 #endif
 }
 
-bool UGlobalStateManager::HasAuthority()
+bool UGlobalStateManager::HasAuthority() const
 {
 	return NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
 }
@@ -651,7 +590,13 @@ void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
-	check(GetCanBeginPlay());
+	check(IsReady());
+
+	const bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	if (bHasGSMAuthority)
+	{
+		SendCanBeginPlayUpdate(true);
+	}
 
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority
 	if (bCanSpawnWithAuthority)
@@ -668,6 +613,22 @@ void UGlobalStateManager::TriggerBeginPlay()
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
+}
+
+void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
+{
+	check(HasAuthority());
+
+	bCanBeginPlay = bInCanBeginPlay;
+
+	FWorkerComponentUpdate Update = {};
+	Update.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate();
+	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bCanBeginPlay));
+
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
 // Queries for the GlobalStateManager in the deployment.
@@ -803,11 +764,3 @@ void UGlobalStateManager::SendSessionIdUpdate()
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::OnTranslatorReady()
-{
-	const bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-	if (!bCanBeginPlay && bHasGSMAuthority)
-	{
-		SetCanBeginPlay(true);
-	}
-}

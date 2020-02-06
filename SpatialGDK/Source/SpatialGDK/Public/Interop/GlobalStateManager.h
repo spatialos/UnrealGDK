@@ -49,7 +49,6 @@ public:
 
 	void SetDeploymentState();
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
-	void SetCanBeginPlay(const bool bInCanBeginPlay);
 	void IncrementSessionID();
 
 	FORCEINLINE FString GetDeploymentMapURL() const { return DeploymentMapURL; }
@@ -64,7 +63,7 @@ public:
 
 	void BeginDestroy() override;
 
-	bool HasAuthority();
+	bool HasAuthority() const;
 
 	void TriggerBeginPlay();
 
@@ -73,11 +72,14 @@ public:
 		return bCanBeginPlay;
 	}
 
+	FORCEINLINE bool IsReady() const
+	{
+		return GetCanBeginPlay() || HasAuthority();
+	}
+
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
 	void RemoveSingletonInstance(const AActor* SingletonActor);
-
-	void OnTranslatorReady();
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
@@ -107,10 +109,10 @@ private:
 	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
-	void ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate);
 
 	void BecomeAuthoritativeOverAllActors();
 	void BecomeAuthoritativeOverActorsBasedOnLBStrategy();
+	void SendCanBeginPlayUpdate(const bool bInCanBeginPlay);
 
 #if WITH_EDITOR
 	void SendShutdownMultiProcessRequest();
