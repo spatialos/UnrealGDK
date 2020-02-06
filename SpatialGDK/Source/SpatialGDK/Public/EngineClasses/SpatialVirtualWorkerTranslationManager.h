@@ -6,6 +6,8 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
+#include "UObject/WeakObjectPtrTemplates.h"
+
 #include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
 
@@ -16,6 +18,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 class SpatialVirtualWorkerTranslator;
 class SpatialOSDispatcherInterface;
 class SpatialOSWorkerInterface;
+class UGlobalStateManager;
 
 //
 // The Translation Manager is responsible for querying SpatialOS for all UnrealWorker worker
@@ -36,7 +39,8 @@ class SPATIALGDK_API SpatialVirtualWorkerTranslationManager
 public:
 	SpatialVirtualWorkerTranslationManager(SpatialOSDispatcherInterface* InReceiver,
 		SpatialOSWorkerInterface* InConnection,
-		SpatialVirtualWorkerTranslator* InTranslator);
+		SpatialVirtualWorkerTranslator* InTranslator,
+		UGlobalStateManager* InGlobalStateManager);
 
 	void AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds);
 
@@ -46,8 +50,8 @@ public:
 private:
 	SpatialOSDispatcherInterface* Receiver;
 	SpatialOSWorkerInterface* Connection;
-
 	SpatialVirtualWorkerTranslator* Translator;
+	TWeakObjectPtr<UGlobalStateManager> GlobalStateManager;
 
 	TMap<VirtualWorkerId, PhysicalWorkerName> VirtualToPhysicalWorkerMapping;
 	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;

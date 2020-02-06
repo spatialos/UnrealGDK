@@ -75,6 +75,8 @@ public:
 	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
 	void RemoveSingletonInstance(const AActor* SingletonActor);
 
+	void OnTranslatorReady();
+
 	Worker_EntityId GlobalStateManagerEntityId;
 
 	// Singleton Manager Component
