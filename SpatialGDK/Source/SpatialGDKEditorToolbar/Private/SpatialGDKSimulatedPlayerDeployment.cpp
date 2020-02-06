@@ -512,9 +512,9 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 	Info.bUseSuccessFailIcons = true;
 	Info.bFireAndForget = false;
 
-	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+	TWeakPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
 
-	NotificationItem->SetCompletionState(SNotificationItem::CS_Pending);
+	NotificationItem.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
 
 	auto LaunchCloudDeployment = [this, NotificationItem]()
 	{
@@ -522,25 +522,34 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		{
 			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
 				FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("Successfully initiated launching of the cloud deployment.")));
-				NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
-				NotificationItem->SetExpireDuration(7.5f);
-				NotificationItem->ExpireAndFadeout();
+				if (TSharedPtr<SNotificationItem> NotificationItemPinned = NotificationItem.Pin())
+				{
+					NotificationItemPinned->SetText(FText::FromString(TEXT("Successfully initiated launching of the cloud deployment.")));
+					NotificationItemPinned->SetCompletionState(SNotificationItem::CS_Success);
+					NotificationItemPinned->SetExpireDuration(7.5f);
+					NotificationItemPinned->ExpireAndFadeout();
+				}
 			}),
 				FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("Failed to launch the DeploymentLauncher script properly.")));
-				NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-				NotificationItem->SetExpireDuration(7.5f);
-				NotificationItem->ExpireAndFadeout();
+				if (TSharedPtr<SNotificationItem> NotificationItemPinned = NotificationItem.Pin())
+				{
+					NotificationItemPinned->SetText(FText::FromString(TEXT("Failed to launch the DeploymentLauncher script properly.")));
+					NotificationItemPinned->SetCompletionState(SNotificationItem::CS_Fail);
+					NotificationItemPinned->SetExpireDuration(7.5f);
+					NotificationItemPinned->ExpireAndFadeout();
+				}
 			})
 				);
 			return;
 		}
 
-		NotificationItem->SetText(FText::FromString(TEXT("Couldn't launch the deployment.")));
-		NotificationItem->SetExpireDuration(3.0f);
-		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-		NotificationItem->ExpireAndFadeout();
+		if (TSharedPtr<SNotificationItem> NotificationItemPinned = NotificationItem.Pin())
+		{
+			NotificationItemPinned->SetText(FText::FromString(TEXT("Couldn't launch the deployment.")));
+			NotificationItemPinned->SetExpireDuration(3.0f);
+			NotificationItemPinned->SetCompletionState(SNotificationItem::CS_Fail);
+			NotificationItemPinned->ExpireAndFadeout();
+		}
 	};
 
 	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
@@ -552,10 +561,13 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		}
 		else
 		{
-			NotificationItem->SetText(FText::FromString(TEXT("Spatial auth failed attempting to launch cloud deployment.")));
-			NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-			NotificationItem->SetExpireDuration(3.0f);
-			NotificationItem->ExpireAndFadeout();
+			if (TSharedPtr<SNotificationItem> NotificationItemPinned = NotificationItem.Pin())
+			{
+				NotificationItemPinned->SetText(FText::FromString(TEXT("Spatial auth failed attempting to launch cloud deployment.")));
+				NotificationItemPinned->SetCompletionState(SNotificationItem::CS_Fail);
+				NotificationItemPinned->SetExpireDuration(3.0f);
+				NotificationItemPinned->ExpireAndFadeout();
+			}
 		}
 	});
 
