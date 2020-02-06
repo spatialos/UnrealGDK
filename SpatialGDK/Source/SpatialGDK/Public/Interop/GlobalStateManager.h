@@ -71,10 +71,7 @@ public:
 
 	bool IsReady() const;
 
-	bool IsReady() const
-	{
-		return GetCanBeginPlay() || HasAuthority();
-	}
+	bool IsReady() const;
 
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
