@@ -5,7 +5,6 @@
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorLayoutDetails.h"
-#include "SpatialGDKServiceSettings.h"
 
 #include "ISettingsModule.h"
 #include "ISettingsContainer.h"
@@ -36,16 +35,6 @@ void FSpatialGDKEditorModule::RegisterSettings()
 
 		SettingsContainer->DescribeCategory("SpatialGDKEditor", LOCTEXT("RuntimeWDCategoryName", "SpatialOS GDK for Unreal"),
 			LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS GDK for Unreal"));
-
-		ISettingsSectionPtr ServiceSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Service Settings",
-			LOCTEXT("SpatialServiceGeneralSettingsName", "Serivce Settings"),
-			LOCTEXT("SpatialServiceGeneralSettingsDescription", "Service configuration for the SpatialOS GDK for Unreal"),
-			GetMutableDefault<USpatialGDKServiceSettings>());
-
-		if (ServiceSettingsSection.IsValid())
-		{
-			ServiceSettingsSection->OnModified().BindRaw(this, &FSpatialGDKEditorModule::HandleServiceSettingsSaved);
-		}
 
 		ISettingsSectionPtr EditorSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Editor Settings",
 			LOCTEXT("SpatialEditorGeneralSettingsName", "Editor Settings"),
@@ -83,14 +72,6 @@ void FSpatialGDKEditorModule::UnregisterSettings()
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	PropertyModule.UnregisterCustomPropertyTypeLayout("FWorkerAssociation");
 }
-
-bool FSpatialGDKEditorModule::HandleServiceSettingsSaved()
-{
-	GetMutableDefault<USpatialGDKServiceSettings>()->SaveConfig();
-
-	return true;
-}
-
 
 bool FSpatialGDKEditorModule::HandleEditorSettingsSaved()
 {

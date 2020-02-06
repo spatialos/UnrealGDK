@@ -17,7 +17,6 @@ public:
 private:
 	void RegisterSettings();
 	void UnregisterSettings();
-	bool HandleServiceSettingsSaved();
 	bool HandleEditorSettingsSaved();
 	bool HandleRuntimeSettingsSaved();
 	bool HandleCloudLauncherSettingsSaved();

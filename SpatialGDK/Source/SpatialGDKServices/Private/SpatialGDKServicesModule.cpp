@@ -12,7 +12,6 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesConstants.h"
-#include "SpatialGDKServiceSettings.h"
 #include "SpatialGDKServicesPrivate.h"
 #include "Widgets/Docking/SDockTab.h"
 
@@ -42,14 +41,6 @@ void FSpatialGDKServicesModule::StartupModule()
 		.SetTooltipText(NSLOCTEXT("UnrealEditor", "SpatialOutputLogTooltipText", "Open the Spatial Output Log tab."))
 		.SetGroup(WorkspaceMenu::GetMenuStructure().GetDeveloperToolsLogCategory())
 		.SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "Log.TabIcon"));
-
-	UEditorEngine::OnEndPlayMap.BindLambda([]
-	{
-		if (GetDefault<USpatialGDKServiceSettings>()->bOpenSpatialOutputLogOnPIESessionEnd)
-		{
-			FGlobalTabmanager::Get()->InvokeTab(SpatialOutputLogTabName);
-		}
-	});
 }
 
 void FSpatialGDKServicesModule::ShutdownModule()
