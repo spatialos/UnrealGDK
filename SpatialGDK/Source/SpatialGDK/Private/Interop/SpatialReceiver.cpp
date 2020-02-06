@@ -198,6 +198,10 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Op.data.schema_type);
 			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+			if (NetDriver->VirtualWorkerTranslator->IsReady())
+			{
+				NetDriver->GlobalStateManager->OnTranslatorReady();
+			}
 		}
 		return;
 	}
@@ -1387,6 +1391,10 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
 			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+			if (NetDriver->VirtualWorkerTranslator->IsReady())
+			{
+				NetDriver->GlobalStateManager->OnTranslatorReady();
+			}
 		}
 		return;
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:

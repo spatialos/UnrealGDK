@@ -113,6 +113,7 @@ const Worker_ComponentId CLIENT_ENDPOINT_COMPONENT_ID					= 9978;
 const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID					= 9977;
 const Worker_ComponentId MULTICAST_RPCS_COMPONENT_ID					= 9976;
 const Worker_ComponentId SPATIAL_DEBUGGING_COMPONENT_ID					= 9975;
+const Worker_ComponentId SERVER_WORKER_COMPONENT_ID						= 9974;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -193,6 +194,9 @@ const Schema_FieldId SPATIAL_DEBUGGING_INTENT_VIRTUAL_WORKER_ID          = 3;
 const Schema_FieldId SPATIAL_DEBUGGING_INTENT_COLOR                      = 4;
 const Schema_FieldId SPATIAL_DEBUGGING_IS_LOCKED                         = 5;
 
+// ServerWorker Field IDs.
+const Schema_FieldId SERVER_WORKER_NAME_ID								 = 1;
+
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
 
@@ -203,6 +207,7 @@ const FName DefaultActorGroup = FName(TEXT("Default"));
 
 const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID = 0;
 const ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;
+const FString INVALID_WORKER_NAME = TEXT("");
 
 const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType.ToString()};
 const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType.ToString()};

@@ -3,6 +3,7 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialOSDispatcherInterface.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
@@ -12,10 +13,12 @@ DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslationManager);
 SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(
 	SpatialOSDispatcherInterface* InReceiver,
 	SpatialOSWorkerInterface* InConnection,
-	SpatialVirtualWorkerTranslator* InTranslator)
+	SpatialVirtualWorkerTranslator* InTranslator,
+	UGlobalStateManager* InGlobalStateManager)
 	: Receiver(InReceiver)
 	, Connection(InConnection)
 	, Translator(InTranslator)
+	, GlobalStateManager(InGlobalStateManager)
 	, bWorkerEntityQueryInFlight(false)
 {}
 
@@ -49,7 +52,7 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Autho
 
 	// Query for all connection entities, so we can detect if some worker has died and needs to be updated in
 	// the mapping.
-	QueryForWorkerEntities();
+	QueryForServerWorkerEntities();
 }
 
 // For each entry in the map, write a VirtualWorkerMapping type object to the Schema object.
@@ -76,18 +79,15 @@ void SpatialVirtualWorkerTranslationManager::ConstructVirtualWorkerMappingFromQu
 			const Worker_ComponentData& Data = Entity.components[j];
 			// System entities which represent workers have a component on them which specifies the SpatialOS worker ID,
 			// which is the string we use to refer to them as a physical worker ID.
-			if (Data.component_id == SpatialConstants::WORKER_COMPONENT_ID)
+			if (Data.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
 			{
 				const Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-				const FString& WorkerType = SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::WORKER_TYPE_ID);
-
 				// TODO(zoning): Currently, this only works if server workers never die. Once we want to support replacing
 				// workers, this will need to process UnassignWorker before processing AssignWorker.
-				if (WorkerType.Equals(SpatialConstants::DefaultServerWorkerType.ToString()) &&
-					!UnassignedVirtualWorkers.IsEmpty())
+				if (!UnassignedVirtualWorkers.IsEmpty())
 				{
-					AssignWorker(SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::WORKER_ID_ID));
+					AssignWorker(SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID));
 				}
 			}
 		}
@@ -113,9 +113,13 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate()
 	// so send it across directly.
 	check(Translator != nullptr);
 	Translator->ApplyVirtualWorkerManagerData(UpdateObject);
+
+	// Make sure the GSM picks up this completion since we don't do component update loopback
+	check(GlobalStateManager.IsValid());
+	GlobalStateManager->OnTranslatorReady();
 }
 
-void SpatialVirtualWorkerTranslationManager::QueryForWorkerEntities()
+void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
 {
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Sending query for WorkerEntities"));
 
@@ -125,10 +129,10 @@ void SpatialVirtualWorkerTranslationManager::QueryForWorkerEntities()
 		return;
 	}
 
-	// Create a query for all the system entities which represent workers. This will be used
+	// Create a query for all the server worker entities. This will be used
 	// to find physical workers which the virtual workers will map to.
 	Worker_ComponentConstraint WorkerEntityComponentConstraint{};
-	WorkerEntityComponentConstraint.component_id = SpatialConstants::WORKER_COMPONENT_ID;
+	WorkerEntityComponentConstraint.component_id = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
 
 	Worker_Constraint WorkerEntityConstraint{};
 	WorkerEntityConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
@@ -144,30 +148,30 @@ void SpatialVirtualWorkerTranslationManager::QueryForWorkerEntities()
 	bWorkerEntityQueryInFlight = true;
 
 	// Register a method to handle the query response.
-	EntityQueryDelegate WorkerEntityQueryDelegate;
-	WorkerEntityQueryDelegate.BindRaw(this, &SpatialVirtualWorkerTranslationManager::WorkerEntityQueryDelegate);
+	EntityQueryDelegate ServerWorkerEntityQueryDelegate;
+	ServerWorkerEntityQueryDelegate.BindRaw(this, &SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate);
 	check(Receiver != nullptr);
-	Receiver->AddEntityQueryDelegate(RequestID, WorkerEntityQueryDelegate);
+	Receiver->AddEntityQueryDelegate(RequestID, ServerWorkerEntityQueryDelegate);
 }
 
-// This method allows the translation manager to deal with the returned list of connection entities when they are received.
+// This method allows the translation manager to deal with the returned list of server worker entities when they are received.
 // Note that this worker may have lost authority for the translation mapping in the meantime, so it's possible the
 // returned information will be thrown away.
-void SpatialVirtualWorkerTranslationManager::WorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op)
+void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op)
 {
 	bWorkerEntityQueryInFlight = false;
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Could not find Worker Entities via entity query: %s, retrying."), UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Could not find ServerWorker Entities via entity query: %s, retrying."), UTF8_TO_TCHAR(Op.message));
 	}
 	else
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT(" Processing Worker Entity query response"));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT(" Processing ServerWorker Entity query response"));
 		ConstructVirtualWorkerMappingFromQueryResponse(Op);
 	}
 
-	// If the translation mapping is complete, publish it. Otherwise retry the worker entity query.
+	// If the translation mapping is complete, publish it. Otherwise retry the server worker entity query.
 	if (UnassignedVirtualWorkers.IsEmpty())
 	{
 		SendVirtualWorkerMappingUpdate();
@@ -175,7 +179,7 @@ void SpatialVirtualWorkerTranslationManager::WorkerEntityQueryDelegate(const Wor
 	else
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Waiting for all virtual workers to be assigned before publishing translation update."));
-		QueryForWorkerEntities();
+		QueryForServerWorkerEntities();
 	}
 }
 

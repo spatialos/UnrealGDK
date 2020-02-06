@@ -1,0 +1,7 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+component ServerWorker {
+    id = 9974;
+    string worker_name = 1;
+}

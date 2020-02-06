@@ -46,7 +46,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_an_authority_change_THEN_query_for_wo
 {
 	TUniquePtr<SpatialOSWorkerConnectionSpy> Connection = MakeUnique<SpatialOSWorkerConnectionSpy>();
 	TUniquePtr<SpatialOSDispatcherSpy> Dispatcher = MakeUnique<SpatialOSDispatcherSpy>();
-	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), nullptr);
+	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), nullptr, nullptr);
 
 	// Build an authority change op which gives the worker authority over the translation.
 	Worker_AuthorityChangeOp QueryOp;
@@ -55,7 +55,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_an_authority_change_THEN_query_for_wo
 	QueryOp.authority = WORKER_AUTHORITY_AUTHORITATIVE;
 
 	Manager->AuthorityChanged(QueryOp);
-	TestTrue("On gaining authority, the TranslationManager queried for worker entities.", Connection->GetLastEntityQuery() != nullptr);
+	TestTrue("On gaining authority, the TranslationManager queried for server worker entities.", Connection->GetLastEntityQuery() != nullptr);
 
 	EntityQueryDelegate* Delegate = Dispatcher->GetEntityQueryDelegate(0);
 	TestTrue("An EntityQueryDelegate was added to the dispatcher when the query was made", Delegate != nullptr);
@@ -72,7 +72,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_failed_query_response_THEN_query_ag
 	TUniquePtr<SpatialOSWorkerConnectionSpy> Connection = MakeUnique<SpatialOSWorkerConnectionSpy>();
 	TUniquePtr<SpatialOSDispatcherSpy> Dispatcher = MakeUnique<SpatialOSDispatcherSpy>();
 	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
-	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), Translator.Get());
+	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), Translator.Get(), nullptr);
 
 	EntityQueryDelegate* Delegate = SetupQueryDelegateTests(Manager.Get(), Dispatcher.Get(), Connection.Get());
 
@@ -86,7 +86,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_failed_query_response_THEN_query_ag
 	Manager->AddVirtualWorkerIds(VirtualWorkerIds);
 
 	Delegate->ExecuteIfBound(ResponseOp);
-	TestTrue("After a failed query response, the TranslationManager queried again for worker entities.", Connection->GetLastEntityQuery() != nullptr);
+	TestTrue("After a failed query response, the TranslationManager queried again for server worker entities.", Connection->GetLastEntityQuery() != nullptr);
 
 	return true;
 }
@@ -96,7 +96,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_successful_query_without_enough_wor
 	TUniquePtr<SpatialOSWorkerConnectionSpy> Connection = MakeUnique<SpatialOSWorkerConnectionSpy>();
 	TUniquePtr<SpatialOSDispatcherSpy> Dispatcher = MakeUnique<SpatialOSDispatcherSpy>();
 	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
-	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), Translator.Get());
+	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), Translator.Get(), nullptr);
 
 	EntityQueryDelegate* Delegate = SetupQueryDelegateTests(Manager.Get(), Dispatcher.Get(), Connection.Get());
 
@@ -111,7 +111,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_successful_query_without_enough_wor
 	Manager->AddVirtualWorkerIds(VirtualWorkerIds);
 
 	Delegate->ExecuteIfBound(ResponseOp);
-	TestTrue("When not enough workers available, the TranslationManager queried again for worker entities.", Connection->GetLastEntityQuery() != nullptr);
+	TestTrue("When not enough workers available, the TranslationManager queried again for server worker entities.", Connection->GetLastEntityQuery() != nullptr);
 
 	return true;
 }
@@ -121,7 +121,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_successful_query_with_invalid_worke
 	TUniquePtr<SpatialOSWorkerConnectionSpy> Connection = MakeUnique<SpatialOSWorkerConnectionSpy>();
 	TUniquePtr<SpatialOSDispatcherSpy> Dispatcher = MakeUnique<SpatialOSDispatcherSpy>();
 	TUniquePtr<SpatialVirtualWorkerTranslator> Translator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
-	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), Translator.Get());
+	TUniquePtr<SpatialVirtualWorkerTranslationManager> Manager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), Translator.Get(), nullptr);
 
 	EntityQueryDelegate* Delegate = SetupQueryDelegateTests(Manager.Get(), Dispatcher.Get(), Connection.Get());
 
@@ -142,7 +142,7 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_a_successful_query_with_invalid_worke
 	Manager->AddVirtualWorkerIds(VirtualWorkerIds);
 
 	Delegate->ExecuteIfBound(ResponseOp);
-	TestTrue("When enough workers available but they are invalid, the TranslationManager queried again for worker entities.", Connection->GetLastEntityQuery() != nullptr);
+	TestTrue("When enough workers available but they are invalid, the TranslationManager queried again for server worker entities.", Connection->GetLastEntityQuery() != nullptr);
 
 	return true;
 }

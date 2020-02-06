@@ -532,6 +532,16 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 			// that was authoritative over the GSM restarts. In which case, we do nothing.
 			if (!bCanBeginPlay)
 			{
+				// If the translator is not ready, that means server worker entities have not
+				// been spawned and so our CanBeginPlay update may not be received as a component
+				// update. We need this to indicate to non-GSM-authoritative workers that they
+				// can attempt to spawn startup Actors with authority if the lb strategy indicates
+				// this. Instead of calling SetCanBeginPlay here, we'll wait till the translator is
+				// ready.
+				if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer && !NetDriver->VirtualWorkerTranslator->IsReady())
+				{
+					return;
+				}
 				SetCanBeginPlay(true);
 			}
 
@@ -791,4 +801,13 @@ void UGlobalStateManager::SendSessionIdUpdate()
 	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, DeploymentSessionId);
 
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+}
+
+void UGlobalStateManager::OnTranslatorReady()
+{
+	const bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	if (!bCanBeginPlay && bHasGSMAuthority)
+	{
+		SetCanBeginPlay(true);
+	}
 }
