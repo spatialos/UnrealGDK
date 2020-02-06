@@ -559,15 +559,12 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		{
 			LaunchCloudDeployment();
 		}
-		else
+		else if (TSharedPtr<SNotificationItem> NotificationItemPinned = NotificationItem.Pin())
 		{
-			if (TSharedPtr<SNotificationItem> NotificationItemPinned = NotificationItem.Pin())
-			{
-				NotificationItemPinned->SetText(FText::FromString(TEXT("Spatial auth failed attempting to launch cloud deployment.")));
-				NotificationItemPinned->SetCompletionState(SNotificationItem::CS_Fail);
-				NotificationItemPinned->SetExpireDuration(3.0f);
-				NotificationItemPinned->ExpireAndFadeout();
-			}
+			NotificationItemPinned->SetText(FText::FromString(TEXT("Spatial auth failed attempting to launch cloud deployment.")));
+			NotificationItemPinned->SetCompletionState(SNotificationItem::CS_Fail);
+			NotificationItemPinned->SetExpireDuration(3.0f);
+			NotificationItemPinned->ExpireAndFadeout();
 		}
 	});
 
