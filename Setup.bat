@@ -60,7 +60,6 @@ call :MarkStartOfBlock "Setup variables"
     set DOMAIN_ENVIRONMENT_VAR=
     for %%A in (%*) do (
         if "%%A"=="--china" set DOMAIN_ENVIRONMENT_VAR=--environment cn-production
-        if "%%A"=="--mobile" set DOWNLOAD_MOBILE=True
     )
 call :MarkEndOfBlock "Setup variables"
 

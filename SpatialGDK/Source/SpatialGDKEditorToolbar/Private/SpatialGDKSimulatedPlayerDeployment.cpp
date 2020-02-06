@@ -518,7 +518,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
 		{
 			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
-				FSimpleDelegate::CreateLambda([]()
+			FSimpleDelegate::CreateLambda([]()
 			{
 				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
@@ -526,7 +526,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 				}
 			}),
 
-				FSimpleDelegate::CreateLambda([]()
+			FSimpleDelegate::CreateLambda([]()
 			{
 				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
