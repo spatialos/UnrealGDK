@@ -6,11 +6,11 @@ if not defined MSBUILD_EXE (
     set MSBUILD_EXE=
 
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" (
-    for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe`) do (
-        if exist %%i (
-            set MSBUILD_EXE="%%i"
-            exit /b 0
-        )
+	for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe`) do (
+		if exist %%i (
+			set MSBUILD_EXE="%%i"
+			exit /b 0
+		)
 	)
 )
 
