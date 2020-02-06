@@ -12,7 +12,7 @@ class FSpatialGDKEditorLayoutDetails : public IDetailCustomization
 {
 private:
 	bool TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile);
-	bool TryPushCommandLineArgs(const FString Executable, const FString ExeArguments, const FString CommandLineArgsFile);
+	bool TryPushCommandLineArgs(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile);
 
 	FReply GenerateDevAuthToken();
 	FReply PrepareIOSApplication();

@@ -79,7 +79,7 @@ FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 
 	if (ExitCode != 0)
 	{
-		UE_LOG(LogSpatialGDKEditorLayoutDetails, Warning, TEXT("Unable to generate a development authentication token. Result: %s"), *CreateDevAuthTokenResult);
+		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Unable to generate a development authentication token. Result: %s"), *CreateDevAuthTokenResult);
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to generate a development authentication token. Result: %s"), *CreateDevAuthTokenResult)));
 		return FReply::Unhandled();
 	};
@@ -96,7 +96,7 @@ FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 	TSharedPtr<FJsonObject> JsonRootObject;
 	if (!(FJsonSerializer::Deserialize(JsonReader, JsonRootObject) && JsonRootObject.IsValid()))
 	{
-		UE_LOG(LogSpatialGDKEditorLayoutDetails, Warning, TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult);
+		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult);
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult)));
 		return FReply::Unhandled();
 	}
@@ -116,7 +116,6 @@ FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 
 bool FSpatialGDKEditorLayoutDetails::TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile)
 {
-	UE_LOG(LogSpatialGDKEditorLayoutDetails, Warning, TEXT("Pushing to iOS device..."));
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString ProjectName = FApp::GetProjectName();
 
@@ -126,6 +125,13 @@ bool FSpatialGDKEditorLayoutDetails::TryConstructMobileCommandLineArgumentsFile(
 	FString SpatialOSCommandLineArgs = FString::Printf(TEXT("-workerType %s"), *(SpatialGDKSettings->MobileWorkerType));
 	if (SpatialGDKSettings->bMobileConnectToLocalDeployment)
 	{
+		if (SpatialGDKSettings->MobileRuntimeIP.IsEmpty())
+		{
+			UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("The Runtime IP is currently not set. Please make sure to specify a Runtime IP."));
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("The Runtime IP is currently not set. Please make sure to specify a Runtime IP."))));
+			return false;
+		}
+
 		TravelUrl = SpatialGDKSettings->MobileRuntimeIP;
 	}
 	else
@@ -161,7 +167,7 @@ bool FSpatialGDKEditorLayoutDetails::TryConstructMobileCommandLineArgumentsFile(
 	return true;
 }
 
-bool FSpatialGDKEditorLayoutDetails::TryPushCommandLineArgs(const FString Executable, const FString ExeArguments, const FString CommandLineArgsFile)
+bool FSpatialGDKEditorLayoutDetails::TryPushCommandLineArgs(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile)
 {
 	FString OutCommandLineArgsFile;
 	FString ExeOutput;
@@ -182,6 +188,7 @@ bool FSpatialGDKEditorLayoutDetails::TryPushCommandLineArgs(const FString Execut
 	{
 		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Failed to delete file %s"), *CommandLineArgsFile);
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Failed to delete file %s"), *CommandLineArgsFile)));
+		return false;
 	}
 
 	return true;
