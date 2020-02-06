@@ -71,11 +71,14 @@ public:
 
 	bool IsReady() const;
 
+	FORCEINLINE bool IsReady() const
+	{
+		return GetCanBeginPlay() || HasAuthority();
+	}
+
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
 	void RemoveSingletonInstance(const AActor* SingletonActor);
-
-	void OnTranslatorReady();
 
 	Worker_EntityId GlobalStateManagerEntityId;
 

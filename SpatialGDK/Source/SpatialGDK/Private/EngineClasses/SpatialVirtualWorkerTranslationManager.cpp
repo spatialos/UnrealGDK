@@ -3,7 +3,6 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialOSDispatcherInterface.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
@@ -13,12 +12,10 @@ DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslationManager);
 SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(
 	SpatialOSDispatcherInterface* InReceiver,
 	SpatialOSWorkerInterface* InConnection,
-	SpatialVirtualWorkerTranslator* InTranslator,
-	UGlobalStateManager* InGlobalStateManager)
+	SpatialVirtualWorkerTranslator* InTranslator)
 	: Receiver(InReceiver)
 	, Connection(InConnection)
 	, Translator(InTranslator)
-	, GlobalStateManager(InGlobalStateManager)
 	, bWorkerEntityQueryInFlight(false)
 {}
 
@@ -132,10 +129,6 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate()
 	// so send it across directly.
 	check(Translator != nullptr);
 	Translator->ApplyVirtualWorkerManagerData(UpdateObject);
-
-	// Make sure the GSM picks up this completion since we don't do component update loopback
-	check(GlobalStateManager.IsValid());
-	GlobalStateManager->OnTranslatorReady();
 }
 
 void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
