@@ -518,8 +518,8 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 
 	auto LaunchCloudDeployment = [this, NotificationItem]()
 	{
-		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
-
+		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
+		{
 			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
 				FSimpleDelegate::CreateLambda([NotificationItem]() {
 				NotificationItem->SetText(FText::FromString(TEXT("Successfully initiated launching of the cloud deployment.")));
@@ -537,12 +537,10 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 			return;
 		}
 
-		FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
-		Info.bUseSuccessFailIcons = true;
-		Info.ExpireDuration = 3.0f;
-
-		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+		NotificationItem->SetText(FText::FromString(TEXT("Couldn't launch the deployment.")));
+		NotificationItem->SetExpireDuration(3.0f);
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+		NotificationItem->ExpireAndFadeout();
 	};
 
 	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },

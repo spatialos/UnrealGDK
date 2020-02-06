@@ -318,11 +318,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfi
 		TryStartSpatialService();
 	}
 
-#if ENGINE_MINOR_VERSION <= 22
 	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, [this]() { return SpatialCommandUtils::AttemptSpatialAuth(bIsInChina); },
-#else
-	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, [this]() { return SpatialCommandUtils::AttemptSpatialAuth(bIsInChina); },
-#endif
 		[this, LaunchConfig, LaunchArgs, CallBack]()
 	{
 		bool bSuccess = AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true;
