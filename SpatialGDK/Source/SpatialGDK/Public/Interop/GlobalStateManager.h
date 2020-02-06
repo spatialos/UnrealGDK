@@ -63,19 +63,11 @@ public:
 
 	void BeginDestroy() override;
 
-	bool HasAuthority() const;
-
 	void TriggerBeginPlay();
 
-	FORCEINLINE bool GetCanBeginPlay() const
-	{
-		return bCanBeginPlay;
-	}
+	bool GetCanBeginPlay() const;
 
-	bool IsReady() const
-	{
-		return GetCanBeginPlay() || HasAuthority();
-	}
+	bool IsReady() const;
 
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);

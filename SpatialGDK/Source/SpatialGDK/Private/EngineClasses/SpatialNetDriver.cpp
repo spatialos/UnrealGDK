@@ -493,7 +493,7 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 	{
 		uint32 ServerHash = GlobalStateManager->GetSchemaHash();
 		if (ClassInfoManager->SchemaDatabase->SchemaDescriptorHash != ServerHash) // Are we running with the same schema hash as the server?
-		{	
+		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Your clients Spatial schema does match the servers, this may cause problems. Client hash: '%u' Server hash: '%u'"), ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
 		}
 
@@ -657,20 +657,31 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		return;
 	}
 
-	// If we have authority over the GSM when loading a sublevel, make sure we have authority
-	// over the actors in the sublevel.
-	if (GlobalStateManager != nullptr)
+	check(GlobalStateManager != nullptr)
+
+	// If load balancing disabled but this worker is GSM authoritative then make sure
+	// we set Role_Authority on Actors in the sublevel. Also, if load balancing is
+	// enabled and lb strategy says we should have authority over a loaded level Actor
+	// then also set Role_Authority on Actors in the sublevel.
+
+
+	// If load balancing is disabled and this worker is not GSM authoritative then exit early.
+	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
+	const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
 	{
-		if (GlobalStateManager->HasAuthority())
+		return;
+	}
+
+	for (auto Actor : LoadedLevel->Actors)
+	{
+		// If load balancing is disabled, we must be the GSM authoritative worker, so set Role_Authority
+		// otherwise, load balancing is enabled, so check the lb strategy.
+		if (Actor->GetIsReplicated() &&
+			(!bLoadBalancingEnabled || LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
 		{
-			for (auto Actor : LoadedLevel->Actors)
-			{
-				if (Actor->GetIsReplicated())
-				{
-					Actor->Role = ROLE_Authority;
-					Actor->RemoteRole = ROLE_SimulatedProxy;
-				}
-			}
+			Actor->Role = ROLE_Authority;
+			Actor->RemoteRole = ROLE_SimulatedProxy;
 		}
 	}
 }
@@ -684,7 +695,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	UWorld* World = GameMode->GetWorld();
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 
-	if (!NetDriver->StaticComponentView->HasAuthority(NetDriver->GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
+	if (!NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
 	{
 		// TODO: UNR-678 Send a command to the GSM to initiate server travel on the correct server.
 		UE_LOG(LogGameMode, Warning, TEXT("Trying to server travel on a server which is not authoritative over the GSM."));
@@ -774,7 +785,7 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			Connection->SendDeleteEntityRequest(WorkerEntityId);
 		}
-		
+
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
 		if (!bPersistSpatialConnection)
 		{
@@ -1644,7 +1655,7 @@ void USpatialNetDriver::PollPendingLoads()
 	{
 		return;
 	}
-	
+
 	for (auto IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
 	{
 		if (PackageMap->IsGUIDPending(*IterPending))

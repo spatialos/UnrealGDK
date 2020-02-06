@@ -6,8 +6,6 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
-#include "UObject/WeakObjectPtrTemplates.h"
-
 #include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
 
@@ -48,6 +46,7 @@ public:
 private:
 	SpatialOSDispatcherInterface* Receiver;
 	SpatialOSWorkerInterface* Connection;
+
 	SpatialVirtualWorkerTranslator* Translator;
 
 	TMap<VirtualWorkerId, PhysicalWorkerName> VirtualToPhysicalWorkerMapping;

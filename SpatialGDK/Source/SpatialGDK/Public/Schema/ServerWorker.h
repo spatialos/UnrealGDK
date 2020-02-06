@@ -13,9 +13,9 @@
 namespace SpatialGDK
 {
 
-// The ServerWorker component exists to hold information which is used to
-// ensure non-GSM-authoritative workers correctly wait to know how they should deal with
-// startup Actors
+// The ServerWorker component exists to hold the physical worker name corresponding to a
+// server worker entity. This is so that the translator can make virtual workers to physical
+// worker names using the server worker entities.
 struct ServerWorker : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::SERVER_WORKER_COMPONENT_ID;

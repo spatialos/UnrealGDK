@@ -552,11 +552,6 @@ void UGlobalStateManager::BeginDestroy()
 #endif
 }
 
-bool UGlobalStateManager::HasAuthority() const
-{
-	return NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-}
-
 void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 {
 	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
@@ -591,8 +586,6 @@ void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
-	check(IsReady());
-
 	const bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 	if (bHasGSMAuthority)
 	{
@@ -606,7 +599,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 		{
 			BecomeAuthoritativeOverActorsBasedOnLBStrategy();
 		}
-		else if (HasAuthority())
+		else
 		{
 			BecomeAuthoritativeOverAllActors();
 		}
@@ -616,9 +609,19 @@ void UGlobalStateManager::TriggerBeginPlay()
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
 }
 
+bool UGlobalStateManager::GetCanBeginPlay() const
+{
+	return bCanBeginPlay;
+}
+
+bool UGlobalStateManager::IsReady() const
+{
+	return GetCanBeginPlay() || NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+}
+
 void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
 {
-	check(HasAuthority());
+	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
 
 	bCanBeginPlay = bInCanBeginPlay;
 
