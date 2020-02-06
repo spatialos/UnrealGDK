@@ -1735,6 +1735,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap());
 	bool bOutReferencesChanged = false;
 	Reader.ApplyComponentUpdate(ComponentUpdate, TargetObject, Channel, bIsHandover, bOutReferencesChanged);
+	RepStateHelper.Update(*this, Channel, TargetObject, bOutReferencesChanged);
 
 	// This is a temporary workaround, see UNR-841:
 	// If the update includes tearoff, close the channel and clean up the entity.
@@ -1748,8 +1749,6 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 			Channel.ConditionalCleanUp(false, EChannelCloseReason::TearOff);
 		}
 	}
-
-	RepStateHelper.Update(*this, Channel, TargetObject, bOutReferencesChanged);
 }
 
 ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs /* = false */)
