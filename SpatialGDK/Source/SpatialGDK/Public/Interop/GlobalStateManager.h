@@ -71,7 +71,7 @@ public:
 
 	bool IsReady() const;
 
-	FORCEINLINE bool IsReady() const
+	bool IsReady() const
 	{
 		return GetCanBeginPlay() || HasAuthority();
 	}
