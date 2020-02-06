@@ -84,7 +84,17 @@ void SpatialVirtualWorkerTranslationManager::ConstructVirtualWorkerMappingFromQu
 				// workers, this will need to process UnassignWorker before processing AssignWorker.
 				if (!UnassignedVirtualWorkers.IsEmpty())
 				{
-					AssignWorker(SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID));
+					// If we didn't find all our server worker entities the first time, future query responses should
+					// ignore workers that we have already assigned a virtual worker ID.
+					const PhysicalWorkerName QueriedWorkerName = SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
+					TArray<FString> ExistingWorkerNames;
+					ExistingWorkerNames.SetNum(VirtualToPhysicalWorkerMapping.Num());
+					VirtualToPhysicalWorkerMapping.GenerateValueArray(ExistingWorkerNames);
+					if (ExistingWorkerNames.Contains(QueriedWorkerName))
+					{
+						continue;
+					}
+					AssignWorker(QueriedWorkerName);
 				}
 			}
 		}
