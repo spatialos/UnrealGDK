@@ -14,10 +14,10 @@
 #include "IPAddress.h"
 #include "Json/Public/Dom/JsonObject.h"
 #include "Misc/MessageDialog.h"
-#include "SpatialGDKServicesModule.h"
-#include "SpatialCommandUtils.h"
-#include "SocketSubsystem.h"
 #include "Sockets.h"
+#include "SocketSubsystem.h"
+#include "SpatialCommandUtils.h"
+#include "SpatialGDKServicesModule.h"
 #include "UObject/CoreNet.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);

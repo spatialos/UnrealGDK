@@ -11,8 +11,7 @@ bool SpatialCommandUtils::AttemptSpatialAuth(bool IsRunningInChina)
 	FString StdErr;
 	int32 ExitCode;
 
-	const static FString SpatialExe = TEXT("spatial");
-	FPlatformProcess::ExecProcess(*SpatialExe, *SpatialInfoArgs, &ExitCode, &SpatialInfoResult, &StdErr);
+	FPlatformProcess::ExecProcess(*FString(TEXT("spatial")), *SpatialInfoArgs, &ExitCode, &SpatialInfoResult, &StdErr);
 
 	bool bSuccess = ExitCode == 0;
 	if (!bSuccess)
