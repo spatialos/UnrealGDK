@@ -204,6 +204,7 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentU
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
+	bCanSpawnWithAuthority = true;
 }
 
 void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActorClass)
@@ -545,7 +546,7 @@ void UGlobalStateManager::BeginDestroy()
 			Update.schema_type = Schema_CreateComponentUpdate();
 			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
 
-			NetDriver>Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+			NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 		}
 	}
 #endif
@@ -553,7 +554,7 @@ void UGlobalStateManager::BeginDestroy()
 
 bool UGlobalStateManager::HasAuthority() const
 {
-	return NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
+	return NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 }
 
 void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
