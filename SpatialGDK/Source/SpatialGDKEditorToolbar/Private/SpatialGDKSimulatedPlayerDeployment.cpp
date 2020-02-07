@@ -558,6 +558,11 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
 		[this, LaunchCloudDeployment, NotificationItem]()
 	{
+		if (GIsRequestingExit)
+		{
+			return;
+		}
+
 		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
 		{
 			LaunchCloudDeployment();
