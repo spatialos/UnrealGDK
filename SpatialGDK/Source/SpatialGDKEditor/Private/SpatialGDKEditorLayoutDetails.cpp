@@ -101,8 +101,21 @@ FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 		return FReply::Unhandled();
 	}
 
-	TSharedPtr<FJsonObject> JsonDataObject = JsonRootObject->GetObjectField("json_data");
-	FString TokenSecret = JsonDataObject->GetStringField("token_secret");
+	const TSharedPtr<FJsonObject> *JsonDataObject;
+	if (JsonRootObject->TryGetObjectField("json_data", JsonDataObject))
+	{
+		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Unable to parse the received json data. Result: %s"), *DevAuthTokenResult);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult)));
+		return FReply::Unhandled();
+	}
+
+	FString TokenSecret;
+	if (!(*JsonDataObject)->TryGetStringField("token_secret", TokenSecret))
+	{
+		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Unable to parse the token_secret field inside the received json data. Result: %s"), *DevAuthTokenResult);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult)));
+		return FReply::Unhandled();
+	}
 
 	if (USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>())
 	{
@@ -120,7 +133,7 @@ bool FSpatialGDKEditorLayoutDetails::TryConstructMobileCommandLineArgumentsFile(
 	const FString ProjectName = FApp::GetProjectName();
 
 	// The project path is based on this: https://github.com/improbableio/UnrealEngine/blob/4.22-SpatialOSUnrealGDK-release/Engine/Source/Programs/AutomationTool/AutomationUtils/DeploymentContext.cs#L408
-	const FString IOSProjectPath = FString::Printf(TEXT("../../../%s/%s.uproject"), *ProjectName, *ProjectName);
+	const FString MobileProjectPath = FString::Printf(TEXT("../../../%s/%s.uproject"), *ProjectName, *ProjectName);
 	FString TravelUrl;
 	FString SpatialOSCommandLineArgs = FString::Printf(TEXT("-workerType %s"), *(SpatialGDKSettings->MobileWorkerType));
 	if (SpatialGDKSettings->bMobileConnectToLocalDeployment)
@@ -154,7 +167,7 @@ bool FSpatialGDKEditorLayoutDetails::TryConstructMobileCommandLineArgumentsFile(
 		}
 	}
 
-	const FString FinalCommandLineArgs = FString::Printf(TEXT("%s %s %s %s"), *IOSProjectPath, *TravelUrl, *SpatialOSCommandLineArgs, *(SpatialGDKSettings->MobileExtraCommandLineArgs));
+	const FString FinalCommandLineArgs = FString::Printf(TEXT("%s %s %s %s"), *MobileProjectPath, *TravelUrl, *SpatialOSCommandLineArgs, *(SpatialGDKSettings->MobileExtraCommandLineArgs));
 	CommandLineArgsFile = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::ProjectLogDir(), TEXT("ue4commandline.txt")));
 
 	if (!FFileHelper::SaveStringToFile(FinalCommandLineArgs, *CommandLineArgsFile, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
