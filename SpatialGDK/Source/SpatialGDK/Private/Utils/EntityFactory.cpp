@@ -80,7 +80,9 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		IntendedVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
 		if (IntendedVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
-			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid virtual worker ID to spawn actor with. Actor: %s"), *Actor->GetName());
+			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid virtual worker ID to spawn Actor. Actor: %s"), *Actor->GetName());
+			// We'll just default to spawning with intent set to this worker's virtual worker ID
+			IntendedVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId()
 		}
 		else
 		{
