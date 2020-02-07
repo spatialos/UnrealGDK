@@ -195,6 +195,7 @@ const Schema_FieldId SPATIAL_DEBUGGING_IS_LOCKED                         = 5;
 
 // ServerWorker Field IDs.
 const Schema_FieldId SERVER_WORKER_NAME_ID								 = 1;
+const Schema_FieldId SERVER_WORKER_READY_TO_BEGIN_PLAY_ID				 = 2;
 
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;

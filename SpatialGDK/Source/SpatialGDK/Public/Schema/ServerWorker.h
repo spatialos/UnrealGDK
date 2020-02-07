@@ -22,11 +22,13 @@ struct ServerWorker : Component
 
 	ServerWorker()
 		: WorkerName(SpatialConstants::INVALID_WORKER_NAME)
+		, bReadyToBeginPlay(false)
 	{}
 
-	ServerWorker(const PhysicalWorkerName& InWorkerName)
+	ServerWorker(const PhysicalWorkerName& InWorkerName, const bool bInReadyToBeginPlay)
 	{
 		WorkerName = InWorkerName;
+		bReadyToBeginPlay = bInReadyToBeginPlay;
 	}
 
 	ServerWorker(const Worker_ComponentData& Data)
@@ -34,6 +36,7 @@ struct ServerWorker : Component
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		WorkerName = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
+		bReadyToBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
 	}
 
 	Worker_ComponentData CreateServerWorkerData()
@@ -44,6 +47,7 @@ struct ServerWorker : Component
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		AddStringToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID, WorkerName);
+		Schema_AddBool(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, bReadyToBeginPlay);
 
 		return Data;
 	}
@@ -56,6 +60,7 @@ struct ServerWorker : Component
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 		AddStringToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID, WorkerName);
+		Schema_AddBool(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, bReadyToBeginPlay);
 
 		return Update;
 	}
@@ -65,9 +70,11 @@ struct ServerWorker : Component
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 		WorkerName = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
+		bReadyToBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
 	}
 
 	PhysicalWorkerName WorkerName;
+	bool bReadyToBeginPlay;
 };
 
 } // namespace SpatialGDK

@@ -2285,6 +2285,16 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 		FoundOps.Add(EntityQueryResponseOp);
 	}
 
+	// CreateEntityResponseOps are needed for non-GSM-authoritative server workers sending an update
+	// to the Runtime indicating that the worker is ready to begin play.
+	Worker_Op* CreateEntityResponseOp = nullptr;
+	FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE, &CreateEntityResponseOp);
+
+	if (CreateEntityResponseOp != nullptr)
+	{
+		FoundOps.Add(CreateEntityResponseOp);
+	}
+
 	// Search for entity id reservation response and process it.  The entity id reservation
 	// can fail to reserve entity ids.  In that case, the EntityPool will not be marked ready,
 	// a new query will be sent, and we will process the new response here when it arrives.

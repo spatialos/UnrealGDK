@@ -12,6 +12,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Net/NetworkProfiler.h"
 #include "Schema/AuthorityIntent.h"
@@ -191,7 +192,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(InterestFactory::CreateServerWorkerInterest().CreateInterestData());
-	Components.Add(ServerWorker(Connection->GetWorkerId()).CreateServerWorkerData());
+	Components.Add(ServerWorker(Connection->GetWorkerId(), false).CreateServerWorkerData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
@@ -207,6 +208,16 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
+
+			// This logic is necessary because a potential race between the order in which the StartupActorManager
+			// AddComponentOp and ServerWorkerEntity CreateEntityResponseOp are received. The justification for this
+			// functionality more broadly is in UGlobalStateManager::ApplyStartupActorManagerData.
+			UGlobalStateManager* GlobalStateManager = Sender->NetDriver->GlobalStateManager;
+			if (!GlobalStateManager->HasSentReadyToBeginPlay() && GlobalStateManager->ShouldSetWorkerReadyToBeginPlay())
+			{
+				GlobalStateManager->SendWorkerReadyToBeginPlay();
+			}
+
 			return;
 		}
 

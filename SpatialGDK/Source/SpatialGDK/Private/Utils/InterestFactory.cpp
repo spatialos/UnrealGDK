@@ -594,6 +594,7 @@ QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint()
 		SpatialConstants::SINGLETON_COMPONENT_ID,
 		SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID,
 		SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
+		SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
 		SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID
 	};
 
