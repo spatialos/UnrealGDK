@@ -14,9 +14,10 @@
 #include "IPAddress.h"
 #include "Json/Public/Dom/JsonObject.h"
 #include "Misc/MessageDialog.h"
-#include "SpatialGDKServicesModule.h"
-#include "SocketSubsystem.h"
 #include "Sockets.h"
+#include "SocketSubsystem.h"
+#include "SpatialCommandUtils.h"
+#include "SpatialGDKServicesModule.h"
 #include "UObject/CoreNet.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
@@ -32,7 +33,7 @@ namespace
 		FString DomainEnvironmentStr;
 		if (bIsInChina)
 		{
-			DomainEnvironmentStr = TEXT("--domain=spatialoschina.com --environment=cn-production");
+			DomainEnvironmentStr = TEXT("--environment=cn-production");
 		}
 		return DomainEnvironmentStr;
 	}
@@ -285,49 +286,8 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 	return bSuccess;
 }
 
-bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose)
+bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose)
 {
-	bRedeployRequired = false;
-
-	if (bStoppingDeployment)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment is in the process of stopping. New deployment will start when previous one has stopped."));
-		while (bStoppingDeployment)
-		{
-			FPlatformProcess::Sleep(0.1f);
-		}
-	}
-
-	if (bLocalDeploymentRunning)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start a local deployment but one is already running."));
-		return false;
-	}
-
-	if (!LocalDeploymentPreRunChecks())
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to start a local deployment but a required port is already bound by another process."));
-		return false;
-	}
-
-	LocalRunningDeploymentID.Empty();
-
-	bStartingDeployment = true;
-
-	// Stop the currently running service if the runtime IP is to be exposed, but is different from the one specified
-	if (ExposedRuntimeIP != RuntimeIPToExpose)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Settings for exposing runtime IP have changed since service startup. Restarting service to reflect changes."));
-		TryStopSpatialService();
-	}
-
-	// If the service is not running then start it.
-	if (!bSpatialServiceRunning)
-	{
-		TryStartSpatialService(RuntimeIPToExpose);
-	}
-
-	SnapshotName.RemoveFromEnd(TEXT(".snapshot"));
 	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json --starting-snapshot-id=\"%s\" %s"), *LaunchConfig, *FSpatialGDKServicesModule::GetProjectName(), *SnapshotName, *LaunchArgs);
 
 	FDateTime SpotCreateStart = FDateTime::Now();
@@ -387,7 +347,77 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
 	}
 
-	return bSuccess;
+	return true;
+}
+
+void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose, const LocalDeploymentCallback& CallBack)
+{
+	bRedeployRequired = false;
+
+	if (bStoppingDeployment)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment is in the process of stopping. New deployment will start when previous one has stopped."));
+		while (bStoppingDeployment)
+		{
+			FPlatformProcess::Sleep(0.1f);
+		}
+	}
+
+	if (bLocalDeploymentRunning)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start a local deployment but one is already running."));
+		CallBack(false);
+		return;
+	}
+
+	if (!LocalDeploymentPreRunChecks())
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to start a local deployment but a required port is already bound by another process."));
+		CallBack(false);
+		return;
+	}
+
+	LocalRunningDeploymentID.Empty();
+
+	bStartingDeployment = true;
+
+	// Stop the currently running service if the runtime IP is to be exposed, but is different from the one specified
+	if (ExposedRuntimeIP != RuntimeIPToExpose)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Settings for exposing runtime IP have changed since service startup. Restarting service to reflect changes."));
+		TryStopSpatialService();
+	}
+
+	// If the service is not running then start it.
+	if (!bSpatialServiceRunning)
+	{
+		TryStartSpatialService(RuntimeIPToExpose);
+	}
+
+	SnapshotName.RemoveFromEnd(TEXT(".snapshot"));
+
+
+#if ENGINE_MINOR_VERSION <= 22
+	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, [this]() { return SpatialCommandUtils::AttemptSpatialAuth(bIsInChina); },
+#else
+	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, [this]() { return SpatialCommandUtils::AttemptSpatialAuth(bIsInChina); },
+#endif
+		[this, LaunchConfig, LaunchArgs, SnapshotName, RuntimeIPToExpose, CallBack]()
+	{
+		bool bSuccess = AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true;
+		if (bSuccess)
+		{
+			FinishLocalDeployment(LaunchConfig, LaunchArgs, SnapshotName, RuntimeIPToExpose);
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial auth failed attempting to launch local deployment."));
+		}
+
+		CallBack(bSuccess);
+	});
+
+	return;
 }
 
 bool FLocalDeploymentManager::TryStopLocalDeployment()
