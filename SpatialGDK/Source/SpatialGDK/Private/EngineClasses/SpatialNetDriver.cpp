@@ -663,19 +663,17 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 	// we set Role_Authority on Actors in the sublevel. Also, if load balancing is
 	// enabled and lb strategy says we should have authority over a loaded level Actor
 	// then also set Role_Authority on Actors in the sublevel.
-
-
-	// If load balancing is disabled and this worker is not GSM authoritative then exit early.
 	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
 	const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
 	{
+		// If load balancing is disabled and this worker is not GSM authoritative then exit early.
 		return;
 	}
 
 	for (auto Actor : LoadedLevel->Actors)
 	{
-		// If load balancing is disabled, we must be the GSM authoritative worker, so set Role_Authority
+		// If load balancing is disabled, we must be the GSM-authoritative worker, so set Role_Authority
 		// otherwise, load balancing is enabled, so check the lb strategy.
 		if (Actor->GetIsReplicated() &&
 			(!bLoadBalancingEnabled || LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
