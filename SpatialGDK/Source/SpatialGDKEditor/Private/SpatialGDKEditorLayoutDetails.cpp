@@ -213,7 +213,7 @@ FReply FSpatialGDKEditorLayoutDetails::PrepareAndroidApplication()
 
 	const FString ProjectName = FApp::GetProjectName();
 	const FString AndroidCommandLineFile = FString::Printf(TEXT("/mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), *ProjectName);
-	const FString AdbArguments = FString::Printf(TEXT("push %s %s"), *OutCommandLineArgsFile, *AndroidCommandLineFile);
+	const FString AdbArguments = FString::Printf(TEXT("push \"%s\" \"%s\""), *OutCommandLineArgsFile, *AndroidCommandLineFile);
 	FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb")));
 
 #if PLATFORM_WINDOWS
