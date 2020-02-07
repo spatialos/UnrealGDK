@@ -63,9 +63,7 @@ public:
 
 	void BeginDestroy() override;
 
-	bool HasSentReadyToBeginPlay() const;
-	bool ShouldSetWorkerReadyToBeginPlay() const;
-	void SendWorkerReadyToBeginPlay();
+	void TrySendWorkerReadyToBeginPlay();
 	void TriggerBeginPlay();
 	bool GetCanBeginPlay() const;
 
@@ -90,7 +88,7 @@ private:
 	uint32 SchemaHash;
 
 	// Startup Actor Manager Component
-	bool bHasSentReadyToBegin;
+	bool bHasSentReadyForVirtualWorkerAssignment;
 	bool bCanBeginPlay;
 	bool bCanSpawnWithAuthority;
 

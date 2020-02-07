@@ -208,16 +208,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
-
-			// This logic is necessary because a potential race between the order in which the StartupActorManager
-			// AddComponentOp and ServerWorkerEntity CreateEntityResponseOp are received. The justification for this
-			// functionality more broadly is in UGlobalStateManager::ApplyStartupActorManagerData.
-			UGlobalStateManager* GlobalStateManager = Sender->NetDriver->GlobalStateManager;
-			if (!GlobalStateManager->HasSentReadyToBeginPlay() && GlobalStateManager->ShouldSetWorkerReadyToBeginPlay())
-			{
-				GlobalStateManager->SendWorkerReadyToBeginPlay();
-			}
-
+			GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 			return;
 		}
 

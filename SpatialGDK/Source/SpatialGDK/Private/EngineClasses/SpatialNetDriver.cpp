@@ -657,7 +657,11 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		return;
 	}
 
-	check(GlobalStateManager != nullptr)
+	// Necessary for levels loaded before connecting to Spatial
+	if (GlobalStateManager == nullptr)
+	{
+		return;
+	}
 
 	// If load balancing disabled but this worker is GSM authoritative then make sure
 	// we set Role_Authority on Actors in the sublevel. Also, if load balancing is

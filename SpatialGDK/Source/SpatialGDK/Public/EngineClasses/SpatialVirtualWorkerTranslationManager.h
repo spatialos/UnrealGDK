@@ -50,6 +50,7 @@ private:
 	SpatialVirtualWorkerTranslator* Translator;
 
 	TMap<VirtualWorkerId, PhysicalWorkerName> VirtualToPhysicalWorkerMapping;
+	TMap<PhysicalWorkerName, VirtualWorkerId> PhysicalToVirtualWorkerMapping;
 	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;

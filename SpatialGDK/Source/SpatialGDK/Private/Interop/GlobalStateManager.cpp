@@ -55,7 +55,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 #endif // WITH_EDITOR
   
 	bAcceptingPlayers = false;
-	bHasSentReadyToBegin = false;
+	bHasSentReadyForVirtualWorkerAssignment = false;
 	bCanBeginPlay = false;
 	bCanSpawnWithAuthority = false;
 }
@@ -85,32 +85,23 @@ void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentDat
 
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 
+	TrySendWorkerReadyToBeginPlay();
+}
+
+void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
+{
 	// Once a worker has received the StartupActorManager AddComponent op, we say that a
 	// worker is ready to begin play. This means if the GSM-authoritative worker then sets
 	// canBeginPlay=true it will be received as a ComponentUpdate and so we can differentiate
 	// from when canBeginPlay=true was loaded from the snapshot and was received as an
 	// AddComponent. This is important for handling startup Actors correctly in a zoned
 	// environment.
+	const bool bHasReceivedStartupActorData = StaticComponentView->HasComponent(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 	const bool bWorkerEntityCreated = NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID;
-	if (bWorkerEntityCreated)
+	if (bHasSentReadyForVirtualWorkerAssignment || !bHasReceivedStartupActorData || !bWorkerEntityCreated)
 	{
-		SendWorkerReadyToBeginPlay();
+		return;
 	}
-}
-
-bool UGlobalStateManager::HasSentReadyToBeginPlay() const
-{
-	return bHasSentReadyToBegin;
-}
-
-bool UGlobalStateManager::ShouldSetWorkerReadyToBeginPlay() const
-{
-	return StaticComponentView->HasComponent(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-}
-
-void UGlobalStateManager::SendWorkerReadyToBeginPlay()
-{
-	check(NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID);
 
 	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
@@ -118,7 +109,7 @@ void UGlobalStateManager::SendWorkerReadyToBeginPlay()
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 	Schema_AddBool(UpdateObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
 
-	bHasSentReadyToBegin = true;
+	bHasSentReadyForVirtualWorkerAssignment = true;
 	NetDriver->Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &Update);
 }
 
@@ -834,4 +825,3 @@ void UGlobalStateManager::SendSessionIdUpdate()
 
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
-
