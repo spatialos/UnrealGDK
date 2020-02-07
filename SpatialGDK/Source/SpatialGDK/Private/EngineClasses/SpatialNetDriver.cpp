@@ -824,9 +824,10 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 	const bool bIsServer = ServerConnection == nullptr;
 
+	// Remove the record of destroyed singletons.
 	if (ThisActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
-		SingletonActorChannels.Remove(ThisActor->GetClass()->GetPathName());
+		GlobalStateManager->RemoveSingletonInstance(ThisActor);
 	}
 
 	if (bIsServer)

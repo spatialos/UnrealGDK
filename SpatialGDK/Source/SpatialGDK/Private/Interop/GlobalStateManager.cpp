@@ -232,7 +232,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 		return;
 	}
 
-	TPair<AActor*, USpatialActorChannel*>* ActorChannelPair = NetDriver->SingletonActorChannels.Find(SingletonActorClass->GetPathName());
+	TPair<AActor*, USpatialActorChannel*>* ActorChannelPair = SingletonClassPathToActorChannels.Find(SingletonActorClass->GetPathName());
 	if (ActorChannelPair == nullptr)
 	{
 		// Dynamically spawn singleton actor if we have queued up data - ala USpatialReceiver::ReceiveActor - JIRA: 735
@@ -309,7 +309,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 
 	UClass* SingletonActorClass = SingletonActor->GetClass();
 
-	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = NetDriver->SingletonActorChannels.FindOrAdd(SingletonActorClass->GetPathName());
+	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = SingletonClassPathToActorChannels.FindOrAdd(SingletonActorClass->GetPathName());
 	USpatialActorChannel*& Channel = ActorChannelPair.Value;
 	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
 	ActorChannelPair.Key = SingletonActor;
@@ -357,9 +357,16 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	return Channel;
 }
 
+void UGlobalStateManager::RemoveSingletonInstance(const AActor* SingletonActor)
+{
+	check(SingletonActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton));
+
+	SingletonClassPathToActorChannels.Remove(SingletonActor->GetClass()->GetPathName());
+}
+
 void UGlobalStateManager::RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel)
 {
-	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = NetDriver->SingletonActorChannels.FindOrAdd(SingletonActor->GetClass()->GetPathName());
+	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = SingletonClassPathToActorChannels.FindOrAdd(SingletonActor->GetClass()->GetPathName());
 
 	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
 	check(ActorChannelPair.Value == nullptr || ActorChannelPair.Value == SingletonChannel);
@@ -370,7 +377,7 @@ void UGlobalStateManager::RegisterSingletonChannel(AActor* SingletonActor, USpat
 
 void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 {
-	for (auto& ClassToActorChannel : NetDriver->SingletonActorChannels)
+	for (auto& ClassToActorChannel : SingletonClassPathToActorChannels)
 	{
 		auto& ActorChannelPair = ClassToActorChannel.Value;
 		AddSingleton(ActorChannelPair.Key);
