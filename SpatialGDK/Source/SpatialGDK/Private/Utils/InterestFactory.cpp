@@ -215,10 +215,12 @@ TArray<Worker_ComponentId> InterestFactory::CreateClientAuthInterestResultType(U
 {
 	TArray<Worker_ComponentId> ResultType;
 
-	// Add the required unreal components
+	// Add the required known components
 	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST);
+	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
 
-	// Add all owner only components
+	// Add all the generated unreal components
+	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
 
 	return ResultType;
@@ -231,7 +233,7 @@ TArray<Worker_ComponentId> InterestFactory::CreateServerNonAuthInterestResultTyp
 	// Add the required unreal components
 	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST);
 
-	// Add all data and handover components
+	// Add all data, owner only, and handover components
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Handover));
