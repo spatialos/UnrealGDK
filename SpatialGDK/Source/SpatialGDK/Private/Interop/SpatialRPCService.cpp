@@ -257,12 +257,12 @@ void SpatialRPCService::OnCheckoutMulticastRPCComponentOnEntity(Worker_EntityId 
 	// Precondition: The multicast RPC component exists in the view for the entity with the passed entity ID.
 	const MulticastRPCs* Component = View->GetComponentData<MulticastRPCs>(EntityId);
 
+	check(Component);
 	if (Component == nullptr)
 	{
 		UE_LOG(LogSpatialRPCService, Error, TEXT("Multicast RPC component for entity with ID %lld was not present at point of checking out the component."), EntityId);
 		return;
 	}
-	check(Component);
 
 	// When checking out entity, ignore multicast RPCs that are already on the component.
 	LastSeenMulticastRPCIds.Add(EntityId, Component->MulticastRPCBuffer.LastSentRPCId);
