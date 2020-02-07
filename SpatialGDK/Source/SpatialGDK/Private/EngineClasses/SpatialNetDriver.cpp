@@ -382,7 +382,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		CreateAndInitializeLoadBalancingClasses();
 	}
 
-	if (SpatialSettings->bUseRPCRingBuffers)
+	if (SpatialSettings->UseRPCRingBuffer())
 	{
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView);
 	}
@@ -411,7 +411,14 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	{
 		if (WorldSettings == nullptr || WorldSettings->LoadBalanceStrategy == nullptr)
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+			if (WorldSettings == nullptr)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy. Using a 1x1 grid."));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+			}
 			LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
 		}
 		else
@@ -820,12 +827,12 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	if (bIsServer)
 	{
 		// Check if this is a dormant entity, and if so retire the entity
-		if (PackageMap != nullptr)
+		if (PackageMap != nullptr && World != nullptr)
 		{
 			const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
 
 			// If the actor is an initially dormant startup actor that has not been replicated.
-			if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor())
+			if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && GlobalStateManager->HasAuthority())
 			{
 				UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Creating a tombstone entity for initially dormant statup actor. "
 					"Actor: %s."), *ThisActor->GetName());
@@ -1692,7 +1699,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		Sender->FlushPackedRPCs();
 	}
 
-	if (SpatialGDKSettings->bUseRPCRingBuffers && Sender != nullptr)
+	if (SpatialGDKSettings->UseRPCRingBuffer() && Sender != nullptr)
 	{
 		Sender->FlushRPCService();
 	}
