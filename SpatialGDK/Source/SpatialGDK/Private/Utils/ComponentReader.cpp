@@ -190,7 +190,15 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 			// Native does this anytime it receives anything, but we probably only have to do so when receiving repnotify properties
 			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-				Cmd.Property->CopySingleValue((FRepShadowDataBuffer)(RepState->StaticBuffer.GetData()) + SwappedCmd.ShadowOffset, Data);
+				#if ENGINE_MINOR_VERSION <= 22
+					Cmd.Property->CopySingleValue(RepState->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+				#else
+					if (RepState->GetReceivingRepState()->StaticBuffer.Num() == 0)
+					{
+						Channel.ResetShadowData(*Replicator->RepLayout.Get(), RepState->GetReceivingRepState()->StaticBuffer, &Object);
+					}
+					Cmd.Property->CopySingleValue(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+				#endif
 			}
 
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
