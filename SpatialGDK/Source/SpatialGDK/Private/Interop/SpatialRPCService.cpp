@@ -254,7 +254,6 @@ void SpatialRPCService::ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_Co
 
 void SpatialRPCService::OnCheckoutMulticastRPCComponentOnEntity(Worker_EntityId EntityId)
 {
-	// Precondition: The multicast RPC component exists in the view for the entity with the passed entity ID.
 	const MulticastRPCs* Component = View->GetComponentData<MulticastRPCs>(EntityId);
 
 	if (!ensure(Component != nullptr))
