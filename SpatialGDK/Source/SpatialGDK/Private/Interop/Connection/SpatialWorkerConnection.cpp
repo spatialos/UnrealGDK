@@ -246,7 +246,7 @@ void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worke
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
 	Connection->DevAuthConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
 	
-	Connection->ReuqestDeploymentLoginTokens();
+	Connection->RequestDeploymentLoginTokens();
 }
 
 void USpatialWorkerConnection::StartDevelopmentAuth(const FString& DevAuthToken)
