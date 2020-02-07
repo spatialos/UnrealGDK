@@ -219,6 +219,21 @@ void USpatialWorkerConnection::ProcessLoginTokensResponse(const Worker_Alpha_Log
 	ConnectToLocator(&  DevAuthConfig);
 }
 
+void USpatialWorkerConnection::ReuqestDeploymentLoginTokens()
+{
+	Worker_Alpha_LoginTokensRequest LTParams{};
+	FTCHARToUTF8 PlayerIdentityToken(*DevAuthConfig.PlayerIdentityToken);
+	LTParams.player_identity_token = PlayerIdentityToken.Get();
+	FTCHARToUTF8 WorkerType(*DevAuthConfig.WorkerType);
+	LTParams.worker_type = WorkerType.Get();
+	LTParams.use_insecure_connection = false;
+	
+	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
+	{
+		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, this, &USpatialWorkerConnection::OnLoginTokens);
+	}
+}
+
 void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
 {
 	if (PIToken->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
@@ -230,16 +245,8 @@ void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worke
 	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully received PIToken: %s"), UTF8_TO_TCHAR(PIToken->player_identity_token));
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
 	Connection->DevAuthConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
-	Worker_Alpha_LoginTokensRequest LTParams{};
-	LTParams.player_identity_token = PIToken->player_identity_token;
-	FTCHARToUTF8 WorkerType(*Connection->DevAuthConfig.WorkerType);
-	LTParams.worker_type = WorkerType.Get();
-	LTParams.use_insecure_connection = false;
-
-	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*Connection->DevAuthConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
-	{
-		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, Connection, &USpatialWorkerConnection::OnLoginTokens);
-	}
+	
+	Connection->ReuqestDeploymentLoginTokens();
 }
 
 void USpatialWorkerConnection::StartDevelopmentAuth(const FString& DevAuthToken)
