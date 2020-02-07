@@ -187,6 +187,12 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 			uint8* Data = (uint8*)&Object + SwappedCmd.Offset;
 
+			// Native does this anytime it receives anything, but we probably only have to do so when receiving repnotify properties
+			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+			{
+				Cmd.Property->CopySingleValue((FRepShadowDataBuffer)(RepState->StaticBuffer.GetData()) + SwappedCmd.ShadowOffset, Data);
+			}
+
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 			{
 				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
