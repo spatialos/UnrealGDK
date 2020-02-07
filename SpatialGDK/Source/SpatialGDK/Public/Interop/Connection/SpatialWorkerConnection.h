@@ -89,6 +89,7 @@ public:
 
 	bool TrySetupConnectionConfigFromCommandLine(const FString& SpatialWorkerType);
 	void SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType);
+	void RequestDeploymentLoginTokens();
 
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
