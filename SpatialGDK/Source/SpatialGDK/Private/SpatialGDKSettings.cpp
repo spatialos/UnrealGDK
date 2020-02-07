@@ -44,6 +44,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 	, bEnableUnrealLoadBalancer(false)
+	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(false)
 	, DefaultRPCRingBufferSize(8)
 	, MaxRPCRingBufferSize(32)
@@ -122,6 +123,16 @@ void USpatialGDKSettings::PostInitProperties()
 		}
 	}
 
+	if (FParse::Param(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread")))
+	{
+		bRunSpatialWorkerConnectionOnGameThread = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread="), bRunSpatialWorkerConnectionOnGameThread);
+	}
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("SpatialWorkerConnection on the Game thread is %s."), bRunSpatialWorkerConnectionOnGameThread ? TEXT("enabled") : TEXT("disabled"));
+
 	if (FParse::Param(CommandLine, TEXT("OverrideResultTypes")))
 	{
 		bEnableResultTypes = true;
@@ -131,6 +142,15 @@ void USpatialGDKSettings::PostInitProperties()
 		FParse::Bool(CommandLine, TEXT("OverrideResultTypes="), bEnableResultTypes);
 	}
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Result types are %s."), bEnableResultTypes ? TEXT("enabled") : TEXT("disabled"));
+
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Handover is %s."), bEnableHandover ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Server QBI is %s."), bEnableServerQBI ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("RPC ring buffers are %s."), bUseRPCRingBuffers ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("RPC packing is %s."), bPackRPCs ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Net Cull Distance interest is %s."), bEnableNetCullDistanceInterest ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Net Cull Distance interest with frequency is %s."), bEnableNetCullDistanceFrequency ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Use Is Actor Relevant For Connection is %s."), UseIsActorRelevantForConnection ? TEXT("enabled") : TEXT("disabled"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Batch Spatial Position Updates is %s."), bBatchSpatialPositionUpdates ? TEXT("enabled") : TEXT("disabled"));
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
@@ -162,6 +182,31 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 				"Failing to do will result in unintended behavior or crashes!"))));
 	}
 }
+
+bool USpatialGDKSettings::CanEditChange(const UProperty* InProperty) const
+{
+	if (!InProperty)
+	{
+		return false;
+	}
+
+	const FName Name = InProperty->GetFName();
+
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUseRPCRingBuffers))
+	{
+		return !bEnableUnrealLoadBalancer;
+	}
+
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultRPCRingBufferSize)
+	 || Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, RPCRingBufferSizeMap)
+	 || Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxRPCRingBufferSize))
+	{
+		return UseRPCRingBuffer();
+	}
+
+	return true;
+}
+
 #endif
 
 uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
@@ -172,4 +217,11 @@ uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 	}
 
 	return DefaultRPCRingBufferSize;
+}
+
+
+bool USpatialGDKSettings::UseRPCRingBuffer() const
+{
+	// RPC Ring buffer are necessary in order to do RPC handover, something legacy RPC does not handle.
+	return bUseRPCRingBuffers || bEnableUnrealLoadBalancer;
 }

@@ -543,9 +543,13 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
 
-	if (OpsProcessingThread == nullptr)
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 	{
-		InitializeOpsProcessingThread();
+		if (OpsProcessingThread == nullptr)
+		{
+			InitializeOpsProcessingThread();
+		}
 	}
 
 	OnConnectedCallback.ExecuteIfBound();
@@ -572,12 +576,13 @@ bool USpatialWorkerConnection::Init()
 
 uint32 USpatialWorkerConnection::Run()
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	check(!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread);
+
 	while (KeepRunning)
 	{
 		FPlatformProcess::Sleep(OpsUpdateInterval);
-
 		QueueLatestOpList();
-
 		ProcessOutgoingMessages();
 	}
 

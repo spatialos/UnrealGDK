@@ -49,6 +49,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Introduced experimental feature flag `bEnableResultTypes`, defaulting false. Flip this to true for Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
 - Moved Dev Auth settings from runtime settings to editor settings.
 - Added the option to use the development authentication flow using the command line.
+- Added a button to generate the Development Authentication Token inside the Unreal Editor. To use it, navigate to **SpatialOS GDK for Unreal** > **Editor Settings** > **Cloud Connection**.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
@@ -79,6 +80,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fix problem where PIE sessions sometimes fail to start due to missing schema for SpatialDebugger blueprint.
 - Fixed an issue where newly created subobjects would have empty state when RepNotify was called for a property pointing to that subobject.
 - Fixed an issue where deleted, initially dormant startup actors would still be present on other workers.
+- Force activation of RPC ring buffer when load balancing is enabled, to allow RPC handover when authority changes
 
 ### External contributors:
 @DW-Sebastien
@@ -90,8 +92,13 @@ Features listed in the internal section are not ready to use but, in the spirit 
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
 - Local deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
 
+### Features:
+- Updated the version of the local API service used by the UnrealGDK.
+
 ### Bug fixes:
 - Replicated references to newly created dynamic subobjects will now be resolved correctly.
+- Fixed a bug that caused the local API service to memory leak.
+- Cloud deployment flow will now correctly report errors when a deployment fails to launch due to a missing assembly.
 
 ## [`0.8.0-preview`] - 2019-12-17
 
