@@ -28,9 +28,9 @@ public:
 	{
 		if (const auto* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 		{
-			if (const TUniquePtr<SpatialGDK::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
+			if (const TUniquePtr<SpatialGDK::Component>* Component = ComponentStorageMap->Find(T::ComponentId))
 			{
-				return &(static_cast<SpatialGDK::ComponentStorage<T>*>(Component->Get())->Get());
+				return static_cast<T*>(Component->Get());
 			}
 		}
 
@@ -51,5 +51,5 @@ private:
 	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
-	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, TUniquePtr<SpatialGDK::ComponentStorageBase>>> EntityComponentMap;
+	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, TUniquePtr<SpatialGDK::Component>>> EntityComponentMap;
 };
