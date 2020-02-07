@@ -514,7 +514,10 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 
 	TWeakPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
 
-	NotificationItem.Pin()->SetCompletionState(SNotificationItem::CS_Pending);
+	if (TSharedPtr<SNotificationItem> NotificationItemPinned = NotificationItem.Pin())
+	{
+		NotificationItemPinned->SetCompletionState(SNotificationItem::CS_Pending);
+	}
 
 	auto LaunchCloudDeployment = [this, NotificationItem]()
 	{
