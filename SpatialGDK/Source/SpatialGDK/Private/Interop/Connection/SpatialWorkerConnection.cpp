@@ -219,7 +219,7 @@ void USpatialWorkerConnection::ProcessLoginTokensResponse(const Worker_Alpha_Log
 	ConnectToLocator(&  DevAuthConfig);
 }
 
-void USpatialWorkerConnection::ReuqestDeploymentLoginTokens()
+void USpatialWorkerConnection::RequestDeploymentLoginTokens()
 {
 	Worker_Alpha_LoginTokensRequest LTParams{};
 	FTCHARToUTF8 PlayerIdentityToken(*DevAuthConfig.PlayerIdentityToken);
