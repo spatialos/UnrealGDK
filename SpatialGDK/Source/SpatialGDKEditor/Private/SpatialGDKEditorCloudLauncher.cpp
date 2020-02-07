@@ -4,9 +4,15 @@
 
 #include "Interfaces/IPluginManager.h"
 #include "SpatialGDKEditorSettings.h"
+#include "CoreGlobals.h"
 
 bool SpatialGDKCloudLaunch()
 {
+	if (GIsRequestingExit)
+	{
+		return false;
+	}
+
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	const FString CmdExecutable = TEXT("cmd.exe");

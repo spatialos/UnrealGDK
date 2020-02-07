@@ -15,6 +15,7 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
+#include "SpatialCommandUtils.h"
 #include "SpatialGDKServicesModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
@@ -29,7 +30,7 @@ namespace
 		FString DomainEnvironmentStr;
 		if (bIsInChina)
 		{
-			DomainEnvironmentStr = TEXT("--domain=spatialoschina.com --environment=cn-production");
+			DomainEnvironmentStr = TEXT("--environment=cn-production");
 		}
 		return DomainEnvironmentStr;
 	}
@@ -223,35 +224,8 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 	});
 }
 
-bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs)
+bool FLocalDeploymentManager::FinishLocalDeployment(const FString& LaunchConfig, const FString& LaunchArgs)
 {
-	bRedeployRequired = false;
-
-	if (bStoppingDeployment)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment is in the process of stopping. New deployment will start when previous one has stopped."));
-		while (bStoppingDeployment)
-		{
-			FPlatformProcess::Sleep(0.1f);
-		}
-	}
-
-	if (bLocalDeploymentRunning)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start a local deployment but one is already running."));
-		return false;
-	}
-
-	LocalRunningDeploymentID.Empty();
-
-	bStartingDeployment = true;
-
-	// If the service is not running then start it.
-	if (!bSpatialServiceRunning)
-	{
-		TryStartSpatialService();
-	}
-
 	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json %s"), *LaunchConfig, *ProjectName, *LaunchArgs);
 
 	FDateTime SpotCreateStart = FDateTime::Now();
@@ -311,7 +285,54 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
 	}
 
-	return bSuccess;
+	return true;
+}
+
+void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfig, const FString& LaunchArgs, const LocalDeploymentCallback& CallBack)
+{
+	bRedeployRequired = false;
+
+	if (bStoppingDeployment)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment is in the process of stopping. New deployment will start when previous one has stopped."));
+		while (bStoppingDeployment)
+		{
+			FPlatformProcess::Sleep(0.1f);
+		}
+	}
+
+	if (bLocalDeploymentRunning)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start a local deployment but one is already running."));
+		CallBack(false);
+		return;
+	}
+
+	LocalRunningDeploymentID.Empty();
+
+	bStartingDeployment = true;
+
+	// If the service is not running then start it.
+	if (!bSpatialServiceRunning)
+	{
+		TryStartSpatialService();
+	}
+
+	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, [this]() { return SpatialCommandUtils::AttemptSpatialAuth(bIsInChina); },
+		[this, LaunchConfig, LaunchArgs, CallBack]()
+	{
+		bool bSuccess = AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true;
+		if (bSuccess)
+		{
+			FinishLocalDeployment(LaunchConfig, LaunchArgs);
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial auth failed attempting to launch local deployment."));
+		}
+
+		CallBack(bSuccess);
+	});
 }
 
 bool FLocalDeploymentManager::TryStopLocalDeployment()
