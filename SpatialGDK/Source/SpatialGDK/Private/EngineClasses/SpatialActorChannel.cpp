@@ -464,7 +464,9 @@ int64 USpatialActorChannel::ReplicateActor()
 	else if (Actor->IsPendingKillOrUnreachable())
 	{
 		bActorIsPendingKill = true;
+#if ENGINE_MINOR_VERSION > 22
 		ActorReplicator.Reset();
+#endif
 		FString Error(FString::Printf(TEXT("ReplicateActor called with PendingKill Actor! %s"), *Describe()));
 		UE_LOG(LogNet, Log, TEXT("%s"), *Error);
 		ensureMsgf(false, TEXT("%s"), *Error);
