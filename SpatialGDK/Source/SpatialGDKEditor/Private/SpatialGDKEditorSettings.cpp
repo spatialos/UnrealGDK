@@ -20,6 +20,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bShowSpatialServiceButton(false)
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
+	, bUseGDKPinnedRuntimeVersion(true)
 	, bExposeRuntimeIP(false)
 	, ExposedRuntimeIP(TEXT(""))
 	, bStopSpatialOnExit(false)
@@ -32,6 +33,24 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
 	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
+}
+
+const FString& USpatialGDKEditorSettings::GetSpatialOSRuntimeVersionForLocal() const
+{
+	if (bUseGDKPinnedRuntimeVersion)
+	{
+		return SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion;
+	}
+	return LocalRuntimeVersion;
+}
+
+const FString& USpatialGDKEditorSettings::GetSpatialOSRuntimeVersionForCloud() const
+{
+	if (bUseGDKPinnedRuntimeVersion)
+	{
+		return SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion;
+	}
+	return CloudRuntimeVersion;
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
@@ -211,6 +230,18 @@ void USpatialGDKEditorSettings::SetSimulatedPlayerRegionCode(const ERegionCode::
 void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 {
 	bSimulatedPlayersIsEnabled = IsEnabled;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetUseGDKPinnedRuntimeVersion(bool Use)
+{
+	bUseGDKPinnedRuntimeVersion = Use;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetCustomCloudSpatialOSRuntimeVersion(const FString& Version)
+{
+	CloudRuntimeVersion = Version;
 	SaveConfig();
 }
 
