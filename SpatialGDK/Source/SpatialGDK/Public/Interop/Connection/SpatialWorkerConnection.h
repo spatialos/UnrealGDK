@@ -64,6 +64,8 @@ public:
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
+	void RequestDeploymentLoginTokens();
+
 private:
 	void ConnectToReceptionist(bool bConnectAsClient);
 	void ConnectToLocator();
