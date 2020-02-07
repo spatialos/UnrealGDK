@@ -156,7 +156,7 @@ public:
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
-	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
+	TMap<FString, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
 	// If this worker is authoritative over the translation, the manager will be instantiated.
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
