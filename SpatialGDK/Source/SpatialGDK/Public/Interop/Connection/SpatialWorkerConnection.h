@@ -89,7 +89,7 @@ public:
 
 	bool TrySetupConnectionConfigFromCommandLine(const FString& SpatialWorkerType);
 	void SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType);
-	void ReuqestDeploymentLoginTokens();
+	void RequestDeploymentLoginTokens();
 
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
