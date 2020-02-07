@@ -205,6 +205,7 @@ namespace Improbable
                 {
                     Console.WriteLine(
                         $"Unable to launch the deployment(s). This is likely because the project '{projectName}' or assembly '{assemblyName}' doesn't exist.");
+                    return 1;
                 }
                 else
                 {

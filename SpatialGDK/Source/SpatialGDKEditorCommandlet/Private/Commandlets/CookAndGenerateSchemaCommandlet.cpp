@@ -67,12 +67,15 @@ UCookAndGenerateSchemaCommandlet::UCookAndGenerateSchemaCommandlet()
 
 int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 {
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook and Generate Schema Started."));
+
+	TGuardValue<bool> UnattendedScriptGuard(GIsRunningUnattendedScript, GIsRunningUnattendedScript || IsRunningCommandlet());
+
 #if ENGINE_MINOR_VERSION <= 22
 	// Force spatial networking
 	GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(true);
 #endif
 
-	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook and Generate Schema Started."));
 	FObjectListener ObjectListener;
 	TSet<FSoftClassPath> ReferencedClasses;
 	ObjectListener.StartListening(&ReferencedClasses);

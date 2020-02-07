@@ -187,11 +187,22 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 
 	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
-	const FString& DeploymentToConnect = Connection->DevAuthConfig.Deployment;
+	Connection->ProcessLoginTokensResponse(LoginTokens);
+}
+
+void USpatialWorkerConnection::ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens)
+{
+	// If LoginTokenResCallback is callable and returns true, return early.
+	if (LoginTokenResCallback && LoginTokenResCallback(LoginTokens))
+	{
+		return;
+	}
+	
+	const FString& DeploymentToConnect = DevAuthConfig.Deployment;
 	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
 	if (DeploymentToConnect.IsEmpty())
 	{
-		Connection->DevAuthConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
+		DevAuthConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
 	}
 	else
 	{
@@ -200,12 +211,12 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 			FString DeploymentName = FString(LoginTokens->login_tokens[i].deployment_name);
 			if (DeploymentToConnect.Compare(DeploymentName) == 0)
 			{
-				Connection->DevAuthConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
+				DevAuthConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
 				break;
 			}
 		}
 	}
-	Connection->ConnectToLocator(&Connection->DevAuthConfig);
+	ConnectToLocator(&  DevAuthConfig);
 }
 
 void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
@@ -389,7 +400,11 @@ void USpatialWorkerConnection::SetupConnectionConfigFromURL(const FURL& URL, con
 		SetConnectionType(ESpatialConnectionType::DevAuthFlow);
 		// TODO: UNR-2811 Also set the locator host of DevAuthConfig from URL.
 		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), DevAuthConfig.LocatorHost);
-		DevAuthConfig.DevelopmentAuthToken = URL.GetOption(*SpatialConstants::URL_DEV_AUTH_OPTION, TEXT(""));
+		DevAuthConfig.DevelopmentAuthToken = URL.GetOption(*SpatialConstants::URL_DEV_AUTH_TOKEN_OPTION, TEXT(""));
+		DevAuthConfig.Deployment = URL.GetOption(*SpatialConstants::URL_TARGET_DEPLOYMENT_OPTION, TEXT(""));
+		DevAuthConfig.PlayerId = URL.GetOption(*SpatialConstants::URL_PLAYER_ID_OPTION, *SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
+		DevAuthConfig.DisplayName = URL.GetOption(*SpatialConstants::URL_DISPLAY_NAME_OPTION, TEXT(""));
+		DevAuthConfig.MetaData = URL.GetOption(*SpatialConstants::URL_METADATA_OPTION, TEXT(""));
 		DevAuthConfig.WorkerType = SpatialWorkerType;
 	}
 	else
@@ -521,9 +536,13 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
 
-	if (OpsProcessingThread == nullptr)
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 	{
-		InitializeOpsProcessingThread();
+		if (OpsProcessingThread == nullptr)
+		{
+			InitializeOpsProcessingThread();
+		}
 	}
 
 	OnConnectedCallback.ExecuteIfBound();
@@ -550,12 +569,13 @@ bool USpatialWorkerConnection::Init()
 
 uint32 USpatialWorkerConnection::Run()
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	check(!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread);
+
 	while (KeepRunning)
 	{
 		FPlatformProcess::Sleep(OpsUpdateInterval);
-
 		QueueLatestOpList();
-
 		ProcessOutgoingMessages();
 	}
 
