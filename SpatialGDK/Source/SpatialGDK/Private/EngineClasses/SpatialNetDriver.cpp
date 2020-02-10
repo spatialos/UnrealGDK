@@ -60,6 +60,8 @@ DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 DECLARE_CYCLE_STAT(TEXT("ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ProcessPrioritizedActors"), STAT_SpatialProcessPrioritizedActors, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("PrioritizeActors"), STAT_SpatialPrioritizeActors, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ProcessOps"), STAT_SpatialProcessOps, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("UpdateAuthority"), STAT_SpatialUpdateAuthority, STATGROUP_SpatialNet);
 DEFINE_STAT(STAT_SpatialConsiderList);
 DEFINE_STAT(STAT_SpatialActorsRelevant);
 DEFINE_STAT(STAT_SpatialActorsChanged);
@@ -1519,11 +1521,14 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			return;
 		}
 
-		for (Worker_OpList* OpList : OpLists)
 		{
-			Dispatcher->ProcessOps(OpList);
+			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
+			for (Worker_OpList* OpList : OpLists)
+			{
+				Dispatcher->ProcessOps(OpList);
 
-			Worker_OpList_Destroy(OpList);
+				Worker_OpList_Destroy(OpList);
+			}
 		}
 
 		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
@@ -1533,6 +1538,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (LoadBalanceEnforcer.IsValid())
 		{
+			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
 			for(const auto& Elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
 			{
 				Sender->SetAclWriteAuthority(Elem.EntityId, Elem.OwningWorkerId);
