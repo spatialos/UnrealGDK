@@ -850,7 +850,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 			}
 
 			// If the actor is an initially dormant startup actor that has not been replicated.
-			if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && ThisActor->HasAuthority())
+			if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && ThisActor->GetIsReplicated() && ThisActor->HasAuthority())
 			{
 				UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Creating a tombstone entity for initially dormant statup actor. "
 					"Actor: %s."), *ThisActor->GetName());
