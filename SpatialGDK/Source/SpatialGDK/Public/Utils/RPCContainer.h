@@ -39,6 +39,9 @@ enum class ERPCResult : uint8_t
 	NoControllerChannel,
 	ControllerChannelNotListening,
 
+	// Other
+	TimedOut,
+
 	Unknown
 };
 
@@ -54,6 +57,11 @@ struct FRPCErrorInfo
 	bool Success() const
 	{
 		return (ErrorCode == ERPCResult::Success);
+	}
+
+	bool TimedOut() const
+	{
+		return (ErrorCode == ERPCResult::TimedOut);
 	}
 
 	TWeakObjectPtr<UObject> TargetObject = nullptr;

@@ -22,14 +22,15 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
 #include "SpatialConstants.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
+#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialSender);
 
@@ -612,6 +613,40 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	}
 
 	ERPCResult Result = SendRPCInternal(TargetObject, Function, Params.Payload);
+
+	if (Result == ERPCResult::NoAuthority)
+	{
+		if (AActor* TargetActor = Cast<AActor>(TargetObject))
+		{
+			if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
+			{
+				if (!USpatialStatics::IsActorGroupOwnerForActor(TargetActor))
+				{
+					Result = ERPCResult::TimedOut;
+				}
+			}
+			if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+			{
+				if (NetDriver->LoadBalanceStrategy != nullptr && NetDriver->VirtualWorkerTranslator != nullptr)
+				{
+					const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*TargetActor);
+					if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+					{
+						if (NewAuthVirtualWorkerId != NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId())
+						{
+							Result = ERPCResult::TimedOut;
+						}
+					}
+				}
+			}
+		}
+
+		const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
+		if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime < TimeDiff)
+		{
+			Result = ERPCResult::TimedOut;
+		}
+	}
 
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result };
 }
