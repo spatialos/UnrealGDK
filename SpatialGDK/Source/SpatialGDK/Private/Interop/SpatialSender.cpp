@@ -618,6 +618,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	{
 		if (AActor* TargetActor = Cast<AActor>(TargetObject))
 		{
+			// TODO(Alex): check pending kill
 			if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
 			{
 				if (!USpatialStatics::IsActorGroupOwnerForActor(TargetActor))
@@ -640,13 +641,15 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 				}
 			}
 		}
-
-		const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
-		if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime < TimeDiff)
-		{
-			Result = ERPCResult::TimedOut;
-		}
 	}
+
+	// TODO(Alex): drop no matter what error if timed out
+	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
+	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime < TimeDiff)
+	{
+		Result = ERPCResult::TimedOut;
+	}
+
 
 	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result };
 }
