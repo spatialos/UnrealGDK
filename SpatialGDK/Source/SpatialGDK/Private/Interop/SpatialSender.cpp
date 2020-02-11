@@ -785,7 +785,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
 
 #if TRACE_LIB_ACTIVE
-			//ComponentUpdate.Trace = Payload.Trace;
+			ComponentUpdate.Trace = Payload.Trace;
 #endif
 
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
