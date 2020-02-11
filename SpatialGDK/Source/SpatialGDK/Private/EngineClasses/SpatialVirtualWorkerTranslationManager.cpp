@@ -89,15 +89,13 @@ void SpatialVirtualWorkerTranslationManager::ConstructVirtualWorkerMappingFromQu
 					continue;
 				}
 
-				const PhysicalWorkerName QueriedWorkerName = SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
-
 				// If we didn't find all our server worker entities the first time, future query responses should
 				// ignore workers that we have already assigned a virtual worker ID.
-				if (!UnassignedVirtualWorkers.IsEmpty() && !PhysicalToVirtualWorkerMapping.Contains(QueriedWorkerName))
+				if (!UnassignedVirtualWorkers.IsEmpty())
 				{
 					// TODO(zoning): Currently, this only works if server workers never die. Once we want to support replacing
 					// workers, this will need to process UnassignWorker before processing AssignWorker.
-					AssignWorker(QueriedWorkerName);
+					AssignWorker(SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID));
 				}
 			}
 		}
@@ -191,6 +189,11 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 
 void SpatialVirtualWorkerTranslationManager::AssignWorker(const PhysicalWorkerName& Name)
 {
+	if (PhysicalToVirtualWorkerMapping.Contains(Name))
+	{
+		return;
+	}
+
 	// Get a VirtualWorkerId from the list of unassigned work.
 	VirtualWorkerId Id;
 	UnassignedVirtualWorkers.Dequeue(Id);
