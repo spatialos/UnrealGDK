@@ -630,6 +630,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 			{
 				if (NetDriver->LoadBalanceStrategy != nullptr && NetDriver->VirtualWorkerTranslator != nullptr)
 				{
+					// TODO(Alex): check authority intent instead?
 					const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*TargetActor);
 					if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 					{
