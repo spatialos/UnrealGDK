@@ -12,6 +12,9 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 #define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
 
@@ -226,21 +229,75 @@ void USpatialGDKEditorSettings::SetNumberOfSimulatedPlayers(uint32 Number)
 	SaveConfig();
 }
 
-bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& LaunchConfigPath)
+bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched)
 {
-	FString FileContents;
-	FFileHelper::LoadFileToString(FileContents, *LaunchConfigPath);
-
-	const FRegexPattern ManualWorkerFlagPattern("\"manual_worker_connection_only\" *: *true");
-	FRegexMatcher ManualWorkerFlagMatcher(ManualWorkerFlagPattern, FileContents);
-
-	if (ManualWorkerFlagMatcher.FindNext())
+	TSharedPtr<FJsonValue> LaunchConfigJson;
 	{
-		UE_LOG(LogSpatialEditorSettings, Warning, TEXT("Launch configuration for cloud deployment has \"manual_worker_connection_only\" set to true. This means server workers will need to be connected manually."));
-		return true;
+		FArchive* ConfigFile = IFileManager::Get().CreateFileReader(*LaunchConfigPath);
+
+		if (!ConfigFile)
+		{
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Could not open configuration file %s"), *LaunchConfigPath);
+			return false;
+		}
+
+		TSharedRef<TJsonReader<char>> JsonReader = TJsonReader<char>::Create(ConfigFile);
+
+		FJsonSerializer::Deserialize(*JsonReader, LaunchConfigJson);
+
+		delete ConfigFile;
+		ConfigFile = nullptr;
 	}
 
-	return false;
+	const TSharedPtr<FJsonObject>* LaunchConfigJsonRootObject;
+
+	if (!LaunchConfigJson || !LaunchConfigJson->TryGetObject(LaunchConfigJsonRootObject))
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Invalid configuration file %s"), *LaunchConfigPath);
+		return false;
+	}
+
+	const TSharedPtr<FJsonObject>* LoadBalancingField;
+	if (!(*LaunchConfigJsonRootObject)->TryGetObjectField("load_balancing", LoadBalancingField))
+	{
+		return false;
+	}
+
+	const TArray<TSharedPtr<FJsonValue>>* LayerConfigurations;
+
+	if (!(*LoadBalancingField)->TryGetArrayField("layer_configurations", LayerConfigurations))
+	{
+		return false;
+	}
+
+	for (const auto& LayerConfigurationValue : *LayerConfigurations)
+	{
+		if (const TSharedPtr<FJsonObject> LayerConfiguration = LayerConfigurationValue->AsObject())
+		{
+			const TSharedPtr<FJsonObject>* OptionsField;
+			if (LayerConfiguration->TryGetObjectField("options", OptionsField))
+			{
+				bool ManualWorkerConnectionFlag;
+				if ((*OptionsField)->TryGetBoolField("manual_worker_connection_only", ManualWorkerConnectionFlag))
+				{
+					if (ManualWorkerConnectionFlag)
+					{
+						FString WorkerName;
+						if (LayerConfiguration->TryGetStringField("layer", WorkerName))
+						{
+							OutWorkersManuallyLaunched.Add(WorkerName);
+						}
+						else
+						{
+							UE_LOG(LogSpatialEditorSettings, Error, TEXT("Invalid configuration file %s, Layer configuration missing its layer field"), *LaunchConfigPath);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return OutWorkersManuallyLaunched.Num() != 0;
 }
 
 bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
@@ -291,9 +348,19 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		}
 	}
 
-	if (IsManualWorkerConnectionSet(GetPrimaryLaunchConfigPath()))
+	TArray<FString> WorkersManuallyLaunched;
+	if (IsManualWorkerConnectionSet(GetPrimaryLaunchConfigPath(), WorkersManuallyLaunched))
 	{
-		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("AllowManualWorkerConnection", "Chosen launch configuration will not automatically launch servers. Do you want to continue?")) != EAppReturnType::Yes)
+		FString WorkersReportString (LOCTEXT("AllowManualWorkerConnection", "Chosen launch configuration will not automatically launch the following worker types. Do you want to continue?\n").ToString());
+
+		for (const FString& Worker : WorkersManuallyLaunched)
+		{
+			WorkersReportString.Append(" - ");
+			WorkersReportString.Append(Worker);
+			WorkersReportString.Append("\n");
+		}
+
+		if (FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(WorkersReportString)) != EAppReturnType::Yes)
 		{
 			return false;
 		}

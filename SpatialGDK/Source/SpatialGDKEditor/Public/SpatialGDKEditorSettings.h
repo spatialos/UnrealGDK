@@ -342,7 +342,7 @@ private:
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
-	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath);
+	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
 
 public:
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Connect to a local deployment"))
