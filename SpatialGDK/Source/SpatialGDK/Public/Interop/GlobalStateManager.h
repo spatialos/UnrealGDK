@@ -69,8 +69,6 @@ public:
 
 	bool IsReady() const;
 
-	bool IsReady() const;
-
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
 	void RemoveSingletonInstance(const AActor* SingletonActor);

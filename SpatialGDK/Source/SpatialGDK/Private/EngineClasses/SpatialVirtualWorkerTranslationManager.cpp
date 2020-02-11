@@ -81,7 +81,7 @@ void SpatialVirtualWorkerTranslationManager::ConstructVirtualWorkerMappingFromQu
 				const Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 				// The translator should only acknowledge workers that are ready to begin play. This means we can make
-				// guarantees based on where non-GSM-authoritative servers canBeginPlayTrue=true as an AddComponent
+				// guarantees based on where non-GSM-authoritative servers canBeginPlay=true as an AddComponent
 				// or ComponentUpdate op. This affects how startup Actors are treated in a zoned environment.
 				const bool bWorkerIsReadyToBeginPlay = SpatialGDK::GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
 				if (!bWorkerIsReadyToBeginPlay)

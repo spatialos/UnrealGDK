@@ -513,6 +513,17 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 		}
 		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		{
+			// The bCanSpawnWithAuthority member determines whether a server-side worker
+			// should consider calling BeginPlay on startup Actors if the load-balancing
+			// strategy dictates that the worker should have authority over the Actor
+			// (providing Unreal load balancing is enabled). This should only happen for
+			// workers launching for fresh deployments, since for restarted workers and
+			// when deployments are launched from a snapshot, the entities representing
+			// startup Actors should already exist. If bCanBeginPlay is set to false, this
+			// means it's a fresh deployment, so bCanSpawnWithAuthority should be true.
+			// Conversely, if bCanBeginPlay is set to true, this worker is either a restarted
+			// crashed worker or in a deployment loaded from snapshot, so bCanSpawnWithAuthority
+			// should be false.
 			bCanSpawnWithAuthority = !bCanBeginPlay;
 			break;
 		}
@@ -613,22 +624,6 @@ void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 	}
 }
 
-void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
-{
-	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
-	{
-		AActor* Actor = *It;
-		if (Actor != nullptr && !Actor->IsPendingKill())
-		{
-			if (Actor->GetIsReplicated() && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
-			{
-				Actor->Role = ROLE_Authority;
-				Actor->RemoteRole = ROLE_SimulatedProxy;
-			}
-		}
-	}
-}
-
 void UGlobalStateManager::TriggerBeginPlay()
 {
 	const bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
@@ -645,19 +640,6 @@ void UGlobalStateManager::TriggerBeginPlay()
 			BecomeAuthoritativeOverActorsBasedOnLBStrategy();
 		}
 		else
-		{
-			BecomeAuthoritativeOverAllActors();
-		}
-	}
-
-	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority
-	if (bCanSpawnWithAuthority)
-	{
-		if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
-		{
-			BecomeAuthoritativeOverActorsBasedOnLBStrategy();
-		}
-		else if (HasAuthority())
 		{
 			BecomeAuthoritativeOverAllActors();
 		}
