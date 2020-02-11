@@ -300,7 +300,7 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSpatialPayload(const FSpatialLatenc
 
 	if (Payload.SpanId.Num() != sizeof(improbable::trace::SpanId))
 	{
-		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("Payload TraceId does not contain the correct number of span bytes. %d found"), Payload.SpanId.Num());
+		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("Payload SpanId does not contain the correct number of span bytes. %d found"), Payload.SpanId.Num());
 		return InvalidTraceKey;
 	}
 
@@ -402,6 +402,10 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc,
 		TArray<uint8> SpanBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.span_id()[0], sizeof(improbable::trace::SpanId));
 		OutLatencyPayload = FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes));
 	}
+
+	TraceKey Key = GenerateNewTraceKey();
+	TraceMap.Add(Key, MoveTemp(NewTrace));
+	ActiveTraceKey = Key; // This will be followed by ContinueLatencyTrace
 
 	return true;
 }
