@@ -10,8 +10,10 @@
 #include "Utils/SchemaDatabase.h"
 
 #include "CoreMinimal.h"
+#include "GeneralProjectSettings.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/FileHelper.h"
+#include "Misc/PackageName.h"
 
 #define LOCTEXT_NAMESPACE "SpatialGDKEDitorSchemaGeneratorTest"
 
