@@ -17,7 +17,10 @@
 DEFINE_LOG_CATEGORY(LogSpatialComponentReader);
 
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyPropertyUpdates"), STAT_ReaderApplyPropertyUpdates, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Reader ApplyHandoverPropertyUpdates"), STAT_ReaderApplyHandoverPropertyUpdates, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyFastArrayUpdate"), STAT_ReaderApplyFastArrayUpdate, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Reader ApplyProperty"), STAT_ReaderApplyProperty, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Reader ApplyArray"), STAT_ReaderApplyArray, STATGROUP_SpatialNet);
 
 namespace
 {
@@ -292,6 +295,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData, const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId, bool& bOutReferencesChanged)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReaderApplyHandoverPropertyUpdates);
+
 	FObjectReplicator* Replicator = Channel.PreReceiveSpatialUpdate(&Object);
 	if (Replicator == nullptr)
 	{
@@ -328,6 +333,8 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 
 void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 ShadowOffset, int32 ParentIndex, bool& bOutReferencesChanged)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReaderApplyProperty);
+
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
 		TArray<uint8> ValueData = IndexBytesFromSchema(Object, FieldId, Index);
@@ -469,6 +476,8 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 
 void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, UArrayProperty* Property, uint8* Data, int32 Offset, int32 ShadowOffset, int32 ParentIndex, bool& bOutReferencesChanged)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReaderApplyArray);
+
 	FObjectReferencesMap* ArrayObjectReferences;
 	bool bNewArrayMap = false;
 	if (FObjectReferences* ExistingEntry = InObjectReferencesMap.Find(Offset))
