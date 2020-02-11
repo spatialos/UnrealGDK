@@ -258,16 +258,30 @@ const FString ZoningAttribute = DefaultServerWorkerType.ToString();
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
 {
+	// Actor components
 	UNREAL_METADATA_COMPONENT_ID,
 	SPAWN_DATA_COMPONENT_ID,
 	RPCS_ON_ENTITY_CREATION_ID,
+
+	// Multicast RPCs
 	MULTICAST_RPCS_COMPONENT_ID,
-	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY
+	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
+
+	// Global state components
+	SINGLETON_MANAGER_COMPONENT_ID,
+	DEPLOYMENT_MAP_COMPONENT_ID,
+	STARTUP_ACTOR_MANAGER_COMPONENT_ID,
+	GSM_SHUTDOWN_COMPONENT_ID,
+
+	// Debugging information
+	DEBUG_METRICS_COMPONENT_ID,
+	SPATIAL_DEBUGGING_COMPONENT_ID
 };
 
 // A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest query.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
 {
+	// RPCs from the server
 	SERVER_ENDPOINT_COMPONENT_ID,
 	SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
 };
@@ -275,21 +289,38 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST = 
 // A list of components servers require on top of any generated data and handover components in order to handle non-authoritative actors correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST = TArray<Worker_ComponentId>
 {
+	// Actor components
 	UNREAL_METADATA_COMPONENT_ID,
 	SPAWN_DATA_COMPONENT_ID,
 	RPCS_ON_ENTITY_CREATION_ID,
+
+	// Multicast RPCs
 	MULTICAST_RPCS_COMPONENT_ID,
 	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
+
 	// Required for server to server RPCs. TODO(UNR-2815): split server to server RPCs into its own component
 	SERVER_ENDPOINT_COMPONENT_ID,
-	SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+	SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
+
+	// Global state components
+	SINGLETON_MANAGER_COMPONENT_ID,
+	DEPLOYMENT_MAP_COMPONENT_ID,
+	STARTUP_ACTOR_MANAGER_COMPONENT_ID,
+	GSM_SHUTDOWN_COMPONENT_ID,
+
+	// Unreal load balancing components
+	VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
+	AUTHORITY_INTENT_COMPONENT_ID
 };
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest query.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST = TArray<Worker_ComponentId>
 {
+	// RPCs from clients
 	CLIENT_ENDPOINT_COMPONENT_ID,
 	CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
+
+	// Heartbeat
 	HEARTBEAT_COMPONENT_ID
 };
 

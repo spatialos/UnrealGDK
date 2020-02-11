@@ -159,9 +159,15 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
+		return;
+	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
+		// The RPC service needs to be informed when a multi-cast RPC component is added.
+		if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
+		{
+			RPCService->OnCheckoutMulticastRPCComponentOnEntity(Op.entity_id);
+		}
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplySingletonManagerData(Op.data);
@@ -228,14 +234,16 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 	RemoveActor(Op.entity_id);
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
-	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
-	{
-		RPCService->OnRemoveEntity(Op.entity_id);
-	}
 }
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
+	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+	{
+		// If this is a multi-cast RPC component, the RPC service should be informed to handle it.
+		RPCService->OnRemoveMulticastRPCComponentForEntity(Op.entity_id);
+	}
+
 	// We are queuing here because if an Actor is removed from your view, remove component ops will be
 	// generated and sent first, and then the RemoveEntityOp will be sent. In this case, we only want
 	// to delete the Actor and not delete the subobjects that the RemoveComponent relate to.
@@ -638,11 +646,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	{
 		StartAsyncLoadingClass(ClassPath, EntityId);
 		return;
-	}
-
-	if (SpatialGDKSettings->UseRPCRingBuffer() && RPCService != nullptr)
-	{
-		RPCService->OnCheckoutEntity(EntityId);
 	}
 
 	if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
