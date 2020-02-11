@@ -252,14 +252,21 @@ void SpatialRPCService::ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_Co
 	}
 }
 
-void SpatialRPCService::OnCheckoutEntity(Worker_EntityId EntityId)
+void SpatialRPCService::OnCheckoutMulticastRPCComponentOnEntity(Worker_EntityId EntityId)
 {
 	const MulticastRPCs* Component = View->GetComponentData<MulticastRPCs>(EntityId);
+
+	if (!ensure(Component != nullptr))
+	{
+		UE_LOG(LogSpatialRPCService, Error, TEXT("Multicast RPC component for entity with ID %lld was not present at point of checking out the component."), EntityId);
+		return;
+	}
+
 	// When checking out entity, ignore multicast RPCs that are already on the component.
 	LastSeenMulticastRPCIds.Add(EntityId, Component->MulticastRPCBuffer.LastSentRPCId);
 }
 
-void SpatialRPCService::OnRemoveEntity(Worker_EntityId EntityId)
+void SpatialRPCService::OnRemoveMulticastRPCComponentForEntity(Worker_EntityId EntityId)
 {
 	LastSeenMulticastRPCIds.Remove(EntityId);
 }
