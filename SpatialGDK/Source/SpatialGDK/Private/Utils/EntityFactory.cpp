@@ -76,11 +76,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
 		AnyServerOrOwningClientRequirementSet.Add(ZoningAttributeSet);
 
-		check(NetDriver->LoadBalanceStrategy != nullptr);
-		IntendedVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
+		const UAbstractLBStrategy* LBStrategy = NetDriver->LoadBalanceStrategy;
+		check(LBStrategy != nullptr);
+		IntendedVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Actor);
 		if (IntendedVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
-			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid virtual worker ID to spawn actor with. Actor: %s"), *Actor->GetName());
+			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid virtual worker ID to spawn actor with. Actor: %s. Strategy: %s"), *Actor->GetName(), *LBStrategy->GetName());
 		}
 		else
 		{
