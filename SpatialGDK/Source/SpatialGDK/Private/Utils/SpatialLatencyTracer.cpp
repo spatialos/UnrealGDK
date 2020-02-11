@@ -436,8 +436,19 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 		return false;
 	}
 
+	auto TraceTypeToStr = [](ETraceType Type) -> TCHAR*
+	{
+		switch (Type)
+		{
+		case ETraceType::Property: return TEXT("Property");
+		case ETraceType::RPC: return TEXT("RPC");
+		case ETraceType::Tagged: return TEXT("Tagged");
+		default: return TEXT("");
+		}
+	};
+
 	WriteKeyFrameToTrace(ActiveTrace, TCHAR_TO_UTF8(*TraceDesc));
-	WriteKeyFrameToTrace(ActiveTrace, FString::Printf(TEXT("Continue trace : %s"), *Target));
+	WriteKeyFrameToTrace(ActiveTrace, FString::Printf(TEXT("Continue trace %s : %s"), TraceTypeToStr(Type), *Target));
 
 	// For non-spatial tracing
 	const improbable::trace::SpanContext& TraceContext = ActiveTrace->context();
@@ -590,7 +601,7 @@ USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTraceOrReadPay
 
 void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc)
 {
-	if (Trace != nullptr)
+	if (Trace != nullptr && TraceDesc.Len())
 	{
 		FString TraceMsg = FormatMessage(TraceDesc);
 		improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*TraceMsg), Trace).End();
