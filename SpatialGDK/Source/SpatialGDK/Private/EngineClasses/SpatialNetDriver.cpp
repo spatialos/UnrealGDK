@@ -986,6 +986,11 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 	Channel->MarkInterestDirty();
 
 	Channel->ServerProcessOwnershipChange();
+
+	if (LockingPolicy != nullptr)
+	{
+		LockingPolicy->OnOwnerUpdated(Actor);
+	}
 }
 
 //SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.

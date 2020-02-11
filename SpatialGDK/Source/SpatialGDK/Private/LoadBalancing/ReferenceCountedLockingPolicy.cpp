@@ -63,7 +63,11 @@ ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(AActor* Actor, FStrin
 		// We want to avoid memory leak if a locked actor is deleted.
 		// To do this, we register with the Actor OnDestroyed delegate with a function that cleans up the internal map.
 		Actor->OnDestroyed.AddDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorDeleted);
-		ActorToLockingState.Add(Actor, MigrationLockElement{ 1, [this, Actor]
+
+		AActor* ActorOwner = Actor->GetOwner();
+		UpdateLockedActorOwnerHierarchyInformation(ActorOwner);
+
+		ActorToLockingState.Add(Actor, MigrationLockElement{ 1, ActorOwner, [this, Actor]
 		{
 			Actor->OnDestroyed.RemoveDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorDeleted);
 		} });
@@ -99,6 +103,8 @@ bool UReferenceCountedLockingPolicy::ReleaseLock(const ActorLockToken Token)
 			UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Actor migration no longer locked. Actor: %s"), *Actor->GetName());
 			ActorLockingState.UnbindActorDeletionDelegateFunc();
 			CountIt.RemoveCurrent();
+
+			UpdateReleasedActorOwnerHierarchyInformation(Actor->GetOwner());
 		}
 		else
 		{
@@ -113,9 +119,30 @@ bool UReferenceCountedLockingPolicy::ReleaseLock(const ActorLockToken Token)
 
 bool UReferenceCountedLockingPolicy::IsLocked(const AActor* Actor) const
 {
+	if (IsExplicitlyLocked(Actor))
+	{
+		return true;
+	}
+
+	const AActor* ActorOwner = Actor->GetOwner();
+	if (ActorOwner == nullptr)
+	{
+		return false;
+	}
+
+	if (LockedHierarchyRootToHierarchyLockCounts.Contains(ActorOwner))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool UReferenceCountedLockingPolicy::IsExplicitlyLocked(const AActor* Actor) const
+{
 	if (Actor == nullptr)
 	{
-		UE_LOG(LogReferenceCountedLockingPolicy, Warning, TEXT("IsLocked called for nullptr"));
+		UE_LOG(LogReferenceCountedLockingPolicy, Warning, TEXT("IsExplicitlyLocked called for nullptr"));
 		return false;
 	}
 	return ActorToLockingState.Contains(Actor);
@@ -162,4 +189,77 @@ bool UReferenceCountedLockingPolicy::ReleaseLockFromDelegate(AActor* ActorToRele
 	ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(DelegateLockIdentifier);
 	bool ReleaseSucceeded = ReleaseLock(LockToken);
 	return ReleaseSucceeded;
+}
+
+void UReferenceCountedLockingPolicy::OnOwnerUpdated(AActor* ActorChangingOwner)
+{
+	check(ActorChangingOwner != nullptr);
+
+	// We only care about locked Actors changing owner
+	if (ActorChangingOwner == nullptr || !IsExplicitlyLocked(ActorChangingOwner))
+	{
+		return;
+	}
+
+	check(ActorToLockingState.Contains(ActorChangingOwner));
+	TWeakObjectPtr<AActor> OldOwner = ActorToLockingState.Find(ActorChangingOwner)->Owner;
+	AActor* NewOwner = ActorChangingOwner->GetOwner();
+
+	UpdateReleasedActorOwnerHierarchyInformation(OldOwner.Get());
+	UpdateLockedActorOwnerHierarchyInformation(NewOwner);
+}
+
+void UReferenceCountedLockingPolicy::OnLockedActorOwnerDeleted(AActor* DestroyedActor)
+{
+	check(DestroyedActor != nullptr);
+
+	// We log an error here because if the locked Actor root was changed before this Actor was destroyed
+	// then the OnOwnerUpdated should have unbound this delegate.
+	if (!LockedHierarchyRootToHierarchyLockCounts.Contains(DestroyedActor))
+	{
+		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Could not find locked Actor root in state in OnDestroyed delegate. Actor: %s"), *DestroyedActor->GetName());
+		return;
+	}
+
+	LockedHierarchyRootToHierarchyLockCounts.Remove(DestroyedActor);
+}
+
+void UReferenceCountedLockingPolicy::UpdateLockedActorOwnerHierarchyInformation(AActor* LockedActorRoot)
+{
+	// If the Actor is nullptr then we don't need to keep track of anything
+	if (LockedActorRoot == nullptr)
+	{
+		return;
+	}
+
+	LockedHierarchyRootToHierarchyLockCounts.FindOrAdd(LockedActorRoot)++;
+	if (!LockedActorRoot->OnDestroyed.IsAlreadyBound(this, &UReferenceCountedLockingPolicy::OnLockedActorOwnerDeleted))
+	{
+		LockedActorRoot->OnDestroyed.AddDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorOwnerDeleted);
+	}	
+}
+
+void UReferenceCountedLockingPolicy::UpdateReleasedActorOwnerHierarchyInformation(AActor* ReleasedActorOwner)
+{
+	if (ReleasedActorOwner == nullptr)
+	{
+		return;
+	}
+
+	check(LockedHierarchyRootToHierarchyLockCounts.Contains(ReleasedActorOwner));
+
+	int32* HierarchyLockCount = LockedHierarchyRootToHierarchyLockCounts.Find(ReleasedActorOwner);
+	check(*HierarchyLockCount > 0);
+
+	// If the lock count is one, we're releasing the only Actor with this owner, so we can stop caring about it.
+	// Otherwise, just decrement it the hierarchy count,
+	if (*HierarchyLockCount == 1)
+	{
+		LockedHierarchyRootToHierarchyLockCounts.Remove(ReleasedActorOwner);
+		ReleasedActorOwner->OnDestroyed.RemoveDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorDeleted);
+	}
+	else
+	{
+		(*HierarchyLockCount)--;
+	}
 }
