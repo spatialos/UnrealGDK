@@ -309,6 +309,10 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
 	TArray<FDistanceFrequencyPair> InterestRangeFrequencyPairs;
 
+	/** Use TLS encryption on the worker connection. May slow performance. */
+	UPROPERTY(EditAnywhere, Config, Category = "Connection")
+	bool bUseSecureConnection;
+
 public:
 	// UI Hidden settings passed through from SpatialGDKEditorSettings
 	bool bUseDevelopmentAuthenticationFlow;

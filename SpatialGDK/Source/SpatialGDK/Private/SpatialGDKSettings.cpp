@@ -60,6 +60,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableNetCullDistanceFrequency(false)
 	, FullFrequencyNetCullDistanceRatio(1.0f)
 	, bUseDevelopmentAuthenticationFlow(false)
+	, bUseSecureConnection(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }

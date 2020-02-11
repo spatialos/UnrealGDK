@@ -56,6 +56,9 @@ struct ConfigureConnection
 		Params.network.modular_kcp.upstream_heartbeat = &HeartbeatParams;
 #endif
 
+		Params.network.modular_kcp.security_type = GetDefault<USpatialGDKSettings>()->bUseSecureConnection ? WORKER_NETWORK_SECURITY_TYPE_TLS : WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		Params.network.modular_tcp.security_type = GetDefault<USpatialGDKSettings>()->bUseSecureConnection ? WORKER_NETWORK_SECURITY_TYPE_TLS : WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+
 		Params.enable_dynamic_components = true;
 	}
 
