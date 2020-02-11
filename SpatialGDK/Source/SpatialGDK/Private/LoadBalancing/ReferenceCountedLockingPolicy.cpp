@@ -124,12 +124,22 @@ bool UReferenceCountedLockingPolicy::IsLocked(const AActor* Actor) const
 		return true;
 	}
 
+	// If we are the root of a hierarchy tree where some Actor is locked, return true
+	if (LockedHierarchyRootToHierarchyLockCounts.Contains(Actor))
+	{
+		return true;
+	}
+
 	const AActor* ActorOwner = Actor->GetOwner();
+
+	// If we have no owner, then we are not locked
 	if (ActorOwner == nullptr)
 	{
 		return false;
 	}
 
+	// If our owner (hierarchy root) is in the mapping, it means some Actor in this Actor's
+	// hierarchy is locked, so return true.
 	if (LockedHierarchyRootToHierarchyLockCounts.Contains(ActorOwner))
 	{
 		return true;
