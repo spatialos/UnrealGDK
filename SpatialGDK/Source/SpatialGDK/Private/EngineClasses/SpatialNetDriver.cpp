@@ -819,6 +819,10 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	// The native UNetDriver would normally store destruction info here for "StartupActors" - replicated actors
 	// placed in the level, but we handle this flow differently in the GDK
 
+	// In single process PIE sessions this can be called on the server with actors from a client when the client unloads a level.
+	// Such actors will not have a valid entity ID.
+	// As only clients unload a level, if an actor has an entity ID and authority then it can not be such a spurious entity.
+
 	// Remove the actor from the property tracker map
 	RepChangedPropertyTrackerMap.Remove(ThisActor);
 
@@ -827,6 +831,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	// Remove the record of destroyed singletons.
 	if (ThisActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
+		// We check for this not being a server below to make sure we don't call this incorrectly in single process PIE sessions.
 		GlobalStateManager->RemoveSingletonInstance(ThisActor);
 	}
 
@@ -836,6 +841,13 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 		if (PackageMap != nullptr && World != nullptr)
 		{
 			const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
+
+			// It is safe to chek that we aren't destroying a singleton actor on a server if there is a valid entity ID and this is not a client.
+			if (ThisActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && EntityId != SpatialConstants::INVALID_ENTITY_ID)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Removed a singleton actor on a server. This should never happen. "
+					"Actor: %s."), *ThisActor->GetName());
+			}
 
 			// If the actor is an initially dormant startup actor that has not been replicated.
 			if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && ThisActor->HasAuthority())
