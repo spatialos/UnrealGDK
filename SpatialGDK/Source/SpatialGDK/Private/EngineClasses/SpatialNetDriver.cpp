@@ -1510,6 +1510,15 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 	if (Connection != nullptr)
 	{
+		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+		if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
+		{
+			if (Connection->IsConnected())
+			{
+				Connection->QueueLatestOpList();
+			}
+		}
+
 		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
 
 		// Servers will queue ops at startup until we've extracted necessary information from the op stream
@@ -1526,7 +1535,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			Worker_OpList_Destroy(OpList);
 		}
 
-		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
+		if (SpatialMetrics != nullptr && SpatialGDKSettings->bEnableMetrics)
 		{
 			SpatialMetrics->TickMetrics(Time);
 		}
@@ -1655,14 +1664,6 @@ void USpatialNetDriver::PollPendingLoads()
 void USpatialNetDriver::TickFlush(float DeltaTime)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
-	{
-		if (Connection != nullptr && Connection->IsConnected())
-		{
-			Connection->QueueLatestOpList();
-		}
-	}
 
 	PollPendingLoads();
 
