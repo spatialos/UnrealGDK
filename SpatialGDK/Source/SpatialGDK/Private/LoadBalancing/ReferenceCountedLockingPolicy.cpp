@@ -65,10 +65,10 @@ ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(AActor* Actor, FStrin
 		// To do this, we register with the Actor OnDestroyed delegate with a function that cleans up the internal map.
 		Actor->OnDestroyed.AddDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorDeleted);
 
-		AActor* ActorOutermostOwner = SpatialGDK::GetOutermostOwner(Actor);
-		UpdateLockedActorOwnerHierarchyInformation(ActorOutermostOwner);
+		AActor* HierarchyRoot = SpatialGDK::GetOutermostOwner(Actor);
+		UpdateLockedActorHierarchyRootInformation(HierarchyRoot);
 
-		ActorToLockingState.Add(Actor, MigrationLockElement{ 1, ActorOutermostOwner, [this, Actor]
+		ActorToLockingState.Add(Actor, MigrationLockElement{ 1, HierarchyRoot, [this, Actor]
 		{
 			Actor->OnDestroyed.RemoveDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorDeleted);
 		} });
@@ -105,7 +105,7 @@ bool UReferenceCountedLockingPolicy::ReleaseLock(const ActorLockToken Token)
 			ActorLockingState.UnbindActorDeletionDelegateFunc();
 			CountIt.RemoveCurrent();
 
-			UpdateReleasedActorOwnerHierarchyInformation(SpatialGDK::GetOutermostOwner(Actor));
+			UpdateReleasedActorHierarchyRootInformation(SpatialGDK::GetOutermostOwner(Actor));
 		}
 		else
 		{
@@ -131,17 +131,17 @@ bool UReferenceCountedLockingPolicy::IsLocked(const AActor* Actor) const
 		return true;
 	}
 
-	const AActor* ActorOutermostOwner = SpatialGDK::GetOutermostOwner(Actor);
+	const AActor* HierarchyRoot = SpatialGDK::GetOutermostOwner(Actor);
 
 	// If we have no owner, then we are not locked
-	if (ActorOutermostOwner == nullptr)
+	if (HierarchyRoot == nullptr)
 	{
 		return false;
 	}
 
-	// If our owner (hierarchy root) is in the mapping, it means some Actor in this Actor's
+	// If our hierarchy root is in the mapping, it means some Actor in this Actor's
 	// hierarchy is locked, so return true.
-	if (LockedHierarchyRootToHierarchyLockCounts.Contains(ActorOutermostOwner))
+	if (LockedHierarchyRootToHierarchyLockCounts.Contains(HierarchyRoot))
 	{
 		return true;
 	}
@@ -207,17 +207,18 @@ void UReferenceCountedLockingPolicy::OnOwnerUpdated(AActor* ActorChangingOwner)
 	check(ActorChangingOwner != nullptr);
 
 	// We only care about locked Actors changing owner
+	// TODO - accommodate Actors in locked Actor path to hierarhcy root changing owner
 	if (ActorChangingOwner == nullptr || !IsExplicitlyLocked(ActorChangingOwner))
 	{
 		return;
 	}
 
 	check(ActorToLockingState.Contains(ActorChangingOwner));
-	TWeakObjectPtr<AActor> OldOwner = ActorToLockingState.Find(ActorChangingOwner)->Owner;
-	AActor* NewOwner = ActorChangingOwner->GetOwner();
+	TWeakObjectPtr<AActor> OldHierarchyRoot = ActorToLockingState.Find(ActorChangingOwner)->Root;
+	AActor* NewHierarchyRoot = SpatialGDK::GetOutermostOwner(ActorChangingOwner);
 
-	UpdateReleasedActorOwnerHierarchyInformation(OldOwner.Get());
-	UpdateLockedActorOwnerHierarchyInformation(NewOwner);
+	UpdateReleasedActorHierarchyRootInformation(OldHierarchyRoot.Get());
+	UpdateLockedActorHierarchyRootInformation(NewHierarchyRoot);
 }
 
 void UReferenceCountedLockingPolicy::OnLockedActorOwnerDeleted(AActor* DestroyedActor)
@@ -235,39 +236,39 @@ void UReferenceCountedLockingPolicy::OnLockedActorOwnerDeleted(AActor* Destroyed
 	LockedHierarchyRootToHierarchyLockCounts.Remove(DestroyedActor);
 }
 
-void UReferenceCountedLockingPolicy::UpdateLockedActorOwnerHierarchyInformation(AActor* LockedActorRoot)
+void UReferenceCountedLockingPolicy::UpdateLockedActorHierarchyRootInformation(AActor* LockedRootActor)
 {
 	// If the Actor is nullptr then we don't need to keep track of anything
-	if (LockedActorRoot == nullptr)
+	if (LockedRootActor == nullptr)
 	{
 		return;
 	}
 
-	LockedHierarchyRootToHierarchyLockCounts.FindOrAdd(LockedActorRoot)++;
-	if (!LockedActorRoot->OnDestroyed.IsAlreadyBound(this, &UReferenceCountedLockingPolicy::OnLockedActorOwnerDeleted))
+	LockedHierarchyRootToHierarchyLockCounts.FindOrAdd(LockedRootActor)++;
+	if (!LockedRootActor->OnDestroyed.IsAlreadyBound(this, &UReferenceCountedLockingPolicy::OnLockedActorOwnerDeleted))
 	{
-		LockedActorRoot->OnDestroyed.AddDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorOwnerDeleted);
+		LockedRootActor->OnDestroyed.AddDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorOwnerDeleted);
 	}	
 }
 
-void UReferenceCountedLockingPolicy::UpdateReleasedActorOwnerHierarchyInformation(AActor* ReleasedActorOwner)
+void UReferenceCountedLockingPolicy::UpdateReleasedActorHierarchyRootInformation(AActor* ReleasedRootActor)
 {
-	if (ReleasedActorOwner == nullptr)
+	if (ReleasedRootActor == nullptr)
 	{
 		return;
 	}
 
-	check(LockedHierarchyRootToHierarchyLockCounts.Contains(ReleasedActorOwner));
+	check(LockedHierarchyRootToHierarchyLockCounts.Contains(ReleasedRootActor));
 
-	int32* HierarchyLockCount = LockedHierarchyRootToHierarchyLockCounts.Find(ReleasedActorOwner);
+	int32* HierarchyLockCount = LockedHierarchyRootToHierarchyLockCounts.Find(ReleasedRootActor);
 	check(*HierarchyLockCount > 0);
 
 	// If the lock count is one, we're releasing the only Actor with this owner, so we can stop caring about it.
 	// Otherwise, just decrement it the hierarchy count,
 	if (*HierarchyLockCount == 1)
 	{
-		LockedHierarchyRootToHierarchyLockCounts.Remove(ReleasedActorOwner);
-		ReleasedActorOwner->OnDestroyed.RemoveDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorDeleted);
+		LockedHierarchyRootToHierarchyLockCounts.Remove(ReleasedRootActor);
+		ReleasedRootActor->OnDestroyed.RemoveDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorDeleted);
 	}
 	else
 	{

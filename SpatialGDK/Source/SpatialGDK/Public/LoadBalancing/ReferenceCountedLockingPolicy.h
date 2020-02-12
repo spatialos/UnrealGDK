@@ -32,7 +32,7 @@ private:
 	struct MigrationLockElement
 	{
 		int32 LockCount;
-		TWeakObjectPtr<AActor> Owner;
+		TWeakObjectPtr<AActor> Root;
 		TFunction<void()> UnbindActorDeletionDelegateFunc;
 	};
 
@@ -55,8 +55,8 @@ private:
 	virtual bool AcquireLockFromDelegate(AActor* ActorToLock,    const FString& DelegateLockIdentifier) override;
 	virtual bool ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier) override;
 
-	void UpdateLockedActorOwnerHierarchyInformation(AActor* LockedActorRoot);
-	void UpdateReleasedActorOwnerHierarchyInformation(AActor* ReleasedActorRoot);
+	void UpdateLockedActorHierarchyRootInformation(AActor* LockedRootActor);
+	void UpdateReleasedActorHierarchyRootInformation(AActor* ReleasedRootActor);
 
 	TMap<const AActor*, MigrationLockElement> ActorToLockingState;
 	TMap<ActorLockToken, LockNameAndActor> TokenToNameAndActor;
