@@ -6,6 +6,7 @@
 #include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Component.h"
+#include "Utils/SpatialActorUtils.h"
 
 #include "Improbable/SpatialEngineDelegates.h"
 
@@ -64,10 +65,10 @@ ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(AActor* Actor, FStrin
 		// To do this, we register with the Actor OnDestroyed delegate with a function that cleans up the internal map.
 		Actor->OnDestroyed.AddDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorDeleted);
 
-		AActor* ActorOwner = Actor->GetOwner();
-		UpdateLockedActorOwnerHierarchyInformation(ActorOwner);
+		AActor* ActorOutermostOwner = SpatialGDK::GetOutermostOwner(Actor);
+		UpdateLockedActorOwnerHierarchyInformation(ActorOutermostOwner);
 
-		ActorToLockingState.Add(Actor, MigrationLockElement{ 1, ActorOwner, [this, Actor]
+		ActorToLockingState.Add(Actor, MigrationLockElement{ 1, ActorOutermostOwner, [this, Actor]
 		{
 			Actor->OnDestroyed.RemoveDynamic(this, &UReferenceCountedLockingPolicy::OnLockedActorDeleted);
 		} });
@@ -104,7 +105,7 @@ bool UReferenceCountedLockingPolicy::ReleaseLock(const ActorLockToken Token)
 			ActorLockingState.UnbindActorDeletionDelegateFunc();
 			CountIt.RemoveCurrent();
 
-			UpdateReleasedActorOwnerHierarchyInformation(Actor->GetOwner());
+			UpdateReleasedActorOwnerHierarchyInformation(SpatialGDK::GetOutermostOwner(Actor));
 		}
 		else
 		{
@@ -130,17 +131,17 @@ bool UReferenceCountedLockingPolicy::IsLocked(const AActor* Actor) const
 		return true;
 	}
 
-	const AActor* ActorOwner = Actor->GetOwner();
+	const AActor* ActorOutermostOwner = SpatialGDK::GetOutermostOwner(Actor);
 
 	// If we have no owner, then we are not locked
-	if (ActorOwner == nullptr)
+	if (ActorOutermostOwner == nullptr)
 	{
 		return false;
 	}
 
 	// If our owner (hierarchy root) is in the mapping, it means some Actor in this Actor's
 	// hierarchy is locked, so return true.
-	if (LockedHierarchyRootToHierarchyLockCounts.Contains(ActorOwner))
+	if (LockedHierarchyRootToHierarchyLockCounts.Contains(ActorOutermostOwner))
 	{
 		return true;
 	}

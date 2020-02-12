@@ -14,6 +14,24 @@
 namespace SpatialGDK
 {
 
+inline AActor* GetOutermostOwner(const AActor* Actor)
+{
+	check(Actor != nullptr);
+
+	AActor* OwnerIterator = Actor->GetOwner();
+	if (OwnerIterator == nullptr)
+	{
+		return nullptr;
+	}
+
+	while (OwnerIterator->GetOwner() != nullptr)
+	{
+		OwnerIterator = OwnerIterator->GetOwner();
+	}
+
+	return OwnerIterator;
+}
+
 inline FString GetOwnerWorkerAttribute(AActor* Actor)
 {
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
