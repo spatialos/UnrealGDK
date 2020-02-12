@@ -187,8 +187,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 			uint8* Data = (uint8*)&Object + SwappedCmd.Offset;
 
-			// Native does this anytime it receives anything, but we probably only have to do so when receiving repnotify properties
-			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+			// Native also does a check for RepNotifies != nullptr, but we cannot use it here, this should be equivalent
+			if (Parent.RepNotifyNumParams != INDEX_NONE)
 			{
 				#if ENGINE_MINOR_VERSION <= 22
 					Cmd.Property->CopySingleValue(RepState->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
