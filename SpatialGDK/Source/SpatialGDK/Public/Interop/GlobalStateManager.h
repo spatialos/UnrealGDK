@@ -75,6 +75,7 @@ public:
 
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
+	void RemoveSingletonInstance(const AActor* SingletonActor);
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
@@ -126,4 +127,6 @@ private:
 	USpatialReceiver* Receiver;
 
 	FDelegateHandle PrePIEEndedHandle;
+
+	TMap<FString, TPair<AActor*, USpatialActorChannel*>> SingletonClassPathToActorChannels;
 };
