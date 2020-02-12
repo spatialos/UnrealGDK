@@ -669,22 +669,6 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
-		// This check happens after building the command request as building the request also sets the entity ID.
-		if (ComponentId == SpatialConstants::SERVER_TO_SERVER_ENDPOINT_COMPONENT_ID_LEGACY)
-		{
-			ServerToServerRPCEndpointLegacy* CrossServerRPCComponent = StaticComponentView->GetComponentData<ServerToServerRPCEndpointLegacy>(EntityId);
-			if (CrossServerRPCComponent == nullptr)
-			{
-				// We haven't seen the component yet to send the RPC to.
-				return ERPCResult::NoActorChannel;
-			}
-			else if (!CrossServerRPCComponent->bReady)
-			{
-				// The receiving worker hasn't set that it is ready to receive cross server RPCs yet, which means it has not yet received authority.
-				return ERPCResult::NoAuthority;
-			}
-		}
-
 		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 		Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
@@ -916,14 +900,6 @@ void USpatialSender::SendClientEndpointReadyUpdate(Worker_EntityId EntityId)
 void USpatialSender::SendServerEndpointReadyUpdate(Worker_EntityId EntityId)
 {
 	ServerRPCEndpointLegacy Endpoint;
-	Endpoint.bReady = true;
-	FWorkerComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
-}
-
-void USpatialSender::SendServerToServerEndpointReadyUpdate(Worker_EntityId EntityId)
-{
-	ServerToServerRPCEndpointLegacy Endpoint;
 	Endpoint.bReady = true;
 	FWorkerComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);

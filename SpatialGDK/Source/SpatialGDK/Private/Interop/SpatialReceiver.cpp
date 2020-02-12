@@ -603,10 +603,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			Sender->SendServerEndpointReadyUpdate(Op.entity_id);
 		}
-		if (Op.component_id == SpatialConstants::SERVER_TO_SERVER_ENDPOINT_COMPONENT_ID_LEGACY)
-		{
-			Sender->SendServerToServerEndpointReadyUpdate(Op.entity_id);
-		}
 	}
 }
 

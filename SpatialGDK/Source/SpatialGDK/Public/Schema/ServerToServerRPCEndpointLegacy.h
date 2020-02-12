@@ -21,16 +21,6 @@ struct ServerToServerRPCEndpointLegacy : Component
 	ServerToServerRPCEndpointLegacy(const Worker_ComponentData& Data)
 	{
 		Schema_Object* EndpointObject = Schema_GetComponentDataFields(Data.schema_type);
-		bReady = GetBoolFromSchema(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
-	}
-
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-	{
-		Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(Update.schema_type);
-		if (Schema_GetBoolCount(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
-		{
-			bReady = GetBoolFromSchema(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
-		}
 	}
 
 	Worker_ComponentData CreateRPCEndpointData()
@@ -39,7 +29,6 @@ struct ServerToServerRPCEndpointLegacy : Component
 		Data.component_id = ComponentId;
 		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-		Schema_AddBool(ComponentObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID, bReady);
 
 		return Data;
 	}
@@ -50,12 +39,9 @@ struct ServerToServerRPCEndpointLegacy : Component
 		Update.component_id = ComponentId;
 		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
-		Schema_AddBool(UpdateObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID, bReady);
 
 		return Update;
 	}
-
-	bool bReady = false;
 };
 
 } // namespace SpatialGDK

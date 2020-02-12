@@ -96,7 +96,6 @@ public:
 
 	void SendClientEndpointReadyUpdate(Worker_EntityId EntityId);
 	void SendServerEndpointReadyUpdate(Worker_EntityId EntityId);
-	void SendServerToServerEndpointReadyUpdate(Worker_EntityId EntityId);
 
 	void EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
 	void FlushRetryRPCs();

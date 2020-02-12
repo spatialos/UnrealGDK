@@ -223,5 +223,5 @@ uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 bool USpatialGDKSettings::UseRPCRingBuffer() const
 {
 	// RPC Ring buffer are necessary in order to do RPC handover, something legacy RPC does not handle.
-	return bUseRPCRingBuffers || bEnableUnrealLoadBalancer;
+	return bUseRPCRingBuffers /*|| bEnableUnrealLoadBalancer*/;
 }
