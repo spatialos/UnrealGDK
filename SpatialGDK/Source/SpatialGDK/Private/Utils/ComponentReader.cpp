@@ -197,7 +197,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					{
 						Channel.ResetShadowData(*Replicator->RepLayout.Get(), RepState->GetReceivingRepState()->StaticBuffer, &Object);
 					}
-					Cmd.Property->CopySingleValue(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+					else
+					{
+						Cmd.Property->CopySingleValue(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+					}
 				#endif
 			}
 
