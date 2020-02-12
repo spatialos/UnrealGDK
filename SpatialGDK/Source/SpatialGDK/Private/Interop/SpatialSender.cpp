@@ -641,13 +641,11 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 
 			if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
 			{
-				if (NetDriver->LoadBalanceStrategy != nullptr && NetDriver->VirtualWorkerTranslator != nullptr)
+				if (NetDriver->VirtualWorkerTranslator != nullptr)
 				{
-					// TODO(Alex): check authority intent instead?
-					const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*TargetActor);
-					if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+					if (const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Params.ObjectRef.Entity))
 					{
-						if (NewAuthVirtualWorkerId != NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId())
+						if (AuthorityIntentComponent->VirtualWorkerId != NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId())
 						{
 							bShouldDrop = true;
 						}
