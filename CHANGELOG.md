@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2020-xx-xx
+Added a new variable `QueuedOutgoingRPCWaitTime`. Outgoing RPCs will now be dropped if: more than `QueuedOutgoingRPCWaitTime` time has passed; the worker is never expected to become authoritative in zoning/offloading scenario; the Actor is being destroyed.
 
 ### Breaking Changes:
 - Simulated Player worker configurations now require a dev auth token and deployment flag instead of a login token and player identity token. See the Example Project for an example of how to set this up.
