@@ -3,6 +3,7 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Schema/Interest.h"
 #include "Utils/SpatialActorUtils.h"
 
 #include "Templates/Tuple.h"
@@ -15,6 +16,7 @@ UGridBasedLBStrategy::UGridBasedLBStrategy()
 	, Cols(1)
 	, WorldWidth(10000.f)
 	, WorldHeight(10000.f)
+	, InterestBorder(0.f)
 {
 }
 
@@ -75,7 +77,6 @@ bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const
 
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 
-
 	return !IsInside(WorkerCells[LocalVirtualWorkerId - 1], Actor2DLocation);
 }
 
@@ -98,6 +99,27 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 	}
 
 	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+}
+
+void UGridBasedLBStrategy::CreateWorkerInterestQueries(TArray<SpatialGDK::Query>& OutQueries) const
+{
+	// For a grid-based strategy, the interest area is the cell that the worker is authoritative over plus some border region.
+	// If there is only a single server, then there is no need to create interest since the worker has authority over the entire world (in principle, at least).
+	check(IsReady());
+	check(InterestBorder >= 0);
+	if (Rows * Cols > 0)
+	{
+		const FBox2D Interest2D = WorkerCells[LocalVirtualWorkerId - 1].ExpandBy(InterestBorder);
+		const FVector Min = FVector{ Interest2D.Min.X, Interest2D.Min.Y, FLT_MIN };
+		const FVector Max = FVector{ Interest2D.Max.X, Interest2D.Max.Y, FLT_MAX };
+		const FBox Interest3D = FBox{ Min, Max };
+		SpatialGDK::QueryConstraint Constraint;
+		Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Interest3D.GetCenter()), SpatialGDK::EdgeLength::FromFVector(2 * Interest3D.GetExtent()) };
+		SpatialGDK::Query Query;
+		Query.Constraint = Constraint;
+		Query.FullSnapshotResult = true;
+		OutQueries.Add(Query);
+	}
 }
 
 bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location)

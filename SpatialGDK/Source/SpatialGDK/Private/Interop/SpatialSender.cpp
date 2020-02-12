@@ -188,7 +188,8 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(InterestFactory::CreateServerWorkerInterest().CreateInterestData());
+	check(NetDriver != nullptr);
+	Components.Add(InterestFactory::CreateServerWorkerInterest(*NetDriver).CreateInterestData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
@@ -204,6 +205,9 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
+			Worker_ComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(*Sender->NetDriver).CreateInterestUpdate();
+			Sender->Connection->SendComponentUpdate(Sender->NetDriver->WorkerEntityId, &InterestUpdate);
+			
 			return;
 		}
 
@@ -284,7 +288,7 @@ void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString E
 
 	Delegate.BindLambda([this, EntityId, Name = MoveTemp(EntityName), Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable
 	{
-		switch(Op.status_code)
+		switch (Op.status_code)
 		{
 		case WORKER_STATUS_CODE_SUCCESS:
 			UE_LOG(LogSpatialSender, Log, TEXT("Created entity. "
@@ -294,7 +298,7 @@ void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString E
 		case WORKER_STATUS_CODE_TIMEOUT:
 			UE_LOG(LogSpatialSender, Log, TEXT("Timed out creating entity. Retrying. "
 				"Entity name: %s, entity id: %lld"), *Name, EntityId);
-			CreateEntityWithRetries(EntityId,  MoveTemp(Name), MoveTemp(Components));
+			CreateEntityWithRetries(EntityId, MoveTemp(Name), MoveTemp(Components));
 			break;
 		default:
 			UE_LOG(LogSpatialSender, Log, TEXT("Failed to create entity. It might already be created. Not retrying. "
@@ -305,6 +309,19 @@ void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString E
 	});
 
 	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(Delegate));
+}
+
+void USpatialSender::SendServerWorkerEntityInterestUpdate()
+{
+	check(Connection != nullptr);
+	check(NetDriver != nullptr);
+	if (NetDriver->WorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		// Can't set interest yet
+		return;
+	}
+	Worker_ComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(*NetDriver).CreateInterestUpdate();
+	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)

@@ -10,6 +10,7 @@
 
 #include "EngineClasses/Components/ActorInterestComponent.h"
 #include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
@@ -257,7 +258,7 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
 	return CreateInterest().CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest()
+Interest InterestFactory::CreateServerWorkerInterest(const USpatialNetDriver& NetDriver)
 {
 	QueryConstraint Constraint;
 
@@ -292,6 +293,19 @@ Interest InterestFactory::CreateServerWorkerInterest()
 	ComponentInterest Queries;
 	Queries.Queries.Add(Query);
 
+	if (SpatialGDKSettings->bEnableUnrealLoadBalancer && SpatialGDKSettings->bEnableServerQBI)
+	{
+		if (const UAbstractLBStrategy* LoadBalancer = NetDriver.LoadBalanceStrategy)
+		{
+			// The load balancer won't be ready when the worker initially connects to SpatialOS. It needs
+			// to wait for the virtual worker mappings to be replicated.
+			if (LoadBalancer->IsReady())
+			{
+				LoadBalancer->CreateWorkerInterestQueries(Queries.Queries);
+			}
+		}
+	}
+
 	Interest ServerInterest;
 	ServerInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, Queries);
 
@@ -317,9 +331,7 @@ Interest InterestFactory::CreateInterest() const
 
 	if (Settings->bEnableServerQBI)
 	{
-		// If we have server QBI, every actor needs a query for the server
-		// TODO(jacques): Use worker interest instead (UNR-2656)
-		AddActorInterest(ResultInterest);
+		return Interest{};
 	}
 
 	if (Settings->bEnableResultTypes)

@@ -42,6 +42,8 @@ public:
 
 	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
+
+	virtual void CreateWorkerInterestQueries(TArray<SpatialGDK::Query>& OutQueries) const override;
 /* End UAbstractLBStrategy Interface */
 
 	LBStrategyRegions GetLBStrategyRegions() const;
@@ -58,6 +60,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")
 	float WorldHeight;
+
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0"), Category = "Grid Based Load Balancing")
+	float InterestBorder;
 
 private:
 
