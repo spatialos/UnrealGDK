@@ -597,11 +597,19 @@ void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const 
 
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 {
+	bool bShouldDrop = false;
+
+	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
+	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime < TimeDiff)
+	{
+		bShouldDrop = true;
+	}
+
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
-		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::UnresolvedTargetObject };
+		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::UnresolvedTargetObject, bShouldDrop };
 	}
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 
@@ -609,23 +617,29 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::MissingFunctionInfo };
+		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::MissingFunctionInfo, bShouldDrop };
 	}
 
 	ERPCResult Result = SendRPCInternal(TargetObject, Function, Params.Payload);
 
-	if (Result == ERPCResult::NoAuthority)
+	if (AActor* TargetActor = Cast<AActor>(TargetObject))
 	{
-		if (AActor* TargetActor = Cast<AActor>(TargetObject))
+		// TODO(Alex): check pending kill
+		if (TargetActor->IsPendingKillPending())
 		{
-			// TODO(Alex): check pending kill
+			bShouldDrop = true;
+		}
+
+		if (Result == ERPCResult::NoAuthority)
+		{
 			if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
 			{
 				if (!USpatialStatics::IsActorGroupOwnerForActor(TargetActor))
 				{
-					Result = ERPCResult::TimedOut;
+					bShouldDrop = true;
 				}
 			}
+
 			if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
 			{
 				if (NetDriver->LoadBalanceStrategy != nullptr && NetDriver->VirtualWorkerTranslator != nullptr)
@@ -636,7 +650,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 					{
 						if (NewAuthVirtualWorkerId != NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId())
 						{
-							Result = ERPCResult::TimedOut;
+							bShouldDrop = true;
 						}
 					}
 				}
@@ -644,15 +658,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		}
 	}
 
-	// TODO(Alex): drop no matter what error if timed out
-	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
-	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime < TimeDiff)
-	{
-		Result = ERPCResult::TimedOut;
-	}
-
-
-	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result };
+	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result, bShouldDrop };
 }
 
 #if !UE_BUILD_SHIPPING

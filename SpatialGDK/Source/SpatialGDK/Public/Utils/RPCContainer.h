@@ -39,9 +39,6 @@ enum class ERPCResult : uint8_t
 	NoControllerChannel,
 	ControllerChannelNotListening,
 
-	// Other
-	TimedOut,
-
 	Unknown
 };
 
@@ -59,16 +56,12 @@ struct FRPCErrorInfo
 		return (ErrorCode == ERPCResult::Success);
 	}
 
-	bool TimedOut() const
-	{
-		return (ErrorCode == ERPCResult::TimedOut);
-	}
-
 	TWeakObjectPtr<UObject> TargetObject = nullptr;
 	TWeakObjectPtr<UFunction> Function = nullptr;
 	bool bIsServer = false;
 	ERPCQueueType QueueType = ERPCQueueType::Unknown;
 	ERPCResult ErrorCode = ERPCResult::Unknown;
+	bool bShouldDrop = false;
 };
 
 struct SPATIALGDK_API FPendingRPCParams

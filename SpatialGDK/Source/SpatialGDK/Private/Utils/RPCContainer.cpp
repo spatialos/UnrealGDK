@@ -59,8 +59,6 @@ namespace
 
 	void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params)
 	{
-		const bool bDrop = ErrorInfo.TimedOut();
-
 		const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
 
 		// The format is expected to be:
@@ -69,7 +67,7 @@ namespace
 			ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
 			ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
 			ErrorInfo.QueueType == ERPCQueueType::Send ? TEXT("sending") : ErrorInfo.QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
-			bDrop ? TEXT("dropped") : TEXT("queued"),
+			ErrorInfo.bShouldDrop ? TEXT("dropped") : TEXT("queued"),
 			ErrorInfo.bIsServer ? TEXT("server") : TEXT("client"),
 			*TimeDiff.ToString(),
 			*ERPCResultToString(ErrorInfo.ErrorCode));
@@ -194,6 +192,6 @@ bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 #if !UE_BUILD_SHIPPING
 		LogRPCError(ErrorInfo, Params);
 #endif
-		return ErrorInfo.TimedOut();
+		return ErrorInfo.bShouldDrop;
 	}
 }
