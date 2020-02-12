@@ -264,7 +264,6 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 	}
 
 	const TArray<TSharedPtr<FJsonValue>>* LayerConfigurations;
-
 	if (!(*LoadBalancingField)->TryGetArrayField("layer_configurations", LayerConfigurations))
 	{
 		return false;
@@ -275,23 +274,21 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 		if (const TSharedPtr<FJsonObject> LayerConfiguration = LayerConfigurationValue->AsObject())
 		{
 			const TSharedPtr<FJsonObject>* OptionsField;
-			if (LayerConfiguration->TryGetObjectField("options", OptionsField))
+			bool ManualWorkerConnectionFlag;
+
+			// Check manual_worker_connection flag, if it exists.
+			if (LayerConfiguration->TryGetObjectField("options", OptionsField)
+			 && (*OptionsField)->TryGetBoolField("manual_worker_connection_only", ManualWorkerConnectionFlag)
+			 && ManualWorkerConnectionFlag)
 			{
-				bool ManualWorkerConnectionFlag;
-				if ((*OptionsField)->TryGetBoolField("manual_worker_connection_only", ManualWorkerConnectionFlag))
+				FString WorkerName;
+				if (LayerConfiguration->TryGetStringField("layer", WorkerName))
 				{
-					if (ManualWorkerConnectionFlag)
-					{
-						FString WorkerName;
-						if (LayerConfiguration->TryGetStringField("layer", WorkerName))
-						{
-							OutWorkersManuallyLaunched.Add(WorkerName);
-						}
-						else
-						{
-							UE_LOG(LogSpatialEditorSettings, Error, TEXT("Invalid configuration file %s, Layer configuration missing its layer field"), *LaunchConfigPath);
-						}
-					}
+					OutWorkersManuallyLaunched.Add(WorkerName);
+				}
+				else
+				{
+					UE_LOG(LogSpatialEditorSettings, Error, TEXT("Invalid configuration file %s, Layer configuration missing its layer field"), *LaunchConfigPath);
 				}
 			}
 		}
@@ -355,9 +352,7 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 
 		for (const FString& Worker : WorkersManuallyLaunched)
 		{
-			WorkersReportString.Append(" - ");
-			WorkersReportString.Append(Worker);
-			WorkersReportString.Append("\n");
+			WorkersReportString.Append(FString::Printf(TEXT(" - %s\n"), *Worker));
 		}
 
 		if (FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(WorkersReportString)) != EAppReturnType::Yes)
