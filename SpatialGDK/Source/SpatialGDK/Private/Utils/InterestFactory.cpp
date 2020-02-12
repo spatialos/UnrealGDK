@@ -12,6 +12,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectIterator.h"
