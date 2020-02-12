@@ -631,27 +631,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 
 		if (Result == ERPCResult::NoAuthority)
 		{
-			if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
-			{
-				if (!USpatialStatics::IsActorGroupOwnerForActor(TargetActor))
-				{
-					bShouldDrop = true;
-				}
-			}
-
-			if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
-			{
-				if (NetDriver->VirtualWorkerTranslator != nullptr)
-				{
-					if (const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Params.ObjectRef.Entity))
-					{
-						if (AuthorityIntentComponent->VirtualWorkerId != NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId())
-						{
-							bShouldDrop = true;
-						}
-					}
-				}
-			}
+			bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
 		}
 	}
 
@@ -665,6 +645,35 @@ void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPaylo
 	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
 }
 #endif
+
+bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_EntityId TargetEntity)
+{
+	bool WillHaveAuthorityOverActor = true;
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
+	{
+		if (!USpatialStatics::IsActorGroupOwnerForActor(TargetActor))
+		{
+			WillHaveAuthorityOverActor = false;
+		}
+	}
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	{
+		if (NetDriver->VirtualWorkerTranslator != nullptr)
+		{
+			if (const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(TargetEntity))
+			{
+				if (AuthorityIntentComponent->VirtualWorkerId != NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId())
+				{
+					WillHaveAuthorityOverActor = false;
+				}
+			}
+		}
+	}
+
+	return WillHaveAuthorityOverActor;
+}
 
 ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload)
 {
