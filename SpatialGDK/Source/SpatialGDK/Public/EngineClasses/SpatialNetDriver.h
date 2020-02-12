@@ -100,7 +100,7 @@ public:
 	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
-	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName);
+	virtual void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName) override;
 	void PostSpawnPlayerController(APlayerController* PlayerController, const FString& WorkerAttribute);
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);

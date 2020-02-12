@@ -6,7 +6,8 @@
 #include "Engine/LocalPlayer.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
-
+#include "GameFramework/GameModeBase.h"
+#include "GameFramework/PlayerStart.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
@@ -55,7 +56,23 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 			URLString += TEXT("?simulatedPlayer=1");
 		}
 		
-		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName);
+		FURL Url = FURL(nullptr, *URLString, TRAVEL_Absolute);
+
+		AGameModeBase* GameMode = NetDriver->GetWorld()->GetAuthGameMode();
+		AActor* PlayerStartActor = GameMode->FindPlayerStart(nullptr, *Url.Portal);
+		UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Player start actor: %s"), *GetNameSafe(PlayerStartActor));
+
+		APlayerStart* PlayerStart = Cast<APlayerStart>(PlayerStartActor);
+		if (PlayerStart)
+		{
+			UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Forwarding player spawn request via player start actor %s"), *PlayerStart->GetName());
+			PlayerStart->RequestPlayerSpawn(Url, UniqueId, OnlinePlatformName);
+		}
+		else
+		{
+			UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Found player start location actor %s, but it was either null or not of type APlayerStart. Spawning player on this server."), *GetNameSafe(PlayerStartActor));
+			NetDriver->AcceptNewPlayer(Url, UniqueId, OnlinePlatformName);
+		}
 	}
 
 	// Send a successful response if the player has been accepted, either from this request or one in the past.
