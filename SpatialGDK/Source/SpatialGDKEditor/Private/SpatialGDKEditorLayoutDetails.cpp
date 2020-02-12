@@ -101,6 +101,7 @@ FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 		return FReply::Unhandled();
 	}
 
+	// We need a pointer to a shared pointer due to how the JSON API works.
 	const TSharedPtr<FJsonObject>* JsonDataObject;
 	if (JsonRootObject->TryGetObjectField("json_data", JsonDataObject))
 	{
