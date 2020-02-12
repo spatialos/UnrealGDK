@@ -190,18 +190,20 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 			// Native also does a check for RepNotifies != nullptr, but we cannot use it here, this should be equivalent
 			if (Parent.RepNotifyNumParams != INDEX_NONE)
 			{
-				#if ENGINE_MINOR_VERSION <= 22
+#if ENGINE_MINOR_VERSION <= 22
+				FRepStateStaticBuffer& ShadowData = RepState->StaticBuffer;
+				
+#else
+				FRepStateStaticBuffer& ShadowData = RepState->GetReceivingRepState()->StaticBuffer;
+#endif
+				if (ShadowData.Num() == 0)
+				{
+					Channel.ResetShadowData(*Replicator->RepLayout.Get(), ShadowData, &Object);
+				}
+				else
+				{
 					Cmd.Property->CopySingleValue(RepState->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
-				#else
-					if (RepState->GetReceivingRepState()->StaticBuffer.Num() == 0)
-					{
-						Channel.ResetShadowData(*Replicator->RepLayout.Get(), RepState->GetReceivingRepState()->StaticBuffer, &Object);
-					}
-					else
-					{
-						Cmd.Property->CopySingleValue(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
-					}
-				#endif
+				}
 			}
 
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
