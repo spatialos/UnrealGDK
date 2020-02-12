@@ -205,7 +205,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
 			Sender->NetDriver->GlobalStateManager->TrySendWorkerReadyToBeginPlay();
-			Worker_ComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(*Sender->NetDriver).CreateInterestUpdate();
+			FWorkerComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(*Sender->NetDriver).CreateInterestUpdate();
 			Sender->Connection->SendComponentUpdate(Sender->NetDriver->WorkerEntityId, &InterestUpdate);
 			
 			return;
@@ -320,7 +320,7 @@ void USpatialSender::SendServerWorkerEntityInterestUpdate()
 		// Can't set interest yet
 		return;
 	}
-	Worker_ComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(*NetDriver).CreateInterestUpdate();
+	FWorkerComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(*NetDriver).CreateInterestUpdate();
 	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
 }
 
