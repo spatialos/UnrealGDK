@@ -49,7 +49,7 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 		[
 			SNew(SButton)
 			.VAlign(VAlign_Center)
-		.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PrepareAndroidApplication)
+		.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice)
 		.Content()
 		[
 			SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to Android device"))
@@ -63,7 +63,7 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 		[
 			SNew(SButton)
 			.VAlign(VAlign_Center)
-		.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PrepareIOSApplication)
+		.OnClicked(this, &FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice)
 		.Content()
 		[
 			SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
@@ -101,7 +101,7 @@ FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 		return FReply::Unhandled();
 	}
 
-	const TSharedPtr<FJsonObject> *JsonDataObject;
+	const TSharedPtr<FJsonObject>* JsonDataObject;
 	if (JsonRootObject->TryGetObjectField("json_data", JsonDataObject))
 	{
 		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Unable to parse the received json data. Result: %s"), *DevAuthTokenResult);
@@ -135,7 +135,7 @@ bool FSpatialGDKEditorLayoutDetails::TryConstructMobileCommandLineArgumentsFile(
 	// The project path is based on this: https://github.com/improbableio/UnrealEngine/blob/4.22-SpatialOSUnrealGDK-release/Engine/Source/Programs/AutomationTool/AutomationUtils/DeploymentContext.cs#L408
 	const FString MobileProjectPath = FString::Printf(TEXT("../../../%s/%s.uproject"), *ProjectName, *ProjectName);
 	FString TravelUrl;
-	FString SpatialOSCommandLineArgs = FString::Printf(TEXT("-workerType %s"), *(SpatialGDKSettings->MobileWorkerType));
+	FString SpatialOSOptions = FString::Printf(TEXT("-workerType %s"), *(SpatialGDKSettings->MobileWorkerType));
 	if (SpatialGDKSettings->bMobileConnectToLocalDeployment)
 	{
 		if (SpatialGDKSettings->MobileRuntimeIP.IsEmpty())
@@ -153,24 +153,24 @@ bool FSpatialGDKEditorLayoutDetails::TryConstructMobileCommandLineArgumentsFile(
 
 		if (SpatialGDKSettings->DevelopmentAuthenticationToken.IsEmpty())
 		{
-			FReply GeneratedToken = GenerateDevAuthToken();
-			if (!GeneratedToken.IsEventHandled())
+			FReply GeneratedTokenReply = GenerateDevAuthToken();
+			if (!GeneratedTokenReply.IsEventHandled())
 			{
 				return false;
 			}
 		}
 
-		SpatialOSCommandLineArgs += FString::Printf(TEXT(" +devauthToken %s"), *(SpatialGDKSettings->DevelopmentAuthenticationToken));
+		SpatialOSOptions += FString::Printf(TEXT(" +devauthToken %s"), *(SpatialGDKSettings->DevelopmentAuthenticationToken));
 		if (!SpatialGDKSettings->DevelopmentDeploymentToConnect.IsEmpty())
 		{
-			SpatialOSCommandLineArgs += FString::Printf(TEXT(" +deployment %s"), *(SpatialGDKSettings->DevelopmentDeploymentToConnect));
+			SpatialOSOptions += FString::Printf(TEXT(" +deployment %s"), *(SpatialGDKSettings->DevelopmentDeploymentToConnect));
 		}
 	}
 
-	const FString FinalCommandLineArgs = FString::Printf(TEXT("%s %s %s %s"), *MobileProjectPath, *TravelUrl, *SpatialOSCommandLineArgs, *(SpatialGDKSettings->MobileExtraCommandLineArgs));
+	const FString SpatialOSCommandLineArgs = FString::Printf(TEXT("%s %s %s %s"), *MobileProjectPath, *TravelUrl, *SpatialOSOptions, *(SpatialGDKSettings->MobileExtraCommandLineArgs));
 	CommandLineArgsFile = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::ProjectLogDir(), TEXT("ue4commandline.txt")));
 
-	if (!FFileHelper::SaveStringToFile(FinalCommandLineArgs, *CommandLineArgsFile, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
+	if (!FFileHelper::SaveStringToFile(SpatialOSCommandLineArgs, *CommandLineArgsFile, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
 	{
 		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Failed to write command line args to file: %s"), *CommandLineArgsFile);
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Failed to write command line args to file: %s"), *CommandLineArgsFile)));
@@ -180,9 +180,8 @@ bool FSpatialGDKEditorLayoutDetails::TryConstructMobileCommandLineArgumentsFile(
 	return true;
 }
 
-bool FSpatialGDKEditorLayoutDetails::TryPushCommandLineArgs(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile)
+bool FSpatialGDKEditorLayoutDetails::TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile)
 {
-	FString OutCommandLineArgsFile;
 	FString ExeOutput;
 	FString StdErr;
 	int32 ExitCode;
@@ -207,7 +206,7 @@ bool FSpatialGDKEditorLayoutDetails::TryPushCommandLineArgs(const FString& Execu
 	return true;
 }
 
-FReply FSpatialGDKEditorLayoutDetails::PrepareAndroidApplication()
+FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice()
 {
 	FString AndroidHome = FPlatformMisc::GetEnvironmentVariable(TEXT("ANDROID_HOME"));
 	if (AndroidHome.IsEmpty())
@@ -224,20 +223,20 @@ FReply FSpatialGDKEditorLayoutDetails::PrepareAndroidApplication()
 		return FReply::Unhandled();
 	}
 
-	const FString ProjectName = FApp::GetProjectName();
-	const FString AndroidCommandLineFile = FString::Printf(TEXT("/mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), *ProjectName);
+	const FString AndroidCommandLineFile = FString::Printf(TEXT("/mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), *(FApp::GetProjectName()));
 	const FString AdbArguments = FString::Printf(TEXT("push \"%s\" \"%s\""), *OutCommandLineArgsFile, *AndroidCommandLineFile);
-	FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb")));
 
 #if PLATFORM_WINDOWS
-	AdbExe = FString::Printf(TEXT("%s.exe"), *AdbExe);
+	const FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb.exe")));
+#else
+	const FString AdbExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(AndroidHome, TEXT("platform-tools/adb")));
 #endif
 
-	TryPushCommandLineArgs(AdbExe, AdbArguments, OutCommandLineArgsFile);
+	TryPushCommandLineArgsToDevice(AdbExe, AdbArguments, OutCommandLineArgsFile);
 	return FReply::Handled();
 }
 
-FReply FSpatialGDKEditorLayoutDetails::PrepareIOSApplication()
+FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice()
 {
 	const UIOSRuntimeSettings* IOSRuntimeSettings = GetDefault<UIOSRuntimeSettings>();
 	FString OutCommandLineArgsFile;
@@ -255,6 +254,6 @@ FReply FSpatialGDKEditorLayoutDetails::PrepareIOSApplication()
 	Executable = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/ThirdParty/Mono/Mac/bin/mono")));
 #endif
 
-	TryPushCommandLineArgs(Executable, DeploymentServerArguments, OutCommandLineArgsFile);
+	TryPushCommandLineArgsToDevice(Executable, DeploymentServerArguments, OutCommandLineArgsFile);
 	return FReply::Handled();
 }

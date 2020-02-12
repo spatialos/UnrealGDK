@@ -346,16 +346,16 @@ private:
 
 public:
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Connect to a local deployment"))
-		bool bMobileConnectToLocalDeployment;
-
-	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Mobile Client Worker Type"))
-		FString MobileWorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
+	bool bMobileConnectToLocalDeployment;
 
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (EditCondition = "bMobileConnectToLocalDeployment", DisplayName = "Runtime IP to local deployment"))
-		FString MobileRuntimeIP;
+	FString MobileRuntimeIP;
+
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Mobile Client Worker Type"))
+	FString MobileWorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
 
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Extra Command Line Arguments"))
-		FString MobileExtraCommandLineArgs;
+	FString MobileExtraCommandLineArgs;
 
 public:
 	/** If you have selected **Auto-generate launch configuration file**, you can change the default options in the file from the drop-down menu. */
