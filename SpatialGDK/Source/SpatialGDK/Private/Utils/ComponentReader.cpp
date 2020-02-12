@@ -201,7 +201,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 				}
 				else
 				{
-					Cmd.Property->CopySingleValue(RepState->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+					Cmd.Property->CopySingleValue(ShadowData.GetData() + SwappedCmd.ShadowOffset, Data);
 				}
 			}
 
