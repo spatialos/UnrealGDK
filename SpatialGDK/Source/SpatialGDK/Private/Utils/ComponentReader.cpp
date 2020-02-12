@@ -192,7 +192,6 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 			{
 #if ENGINE_MINOR_VERSION <= 22
 				FRepStateStaticBuffer& ShadowData = RepState->StaticBuffer;
-				
 #else
 				FRepStateStaticBuffer& ShadowData = RepState->GetReceivingRepState()->StaticBuffer;
 #endif
