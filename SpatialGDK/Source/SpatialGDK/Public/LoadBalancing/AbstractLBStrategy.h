@@ -10,6 +10,11 @@
 
 #include "AbstractLBStrategy.generated.h"
 
+namespace SpatialGDK
+{
+	struct Query;
+}
+class USpatialClassInfoManager;
 class USpatialNetDriver;
 
 /**
@@ -43,6 +48,11 @@ public:
 
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const { return false; }
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;)
+
+	/**
+		* Add any interest queries required by this worker based on the load balancing strategy used.
+		*/
+	virtual void CreateWorkerInterestQueries(TArray<SpatialGDK::Query>& OutQueries) const PURE_VIRTUAL(UAbstractLBStrategy::CreateWorkerInterestQueries, )
 
 protected:
 

@@ -25,7 +25,7 @@ public:
 	Worker_ComponentData CreateInterestData() const;
 	Worker_ComponentUpdate CreateInterestUpdate() const;
 
-	static Interest CreateServerWorkerInterest();
+	static Interest CreateServerWorkerInterest(const USpatialNetDriver& NetDriver);
 
 private:
 	// Build the checkout radius constraints for client workers
@@ -53,6 +53,9 @@ private:
 
 	void GetActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const;
 	TArray<Query> GetUserDefinedQueries(const QueryConstraint& LevelConstraints) const;
+
+	// Defined Constraint AND Level Constraint
+	Interest CreateActorInterest() const;
 
 	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd);
 
