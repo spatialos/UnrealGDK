@@ -624,7 +624,6 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 
 	if (AActor* TargetActor = Cast<AActor>(TargetObject))
 	{
-		// TODO(Alex): check pending kill
 		if (TargetActor->IsPendingKillPending())
 		{
 			bShouldDrop = true;
