@@ -57,8 +57,12 @@ struct ConfigureConnection
 		Params.network.modular_kcp.upstream_heartbeat = &HeartbeatParams;
 #endif
 
-		// There is no need to encrypt UnrealWorker (server) to runtime traffic as these machines will always be in the same data center.
-		if (*Config.WorkerType != SpatialConstants::DefaultServerWorkerType.ToString() && GetDefault<USpatialGDKSettings>()->bUseSecureConnection)
+		if (*Config.WorkerType == SpatialConstants::DefaultServerWorkerType.ToString() && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection)
+		{
+			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+		}
+		else if (*Config.WorkerType == SpatialConstants::DefaultClientWorkerType.ToString() && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnection)
 		{
 			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
 			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
