@@ -6,6 +6,7 @@
 #endif
 
 #include "Async/Async.h"
+#include "Improbable/SpatialEngineConstants.h" 
 #include "Misc/Paths.h"
 
 #include "SpatialGDKSettings.h"
@@ -56,8 +57,17 @@ struct ConfigureConnection
 		Params.network.modular_kcp.upstream_heartbeat = &HeartbeatParams;
 #endif
 
-		Params.network.modular_kcp.security_type = GetDefault<USpatialGDKSettings>()->bUseSecureConnection ? WORKER_NETWORK_SECURITY_TYPE_TLS : WORKER_NETWORK_SECURITY_TYPE_INSECURE;
-		Params.network.modular_tcp.security_type = GetDefault<USpatialGDKSettings>()->bUseSecureConnection ? WORKER_NETWORK_SECURITY_TYPE_TLS : WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		// There is no need to encrypt UnrealWorker (server) to runtime traffic as these machines will always be in the same data center.
+		if (*Config.WorkerType != SpatialConstants::DefaultServerWorkerType.ToString() && GetDefault<USpatialGDKSettings>()->bUseSecureConnection)
+		{
+			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+		}
+		else
+		{
+			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		}
 
 		Params.enable_dynamic_components = true;
 	}
