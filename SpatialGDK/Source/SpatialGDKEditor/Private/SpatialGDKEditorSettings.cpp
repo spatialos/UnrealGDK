@@ -233,7 +233,7 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 {
 	TSharedPtr<FJsonValue> LaunchConfigJson;
 	{
-		FArchive* ConfigFile = IFileManager::Get().CreateFileReader(*LaunchConfigPath);
+		TUniquePtr<FArchive> ConfigFile(IFileManager::Get().CreateFileReader(*LaunchConfigPath));
 
 		if (!ConfigFile)
 		{
@@ -241,12 +241,9 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 			return false;
 		}
 
-		TSharedRef<TJsonReader<char>> JsonReader = TJsonReader<char>::Create(ConfigFile);
+		TSharedRef<TJsonReader<char>> JsonReader = TJsonReader<char>::Create(ConfigFile.Get());
 
 		FJsonSerializer::Deserialize(*JsonReader, LaunchConfigJson);
-
-		delete ConfigFile;
-		ConfigFile = nullptr;
 	}
 
 	const TSharedPtr<FJsonObject>* LaunchConfigJsonRootObject;
