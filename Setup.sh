@@ -19,7 +19,7 @@ SCHEMA_COPY_DIR="$(pwd)/../../../spatial/schema/unreal/gdk"
 SCHEMA_STD_COPY_DIR="$(pwd)/../../../spatial/build/dependencies/schema/standard_library"
 SPATIAL_DIR="$(pwd)/../../../spatial"
 if [[ "${1:-}" == "--china" ]]; then
-    DOMAIN_ENVIRONMENT_VAR="--domain spatialoschina.com --environment cn-production"
+    DOMAIN_ENVIRONMENT_VAR="--environment cn-production"
 fi
 
 echo "Setup the git hooks"

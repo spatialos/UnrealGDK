@@ -26,8 +26,14 @@ namespace Improbable
         private const string CHINA_ENDPOINT_URL = "platform.api.spatialoschina.com";
         private const int CHINA_ENDPOINT_PORT = 443;
 
+        private static readonly string ChinaRefreshToken = File.ReadAllText(Path.Combine(Environment.ExpandEnvironmentVariables("%LOCALAPPDATA%"), ".improbable/oauth2/oauth2_refresh_token_cn-production"));
+
+        private static readonly PlatformRefreshTokenCredential ChinaCredentials = new PlatformRefreshTokenCredential(ChinaRefreshToken,
+            "https://auth.spatialoschina.com/auth/v1/authcode",
+            "https://auth.spatialoschina.com/auth/v1/token");
+
         private static string UploadSnapshot(SnapshotServiceClient client, string snapshotPath, string projectName,
-            string deploymentName)
+            string deploymentName, string region)
         {
             Console.WriteLine($"Uploading {snapshotPath} to project {projectName}");
 
@@ -61,7 +67,12 @@ namespace Improbable
             var httpRequest = WebRequest.Create(uploadSnapshotResponse.UploadUrl) as HttpWebRequest;
             httpRequest.Method = "PUT";
             httpRequest.ContentLength = snapshotToUpload.Size;
-            httpRequest.Headers.Set("Content-MD5", snapshotToUpload.Checksum);
+            httpRequest.Headers.Add("Content-MD5", snapshotToUpload.Checksum);
+
+            if (region == "CN")
+            {
+                httpRequest.Headers.Add("x-amz-server-side-encryption", "AES256");
+            }
 
             using (var dataStream = httpRequest.GetRequestStream())
             {
@@ -89,6 +100,11 @@ namespace Improbable
                 return new PlatformApiEndpoint(CHINA_ENDPOINT_URL, CHINA_ENDPOINT_PORT);
             }
             return null; // Use default
+        }
+
+        private static PlatformRefreshTokenCredential GetPlatformRefreshTokenCredential(string region)
+        {
+            return region == "CN" ? ChinaCredentials : null;
         }
 
         private static int CreateDeployment(string[] args)
@@ -122,7 +138,7 @@ namespace Improbable
 
             try
             {
-                var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(mainDeploymentRegion));
+                var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(mainDeploymentRegion), GetPlatformRefreshTokenCredential(mainDeploymentRegion));
 
                 if (DeploymentExists(deploymentServiceClient, projectName, mainDeploymentName))
                 {
@@ -189,6 +205,7 @@ namespace Improbable
                 {
                     Console.WriteLine(
                         $"Unable to launch the deployment(s). This is likely because the project '{projectName}' or assembly '{assemblyName}' doesn't exist.");
+                    return 1;
                 }
                 else
                 {
@@ -233,11 +250,11 @@ namespace Improbable
         private static Operation<Deployment, CreateDeploymentMetadata> CreateMainDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
             bool launchSimPlayerDeployment, string projectName, string assemblyName, string mainDeploymentName, string mainDeploymentJsonPath, string mainDeploymentSnapshotPath, string regionCode)
         {
-            var snapshotServiceClient = SnapshotServiceClient.Create(GetApiEndpoint(regionCode));
+            var snapshotServiceClient = SnapshotServiceClient.Create(GetApiEndpoint(regionCode), GetPlatformRefreshTokenCredential(regionCode));
 
             // Upload snapshots.
             var mainSnapshotId = UploadSnapshot(snapshotServiceClient, mainDeploymentSnapshotPath, projectName,
-                mainDeploymentName);
+                mainDeploymentName, regionCode);
 
             if (mainSnapshotId.Length == 0)
             {
@@ -281,7 +298,7 @@ namespace Improbable
         private static Operation<Deployment, CreateDeploymentMetadata> CreateSimPlayerDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
             string projectName, string assemblyName, string mainDeploymentName, string simDeploymentName, string simDeploymentJsonPath, string regionCode, int simNumPlayers)
         {
-            var playerAuthServiceClient = PlayerAuthServiceClient.Create(GetApiEndpoint(regionCode));
+            var playerAuthServiceClient = PlayerAuthServiceClient.Create(GetApiEndpoint(regionCode), GetPlatformRefreshTokenCredential(regionCode));
 
             // Create development authentication token used by the simulated players.
             var dat = playerAuthServiceClient.CreateDevelopmentAuthenticationToken(
@@ -371,7 +388,7 @@ namespace Improbable
             var projectName = args[1];
             var regionCode = args[2];
 
-            var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(regionCode));
+            var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(regionCode), GetPlatformRefreshTokenCredential(regionCode));
 
             if (args.Length == 4)
             {
@@ -423,7 +440,7 @@ namespace Improbable
             var projectName = args[1];
             var regionCode = args[2];
 
-            var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(regionCode));
+            var deploymentServiceClient = DeploymentServiceClient.Create(GetApiEndpoint(regionCode), GetPlatformRefreshTokenCredential(regionCode));
             var activeDeployments = ListLaunchedActiveDeployments(deploymentServiceClient, projectName);
 
             foreach (var deployment in activeDeployments)
