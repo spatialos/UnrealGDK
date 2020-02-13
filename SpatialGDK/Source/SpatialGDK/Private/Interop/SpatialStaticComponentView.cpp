@@ -89,7 +89,7 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		Data = MakeUnique<SpatialGDK::ServerRPCEndpointLegacy>(Op.data);
 		break;
 	case SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ServerRPCEndpointLegacy>(Op.data);
+		Data = MakeUnique<SpatialGDK::ServerToServerCommandEndpoint>(Op.data);
 		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::AuthorityIntent>(Op.data);
