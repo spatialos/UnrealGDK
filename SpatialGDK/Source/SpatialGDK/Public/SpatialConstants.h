@@ -114,10 +114,14 @@ const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID					= 9977;
 const Worker_ComponentId MULTICAST_RPCS_COMPONENT_ID					= 9976;
 const Worker_ComponentId SPATIAL_DEBUGGING_COMPONENT_ID					= 9975;
 <<<<<<< HEAD
+<<<<<<< HEAD
 const Worker_ComponentId SERVER_WORKER_COMPONENT_ID						= 9974;
 =======
 const Worker_ComponentId SERVER_TO_SERVER_ENDPOINT_COMPONENT_ID_LEGACY	= 9974;
 >>>>>>> 19adbb87... split component
+=======
+const Worker_ComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9974;
+>>>>>>> f1a21605... rename legacy->command
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -339,7 +343,7 @@ FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType
 	{
 	case ERPCType::CrossServer:
 	{
-		return SpatialConstants::SERVER_TO_SERVER_ENDPOINT_COMPONENT_ID_LEGACY;
+		return SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 	}
 	case ERPCType::NetMulticast:
 	{
@@ -368,7 +372,7 @@ FORCEINLINE Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffer
 
 FORCEINLINE Worker_ComponentId GetCrossServerRPCComponent(bool bUsingRingBuffers)
 {
-	return bUsingRingBuffers ? SERVER_ENDPOINT_COMPONENT_ID : SERVER_TO_SERVER_ENDPOINT_COMPONENT_ID_LEGACY;
+	return bUsingRingBuffers ? SERVER_ENDPOINT_COMPONENT_ID : SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 }
 
 } // ::SpatialConstants

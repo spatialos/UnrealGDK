@@ -20,7 +20,7 @@ component UnrealServerRPCEndpointLegacy {
     event UnrealPackedRPCPayload packed_server_to_client_rpc;
 }
 
-component UnrealServerToServerRPCEndpointLegacy {
+component UnrealServerToServerCommandEndpoint {
     id = 9974;
     command Void server_to_server_rpc_command(UnrealRPCPayload);
 }

@@ -12,13 +12,13 @@
 namespace SpatialGDK
 {
 
-struct ServerToServerRPCEndpointLegacy : Component
+struct ServerToServerCommandEndpoint : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_ENDPOINT_COMPONENT_ID_LEGACY;
+	static const Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 
-	ServerToServerRPCEndpointLegacy() = default;
+	ServerToServerCommandEndpoint() = default;
 
-	ServerToServerRPCEndpointLegacy(const Worker_ComponentData& Data)
+	ServerToServerCommandEndpoint(const Worker_ComponentData& Data)
 	{
 		Schema_Object* EndpointObject = Schema_GetComponentDataFields(Data.schema_type);
 	}

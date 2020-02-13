@@ -12,7 +12,7 @@
 #include "Schema/Heartbeat.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
-#include "Schema/ServerToServerRPCEndpointLegacy.h"
+#include "Schema/ServerToServerCommandEndpoint.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpatialDebugging.h"
@@ -122,7 +122,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	else
 	{
 		ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
-		ComponentWriteAcl.Add(SpatialConstants::SERVER_TO_SERVER_ENDPOINT_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
+		ComponentWriteAcl.Add(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 		ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
 		ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, OwningClientOnlyRequirementSet);
 
@@ -308,7 +308,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	{
 		ComponentDatas.Add(ClientRPCEndpointLegacy().CreateRPCEndpointData());
 		ComponentDatas.Add(ServerRPCEndpointLegacy().CreateRPCEndpointData());
-		ComponentDatas.Add(ServerToServerRPCEndpointLegacy().CreateRPCEndpointData());
+		ComponentDatas.Add(ServerToServerCommandEndpoint().CreateRPCEndpointData());
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY));
 
 		if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
