@@ -51,6 +51,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added a button to generate the Development Authentication Token inside the Unreal Editor. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Cloud Connection**.
 - The Spatial output log will now be open by default.
 - Added a new settings section allowing you to configure the launch arguments when running a a client on a mobile device. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Mobile**.
+- Added settings to choose which runtime version to launch with local and cloud deployment launch command.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
