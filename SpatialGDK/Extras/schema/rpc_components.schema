@@ -21,7 +21,7 @@ component UnrealServerRPCEndpointLegacy {
 }
 
 component UnrealServerToServerCommandEndpoint {
-    id = 9974;
+    id = 9973;
     command Void server_to_server_rpc_command(UnrealRPCPayload);
 }
 
