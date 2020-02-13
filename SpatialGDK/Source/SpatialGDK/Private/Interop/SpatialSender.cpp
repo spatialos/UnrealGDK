@@ -600,8 +600,8 @@ void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const 
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendRPC);
-  
-  bool bShouldDrop = false;
+
+	bool bShouldDrop = false;
 
 	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
 	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime < TimeDiff)
