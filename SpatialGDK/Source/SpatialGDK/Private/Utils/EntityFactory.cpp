@@ -12,7 +12,6 @@
 #include "Schema/Heartbeat.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
-#include "Schema/ServerToServerCommandEndpoint.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpatialDebugging.h"
@@ -308,7 +307,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	{
 		ComponentDatas.Add(ClientRPCEndpointLegacy().CreateRPCEndpointData());
 		ComponentDatas.Add(ServerRPCEndpointLegacy().CreateRPCEndpointData());
-		ComponentDatas.Add(ServerToServerCommandEndpoint().CreateRPCEndpointData());
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY));
 
 		if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
