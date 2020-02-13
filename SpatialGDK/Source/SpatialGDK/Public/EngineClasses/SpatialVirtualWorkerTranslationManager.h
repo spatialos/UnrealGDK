@@ -50,6 +50,7 @@ private:
 	SpatialVirtualWorkerTranslator* Translator;
 
 	TMap<VirtualWorkerId, PhysicalWorkerName> VirtualToPhysicalWorkerMapping;
+	TMap<PhysicalWorkerName, VirtualWorkerId> PhysicalToVirtualWorkerMapping;
 	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
@@ -59,8 +60,8 @@ private:
 
 	// The following methods are used to query the Runtime for all worker entities and update the mapping
 	// based on the response.
-	void QueryForWorkerEntities();
-	void WorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
+	void QueryForServerWorkerEntities();
+	void ServerWorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
 	void ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SendVirtualWorkerMappingUpdate();
 
