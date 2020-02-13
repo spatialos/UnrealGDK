@@ -305,9 +305,6 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 	MULTICAST_RPCS_COMPONENT_ID,
 	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
 
-	// Required for server to server RPCs.
-	SERVER_ENDPOINT_COMPONENT_ID,
-
 	// Global state components
 	SINGLETON_MANAGER_COMPONENT_ID,
 	DEPLOYMENT_MAP_COMPONENT_ID,
@@ -363,9 +360,9 @@ FORCEINLINE Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffer
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 }
 
-FORCEINLINE Worker_ComponentId GetCrossServerRPCComponent(bool bUsingRingBuffers)
+FORCEINLINE Worker_ComponentId GetCrossServerRPCComponent()
 {
-	return bUsingRingBuffers ? SERVER_ENDPOINT_COMPONENT_ID : SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
+	return SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 }
 
 } // ::SpatialConstants
