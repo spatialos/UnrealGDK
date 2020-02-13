@@ -149,7 +149,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Processing Received RPC With Unresolved Refs"))
 	float QueuedIncomingRPCWaitTime;
 
-	/** Seconds to wait before dropping an outgoing RPC, due to lack of authority over the Entity*/
+	/** Seconds to wait before dropping an outgoing RPC.*/
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Dropping Outgoing RPC"))
 	float QueuedOutgoingRPCWaitTime;
 
