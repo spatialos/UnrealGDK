@@ -41,7 +41,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Batch Spatial Position Updates now defaults to false.
 - Introduced experimental feature flag `bEnableClientResultTypes`, defaulting false. Flip this to true for client Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
 - Dynamic interest overrides are disabled if the `bEnableClientResultTypes` flag is set to true. 
-
+- Minor code updates to handle API changes in 4.24 (and stop deprecation warnings)
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
