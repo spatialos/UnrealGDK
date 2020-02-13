@@ -51,6 +51,12 @@ private:
 	/** Delegate to commit primary deployment name */
 	void OnPrimaryDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType);
 
+	/** Delegate called when the user clicks the GDK Pinned Version checkbox */
+	void OnCheckedUsePinnedVersion(ECheckBoxState NewCheckedState);
+
+	/** Delegate to commit runtime version */
+	void OnRuntimeCustomVersionCommited(const FText& InText, ETextCommit::Type InCommitType);
+
 	/** Delegate called when the user has picked a path for the snapshot file */
 	void OnSnapshotPathPicked(const FString& PickedPath);
 
@@ -94,6 +100,9 @@ private:
 	void OnCheckedSimulatedPlayers(ECheckBoxState NewCheckedState);
 
 	ECheckBoxState IsSimulatedPlayersEnabled() const;
+	ECheckBoxState IsUsingGDKPinnedRuntimeVersion() const;
+	bool IsUsingCustomRuntimeVersion() const;
+	FText GetSpatialOSRuntimeVersionToUseText() const;
 
 	/** Delegate to determine the 'Launch Deployment' button enabled state */
 	bool IsDeploymentConfigurationValid() const;
