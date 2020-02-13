@@ -19,7 +19,7 @@ public:
 		RepFlags.bNetInitial = 1; // The server will only ever send one update for bNetInitial, so just let them through here.
 		RepFlags.bNetSimulated = ActorChannel->Actor->Role == ROLE_SimulatedProxy;
 		RepFlags.bNetOwner = bIsClient && ActorChannel->IsOwnedByWorker();
-		RepFlags.bRepPhysics = ActorChannel->Actor->ReplicatedMovement.bRepPhysics;
+		RepFlags.bRepPhysics = ActorChannel->Actor->GetReplicatedMovement().bRepPhysics;
 
 #if 0
 		UE_LOG(LogTemp, Verbose, TEXT("CMF Actor %s (%lld) NetOwner %d Simulated %d RepPhysics %d Client %s"),

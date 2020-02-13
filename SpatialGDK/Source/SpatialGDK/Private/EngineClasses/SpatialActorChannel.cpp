@@ -479,7 +479,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	RepFlags.bNetSimulated = (Actor->GetRemoteRole() == ROLE_SimulatedProxy);
-	RepFlags.bRepPhysics = Actor->ReplicatedMovement.bRepPhysics;
+	RepFlags.bRepPhysics = Actor->GetReplicatedMovement().bRepPhysics;
 	RepFlags.bReplay = ActorWorld && (ActorWorld->DemoNetDriver == Connection->GetDriver());
 
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);

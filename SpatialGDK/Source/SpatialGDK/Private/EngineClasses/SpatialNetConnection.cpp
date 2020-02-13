@@ -71,11 +71,11 @@ int32 USpatialNetConnection::IsNetReady(bool Saturate)
 	return true;
 }
 
-void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)
+void USpatialNetConnection::UpdateLevelVisibility(const struct FUpdateLevelVisibilityLevelInfo& LevelVisibility)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialNetConnectionUpdateLevelVisibility);
 
-	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
+	UNetConnection::UpdateLevelVisibility(LevelVisibility);
 
 	// We want to update our interest as fast as possible
 	// So we send an Interest update immediately.
