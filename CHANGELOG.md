@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased-`x.y.z`] - 2020-xx-xx
 ### Features:
 - Updated the version of the local API service used by the UnrealGDK.
+- The Spatial output log will now be open by default.
 
 ### Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
