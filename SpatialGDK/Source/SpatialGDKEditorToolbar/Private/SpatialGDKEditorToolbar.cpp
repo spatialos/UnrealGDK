@@ -641,8 +641,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 	const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
 	const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
+	const FString RuntimeVersion = SpatialGDKSettings->GetSpatialOSRuntimeVersionForLocal();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName]
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion]
 	{
 		// If the last local deployment is still stopping then wait until it's finished.
 		while (LocalDeploymentManager->IsDeploymentStopping())
@@ -664,7 +665,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
-		const bool bLocalDeploymentStarted = LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, GetOptionalExposedRuntimeIP());
+		const bool bLocalDeploymentStarted = LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName, GetOptionalExposedRuntimeIP());
 
 		if (bLocalDeploymentStarted)
 		{

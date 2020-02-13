@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
- 
+
 #include "Utils/EntityFactory.h"
- 
+
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -37,7 +37,7 @@ EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapC
 	, ClassInfoManager(InClassInfoManager)
 	, RPCService(InRPCService)
 { }
- 
+
 TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs)
 {
 	AActor* Actor = Channel->Actor;
@@ -76,13 +76,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
 		AnyServerOrOwningClientRequirementSet.Add(ZoningAttributeSet);
 
-		check(NetDriver->LoadBalanceStrategy != nullptr);
-		IntendedVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
+		const UAbstractLBStrategy* LBStrategy = NetDriver->LoadBalanceStrategy;
+		check(LBStrategy != nullptr);
+		IntendedVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Actor);
 		if (IntendedVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
-			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid virtual worker ID to spawn Actor. Actor: %s"), *Actor->GetName());
-			// We'll just default to spawning with intent set to this worker's virtual worker ID
-			IntendedVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid virtual worker ID to spawn actor with. Actor: %s. Strategy: %s"), *Actor->GetName(), *LBStrategy->GetName());
 		}
 		else
 		{
@@ -122,6 +121,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	else
 	{
 		ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
+		ComponentWriteAcl.Add(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 		ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
 		ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, OwningClientOnlyRequirementSet);
 
@@ -307,6 +307,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	{
 		ComponentDatas.Add(ClientRPCEndpointLegacy().CreateRPCEndpointData());
 		ComponentDatas.Add(ServerRPCEndpointLegacy().CreateRPCEndpointData());
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY));
 
 		if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
@@ -396,7 +397,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	}
 
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
- 
+
 	return ComponentDatas;
 }
 
