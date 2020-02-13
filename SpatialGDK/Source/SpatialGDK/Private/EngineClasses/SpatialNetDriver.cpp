@@ -409,7 +409,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 {
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
-	if (IsServer()) 
+	if (IsServer())
 	{
 		if (WorldSettings == nullptr || WorldSettings->LoadBalanceStrategy == nullptr)
 		{
@@ -495,7 +495,7 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 	{
 		uint32 ServerHash = GlobalStateManager->GetSchemaHash();
 		if (ClassInfoManager->SchemaDatabase->SchemaDescriptorHash != ServerHash) // Are we running with the same schema hash as the server?
-		{	
+		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Your clients Spatial schema does match the servers, this may cause problems. Client hash: '%u' Server hash: '%u'"), ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
 		}
 
@@ -618,7 +618,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			StaticComponentView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
 		{
 			// ServerTravel - Increment the session id, so users don't rejoin the old game.
-			GlobalStateManager->SetCanBeginPlay(true);
 			GlobalStateManager->TriggerBeginPlay();
 			GlobalStateManager->SetDeploymentState();
 			GlobalStateManager->SetAcceptingPlayers(true);
@@ -660,20 +659,33 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		return;
 	}
 
-	// If we have authority over the GSM when loading a sublevel, make sure we have authority
-	// over the actors in the sublevel.
-	if (GlobalStateManager != nullptr)
+	// Necessary for levels loaded before connecting to Spatial
+	if (GlobalStateManager == nullptr)
 	{
-		if (GlobalStateManager->HasAuthority())
+		return;
+	}
+
+	// If load balancing disabled but this worker is GSM authoritative then make sure
+	// we set Role_Authority on Actors in the sublevel. Also, if load balancing is
+	// enabled and lb strategy says we should have authority over a loaded level Actor
+	// then also set Role_Authority on Actors in the sublevel.
+	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
+	const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
+	{
+		// If load balancing is disabled and this worker is not GSM authoritative then exit early.
+		return;
+	}
+
+	for (auto Actor : LoadedLevel->Actors)
+	{
+		// If load balancing is disabled, we must be the GSM-authoritative worker, so set Role_Authority
+		// otherwise, load balancing is enabled, so check the lb strategy.
+		if (Actor->GetIsReplicated() &&
+			(!bLoadBalancingEnabled || LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
 		{
-			for (auto Actor : LoadedLevel->Actors)
-			{
-				if (Actor->GetIsReplicated())
-				{
-					Actor->Role = ROLE_Authority;
-					Actor->RemoteRole = ROLE_SimulatedProxy;
-				}
-			}
+			Actor->Role = ROLE_Authority;
+			Actor->RemoteRole = ROLE_SimulatedProxy;
 		}
 	}
 }
@@ -687,7 +699,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	UWorld* World = GameMode->GetWorld();
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 
-	if (!NetDriver->StaticComponentView->HasAuthority(NetDriver->GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
+	if (!NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
 	{
 		// TODO: UNR-678 Send a command to the GSM to initiate server travel on the correct server.
 		UE_LOG(LogGameMode, Warning, TEXT("Trying to server travel on a server which is not authoritative over the GSM."));
@@ -777,7 +789,7 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			Connection->SendDeleteEntityRequest(WorkerEntityId);
 		}
-		
+
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
 		if (!bPersistSpatialConnection)
 		{
@@ -1651,7 +1663,7 @@ void USpatialNetDriver::PollPendingLoads()
 	{
 		return;
 	}
-	
+
 	for (auto IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
 	{
 		if (PackageMap->IsGUIDPending(*IterPending))
@@ -2281,6 +2293,16 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 		FoundOps.Add(EntityQueryResponseOp);
 	}
 
+	// CreateEntityResponseOps are needed for non-GSM-authoritative server workers sending an update
+	// to the Runtime indicating that the worker is ready to begin play.
+	Worker_Op* CreateEntityResponseOp = nullptr;
+	FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE, &CreateEntityResponseOp);
+
+	if (CreateEntityResponseOp != nullptr)
+	{
+		FoundOps.Add(CreateEntityResponseOp);
+	}
+
 	// Search for entity id reservation response and process it.  The entity id reservation
 	// can fail to reserve entity ids.  In that case, the EntityPool will not be marked ready,
 	// a new query will be sent, and we will process the new response here when it arrives.
@@ -2296,7 +2318,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	}
 
 	// Search for StartupActorManager ops we need and process them
-	if (!GlobalStateManager->GetCanBeginPlay())
+	if (!GlobalStateManager->IsReady())
 	{
 		Worker_Op* AddComponentOp = nullptr;
 		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AddComponentOp);
@@ -2356,7 +2378,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	SelectiveProcessOps(FoundOps);
 
 	if (PackageMap->IsEntityPoolReady() &&
-		GlobalStateManager->GetCanBeginPlay() &&
+		GlobalStateManager->IsReady() &&
 		(!VirtualWorkerTranslator.IsValid() || VirtualWorkerTranslator->IsReady()))
 	{
 		// Return whether or not we are ready to start

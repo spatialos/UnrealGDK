@@ -65,7 +65,7 @@ TSet<VirtualWorkerId> UGridBasedLBStrategy::GetVirtualWorkerIds() const
 	return TSet<VirtualWorkerId>(VirtualWorkerIds);
 }
 
-bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const
+bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
@@ -74,9 +74,7 @@ bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const
 	}
 
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
-
-
-	return !IsInside(WorkerCells[LocalVirtualWorkerId - 1], Actor2DLocation);
+	return IsInside(WorkerCells[LocalVirtualWorkerId - 1], Actor2DLocation);
 }
 
 VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const

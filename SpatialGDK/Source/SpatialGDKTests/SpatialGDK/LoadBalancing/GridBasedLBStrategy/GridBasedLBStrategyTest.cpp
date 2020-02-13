@@ -110,7 +110,7 @@ bool FWaitForActor::Update()
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckShouldRelinquishAuthority, FAutomationTestBase*, Test, FName, Handle, bool, bExpected);
 bool FCheckShouldRelinquishAuthority::Update()
 {
-	bool bActual = Strat->ShouldRelinquishAuthority(*TestActors[Handle]);
+	bool bActual = !Strat->ShouldHaveAuthority(*TestActors[Handle]);
 
 	Test->TestEqual(FString::Printf(TEXT("Should Relinquish Authority. Actual: %d, Expected: %d"), bActual, bExpected), bActual, bExpected);
 
