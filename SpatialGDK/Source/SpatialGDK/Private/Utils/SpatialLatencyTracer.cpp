@@ -403,14 +403,12 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc,
 		OutLatencyPayload = FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes));
 	}
 
-	TraceKey Key = GenerateNewTraceKey();
-	TraceMap.Add(Key, MoveTemp(NewTrace));
-	ActiveTraceKey = Key; // This will be followed by ContinueLatencyTrace
+	NewTrace.End(); // Everything else is added as a key frame to this trace 
 
 	return true;
 }
 
-bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue)
+bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType::Type Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue)
 {
 	// TODO: UNR-2787 - Improve mutex-related latency
 	// This functions might spike because of the Mutex below
@@ -436,19 +434,8 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 		return false;
 	}
 
-	auto TraceTypeToStr = [](ETraceType Type) -> TCHAR*
-	{
-		switch (Type)
-		{
-		case ETraceType::Property: return TEXT("Property");
-		case ETraceType::RPC: return TEXT("RPC");
-		case ETraceType::Tagged: return TEXT("Tagged");
-		default: return TEXT("");
-		}
-	};
-
 	WriteKeyFrameToTrace(ActiveTrace, TCHAR_TO_UTF8(*TraceDesc));
-	WriteKeyFrameToTrace(ActiveTrace, FString::Printf(TEXT("Continue trace %s : %s"), TraceTypeToStr(Type), *Target));
+	WriteKeyFrameToTrace(ActiveTrace, FString::Printf(TEXT("Continue trace %s : %s"), *UEnum::GetValueAsString(Type), *Target));
 
 	// For non-spatial tracing
 	const improbable::trace::SpanContext& TraceContext = ActiveTrace->context();
@@ -514,7 +501,7 @@ void USpatialLatencyTracer::ClearTrackingInformation()
 	TrackingTags.Reset();
 }
 
-TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& Target, ETraceType Type)
+TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& Target, ETraceType::Type Type)
 {
 	if (Actor == nullptr)
 	{
@@ -601,7 +588,7 @@ USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTraceOrReadPay
 
 void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc)
 {
-	if (Trace != nullptr && TraceDesc.Len())
+	if (Trace != nullptr)
 	{
 		FString TraceMsg = FormatMessage(TraceDesc);
 		improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*TraceMsg), Trace).End();
