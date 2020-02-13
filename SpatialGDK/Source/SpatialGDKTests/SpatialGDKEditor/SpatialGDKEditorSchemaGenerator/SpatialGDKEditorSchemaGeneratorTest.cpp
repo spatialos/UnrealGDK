@@ -842,6 +842,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 		"relevant.schema",
 		"rpc_components.schema",
 		"rpc_payload.schema",
+		"server_worker.schema",
 		"singleton.schema",
 		"spawndata.schema",
 		"spawner.schema",
