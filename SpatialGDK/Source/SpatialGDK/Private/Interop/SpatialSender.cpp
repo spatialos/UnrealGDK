@@ -665,7 +665,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 	{
 	case ERPCType::CrossServer:
 	{
-		Worker_ComponentId ComponentId = SpatialConstants::GetCrossServerRPCComponent(SpatialGDKSettings->UseRPCRingBuffer());
+		Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
