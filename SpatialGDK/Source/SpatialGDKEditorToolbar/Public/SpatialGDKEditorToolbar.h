@@ -75,8 +75,6 @@ private:
 	bool StopSpatialServiceIsVisible() const;
 	bool StopSpatialServiceCanExecute() const;
 
-	bool UpdateIOSClientIsVisible() const;
-
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
@@ -106,8 +104,6 @@ private:
 	bool IsSchemaGenerated() const;
 
 	FString GetOptionalExposedRuntimeIP() const;
-
-	void UpdateIOSClient() const;
 
 	static void ShowCompileLog();
 
