@@ -12,8 +12,8 @@ Push-Location $gdk_path
     }
     $env:MSBUILD_EXE = "`"$msbuild_path`""
     if($includeTraceLibs) {
-        cmd /c SetupIncTraceLibs.bat
+        cmd /c SetupIncTraceLibs.bat --mobile
     } else {
-        cmd /c Setup.bat
+        cmd /c Setup.bat --mobile
     }
 Pop-Location
