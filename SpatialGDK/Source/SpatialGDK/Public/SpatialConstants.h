@@ -42,7 +42,7 @@ enum ESchemaComponentType : int32
 namespace SpatialConstants
 {
 
-FORCEINLINE FString RPCTypeToString(ERPCType RPCType)
+inline FString RPCTypeToString(ERPCType RPCType)
 {
 	switch (RPCType)
 	{
@@ -305,9 +305,6 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 	MULTICAST_RPCS_COMPONENT_ID,
 	NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
 
-	// Required for server to server RPCs.
-	SERVER_ENDPOINT_COMPONENT_ID,
-
 	// Global state components
 	SINGLETON_MANAGER_COMPONENT_ID,
 	DEPLOYMENT_MAP_COMPONENT_ID,
@@ -330,7 +327,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST = 
 	HEARTBEAT_COMPONENT_ID
 };
 
-FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
+inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {
 	switch (RPCType)
 	{
@@ -358,14 +355,9 @@ FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType
 	}
 }
 
-FORCEINLINE Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
+inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
 {
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
-}
-
-FORCEINLINE Worker_ComponentId GetCrossServerRPCComponent(bool bUsingRingBuffers)
-{
-	return bUsingRingBuffers ? SERVER_ENDPOINT_COMPONENT_ID : SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 }
 
 } // ::SpatialConstants
