@@ -21,7 +21,7 @@ class USpatialNetDriver;
  *      VirtualWorkerIds from GetVirtualWorkerIds() and begin assinging workers.
  *    (Other Workers): SetLocalVirtualWorkerId when assigned a VirtualWorkerId.
  * 4. For each Actor being replicated:
- *   a) Check if authority should be relinquished by calling ShouldRelinquishAuthority
+ *   a) Check if authority should be relinquished by calling ShouldHaveAuthority
  *   b) If true: Send authority change request to Translator/Enforcer passing in new
  *        VirtualWorkerId returned by WhoShouldHaveAuthority
  */
@@ -41,7 +41,7 @@ public:
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
 
-	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const { return false; }
+	virtual bool ShouldHaveAuthority(const AActor& Actor) const { return false; }
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;)
 
 protected:
