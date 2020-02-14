@@ -20,6 +20,9 @@
 
 DEFINE_LOG_CATEGORY(LogComponentFactory);
 
+DECLARE_CYCLE_STAT(TEXT("Factory ProcessPropertyUpdates"), STAT_FactoryProcessPropertyUpdates, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Factory ProcessFastArrayUpdate"), STAT_FactoryProcessFastArrayUpdate, STATGROUP_SpatialNet);
+
 namespace
 {
 	template<typename T>
@@ -45,6 +48,8 @@ ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNet
 
 bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TraceKey* OutLatencyTraceId, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
 {
+	SCOPE_CYCLE_COUNTER(STAT_FactoryProcessPropertyUpdates);
+
 	bool bWroteSomething = false;
 
 	// Populate the replicated data component updates from the replicated property changelist.
@@ -98,6 +103,8 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 					// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
 					if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
 					{
+						SCOPE_CYCLE_COUNTER(STAT_FactoryProcessFastArrayUpdate);
+
 						FSpatialNetBitWriter ValueDataWriter(PackageMap);
 
 						if (FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct) || bIsInitialData)

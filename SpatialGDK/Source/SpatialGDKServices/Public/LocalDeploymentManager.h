@@ -28,7 +28,7 @@ public:
 	bool KillProcessBlockingPort(int32 Port);
 	bool LocalDeploymentPreRunChecks();
 
-	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose);
+	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose);
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 
 	bool SPATIALGDKSERVICES_API TryStartSpatialService(FString RuntimeIPToExpose);
