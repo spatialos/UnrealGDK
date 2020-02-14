@@ -197,23 +197,23 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 				uint8* Data = (uint8*)&Object + SwappedCmd.Offset;
 
-                // If the property has RepNotifies, update with local data and possibly initialize the shadow data
-                if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
-                {
+				// If the property has RepNotifies, update with local data and possibly initialize the shadow data
+				if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+				{
 #if ENGINE_MINOR_VERSION <= 22
-                    FRepStateStaticBuffer& ShadowData = RepState->StaticBuffer;
+					FRepStateStaticBuffer& ShadowData = RepState->StaticBuffer;
 #else
-                    FRepStateStaticBuffer& ShadowData = RepState->GetReceivingRepState()->StaticBuffer;
+					FRepStateStaticBuffer& ShadowData = RepState->GetReceivingRepState()->StaticBuffer;
 #endif
-                    if (ShadowData.Num() == 0)
-                    {
-                        Channel.ResetShadowData(*Replicator->RepLayout.Get(), ShadowData, &Object);
-                    }
-                    else
-                    {
-                        Cmd.Property->CopySingleValue(ShadowData.GetData() + SwappedCmd.ShadowOffset, Data);
-                    }
-                }
+					if (ShadowData.Num() == 0)
+					{
+						Channel.ResetShadowData(*Replicator->RepLayout.Get(), ShadowData, &Object);
+					}
+					else
+					{
+						Cmd.Property->CopySingleValue(ShadowData.GetData() + SwappedCmd.ShadowOffset, Data);
+					}
+				}
 
 				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 				{
