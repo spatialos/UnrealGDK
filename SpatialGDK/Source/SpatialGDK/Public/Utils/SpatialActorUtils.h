@@ -2,34 +2,41 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "EngineClasses/SpatialNetConnection.h"
 
 #include "Components/SceneComponent.h"
+#include "Containers/Array.h"
+#include "Containers/UnrealString.h"
 #include "Engine/EngineTypes.h"
-#include "EngineClasses/SpatialNetConnection.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerController.h"
+#include "Math/Vector.h"
 
 namespace SpatialGDK
 {
 
-inline AActor* GetOutermostOwner(const AActor* Actor)
+// We need the optional IgnoredActor argument because Actor deletions are broadcast before
+// SetOwner is called and ownership hierarchies are updated.
+inline TArray<AActor*> GetOwnershipHierarchyPath(const AActor* Actor, const AActor* IgnoredActor = nullptr)
 {
 	check(Actor != nullptr);
 
 	AActor* OwnerIterator = Actor->GetOwner();
 	if (OwnerIterator == nullptr)
 	{
-		return nullptr;
+		return TArray<AActor*>();
 	}
 
-	while (OwnerIterator->GetOwner() != nullptr)
+	TArray<AActor*> OwnershipHierarchy {OwnerIterator};
+
+	while (OwnerIterator->GetOwner() != nullptr && OwnerIterator->GetOwner() != IgnoredActor)
 	{
 		OwnerIterator = OwnerIterator->GetOwner();
+		OwnershipHierarchy.Insert(OwnerIterator, 0);
 	}
 
-	return OwnerIterator;
+	return OwnershipHierarchy;
 }
 
 inline FString GetOwnerWorkerAttribute(AActor* Actor)

@@ -32,36 +32,36 @@ private:
 	struct MigrationLockElement
 	{
 		int32 LockCount;
-		TWeakObjectPtr<AActor> Root;
-		TFunction<void()> UnbindActorDeletionDelegateFunc;
+		TArray<AActor*> OwnershipPath;
 	};
 
 	struct LockNameAndActor
 	{
 		FString LockName;
-		const AActor* Actor;
+		AActor* Actor;
 	};
 
-	bool IsExplicitlyLocked(const AActor* Actor) const;
-
-	UFUNCTION()
-	void OnLockedActorDeleted(AActor* DestroyedActor);
-
-	UFUNCTION()
-	void OnLockedActorOwnerDeleted(AActor* DestroyedActorRoot);
-
 	bool CanAcquireLock(AActor* Actor) const;
+	bool IsExplicitlyLocked(const AActor* Actor) const;
+	bool IsOnLockedHierarchyPath(const AActor* Actor) const;
+
+	UFUNCTION()
+	void OnExplicitlyLockedActorDeleted(AActor* DestroyedActor);
+
+	UFUNCTION()
+	void OnOwnershipPathActorDeleted(AActor* DestroyedActorRoot);
 
 	virtual bool AcquireLockFromDelegate(AActor* ActorToLock,    const FString& DelegateLockIdentifier) override;
 	virtual bool ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier) override;
 
-	void UpdateLockedActorHierarchyRootInformation(AActor* LockedRootActor);
-	void UpdateReleasedActorHierarchyRootInformation(AActor* ReleasedRootActor);
+	void ResetLockedActorOwnershipHierarchyInformation(const AActor* ExplicitlyLockedActor, const AActor* DeletedHierarchyActor = nullptr);
+	void AddOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*> OwnershipHierarchyPath);
+	void RemoveOwnershipHierarchyPathInformation(TArray<AActor*> OwnershipHierarchyPath);
 
 	TMap<const AActor*, MigrationLockElement> ActorToLockingState;
 	TMap<ActorLockToken, LockNameAndActor> TokenToNameAndActor;
 	TMap<FString, ActorLockToken> DelegateLockingIdentifierToActorLockToken;
-	TMap<AActor*, int32> LockedHierarchyRootToHierarchyLockCounts;
+	TMap<AActor*, TArray<const AActor*>> LockedOwnershipPathActorToExplicitlyLockedActors;
 
 	ActorLockToken NextToken = 1;
 };
