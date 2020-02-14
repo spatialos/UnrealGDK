@@ -27,10 +27,11 @@ struct SPATIALGDK_API FSpatialLatencyPayload
 	TArray<uint8> SpanId;
 
 	// Required for TMap hash
-	bool operator== (const FSpatialLatencyPayload& Other) const
+	bool operator == (const FSpatialLatencyPayload& Other) const
 	{
 		return TraceId == Other.TraceId && SpanId == Other.SpanId;
 	}
+
 	friend uint32 GetTypeHash(const FSpatialLatencyPayload& Obj)
 	{
 		return CityHash32((const char*)Obj.TraceId.GetData(), Obj.TraceId.Num()) ^ CityHash32((const char*)Obj.SpanId.GetData(), Obj.SpanId.Num());

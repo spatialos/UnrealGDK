@@ -460,7 +460,10 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
 		// We can't do any deeper tracing in the stack here so terminate these traces here
-		EndLatencyTrace(Key, TEXT("End of native tracing"));
+		if (Type == ETraceType::RPC || Type == ETraceType::Property)
+		{
+			EndLatencyTrace(Key, TEXT("End of native tracing"));
+		}
 
 		ClearTrackingInformation();
 	}
@@ -579,8 +582,7 @@ USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTraceOrReadPay
 {
 	if (TraceKey* ExistingKey = PayloadToTraceKeys.Find(Payload)) // This occurs if the root was created on this machine 
 	{
-		USpatialLatencyTracer::TraceSpan* Span = TraceMap.Find(*ExistingKey);
-		if (Span)
+		if (USpatialLatencyTracer::TraceSpan* Span = TraceMap.Find(*ExistingKey))
 		{
 			return Span;
 		}
