@@ -101,6 +101,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	static float GetFullFrequencyNetCullDistanceRatio();
 
+	/**
+	 * Returns the inspector colour for the given worker name.
+	 * Argument expected in the form: UnrealWorker1a2s3d4f...
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	static FColor GetInspectorColorForWorkerName(const FString& WorkerName);
+
 private:
 
 	static SpatialActorGroupManager* GetActorGroupManager(const UObject* WorldContext);

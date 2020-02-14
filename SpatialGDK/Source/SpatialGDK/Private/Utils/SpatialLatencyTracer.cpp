@@ -73,6 +73,18 @@ void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const F
 #endif // TRACE_LIB_ACTIVE
 }
 
+bool USpatialLatencyTracer::SetMessagePrefix(UObject* WorldContextObject, const FString& NewMessagePrefix)
+{
+#if TRACE_LIB_ACTIVE
+	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
+	{
+		Tracer->MessagePrefix = NewMessagePrefix;
+		return true;
+	}
+#endif // TRACE_LIB_ACTIVE
+	return false;
+}
+
 bool USpatialLatencyTracer::BeginLatencyTrace(UObject* WorldContextObject, const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
 {
 #if TRACE_LIB_ACTIVE
@@ -583,7 +595,7 @@ void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const F
 
 FString USpatialLatencyTracer::FormatMessage(const FString& Message) const
 {
-	return FString::Printf(TEXT("(%s) : %s"), *WorkerId.Left(18), *Message);
+	return FString::Printf(TEXT("%s(%s) : %s"), *MessagePrefix, *WorkerId.Left(18), *Message);
 }
 
 #endif // TRACE_LIB_ACTIVE

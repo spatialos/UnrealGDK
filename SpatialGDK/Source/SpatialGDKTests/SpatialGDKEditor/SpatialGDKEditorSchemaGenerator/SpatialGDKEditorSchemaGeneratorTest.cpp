@@ -10,8 +10,10 @@
 #include "Utils/SchemaDatabase.h"
 
 #include "CoreMinimal.h"
+#include "GeneralProjectSettings.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/FileHelper.h"
+#include "Misc/PackageName.h"
 
 #define LOCTEXT_NAMESPACE "SpatialGDKEDitorSchemaGeneratorTest"
 
@@ -840,6 +842,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 		"relevant.schema",
 		"rpc_components.schema",
 		"rpc_payload.schema",
+		"server_worker.schema",
 		"singleton.schema",
 		"spawndata.schema",
 		"spawner.schema",

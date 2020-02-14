@@ -1,11 +1,13 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
- 
+
 #include "Utils/EntityFactory.h"
- 
+
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/SpatialRPCService.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
@@ -14,6 +16,8 @@
 #include "Schema/Singleton.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
+#include "Schema/Tombstone.h"
+#include "SpatialConstants.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
@@ -21,6 +25,8 @@
 #include "Utils/SpatialDebugger.h"
 
 #include "Engine.h"
+
+DEFINE_LOG_CATEGORY(LogEntityFactory);
 
 namespace SpatialGDK
 {
@@ -31,7 +37,7 @@ EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapC
 	, ClassInfoManager(InClassInfoManager)
 	, RPCService(InRPCService)
 { }
- 
+
 TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs)
 {
 	AActor* Actor = Channel->Actor;
@@ -57,6 +63,10 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
 	}
 
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
+	WorkerAttributeSet WorkerAttributeOrSpecificWorker{ Info.WorkerType.ToString() };
+	VirtualWorkerId IntendedVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+
 	// Add Zoning Attribute if we are using the load balancer.
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
@@ -65,7 +75,22 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		AnyServerRequirementSet.Add(ZoningAttributeSet);
 		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
 		AnyServerOrOwningClientRequirementSet.Add(ZoningAttributeSet);
+
+		const UAbstractLBStrategy* LBStrategy = NetDriver->LoadBalanceStrategy;
+		check(LBStrategy != nullptr);
+		IntendedVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Actor);
+		if (IntendedVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+		{
+			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid virtual worker ID to spawn actor with. Actor: %s. Strategy: %s"), *Actor->GetName(), *LBStrategy->GetName());
+		}
+		else
+		{
+			const PhysicalWorkerName* IntendedAuthoritativePhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
+			WorkerAttributeOrSpecificWorker = { FString::Format(TEXT("workerId:{0}"), { *IntendedAuthoritativePhysicalWorkerName }) };
+		}
 	}
+
+	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttributeOrSpecificWorker };
 
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
@@ -81,18 +106,13 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ReadAcl = AnyServerOrClientRequirementSet;
 	}
 
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
-
-	const WorkerAttributeSet WorkerAttribute{ Info.WorkerType.ToString() };
-	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
-
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 
-	if (SpatialSettings->bUseRPCRingBuffers && RPCService != nullptr)
+	if (SpatialSettings->UseRPCRingBuffer() && RPCService != nullptr)
 	{
 		ComponentWriteAcl.Add(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 		ComponentWriteAcl.Add(SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
@@ -101,6 +121,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	else
 	{
 		ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
+		ComponentWriteAcl.Add(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 		ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
 		ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, OwningClientOnlyRequirementSet);
 
@@ -220,7 +241,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId()));
+		ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
 	}
 
 	if (NetDriver->SpatialDebugger != nullptr)
@@ -278,7 +299,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	InterestFactory InterestDataFactory(Actor, Info, EntityId, ClassInfoManager, PackageMap);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
-	if (SpatialSettings->bUseRPCRingBuffers && RPCService != nullptr)
+	if (SpatialSettings->UseRPCRingBuffer() && RPCService != nullptr)
 	{
 		ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
 	}
@@ -286,6 +307,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	{
 		ComponentDatas.Add(ClientRPCEndpointLegacy().CreateRPCEndpointData());
 		ComponentDatas.Add(ServerRPCEndpointLegacy().CreateRPCEndpointData());
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY));
 
 		if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
@@ -375,7 +397,73 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	}
 
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
- 
+
 	return ComponentDatas;
 }
+
+TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AActor* Actor)
+{
+	check(Actor->IsNetStartupActor());
+
+	const UClass* Class = Actor->GetClass();
+
+	// Construct an ACL for a read-only entity.
+	WorkerRequirementSet AnyServerRequirementSet;
+	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
+
+	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->ServerWorkerTypes)
+	{
+		WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
+
+		AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
+		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
+	}
+
+	// Add Zoning Attribute if we are using the load balancer.
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		const WorkerAttributeSet ZoningAttributeSet = { SpatialConstants::ZoningAttribute };
+		AnyServerRequirementSet.Add(ZoningAttributeSet);
+		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
+	}
+
+	WorkerRequirementSet ReadAcl;
+	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+	{
+		ReadAcl = AnyServerRequirementSet;
+	}
+	else
+	{
+		ReadAcl = AnyServerOrClientRequirementSet;
+	}
+
+	// Get a stable object ref.
+	FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
+	if (OuterObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+	{
+		const FNetworkGUID NetGUID = PackageMap->ResolveStablyNamedObject(Actor->GetOuter());
+		OuterObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+	}
+
+	// No path in SpatialOS should contain a PIE prefix.
+	FString TempPath = Actor->GetFName().ToString();
+	GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
+	const TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
+
+	TArray<FWorkerComponentData> Components;
+	Components.Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreatePositionData());
+	Components.Add(Metadata(Class->GetName()).CreateMetadataData());
+	Components.Add(UnrealMetadata(StablyNamedObjectRef, GetOwnerWorkerAttribute(Actor), Class->GetPathName(), true).CreateUnrealMetadataData());
+	Components.Add(Tombstone().CreateData());
+	Components.Add(EntityAcl(ReadAcl, WriteAclMap()).CreateEntityAclData());
+
+	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
+	{
+		Components.Add(Persistence().CreatePersistenceData());
+	}
+
+	return Components;
 }
+
+}  // namespace SpatialGDK

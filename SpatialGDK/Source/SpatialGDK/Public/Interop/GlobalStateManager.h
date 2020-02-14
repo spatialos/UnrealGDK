@@ -49,7 +49,6 @@ public:
 
 	void SetDeploymentState();
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
-	void SetCanBeginPlay(const bool bInCanBeginPlay);
 	void IncrementSessionID();
 
 	FORCEINLINE FString GetDeploymentMapURL() const { return DeploymentMapURL; }
@@ -64,17 +63,15 @@ public:
 
 	void BeginDestroy() override;
 
-	bool HasAuthority();
-
+	void TrySendWorkerReadyToBeginPlay();
 	void TriggerBeginPlay();
+	bool GetCanBeginPlay() const;
 
-	FORCEINLINE bool GetCanBeginPlay() const
-	{
-		return bCanBeginPlay;
-	}
+	bool IsReady() const;
 
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
+	void RemoveSingletonInstance(const AActor* SingletonActor);
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
@@ -89,7 +86,9 @@ private:
 	uint32 SchemaHash;
 
 	// Startup Actor Manager Component
+	bool bHasSentReadyForVirtualWorkerAssignment;
 	bool bCanBeginPlay;
+	bool bCanSpawnWithAuthority;
 
 public:
 #if WITH_EDITOR
@@ -103,9 +102,10 @@ private:
 	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
-	void ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate);
 
 	void BecomeAuthoritativeOverAllActors();
+	void BecomeAuthoritativeOverActorsBasedOnLBStrategy();
+	void SendCanBeginPlayUpdate(const bool bInCanBeginPlay);
 
 #if WITH_EDITOR
 	void SendShutdownMultiProcessRequest();
@@ -126,4 +126,6 @@ private:
 	USpatialReceiver* Receiver;
 
 	FDelegateHandle PrePIEEndedHandle;
+
+	TMap<FString, TPair<AActor*, USpatialActorChannel*>> SingletonClassPathToActorChannels;
 };

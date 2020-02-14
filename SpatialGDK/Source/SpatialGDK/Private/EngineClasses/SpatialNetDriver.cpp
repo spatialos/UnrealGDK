@@ -49,11 +49,19 @@
 #include "SpatialGDKServicesModule.h"
 #endif
 
+using SpatialGDK::ComponentFactory;
+using SpatialGDK::FindFirstOpOfType;
+using SpatialGDK::FindFirstOpOfTypeForComponent;
+using SpatialGDK::InterestFactory;
+using SpatialGDK::RPCPayload;
+
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
 DECLARE_CYCLE_STAT(TEXT("ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ProcessPrioritizedActors"), STAT_SpatialProcessPrioritizedActors, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("PrioritizeActors"), STAT_SpatialPrioritizeActors, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ProcessOps"), STAT_SpatialProcessOps, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("UpdateAuthority"), STAT_SpatialUpdateAuthority, STATGROUP_SpatialNet);
 DEFINE_STAT(STAT_SpatialConsiderList);
 DEFINE_STAT(STAT_SpatialActorsRelevant);
 DEFINE_STAT(STAT_SpatialActorsChanged);
@@ -376,7 +384,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		CreateAndInitializeLoadBalancingClasses();
 	}
 
-	if (SpatialSettings->bUseRPCRingBuffers)
+	if (SpatialSettings->UseRPCRingBuffer())
 	{
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView);
 	}
@@ -401,11 +409,18 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 {
 	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
-	if (IsServer()) 
+	if (IsServer())
 	{
 		if (WorldSettings == nullptr || WorldSettings->LoadBalanceStrategy == nullptr)
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+			if (WorldSettings == nullptr)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy. Using a 1x1 grid."));
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
+			}
 			LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
 		}
 		else
@@ -430,7 +445,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		{
 			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->LockingPolicy);
 		}
-		LockingPolicy->Init(StaticComponentView, PackageMap, VirtualWorkerTranslator.Get());
+		LockingPolicy->Init(StaticComponentView, PackageMap, VirtualWorkerTranslator.Get(), AcquireLockDelegate, ReleaseLockDelegate);
 	}
 }
 
@@ -480,7 +495,7 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 	{
 		uint32 ServerHash = GlobalStateManager->GetSchemaHash();
 		if (ClassInfoManager->SchemaDatabase->SchemaDescriptorHash != ServerHash) // Are we running with the same schema hash as the server?
-		{	
+		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Your clients Spatial schema does match the servers, this may cause problems. Client hash: '%u' Server hash: '%u'"), ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
 		}
 
@@ -603,7 +618,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			StaticComponentView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
 		{
 			// ServerTravel - Increment the session id, so users don't rejoin the old game.
-			GlobalStateManager->SetCanBeginPlay(true);
 			GlobalStateManager->TriggerBeginPlay();
 			GlobalStateManager->SetDeploymentState();
 			GlobalStateManager->SetAcceptingPlayers(true);
@@ -645,20 +659,33 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		return;
 	}
 
-	// If we have authority over the GSM when loading a sublevel, make sure we have authority
-	// over the actors in the sublevel.
-	if (GlobalStateManager != nullptr)
+	// Necessary for levels loaded before connecting to Spatial
+	if (GlobalStateManager == nullptr)
 	{
-		if (GlobalStateManager->HasAuthority())
+		return;
+	}
+
+	// If load balancing disabled but this worker is GSM authoritative then make sure
+	// we set Role_Authority on Actors in the sublevel. Also, if load balancing is
+	// enabled and lb strategy says we should have authority over a loaded level Actor
+	// then also set Role_Authority on Actors in the sublevel.
+	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
+	const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
+	{
+		// If load balancing is disabled and this worker is not GSM authoritative then exit early.
+		return;
+	}
+
+	for (auto Actor : LoadedLevel->Actors)
+	{
+		// If load balancing is disabled, we must be the GSM-authoritative worker, so set Role_Authority
+		// otherwise, load balancing is enabled, so check the lb strategy.
+		if (Actor->GetIsReplicated() &&
+			(!bLoadBalancingEnabled || LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
 		{
-			for (auto Actor : LoadedLevel->Actors)
-			{
-				if (Actor->GetIsReplicated())
-				{
-					Actor->Role = ROLE_Authority;
-					Actor->RemoteRole = ROLE_SimulatedProxy;
-				}
-			}
+			Actor->Role = ROLE_Authority;
+			Actor->RemoteRole = ROLE_SimulatedProxy;
 		}
 	}
 }
@@ -672,7 +699,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	UWorld* World = GameMode->GetWorld();
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 
-	if (!NetDriver->StaticComponentView->HasAuthority(NetDriver->GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
+	if (!NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
 	{
 		// TODO: UNR-678 Send a command to the GSM to initiate server travel on the correct server.
 		UE_LOG(LogGameMode, Warning, TEXT("Trying to server travel on a server which is not authoritative over the GSM."));
@@ -762,7 +789,7 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			Connection->SendDeleteEntityRequest(WorkerEntityId);
 		}
-		
+
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
 		if (!bPersistSpatialConnection)
 		{
@@ -806,13 +833,54 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	// The native UNetDriver would normally store destruction info here for "StartupActors" - replicated actors
 	// placed in the level, but we handle this flow differently in the GDK
 
+	// In single process PIE sessions this can be called on the server with actors from a client when the client unloads a level.
+	// Such actors will not have a valid entity ID.
+	// As only clients unload a level, if an actor has an entity ID and authority then it can not be such a spurious entity.
+
 	// Remove the actor from the property tracker map
 	RepChangedPropertyTrackerMap.Remove(ThisActor);
 
 	const bool bIsServer = ServerConnection == nullptr;
 
+	// Remove the record of destroyed singletons.
+	if (ThisActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		// We check for this not being a server below to make sure we don't call this incorrectly in single process PIE sessions.
+		GlobalStateManager->RemoveSingletonInstance(ThisActor);
+	}
+
 	if (bIsServer)
 	{
+		// Check if this is a dormant entity, and if so retire the entity
+		if (PackageMap != nullptr && World != nullptr)
+		{
+			const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
+
+			// It is safe to chek that we aren't destroying a singleton actor on a server if there is a valid entity ID and this is not a client.
+			if (ThisActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && EntityId != SpatialConstants::INVALID_ENTITY_ID)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Removed a singleton actor on a server. This should never happen. "
+					"Actor: %s."), *ThisActor->GetName());
+			}
+
+			// If the actor is an initially dormant startup actor that has not been replicated.
+			if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && ThisActor->GetIsReplicated() && ThisActor->HasAuthority())
+			{
+				UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Creating a tombstone entity for initially dormant statup actor. "
+					"Actor: %s."), *ThisActor->GetName());
+				Sender->CreateTombstoneEntity(ThisActor);
+			}
+			else if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
+			{
+				// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
+				if (!StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId))
+				{
+					UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId, *ThisActor->GetName());
+				}
+				Sender->RetireEntity(EntityId);
+			}
+		}
+
 		for (int32 i = ClientConnections.Num() - 1; i >= 0; i--)
 		{
 			UNetConnection* ClientConnection = ClientConnections[i];
@@ -831,21 +899,6 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 			// Remove it from any dormancy lists
 			ClientConnection->DormantReplicatorMap.Remove(ThisActor);
-		}
-
-		// Check if this is a dormant entity, and if so retire the entity
-		if (PackageMap != nullptr)
-		{
-			Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
-			if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
-			{
-				// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
-				if (!StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId))
-				{
-					UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId, *ThisActor->GetName());
-				}
-				Sender->RetireEntity(EntityId);
-			}
 		}
 	}
 
@@ -1498,11 +1551,14 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			return;
 		}
 
-		for (Worker_OpList* OpList : OpLists)
 		{
-			Dispatcher->ProcessOps(OpList);
+			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
+			for (Worker_OpList* OpList : OpLists)
+			{
+				Dispatcher->ProcessOps(OpList);
 
-			Worker_OpList_Destroy(OpList);
+				Worker_OpList_Destroy(OpList);
+			}
 		}
 
 		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
@@ -1512,6 +1568,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (LoadBalanceEnforcer.IsValid())
 		{
+			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
 			for(const auto& Elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
 			{
 				Sender->SetAclWriteAuthority(Elem.EntityId, Elem.OwningWorkerId);
@@ -1606,7 +1663,7 @@ void USpatialNetDriver::PollPendingLoads()
 	{
 		return;
 	}
-	
+
 	for (auto IterPending = PackageMap->PendingReferences.CreateIterator(); IterPending; ++IterPending)
 	{
 		if (PackageMap->IsGUIDPending(*IterPending))
@@ -1633,31 +1690,24 @@ void USpatialNetDriver::PollPendingLoads()
 
 void USpatialNetDriver::TickFlush(float DeltaTime)
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
+	{
+		if (Connection != nullptr && Connection->IsConnected())
+		{
+			Connection->QueueLatestOpList();
+		}
+	}
+
 	PollPendingLoads();
-
-	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
-	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
-
-#if USE_SERVER_PERF_COUNTERS
-	double ServerReplicateActorsTimeMs = 0.0f;
-#endif // USE_SERVER_PERF_COUNTERS
-
-  const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	if (IsServer() && GetSpatialOSNetConnection() != nullptr && PackageMap->IsEntityPoolReady() && bIsReadyToStart)
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
 
-#if USE_SERVER_PERF_COUNTERS
-		double ServerReplicateActorsTimeStart = FPlatformTime::Seconds();
-#endif // USE_SERVER_PERF_COUNTERS
-
 		int32 Updated = ServerReplicateActors(DeltaTime);
-
-#if USE_SERVER_PERF_COUNTERS
-		ServerReplicateActorsTimeMs = (FPlatformTime::Seconds() - ServerReplicateActorsTimeStart) * 1000.0;
-#endif // USE_SERVER_PERF_COUNTERS
 
 		static int32 LastUpdateCount = 0;
 		// Only log the zero replicated actors once after replicating an actor
@@ -1685,7 +1735,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		Sender->FlushPackedRPCs();
 	}
 
-	if (SpatialGDKSettings->bUseRPCRingBuffers && Sender != nullptr)
+	if (SpatialGDKSettings->UseRPCRingBuffer() && Sender != nullptr)
 	{
 		Sender->FlushRPCService();
 	}
@@ -1694,6 +1744,16 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	TimerManager.Tick(DeltaTime);
 
+	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
+	{
+		if (Connection != nullptr && Connection->IsConnected())
+		{
+			Connection->ProcessOutgoingMessages();
+		}
+	}
+
+	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
+	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
 	Super::TickFlush(DeltaTime);
 }
 
@@ -2233,6 +2293,16 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 		FoundOps.Add(EntityQueryResponseOp);
 	}
 
+	// CreateEntityResponseOps are needed for non-GSM-authoritative server workers sending an update
+	// to the Runtime indicating that the worker is ready to begin play.
+	Worker_Op* CreateEntityResponseOp = nullptr;
+	FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE, &CreateEntityResponseOp);
+
+	if (CreateEntityResponseOp != nullptr)
+	{
+		FoundOps.Add(CreateEntityResponseOp);
+	}
+
 	// Search for entity id reservation response and process it.  The entity id reservation
 	// can fail to reserve entity ids.  In that case, the EntityPool will not be marked ready,
 	// a new query will be sent, and we will process the new response here when it arrives.
@@ -2248,7 +2318,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	}
 
 	// Search for StartupActorManager ops we need and process them
-	if (!GlobalStateManager->GetCanBeginPlay())
+	if (!GlobalStateManager->IsReady())
 	{
 		Worker_Op* AddComponentOp = nullptr;
 		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AddComponentOp);
@@ -2308,7 +2378,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 	SelectiveProcessOps(FoundOps);
 
 	if (PackageMap->IsEntityPoolReady() &&
-		GlobalStateManager->GetCanBeginPlay() &&
+		GlobalStateManager->IsReady() &&
 		(!VirtualWorkerTranslator.IsValid() || VirtualWorkerTranslator->IsReady()))
 	{
 		// Return whether or not we are ready to start

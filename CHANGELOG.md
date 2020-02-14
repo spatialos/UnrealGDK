@@ -29,7 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A warning is shown if a cloud deployment is launched with the `manual_worker_connection_only` flag set to true
 - Server travel supported for single server game worlds. Does not currently support zoning or off-loading.
 - Enabled the SpatialOS toolbar for MacOS.
-- Added a menu item to push additional arguments for iOS devices.
 - Improved workflow around schema generation issues and launching local builds. A warning will now show if attempting to run a local deployment after a schema error.
 - DeploymentLauncher can parse a .pb.json launch configuration.
 - DeploymentLauncher can launch a Simulated Player deployment independently from the target deployment.
@@ -42,11 +41,18 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Entries in the SchemaDatabase are now sorted to improve efficiancy when browsing the asset in the editor. (DW-Sebastien)
 - Load Balancing Strategies and Locking Strategies can be set per-level using SpatialWorldSettings.
 - Batch Spatial Position Updates now defaults to false.
-- Introduced experimental feature flag `bEnableClientResultTypes`, defaulting false. Flip this to true for client Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
 - Dynamic interest overrides are disabled if the `bEnableClientResultTypes` flag is set to true. 
 - Added `bEnableNetCullDistanceInterest` (defaulted false) to enable client interest to be exposed through component tagging. This functionality has closer parity to native unreal client interest.
 - Added `bEnableNetCullDistanceFrequency` (defaulted false) to enable client interest queries to use frequency. This functionality is configured using `InterestRangeFrequencyPairs` and `FullFrequencyNetCullDistanceRatio`.
 - Added support for Android.
+- Introduced experimental feature flag `bEnableResultTypes`, defaulting false. Flip this to true for Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
+- Moved Dev Auth settings from runtime settings to editor settings.
+- Added the option to use the development authentication flow using the command line.
+- Added a button to generate the Development Authentication Token inside the Unreal Editor. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Cloud Connection**.
+- The Spatial output log will now be open by default.
+- Added a new settings section allowing you to configure the launch arguments when running a a client on a mobile device. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Mobile**.
+- Added settings to choose which runtime version to launch with local and cloud deployment launch command.
+- With the `--OverrideResultTypes` flag flipped, servers will no longer check out server RPC components on actors they do not own. This should give a bandwidth saving to server workers in offloaded and zoned games.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
@@ -76,6 +82,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Track properties containing references to replicated actors, in order to resolve them again if the actor they reference moves out and back into relevance.
 - Fix problem where PIE sessions sometimes fail to start due to missing schema for SpatialDebugger blueprint.
 - Fixed an issue where newly created subobjects would have empty state when RepNotify was called for a property pointing to that subobject.
+- Fixed an issue where deleted, initially dormant startup actors would still be present on other workers.
+- Force activation of RPC ring buffer when load balancing is enabled, to allow RPC handover when authority changes
 
 ### External contributors:
 @DW-Sebastien
@@ -87,8 +95,13 @@ Features listed in the internal section are not ready to use but, in the spirit 
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
 - Local deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
 
+### Features:
+- Updated the version of the local API service used by the UnrealGDK.
+
 ### Bug fixes:
 - Replicated references to newly created dynamic subobjects will now be resolved correctly.
+- Fixed a bug that caused the local API service to memory leak.
+- Cloud deployment flow will now correctly report errors when a deployment fails to launch due to a missing assembly.
 
 ## [`0.8.0-preview`] - 2019-12-17
 

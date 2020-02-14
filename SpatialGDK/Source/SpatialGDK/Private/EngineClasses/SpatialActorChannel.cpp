@@ -341,23 +341,13 @@ void USpatialActorChannel::UpdateShadowData()
 	}
 
 	// Refresh shadow data when crossing over servers to prevent stale/out-of-date data.
-#if ENGINE_MINOR_VERSION <= 22
-	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), reinterpret_cast<uint8*>(Actor));
-#else
-	ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer.Buffer.Empty();
-	ActorReplicator->RepLayout->InitRepStateStaticBuffer(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, reinterpret_cast<const uint8*>(Actor));
-#endif
+	ResetShadowData(*ActorReplicator->RepLayout, ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor);
 
 	// Refresh the shadow data for all replicated components of this actor as well.
 	for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
 	{
 		FObjectReplicator& ComponentReplicator = FindOrCreateReplicator(ActorComponent).Get();
-#if ENGINE_MINOR_VERSION <= 22
-		ComponentReplicator.RepLayout->InitShadowData(ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, ActorComponent->GetClass(), reinterpret_cast<uint8*>(ActorComponent));
-#else
-		ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer.Buffer.Empty();
-		ComponentReplicator.RepLayout->InitRepStateStaticBuffer(ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, reinterpret_cast<const uint8*>(ActorComponent));
-#endif
+		ResetShadowData(*ComponentReplicator.RepLayout, ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, ActorComponent);
 	}
 }
 
@@ -446,6 +436,45 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Group actors by exact class, one level below parent native class.
 	SCOPE_CYCLE_UOBJECT(ReplicateActor, Actor);
 
+	const bool bReplay = ActorWorld && ActorWorld->DemoNetDriver == Connection->GetDriver();
+
+	//////////////////////////////////////////////////////////////////////////
+	// Begin - error and stat duplication from DataChannel::ReplicateActor()
+	if (!bReplay)
+	{
+		GNumReplicateActorCalls++;
+	}
+
+	// triggering replication of an Actor while already in the middle of replication can result in invalid data being sent and is therefore illegal
+	if (bIsReplicatingActor)
+	{
+		FString Error(FString::Printf(TEXT("ReplicateActor called while already replicating! %s"), *Describe()));
+		UE_LOG(LogNet, Log, TEXT("%s"), *Error);
+		ensureMsgf(false, TEXT("%s"), *Error);
+		return 0;
+	}
+	else if (bActorIsPendingKill)
+	{
+		// Don't need to do anything, because it should have already been logged.
+		return 0;
+	}
+	// If our Actor is PendingKill, that's bad. It means that somehow it wasn't properly removed
+	// from the NetDriver or ReplicationDriver.
+	// TODO: Maybe notify the NetDriver / RepDriver about this, and have the channel close?
+	else if (Actor->IsPendingKillOrUnreachable())
+	{
+		bActorIsPendingKill = true;
+#if ENGINE_MINOR_VERSION > 22
+		ActorReplicator.Reset();
+#endif
+		FString Error(FString::Printf(TEXT("ReplicateActor called with PendingKill Actor! %s"), *Describe()));
+		UE_LOG(LogNet, Log, TEXT("%s"), *Error);
+		ensureMsgf(false, TEXT("%s"), *Error);
+		return 0;
+	}
+	// End - error and stat duplication from DataChannel::ReplicateActor()
+	//////////////////////////////////////////////////////////////////////////
+
 	// Create an outgoing bunch (to satisfy some of the functions below).
 	FOutBunch Bunch(this, 0);
 	if (Bunch.IsError())
@@ -479,7 +508,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	RepFlags.bNetSimulated = (Actor->GetRemoteRole() == ROLE_SimulatedProxy);
 	RepFlags.bRepPhysics = Actor->ReplicatedMovement.bRepPhysics;
-	RepFlags.bReplay = ActorWorld && (ActorWorld->DemoNetDriver == Connection->GetDriver());
+	RepFlags.bReplay = bReplay;
 
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
 
@@ -671,7 +700,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
 		// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
 		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) &&
-		NetDriver->LoadBalanceStrategy->ShouldRelinquishAuthority(*Actor) &&
+		!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) &&
 		!NetDriver->LockingPolicy->IsLocked(Actor))
 	{
 		const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
@@ -1064,11 +1093,9 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PreNetReceive();
 #if ENGINE_MINOR_VERSION <= 22
-	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), reinterpret_cast<uint8*>(TargetObject));
+	ResetShadowData(*Replicator.RepLayout, Replicator.RepState->StaticBuffer, TargetObject);
 #else
-	// TODO: UNR-2372 - Investigate not resetting the ShadowData.
-	Replicator.RepState->GetReceivingRepState()->StaticBuffer.Buffer.Empty();
-	Replicator.RepLayout->InitRepStateStaticBuffer(Replicator.RepState->GetReceivingRepState()->StaticBuffer, reinterpret_cast<const uint8*>(TargetObject));
+	ResetShadowData(*Replicator.RepLayout, Replicator.RepState->GetReceivingRepState()->StaticBuffer, TargetObject);
 #endif
 
 	return &Replicator;
@@ -1100,7 +1127,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 	// True if the entity is in the worker's view.
 	// If this is the case then we know the entity was created and do not need to retry if the request timed-out.
-	const bool bEntityIsInView = NetDriver->StaticComponentView->HasComponent(Position::ComponentId, GetEntityId());
+	const bool bEntityIsInView = NetDriver->StaticComponentView->HasComponent(SpatialGDK::Position::ComponentId, GetEntityId());
 
 	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{
@@ -1169,7 +1196,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 	// Check that the Actor has moved sufficiently far to be updated
 	const float SpatialPositionThresholdSquared = FMath::Square(GetDefault<USpatialGDKSettings>()->PositionDistanceThreshold);
-	FVector ActorSpatialPosition = GetActorSpatialPosition(Actor);
+	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
 	if (FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate) < SpatialPositionThresholdSquared)
 	{
 		return;
@@ -1311,7 +1338,7 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	{
 		bNetOwned = bNewNetOwned;
 		// Don't send dynamic interest for this ownership change if it is otherwise handled by result types.
-		if (GetDefault<USpatialGDKSettings>()->bEnableClientResultTypes)
+		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 		{
 			return;		
 		}
@@ -1327,5 +1354,21 @@ void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef,
 	{
 		Receiver->CleanupRepStateMap(*SubObjectRefMap);
 		ObjectReferenceMap.Remove(Object);
+	}
+}
+
+void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject)
+{
+	if (StaticBuffer.Num() == 0)
+	{
+#if ENGINE_MINOR_VERSION <= 22
+		RepLayout.InitShadowData(StaticBuffer, TargetObject->GetClass(), reinterpret_cast<uint8*>(TargetObject));
+#else
+		RepLayout.InitRepStateStaticBuffer(StaticBuffer, reinterpret_cast<const uint8*>(TargetObject));
+#endif
+	}
+	else
+	{
+		RepLayout.CopyProperties(StaticBuffer, reinterpret_cast<uint8*>(TargetObject));
 	}
 }
