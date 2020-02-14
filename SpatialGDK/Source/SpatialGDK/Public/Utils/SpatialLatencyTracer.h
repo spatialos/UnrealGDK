@@ -180,6 +180,7 @@ private:
 	TMap<ActorPropertyKey, TraceKey> TrackingProperties;
 	TMap<ActorTagKey, TraceKey> TrackingTags;
 	TMap<TraceKey, TraceSpan> TraceMap;
+	TMap<FSpatialLatencyPayload, TraceKey> PayloadToTraceKeys;
 
 public:
 

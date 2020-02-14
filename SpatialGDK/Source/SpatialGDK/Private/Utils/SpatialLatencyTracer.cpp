@@ -403,7 +403,10 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc,
 		OutLatencyPayload = FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes));
 	}
 
-	NewTrace.End(); // Everything else is added as a key frame to this trace 
+	// Add to internal tracking
+	TraceKey Key = GenerateNewTraceKey();
+	TraceMap.Add(Key, MoveTemp(NewTrace));
+	PayloadToTraceKeys.Add(MakeTuple(OutLatencyPayload, Key));
 
 	return true;
 }
@@ -451,10 +454,14 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 	TraceMap.Add(Key, MoveTemp(TempSpan));
 	TraceMap.Remove(ActiveTraceKey);
 	ActiveTraceKey = InvalidTraceKey;
+	PayloadToTraceKeys.Remove(LatencyPayload);
+	PayloadToTraceKeys.Add(MakeTuple(OutLatencyPayloadContinue, Key)); // Add continued payload to tracking map. 
 
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
 		// We can't do any deeper tracing in the stack here so terminate these traces here
+		EndLatencyTrace(Key, TEXT("End of native tracing"));
+
 		ClearTrackingInformation();
 	}
 
@@ -476,6 +483,7 @@ bool USpatialLatencyTracer::EndLatencyTrace_Internal(const FSpatialLatencyPayloa
 	WriteKeyFrameToTrace(ActiveTrace, TEXT("End Trace"));
 	ActiveTrace->End();
 
+	PayloadToTraceKeys.Remove(LatencyPayload);
 	TraceMap.Remove(ActiveTraceKey);
 	ActiveTraceKey = InvalidTraceKey;
 
@@ -499,6 +507,7 @@ void USpatialLatencyTracer::ClearTrackingInformation()
 	TrackingRPCs.Reset();
 	TrackingProperties.Reset();
 	TrackingTags.Reset();
+	PayloadToTraceKeys.Reset();
 }
 
 TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& Target, ETraceType::Type Type)
@@ -568,6 +577,19 @@ USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTrace()
 
 USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTraceOrReadPayload(const FSpatialLatencyPayload& Payload)
 {
+	if (TraceKey* ExistingKey = PayloadToTraceKeys.Find(Payload)) // This occurs if the root was created on this machine 
+	{
+		USpatialLatencyTracer::TraceSpan* Span = TraceMap.Find(*ExistingKey);
+		if (Span)
+		{
+			return Span;
+		}
+		else
+		{
+			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Could not find existing payload in TraceMap despite being tracked in the payload map."), *WorkerId);
+		}
+	}
+
 	USpatialLatencyTracer::TraceSpan* ActiveTrace = GetActiveTrace();
 	if (ActiveTrace == nullptr)
 	{
