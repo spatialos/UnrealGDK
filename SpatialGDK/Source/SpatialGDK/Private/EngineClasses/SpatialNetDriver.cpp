@@ -964,6 +964,11 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 		return;
 	}
 
+	if (LockingPolicy != nullptr)
+	{
+		LockingPolicy->OnOwnerUpdated(Actor);
+	}
+
 	// If PackageMap doesn't exist, we haven't connected yet, which means
 	// we don't need to update the interest at this point
 	if (PackageMap == nullptr)
@@ -986,11 +991,6 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 	Channel->MarkInterestDirty();
 
 	Channel->ServerProcessOwnershipChange();
-
-	if (LockingPolicy != nullptr)
-	{
-		LockingPolicy->OnOwnerUpdated(Actor);
-	}
 }
 
 //SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.

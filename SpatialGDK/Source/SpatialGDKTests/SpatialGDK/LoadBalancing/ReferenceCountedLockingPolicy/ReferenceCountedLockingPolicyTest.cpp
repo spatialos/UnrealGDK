@@ -132,6 +132,25 @@ bool FWaitForActor::Update()
 	return (IsValid(Actor) && Actor->IsActorInitialized() && Actor->HasActorBegunPlay());
 }
 
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FDestroyActor, TSharedPtr<TestData>, Data, FName, Handle);
+bool FDestroyActor::Update()
+{
+	AActor* Actor = Data->TestActors.FindAndRemoveChecked(Handle);
+	Actor->Destroy();
+
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FSetOwnership, TSharedPtr<TestData>, Data, FName, ActorBeingOwnedHandle, FName, ActorToOwnHandle);
+bool FSetOwnership::Update()
+{
+	AActor* ActorBeingOwned = Data->TestActors[ActorBeingOwnedHandle];
+	AActor* ActorToOwn = Data->TestActors[ActorToOwnHandle];
+	ActorBeingOwned->SetOwner(ActorToOwn);
+	Data->LockingPolicy->OnOwnerUpdated(ActorBeingOwned);
+	return true;
+}
+
 DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FAcquireLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DebugString, bool, bExpectedSuccess);
 bool FAcquireLock::Update()
 {
@@ -265,6 +284,8 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLoc
 	return true;
 }
 
+// AcquireLock and ReleaseLock
+
 REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_is_called_THEN_it_errors_and_returns_false)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
@@ -338,6 +359,264 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 	return true;
 }
+
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Character"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Controller"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "State"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Character"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Controller"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "State"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "State", "Controller"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "Character", "Controller"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "State", false));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Character", "First lock", true));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "State", true));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Character", "First lock", true));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "State", false));
+
+	return true;
+}
+
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_root_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Character"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Controller"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "State"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Character"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Controller"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "State"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "State", "Controller"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "Character", "Controller"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "State", false));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Controller", "First lock", true));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "State", true));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Controller", "First lock", true));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "State", false));
+
+	return true;
+}
+
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_Actor_hierarchy_changes_THEN_IsLocked_returns_correctly_for_all_Actors)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Character"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Controller"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "State"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "OtherActor"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Character"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Controller"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "State"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "OtherActor"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "State", "Controller"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "Character", "Controller"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Character", "First lock", true));
+
+	//			Controller			Other Actor
+	//			/		 \
+	//		State     Character (locked)
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "State", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "OtherActor", false));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "Character", "OtherActor"));
+
+	//			Controller			Other Actor
+	//				|					 |
+	//		      State				 Character (locked)
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "State", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "OtherActor", true));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Character", "First lock", true));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "State", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "OtherActor", false));
+
+	return true;
+}
+
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_Actor_is_destroyed_THEN_IsLocked_returns_false_for_other_hierarchy_Actors)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Character"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Controller"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "State"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Character"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Controller"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "State"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "State", "Controller"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "Character", "Controller"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Character", "First lock", true));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "State", true));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FDestroyActor(Data, "Character"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "State", false));
+
+	return true;
+}
+
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "A"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "B"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "C"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "A"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "B"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "C"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "B", "A"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "B", "First lock", true));
+
+	//				A					C
+	//				|
+	//		B (explicitly locked)
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "A", "C"));
+
+	//				C
+	//				|
+	//				A
+	//				|
+	//		B (explicitly locked)
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
+
+	return true;
+}
+
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_Actor_on_hierarchy_path_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "A"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "B"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "C"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "D"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "E"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "A"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "B"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "C"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "D"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "E"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "B", "A"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "C", "B"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "D", "C"));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "D", "First lock", true));
+
+	//				A					E
+	//				|
+	//				B
+	//				|
+	//				C
+	//				|
+	//		D (explicitly locked)
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", false));
+
+	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "C", "E"));
+
+	//		A					E
+	//		|					|
+	//		B					C
+	//							|
+	//					D (explicitly locked)
+
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
+
+	return true;
+}
+
+// AcquireLockDelegate and ReleaseLockDelegate
 
 REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_is_executed_THEN_it_errors_and_returns_false)
 {

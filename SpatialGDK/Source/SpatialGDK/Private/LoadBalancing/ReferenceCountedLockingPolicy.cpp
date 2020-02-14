@@ -125,7 +125,7 @@ bool UReferenceCountedLockingPolicy::IsLocked(const AActor* Actor) const
 		return true;
 	}
 
-	// If we are the root of a hierarchy tree where some Actor is locked, return true
+	// If we are the root of a hierarchy tree where some lower hierarchy Actor is locked, then we are locked
 	if (LockedHierarchyRootToHierarchyLockCounts.Contains(Actor))
 	{
 		return true;
@@ -139,8 +139,14 @@ bool UReferenceCountedLockingPolicy::IsLocked(const AActor* Actor) const
 		return false;
 	}
 
-	// If our hierarchy root is in the mapping, it means some Actor in this Actor's
-	// hierarchy is locked, so return true.
+	// If our hierarchy root is explicitly locked, then we are locked
+	if (IsExplicitlyLocked(HierarchyRoot))
+	{
+		return true;
+	}
+
+	// If some Actor in this Actor's hierarchy is locked (our hierarchy root
+	// is in the mapping), then we are locked
 	if (LockedHierarchyRootToHierarchyLockCounts.Contains(HierarchyRoot))
 	{
 		return true;
@@ -174,6 +180,11 @@ void UReferenceCountedLockingPolicy::OnLockedActorDeleted(AActor* DestroyedActor
 		TokenToNameAndActor.Remove(Token);
 	}
 	ActorToLockingState.Remove(DestroyedActor);
+
+	if (AActor* HierarchyRoot = SpatialGDK::GetOutermostOwner(DestroyedActor))
+	{
+		UpdateReleasedActorHierarchyRootInformation(HierarchyRoot);
+	}
 }
 
 bool UReferenceCountedLockingPolicy::AcquireLockFromDelegate(AActor* ActorToLock, const FString& DelegateLockIdentifier)
@@ -207,7 +218,7 @@ void UReferenceCountedLockingPolicy::OnOwnerUpdated(AActor* ActorChangingOwner)
 	check(ActorChangingOwner != nullptr);
 
 	// We only care about locked Actors changing owner
-	// TODO - accommodate Actors in locked Actor path to hierarhcy root changing owner
+	// TODO - accommodate Actors in locked Actor path to hierarchy root changing owner
 	if (ActorChangingOwner == nullptr || !IsExplicitlyLocked(ActorChangingOwner))
 	{
 		return;
