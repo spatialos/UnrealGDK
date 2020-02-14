@@ -42,7 +42,7 @@ enum ESchemaComponentType : int32
 namespace SpatialConstants
 {
 
-FORCEINLINE FString RPCTypeToString(ERPCType RPCType)
+inline FString RPCTypeToString(ERPCType RPCType)
 {
 	switch (RPCType)
 	{
@@ -327,7 +327,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST = 
 	HEARTBEAT_COMPONENT_ID
 };
 
-FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
+inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {
 	switch (RPCType)
 	{
@@ -355,7 +355,7 @@ FORCEINLINE Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType
 	}
 }
 
-FORCEINLINE Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
+inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
 {
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 }
