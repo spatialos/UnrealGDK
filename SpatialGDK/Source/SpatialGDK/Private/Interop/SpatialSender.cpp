@@ -12,6 +12,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Net/NetworkProfiler.h"
 #include "Schema/AuthorityIntent.h"
@@ -19,6 +20,7 @@
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
+#include "Schema/ServerWorker.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
 #include "SpatialConstants.h"
@@ -186,12 +188,14 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, WorkerIdPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
+	ComponentWriteAcl.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, WorkerIdPermission);
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(InterestFactory::CreateServerWorkerInterest().CreateInterestData());
+	Components.Add(ServerWorker(Connection->GetWorkerId(), false).CreateServerWorkerData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
@@ -207,6 +211,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
+			Sender->NetDriver->GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 			return;
 		}
 
@@ -711,7 +716,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 	{
 	case ERPCType::CrossServer:
 	{
-		Worker_ComponentId ComponentId = SpatialConstants::GetCrossServerRPCComponent(SpatialGDKSettings->UseRPCRingBuffer());
+		Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 

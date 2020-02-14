@@ -247,6 +247,7 @@ private:
 	void SetLevelEditorPlaySettingsWorkerTypes();
 
 public:
+
 	/** If checked, show the Spatial service button on the GDK toolbar which can be used to turn the Spatial service on and off. */
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (DisplayName = "Show Spatial service button"))
 	bool bShowSpatialServiceButton;
@@ -259,7 +260,26 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-generate launch configuration file"))
 	bool bGenerateDefaultLaunchConfig;
 
+	/** Returns the Runtime version to use for cloud deployments, either the pinned one, or the user-specified one depending of the settings. */
+	const FString& GetSpatialOSRuntimeVersionForCloud() const;
+
+	/** Returns the Runtime version to use for local deployments, either the pinned one, or the user-specified one depending of the settings. */
+	const FString& GetSpatialOSRuntimeVersionForLocal() const;
+
+	/** Whether to use the GDK-associated SpatialOS runtime version, or to use the one specified in the RuntimeVersion field. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Use GDK pinned runtime version"))
+	bool bUseGDKPinnedRuntimeVersion;
+
+	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
+	FString LocalRuntimeVersion;
+
+	/** Runtime version to use for cloud deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
+	FString CloudRuntimeVersion;
+
 private:
+
 	/** If you are not using auto-generate launch configuration file, specify a launch configuration `.json` file and location here.  */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "!bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file path"))
 	FFilePath SpatialOSLaunchConfig;
@@ -342,7 +362,7 @@ private:
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
-	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath);
+	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
 
 public:
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Connect to a local deployment"))
@@ -474,6 +494,18 @@ public:
 	FORCEINLINE bool IsSimulatedPlayersEnabled() const
 	{
 		return bSimulatedPlayersIsEnabled;
+	}
+
+	void SetUseGDKPinnedRuntimeVersion(bool IsEnabled);
+	FORCEINLINE bool GetUseGDKPinnedRuntimeVersion() const
+	{
+		return bUseGDKPinnedRuntimeVersion;
+	}
+
+	void SetCustomCloudSpatialOSRuntimeVersion(const FString& Version);
+	FORCEINLINE const FString& GetCustomCloudSpatialOSRuntimeVersion() const
+	{
+		return CloudRuntimeVersion;
 	}
 
 	void SetSimulatedPlayerDeploymentName(const FString& Name);
