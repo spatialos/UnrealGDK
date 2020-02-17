@@ -77,7 +77,7 @@ TSharedPtr<TestData> MakeNewTestData(Worker_EntityId EntityId, Worker_Authority 
 	return Data;
 }
 
-// Copied from AutomationCommon::GetAnyGameWorld()
+// Copied from AutomationCommon::GetAnyGameWorld().
 UWorld* GetAnyGameWorld()
 {
 	UWorld* World = nullptr;
@@ -155,11 +155,16 @@ bool FSetOwnership::Update()
 DEFINE_LATENT_AUTOMATION_COMMAND_FIVE_PARAMETER(FAcquireLock, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, FName, ActorHandle, FString, DebugString, bool, bExpectedSuccess);
 bool FAcquireLock::Update()
 {
+	if (!bExpectedSuccess)
+	{
+		Test->AddExpectedError(TEXT("Called AcquireLock when CanAcquireLock returned false."), EAutomationExpectedErrorFlags::Contains, 1);
+	}
+
 	AActor* Actor = Data->TestActors[ActorHandle];
 	const ActorLockToken Token = Data->LockingPolicy->AcquireLock(Actor, DebugString);
 	const bool bAcquireLockSucceeded = Token != SpatialConstants::INVALID_ACTOR_LOCK_TOKEN;
 
-	// If the token returned is valid, it MUST be unique
+	// If the token returned is valid, it MUST be unique.
 	if (bAcquireLockSucceeded)
 	{
 		for (const TPair<AActor*, TArray<LockingTokenAndDebugString>>& ActorLockingTokenAndDebugStrings : Data->TestActorToLockingTokenAndDebugStrings)
@@ -190,10 +195,10 @@ bool FReleaseLock::Update()
 {
 	const AActor* Actor = Data->TestActors[ActorHandle];
 
-	// Find lock token based on relevant lock debug string
+	// Find lock token based on relevant lock debug string.
 	TArray<LockingTokenAndDebugString>* LockTokenAndDebugStrings = Data->TestActorToLockingTokenAndDebugStrings.Find(Actor);
 
-	// If we're double releasing or releasing with a non-existent token then either we should expect to fail or the test is broken
+	// If we're double releasing or releasing with a non-existent token then either we should expect to fail or the test is broken.
 	if (LockTokenAndDebugStrings == nullptr)
 	{
 		check(!bExpectedSuccess);
@@ -217,11 +222,39 @@ bool FReleaseLock::Update()
 
 	LockTokenAndDebugStrings->RemoveAt(TokenIndex);
 
-	// If removing last token for Actor, delete map entry
+	// If removing last token for Actor, delete map entry.
 	if (LockTokenAndDebugStrings->Num() == 0)
 	{
 		Data->TestActorToLockingTokenAndDebugStrings.Remove(Actor);
 	}
+
+	return true;
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FReleaseAllLocks, FAutomationTestBase*, Test, TSharedPtr<TestData>, Data, int32, ExpectedFailures);
+bool FReleaseAllLocks::Update()
+{
+	const bool bExpectedSuccess = ExpectedFailures == 0;
+
+	if (!bExpectedSuccess)
+	{
+		Test->AddExpectedError(TEXT("Called ReleaseLock for unidentified Actor lock token."), EAutomationExpectedErrorFlags::Contains, ExpectedFailures);
+	}
+
+	// Attempt to release every lock token for every Actor.
+	for (TPair<AActor*, TArray<LockingTokenAndDebugString>>& ActorAndLockingTokenAndDebugStringsPair : Data->TestActorToLockingTokenAndDebugStrings)
+	{
+		for (LockingTokenAndDebugString& TokenAndDebugString : ActorAndLockingTokenAndDebugStringsPair.Value)
+		{
+			const ActorLockToken Token = TokenAndDebugString.Key;
+			const bool bReleaseLockSucceeded = Data->LockingPolicy->ReleaseLock(Token);
+			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to fail but it succeeded. Token: %d"), Token), !bExpectedSuccess && bReleaseLockSucceeded);
+			Test->TestFalse(FString::Printf(TEXT("Expected ReleaseAllLocks to succeed but it failed. Token: %d"), Token), bExpectedSuccess && !bReleaseLockSucceeded);
+		}
+	}
+
+	// Cleanup the test mapping of Actors to tokens and debug strings.
+	Data->TestActorToLockingTokenAndDebugStrings.Reset();
 
 	return true;
 }
@@ -302,6 +335,60 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_is
 	return true;
 }
 
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is_not_authoritative_THEN_AcquireLock_returns_false)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_NOT_AUTHORITATIVE, 1);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "First lock", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+
+	return true;
+}
+
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is_deleted_THEN_ReleaseLock_returns_false)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "First lock", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FDestroyActor(Data, "Actor"));
+	// We want to test that the Actor deletion has correctly been cleaned up in the locking policy.
+	// We cannot call IsLocked with a deleted Actor so instead we try to release the lock we held
+	// for the Actor and check that it fails.
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseAllLocks(this, Data, 1));
+
+	return true;
+}
+
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_twice_WHEN_the_locked_Actor_is_deleted_THEN_ReleaseLock_returns_false)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "First lock", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "Second lock", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FDestroyActor(Data, "Actor"));
+	// We want to test that the Actor deletion has correctly been cleaned up in the locking policy.
+	// We cannot call IsLocked with a deleted Actor so instead we try to release the lock we held
+	// for the Actor and check that it fails.
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseAllLocks(this, Data, 2));
+
+	return true;
+}
+
 REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
@@ -357,6 +444,26 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock", false));
+
+	return true;
+}
+
+REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_AcquireLock_is_called_again_THEN_it_succeeds)
+{
+	AutomationOpenMap("/Engine/Maps/Entry");
+
+	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "First lock", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "Second lock", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 
 	return true;
 }

@@ -56,7 +56,7 @@ private:
 
 	void ResetLockedActorOwnershipHierarchyInformation(const AActor* ExplicitlyLockedActor, const AActor* DeletedHierarchyActor = nullptr);
 	void AddOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*> OwnershipHierarchyPath);
-	void RemoveOwnershipHierarchyPathInformation(TArray<AActor*> OwnershipHierarchyPath);
+	void RemoveOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*> OwnershipHierarchyPath);
 
 	TMap<const AActor*, MigrationLockElement> ActorToLockingState;
 	TMap<ActorLockToken, LockNameAndActor> TokenToNameAndActor;
