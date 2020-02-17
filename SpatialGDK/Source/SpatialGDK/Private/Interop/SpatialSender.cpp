@@ -543,12 +543,13 @@ void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId
 {
 	if (TArray<Worker_ComponentUpdate>* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
 	{
-		for (auto It = UpdatesQueuedUntilAuthority->CreateIterator(); It; It++)
+		for (int32 Num = 0; Num < UpdatesQueuedUntilAuthority->Num(); Num++)
 		{
-			if (ComponentId == It->component_id)
+			if (ComponentId == (*UpdatesQueuedUntilAuthority)[Num].component_id)
 			{
-				Connection->SendComponentUpdate(EntityId, &(*It));
-				It.RemoveCurrent();
+				Connection->SendComponentUpdate(EntityId, &(*UpdatesQueuedUntilAuthority)[Num]);
+				UpdatesQueuedUntilAuthority->RemoveAtSwap(Num);
+				Num--;
 			}
 		}
 		if (UpdatesQueuedUntilAuthority->Num() == 0)
