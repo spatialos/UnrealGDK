@@ -493,9 +493,9 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Character", "First lock", true));
 
-	//			Controller	
-	//			/		 \
-	//		State     Character (explicitly locked)
+	//          Controller	
+	//          /       \
+	//       State    Character (explicitly locked)
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", true));
@@ -536,9 +536,9 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Character", "First lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "State", "Second lock", true));
 
-	//							  Controller	
-	//							   /	  \
-	//		State (explicitly locked)     Character (explicitly locked)
+	//                            Controller	
+	//                             /       \
+	//      State (explicitly locked)     Character (explicitly locked)
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", true));
@@ -546,9 +546,9 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Character", "First lock", true));
 
-	//							 Controller	
-	//							 /		 \
-	//		State (explicitly locked)   Character
+	//                           Controller	
+	//                            /       \
+	//      State (explicitly locked)    Character
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", true));
@@ -556,9 +556,9 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "State", "Second lock", true));
 
-	//		    Controller	
-	//		   /		 \
-	//		State     Character
+	//          Controller	
+	//          /        \
+	//       State     Character
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", false));
@@ -592,9 +592,9 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Controller", "First lock", true));
 
-	//		Controller (explicitly locked)
-	//		   /		 \
-	//		State     Character 
+	//     Controller (explicitly locked)
+	//         /          \
+	//      State      Character 
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", true));
@@ -602,9 +602,9 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Controller", "First lock", true));
 
-	//			Controller
-	//		   /		 \
-	//		State     Character 
+	//         Controller
+	//          /      \
+	//       State    Character 
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", false));
@@ -636,9 +636,9 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Character", "First lock", true));
 
-	//			Controller			Other Actor
-	//			/		 \
-	//		State     Character (locked)
+	//          Controller                       Other Actor
+	//          /        \
+	//       State      Character (locked)
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", true));
@@ -647,9 +647,9 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "Character", "OtherActor"));
 
-	//			Controller			Other Actor
-	//				|					 |
-	//		      State				 Character (locked)
+	//          Controller           Other Actor
+	//              |                     |
+	//            State            Character (locked)
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Character", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Controller", false));
@@ -719,9 +719,9 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "B", "First lock", true));
 
-	//				A					C
-	//				|
-	//		B (explicitly locked)
+	//              A                  C
+	//              |
+	//      B (explicitly locked)
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
@@ -729,11 +729,11 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "A", "C"));
 
-	//				C
-	//				|
-	//				A
-	//				|
-	//		B (explicitly locked)
+	//              C
+	//              |
+	//              A
+	//              |
+	//    B (explicitly locked)
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
@@ -768,13 +768,13 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "D", "First lock", true));
 
-	//				A					E
+	//              A				E
 	//				|
 	//				B
 	//				|
 	//				C
 	//				|
-	//		D (explicitly locked)
+	//     D (explicitly locked)
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
@@ -784,11 +784,11 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 	ADD_LATENT_AUTOMATION_COMMAND(FSetOwnership(Data, "C", "E"));
 
-	//		A					E
-	//		|					|
-	//		B					C
-	//							|
-	//					D (explicitly locked)
+	//      A                   E
+	//      |                   |
+	//      B                   C
+	//                          |
+	//                  D (explicitly locked)
 
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));

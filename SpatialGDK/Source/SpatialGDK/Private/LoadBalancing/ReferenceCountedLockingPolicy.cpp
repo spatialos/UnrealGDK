@@ -125,13 +125,13 @@ bool UReferenceCountedLockingPolicy::IsLocked(const AActor* Actor) const
 		return false;
 	}
 
-	// Is this Actor explicitly locked or on a locked hierarchy ownership path
+	// Is this Actor explicitly locked or on a locked hierarchy ownership path.
 	if (IsExplicitlyLocked(Actor) || IsOnLockedHierarchyPath(Actor))
 	{
 		return true;
 	}
 
-	// Is the hierarchy root of this Actor explicitly locked or on a locked hierarchy ownership path
+	// Is the hierarchy root of this Actor explicitly locked or on a locked hierarchy ownership path.
 	TArray<AActor*> OwnershipHierarchyPath = SpatialGDK::GetOwnershipHierarchyPath(Actor);
 	if (OwnershipHierarchyPath.Num() > 0)
 	{
@@ -178,40 +178,36 @@ bool UReferenceCountedLockingPolicy::ReleaseLockFromDelegate(AActor* ActorToRele
 	return ReleaseSucceeded;
 }
 
-void UReferenceCountedLockingPolicy::OnOwnerUpdated(AActor* ActorChangingOwner)
+void UReferenceCountedLockingPolicy::OnOwnerUpdated(const AActor* Actor)
 {
-	check(ActorChangingOwner != nullptr);
+	check(Actor != nullptr);
 
-	const bool bActorExplicitlyLocked = IsExplicitlyLocked(ActorChangingOwner);
-	const bool bActorIsOnLockedHierarchyPath = IsOnLockedHierarchyPath(ActorChangingOwner);
+	const bool bActorExplicitlyLocked = IsExplicitlyLocked(Actor);
+	const bool bActorIsOnLockedHierarchyPath = IsOnLockedHierarchyPath(Actor);
 
-	// We only care about Actors changing owner that are some part of a locked hierarchy
+	// We only care about Actors changing owner that are some part of a locked hierarchy.
 	if (!bActorExplicitlyLocked && !bActorIsOnLockedHierarchyPath)
 	{
 		return;
 	}
 
-	// If an explicitly locked Actor is changing owner
+	// If an explicitly locked Actor is changing owner.
 	if (bActorExplicitlyLocked)
 	{
-		ResetLockedActorOwnershipHierarchyInformation(ActorChangingOwner);
+		RecalculateLockedActorOwnershipHierarchyInformation(Actor);
 	}
 
 	// If an Actor inside the hierarchy is changing owner to some Actor, we need to find which explicitly locked Actors
-	// have this Actor on their hierarchy path, and update their hierarchy information accordingly
+	// have this Actor on their hierarchy path, and update their hierarchy information accordingly.
 	if (bActorIsOnLockedHierarchyPath)
 	{
-		TArray<const AActor*>& ExplicitlyLockedActorsWithThisActorOnPath = LockedOwnershipPathActorToExplicitlyLockedActors.FindChecked(ActorChangingOwner);
-		for (const AActor* LockedActor : ExplicitlyLockedActorsWithThisActorOnPath)
-		{
-			ResetLockedActorOwnershipHierarchyInformation(LockedActor);
-		}
+		RecalculateAllExplicitlyLockedActorsInThisHierarchy(Actor);
 	}
 }
 
 void UReferenceCountedLockingPolicy::OnExplicitlyLockedActorDeleted(AActor* DestroyedActor)
 {
-	//	Find all tokens for this Actor and unlock
+	// Find all tokens for this Actor and unlock.
 	TArray<ActorLockToken> TokensToRemove;
 	for (const auto& KeyValuePair : TokenToNameAndActor)
 	{
@@ -225,10 +221,10 @@ void UReferenceCountedLockingPolicy::OnExplicitlyLockedActorDeleted(AActor* Dest
 		TokenToNameAndActor.Remove(Token);
 	}
 
-	//	Delete Actor from local mapping
+	//	Delete Actor from local mapping.
 	MigrationLockElement ActorLockingState = ActorToLockingState.FindAndRemoveChecked(DestroyedActor);
 
-	// Update ownership path Actor mapping to remove this Actor
+	// Update ownership path Actor mapping to remove this Actor.
 	RemoveOwnershipHierarchyPathInformation(DestroyedActor, ActorLockingState.OwnershipPath);
 }
 
@@ -238,17 +234,22 @@ void UReferenceCountedLockingPolicy::OnOwnershipPathActorDeleted(AActor* Destroy
 
 	// For all explicitly locked Actors where this Actor is on the ownership path, recalculate the
 	// ownership path information to account for this Actor's deletion.
-	TArray<const AActor*> ExplicitlyLockedActorsWithThisActorInOwnershipPath = LockedOwnershipPathActorToExplicitlyLockedActors.FindAndRemoveChecked(DestroyedOwnershipPathActor);
-	for (const AActor* ExplicitlyLockedActor : ExplicitlyLockedActorsWithThisActorInOwnershipPath)
-	{
-		check(ActorToLockingState.Contains(ExplicitlyLockedActor));
-		ResetLockedActorOwnershipHierarchyInformation(ExplicitlyLockedActor);
-	}
+	RecalculateAllExplicitlyLockedActorsInThisHierarchy(DestroyedOwnershipPathActor);
+	LockedOwnershipPathActorToExplicitlyLockedActors.Remove(DestroyedOwnershipPathActor);
 
 	check(!LockedOwnershipPathActorToExplicitlyLockedActors.Contains(DestroyedOwnershipPathActor));
 }
 
-void UReferenceCountedLockingPolicy::ResetLockedActorOwnershipHierarchyInformation(const AActor* ExplicitlyLockedActor, const AActor* DeletedHierarchyActor)
+void UReferenceCountedLockingPolicy::RecalculateAllExplicitlyLockedActorsInThisHierarchy(const AActor* ActorInHierarchy)
+{
+	TArray<const AActor*> ExplicitlyLockedActorsWithThisActorInOwnershipPath = LockedOwnershipPathActorToExplicitlyLockedActors.FindChecked(ActorInHierarchy);
+	for (const AActor* ExplicitlyLockedActor : ExplicitlyLockedActorsWithThisActorInOwnershipPath)
+	{
+		RecalculateLockedActorOwnershipHierarchyInformation(ExplicitlyLockedActor);
+	}
+}
+
+void UReferenceCountedLockingPolicy::RecalculateLockedActorOwnershipHierarchyInformation(const AActor* ExplicitlyLockedActor, const AActor* DeletedHierarchyActor)
 {
 	// For the old ownership path, update ownership path Actor mapping to explicitly locked Actors to remove this Actor.
 	TArray<AActor*> OldOwnershipHierarchyPath = ActorToLockingState.FindChecked(ExplicitlyLockedActor).OwnershipPath;
@@ -260,7 +261,7 @@ void UReferenceCountedLockingPolicy::ResetLockedActorOwnershipHierarchyInformati
 	AddOwnershipHierarchyPathInformation(ExplicitlyLockedActor, NewOwnershipHierarchyPath);
 }
 
-void UReferenceCountedLockingPolicy::RemoveOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*> OwnershipHierarchyPath)
+void UReferenceCountedLockingPolicy::RemoveOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*>& OwnershipHierarchyPath)
 {
 	for (AActor* OwnershipPathActor : OwnershipHierarchyPath)
 	{
@@ -282,8 +283,10 @@ void UReferenceCountedLockingPolicy::RemoveOwnershipHierarchyPathInformation(con
 	}
 }
 
-void UReferenceCountedLockingPolicy::AddOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*> OwnershipHierarchyPath)
+void UReferenceCountedLockingPolicy::AddOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*>& OwnershipHierarchyPath)
 {
+	// For every Actor on the hierarchy path of an explicitly locked Actor, we store a reference from the hierarchy path Actor back to
+	// the explicitly locked Actor, as well as binding a deletion delegate to the hierarchy path Actors.
 	for (AActor* OwnershipPathActor : OwnershipHierarchyPath)
 	{
 		TArray<const AActor*>& ExplicitlyLockedActorsWithThisActorOnPath = LockedOwnershipPathActorToExplicitlyLockedActors.FindOrAdd(OwnershipPathActor);

@@ -26,7 +26,7 @@ public:
 
 	virtual bool IsLocked(const AActor* Actor) const override;
 
-	virtual void OnOwnerUpdated(AActor* Actor) override;
+	virtual void OnOwnerUpdated(const AActor* Actor) override;
 
 private:
 	struct MigrationLockElement
@@ -54,9 +54,10 @@ private:
 	virtual bool AcquireLockFromDelegate(AActor* ActorToLock,    const FString& DelegateLockIdentifier) override;
 	virtual bool ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier) override;
 
-	void ResetLockedActorOwnershipHierarchyInformation(const AActor* ExplicitlyLockedActor, const AActor* DeletedHierarchyActor = nullptr);
-	void AddOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*> OwnershipHierarchyPath);
-	void RemoveOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*> OwnershipHierarchyPath);
+	void RecalculateAllExplicitlyLockedActorsInThisHierarchy(const AActor* ActorInHierarchy);
+	void RecalculateLockedActorOwnershipHierarchyInformation(const AActor* ExplicitlyLockedActor, const AActor* DeletedHierarchyActor = nullptr);
+	void AddOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*>& OwnershipHierarchyPath);
+	void RemoveOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*>& OwnershipHierarchyPath);
 
 	TMap<const AActor*, MigrationLockElement> ActorToLockingState;
 	TMap<ActorLockToken, LockNameAndActor> TokenToNameAndActor;

@@ -16,24 +16,24 @@
 namespace SpatialGDK
 {
 
-// We need the optional IgnoredActor argument because Actor deletions are broadcast before
-// SetOwner is called and ownership hierarchies are updated.
-inline TArray<AActor*> GetOwnershipHierarchyPath(const AActor* Actor, const AActor* IgnoredActor = nullptr)
+// We need the optional ActorToStopIteratingAt argument because for ownership-based Actor sets we want to find a hierarchy
+// assuming the future deletion of a given Actor. This is because Actor deletions are broadcast before SetOwner is called
+// which then updates the ownership hierarchy.
+inline TArray<AActor*> GetOwnershipHierarchyPath(const AActor* Actor, const AActor* ActorToStopIteratingAt = nullptr)
 {
 	check(Actor != nullptr);
 
-	AActor* OwnerIterator = Actor->GetOwner();
-	if (OwnerIterator == nullptr)
-	{
-		return TArray<AActor*>();
-	}
+	TArray<AActor*> OwnershipHierarchy = TArray<AActor*>();
 
-	TArray<AActor*> OwnershipHierarchy {OwnerIterator};
-
-	while (OwnerIterator->GetOwner() != nullptr && OwnerIterator->GetOwner() != IgnoredActor)
+	AActor* Owner = Actor->GetOwner();
+	if (Owner != nullptr)
 	{
-		OwnerIterator = OwnerIterator->GetOwner();
-		OwnershipHierarchy.Insert(OwnerIterator, 0);
+		OwnershipHierarchy.Add(Owner);
+		while (Owner->GetOwner() != nullptr && Owner->GetOwner() != ActorToStopIteratingAt)
+		{
+			Owner = Owner->GetOwner();
+			OwnershipHierarchy.Insert(Owner, 0);
+		}
 	}
 
 	return OwnershipHierarchy;
