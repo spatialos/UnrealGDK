@@ -133,10 +133,10 @@ FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 
 	// We need a pointer to a shared pointer due to how the JSON API works.
 	const TSharedPtr<FJsonObject>* JsonDataObject;
-	if (JsonRootObject->TryGetObjectField("json_data", JsonDataObject))
+	if (!(JsonRootObject->TryGetObjectField("json_data", JsonDataObject)))
 	{
 		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Unable to parse the received json data. Result: %s"), *DevAuthTokenResult);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult)));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received json data. Result: %s"), *DevAuthTokenResult)));
 		return FReply::Unhandled();
 	}
 
@@ -144,7 +144,7 @@ FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 	if (!(*JsonDataObject)->TryGetStringField("token_secret", TokenSecret))
 	{
 		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Unable to parse the token_secret field inside the received json data. Result: %s"), *DevAuthTokenResult);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the received development authentication token. Result: %s"), *DevAuthTokenResult)));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Unable to parse the token_secret field inside the received json data. Result: %s"), *DevAuthTokenResult)));
 		return FReply::Unhandled();
 	}
 
