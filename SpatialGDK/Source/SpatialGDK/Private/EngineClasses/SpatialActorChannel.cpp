@@ -436,6 +436,45 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Group actors by exact class, one level below parent native class.
 	SCOPE_CYCLE_UOBJECT(ReplicateActor, Actor);
 
+	const bool bReplay = ActorWorld && ActorWorld->DemoNetDriver == Connection->GetDriver();
+
+	//////////////////////////////////////////////////////////////////////////
+	// Begin - error and stat duplication from DataChannel::ReplicateActor()
+	if (!bReplay)
+	{
+		GNumReplicateActorCalls++;
+	}
+
+	// triggering replication of an Actor while already in the middle of replication can result in invalid data being sent and is therefore illegal
+	if (bIsReplicatingActor)
+	{
+		FString Error(FString::Printf(TEXT("ReplicateActor called while already replicating! %s"), *Describe()));
+		UE_LOG(LogNet, Log, TEXT("%s"), *Error);
+		ensureMsgf(false, TEXT("%s"), *Error);
+		return 0;
+	}
+	else if (bActorIsPendingKill)
+	{
+		// Don't need to do anything, because it should have already been logged.
+		return 0;
+	}
+	// If our Actor is PendingKill, that's bad. It means that somehow it wasn't properly removed
+	// from the NetDriver or ReplicationDriver.
+	// TODO: Maybe notify the NetDriver / RepDriver about this, and have the channel close?
+	else if (Actor->IsPendingKillOrUnreachable())
+	{
+		bActorIsPendingKill = true;
+#if ENGINE_MINOR_VERSION > 22
+		ActorReplicator.Reset();
+#endif
+		FString Error(FString::Printf(TEXT("ReplicateActor called with PendingKill Actor! %s"), *Describe()));
+		UE_LOG(LogNet, Log, TEXT("%s"), *Error);
+		ensureMsgf(false, TEXT("%s"), *Error);
+		return 0;
+	}
+	// End - error and stat duplication from DataChannel::ReplicateActor()
+	//////////////////////////////////////////////////////////////////////////
+
 	// Create an outgoing bunch (to satisfy some of the functions below).
 	FOutBunch Bunch(this, 0);
 	if (Bunch.IsError())
@@ -469,7 +508,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	RepFlags.bNetSimulated = (Actor->GetRemoteRole() == ROLE_SimulatedProxy);
 	RepFlags.bRepPhysics = Actor->ReplicatedMovement.bRepPhysics;
-	RepFlags.bReplay = ActorWorld && (ActorWorld->DemoNetDriver == Connection->GetDriver());
+	RepFlags.bReplay = bReplay;
 
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
 
@@ -661,7 +700,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
 		// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
 		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) &&
-		NetDriver->LoadBalanceStrategy->ShouldRelinquishAuthority(*Actor) &&
+		!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) &&
 		!NetDriver->LockingPolicy->IsLocked(Actor))
 	{
 		const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);

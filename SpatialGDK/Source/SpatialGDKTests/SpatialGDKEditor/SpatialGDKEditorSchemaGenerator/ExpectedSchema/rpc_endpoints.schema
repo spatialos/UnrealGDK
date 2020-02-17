@@ -147,7 +147,6 @@ component UnrealServerEndpoint {
 	uint64 last_sent_server_to_client_unreliable_rpc_id = 66;
 	uint64 last_acked_client_to_server_reliable_rpc_id = 67;
 	uint64 last_acked_client_to_server_unreliable_rpc_id = 68;
-	command Void server_to_server_rpc_command(UnrealRPCPayload);
 }
 
 component UnrealMulticastRPCs {

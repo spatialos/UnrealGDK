@@ -11,7 +11,12 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorLayoutDetails, Log, All);
 class FSpatialGDKEditorLayoutDetails : public IDetailCustomization
 {
 private:
-	FReply ClickedOnButton();
+	bool TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile);
+	bool TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile);
+
+	FReply GenerateDevAuthToken();
+	FReply PushCommandLineArgsToIOSDevice();
+	FReply PushCommandLineArgsToAndroidDevice();
 
 public:
 	static TSharedRef<IDetailCustomization> MakeInstance();

@@ -35,7 +35,7 @@ DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
 DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel, STATGROUP_SpatialNet);
 
-DECLARE_CYCLE_STAT(TEXT("Receiver CritSection"), STAT_ReceiverCritSection, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver LeaveCritSection"), STAT_ReceiverLeaveCritSection, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver AddEntity"), STAT_ReceiverAddEntity, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver RemoveEntity"), STAT_ReceiverRemoveEntity, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver AddComponent"), STAT_ReceiverAddComponent, STATGROUP_SpatialNet);
@@ -50,6 +50,10 @@ DECLARE_CYCLE_STAT(TEXT("Receiver AuthorityChange"), STAT_ReceiverAuthChange, ST
 DECLARE_CYCLE_STAT(TEXT("Receiver ReserveEntityIds"), STAT_ReceiverReserveEntityIds, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver CreateEntityResponse"), STAT_ReceiverCreateEntityResponse, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver EntityQueryResponse"), STAT_ReceiverEntityQueryResponse, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver FlushRemoveComponents"), STAT_ReceiverFlushRemoveComponents, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver ReceiveActor"), STAT_ReceiverReceiveActor, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService)
@@ -70,7 +74,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
 {
-	SCOPE_CYCLE_COUNTER(STAT_ReceiverCritSection);
 	if (InCriticalSection)
 	{
 		EnterCriticalSection();
@@ -90,6 +93,8 @@ void USpatialReceiver::EnterCriticalSection()
 
 void USpatialReceiver::LeaveCriticalSection()
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverLeaveCritSection);
+
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Leaving critical section."));
 	check(bInCriticalSection);
 
@@ -156,12 +161,19 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
+	case SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
+		return;
+	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
+		// The RPC service needs to be informed when a multi-cast RPC component is added.
+		if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
+		{
+			RPCService->OnCheckoutMulticastRPCComponentOnEntity(Op.entity_id);
+		}
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplySingletonManagerData(Op.data);
@@ -228,14 +240,16 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 	RemoveActor(Op.entity_id);
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
-	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
-	{
-		RPCService->OnRemoveEntity(Op.entity_id);
-	}
 }
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
+	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+	{
+		// If this is a multi-cast RPC component, the RPC service should be informed to handle it.
+		RPCService->OnRemoveMulticastRPCComponentForEntity(Op.entity_id);
+	}
+
 	// We are queuing here because if an Actor is removed from your view, remove component ops will be
 	// generated and sent first, and then the RemoveEntityOp will be sent. In this case, we only want
 	// to delete the Actor and not delete the subobjects that the RemoveComponent relate to.
@@ -247,6 +261,8 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 
 void USpatialReceiver::FlushRemoveComponentOps()
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverFlushRemoveComponents);
+
 	for (const auto& Op : QueuedRemoveComponentOps)
 	{
 		ProcessRemoveComponent(Op);
@@ -617,6 +633,8 @@ bool USpatialReceiver::IsReceivedEntityTornOff(Worker_EntityId EntityId)
 
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverReceiveActor);
+	
 	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
 	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
 
@@ -638,11 +656,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	{
 		StartAsyncLoadingClass(ClassPath, EntityId);
 		return;
-	}
-
-	if (SpatialGDKSettings->UseRPCRingBuffer() && RPCService != nullptr)
-	{
-		RPCService->OnCheckoutEntity(EntityId);
 	}
 
 	if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
@@ -825,6 +838,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverRemoveActor);
+
 	TWeakObjectPtr<UObject> WeakActor = PackageMap->GetObjectFromEntityId(EntityId);
 
 	// Actor has not been resolved yet or has already been destroyed. Clean up surrounding bookkeeping.
@@ -1537,7 +1552,6 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 			{
 				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
 
-
 				// In a zoned multiworker scenario we might not have gained authority over the current entity in this bundle in time
 				// before processing so don't ApplyRPCs to an entity that we don't have authority over.
 				if (!StaticComponentView->HasAuthority(ObjectRef.Entity, RPCEndpointComponentId))
@@ -1787,6 +1801,8 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 
 FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverApplyRPC);
+
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
