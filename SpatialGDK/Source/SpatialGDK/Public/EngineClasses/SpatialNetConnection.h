@@ -30,7 +30,7 @@ public:
 	virtual int32 IsNetReady(bool Saturate) override;
 
 	/** Called by PlayerController to tell connection about client level visibility change */
-	virtual void UpdateLevelVisibility(const FName& PackageName, bool bIsVisible) override;
+	virtual void UpdateLevelVisibility(const struct FUpdateLevelVisibilityLevelInfo& LevelVisibility) override;
 
 	virtual void FlushDormancy(class AActor* Actor) override;
 

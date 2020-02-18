@@ -16,7 +16,7 @@ USpatialPingComponent::USpatialPingComponent(const FObjectInitializer& ObjectIni
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 
-	bReplicates = true;
+	SetIsReplicatedByDefault(true);
 }
 
 void USpatialPingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
