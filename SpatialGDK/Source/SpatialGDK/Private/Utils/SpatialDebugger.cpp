@@ -344,6 +344,8 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		HorizontalOffset += 16.0f;
 		Canvas->SetDrawColor(ServerWorkerColor);
 		Canvas->DrawIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
+		Canvas->SetDrawColor(GetTextColorForBackgroundColor(ServerWorkerColor));
+		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->AuthoritativeVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 5, ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
 		HorizontalOffset += 16.0f;
 	}
 
@@ -356,6 +358,8 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		HorizontalOffset += 16.0f;
 		Canvas->SetDrawColor(VirtualWorkerColor);
 		Canvas->DrawIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
+		Canvas->SetDrawColor(GetTextColorForBackgroundColor(VirtualWorkerColor));
+		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->IntentVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 5, ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
 		HorizontalOffset += 16.0f;
 	}
 
@@ -378,6 +382,11 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		Canvas->SetDrawColor(FColor::Green);
 		Canvas->DrawText(RenderFont, Label, ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f, 1.0f, FontRenderInfo);
 	}
+}
+
+FColor ASpatialDebugger::GetTextColorForBackgroundColor(const FColor& BackgroundColor) const
+{
+	return BackgroundColor.ReinterpretAsLinear().ComputeLuminance() > 0.5 ? FColor::Black : FColor::White;
 }
 
 void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controller */) // Controller is invalid.

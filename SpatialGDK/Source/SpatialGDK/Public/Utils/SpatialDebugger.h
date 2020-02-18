@@ -139,6 +139,8 @@ private:
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
+	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;
+
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;
 
