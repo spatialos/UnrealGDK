@@ -55,6 +55,7 @@ steps:
         GDK_BRANCH: "${BUILDKITE_BRANCH}"
 
   - label: "generate-pipeline-steps"
+    if: (!build.pull_request.draft && build.pull_request.id != null) || build.branch == "master" || build.branch == "preview" || build.branch == "release"
     commands:
       - "ci/generate-and-upload-build-steps.sh"
     env:
