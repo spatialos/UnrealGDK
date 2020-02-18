@@ -56,14 +56,6 @@ FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* I
 {
 }
 
-FPendingRPC::FPendingRPC(FPendingRPC&& Other)
-	: Offset(Other.Offset)
-	, Index(Other.Index)
-	, Data(MoveTemp(Other.Data))
-	, Entity(Other.Entity)
-{
-}
-
 void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService)
 {
 	NetDriver = InNetDriver;
@@ -844,6 +836,10 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 			FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
 
+#if TRACE_LIB_ACTIVE
+			ComponentUpdate.Trace = Payload.Trace;
+#endif
+
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 #if !UE_BUILD_SHIPPING
 			TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
@@ -1017,9 +1013,9 @@ Worker_CommandRequest USpatialSender::CreateRetryRPCCommandRequest(const FReliab
 	return CommandRequest;
 }
 
-Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId EventIndex)
+FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId EventIndex)
 {
-	Worker_ComponentUpdate ComponentUpdate = {};
+	FWorkerComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = ComponentId;
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
@@ -1030,6 +1026,10 @@ Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 	ensure(TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
 	Payload.WriteToSchemaObject(EventData);
+
+#if TRACE_LIB_ACTIVE
+	ComponentUpdate.Trace = Payload.Trace;
+#endif
 
 	return ComponentUpdate;
 }
