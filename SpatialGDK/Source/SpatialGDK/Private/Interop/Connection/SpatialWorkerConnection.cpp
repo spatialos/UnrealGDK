@@ -18,7 +18,7 @@ using namespace SpatialGDK;
 
 struct ConfigureConnection
 {
-	ConfigureConnection(const FConnectionConfig& InConfig, bool bConnectAsClient)
+	ConfigureConnection(const FConnectionConfig& InConfig, const bool bConnectAsClient)
 		: Config(InConfig)
 		, Params()
 		, WorkerType(*Config.WorkerType)
