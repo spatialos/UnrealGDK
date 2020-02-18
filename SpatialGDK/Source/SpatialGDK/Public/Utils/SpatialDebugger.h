@@ -140,6 +140,7 @@ private:
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
 	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;
+	int32 GetNumberOfDigitsIn(int32 SomeNumber) const;
 
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;
