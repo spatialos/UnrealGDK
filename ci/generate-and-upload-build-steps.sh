@@ -23,7 +23,7 @@ generate_build_configuration_steps () {
         # Linux Development NoEditor build configuration
         upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
     else
-        echo "Building for all supported configurations. Generating appropriate steps..."
+        echo "Building for all supported configurations. Generating the appropriate steps..."
         
         # Editor builds (Test and Shipping build states do not exist for the Editor build target)
         for BUILD_STATE in "DebugGame" "Development"; do
