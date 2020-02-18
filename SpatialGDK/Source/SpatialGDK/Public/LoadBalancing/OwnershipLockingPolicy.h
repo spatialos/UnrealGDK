@@ -9,12 +9,12 @@
 #include "GameFramework/Actor.h"
 #include "UObject/WeakObjectPtr.h"
 
-#include "ReferenceCountedLockingPolicy.generated.h"
+#include "OwnershipLockingPolicy.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogReferenceCountedLockingPolicy, Log, All)
+DECLARE_LOG_CATEGORY_EXTERN(LogOwnershipLockingPolicy, Log, All)
 
 UCLASS()
-class SPATIALGDK_API UReferenceCountedLockingPolicy : public UAbstractLockingPolicy
+class SPATIALGDK_API UOwnershipLockingPolicy : public UAbstractLockingPolicy
 {
 	GENERATED_BODY()
 
@@ -26,43 +26,43 @@ public:
 
 	virtual bool IsLocked(const AActor* Actor) const override;
 
-	virtual void OnOwnerUpdated(const AActor* Actor) override;
+	virtual void OnOwnerUpdated(const AActor* Actor, const AActor* OldOwner) override;
 
 private:
 	struct MigrationLockElement
 	{
 		int32 LockCount;
-		TArray<AActor*> OwnershipPath;
+		AActor* HierarchyRoot;
 	};
 
 	struct LockNameAndActor
 	{
-		FString LockName;
+		const FString LockName;
 		AActor* Actor;
 	};
 
-	bool CanAcquireLock(AActor* Actor) const;
+	bool CanAcquireLock(const AActor* Actor) const;
 	bool IsExplicitlyLocked(const AActor* Actor) const;
-	bool IsOnLockedHierarchyPath(const AActor* Actor) const;
+	bool IsLockedHierarchyRoot(const AActor* Actor) const;
 
 	UFUNCTION()
 	void OnExplicitlyLockedActorDeleted(AActor* DestroyedActor);
 
 	UFUNCTION()
-	void OnOwnershipPathActorDeleted(AActor* DestroyedActorRoot);
+	void OnHierarchyRootActorDeleted(AActor* DestroyedActorRoot);
 
 	virtual bool AcquireLockFromDelegate(AActor* ActorToLock,    const FString& DelegateLockIdentifier) override;
 	virtual bool ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier) override;
 
-	void RecalculateAllExplicitlyLockedActorsInThisHierarchy(const AActor* ActorInHierarchy);
+	void RecalculateAllExplicitlyLockedActorsInThisHierarchy(const AActor* HierarchyRoot);
 	void RecalculateLockedActorOwnershipHierarchyInformation(const AActor* ExplicitlyLockedActor, const AActor* DeletedHierarchyActor = nullptr);
-	void AddOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*>& OwnershipHierarchyPath);
-	void RemoveOwnershipHierarchyPathInformation(const AActor* ExplicitlyLockedActor, TArray<AActor*>& OwnershipHierarchyPath);
+	void AddOwnershipHierarchyRootInformation(AActor* HierarchyRoot, const AActor* ExplicitlyLockedActor);
+	void RemoveOwnershipHierarchyRootInformation(AActor* HierarchyRoot, const AActor* ExplicitlyLockedActor);
 
 	TMap<const AActor*, MigrationLockElement> ActorToLockingState;
 	TMap<ActorLockToken, LockNameAndActor> TokenToNameAndActor;
 	TMap<FString, ActorLockToken> DelegateLockingIdentifierToActorLockToken;
-	TMap<AActor*, TArray<const AActor*>> LockedOwnershipPathActorToExplicitlyLockedActors;
+	TMap<const AActor*, TArray<const AActor*>> LockedOwnershipRootActorToExplicitlyLockedActors;
 
 	ActorLockToken NextToken = 1;
 };

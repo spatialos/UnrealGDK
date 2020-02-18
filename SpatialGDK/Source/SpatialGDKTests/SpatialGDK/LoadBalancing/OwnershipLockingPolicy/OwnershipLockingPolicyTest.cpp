@@ -7,7 +7,7 @@
 #include "EngineClasses/AbstractSpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/SpatialStaticComponentView.h"
-#include "LoadBalancing/ReferenceCountedLockingPolicy.h"
+#include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "Tests/TestDefinitions.h"
 
@@ -22,8 +22,8 @@
 #include "Templates/SharedPointer.h"
 #include "UObject/UObjectGlobals.h"
 
-#define REFERENCECOUNTEDLOCKINGPOLICY_TEST(TestName) \
-	GDK_TEST(Core, UReferenceCountedLockingPolicy, TestName)
+#define OWNERSHIPLOCKINGPOLICY_TEST(TestName) \
+	GDK_TEST(Core, UOwnershipLockingPolicy, TestName)
 
 namespace
 {
@@ -35,7 +35,7 @@ struct TestData
 	UWorld* TestWorld;
 	TMap<FName, AActor*> TestActors;
 	TMap<AActor*, TArray<LockingTokenAndDebugString>> TestActorToLockingTokenAndDebugStrings;
-	UReferenceCountedLockingPolicy* LockingPolicy;
+	UOwnershipLockingPolicy* LockingPolicy;
 	USpatialStaticComponentView* StaticComponentView;
 	UAbstractSpatialPackageMapClient* PackageMap;
 	AbstractVirtualWorkerTranslator* VirtualWorkerTranslator;
@@ -70,7 +70,7 @@ TSharedPtr<TestData> MakeNewTestData(Worker_EntityId EntityId, Worker_Authority 
 
 	Data->VirtualWorkerTranslator = new USpatialVirtualWorkerTranslatorMock(VirtWorkerId);
 
-	Data->LockingPolicy = NewObject<UReferenceCountedLockingPolicy>();
+	Data->LockingPolicy = NewObject<UOwnershipLockingPolicy>();
 	Data->LockingPolicy->Init(Data->StaticComponentView, Data->PackageMap, Data->VirtualWorkerTranslator, Data->AcquireLockDelegate, Data->ReleaseLockDelegate);
 	Data->LockingPolicy->AddToRoot();
 
@@ -147,8 +147,9 @@ bool FSetOwnership::Update()
 {
 	AActor* ActorBeingOwned = Data->TestActors[ActorBeingOwnedHandle];
 	AActor* ActorToOwn = Data->TestActors[ActorToOwnHandle];
+	AActor* OldOwner = ActorBeingOwned->GetOwner();
 	ActorBeingOwned->SetOwner(ActorToOwn);
-	Data->LockingPolicy->OnOwnerUpdated(ActorBeingOwned);
+	Data->LockingPolicy->OnOwnerUpdated(ActorBeingOwned, OldOwner);
 	return true;
 }
 
@@ -304,7 +305,7 @@ bool FTestIsLocked::Update()
 
 }  // anonymous namespace
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLocked_is_called_THEN_returns_false_with_no_lock_tokens)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLocked_is_called_THEN_returns_false_with_no_lock_tokens)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -320,7 +321,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLoc
 
 // AcquireLock and ReleaseLock
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_is_called_THEN_it_errors_and_returns_false)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_is_called_THEN_it_errors_and_returns_false)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -335,7 +336,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_is
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is_not_authoritative_THEN_AcquireLock_returns_false)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is_not_authoritative_THEN_AcquireLock_returns_false)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -350,7 +351,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_A
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is_deleted_THEN_ReleaseLock_returns_false)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is_deleted_THEN_ReleaseLock_returns_false)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -369,7 +370,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_A
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_twice_WHEN_the_locked_Actor_is_deleted_THEN_ReleaseLock_returns_false)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_twice_WHEN_the_locked_Actor_is_deleted_THEN_ReleaseLock_returns_false)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -389,7 +390,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_twice_WHEN_the_lo
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -407,7 +408,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -429,7 +430,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_ReleaseLock_is_called_again_THEN_it_errors_and_returns_false)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_ReleaseLock_is_called_again_THEN_it_errors_and_returns_false)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -448,7 +449,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_AcquireLock_is_called_again_THEN_it_succeeds)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_AcquireLock_is_called_again_THEN_it_succeeds)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -468,7 +469,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -510,7 +511,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_multiple_hierarchy_Actors_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_multiple_hierarchy_Actors_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -567,7 +568,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_root_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_root_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -613,7 +614,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_Actor_hierarchy_changes_THEN_IsLocked_returns_correctly_for_all_Actors)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_Actor_hierarchy_changes_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -666,7 +667,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_Actor_is_destroyed_THEN_IsLocked_returns_false_for_other_hierarchy_Actors)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_Actor_is_destroyed_THEN_IsLocked_returns_false_for_other_hierarchy_Actors)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -699,7 +700,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -742,7 +743,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_Actor_on_hierarchy_path_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_Actor_WHEN_Actor_on_hierarchy_path_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -801,7 +802,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_
 
 // AcquireLockDelegate and ReleaseLockDelegate
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_is_executed_THEN_it_errors_and_returns_false)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_is_executed_THEN_it_errors_and_returns_false)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -816,7 +817,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_de
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -834,7 +835,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_a
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
@@ -856,7 +857,7 @@ REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_a
 	return true;
 }
 
-REFERENCECOUNTEDLOCKINGPOLICY_TEST(GIVEN_AcquireLockDelegate_and_ReleaseLockDelegate_are_executed_WHEN_ReleaseLockDelegate_is_executed_again_THEN_it_errors_and_returns_false)
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLockDelegate_and_ReleaseLockDelegate_are_executed_WHEN_ReleaseLockDelegate_is_executed_again_THEN_it_errors_and_returns_false)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 

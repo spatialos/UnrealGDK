@@ -19,24 +19,22 @@ namespace SpatialGDK
 // We need the optional ActorToStopIteratingAt argument because for ownership-based Actor sets we want to find a hierarchy
 // assuming the future deletion of a given Actor. This is because Actor deletions are broadcast before SetOwner is called
 // which then updates the ownership hierarchy.
-inline TArray<AActor*> GetOwnershipHierarchyPath(const AActor* Actor, const AActor* ActorToStopIteratingAt = nullptr)
+inline AActor* GetHierarchyRoot(const AActor* Actor, const AActor* ActorToStopIteratingAt = nullptr)
 {
 	check(Actor != nullptr);
 
-	TArray<AActor*> OwnershipHierarchy = TArray<AActor*>();
-
 	AActor* Owner = Actor->GetOwner();
-	if (Owner != nullptr)
+	if (Owner == ActorToStopIteratingAt)
 	{
-		OwnershipHierarchy.Add(Owner);
-		while (Owner->GetOwner() != nullptr && Owner->GetOwner() != ActorToStopIteratingAt)
-		{
-			Owner = Owner->GetOwner();
-			OwnershipHierarchy.Insert(Owner, 0);
-		}
+		return nullptr;
 	}
 
-	return OwnershipHierarchy;
+	while (Owner->GetOwner() != nullptr && Owner->GetOwner() != ActorToStopIteratingAt)
+	{
+		Owner = Owner->GetOwner();
+	}
+
+	return Owner;
 }
 
 inline FString GetOwnerWorkerAttribute(AActor* Actor)
