@@ -7,9 +7,11 @@ public class SpatialGDKEditor : ModuleRules
 	public SpatialGDKEditor(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        bUseUnity = false;
+#pragma warning disable 0618
+        bFasterWithoutUnity = true; // Deprecated in 4.24, replace with bUseUnity = true; once we drop support for 4.23
+#pragma warning restore 0618
 
-		PrivateDependencyModuleNames.AddRange(
+        PrivateDependencyModuleNames.AddRange(
 			new string[] {
 				"Core",
 				"CoreUObject",
