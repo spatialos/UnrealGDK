@@ -9,14 +9,15 @@ public class SpatialGDKEditor : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         bUseUnity = false;
 
-        PrivateDependencyModuleNames.AddRange(
+		PrivateDependencyModuleNames.AddRange(
 			new string[] {
 				"Core",
 				"CoreUObject",
 				"EditorStyle",
 				"Engine",
  				"EngineSettings",
-				"Json",
+ 				"IOSRuntimeSettings",
+ 				"Json",
 				"PropertyEditor",
 				"Slate",
 				"SlateCore",
@@ -24,7 +25,7 @@ public class SpatialGDKEditor : ModuleRules
 				"SpatialGDKServices",
 				"UnrealEd",
 				"GameplayAbilities"
-            });
+			});
 
 		PrivateIncludePaths.AddRange(
 			new string[]

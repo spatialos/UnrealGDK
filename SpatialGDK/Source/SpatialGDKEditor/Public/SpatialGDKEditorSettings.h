@@ -223,16 +223,6 @@ namespace ERegionCode
 	};
 }
 
-UENUM()
-namespace EServicesRegion
-{
-	enum Type
-	{
-		Default,
-		CN
-	};
-}
-
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
@@ -249,10 +239,15 @@ private:
 	/** Set WorkerTypes in runtime settings. */
 	void SetRuntimeWorkerTypes();
 
+	/** Set DAT in runtime settings. */
+	void SetRuntimeUseDevelopmentAuthenticationFlow();
+	void SetRuntimeDevelopmentDeploymentToConnect();
+
 	/** Set WorkerTypesToLaunch in level editor play settings. */
 	void SetLevelEditorPlaySettingsWorkerTypes();
 
 public:
+
 	/** If checked, show the Spatial service button on the GDK toolbar which can be used to turn the Spatial service on and off. */
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (DisplayName = "Show Spatial service button"))
 	bool bShowSpatialServiceButton;
@@ -265,7 +260,26 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-generate launch configuration file"))
 	bool bGenerateDefaultLaunchConfig;
 
+	/** Returns the Runtime version to use for cloud deployments, either the pinned one, or the user-specified one depending of the settings. */
+	const FString& GetSpatialOSRuntimeVersionForCloud() const;
+
+	/** Returns the Runtime version to use for local deployments, either the pinned one, or the user-specified one depending of the settings. */
+	const FString& GetSpatialOSRuntimeVersionForLocal() const;
+
+	/** Whether to use the GDK-associated SpatialOS runtime version, or to use the one specified in the RuntimeVersion field. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Use GDK pinned runtime version"))
+	bool bUseGDKPinnedRuntimeVersion;
+
+	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
+	FString LocalRuntimeVersion;
+
+	/** Runtime version to use for cloud deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (EditCondition = "!bUseGDKPinnedRuntimeVersion"))
+	FString CloudRuntimeVersion;
+
 private:
+
 	/** If you are not using auto-generate launch configuration file, specify a launch configuration `.json` file and location here.  */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "!bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file path"))
 	FFilePath SpatialOSLaunchConfig;
@@ -318,6 +332,20 @@ private:
 
 	const FString SimulatedPlayerLaunchConfigPath;
 
+public:
+	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
+		bool bUseDevelopmentAuthenticationFlow;
+
+	/** The token created using 'spatial project auth dev-auth-token' */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
+		FString DevelopmentAuthenticationToken;
+
+	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
+		FString DevelopmentDeploymentToConnect;
+
+private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
 
@@ -330,14 +358,24 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", DisplayName = "Number of simulated players"))
 		uint32 NumberOfSimulatedPlayers;
 
-	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
-	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
-
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
 	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
-	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath);
+	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
+
+public:
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Connect to a local deployment"))
+	bool bMobileConnectToLocalDeployment;
+
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (EditCondition = "bMobileConnectToLocalDeployment", DisplayName = "Runtime IP to local deployment"))
+	FString MobileRuntimeIP;
+
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Mobile Client Worker Type"))
+	FString MobileWorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
+
+	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Extra Command Line Arguments"))
+	FString MobileExtraCommandLineArgs;
 
 public:
 	/** If you have selected **Auto-generate launch configuration file**, you can change the default options in the file from the drop-down menu. */
@@ -458,6 +496,18 @@ public:
 		return bSimulatedPlayersIsEnabled;
 	}
 
+	void SetUseGDKPinnedRuntimeVersion(bool IsEnabled);
+	FORCEINLINE bool GetUseGDKPinnedRuntimeVersion() const
+	{
+		return bUseGDKPinnedRuntimeVersion;
+	}
+
+	void SetCustomCloudSpatialOSRuntimeVersion(const FString& Version);
+	FORCEINLINE const FString& GetCustomCloudSpatialOSRuntimeVersion() const
+	{
+		return CloudRuntimeVersion;
+	}
+
 	void SetSimulatedPlayerDeploymentName(const FString& Name);
 	FORCEINLINE FString GetSimulatedPlayerDeploymentName() const
 	{
@@ -482,5 +532,5 @@ public:
 
 	bool IsDeploymentConfigurationValid() const;
 
-	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
+	void SetRuntimeDevelopmentAuthenticationToken();
 };

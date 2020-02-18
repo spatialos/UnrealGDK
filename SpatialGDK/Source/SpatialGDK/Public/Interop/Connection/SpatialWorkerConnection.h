@@ -6,6 +6,7 @@
 #include "HAL/Runnable.h"
 #include "HAL/ThreadSafeBool.h"
 
+#include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialCommonTypes.h"
@@ -24,45 +25,55 @@ enum class ESpatialConnectionType
 {
 	Receptionist,
 	LegacyLocator,
-	Locator
+	Locator,
+	DevAuthFlow
 };
 
 UCLASS()
-class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
+class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable, public SpatialOSWorkerInterface
 {
 	GENERATED_BODY()
 
 public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
+	
+	using LoginTokenResponseCallback = TFunction<bool(const Worker_Alpha_LoginTokensResponse*)>;
+    
+    /// Register a callback using this function.
+    /// It will be triggered when receiving login tokens using the development authentication flow inside SpatialWorkerConnection.
+    /// @param Callback - callback function.
+	void RegisterOnLoginTokensCallback(const LoginTokenResponseCallback& Callback) {LoginTokenResCallback = Callback;}
 
 	void Connect(bool bConnectAsClient, uint32 PlayInEditorID);
 
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
 	// Worker Connection Interface
-	TArray<Worker_OpList*> GetOpList();
-	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);
-	Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId);
-	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
-	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate, const TraceKey Key = USpatialLatencyTracer::InvalidTraceKey);
-	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
-	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
-	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
-	void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message);
-	void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest);
-	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
-	void SendMetrics(const SpatialGDK::SpatialMetrics& Metrics);
+	virtual TArray<Worker_OpList*> GetOpList() override;
+	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
+	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData>&& Components, const Worker_EntityId* EntityId) override;
+	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId) override;
+	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData) override;
+	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) override;
+	virtual void SendComponentUpdate(Worker_EntityId EntityId, const FWorkerComponentUpdate* ComponentUpdate) override;
+	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId) override;
+	virtual void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response) override;
+	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message) override;
+	virtual void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) override;
+	virtual void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) override;
+	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
+	virtual void SendMetrics(const SpatialGDK::SpatialMetrics& Metrics) override;
 
 	PhysicalWorkerName GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
 	void SetConnectionType(ESpatialConnectionType InConnectionType);
 
+	// TODO: UNR-2753
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
+	FDevAuthConfig DevAuthConfig;
 
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnEnqueueMessage OnEnqueueMessage;
@@ -76,12 +87,16 @@ public:
 	DECLARE_DELEGATE_TwoParams(OnConnectionToSpatialOSFailedDelegate, uint8_t, const FString&);
 	OnConnectionToSpatialOSFailedDelegate OnFailedToConnectCallback;
 
-	void StartSetupConnectionConfigFromURL(const FURL& URL, bool& bOutUseReceptionist);
-	void FinishSetupConnectionConfig(const FURL& URL, bool bUseReceptionist, const FString& SpatialWorkerType);
+	bool TrySetupConnectionConfigFromCommandLine(const FString& SpatialWorkerType);
+	void SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType);
+	void RequestDeploymentLoginTokens();
+
+	void QueueLatestOpList();
+	void ProcessOutgoingMessages();
 
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
-	void ConnectToLocator();
+	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
 	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 
 	void OnConnectionSuccess();
@@ -98,12 +113,11 @@ private:
 	// End FRunnable Interface
 
 	void InitializeOpsProcessingThread();
-	void QueueLatestOpList();
-	void ProcessOutgoingMessages();
 
-	void StartDevelopmentAuth(FString DevAuthToken);
+	void StartDevelopmentAuth(const FString& DevAuthToken);
 	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
 	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
+	void ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
 	template <typename T, typename... ArgsType>
 	void QueueOutgoingMessage(ArgsType&&... Args);
@@ -128,4 +142,5 @@ private:
 	Worker_RequestId NextRequestId = 0;
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
+	LoginTokenResponseCallback LoginTokenResCallback;
 };

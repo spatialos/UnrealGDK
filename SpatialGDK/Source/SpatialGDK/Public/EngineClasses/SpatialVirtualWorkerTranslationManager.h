@@ -14,8 +14,8 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 
 class SpatialVirtualWorkerTranslator;
-class USpatialReceiver;
-class USpatialWorkerConnection;
+class SpatialOSDispatcherInterface;
+class SpatialOSWorkerInterface;
 
 //
 // The Translation Manager is responsible for querying SpatialOS for all UnrealWorker worker
@@ -34,8 +34,8 @@ class USpatialWorkerConnection;
 class SPATIALGDK_API SpatialVirtualWorkerTranslationManager
 {
 public:
-	SpatialVirtualWorkerTranslationManager(USpatialReceiver* InReceiver,
-		USpatialWorkerConnection* InConnection,
+	SpatialVirtualWorkerTranslationManager(SpatialOSDispatcherInterface* InReceiver,
+		SpatialOSWorkerInterface* InConnection,
 		SpatialVirtualWorkerTranslator* InTranslator);
 
 	void AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds);
@@ -44,12 +44,13 @@ public:
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 
 private:
-	TWeakObjectPtr<USpatialReceiver> Receiver;
-	TWeakObjectPtr<USpatialWorkerConnection> Connection;
+	SpatialOSDispatcherInterface* Receiver;
+	SpatialOSWorkerInterface* Connection;
 
 	SpatialVirtualWorkerTranslator* Translator;
 
 	TMap<VirtualWorkerId, PhysicalWorkerName> VirtualToPhysicalWorkerMapping;
+	TMap<PhysicalWorkerName, VirtualWorkerId> PhysicalToVirtualWorkerMapping;
 	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
@@ -59,8 +60,8 @@ private:
 
 	// The following methods are used to query the Runtime for all worker entities and update the mapping
 	// based on the response.
-	void QueryForWorkerEntities();
-	void WorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
+	void QueryForServerWorkerEntities();
+	void ServerWorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
 	void ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SendVirtualWorkerMappingUpdate();
 

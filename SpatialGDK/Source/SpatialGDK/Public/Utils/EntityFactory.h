@@ -2,11 +2,14 @@
  
 #pragma once
  
-#include "Core.h"
- 
+#include "SpatialCommonTypes.h"
+
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+DECLARE_LOG_CATEGORY_EXTERN(LogEntityFactory, Log, All);
+
+class AActor;
 class USpatialActorChannel;
 class USpatialNetDriver;
 class USpatialPackageMap;
@@ -25,7 +28,8 @@ class SPATIALGDK_API EntityFactory
 public:
 	EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService);
  
-	TArray<Worker_ComponentData> CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs);
+	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs);
+	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);
  
 private:
 	USpatialNetDriver* NetDriver;
@@ -33,4 +37,4 @@ private:
 	USpatialClassInfoManager* ClassInfoManager;
 	SpatialRPCService* RPCService;
 };
-}
+}  // namepsace SpatialGDK

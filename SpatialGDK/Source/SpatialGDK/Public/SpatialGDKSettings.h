@@ -32,6 +32,28 @@ namespace ESettingsWorkerLogVerbosity
 	};
 }
 
+UENUM()
+namespace EServicesRegion
+{
+	enum Type
+	{
+		Default,
+		CN
+	};
+}
+
+USTRUCT(BlueprintType)
+struct FDistanceFrequencyPair
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "SpatialGDK")
+	float DistanceRatio;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "SpatialGDK")
+	float Frequency;
+};
+
 UCLASS(config = SpatialGDKSettings, defaultconfig)
 class SPATIALGDK_API USpatialGDKSettings : public UObject
 {
@@ -168,11 +190,11 @@ public:
 	UPROPERTY(config)
 	bool bEnableServerQBI;
 
-	/** EXPERIMENTAL - Adds granular result types for client queries.
+	/** EXPERIMENTAL - Adds granular result types for queries.
 	Granular here means specifically the required Unreal components for spawning other actors and all data type components.
 	Needs testing thoroughly before making default. May be replaced by component set result types instead. */
 	UPROPERTY(config)
-	bool bEnableClientResultTypes;
+	bool bEnableResultTypes;
 
 	/** Pack RPCs sent during the same frame into a single update. */
 	UPROPERTY(config)
@@ -182,17 +204,8 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection")
 	FString DefaultReceptionistHost;
 
-	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	bool bUseDevelopmentAuthenticationFlow;
-
-	/** The token created using 'spatial project auth dev-auth-token' */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	FString DevelopmentAuthenticationToken;
-
-	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
-	FString DevelopmentDeploymentToConnect;
+	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
+	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
 	/** Single server worker type to launch when offloading is disabled, fallback server worker type when offloading is enabled (owns all actor classes by default). */
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
@@ -225,22 +238,33 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
 	FWorkerType LoadBalancingWorkerType;
 
+	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
+	UPROPERTY(Config)
+	bool bRunSpatialWorkerConnectionOnGameThread;
+
+	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
+	bool UseRPCRingBuffer() const;
+
+private:
+#if WITH_EDITOR
+	bool CanEditChange(const UProperty* InProperty) const override;
+#endif
+
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
 	bool bUseRPCRingBuffers;
 
-private:
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "Default RPC Ring Buffer Size"))
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Default RPC Ring Buffer Size"))
 	uint32 DefaultRPCRingBufferSize;
 
 	/** Overrides default ring buffer size. */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "RPC Ring Buffer Size Map"))
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "RPC Ring Buffer Size Map"))
 	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
 
 public:
 	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
 
 	/** The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and break snapshot compatibility. */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (EditCondition = "bUseRPCRingBuffers", DisplayName = "Max RPC Ring Buffer Size"))
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
 	uint32 MaxRPCRingBufferSize;
 
 	/** Only valid on Tcp connections - indicates if we should enable TCP_NODELAY - see c_worker.h */
@@ -266,4 +290,28 @@ public:
 	/** Do async loading for new classes when checking out entities. */
 	UPROPERTY(Config)
 	bool bAsyncLoadNewClassesOnEntityCheckout;
+
+	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
+
+	/** Enable to use the new net cull distance component tagging form of interest */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest")
+	bool bEnableNetCullDistanceInterest;
+
+	/** Enable to use interest frequency with bEnableNetCullDistanceInterest*/
+	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceInterest"))
+	bool bEnableNetCullDistanceFrequency;
+
+	/** Full update frequency ratio of actor's net cull distance */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
+	float FullFrequencyNetCullDistanceRatio;
+
+	/** QBI pairs for ratio of - net cull distance : update frequency */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
+	TArray<FDistanceFrequencyPair> InterestRangeFrequencyPairs;
+
+public:
+	// UI Hidden settings passed through from SpatialGDKEditorSettings
+	bool bUseDevelopmentAuthenticationFlow;
+	FString DevelopmentAuthenticationToken;
+	FString DevelopmentDeploymentToConnect;
 };

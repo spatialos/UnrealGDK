@@ -18,7 +18,7 @@ namespace SpatialGDK
 class SPATIALGDK_API InterestFactory
 {
 public:
-	InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
+	InterestFactory(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId, USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
 
 	static void CreateAndCacheInterestState(USpatialClassInfoManager* ClassInfoManager);
 
@@ -30,17 +30,31 @@ public:
 private:
 	// Build the checkout radius constraints for client workers
 	static QueryConstraint CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
-	// Builds the result type of necessary components for clients to see on NON-AUTHORITATIVE entities
-	static TArray<Worker_ComponentId> CreateClientResultType(USpatialClassInfoManager* ClassInfoManager);
+	static QueryConstraint CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager);
+	static QueryConstraint CreateNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager);
+	static QueryConstraint CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager);
+
+	// Builds the result types of necessary components for clients
+	static TArray<Worker_ComponentId> CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	static TArray<Worker_ComponentId> CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	static TArray<Worker_ComponentId> CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	static TArray<Worker_ComponentId> CreateServerAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
 
 	Interest CreateInterest() const;
 
 	// Only uses Defined Constraint
-	Interest CreateActorInterest() const;
+	void AddActorInterest(Interest& OutInterest) const;
 	// Defined Constraint AND Level Constraint
-	Interest CreatePlayerOwnedActorInterest() const;
+	void AddPlayerControllerActorInterest(Interest& OutInterest) const;
+	// The components clients need to see on entities they are have authority over that they don't already see through authority.
+	void AddClientSelfInterest(Interest& OutInterest) const;
+	// The components servers need to see on entities they have authority over that they don't already see through authority.
+	void AddServerSelfInterest(Interest& OutInterest) const;
 
-	void AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
+	void GetActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const;
+	TArray<Query> GetUserDefinedQueries(const QueryConstraint& LevelConstraints) const;
+
+	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd);
 
 	// Checkout Constraint OR AlwaysInterested OR AlwaysRelevant Constraint
 	QueryConstraint CreateSystemDefinedConstraints() const;
@@ -50,13 +64,14 @@ private:
 	QueryConstraint CreateAlwaysInterestedConstraint() const;
 	static QueryConstraint CreateAlwaysRelevantConstraint();
 
-	// Only checkout entities that are in loaded sublevels
+	// Only checkout entities that are in loaded sub-levels
 	QueryConstraint CreateLevelConstraints() const;	
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
 	AActor* Actor;
 	const FClassInfo& Info;
+	const Worker_EntityId EntityId;
 	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;
 };

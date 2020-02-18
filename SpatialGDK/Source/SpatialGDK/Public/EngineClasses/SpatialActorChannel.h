@@ -152,17 +152,22 @@ public:
 			return false;
 		}
 
-		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers));
+		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
 	}
 
 	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
-	FORCEINLINE bool IsOwnedByWorker() const
+	FORCEINLINE bool IsAuthoritativeClient() const
 	{
+		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
+		{
+			return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
+		}
+
 		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
 
 		if (const SpatialGDK::EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId))
 		{
-			if (const WorkerRequirementSet* WorkerRequirementsSet = EntityACL->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->bUseRPCRingBuffers)))
+			if (const WorkerRequirementSet* WorkerRequirementsSet = EntityACL->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())))
 			{
 				for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
 				{
@@ -180,7 +185,7 @@ public:
 		return false;
 	}
 
-	FORCEINLINE bool IsAuthoritativeServer()
+	FORCEINLINE bool IsAuthoritativeServer() const
 	{
 		return NetDriver->IsServer() && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID);
 	}
@@ -206,7 +211,7 @@ public:
 	virtual int64 Close(EChannelCloseReason Reason) override;
 	// End UChannel interface
 
-	// Begin UActorChannel inteface
+	// Begin UActorChannel interface
 	virtual int64 ReplicateActor() override;
 #if ENGINE_MINOR_VERSION <= 22
 	virtual void SetChannelActor(AActor* InActor) override;
@@ -247,10 +252,11 @@ public:
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
 
 	bool IsListening() const;
-	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
 	// Call when a subobject is deleted to unmap its references and cleanup its cached informations.
 	void OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object);
+
+	static void ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject);
 
 protected:
 	// Begin UChannel interface
@@ -268,6 +274,7 @@ private:
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
 	
 	void UpdateEntityACLToNewOwner();
+	void UpdateInterestBucketComponentId();
 
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
