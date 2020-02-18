@@ -15,7 +15,7 @@ generate_build_configuration_steps () {
 
     # if the BUILD_ALL_CONFIGURATIONS environment variable doesn't exist, then...
     if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
-        echo "Building for minimal subset of supported configurations. Generating the appropriate steps..."
+        echo "Building for subset of supported configurations. Generating the appropriate steps..."
         
         # Win64 Development Editor build configuration
         upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development"
