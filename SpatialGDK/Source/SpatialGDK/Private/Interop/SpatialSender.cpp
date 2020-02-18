@@ -303,7 +303,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			{
 				if (SubobjectInfo.SchemaComponents[Type] != SpatialConstants::INVALID_COMPONENT_ID)
 				{
-					ComponentWriteAcl.FindOrAdd(SubobjectInfo.SchemaComponents[Type]) = AuthoritativeWorkerRequirementSet;
+					ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
 				}
 			});
 
@@ -543,15 +543,15 @@ void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId
 {
 	if (TArray<Worker_ComponentUpdate>* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
 	{
-		for (int32 Num = 0; Num < UpdatesQueuedUntilAuthority->Num(); Num++)
+		for (auto It = UpdatesQueuedUntilAuthority->CreateIterator(); It; It++)
 		{
-			if (ComponentId == (*UpdatesQueuedUntilAuthority)[Num].component_id)
+			if (ComponentId == It->component_id)
 			{
-				Connection->SendComponentUpdate(EntityId, &(*UpdatesQueuedUntilAuthority)[Num]);
-				UpdatesQueuedUntilAuthority->RemoveAtSwap(Num);
-				Num--;
+				Connection->SendComponentUpdate(EntityId, &(*It));
+				It.RemoveCurrent();
 			}
 		}
+
 		if (UpdatesQueuedUntilAuthority->Num() == 0)
 		{
 			UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
