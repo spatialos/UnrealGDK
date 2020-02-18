@@ -71,11 +71,19 @@ int32 USpatialNetConnection::IsNetReady(bool Saturate)
 	return true;
 }
 
+#if ENGINE_MINOR_VERSION <= 23
+void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)
+#else
 void USpatialNetConnection::UpdateLevelVisibility(const struct FUpdateLevelVisibilityLevelInfo& LevelVisibility)
+#endif
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialNetConnectionUpdateLevelVisibility);
 
+#if ENGINE_MINOR_VERSION <= 23
+	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
+#else
 	UNetConnection::UpdateLevelVisibility(LevelVisibility);
+#endif
 
 	// We want to update our interest as fast as possible
 	// So we send an Interest update immediately.

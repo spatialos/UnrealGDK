@@ -35,7 +35,7 @@ namespace
 		}
 	};
 
-	UEStream Stream;
+	UEStream UStream;
 
 #if TRACE_LIB_ACTIVE
 	improbable::trace::SpanContext ReadSpanContext(const void* TraceBytes, const void* SpanBytes)
