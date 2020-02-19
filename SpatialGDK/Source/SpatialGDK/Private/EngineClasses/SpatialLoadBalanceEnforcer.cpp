@@ -24,15 +24,7 @@ void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_
 	check(Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 	if (StaticComponentView->HasAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
-		const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Op.entity_id);
-		if (AuthorityIntentComponent != nullptr) {
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) OnAuthorityIntentComponentUpdated. EntityId: %lld. VirtualWorkerId: %d."), *WorkerId, Op.entity_id, AuthorityIntentComponent->VirtualWorkerId);
-			QueueAclAssignmentRequest(Op.entity_id);
-		}
-		else
-		{
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("EntityId: %lld. Authority intent componet in update is null."), Op.entity_id);
-		}
+		QueueAclAssignmentRequest(Op.entity_id);
 	}
 }
 
