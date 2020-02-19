@@ -254,7 +254,7 @@ FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice()
 		return FReply::Unhandled();
 	}
 
-	const FString AndroidCommandLineFile = FString::Printf(TEXT("/mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), *(FApp::GetProjectName()));
+	const FString AndroidCommandLineFile = FString::Printf(TEXT("/mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), *FString(FApp::GetProjectName()));
 	const FString AdbArguments = FString::Printf(TEXT("push \"%s\" \"%s\""), *OutCommandLineArgsFile, *AndroidCommandLineFile);
 
 #if PLATFORM_WINDOWS
