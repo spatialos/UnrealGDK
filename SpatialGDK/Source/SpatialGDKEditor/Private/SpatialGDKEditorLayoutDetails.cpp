@@ -217,7 +217,7 @@ bool FSpatialGDKEditorLayoutDetails::TryPushCommandLineArgsToDevice(const FStrin
 	FString StdErr;
 	int32 ExitCode;
 
-	FPlatformProcess::ExecProcess(*Executable, *ExeArguments, &ExitCode, &ExeOutput, &StdErr);
+	FPlatformProcess::ExecProcess(UTF8_TO_TCHAR(*Executable), UTF8_TO_TCHAR(*ExeArguments), &ExitCode, &ExeOutput, &StdErr);
 	if (ExitCode != 0)
 	{
 		UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("Failed to update the mobile client. %s %s"), *ExeOutput, *StdErr);
@@ -254,7 +254,7 @@ FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToAndroidDevice()
 		return FReply::Unhandled();
 	}
 
-	const FString AndroidCommandLineFile = FString::Printf(TEXT("/mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), *(FApp::GetProjectName()));
+	const FString AndroidCommandLineFile = FString::Printf(TEXT("/mnt/sdcard/UE4Game/%s/UE4CommandLine.txt"), TCHAR_TO_UTF8(FApp::GetProjectName()));
 	const FString AdbArguments = FString::Printf(TEXT("push \"%s\" \"%s\""), *OutCommandLineArgsFile, *AndroidCommandLineFile);
 
 #if PLATFORM_WINDOWS
