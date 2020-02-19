@@ -451,7 +451,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
-			Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id);
+			Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id, Op.component_id);
 		}
 
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
