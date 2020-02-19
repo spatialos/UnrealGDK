@@ -574,21 +574,22 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
 		{
 			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
-			FSimpleDelegate::CreateLambda([]()
-			{
-				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+				FSimpleDelegate::CreateLambda([]()
 				{
-					ToolbarPtr->OnShowSuccessNotification("Successfully launched cloud deployment.");
-				}
-			}),
+					if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+					{
+						ToolbarPtr->OnShowSuccessNotification("Successfully launched cloud deployment.");
+					}
+				}),
 
 				FSimpleDelegate::CreateLambda([]()
-			{
-				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
-					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
-				}
-			}));
+					if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+					{
+						ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
+					}
+				})
+			);
 
 			return;
 		}

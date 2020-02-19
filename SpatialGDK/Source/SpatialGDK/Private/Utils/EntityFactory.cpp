@@ -349,7 +349,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-            ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+			ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 			{
 				if (SubobjectInfo.SchemaComponents[Type] != SpatialConstants::INVALID_COMPONENT_ID)
 				{
