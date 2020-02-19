@@ -11,6 +11,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Serialization/JsonSerializer.h"
+#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
@@ -103,9 +104,13 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 
 FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 {
+
+	FString Command = GetDefault<USpatialGDKSettings>()->IsRunningInChina() ? TEXT("project auth dev-auth-token create --environment cn-production --description=\"Unreal GDK Token\" --json_output") :
+		TEXT("project auth dev-auth-token create --description=\"Unreal GDK Token\" --json_output");
+
 	FString CreateDevAuthTokenResult;
 	int32 ExitCode;
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, TEXT("project auth dev-auth-token create --description=\"Unreal GDK Token\" --json_output"), SpatialGDKServicesConstants::SpatialOSDirectory, CreateDevAuthTokenResult, ExitCode);
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, Command, SpatialGDKServicesConstants::SpatialOSDirectory, CreateDevAuthTokenResult, ExitCode);
 
 	if (ExitCode != 0)
 	{
