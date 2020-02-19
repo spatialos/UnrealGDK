@@ -55,7 +55,7 @@ private:
 	virtual bool ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier) override;
 
 	void RecalculateAllExplicitlyLockedActorsInThisHierarchy(const AActor* HierarchyRoot);
-	void RecalculateLockedActorOwnershipHierarchyInformation(const AActor* ExplicitlyLockedActor, const AActor* DeletedHierarchyActor = nullptr);
+	void RecalculateLockedActorOwnershipHierarchyInformation(const AActor* ExplicitlyLockedActor);
 	void AddOwnershipHierarchyRootInformation(AActor* HierarchyRoot, const AActor* ExplicitlyLockedActor);
 	void RemoveOwnershipHierarchyRootInformation(AActor* HierarchyRoot, const AActor* ExplicitlyLockedActor);
 

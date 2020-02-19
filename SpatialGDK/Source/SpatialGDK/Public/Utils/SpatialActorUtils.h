@@ -16,20 +16,17 @@
 namespace SpatialGDK
 {
 
-// We need the optional ActorToStopIteratingAt argument because for ownership-based Actor sets we want to find a hierarchy
-// assuming the future deletion of a given Actor. This is because Actor deletions are broadcast before SetOwner is called
-// which then updates the ownership hierarchy.
-inline AActor* GetHierarchyRoot(const AActor* Actor, const AActor* ActorToStopIteratingAt = nullptr)
+inline AActor* GetHierarchyRoot(const AActor* Actor)
 {
 	check(Actor != nullptr);
 
 	AActor* Owner = Actor->GetOwner();
-	if (Owner == ActorToStopIteratingAt)
+	if (Owner == nullptr || Owner->IsPendingKillPending())
 	{
 		return nullptr;
 	}
 
-	while (Owner->GetOwner() != nullptr && Owner->GetOwner() != ActorToStopIteratingAt)
+	while (Owner->GetOwner() != nullptr && !Owner->GetOwner()->IsPendingKillPending())
 	{
 		Owner = Owner->GetOwner();
 	}
