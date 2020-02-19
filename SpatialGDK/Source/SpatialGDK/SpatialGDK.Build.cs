@@ -23,9 +23,13 @@ public class SpatialGDK : ModuleRules
         PublicIncludePaths.Add(WorkerSDKPath); // Worker SDK uses a different include format <improbable/x.h>
         PrivateIncludePaths.Add(WorkerSDKPath);
 
-        PublicDependencyModuleNames.AddRange(
+		var WorkerWrapperPath = Path.Combine(Path.GetFullPath(ModuleDirectory), "../SpatialGDKWorkerWrapper/UnrealWorkerWrapperPrototype/workers/cpp/gdk/include");
+		PublicIncludePaths.Add(WorkerWrapperPath);
+
+		PublicDependencyModuleNames.AddRange(
             new string[]
             {
+                "SpatialGDKWorkerWrapper",
                 "Core",
                 "CoreUObject",
                 "Engine",

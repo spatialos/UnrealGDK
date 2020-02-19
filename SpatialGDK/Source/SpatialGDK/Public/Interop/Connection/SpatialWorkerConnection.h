@@ -14,6 +14,8 @@
 #include "UObject/WeakObjectPtr.h"
 #include "Utils/SpatialLatencyTracer.h"
 
+#include <gdk/spatialos_worker.h>
+
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -143,4 +145,6 @@ private:
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 	LoginTokenResponseCallback LoginTokenResCallback;
+
+	gdk::SpatialOsWorker* Worker;
 };
