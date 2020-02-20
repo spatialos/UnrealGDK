@@ -128,7 +128,7 @@ public:
 	 * This should only be used in single server configurations. The state of the world in the inspector will no longer be up to date.
 	 */
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Only Replicate Net Relevant Actors"))
-	bool UseIsActorRelevantForConnection;
+	bool bUseIsActorRelevantForConnection;
 
 	/**
 	* Specifies the rate, in number of times per second, at which server-worker instance updates are sent to and received from the SpatialOS Runtime.
