@@ -2,27 +2,50 @@
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/SpatialSender.h"
+#include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
-#include "Schema/Component.h"
 #include "SpatialCommonTypes.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
 using namespace SpatialGDK;
 
-SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
-	: WorkerId(InWorkerId)
-	, StaticComponentView(InStaticComponentView)
-	, VirtualWorkerTranslator(InVirtualWorkerTranslator)
+SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer()
+	: StaticComponentView(nullptr)
+	, Sender(nullptr)
+	, VirtualWorkerTranslator(nullptr)
 {
+}
+
+void SpatialLoadBalanceEnforcer::Init(const PhysicalWorkerName &InWorkerId,
+	USpatialStaticComponentView* InStaticComponentView,
+	USpatialSender* InSpatialSender,
+	SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator)
+{
+	WorkerId = InWorkerId;
+
 	check(InStaticComponentView != nullptr);
+	StaticComponentView = InStaticComponentView;
+
+	check(InSpatialSender != nullptr);
+	Sender = InSpatialSender;
+
 	check(InVirtualWorkerTranslator != nullptr);
+	VirtualWorkerTranslator = InVirtualWorkerTranslator;
+}
+
+void SpatialLoadBalanceEnforcer::Tick()
+{
+	ProcessQueuedAclAssignmentRequests();
 }
 
 void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
+	check(StaticComponentView.IsValid())
 	check(Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
-	if (StaticComponentView->HasAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+	if (StaticComponentView->GetAuthority(Op.entity_id, SpatialConstants::ENTITY_ACL_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		QueueAclAssignmentRequest(Op.entity_id);
 	}
@@ -33,10 +56,12 @@ void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_
 // which may have been received before this call.
 void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
+	check(StaticComponentView.IsValid())
+
 	if (AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID &&
 		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(AuthOp.entity_id);
+		const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(AuthOp.entity_id);
 		if (AuthorityIntentComponent == nullptr)
 		{
 			// TODO(zoning): There are still some entities being created without an authority intent component.
@@ -49,7 +74,7 @@ void SpatialLoadBalanceEnforcer::AuthorityChanged(const Worker_AuthorityChangeOp
 		const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (OwningWorkerId != nullptr &&
 			*OwningWorkerId == WorkerId &&
-			StaticComponentView->HasAuthority(AuthOp.entity_id, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
+			StaticComponentView->GetAuthority(AuthOp.entity_id, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("No need to queue newly authoritative entity %lld because this worker is already authoritative."), AuthOp.entity_id);
 			return;
@@ -79,32 +104,22 @@ void SpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId
 	}
 }
 
-TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
+void SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 {
-	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> PendingRequests;
-
 	TArray<Worker_EntityId> CompletedRequests;
 	CompletedRequests.Reserve(AclWriteAuthAssignmentRequests.Num());
 
 	for (WriteAuthAssignmentRequest& Request : AclWriteAuthAssignmentRequests)
 	{
-		const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
+ 		const AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(Request.EntityId);
 		if (AuthorityIntentComponent == nullptr)
 		{
 			// TODO(zoning): Not sure whether this should be possible or not. Remove if we don't see the warning again.
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Entity without AuthIntent component will not be processed. EntityId: %lld"), Request.EntityId);
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("(%s) Entity without AuthIntent component will not be processed. EntityId: %lld"), *WorkerId, Request.EntityId);
 			CompletedRequests.Add(Request.EntityId);
 			continue;
 		}
 
-		if (AuthorityIntentComponent->VirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-		{
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Entity with invalid virtual worker ID assignment will not be processed. EntityId: %lld. This should not happen - investigate if you see this warning."), Request.EntityId);
-			CompletedRequests.Add(Request.EntityId);
-			continue;
-		}
-
-		check(VirtualWorkerTranslator != nullptr);
 		const PhysicalWorkerName* DestinationWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 		if (DestinationWorkerId == nullptr)
 		{
@@ -120,9 +135,10 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 			continue;
 		}
 
+		check(Sender.IsValid());
 		if (StaticComponentView->HasAuthority(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 		{
-			PendingRequests.Push(AclWriteAuthorityRequest{ Request.EntityId, *DestinationWorkerId });
+			Sender->SetAclWriteAuthority(Request.EntityId, *DestinationWorkerId);
 		}
 		else
 		{
@@ -133,6 +149,4 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 	}
 
 	AclWriteAuthAssignmentRequests.RemoveAll([CompletedRequests](const WriteAuthAssignmentRequest& Request) { return CompletedRequests.Contains(Request.EntityId); });
-
-	return PendingRequests;
 }

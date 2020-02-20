@@ -5,11 +5,9 @@
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GeneralProjectSettings.h"
-#include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Utils/InspectionColors.h"
 #include "Utils/SpatialActorGroupManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
@@ -43,37 +41,6 @@ FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
 	}
 
 	return NAME_None;
-}
-
-bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& InFlagName, FString& OutFlagValue)
-{
-	if (const UWorld* World = WorldContext->GetWorld())
-	{
-		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
-		{
-			if (const USpatialWorkerFlags* SpatialWorkerFlags = SpatialNetDriver->SpatialWorkerFlags) 
-			{
-				return SpatialWorkerFlags->GetWorkerFlag(InFlagName, OutFlagValue);
-			}
-		}
-	}
-
-	return false;
-}
-
-TArray<FDistanceFrequencyPair> USpatialStatics::GetNCDDistanceRatios()
-{
-	return GetDefault<USpatialGDKSettings>()->InterestRangeFrequencyPairs;
-}
-
-float USpatialStatics::GetFullFrequencyNetCullDistanceRatio()
-{
-	return GetDefault<USpatialGDKSettings>()->FullFrequencyNetCullDistanceRatio;
-}
-
-FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName)
-{
-	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
 bool USpatialStatics::IsSpatialOffloadingEnabled()

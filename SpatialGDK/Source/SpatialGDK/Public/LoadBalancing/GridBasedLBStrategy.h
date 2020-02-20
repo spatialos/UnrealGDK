@@ -5,8 +5,6 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 
 #include "CoreMinimal.h"
-#include "Math/Box2D.h"
-#include "Math/Vector2D.h"
 
 #include "GridBasedLBStrategy.generated.h"
 
@@ -33,18 +31,16 @@ class SPATIALGDK_API UGridBasedLBStrategy : public UAbstractLBStrategy
 public:
 	UGridBasedLBStrategy();
 
-	using LBStrategyRegions = TArray<TPair<VirtualWorkerId, FBox2D>>;
-
 /* UAbstractLBStrategy Interface */
 	virtual void Init(const USpatialNetDriver* InNetDriver) override;
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;
 
-	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
+	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
+	virtual FVector GetLocalVirtualWorkerActorPosition() const override;
+	virtual void UpdateLocalWorkerInterest(SpatialGDK::Interest* ServerWorkerInterest) const override;
 /* End UAbstractLBStrategy Interface */
-
-	LBStrategyRegions GetLBStrategyRegions() const;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")

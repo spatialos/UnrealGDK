@@ -3,25 +3,20 @@
 #include "Interop/SpatialStaticComponentView.h"
 
 #include "Schema/AuthorityIntent.h"
-#include "Schema/ClientEndpoint.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Component.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
-#include "Schema/MulticastRPCs.h"
 #include "Schema/RPCPayload.h"
-#include "Schema/ServerEndpoint.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/Singleton.h"
-#include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
-#include "Schema/UnrealMetadata.h"
 
-Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
-	if (const TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
+	if (TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
 	{
-		if (const Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
+		if (Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
 		{
 			return *Authority;
 		}
@@ -31,12 +26,12 @@ Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId Entit
 }
 
 // TODO UNR-640 - Need to fix for authority loss imminent
-bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	return GetAuthority(EntityId, ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 }
 
-bool USpatialStaticComponentView::HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+bool USpatialStaticComponentView::HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	if (auto* EntityComponentStorage = EntityComponentMap.Find(EntityId))
 	{
@@ -48,65 +43,53 @@ bool USpatialStaticComponentView::HasComponent(Worker_EntityId EntityId, Worker_
 
 void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op)
 {
-	TUniquePtr<SpatialGDK::Component> Data;
+	TUniquePtr<SpatialGDK::ComponentStorageBase> Data;
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::EntityAcl>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::EntityAcl>>(Op.data);
 		break;
 	case SpatialConstants::METADATA_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::Metadata>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Metadata>>(Op.data);
 		break;
 	case SpatialConstants::POSITION_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::Position>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Position>>(Op.data);
 		break;
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::Persistence>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Persistence>>(Op.data);
 		break;
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::SpawnData>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::SpawnData>>(Op.data);
 		break;
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::Singleton>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Singleton>>(Op.data);
 		break;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::UnrealMetadata>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::UnrealMetadata>>(Op.data);
 		break;
 	case SpatialConstants::INTEREST_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::Interest>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Interest>>(Op.data);
 		break;
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::Heartbeat>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Heartbeat>>(Op.data);
 		break;
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
-		Data = MakeUnique<SpatialGDK::RPCsOnEntityCreation>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::RPCsOnEntityCreation>>(Op.data);
 		break;
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
-		Data = MakeUnique<SpatialGDK::ClientRPCEndpointLegacy>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ClientRPCEndpointLegacy>>(Op.data);
 		break;
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
-		Data = MakeUnique<SpatialGDK::ServerRPCEndpointLegacy>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ServerRPCEndpointLegacy>>(Op.data);
 		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::AuthorityIntent>(Op.data);
-		break;
-	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ClientEndpoint>(Op.data);
-		break;
-	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ServerEndpoint>(Op.data);
-		break;
-	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::MulticastRPCs>(Op.data);
-		break;
-	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::SpatialDebugging>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::AuthorityIntent>>(Op.data);
 		break;
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.
 		Data = nullptr;
 	}
-	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = MoveTemp(Data);
+	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = std::move(Data);
 }
 
 void USpatialStaticComponentView::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
@@ -143,18 +126,6 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::AuthorityIntent>(Op.entity_id);
-		break;
-	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::ClientEndpoint>(Op.entity_id);
-		break;
-	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::ServerEndpoint>(Op.entity_id);
-		break;
-	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::MulticastRPCs>(Op.entity_id);
-		break;
-	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::SpatialDebugging>(Op.entity_id);
 		break;
 	default:
 		return;

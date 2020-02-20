@@ -408,6 +408,56 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHier
 	return OutComponentIds;
 }
 
+Worker_ComponentId USpatialClassInfoManager::GetComponentIdForComponentClass(const UClass& ActorClass, const UClass& ComponentClass) const
+{
+	const FString ClassPath = ActorClass.GetPathName();
+	TArray<Worker_ComponentId> ComponentIds;
+	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(ActorClass.GetPathName()))
+	{
+		for (const auto& Entry : ActorSchemaData->SubobjectData)
+		{
+			if (Entry.Value.ClassPath == ComponentClass.GetPathName())
+			{
+				return Entry.Value.SchemaComponents[SCHEMA_Data];
+			}
+		}
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
+}
+
+TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForComponentClassHierarchy(const UClass& ActorClass, const UClass& ComponentClass, const bool bIncludeDerivedTypes /* = true */) const
+{
+	TArray<Worker_ComponentId> OutComponentIds;
+
+	check(SchemaDatabase);
+	if (bIncludeDerivedTypes)
+	{
+		for (TObjectIterator<UClass> It; It; ++It)
+		{
+			const UClass* Class = *It;
+			check(Class);
+			if (Class->IsChildOf(&ActorClass))
+			{
+				Worker_ComponentId ComponentId = GetComponentIdForComponentClass(*Class, ComponentClass);
+				if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+				{
+					OutComponentIds.Add(ComponentId);
+				}
+			}
+		}
+	}
+	else
+	{
+		Worker_ComponentId ComponentId = GetComponentIdForComponentClass(ActorClass, ComponentClass);
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			OutComponentIds.Add(ComponentId);
+		}
+	}
+
+	return OutComponentIds;
+}
+
 
 bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
 {
@@ -465,89 +515,19 @@ const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction*
 	return *RPCInfoPtr;
 }
 
-Worker_ComponentId USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath) const
+uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
 {
 	FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
-	if (const Worker_ComponentId* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
+	if (const uint32* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
 	{
 		return *ComponentId;
 	}
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
-bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId) const
+bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
 {
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
-}
-
-const TMap<float, Worker_ComponentId>& USpatialClassInfoManager::GetNetCullDistanceToComponentIds() const
-{
-	return SchemaDatabase->NetCullDistanceToComponentId;
-}
-
-const TArray<Worker_ComponentId>& USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const
-{
-	switch (ComponentType)
-	{
-	case ESchemaComponentType::SCHEMA_Data:
-		return SchemaDatabase->DataComponentIds;
-	case ESchemaComponentType::SCHEMA_OwnerOnly:
-		return SchemaDatabase->OwnerOnlyComponentIds;
-	case ESchemaComponentType::SCHEMA_Handover:
-		return SchemaDatabase->HandoverComponentIds;
-	default:
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Component type %d not recognised."), ComponentType);
-		checkNoEntry();
-		static const TArray<Worker_ComponentId> EmptyArray;
-		return EmptyArray;
-	}
-}
-
-const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient)
-{
-	const FClassInfo* Info = nullptr;
-
-	const FClassInfo& SubobjectInfo = GetOrCreateClassInfoByClass(Object->GetClass());
-
-	// Find the first ClassInfo relating to a dynamic subobject
-	// which has not been used on this entity.
-	for (const auto& DynamicSubobjectInfo : SubobjectInfo.DynamicSubobjectInfo)
-	{
-		if (!PackageMapClient->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data])).IsValid())
-		{
-			Info = &DynamicSubobjectInfo.Get();
-			break;
-		}
-	}
-
-	// If all ClassInfos are used up, we error.
-	if (Info == nullptr)
-	{
-		const AActor* Actor = Cast<AActor>(PackageMapClient->GetObjectFromEntityId(EntityId));
-		UE_LOG(LogSpatialPackageMap, Error, TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
-			" the max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), *GetNameSafe(Actor));
-	}
-
-	return Info;
-}
-
-Worker_ComponentId USpatialClassInfoManager::GetComponentIdForNetCullDistance(float NetCullDistance) const
-{
-	if (const uint32* ComponentId = SchemaDatabase->NetCullDistanceToComponentId.Find(NetCullDistance))
-	{
-		return *ComponentId;
-	}
-	return SpatialConstants::INVALID_COMPONENT_ID;
-}
-
-bool USpatialClassInfoManager::IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const
-{
-	return SchemaDatabase->NetCullDistanceComponentIds.Contains(ComponentId);
-}
-
-bool USpatialClassInfoManager::IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const
-{
-	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId);
 }
 
 void USpatialClassInfoManager::QuitGame()
@@ -560,44 +540,4 @@ void USpatialClassInfoManager::QuitGame()
 #else
 	FGenericPlatformMisc::RequestExit(false);
 #endif
-}
-
-Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(const AActor* Actor) const
-{
-	check(Actor);
-	const AActor* ActorForRelevancy = Actor;
-	// bAlwaysRelevant takes precedence over bNetUseOwnerRelevancy - see AActor::IsNetRelevantFor
-	while (!ActorForRelevancy->bAlwaysRelevant && ActorForRelevancy->bNetUseOwnerRelevancy && ActorForRelevancy->GetOwner() != nullptr)
-	{
-		ActorForRelevancy = ActorForRelevancy->GetOwner();
-	}
-
-	if (ActorForRelevancy->bAlwaysRelevant)
-	{
-		return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
-	}
-
-	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest)
-	{
-		Worker_ComponentId NCDComponentId = GetComponentIdForNetCullDistance(ActorForRelevancy->NetCullDistanceSquared);
-		if (NCDComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			return NCDComponentId;
-		}
-
-		const AActor* DefaultActor = ActorForRelevancy->GetClass()->GetDefaultObject<AActor>();
-		if (ActorForRelevancy->NetCullDistanceSquared != DefaultActor->NetCullDistanceSquared)
-		{
-			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s via %s, because its Net Cull Distance is different from its default one."),
-				ActorForRelevancy->NetCullDistanceSquared, *Actor->GetPathName(), *ActorForRelevancy->GetPathName());
-
-			return ComputeActorInterestComponentId(DefaultActor);
-		}
-		else
-		{
-			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find Net Cull Distance Component for distance %f, processing Actor %s via %s. Have you generated schema?"),
-				ActorForRelevancy->NetCullDistanceSquared, *Actor->GetPathName(), *ActorForRelevancy->GetPathName());
-		}
-	}
-	return SpatialConstants::INVALID_COMPONENT_ID;
 }

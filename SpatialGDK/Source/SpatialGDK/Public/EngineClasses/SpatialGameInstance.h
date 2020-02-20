@@ -9,8 +9,6 @@
 
 class USpatialLatencyTracer;
 class USpatialWorkerConnection;
-class UGlobalStateManager;
-class USpatialStaticComponentView;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
@@ -26,9 +24,6 @@ public:
 #if WITH_EDITOR
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
-	// Initializes the Spatial connection if Spatial networking is enabled, otherwise does nothing.
-	void TryConnectToSpatial();
-
 	virtual void StartGameInstance() override;
 
 	//~ Begin UObject Interface
@@ -47,8 +42,6 @@ public:
 
 	FORCEINLINE USpatialWorkerConnection* GetSpatialWorkerConnection() { return SpatialConnection; }
 	FORCEINLINE USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
-	FORCEINLINE UGlobalStateManager* GetGlobalStateManager() { return GlobalStateManager; };
-	FORCEINLINE USpatialStaticComponentView* GetStaticComponentView() { return StaticComponentView; };
 
 	void HandleOnConnected();
 	void HandleOnConnectionFailed(const FString& Reason);
@@ -79,13 +72,4 @@ private:
 
 	UPROPERTY()
 	USpatialLatencyTracer* SpatialLatencyTracer = nullptr;
-
-	// GlobalStateManager must persist when server traveling
-	UPROPERTY()
-	UGlobalStateManager* GlobalStateManager;
-
-	// StaticComponentView must persist when server traveling
-	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
-
 };

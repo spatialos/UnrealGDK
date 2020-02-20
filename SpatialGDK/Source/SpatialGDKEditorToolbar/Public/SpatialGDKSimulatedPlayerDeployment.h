@@ -13,8 +13,6 @@
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/SCompoundWidget.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSimulatedPlayerDeployment, Log, All);
-
 class SWindow;
 
 enum class ECheckBoxState : uint8;
@@ -36,26 +34,17 @@ public:
 	void Construct(const FArguments& InArgs);
 
 private:
-
 	/** The parent window of this widget */
 	TWeakPtr<SWindow> ParentWindowPtr;
 
 	/** Pointer to the SpatialGDK editor */
 	TWeakPtr<FSpatialGDKEditor> SpatialGDKEditorPtr;
 
-	TFuture<bool> AttemptSpatialAuthResult;
-
 	/** Delegate to commit assembly name */
 	void OnDeploymentAssemblyCommited(const FText& InText, ETextCommit::Type InCommitType);
 
 	/** Delegate to commit primary deployment name */
 	void OnPrimaryDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType);
-
-	/** Delegate called when the user clicks the GDK Pinned Version checkbox */
-	void OnCheckedUsePinnedVersion(ECheckBoxState NewCheckedState);
-
-	/** Delegate to commit runtime version */
-	void OnRuntimeCustomVersionCommited(const FText& InText, ETextCommit::Type InCommitType);
 
 	/** Delegate called when the user has picked a path for the snapshot file */
 	void OnSnapshotPathPicked(const FString& PickedPath);
@@ -97,9 +86,6 @@ private:
 	void OnCheckedSimulatedPlayers(ECheckBoxState NewCheckedState);
 
 	ECheckBoxState IsSimulatedPlayersEnabled() const;
-	ECheckBoxState IsUsingGDKPinnedRuntimeVersion() const;
-	bool IsUsingCustomRuntimeVersion() const;
-	FText GetSpatialOSRuntimeVersionToUseText() const;
 
 	/** Delegate to determine the 'Launch Deployment' button enabled state */
 	bool IsDeploymentConfigurationValid() const;

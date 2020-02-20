@@ -1,8 +1,6 @@
 @echo off
 
-if not defined NO_SET_LOCAL (
-    setlocal
-)
+setlocal
 
 pushd "%~dp0"
 
@@ -59,12 +57,7 @@ call :MarkStartOfBlock "Setup variables"
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
     set SPATIAL_DIR=%~dp0..\..\..\spatial
-    set DOMAIN_ENVIRONMENT_VAR=
-    set DOWNLOAD_MOBILE=
-    for %%A in (%*) do (
-        if "%%A"=="--china" set DOMAIN_ENVIRONMENT_VAR=--environment cn-production
-        if "%%A"=="--mobile" set DOWNLOAD_MOBILE=True
-    )
+
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"
@@ -85,8 +78,6 @@ call :MarkStartOfBlock "Create folders"
     md "%CORE_SDK_DIR%\tools"        >nul 2>nul
     md "%CORE_SDK_DIR%\worker_sdk"   >nul 2>nul
     md "%BINARIES_DIR%"              >nul 2>nul
-    md "%BINARIES_DIR%\Android"      >nul 2>nul
-    md "%BINARIES_DIR%\Programs"     >nul 2>nul
 
     if exist "%SPATIAL_DIR%" (
         md "%SCHEMA_STD_COPY_DIR%"    >nul 2>nul
@@ -95,20 +86,15 @@ call :MarkStartOfBlock "Create folders"
 call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"
-    spatial package retrieve tools           schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
-    spatial package retrieve schema          standard_library                           %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\schema\standard_library.zip"
-    spatial package retrieve worker_sdk      c_headers                                  %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c_headers.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86-vc140_md-win32               %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-vc140_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-vc140_md-win32            %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc140_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc510-linux              %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc510-linux.zip"
-if defined DOWNLOAD_MOBILE (
-    spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang-ios         %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip"
-    spatial package retrieve worker_sdk      c-dynamic-arm64v8a-clang_ndk16b-android    %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_ndk16b-android.zip"
-    spatial package retrieve worker_sdk      c-dynamic-armv7a-clang_ndk16b-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_ndk16b-android.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-clang_ndk16b-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_ndk16b-android.zip"
-)
-    spatial package retrieve worker_sdk      csharp                                     %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\csharp.zip"
-    spatial package retrieve spot            spot-win64                                 %PINNED_SPOT_VERSION%       %DOMAIN_ENVIRONMENT_VAR%   "%BINARIES_DIR%\Programs\spot.exe"
+    spatial package retrieve tools           schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
+    spatial package retrieve schema          standard_library                           %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\schema\standard_library.zip"
+    spatial package retrieve worker_sdk      c_headers                                  %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c_headers.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86-vc140_md-win32               %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-vc140_md-win32.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-vc140_md-win32            %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc140_md-win32.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc510-linux              %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc510-linux.zip"
+    spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang-ios         %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip"
+    spatial package retrieve worker_sdk      csharp                                     %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\csharp.zip"
+    spatial package retrieve spot            spot-win64                                 %PINNED_SPOT_VERSION%       "%BINARIES_DIR%\Programs\spot.exe"
 call :MarkEndOfBlock "Retrieve dependencies"
 
 call :MarkStartOfBlock "Unpack dependencies"
@@ -117,15 +103,9 @@ call :MarkStartOfBlock "Unpack dependencies"
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc140_md-win32.zip\"            -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc510-linux.zip\"              -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\csharp.zip\"                                     -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\csharp\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip\"         -DestinationPath \"%BINARIES_DIR%\IOS\" -Force;"^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"                    -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                               -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
-
-    if defined DOWNLOAD_MOBILE (
-        powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip\"         -DestinationPath \"%BINARIES_DIR%\IOS\" -Force;"^
-                            "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_ndk16b-android.zip\"    -DestinationPath \"%BINARIES_DIR%\Android\arm64-v8a\" -Force; "^
-                            "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_ndk16b-android.zip\"      -DestinationPath \"%BINARIES_DIR%\Android\armeabi-v7a\" -Force; "^
-                            "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_ndk16b-android.zip\"      -DestinationPath \"%BINARIES_DIR%\Android\x86_64\" -Force; "^
-    )
     xcopy /s /i /q "%BINARIES_DIR%\Headers\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
 

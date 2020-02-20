@@ -13,9 +13,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/GlobalStateManager.h"
-#include "Interop/SpatialStaticComponentView.h"
-#include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialLatencyTracer.h"
@@ -74,6 +71,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 {
 	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
+	SpatialConnection->Init(this);
 
 #if TRACE_LIB_ACTIVE
 	SpatialConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
@@ -103,7 +101,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 }
 #endif
 
-void USpatialGameInstance::TryConnectToSpatial()
+void USpatialGameInstance::StartGameInstance()
 {
 	if (HasSpatialNetDriver())
 	{
@@ -129,11 +127,6 @@ void USpatialGameInstance::TryConnectToSpatial()
 			}
 		}
 	}
-}
-
-void USpatialGameInstance::StartGameInstance()
-{
-	TryConnectToSpatial();
 
 	Super::StartGameInstance();
 }
@@ -158,7 +151,7 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 			{
 				return true;
 			}
-
+			
 			if (NetDriver->SpatialDebugger && NetDriver->SpatialDebugger->ProcessConsoleExec(Cmd, Ar, Executor))
 			{
 				return true;
@@ -174,8 +167,6 @@ void USpatialGameInstance::Init()
 	Super::Init();
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
-	GlobalStateManager = NewObject<UGlobalStateManager>();
-	StaticComponentView = NewObject<USpatialStaticComponentView>();
 }
 
 void USpatialGameInstance::HandleOnConnected()

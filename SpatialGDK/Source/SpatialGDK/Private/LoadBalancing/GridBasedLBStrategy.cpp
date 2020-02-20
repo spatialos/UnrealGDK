@@ -4,8 +4,10 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SpatialActorUtils.h"
-
-#include "Templates/Tuple.h"
+#include "Schema/Interest.h"
+#include "Schema/AuthorityIntent.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
+#include "Interop/SpatialStaticComponentView.h"
 
 DEFINE_LOG_CATEGORY(LogGridBasedLBStrategy);
 
@@ -65,7 +67,7 @@ TSet<VirtualWorkerId> UGridBasedLBStrategy::GetVirtualWorkerIds() const
 	return TSet<VirtualWorkerId>(VirtualWorkerIds);
 }
 
-bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
+bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
@@ -73,8 +75,20 @@ bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 		return false;
 	}
 
-	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
-	return IsInside(WorkerCells[LocalVirtualWorkerId - 1], Actor2DLocation);
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Actor.GetNetDriver());
+	check(NetDriver);
+
+	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(&Actor);
+	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+	check(NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID));
+
+	SpatialGDK::AuthorityIntent* AuthorityIntentComponent = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
+	if (AuthorityIntentComponent->VirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID) return true;
+
+	FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
+	// hack to prevent things going out of bounds
+	Actor2DLocation = FVector2D(FMath::Clamp(FMath::RoundToInt(Actor2DLocation.X / 10.f) * 10.f, -WorldWidth / 2, WorldWidth / 2), FMath::Clamp(FMath::RoundToInt(Actor2DLocation.Y / 10.f) * 10.f, -WorldHeight / 2, WorldHeight / 2));
+	return !IsInside(WorkerCells[LocalVirtualWorkerId - 1], Actor2DLocation);
 }
 
 VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
@@ -85,7 +99,9 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
-	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
+	FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
+	// hack to prevent things going out of bounds
+	Actor2DLocation = FVector2D(FMath::Clamp(FMath::RoundToInt(Actor2DLocation.X / 10.f) * 10.f, -WorldWidth / 2, WorldWidth / 2), FMath::Clamp(FMath::RoundToInt(Actor2DLocation.Y / 10.f) * 10.f, -WorldHeight / 2, WorldHeight / 2));
 
 	for (int i = 0; i < WorkerCells.Num(); i++)
 	{
@@ -95,23 +111,56 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 		}
 	}
 
+	// This should be unreachable because of the hack above
+	UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("Actor %s outside of specified Grid [%f,%f]"), *AActor::GetDebugName(&Actor), Actor2DLocation.X, Actor2DLocation.Y);
 	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+}
+
+
+FVector UGridBasedLBStrategy::GetLocalVirtualWorkerActorPosition() const
+{
+	if (LocalVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID || (int32) LocalVirtualWorkerId > WorkerCells.Num())
+	{
+		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("Tried to get actor position for invalid virtual worker ID %d"), LocalVirtualWorkerId);
+		return FVector();
+	}
+	return FVector(WorkerCells[LocalVirtualWorkerId - 1].GetCenter(), 0);
+}
+
+
+void UGridBasedLBStrategy::UpdateLocalWorkerInterest(SpatialGDK::Interest* ServerWorkerInterest) const
+{
+	if (LocalVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID || (int32)LocalVirtualWorkerId > WorkerCells.Num())
+	{
+		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("Invalid local virtual worker ID %d when adjusting query"), LocalVirtualWorkerId);
+		return;
+	}
+	SpatialGDK::ComponentInterest& ComponentInterest = ServerWorkerInterest->ComponentInterestMap[SpatialConstants::POSITION_COMPONENT_ID];
+	if (ComponentInterest.Queries.Num() == 1)
+	{
+		const FBox2D& Box = WorkerCells[LocalVirtualWorkerId - 1];
+		const FVector2D BoxCenter = Box.GetCenter();
+		SpatialGDK::Query& query = ComponentInterest.Queries[0];
+		SpatialGDK::QueryConstraint QueryConstraint;
+		FVector2D Size = Box.GetSize();
+		SpatialGDK::EdgeLength Length;
+		Length.X = (Size.X * 0.01) + 50;
+		Length.Z = (Size.Y * 0.01) + 50;
+		Length.Y = 10000;
+		SpatialGDK::BoxConstraint BoxConstraint;
+		BoxConstraint.EdgeLength = Length;
+		BoxConstraint.Center = SpatialGDK::Coordinates{ BoxCenter.Y * 0.01, 0, BoxCenter.X * 0.01 };
+		QueryConstraint.BoxConstraint = BoxConstraint;
+		query.Constraint.OrConstraint.Add(QueryConstraint);
+	}
+	else
+	{
+		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("Failed to adjust QBI query for server worker entity, query format changed."));
+	}
 }
 
 bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location)
 {
 	return Location.X >= Box.Min.X && Location.Y >= Box.Min.Y
 		&& Location.X < Box.Max.X && Location.Y < Box.Max.Y;
-}
-
-UGridBasedLBStrategy::LBStrategyRegions UGridBasedLBStrategy::GetLBStrategyRegions() const
-{
-	LBStrategyRegions VirtualWorkerToCell;
-	VirtualWorkerToCell.SetNum(WorkerCells.Num());
-
-	for (int i = 0; i < WorkerCells.Num(); i++)
-	{
-		VirtualWorkerToCell[i] = MakeTuple(VirtualWorkerIds[i], WorkerCells[i]);
-	}
-	return VirtualWorkerToCell;
 }

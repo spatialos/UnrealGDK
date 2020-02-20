@@ -6,22 +6,16 @@
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesModule.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialGDKEditorCloudLauncher);
-
-namespace
-{
-	const FString LauncherExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher/DeploymentLauncher.exe"));
-}
-
 bool SpatialGDKCloudLaunch()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	FString LauncherCreateArguments = FString::Printf(
-		TEXT("create %s %s %s %s \"%s\" \"%s\" %s"),
+	const FString CmdExecutable = TEXT("cmd.exe");
+
+	FString LauncherCmdArguments = FString::Printf(
+		TEXT("/c cmd.exe /c DeploymentLauncher.exe create %s %s %s \"%s\" \"%s\" %s"),
 		*FSpatialGDKServicesModule::GetProjectName(),
 		*SpatialGDKSettings->GetAssemblyName(),
-		*SpatialGDKSettings->GetSpatialOSRuntimeVersionForCloud(),
 		*SpatialGDKSettings->GetPrimaryDeploymentName(),
 		*SpatialGDKSettings->GetPrimaryLaunchConfigPath(),
 		*SpatialGDKSettings->GetSnapshotPath(),
@@ -30,9 +24,9 @@ bool SpatialGDKCloudLaunch()
 
 	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
 	{
-		LauncherCreateArguments = FString::Printf(
+		LauncherCmdArguments = FString::Printf(
 			TEXT("%s %s \"%s\" %s %s"),
-			*LauncherCreateArguments,
+			*LauncherCmdArguments,
 			*SpatialGDKSettings->GetSimulatedPlayerDeploymentName(),
 			*SpatialGDKSettings->GetSimulatedPlayerLaunchConfigPath(),
 			*SpatialGDKSettings->GetSimulatedPlayerRegionCode().ToString(),
@@ -40,52 +34,31 @@ bool SpatialGDKCloudLaunch()
 		);
 	}
 
-	int32 OutCode = 0;
-	FString OutString;
-	FString OutErr;
+	LauncherCmdArguments = FString::Printf(
+		TEXT("%s ^& pause"),
+		*LauncherCmdArguments
+	);
 
-	bool bSuccess = FPlatformProcess::ExecProcess(*LauncherExe, *LauncherCreateArguments, &OutCode, &OutString, &OutErr);
-	if (OutCode != 0)
-	{
-		UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("Cloud Launch failed with code %d: %s"), OutCode, *OutString);
-		if (!OutErr.IsEmpty())
-		{
-			UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("%s"), *OutErr);
-		}
-		bSuccess = false;
-	}
+	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
+		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0,
+		*SpatialGDKSettings->GetDeploymentLauncherPath(), nullptr, nullptr);
 
-	return bSuccess;
+	return DeploymentLauncherProcHandle.IsValid();
 }
  
 bool SpatialGDKCloudStop()
 {
-	UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("Function not available"));
-	return false;
-
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	// TODO: UNR-2435 - Add a Stop Deployment button and fix the code below:
-	// get and provide deployment-id to stop the deployment as one of the LauncherStopArguments
-	const FString LauncherStopArguments = FString::Printf(
-		TEXT("stop %s"),
+	const FString CmdExecutable = TEXT("cmd.exe");
+	const FString LauncherCmdArguments = FString::Printf(
+		TEXT("/c DeploymentLauncher.exe stop %s"),
 		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
 		);
 
-	int32 OutCode = 0;
-	FString OutString;
-	FString OutErr;
+	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
+		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0,
+		*SpatialGDKSettings->GetDeploymentLauncherPath(), nullptr, nullptr);
 
-	bool bSuccess = FPlatformProcess::ExecProcess(*LauncherExe, *LauncherStopArguments, &OutCode, &OutString, &OutErr);
-	if (OutCode != 0)
-	{
-		UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("Cloud Launch failed with code %d: %s"), OutCode, *OutString);
-		if (!OutErr.IsEmpty())
-		{
-			UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("%s"), *OutErr);
-		}
-		bSuccess = false;
-	}
-
-	return bSuccess;
+	return DeploymentLauncherProcHandle.IsValid();
 }

@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Tests/TestDefinitions.h"
+#include "TestDefinitions.h"
 
 #include "SchemaGenObjectStub.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
@@ -10,10 +10,8 @@
 #include "Utils/SchemaDatabase.h"
 
 #include "CoreMinimal.h"
-#include "GeneralProjectSettings.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/FileHelper.h"
-#include "Misc/PackageName.h"
 
 #define LOCTEXT_NAMESPACE "SpatialGDKEDitorSchemaGeneratorTest"
 
@@ -842,11 +840,9 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 		"relevant.schema",
 		"rpc_components.schema",
 		"rpc_payload.schema",
-		"server_worker.schema",
 		"singleton.schema",
 		"spawndata.schema",
 		"spawner.schema",
-		"spatial_debugging.schema",
 		"tombstone.schema",
 		"unreal_metadata.schema",
 		"virtual_worker_translation.schema"

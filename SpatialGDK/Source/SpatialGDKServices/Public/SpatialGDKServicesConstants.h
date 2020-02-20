@@ -28,6 +28,5 @@ namespace SpatialGDKServicesConstants
 	const FString SpatialExe = CreateExePath(SpatialPath, TEXT("spatial"));
 	const FString SpotExe = CreateExePath(GDKProgramPath, TEXT("spot"));
 	const FString SchemaCompilerExe = CreateExePath(GDKProgramPath, TEXT("schema_compiler"));
-	const FString SpatialOSDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")));
-	const FString SpatialOSRuntimePinnedVersion("11-20200205T105018Z-7668e9b");
+    const FString SpatialOSDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")));
 }

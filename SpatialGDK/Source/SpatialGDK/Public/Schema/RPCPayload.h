@@ -17,7 +17,7 @@ struct RPCPayload
 {
 	RPCPayload() = delete;
 
-	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, TraceKey InTraceKey = InvalidTraceKey)
+	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, TraceKey InTraceKey = USpatialLatencyTracer::InvalidTraceKey)
 		: Offset(InOffset)
 		, Index(InIndex)
 		, PayloadData(MoveTemp(Data))
@@ -65,7 +65,7 @@ struct RPCPayload
 	uint32 Offset;
 	uint32 Index;
 	TArray<uint8> PayloadData;
-	TraceKey Trace = InvalidTraceKey;
+	TraceKey Trace = USpatialLatencyTracer::InvalidTraceKey;
 };
 
 struct RPCsOnEntityCreation : Component

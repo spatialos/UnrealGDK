@@ -18,7 +18,7 @@ namespace Improbable.WorkerCoordinator
                 WorkerType = coordinatorWorkerType,
                 Network =
                 {
-                    ConnectionType = NetworkConnectionType.ModularTcp,
+                    ConnectionType = NetworkConnectionType.Tcp,
                     UseExternalIp = false
                 }
             };

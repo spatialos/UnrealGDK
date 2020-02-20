@@ -174,7 +174,7 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.Printf("data unreal.generated.{0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
-		AddComponentId(ComponentId, SubobjectData.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
+		SubobjectData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = ComponentId;
 	}
 
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
@@ -199,7 +199,7 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.Printf("data unreal.generated.{0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
 
-		AddComponentId(ComponentId, SubobjectData.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
+		SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = ComponentId;
 	}
 
 	return SubobjectData;
@@ -319,7 +319,7 @@ FString GetRPCFieldPrefix(ERPCType RPCType)
 void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_ComponentId ComponentId, TArray<ERPCType> SentRPCTypes, TArray<ERPCType> AckedRPCTypes)
 {
 	Writer.PrintNewLine();
-	Writer.Printf("component Unreal{0} {", *EndpointName).Indent();
+	Writer.Printf("component Unreal{0}RPCEndpoint {", *EndpointName).Indent();
 	Writer.Printf("id = {0};", ComponentId);
 
 	Schema_FieldId FieldId = 1;
@@ -339,11 +339,10 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 		Writer.Printf("uint64 last_acked_{0}_rpc_id = {1};", GetRPCFieldPrefix(AckedRPCType), FieldId++);
 	}
 
-	if (ComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+	if (ComponentId == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
 	{
-		// This counter is used to let clients execute initial multicast RPCs when entity is just getting created,
-		// while ignoring existing multicast RPCs when an entity enters the interest range.
-		Writer.Printf("uint32 initially_present_multicast_rpc_count = {0};", FieldId++);
+		// CrossServer RPC uses commands, only exists on ServerRPCEndpoint
+		Writer.Print("command Void server_to_server_rpc_command(UnrealRPCPayload);");
 	}
 
 	Writer.Outdent().Print("}");
@@ -494,7 +493,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, Class));
 			Writer.Outdent().Print("}");
 
-			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
+			DynamicSubobjectComponents.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = ComponentId;
 		}
 
 		if (HandoverData.Num() > 0)
@@ -519,7 +518,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("data {0};", *SchemaHandoverDataName(Class));
 			Writer.Outdent().Print("}");
 
-			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
+			DynamicSubobjectComponents.SchemaComponents[SCHEMA_Handover] = ComponentId;
 		}
 
 		SubobjectSchemaData.DynamicSubobjectComponents.Add(MoveTemp(DynamicSubobjectComponents));
@@ -589,7 +588,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
 
-		AddComponentId(ComponentId, ActorSchemaData.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
+		ActorSchemaData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = ComponentId;
 
 		int FieldCounter = 0;
 		for (auto& RepProp : RepData[Group])
@@ -623,7 +622,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
 
-		AddComponentId(ComponentId, ActorSchemaData.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
+		ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = ComponentId;
 
 		int FieldCounter = 0;
 		for (auto& Prop : HandoverData)
@@ -640,22 +639,6 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 
 	ActorClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
 
-	// Cache the NCD for this Actor
-	if (AActor* CDO = Class->GetDefaultObject<AActor>())
-	{
-		const float NCD = CDO->NetCullDistanceSquared;
-		if (NetCullDistanceToComponentId.Find(NCD) == nullptr)
-		{
-			if (FMath::FloorToFloat(NCD) != NCD)
-			{
-				UE_LOG(LogSchemaGenerator, Warning, TEXT("Fractional Net Cull Distance values are not supported and may result in incorrect behaviour. "
-					"Please modify class's (%s) Net Cull Distance Squared value (%f)"), *Class->GetPathName(), NCD);
-			}
-
-			NetCullDistanceToComponentId.Add(NCD, 0);
-		}
-	}
-
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
 }
 
@@ -671,16 +654,9 @@ void GenerateRPCEndpointsSchema(FString SchemaPath)
 	Writer.Print("import \"unreal/gdk/core_types.schema\";");
 	Writer.Print("import \"unreal/gdk/rpc_payload.schema\";");
 
-	GenerateRPCEndpoint(Writer, TEXT("ClientEndpoint"), SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, { ERPCType::ServerReliable, ERPCType::ServerUnreliable }, { ERPCType::ClientReliable, ERPCType::ClientUnreliable });
-	GenerateRPCEndpoint(Writer, TEXT("ServerEndpoint"), SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID, { ERPCType::ClientReliable, ERPCType::ClientUnreliable }, { ERPCType::ServerReliable, ERPCType::ServerUnreliable });
-	GenerateRPCEndpoint(Writer, TEXT("MulticastRPCs"), SpatialConstants::MULTICAST_RPCS_COMPONENT_ID, { ERPCType::NetMulticast }, {});
+	GenerateRPCEndpoint(Writer, TEXT("Client"), SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, { ERPCType::ServerReliable, ERPCType::ServerUnreliable }, { ERPCType::ClientReliable, ERPCType::ClientUnreliable });
+	GenerateRPCEndpoint(Writer, TEXT("Server"), SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, { ERPCType::ClientReliable, ERPCType::ClientUnreliable }, { ERPCType::ServerReliable, ERPCType::ServerUnreliable });
+	GenerateRPCEndpoint(Writer, TEXT("Multicast"), SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, { ERPCType::NetMulticast }, {});
 
 	Writer.WriteToFile(FString::Printf(TEXT("%srpc_endpoints.schema"), *SchemaPath));
-}
-
-// Add the component ID to the passed schema components array and the set of components of that type.
-void AddComponentId(const Worker_ComponentId ComponentId, ComponentIdPerType& SchemaComponents, const ESchemaComponentType ComponentType)
-{
-	SchemaComponents[ComponentType] = ComponentId;
-	SchemaComponentTypeToComponents[ComponentType].Add(ComponentId);
 }

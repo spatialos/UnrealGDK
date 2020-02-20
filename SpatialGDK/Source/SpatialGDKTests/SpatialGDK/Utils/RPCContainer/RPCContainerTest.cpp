@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Tests/TestDefinitions.h"
+#include "TestDefinitions.h"
 
 #include "ObjectDummy.h"
 #include "ObjectSpy.h"

@@ -178,14 +178,7 @@ exit /b !ERRORLEVEL!";
 
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
 
-                if (additionalUATArgs.Contains("-pak"))
-                {
-                    Console.WriteLine("Cannot force bSpatialNetworking with -pak argument.");
-                }
-                else
-                {
-                    ForceSpatialNetworkingInConfig(windowsNoEditorPath, baseGameName);
-                }
+                ForceSpatialNetworkingInConfig(windowsNoEditorPath, baseGameName);
 
                 // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher.
                 // TO-DO: Remove this once LAUNCH-341 has been completed, and the _ is no longer necessary.
@@ -244,14 +237,7 @@ exit /b !ERRORLEVEL!";
 
                 var linuxSimulatedPlayerPath = Path.Combine(stagingDir, "LinuxNoEditor");
 
-                if (additionalUATArgs.Contains("-pak"))
-                {
-                    Console.WriteLine("Cannot force bSpatialNetworking with -pak argument.");
-                }
-                else
-                {
-                    ForceSpatialNetworkingInConfig(linuxSimulatedPlayerPath, baseGameName);
-                }
+                ForceSpatialNetworkingInConfig(linuxSimulatedPlayerPath, baseGameName);
 
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerWorkerShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartSimulatedClient.sh"));
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerCoordinatorShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartCoordinator.sh"));
@@ -318,14 +304,7 @@ exit /b !ERRORLEVEL!";
                 var assemblyPlatform = isLinux ? "Linux" : "Windows";
                 var serverPath = Path.Combine(stagingDir, assemblyPlatform + "Server");
 
-                if (additionalUATArgs.Contains("-pak"))
-                {
-                    Console.WriteLine("Cannot force bSpatialNetworking with -pak argument.");
-                }
-                else
-                {
-                    ForceSpatialNetworkingInConfig(serverPath, baseGameName);
-                }
+                ForceSpatialNetworkingInConfig(serverPath, baseGameName);
 
                 if (isLinux)
                 {

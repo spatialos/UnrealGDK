@@ -84,7 +84,7 @@ Scripts/spatialos.*.build.json
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Improbable.Unreal.Scripts.sln
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/packages/Newtonsoft.Json.12.0.2/lib/net45/Newtonsoft.Json.dll
-SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/packages/
+!SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/packages/
 SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Build/Build.csproj.user
 
 # Don't ignore the Build util
@@ -93,3 +93,5 @@ SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Build/Build.csproj.user
 _ReSharper.caches
 
 **/.DS_Store
+
+!ci/*.ps1

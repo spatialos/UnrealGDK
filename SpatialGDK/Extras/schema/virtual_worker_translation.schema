@@ -13,5 +13,5 @@ type VirtualWorkerMapping {
 
 component VirtualWorkerTranslation {
      id = 9979;
-     transient list<VirtualWorkerMapping> virtual_worker_mapping = 1;
+     list<VirtualWorkerMapping> virtual_worker_mapping = 1;
 }

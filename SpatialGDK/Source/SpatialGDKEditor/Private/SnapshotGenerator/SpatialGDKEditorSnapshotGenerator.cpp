@@ -51,7 +51,7 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
-	Components.Add(Position(DeploymentOrigin).CreatePositionData());
+	Components.Add(Position(Origin).CreatePositionData());
 	Components.Add(Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
@@ -88,7 +88,6 @@ Worker_ComponentData CreateDeploymentData()
 	AddStringToSchema(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID, "");
 	Schema_AddBool(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID, false);
 	Schema_AddInt32(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, 0);
-	Schema_AddUint32(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH, 0);
 
 	return DeploymentData;
 }
@@ -113,18 +112,12 @@ Worker_ComponentData CreateStartupActorManagerData()
 	return StartupActorManagerData;
 }
 
-WorkerRequirementSet CreateReadACLForAlwaysRelevantEntities()
+Worker_ComponentData CreateVirtualWorkerTranslatorData()
 {
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	WorkerRequirementSet ReadACL;
-	for (const FName& WorkerType : SpatialGDKSettings->ServerWorkerTypes)
-	{
-		const WorkerAttributeSet WorkerTypeAttributeSet{ { WorkerType.ToString() } };
-		ReadACL.Add(WorkerTypeAttributeSet);
-	}
-
-	return ReadACL;
+	Worker_ComponentData VirtualWorkerTranslatorData{};
+	VirtualWorkerTranslatorData.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
+	VirtualWorkerTranslatorData.schema_type = Schema_CreateComponentData();
+	return VirtualWorkerTranslatorData;
 }
 
 bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
@@ -144,55 +137,32 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
-	Components.Add(Position(DeploymentOrigin).CreatePositionData());
+	Components.Add(Position(Origin).CreatePositionData());
 	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateSingletonManagerData());
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
-	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(CreateVirtualWorkerTranslatorData());
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	WorkerRequirementSet ReadACL;
+	for (const FName& WorkerType : SpatialGDKSettings->ServerWorkerTypes)
+	{
+		const WorkerAttributeSet WorkerTypeAttributeSet{ { WorkerType.ToString() } };
+		ReadACL.Add(WorkerTypeAttributeSet);
+	}
+
+	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();
 
 	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &GSM);
-	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
-}
-
-Worker_ComponentData CreateVirtualWorkerTranslatorData()
-{
-	Worker_ComponentData VirtualWorkerTranslatorData{};
-	VirtualWorkerTranslatorData.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
-	VirtualWorkerTranslatorData.schema_type = Schema_CreateComponentData();
-	return VirtualWorkerTranslatorData;
-}
-
-bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
-{
-	Worker_Entity VirtualWorkerTranslator;
-	VirtualWorkerTranslator.entity_id = SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID;
-
-	TArray<Worker_ComponentData> Components;
-
-	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-
-	Components.Add(Position(DeploymentOrigin).CreatePositionData());
-	Components.Add(Metadata(TEXT("VirtualWorkerTranslator")).CreateMetadataData());
-	Components.Add(Persistence().CreatePersistenceData());
-	Components.Add(CreateVirtualWorkerTranslatorData());
-	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
-
-	VirtualWorkerTranslator.component_count = Components.Num();
-	VirtualWorkerTranslator.components = Components.GetData();
-
-	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &VirtualWorkerTranslator);
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
 }
 
@@ -246,12 +216,6 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	if (!CreateGlobalStateManager(OutputStream))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating GlobalStateManager in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
-		return false;
-	}
-
-	if (!CreateVirtualWorkerTranslator(OutputStream))
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating VirtualWorkerTranslator in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}
 

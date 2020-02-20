@@ -2,12 +2,13 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+
+#include "Interop/SpatialSender.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "SpatialCommonTypes.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
-
-#include "CoreMinimal.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
 
@@ -16,26 +17,22 @@ class SpatialVirtualWorkerTranslator;
 class SpatialLoadBalanceEnforcer
 {
 public:
-	struct AclWriteAuthorityRequest
-	{
-		Worker_EntityId EntityId = 0;
-		FString OwningWorkerId;
-	};
+	SpatialLoadBalanceEnforcer();
 
-	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
+	void Init(const PhysicalWorkerName &InWorkerId, USpatialStaticComponentView* InStaticComponentView, USpatialSender* InSpatialSender, SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
+	void Tick();
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
 	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
 
 	void OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op);
 
-	TArray<AclWriteAuthorityRequest> ProcessQueuedAclAssignmentRequests();
-
 private:
 
-	const PhysicalWorkerName WorkerId;
-	TWeakObjectPtr<const USpatialStaticComponentView> StaticComponentView;
-	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
+	PhysicalWorkerName WorkerId;
+	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
+	TWeakObjectPtr<USpatialSender> Sender;
+	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 	struct WriteAuthAssignmentRequest
 	{
@@ -48,4 +45,6 @@ private:
 	};
 
 	TArray<WriteAuthAssignmentRequest> AclWriteAuthAssignmentRequests;
+
+	void ProcessQueuedAclAssignmentRequests();
 };

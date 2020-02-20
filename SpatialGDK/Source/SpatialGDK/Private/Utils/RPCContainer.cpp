@@ -159,6 +159,7 @@ void FRPCContainer::DropForEntity(const Worker_EntityId& EntityId)
 	}
 }
 
+
 bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ERPCType Type) const
 {
 	if(const FRPCMap* MapOfQueues = QueuedRPCs.Find(Type))

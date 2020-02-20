@@ -5,7 +5,7 @@ package unreal.generated;
 import "unreal/gdk/core_types.schema";
 import "unreal/gdk/rpc_payload.schema";
 
-component UnrealClientEndpoint {
+component UnrealClientRPCEndpoint {
 	id = 9978;
 	option<UnrealRPCPayload> client_to_server_reliable_rpc_0 = 1;
 	option<UnrealRPCPayload> client_to_server_reliable_rpc_1 = 2;
@@ -77,7 +77,7 @@ component UnrealClientEndpoint {
 	uint64 last_acked_server_to_client_unreliable_rpc_id = 68;
 }
 
-component UnrealServerEndpoint {
+component UnrealServerRPCEndpoint {
 	id = 9977;
 	option<UnrealRPCPayload> server_to_client_reliable_rpc_0 = 1;
 	option<UnrealRPCPayload> server_to_client_reliable_rpc_1 = 2;
@@ -147,9 +147,10 @@ component UnrealServerEndpoint {
 	uint64 last_sent_server_to_client_unreliable_rpc_id = 66;
 	uint64 last_acked_client_to_server_reliable_rpc_id = 67;
 	uint64 last_acked_client_to_server_unreliable_rpc_id = 68;
+	command Void server_to_server_rpc_command(UnrealRPCPayload);
 }
 
-component UnrealMulticastRPCs {
+component UnrealMulticastRPCEndpoint {
 	id = 9976;
 	option<UnrealRPCPayload> multicast_rpc_0 = 1;
 	option<UnrealRPCPayload> multicast_rpc_1 = 2;
@@ -184,5 +185,4 @@ component UnrealMulticastRPCs {
 	option<UnrealRPCPayload> multicast_rpc_30 = 31;
 	option<UnrealRPCPayload> multicast_rpc_31 = 32;
 	uint64 last_sent_multicast_rpc_id = 33;
-	uint32 initially_present_multicast_rpc_count = 34;
 }

@@ -18,9 +18,8 @@ class FLocalDeploymentManager
 public:
 	FLocalDeploymentManager();
 
-	void SPATIALGDKSERVICES_API Init(FString RuntimeIPToExpose);
-
 	void SPATIALGDKSERVICES_API SetInChina(bool IsInChina);
+	void SPATIALGDKSERVICES_API Init(FString RuntimeIPToExpose);
 
 	void SPATIALGDKSERVICES_API RefreshServiceStatus();
 
@@ -28,9 +27,7 @@ public:
 	bool KillProcessBlockingPort(int32 Port);
 	bool LocalDeploymentPreRunChecks();
 
-    using LocalDeploymentCallback = TFunction<void(bool)>;
-
-	void SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose, const LocalDeploymentCallback& CallBack);
+	bool SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose);
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 
 	bool SPATIALGDKSERVICES_API TryStartSpatialService(FString RuntimeIPToExpose);
@@ -67,10 +64,6 @@ public:
 private:
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
-
-	bool FinishLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose);
-
-	TFuture<bool> AttemptSpatialAuthResult;
 
 	static const int32 ExitCodeSuccess = 0;
 	static const int32 ExitCodeNotRunning = 4;

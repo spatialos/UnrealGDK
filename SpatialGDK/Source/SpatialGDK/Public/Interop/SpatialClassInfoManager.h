@@ -110,31 +110,17 @@ public:
 
 	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
 	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
+
+	Worker_ComponentId GetComponentIdForComponentClass(const UClass& ActorClass, const UClass& ComponentClass) const;
+	TArray<Worker_ComponentId> GetComponentIdsForComponentClassHierarchy(const UClass& ActorClass, const UClass& ComponentClass, const bool bIncludeDerivedTypes = true) const;
 	
 	const FRPCInfo& GetRPCInfo(UObject* Object, UFunction* Function);
 
-	Worker_ComponentId GetComponentIdFromLevelPath(const FString& LevelPath) const;
-	bool IsSublevelComponent(Worker_ComponentId ComponentId) const;
-
-	const TMap<float, Worker_ComponentId>& GetNetCullDistanceToComponentIds() const;
-
-	Worker_ComponentId GetComponentIdForNetCullDistance(float NetCullDistance) const;
-	Worker_ComponentId ComputeActorInterestComponentId(const AActor* Actor) const;
-
-	bool IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const;
-
-	const TArray<Worker_ComponentId>& GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const;
-
-	// Used to check if component is used for qbi tracking only
-	bool IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const;
-
-	// Tries to find ClassInfo corresponding to an unused dynamic subobject on the given entity
-	const FClassInfo* GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient);
+	uint32 GetComponentIdFromLevelPath(const FString& LevelPath);
+	bool IsSublevelComponent(Worker_ComponentId ComponentId);
 
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
-
-	void QuitGame();
 
 private:
 	void CreateClassInfoForClass(UClass* Class);
@@ -142,6 +128,8 @@ private:
 
 	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
+
+	void QuitGame();
 
 private:
 	UPROPERTY()

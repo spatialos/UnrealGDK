@@ -15,8 +15,8 @@ LOG_FILE=$2
 shift 2
 
 # 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
-mkdir -p /improbable/logs/UnrealWorker/
-useradd $NEW_USER -m -d /improbable/logs/UnrealWorker 2>/dev/null
+mkdir -p /improbable/logs/UnrealWorker/Logs
+useradd $NEW_USER -m -d /improbable/logs/UnrealWorker/Logs 2>/dev/null
 chown -R $NEW_USER:$NEW_USER $(pwd) 2>/dev/null
 chmod -R o+rw /improbable/logs 2>/dev/null
 
@@ -55,13 +55,6 @@ gosu $NEW_USER ""${{SCRIPT}}"" ""$@"" >> ""/improbable/logs/${{WORKER_ID}}.log""
 
         public const string SimulatedPlayerCoordinatorShellScript =
 @"#!/bin/sh
-
-# Some clients are quite large so in order to avoid running out of disk space on the node we attempt to delete the zip
-WORKER_ZIP_DIR=""/tmp/runner_source/""
-if [ -d ""$WORKER_ZIP_DIR"" ]; then
-  rm -rf ""$WORKER_ZIP_DIR""
-fi
-
 sleep 5
 
 chmod +x WorkerCoordinator.exe

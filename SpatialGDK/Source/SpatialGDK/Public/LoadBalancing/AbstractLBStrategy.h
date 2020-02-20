@@ -11,6 +11,7 @@
 #include "AbstractLBStrategy.generated.h"
 
 class USpatialNetDriver;
+namespace SpatialGDK { struct Interest; }
 
 /**
  * This class can be used to define a load balancing strategy.
@@ -21,7 +22,7 @@ class USpatialNetDriver;
  *      VirtualWorkerIds from GetVirtualWorkerIds() and begin assinging workers.
  *    (Other Workers): SetLocalVirtualWorkerId when assigned a VirtualWorkerId.
  * 4. For each Actor being replicated:
- *   a) Check if authority should be relinquished by calling ShouldHaveAuthority
+ *   a) Check if authority should be relinquished by calling ShouldRelinquishAuthority
  *   b) If true: Send authority change request to Translator/Enforcer passing in new
  *        VirtualWorkerId returned by WhoShouldHaveAuthority
  */
@@ -41,8 +42,11 @@ public:
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
 
-	virtual bool ShouldHaveAuthority(const AActor& Actor) const { return false; }
-	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;)
+	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const { return false; }
+	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID; )
+
+	virtual FVector GetLocalVirtualWorkerActorPosition() const { return FVector(0, 0, 0); }
+	virtual void UpdateLocalWorkerInterest(SpatialGDK::Interest* ServerWorkerInterest) const {}
 
 protected:
 
