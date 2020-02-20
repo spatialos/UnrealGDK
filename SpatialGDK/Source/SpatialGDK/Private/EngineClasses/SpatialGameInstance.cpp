@@ -102,7 +102,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 }
 #endif
 
-void USpatialGameInstance::StartGameInstance()
+void USpatialGameInstance::TryConnectToSpatial()
 {
 	if (HasSpatialNetDriver())
 	{
@@ -128,6 +128,11 @@ void USpatialGameInstance::StartGameInstance()
 			}
 		}
 	}
+}
+
+void USpatialGameInstance::StartGameInstance()
+{
+	TryConnectToSpatial();
 
 	Super::StartGameInstance();
 }
