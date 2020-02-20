@@ -489,7 +489,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						// The following check will return false on non-authoritative servers if the Pawn hasn't been received yet.
 						if (APawn* PawnFromPlayerState = PlayerState->GetPawn())
 						{
-							check(PlayerState->bIsABot || PawnFromPlayerState->IsPlayerControlled());
 							if (PawnFromPlayerState->IsPlayerControlled())
 							{
 								PawnFromPlayerState->RemoteRole = ROLE_AutonomousProxy;
