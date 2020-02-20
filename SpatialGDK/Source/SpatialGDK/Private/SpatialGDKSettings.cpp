@@ -18,17 +18,17 @@ namespace
 	{
 		if(FParse::Param(CommandLine, Parameter))
 		{
-			Value = true;
+			bOutValue = true;
 		}
 		else
 		{
 			TCHAR TempStr[16];
 			if (FParse::Value(CommandLine, Parameter, TempStr, 16) && TempStr[0] == '=')
 			{
-				Value = FCString::ToBool(TempStr + 1); // + 1 to skip =
+				bOutValue = FCString::ToBool(TempStr + 1); // + 1 to skip =
 			}
 		}
-		UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, Value ? TEXT("enabled") : TEXT("disabled"));
+		UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue ? TEXT("enabled") : TEXT("disabled"));
 	}
 }
 
