@@ -702,40 +702,26 @@ int64 USpatialActorChannel::ReplicateActor()
 	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
 		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
-		// We use an additional bool to keep track of whether we've called IsLocked. This is because 1) we don't
-		// want to call it twice in both the main load-balancing flow and when sending a debugger update and 2)
-		// for efficiency, we want to wait to until ShouldHaveAuthority is called before we try calling IsLocked
-		// on the main load-balancing flow.
-		bool bCalledIsLocked = false;
-		bool bIsLocked = false;
-		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
-		{
-			bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-			bCalledIsLocked = true;
-			if (!bIsLocked)
+		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
+		{		
+			const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
+			if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 			{
-				const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
-				if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-				{
-					Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
+				Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
 
-					// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy 
-					Actor->Role = ROLE_SimulatedProxy;
-					Actor->RemoteRole = ROLE_Authority;
-				}
-				else
-				{
-					UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
-				}
+				// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy 
+				Actor->Role = ROLE_SimulatedProxy;
+				Actor->RemoteRole = ROLE_Authority;
+			}
+			else
+			{
+				UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
 			}
 		}
 
 		if (SpatialGDK::SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
 		{
-			if (!bCalledIsLocked)
-			{
-				bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-			}
+			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
 			if (DebuggingInfo->IsLocked != bIsLocked)
 			{
 				DebuggingInfo->IsLocked = bIsLocked;
