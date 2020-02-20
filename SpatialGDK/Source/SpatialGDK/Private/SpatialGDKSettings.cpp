@@ -14,7 +14,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
 
 namespace
 {
-	void CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, bool& Value)
+	void CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, bool& bOutValue)
 	{
 		if(FParse::Param(CommandLine, Parameter))
 		{
