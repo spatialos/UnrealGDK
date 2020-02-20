@@ -104,13 +104,15 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 
 FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 {
-
-	FString Command = GetDefault<USpatialGDKSettings>()->IsRunningInChina() ? TEXT("project auth dev-auth-token create --environment cn-production --description=\"Unreal GDK Token\" --json_output") :
-		TEXT("project auth dev-auth-token create --description=\"Unreal GDK Token\" --json_output");
+	FString Arguments = TEXT("project auth dev-auth-token create --description=\"Unreal GDK Token\" --json_output");
+	if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
+	{
+		Arguments += TEXT(" --environment cn-production");
+	}
 
 	FString CreateDevAuthTokenResult;
 	int32 ExitCode;
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, Command, SpatialGDKServicesConstants::SpatialOSDirectory, CreateDevAuthTokenResult, ExitCode);
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, Arguments, SpatialGDKServicesConstants::SpatialOSDirectory, CreateDevAuthTokenResult, ExitCode);
 
 	if (ExitCode != 0)
 	{
