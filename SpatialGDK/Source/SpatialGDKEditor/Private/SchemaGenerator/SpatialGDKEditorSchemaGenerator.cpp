@@ -536,6 +536,15 @@ void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& Co
 		}
 	}
 
+	// Delete the existing schema files. This ensures there are no conflicts between schema files.
+	TArray<FString> FoundFiles;
+	PlatformFile.FindFiles(FoundFiles, *GDKSchemaCopyDir, TEXT("schema"));
+
+	for (FString& File : FoundFiles)
+	{
+		PlatformFile.DeleteFile(*File);
+	}
+
 	if (!PlatformFile.DirectoryExists(*CoreSDKSchemaCopyDir))
 	{
 		if (!PlatformFile.CreateDirectoryTree(*CoreSDKSchemaCopyDir))
