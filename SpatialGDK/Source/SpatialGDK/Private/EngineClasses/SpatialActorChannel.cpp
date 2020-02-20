@@ -476,6 +476,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	//////////////////////////////////////////////////////////////////////////
 
 	// Create an outgoing bunch (to satisfy some of the functions below).
+	// This is also a check to see if the channel is saturated.
 	FOutBunch Bunch(this, 0);
 	if (Bunch.IsError())
 	{
@@ -545,7 +546,6 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
-	bool bWroteSomethingImportant = false;
 
 #if ENGINE_MINOR_VERSION <= 22
 	ActorReplicator->ChangelistMgr->Update(ActorReplicator->RepState.Get(), Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
@@ -587,6 +587,8 @@ int64 USpatialActorChannel::ReplicateActor()
 		HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
 	}
 
+	uint32 NumBitsWriten = 0;
+
 	// If any properties have changed, send a component update.
 	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
 	{
@@ -606,11 +608,11 @@ int64 USpatialActorChannel::ReplicateActor()
 		else
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
-			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState);
+			uint32 BytesWriten = 0;
+			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState, BytesWriten);
+			NumBitsWriten += BytesWriten;
 			bInterestDirty = false;
 		}
-
-		bWroteSomethingImportant = true;
 
 		if (RepChanged.Num() > 0)
 		{
@@ -653,7 +655,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
 		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
 		// the same SpatialActorChannel::ReplicateSubobject.
-		bWroteSomethingImportant |= Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
+		bool bWroteSomething = Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 
 		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 		{
@@ -672,7 +674,9 @@ int64 USpatialActorChannel::ReplicateActor()
 			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
 			if (SubobjectHandoverChangeState.Num() > 0)
 			{
-				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState);
+				uint32 BytesWriten = 0;
+				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState, BytesWriten);
+				NumBitsWriten += BytesWriten;
 			}
 		}
 
@@ -730,7 +734,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	bForceCompareProperties = false;		// Only do this once per frame when set
 
-	return (bWroteSomethingImportant) ? 1 : 0;	// TODO: return number of bits written (UNR-664)
+	return NumBitsWriten;
 }
 
 void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
@@ -873,7 +877,8 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		}
 
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
-		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr);
+		uint32 BytesWriten = 0;
+		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr, BytesWriten);
 
 		SendingRepState->HistoryEnd++;
 	}

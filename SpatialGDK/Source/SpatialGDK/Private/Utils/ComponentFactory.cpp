@@ -46,11 +46,12 @@ ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNet
 	, LatencyTracer(InLatencyTracer)
 { }
 
-bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TraceKey* OutLatencyTraceId, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
+uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TraceKey* OutLatencyTraceId, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
 {
 	SCOPE_CYCLE_COUNTER(STAT_FactoryProcessPropertyUpdates);
 
-	bool bWroteSomething = false;
+	uint32 NumBytesWriten = 0;
+	const uint32 NumBytesStart = Schema_GetWriteBufferLength(ComponentObject);
 
 	// Populate the replicated data component updates from the replicated property changelist.
 	if (Changes.RepChanged.Num() > 0)
@@ -93,9 +94,11 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				const uint8* Data = (uint8*)Object + Cmd.Offset;
 
 				bool bProcessedFastArrayProperty = false;
+
 #if USE_NETWORK_PROFILER
-				const uint32 NumBytesStart = Schema_GetWriteBufferLength(ComponentObject);
+				const uint32 ProfilerBytesStart = Schema_GetWriteBufferLength(ComponentObject);
 #endif
+
 				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 				{
 					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
@@ -121,17 +124,16 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 					AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, ClearedIds);
 				}
 
-				bWroteSomething = true;
 #if USE_NETWORK_PROFILER
 				/**
-				 *  a good proxy for how many bits are being sent for a propery. Reasons for why it might not be fully accurate:
+				 *  a good proxy for how many bits are being sent for a property. Reasons for why it might not be fully accurate:
 						- the serialized size of a message is just the body contents. Typically something will send the message with the length prefixed, which might be varint encoded, and you pushing the size over some size can cause the encoding of the length be bigger
 						- similarly, if you push the message over some size it can cause fragmentation which means you now have to pay for the headers again
 						- if there is any compression or anything else going on, the number of bytes actually transferred because of this data can differ
 						- lastly somewhat philosophical question of who pays for the overhead of a packet and whether you attribute a part of it to each field or attribute it to the update itself, but I assume you care a bit less about this
 				 */
-				const uint32 NumBytesEnd = Schema_GetWriteBufferLength(ComponentObject);
-				NETWORK_PROFILER(GNetworkProfiler.TrackReplicateProperty(Cmd.Property, (NumBytesEnd - NumBytesStart) * CHAR_BIT, nullptr));
+				const uint32 ProfilerBytesEnd = Schema_GetWriteBufferLength(ComponentObject);
+				NETWORK_PROFILER(GNetworkProfiler.TrackReplicateProperty(Cmd.Property, (ProfilerBytesEnd - ProfilerBytesStart) * CHAR_BIT, nullptr));
 #endif				
 			}
 
@@ -145,12 +147,14 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 		}
 	}
 
-	return bWroteSomething;
+	const uint32 NumBytesEnd = Schema_GetWriteBufferLength(ComponentObject);
+
+	return NumBytesEnd - NumBytesStart;
 }
 
-bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TraceKey* OutLatencyTraceId, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
+uint32 ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TraceKey* OutLatencyTraceId, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
 {
-	bool bWroteSomething = false;
+	const uint32 NumBytesStart = Schema_GetWriteBufferLength(ComponentObject);
 
 	for (uint16 ChangedHandle : Changes)
 	{
@@ -172,11 +176,11 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 		}
 #endif
 		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, ClearedIds);
-
-		bWroteSomething = true;
 	}
 
-	return bWroteSomething;
+	const uint32 NumBytesEnd = Schema_GetWriteBufferLength(ComponentObject);
+
+	return NumBytesEnd - NumBytesStart;
 }
 
 void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TArray<Schema_FieldId>* ClearedIds)
@@ -385,7 +389,7 @@ FWorkerComponentData ComponentFactory::CreateHandoverComponentData(Worker_Compon
 	return ComponentData;
 }
 
-TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState)
+TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState, uint32& NumBytesWriten)
 {
 	TArray<FWorkerComponentUpdate> ComponentUpdates;
 
@@ -393,21 +397,23 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	{
 		if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			bool bWroteSomething = false;
-			FWorkerComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_Data], Object, *RepChangeState, SCHEMA_Data, bWroteSomething);
-			if (bWroteSomething)
+			const uint32 BytesWriten = 0;
+			FWorkerComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_Data], Object, *RepChangeState, SCHEMA_Data, BytesWriten);
+			if (BytesWriten > 0)
 			{
 				ComponentUpdates.Add(MultiClientUpdate);
+				NumBytesWriten += BytesWriten;
 			}
 		}
 
 		if (Info.SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			bool bWroteSomething = false;
-			FWorkerComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, *RepChangeState, SCHEMA_OwnerOnly, bWroteSomething);
-			if (bWroteSomething)
+			const uint32 BytesWriten = 0;
+			FWorkerComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, *RepChangeState, SCHEMA_OwnerOnly, BytesWriten);
+			if (BytesWriten > 0)
 			{
 				ComponentUpdates.Add(SingleClientUpdate);
+				NumBytesWriten += BytesWriten;
 			}
 		}
 	}
@@ -416,11 +422,12 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	{
 		if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			bool bWroteSomething = false;
-			FWorkerComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info.SchemaComponents[SCHEMA_Handover], Object, Info, *HandoverChangeState, bWroteSomething);
-			if (bWroteSomething)
+			const uint32 BytesWriten = 0;
+			FWorkerComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info.SchemaComponents[SCHEMA_Handover], Object, Info, *HandoverChangeState, BytesWriten);
+			if (BytesWriten > 0)
 			{
 				ComponentUpdates.Add(HandoverUpdate);
+				NumBytesWriten += BytesWriten;
 			}
 		}
 	}
@@ -435,7 +442,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	return ComponentUpdates;
 }
 
-FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool& bWroteSomething)
+FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, uint32& NumBytesWriten)
 {
 	FWorkerComponentUpdate ComponentUpdate = {};
 
@@ -445,14 +452,16 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
+	const uint32 BytesWriten = 0;
+	BytesWriten = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
+	NumBytesWriten += BytesWriten;
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
 		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
 	}
 
-	if (!bWroteSomething)
+	if (BytesWriten == 0)
 	{
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 	}
@@ -460,7 +469,7 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	return ComponentUpdate;
 }
 
-FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool& bWroteSomething)
+FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, uint32& NumBytesWriten)
 {
 	FWorkerComponentUpdate ComponentUpdate = {};
 
@@ -470,14 +479,16 @@ FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
+	const uint32 BytesWriten = 0;
+	BytesWriten = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
+	NumBytesWriten += BytesWriten;
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
 		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
 	}
 
-	if (!bWroteSomething)
+	if (BytesWriten == 0)
 	{
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 	}
