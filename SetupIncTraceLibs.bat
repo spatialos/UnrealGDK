@@ -9,7 +9,7 @@ set NO_SET_LOCAL=1
 
 pushd "%~dp0"
 
-call Setup.bat
+call Setup.bat %*
 
 call :MarkStartOfBlock "%~0"
 
