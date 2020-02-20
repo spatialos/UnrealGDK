@@ -24,7 +24,7 @@ DOWNLOAD_MOBILE=
 while test $# -gt 0
 do
     case "$1" in
-        --china) DOMAIN_ENVIRONMENT_VAR="--domain spatialoschina.com --environment cn-production"
+        --china) DOMAIN_ENVIRONMENT_VAR="--environment cn-production"
             ;;
         --mobile) DOWNLOAD_MOBILE=true
             ;;
