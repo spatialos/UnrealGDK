@@ -339,15 +339,23 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 }
 
 // Apply (and clean up) any updates queued, due to being sent previously when they didn't have authority.
-void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId)
+void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	if (TArray<FWorkerComponentUpdate>* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
 	{
-		for(auto& Component : *UpdatesQueuedUntilAuthority)
+		for (auto It = UpdatesQueuedUntilAuthority->CreateIterator(); It; It++)
 		{
-			Connection->SendComponentUpdate(EntityId, &Component);			
+			if (ComponentId == It->component_id)
+			{
+				Connection->SendComponentUpdate(EntityId, &(*It));
+				It.RemoveCurrent();
+			}
 		}
-		UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
+
+		if (UpdatesQueuedUntilAuthority->Num() == 0)
+		{
+			UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
+		}
 	}
 }
 
