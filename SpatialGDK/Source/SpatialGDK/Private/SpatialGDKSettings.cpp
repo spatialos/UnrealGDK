@@ -96,6 +96,12 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideLoadBalancer"), TEXT("Load balancer"), bEnableUnrealLoadBalancer);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCPacking"), TEXT("RPC packing"), bPackRPCs);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread"), TEXT("Spatial worker connection on game thread"), bRunSpatialWorkerConnectionOnGameThread);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideResultTypes"), TEXT("Result types"), bEnableResultTypes);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterest"), TEXT("Net cull distance interest"), bEnableNetCullDistanceInterest);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"), bEnableNetCullDistanceFrequency);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"), bUseIsActorRelevantForConnection);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
 
 	if (bEnableUnrealLoadBalancer)
 	{
@@ -108,13 +114,6 @@ void USpatialGDKSettings::PostInitProperties()
 			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
 		}
 	}
-
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread"), TEXT("Spatial worker connection on game thread"), bRunSpatialWorkerConnectionOnGameThread);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideResultTypes"), TEXT("Result types"), bEnableResultTypes);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterest"), TEXT("Net cull distance interest"), bEnableNetCullDistanceInterest);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"), bEnableNetCullDistanceFrequency);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"), bUseIsActorRelevantForConnection);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
