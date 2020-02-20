@@ -540,7 +540,7 @@ void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& Co
 	TArray<FString> FoundFiles;
 	PlatformFile.FindFiles(FoundFiles, *GDKSchemaCopyDir, TEXT("schema"));
 
-	for (FString& File : FoundFiles)
+	for (const FString& File : FoundFiles)
 	{
 		PlatformFile.DeleteFile(*File);
 	}
