@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "CoreMinimal.h"
-
 #include "Tests/TestingComponentViewHelpers.h"
+
+#include "CoreMinimal.h"
 
 void TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView,
 	const Worker_EntityId EntityId,

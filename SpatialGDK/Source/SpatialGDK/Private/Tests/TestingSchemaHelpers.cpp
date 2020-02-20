@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "CoreMinimal.h"
-
 #include "Tests/TestingSchemaHelpers.h"
+
+#include "CoreMinimal.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
