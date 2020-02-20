@@ -957,7 +957,7 @@ void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNet
 	// Intentionally don't call Super::NotifyActorFullyDormantForConnection
 }
 
-void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
+void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 {
 	if (!IsServer())
 	{
