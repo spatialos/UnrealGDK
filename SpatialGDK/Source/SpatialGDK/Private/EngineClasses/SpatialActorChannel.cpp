@@ -702,8 +702,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
 		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
-		const bool bActorIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-		if (!bActorIsLocked && !NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
+		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
 		{
 			const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
 			if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
@@ -722,9 +721,10 @@ int64 USpatialActorChannel::ReplicateActor()
 
 		if (SpatialGDK::SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
 		{
-			if (bActorIsLocked != DebuggingInfo->IsLocked)
+			bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
+			if (DebuggingInfo->IsLocked != bIsLocked)
 			{
-				DebuggingInfo->IsLocked = bActorIsLocked;
+				DebuggingInfo->IsLocked = bIsLocked;
 				FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
 				NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 			}
