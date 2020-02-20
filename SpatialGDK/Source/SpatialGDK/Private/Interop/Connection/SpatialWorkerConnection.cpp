@@ -6,6 +6,7 @@
 #endif
 
 #include "Async/Async.h"
+#include "Improbable/SpatialEngineConstants.h" 
 #include "Misc/Paths.h"
 
 #include "SpatialGDKSettings.h"
@@ -17,7 +18,7 @@ using namespace SpatialGDK;
 
 struct ConfigureConnection
 {
-	ConfigureConnection(const FConnectionConfig& InConfig)
+	ConfigureConnection(const FConnectionConfig& InConfig, const bool bConnectAsClient)
 		: Config(InConfig)
 		, Params()
 		, WorkerType(*Config.WorkerType)
@@ -55,6 +56,22 @@ struct ConfigureConnection
 		Params.network.modular_kcp.downstream_heartbeat = &HeartbeatParams;
 		Params.network.modular_kcp.upstream_heartbeat = &HeartbeatParams;
 #endif
+		
+		if (!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection)
+		{
+			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+		}
+		else if (bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnection)
+		{
+			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+		}
+		else
+		{
+			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		}
 
 		Params.enable_dynamic_components = true;
 	}
@@ -277,7 +294,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(uint32 PlayInEditorID)
 
 	ReceptionistConfig.PreConnectInit(bConnectAsClient);
 
-	ConfigureConnection ConnectionConfig(ReceptionistConfig);
+	ConfigureConnection ConnectionConfig(ReceptionistConfig, bConnectAsClient);
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
 		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.ReceptionistPort,
@@ -296,7 +313,7 @@ void USpatialWorkerConnection::ConnectToLocator(FLocatorConfig* InLocatorConfig)
 
 	InLocatorConfig->PreConnectInit(bConnectAsClient);
 
-	ConfigureConnection ConnectionConfig(*InLocatorConfig);
+	ConfigureConnection ConnectionConfig(*InLocatorConfig, bConnectAsClient);
 
 	FTCHARToUTF8 PlayerIdentityTokenCStr(*InLocatorConfig->PlayerIdentityToken);
 	FTCHARToUTF8 LoginTokenCStr(*InLocatorConfig->LoginToken);

@@ -342,20 +342,20 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 					// This is a failure but there is already a log inside TryResolveNewDynamicSubbojectAndGetClassInfo
 					continue;
 				}
-
-				ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-				{
-					if (SubobjectInfo->SchemaComponents[Type] != SpatialConstants::INVALID_COMPONENT_ID)
-					{
-						ComponentWriteAcl.Add(SubobjectInfo->SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
-					}
-				});
 			}
 
 			const FClassInfo& SubobjectInfo = ClassInfoManager->GetOrCreateClassInfoByObject(Subobject);
 
 			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
+
+			ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+			{
+				if (SubobjectInfo.SchemaComponents[Type] != SpatialConstants::INVALID_COMPONENT_ID)
+				{
+					ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
+				}
+			});
 
 			TArray<FWorkerComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 			ComponentDatas.Append(ActorSubobjectDatas);
