@@ -22,44 +22,28 @@ SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName&
 void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
 	check(Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
-	if (CanEnforce(Op.entity_id))
-	{
-		MaybeQueueAclAssignmentRequest(Op.entity_id);
-	}
+	
+	MaybeQueueAclAssignmentRequest(Op.entity_id);
 }
 
 void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentAdded(const Worker_AddComponentOp& Op)
 {
-	if (!(Op.data.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID || Op.data.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Warning,
-			TEXT("Load balancer notified of add component %d for entity %lld which is not a load balancing component"),
-			Op.data.component_id, Op.entity_id);
-		return;
-	}
-
-	if (CanEnforce(Op.entity_id))
-	{
-		MaybeQueueAclAssignmentRequest(Op.entity_id);
-	}
+	// Should only be passed auth intent or ACL.
+	check(Op.data.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID || Op.data.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID);
+	
+	MaybeQueueAclAssignmentRequest(Op.entity_id);
 }
 
 void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentRemoved(const Worker_RemoveComponentOp& Op)
 {
-	if (!(Op.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID || Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Warning,
-			TEXT("Load balancer notified of remove component %d for entity %lld which is not a load balancing component"),
-			Op.component_id, Op.entity_id);
-		return;
-	}
+	// Should only be passed auth intent or ACL.
+	check(Op.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID || Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID);
 
 	if (AclAssignmentRequestIsQueued(Op.entity_id))
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Warning,
 			TEXT("Component %d for entity %lld removed. Can no longer enforce the previous request for this entity."),
 			Op.component_id, Op.entity_id);
-		return;
 	}
 }
 
@@ -69,29 +53,23 @@ void SpatialLoadBalanceEnforcer::OnEntityRemoved(const Worker_RemoveEntityOp& Op
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Warning,
 			TEXT("Entity %lld removed. Can no longer enforce the previous request for this entity."), Op.entity_id);
-		return;
 	}
 }
 
 void SpatialLoadBalanceEnforcer::OnAclAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	if (AuthOp.component_id != SpatialConstants::ENTITY_ACL_COMPONENT_ID)
-	{
-		UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Loadbalancer informed of authority change for entity %lld that was not related to the ACL component."), AuthOp.entity_id);
-		return;
-	}
+	// This class should only be informed of ACL authority changes.
+	check(AuthOp.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID);
 
-	if (AclAssignmentRequestIsQueued(AuthOp.entity_id) && AuthOp.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+	if (AclAssignmentRequestIsQueued(AuthOp.entity_id) && AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Warning,
 			TEXT("ACL authority lost for entity %lld. Can no longer enforce the previous request for this entity."),
 			AuthOp.entity_id);
 		return;
 	}
-	if (CanEnforce(AuthOp.entity_id))
-	{
-		MaybeQueueAclAssignmentRequest(AuthOp.entity_id);
-	}
+
+	MaybeQueueAclAssignmentRequest(AuthOp.entity_id);
 }
 
 // MaybeQueueAclAssignmentRequest is called from three places.
@@ -101,17 +79,16 @@ void SpatialLoadBalanceEnforcer::OnAclAuthorityChanged(const Worker_AuthorityCha
 //    (this worker just became responsible, so check to make sure intent and ACL agree.)
 // 3) AuthorityIntent change - Intent is authoritative on this worker but no longer assigned to this worker - ACL is authoritative on this worker.
 //    (this worker had responsibility for both and is giving up authority.)
-// Queuing an ACL assignment request may not occur if the assignment is the same as before, or if the request is already queued.
+// Queuing an ACL assignment request may not occur if the assignment is the same as before, or if the request is already queued,
+// or if we don't meet the predicate required to enforce the assignment.
 void SpatialLoadBalanceEnforcer::MaybeQueueAclAssignmentRequest(const Worker_EntityId EntityId)
 {
-	const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
-	if (AuthorityIntentComponent == nullptr)
+	if (!CanEnforce(EntityId))
 	{
-		// We should have checked the existence of the auth intent component before calling this function.
-		checkNoEntry();
 		return;
 	}
 
+	const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
 	const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 	if (OwningWorkerId != nullptr &&
 		*OwningWorkerId == WorkerId &&
