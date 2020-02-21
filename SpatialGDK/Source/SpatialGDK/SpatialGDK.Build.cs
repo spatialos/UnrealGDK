@@ -23,9 +23,10 @@ public class SpatialGDK : ModuleRules
         PublicIncludePaths.Add(WorkerSDKPath); // Worker SDK uses a different include format <improbable/x.h>
         PrivateIncludePaths.Add(WorkerSDKPath);
 
-        PublicDependencyModuleNames.AddRange(
+		PublicDependencyModuleNames.AddRange(
             new string[]
             {
+                "SpatialView",
                 "Core",
                 "CoreUObject",
                 "Engine",
