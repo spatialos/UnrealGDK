@@ -389,7 +389,7 @@ FWorkerComponentData ComponentFactory::CreateHandoverComponentData(Worker_Compon
 	return ComponentData;
 }
 
-TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState, uint32& NumBytesWriten)
+TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState, uint32& OutNumBytesWriten)
 {
 	TArray<FWorkerComponentUpdate> ComponentUpdates;
 
@@ -402,7 +402,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			if (BytesWriten > 0)
 			{
 				ComponentUpdates.Add(MultiClientUpdate);
-				NumBytesWriten += BytesWriten;
+				OutNumBytesWriten += BytesWriten;
 			}
 		}
 
@@ -413,7 +413,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			if (BytesWriten > 0)
 			{
 				ComponentUpdates.Add(SingleClientUpdate);
-				NumBytesWriten += BytesWriten;
+				OutNumBytesWriten += BytesWriten;
 			}
 		}
 	}
@@ -427,7 +427,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			if (BytesWriten > 0)
 			{
 				ComponentUpdates.Add(HandoverUpdate);
-				NumBytesWriten += BytesWriten;
+				OutNumBytesWriten += BytesWriten;
 			}
 		}
 	}
@@ -442,7 +442,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	return ComponentUpdates;
 }
 
-FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, uint32& NumBytesWriten)
+FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, uint32& OutNumBytesWriten)
 {
 	FWorkerComponentUpdate ComponentUpdate = {};
 
@@ -452,9 +452,7 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	uint32 BytesWriten = 0;
-	BytesWriten = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
-	NumBytesWriten += BytesWriten;
+	OutNumBytesWriten += FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
@@ -469,7 +467,7 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	return ComponentUpdate;
 }
 
-FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, uint32& NumBytesWriten)
+FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, uint32& OutNumBytesWriten)
 {
 	FWorkerComponentUpdate ComponentUpdate = {};
 
@@ -479,9 +477,7 @@ FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	uint32 BytesWriten = 0;
-	BytesWriten = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
-	NumBytesWriten += BytesWriten;
+	OutNumBytesWriten += FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{

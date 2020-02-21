@@ -477,7 +477,6 @@ int64 USpatialActorChannel::ReplicateActor()
 	//////////////////////////////////////////////////////////////////////////
 
 	// Create an outgoing bunch (to satisfy some of the functions below).
-	// This is also a check to see if the channel is saturated.
 	FOutBunch Bunch(this, 0);
 	if (Bunch.IsError())
 	{

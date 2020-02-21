@@ -66,6 +66,4 @@ public:
 	// Player lifecycle
 	Worker_EntityId PlayerControllerEntity;
 	FTimerHandle HeartbeatTimer;
-
-private:
 };
