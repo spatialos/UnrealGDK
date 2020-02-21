@@ -19,19 +19,30 @@ public:
 	struct AclWriteAuthorityRequest
 	{
 		Worker_EntityId EntityId = 0;
-		FString OwningWorkerId;
+		PhysicalWorkerName OwningWorkerId;
+		WorkerRequirementSet ReadAcl;
+		WorkerRequirementSet ClientRequirementSet;
+		TArray<Worker_ComponentId> ComponentIds;
 	};
 
 	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView, const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
 
-	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
-	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
 
 	void OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op);
+	void OnLoadBalancingComponentAdded(const Worker_AddComponentOp& Op);
+	void OnLoadBalancingComponentRemoved(const Worker_RemoveComponentOp& Op);
+	void OnEntityRemoved(const Worker_RemoveEntityOp& Op);
+	void OnAclAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
+
+	void MaybeQueueAclAssignmentRequest(const Worker_EntityId EntityId);
 
 	TArray<AclWriteAuthorityRequest> ProcessQueuedAclAssignmentRequests();
 
 private:
+
+	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
+	bool AclAssignmentRequestIsQueued(const Worker_EntityId EntityId);
+	bool CanEnforce(Worker_EntityId EntityId);
 
 	const PhysicalWorkerName WorkerId;
 	TWeakObjectPtr<const USpatialStaticComponentView> StaticComponentView;

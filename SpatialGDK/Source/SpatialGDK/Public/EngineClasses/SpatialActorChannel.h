@@ -155,39 +155,27 @@ public:
 		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
 	}
 
-	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
-	FORCEINLINE bool IsAuthoritativeClient() const
+	inline void OnClientAuthorityChange(Worker_AuthorityChangeOp Op)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
-		{
-			return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
-		}
-
-		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
-
-		if (const SpatialGDK::EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId))
-		{
-			if (const WorkerRequirementSet* WorkerRequirementsSet = EntityACL->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())))
-			{
-				for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
-				{
-					for (const FString& Attribute : AttributeSet)
-					{
-						if (WorkerAttributes.Contains(Attribute))
-						{
-							return true;
-						}
-					}
-				}
-			}
-		}
-
-		return false;
+		check(Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
+		bIsAuthClient = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? true : false;
 	}
 
-	FORCEINLINE bool IsAuthoritativeServer() const
+	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
+	inline bool IsAuthoritativeClient() const
 	{
-		return NetDriver->IsServer() && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID);
+		return bIsAuthClient;
+	}
+
+	inline void OnServerAuthorityChange(Worker_AuthorityChangeOp Op)
+	{
+		check(Op.component_id == SpatialConstants::POSITION_COMPONENT_ID);
+		bIsAuthServer = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? true : false;
+	}
+
+	inline bool IsAuthoritativeServer() const
+	{
+		return bIsAuthServer;
 	}
 
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
@@ -290,6 +278,9 @@ public:
 private:
 	Worker_EntityId EntityId;
 	bool bInterestDirty;
+
+	bool bIsAuthServer;
+	bool bIsAuthClient;
 
 	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;
