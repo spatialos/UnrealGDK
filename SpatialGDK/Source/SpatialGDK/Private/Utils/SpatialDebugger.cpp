@@ -16,6 +16,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "GenericPlatform/GenericPlatformMath.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
@@ -324,6 +325,8 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 
 	const SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
 
+	static const float BaseHorizontalOffset(16.0f);
+
 	if (bShowLock)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
@@ -332,7 +335,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 
 		Canvas->SetDrawColor(FColor::White);
 		Canvas->DrawIcon(Icons[LockIcon], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
-		HorizontalOffset += 16.0f;
+		HorizontalOffset += BaseHorizontalOffset;
 	}
 
 	if (bShowAuth)
@@ -341,10 +344,13 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		const FColor& ServerWorkerColor = DebuggingInfo->AuthoritativeColor;
 		Canvas->SetDrawColor(FColor::White);
 		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
-		HorizontalOffset += 16.0f;
+		HorizontalOffset += BaseHorizontalOffset;
 		Canvas->SetDrawColor(ServerWorkerColor);
-		Canvas->DrawIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
-		HorizontalOffset += 16.0f;
+		const float BoxScaleBasedOnNumberSize = 0.75f * GetNumberOfDigitsIn(DebuggingInfo->AuthoritativeVirtualWorkerId);
+		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, FVector(BoxScaleBasedOnNumberSize, 1.f, 1.f));
+		Canvas->SetDrawColor(GetTextColorForBackgroundColor(ServerWorkerColor));
+		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->AuthoritativeVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1, ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
+		HorizontalOffset += (BaseHorizontalOffset * BoxScaleBasedOnNumberSize);
 	}
 
 	if (bShowAuthIntent)
@@ -355,8 +361,11 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
 		HorizontalOffset += 16.0f;
 		Canvas->SetDrawColor(VirtualWorkerColor);
-		Canvas->DrawIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
-		HorizontalOffset += 16.0f;
+		const float BoxScaleBasedOnNumberSize = 0.75f * GetNumberOfDigitsIn(DebuggingInfo->IntentVirtualWorkerId);
+		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, FVector(BoxScaleBasedOnNumberSize, 1.f, 1.f));
+		Canvas->SetDrawColor(GetTextColorForBackgroundColor(VirtualWorkerColor));
+		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->IntentVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1, ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
+		HorizontalOffset += (BaseHorizontalOffset * BoxScaleBasedOnNumberSize);
 	}
 
 	FString Label;
@@ -378,6 +387,18 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		Canvas->SetDrawColor(FColor::Green);
 		Canvas->DrawText(RenderFont, Label, ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f, 1.0f, FontRenderInfo);
 	}
+}
+
+FColor ASpatialDebugger::GetTextColorForBackgroundColor(const FColor& BackgroundColor) const
+{
+	return BackgroundColor.ReinterpretAsLinear().ComputeLuminance() > 0.5 ? FColor::Black : FColor::White;
+}
+
+// This will break once we have more than 10,000 workers, happily kicking that can down the road.
+int32 ASpatialDebugger::GetNumberOfDigitsIn(int32 SomeNumber) const
+{
+	SomeNumber = FMath::Abs(SomeNumber);
+	return (SomeNumber < 10 ? 1 : (SomeNumber < 100 ? 2 : (SomeNumber < 1000 ? 3 : 4)));
 }
 
 void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controller */) // Controller is invalid.
