@@ -588,7 +588,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
 	}
 
-	uint32 NumBitsWriten = 0;
+	uint32 NumBytesWriten = 0;
 
 	// If any properties have changed, send a component update.
 	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
@@ -611,7 +611,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
 			uint32 BytesWriten = 0;
 			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState, BytesWriten);
-			NumBitsWriten += BytesWriten;
+			NumBytesWriten += BytesWriten;
 			bInterestDirty = false;
 		}
 
@@ -677,7 +677,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			{
 				uint32 BytesWriten = 0;
 				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState, BytesWriten);
-				NumBitsWriten += BytesWriten;
+				NumBytesWriten += BytesWriten;
 			}
 		}
 
@@ -747,7 +747,15 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	bForceCompareProperties = false;		// Only do this once per frame when set
 
-	return NumBitsWriten;
+	if (NumBytesWriten > 0)
+	{
+		if (USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection))
+		{
+			SpatialConnection->AddQueuedBytes(NumBytesWriten);
+		}
+	}
+
+	return NumBytesWriten;
 }
 
 void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)

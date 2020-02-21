@@ -53,6 +53,8 @@ public:
 
 	void ClientNotifyClientHasQuit();
 
+	void AddQueuedBytes(int32 Bytes) { QueuedBits += (Bytes * 8); };
+
 	UPROPERTY()
 	bool bReliableSpatialConnection;
 
@@ -64,4 +66,6 @@ public:
 	// Player lifecycle
 	Worker_EntityId PlayerControllerEntity;
 	FTimerHandle HeartbeatTimer;
+
+private:
 };

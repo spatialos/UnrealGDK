@@ -397,7 +397,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	{
 		if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			const uint32 BytesWriten = 0;
+			uint32 BytesWriten = 0;
 			FWorkerComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_Data], Object, *RepChangeState, SCHEMA_Data, BytesWriten);
 			if (BytesWriten > 0)
 			{
@@ -408,7 +408,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 
 		if (Info.SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			const uint32 BytesWriten = 0;
+			uint32 BytesWriten = 0;
 			FWorkerComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, *RepChangeState, SCHEMA_OwnerOnly, BytesWriten);
 			if (BytesWriten > 0)
 			{
@@ -422,7 +422,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	{
 		if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			const uint32 BytesWriten = 0;
+			uint32 BytesWriten = 0;
 			FWorkerComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info.SchemaComponents[SCHEMA_Handover], Object, Info, *HandoverChangeState, BytesWriten);
 			if (BytesWriten > 0)
 			{
@@ -452,7 +452,7 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	const uint32 BytesWriten = 0;
+	uint32 BytesWriten = 0;
 	BytesWriten = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
 	NumBytesWriten += BytesWriten;
 
@@ -479,7 +479,7 @@ FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	const uint32 BytesWriten = 0;
+	uint32 BytesWriten = 0;
 	BytesWriten = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
 	NumBytesWriten += BytesWriten;
 
