@@ -655,7 +655,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
 		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
 		// the same SpatialActorChannel::ReplicateSubobject.
-		bool bWroteSomething = Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
+		Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 
 		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 		{
