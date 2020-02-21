@@ -6,9 +6,10 @@ rem ****
 
 set NO_PAUSE=1
 set NO_SET_LOCAL=1
-call Setup.bat %*
 
 pushd "%~dp0"
+
+call Setup.bat %*
 
 call :MarkStartOfBlock "%~0"
 
