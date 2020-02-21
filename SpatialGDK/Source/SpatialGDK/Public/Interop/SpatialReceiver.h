@@ -178,7 +178,7 @@ private:
 		USpatialReceiver& Receiver;
 
 		bool bInCriticalSection;
-		TArray<Worker_EntityId> PendingAddEntities;
+		TArray<Worker_EntityId> PendingAddActors;
 		TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 		TArray<PendingAddComponentWrapper> PendingAddComponents;
 	};
@@ -194,6 +194,7 @@ public:
 	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
 
 private:
+
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
@@ -228,7 +229,7 @@ private:
 	FRPCContainer IncomingRPCs;
 
 	bool bInCriticalSection;
-	TArray<Worker_EntityId> PendingAddEntities;
+	TArray<Worker_EntityId> PendingAddActors;
 	TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_RemoveComponentOp> QueuedRemoveComponentOps;

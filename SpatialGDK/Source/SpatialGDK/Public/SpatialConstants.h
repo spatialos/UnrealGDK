@@ -312,8 +312,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 	GSM_SHUTDOWN_COMPONENT_ID,
 
 	// Unreal load balancing components
-	VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
-	AUTHORITY_INTENT_COMPONENT_ID
+	VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID
 };
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest query.

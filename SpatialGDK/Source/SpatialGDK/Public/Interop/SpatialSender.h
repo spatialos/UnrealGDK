@@ -75,7 +75,7 @@ public:
 	void SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
-	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& DestinationWorkerId);
+	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& DestinationWorkerId, const WorkerRequirementSet& ReadAcl, const WorkerRequirementSet& ClientRequirementSet, const TArray<Worker_ComponentId>& ComponentIds);
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	ERPCResult SendRPCInternal(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload);
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response);
