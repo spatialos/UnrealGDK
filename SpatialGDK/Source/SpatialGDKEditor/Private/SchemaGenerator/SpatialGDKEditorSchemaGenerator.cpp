@@ -528,30 +528,8 @@ void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& Co
 	
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	if (!PlatformFile.DirectoryExists(*GDKSchemaCopyDir))
-	{
-		if (!PlatformFile.CreateDirectoryTree(*GDKSchemaCopyDir))
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create gdk schema directory '%s'! Please make sure the parent directory is writeable."), *GDKSchemaCopyDir);
-		}
-	}
-
-	// Delete the existing schema files. This ensures there are no conflicts between schema files.
-	TArray<FString> FoundFiles;
-	PlatformFile.FindFiles(FoundFiles, *GDKSchemaCopyDir, TEXT("schema"));
-
-	for (const FString& File : FoundFiles)
-	{
-		PlatformFile.DeleteFile(*File);
-	}
-
-	if (!PlatformFile.DirectoryExists(*CoreSDKSchemaCopyDir))
-	{
-		if (!PlatformFile.CreateDirectoryTree(*CoreSDKSchemaCopyDir))
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create standard library schema directory '%s'! Please make sure the parent directory is writeable."), *GDKSchemaCopyDir);
-		}
-	}
+	DeleteGeneratedSchemaFiles(*GDKSchemaCopyDir);
+	DeleteGeneratedSchemaFiles(*CoreSDKSchemaCopyDir);
 
 	if (!PlatformFile.CopyDirectoryTree(*GDKSchemaCopyDir, *GDKSchemaDir, true /*bOverwriteExisting*/))
 	{
