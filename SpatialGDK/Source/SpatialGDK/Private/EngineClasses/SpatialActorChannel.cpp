@@ -22,6 +22,7 @@
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
+#include "Schema/SpatialDebugging.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -696,25 +697,37 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 	}
 
+	// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
+	// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
 	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
-		// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
-		// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
-		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) &&
-		!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) &&
-		!NetDriver->LockingPolicy->IsLocked(Actor))
+		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
-		const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
-		if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-		{
-			Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
+		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
+		{		
+			const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
+			if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+			{
+				Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
 
-			// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy 
-			Actor->Role = ROLE_SimulatedProxy;
-			Actor->RemoteRole = ROLE_Authority;
+				// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy 
+				Actor->Role = ROLE_SimulatedProxy;
+				Actor->RemoteRole = ROLE_Authority;
+			}
+			else
+			{
+				UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
+			}
 		}
-		else
+
+		if (SpatialGDK::SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
 		{
-			UE_LOG(LogSpatialActorChannel, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
+			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
+			if (DebuggingInfo->IsLocked != bIsLocked)
+			{
+				DebuggingInfo->IsLocked = bIsLocked;
+				FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+				NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
+			}
 		}
 	}
 #if USE_NETWORK_PROFILER 
