@@ -587,8 +587,6 @@ void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclW
 			continue;
 		}
 
-		WorkerRequirementSet RequirementSet;
-
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
 			NewAcl.ComponentWriteAcl.Add(ComponentId, { SpatialConstants::LoadBalancerAttributeSet });

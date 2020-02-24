@@ -248,7 +248,6 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 		LoadBalanceEnforcer->OnEntityRemoved(Op);
 	}
 
-	RemoveActor(Op.entity_id);
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
 }
 
