@@ -50,6 +50,12 @@
       "Type": "Editor",
       "LoadingPhase": "PreLoadingScreen",
       "WhitelistPlatforms": [ "Win64" ]
+    },
+    {
+      "Name": "SpatialView",
+      "Type": "Runtime",
+      "LoadingPhase": "PreDefault",
+      "WhitelistPlatforms": [ "Win64", "Linux", "Mac", "XboxOne", "PS4", "IOS", "Android" ]
     }
   ],
   "Plugins": [
