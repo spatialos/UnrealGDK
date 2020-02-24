@@ -337,6 +337,8 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 {
 	TArray<FWorkerComponentData> ComponentDatas;
 
+	OutBytesWritten = 0
+
 	if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		uint32 BytesWritten = 0;
@@ -389,7 +391,7 @@ FWorkerComponentData ComponentFactory::CreateHandoverComponentData(Worker_Compon
 	FWorkerComponentData ComponentData = CreateEmptyComponentData(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	OutBytesWritten += FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, true, GetTraceKeyFromComponentObject(ComponentData));
+	OutBytesWritten = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, true, GetTraceKeyFromComponentObject(ComponentData));
 
 	return ComponentData;
 }
@@ -397,6 +399,8 @@ FWorkerComponentData ComponentFactory::CreateHandoverComponentData(Worker_Compon
 TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState, uint32& OutBytesWritten)
 {
 	TArray<FWorkerComponentUpdate> ComponentUpdates;
+
+	OutBytesWritten = 0
 
 	if (RepChangeState)
 	{
@@ -457,8 +461,7 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	uint32 BytesWritten = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
-	OutBytesWritten += BytesWritten;
+	OutBytesWritten = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
@@ -483,8 +486,7 @@ FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	uint32 BytesWritten = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
-	OutBytesWritten += BytesWritten;
+	OutBytesWritten = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
