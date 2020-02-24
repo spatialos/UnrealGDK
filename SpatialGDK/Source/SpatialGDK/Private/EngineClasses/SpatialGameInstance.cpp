@@ -104,7 +104,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 }
 #endif
 
-void USpatialGameInstance::StartGameInstance()
+void USpatialGameInstance::TryConnectToSpatial()
 {
 	if (HasSpatialNetDriver())
 	{
@@ -130,6 +130,11 @@ void USpatialGameInstance::StartGameInstance()
 			}
 		}
 	}
+}
+
+void USpatialGameInstance::StartGameInstance()
+{
+	TryConnectToSpatial();
 
 	Super::StartGameInstance();
 }
@@ -213,38 +218,57 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 		return;
 	}
 
-	if (!USpatialStatics::IsSpatialOffloadingEnabled())
+	if (USpatialStatics::IsSpatialOffloadingEnabled())
 	{
-		return;
-	}
-
-	if (OwningWorld->WorldType != EWorldType::PIE
-		&& OwningWorld->WorldType != EWorldType::Game
-		&& OwningWorld->WorldType != EWorldType::GamePreview)
-	{
-		return;
-	}
-
-	for (int32 ActorIndex = 0; ActorIndex < LoadedLevel->Actors.Num(); ActorIndex++)
-	{
-		AActor* Actor = LoadedLevel->Actors[ActorIndex];
-		if (Actor == nullptr)
+		if (OwningWorld->WorldType != EWorldType::PIE
+			&& OwningWorld->WorldType != EWorldType::Game
+			&& OwningWorld->WorldType != EWorldType::GamePreview)
 		{
-			continue;
+			return;
 		}
 
-		if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
+		for (int32 ActorIndex = 0; ActorIndex < LoadedLevel->Actors.Num(); ActorIndex++)
 		{
-			if (!Actor->bNetLoadOnNonAuthServer)
+			AActor* Actor = LoadedLevel->Actors[ActorIndex];
+			if (Actor == nullptr)
 			{
-				Actor->Destroy();
+				continue;
 			}
-			else
+
+			if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
 			{
-				UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s Not actor group owner of startup actor %s, Exchanging Roles"), *WorkerType, *GetPathNameSafe(Actor));
-				ENetRole Temp = Actor->Role;
-				Actor->Role = Actor->RemoteRole;
-				Actor->RemoteRole = Temp;
+				if (!Actor->bNetLoadOnNonAuthServer)
+				{
+					Actor->Destroy();
+				}
+				else
+				{
+					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s Not actor group owner of startup actor %s, Exchanging Roles"), *WorkerType, *GetPathNameSafe(Actor));
+					ENetRole Temp = Actor->Role;
+					Actor->Role = Actor->RemoteRole;
+					Actor->RemoteRole = Temp;
+				}
+			}
+		}
+	}
+	else if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	{
+		// Necessary for levels loaded before connecting to Spatial
+		if (GlobalStateManager == nullptr)
+		{
+			return;
+		}
+
+		// If load balancing is enabled and lb strategy says we should have authority over a
+		// loaded level Actor then also set Role_Authority on Actors in the sublevel.
+		const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+
+		for (auto Actor : LoadedLevel->Actors)
+		{
+			if (Actor->GetIsReplicated() && !LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
+			{
+				Actor->Role = ROLE_SimulatedProxy;
+				Actor->RemoteRole = ROLE_Authority;
 			}
 		}
 	}

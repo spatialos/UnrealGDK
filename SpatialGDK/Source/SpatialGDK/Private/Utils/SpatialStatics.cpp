@@ -10,6 +10,7 @@
 #include "SpatialConstants.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/InspectionColors.h"
 #include "Utils/SpatialActorGroupManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
@@ -69,6 +70,11 @@ TArray<FDistanceFrequencyPair> USpatialStatics::GetNCDDistanceRatios()
 float USpatialStatics::GetFullFrequencyNetCullDistanceRatio()
 {
 	return GetDefault<USpatialGDKSettings>()->FullFrequencyNetCullDistanceRatio;
+}
+
+FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName)
+{
+	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
 bool USpatialStatics::IsSpatialOffloadingEnabled()

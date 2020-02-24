@@ -300,7 +300,7 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSpatialPayload(const FSpatialLatenc
 
 	if (Payload.SpanId.Num() != sizeof(improbable::trace::SpanId))
 	{
-		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("Payload TraceId does not contain the correct number of span bytes. %d found"), Payload.SpanId.Num());
+		UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("Payload SpanId does not contain the correct number of span bytes. %d found"), Payload.SpanId.Num());
 		return InvalidTraceKey;
 	}
 
@@ -403,10 +403,15 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc,
 		OutLatencyPayload = FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes));
 	}
 
+	// Add to internal tracking
+	TraceKey Key = GenerateNewTraceKey();
+	TraceMap.Add(Key, MoveTemp(NewTrace));
+	PayloadToTraceKeys.Add(MakeTuple(OutLatencyPayload, Key));
+
 	return true;
 }
 
-bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue)
+bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType::Type Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue)
 {
 	// TODO: UNR-2787 - Improve mutex-related latency
 	// This functions might spike because of the Mutex below
@@ -433,7 +438,7 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 	}
 
 	WriteKeyFrameToTrace(ActiveTrace, TCHAR_TO_UTF8(*TraceDesc));
-	WriteKeyFrameToTrace(ActiveTrace, FString::Printf(TEXT("Continue trace : %s"), *Target));
+	WriteKeyFrameToTrace(ActiveTrace, FString::Printf(TEXT("Continue trace %s : %s"), *UEnum::GetValueAsString(Type), *Target));
 
 	// For non-spatial tracing
 	const improbable::trace::SpanContext& TraceContext = ActiveTrace->context();
@@ -449,10 +454,17 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 	TraceMap.Add(Key, MoveTemp(TempSpan));
 	TraceMap.Remove(ActiveTraceKey);
 	ActiveTraceKey = InvalidTraceKey;
+	PayloadToTraceKeys.Remove(LatencyPayload);
+	PayloadToTraceKeys.Add(MakeTuple(OutLatencyPayloadContinue, Key)); // Add continued payload to tracking map. 
 
 	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
 		// We can't do any deeper tracing in the stack here so terminate these traces here
+		if (Type == ETraceType::RPC || Type == ETraceType::Property)
+		{
+			EndLatencyTrace(Key, TEXT("End of native tracing"));
+		}
+
 		ClearTrackingInformation();
 	}
 
@@ -474,6 +486,7 @@ bool USpatialLatencyTracer::EndLatencyTrace_Internal(const FSpatialLatencyPayloa
 	WriteKeyFrameToTrace(ActiveTrace, TEXT("End Trace"));
 	ActiveTrace->End();
 
+	PayloadToTraceKeys.Remove(LatencyPayload);
 	TraceMap.Remove(ActiveTraceKey);
 	ActiveTraceKey = InvalidTraceKey;
 
@@ -497,9 +510,10 @@ void USpatialLatencyTracer::ClearTrackingInformation()
 	TrackingRPCs.Reset();
 	TrackingProperties.Reset();
 	TrackingTags.Reset();
+	PayloadToTraceKeys.Reset();
 }
 
-TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& Target, ETraceType Type)
+TraceKey USpatialLatencyTracer::CreateNewTraceEntry(const AActor* Actor, const FString& Target, ETraceType::Type Type)
 {
 	if (Actor == nullptr)
 	{
@@ -566,6 +580,18 @@ USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTrace()
 
 USpatialLatencyTracer::TraceSpan* USpatialLatencyTracer::GetActiveTraceOrReadPayload(const FSpatialLatencyPayload& Payload)
 {
+	if (TraceKey* ExistingKey = PayloadToTraceKeys.Find(Payload)) // This occurs if the root was created on this machine 
+	{
+		if (USpatialLatencyTracer::TraceSpan* Span = TraceMap.Find(*ExistingKey))
+		{
+			return Span;
+		}
+		else
+		{
+			UE_LOG(LogSpatialLatencyTracing, Warning, TEXT("(%s) : Could not find existing payload in TraceMap despite being tracked in the payload map."), *WorkerId);
+		}
+	}
+
 	USpatialLatencyTracer::TraceSpan* ActiveTrace = GetActiveTrace();
 	if (ActiveTrace == nullptr)
 	{

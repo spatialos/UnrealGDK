@@ -128,7 +128,7 @@ public:
 	 * This should only be used in single server configurations. The state of the world in the inspector will no longer be up to date.
 	 */
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Only Replicate Net Relevant Actors"))
-	bool UseIsActorRelevantForConnection;
+	bool bUseIsActorRelevantForConnection;
 
 	/**
 	* Specifies the rate, in number of times per second, at which server-worker instance updates are sent to and received from the SpatialOS Runtime.
@@ -308,6 +308,14 @@ public:
 	/** QBI pairs for ratio of - net cull distance : update frequency */
 	UPROPERTY(EditAnywhere, Config, Category = "Interest", meta = (EditCondition = "bEnableNetCullDistanceFrequency"))
 	TArray<FDistanceFrequencyPair> InterestRangeFrequencyPairs;
+
+	/** Use TLS encryption for UnrealClient workers connection. May impact performance. */
+	UPROPERTY(EditAnywhere, Config, Category = "Connection")
+	bool bUseSecureClientConnection;
+
+	/** Use TLS encryption for UnrealWorker (server) workers connection. May impact performance. */
+	UPROPERTY(EditAnywhere, Config, Category = "Connection")
+	bool bUseSecureServerConnection;
 
 public:
 	// UI Hidden settings passed through from SpatialGDKEditorSettings

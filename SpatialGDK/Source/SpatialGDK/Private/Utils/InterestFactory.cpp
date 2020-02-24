@@ -203,6 +203,11 @@ TArray<Worker_ComponentId> InterestFactory::CreateClientNonAuthInterestResultTyp
 	// Add all data components- clients don't need to see handover or owner only components on other entities.
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
 
+	// In direct disagreement with the above comment, we add the owner only components as well.
+	// This is because GDK workers currently make assumptions about information being available at the point of possession.
+	// TODO(jacques): fix (unr-2865)
+	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
+
 	return ResultType;
 }
 
@@ -210,10 +215,12 @@ TArray<Worker_ComponentId> InterestFactory::CreateClientAuthInterestResultType(U
 {
 	TArray<Worker_ComponentId> ResultType;
 
-	// Add the required unreal components
+	// Add the required known components
 	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST);
+	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
 
-	// Add all owner only components
+	// Add all the generated unreal components
+	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
 
 	return ResultType;
@@ -226,8 +233,9 @@ TArray<Worker_ComponentId> InterestFactory::CreateServerNonAuthInterestResultTyp
 	// Add the required unreal components
 	ResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST);
 
-	// Add all data and handover components
+	// Add all data, owner only, and handover components
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
+	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
 	ResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Handover));
 
 	return ResultType;
@@ -310,6 +318,7 @@ Interest InterestFactory::CreateInterest() const
 	if (Settings->bEnableServerQBI)
 	{
 		// If we have server QBI, every actor needs a query for the server
+		// TODO(jacques): Use worker interest instead (UNR-2656)
 		AddActorInterest(ResultInterest);
 	}
 
@@ -333,9 +342,14 @@ void InterestFactory::AddActorInterest(Interest& OutInterest) const
 
 	Query NewQuery;
 	NewQuery.Constraint = SystemConstraints;
-	// TODO: Make result type handle components certain workers shouldn't see
-	// e.g. Handover, OwnerOnly, etc.
-	NewQuery.FullSnapshotResult = true;
+	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
+	{
+		NewQuery.ResultComponentId = ServerNonAuthInterestResultType;
+	}
+	else
+	{
+		NewQuery.FullSnapshotResult = true;
+	}
 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, NewQuery);
 }
@@ -425,12 +439,17 @@ void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 
 void InterestFactory::AddServerSelfInterest(Interest& OutInterest) const
 {
-	Query NewQuery;
-	NewQuery.Constraint.EntityIdConstraint = EntityId;
+	// Add a query for components all servers need to read client data
+	Query ClientQuery;
+	ClientQuery.Constraint.EntityIdConstraint = EntityId;
+	ClientQuery.ResultComponentId = ServerAuthInterestResultType;
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ClientQuery);
 
-	NewQuery.ResultComponentId = ServerAuthInterestResultType;
-
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, NewQuery);
+	// Add a query for the load balancing worker (whoever is delegated the ACL) to read the authority intent
+	Query LoadBalanceQuery;
+	LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
+	LoadBalanceQuery.ResultComponentId = TArray<Worker_ComponentId>{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID };
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 }
 
 void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd)
@@ -574,6 +593,8 @@ QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint()
 	Worker_ComponentId ComponentIds[] = {
 		SpatialConstants::SINGLETON_COMPONENT_ID,
 		SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID,
+		SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
+		SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
 		SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID
 	};
 

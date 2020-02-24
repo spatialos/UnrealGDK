@@ -346,12 +346,6 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 		Writer.Printf("uint32 initially_present_multicast_rpc_count = {0};", FieldId++);
 	}
 
-	if (ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID)
-	{
-		// CrossServer RPC uses commands, only exists on ServerRPCEndpoint
-		Writer.Print("command Void server_to_server_rpc_command(UnrealRPCPayload);");
-	}
-
 	Writer.Outdent().Print("}");
 }
 

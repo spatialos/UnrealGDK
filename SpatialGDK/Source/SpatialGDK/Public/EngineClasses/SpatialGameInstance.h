@@ -27,6 +27,9 @@ public:
 #if WITH_EDITOR
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
+	// Initializes the Spatial connection if Spatial networking is enabled, otherwise does nothing.
+	void TryConnectToSpatial();
+
 	virtual void StartGameInstance() override;
 
 	//~ Begin UObject Interface

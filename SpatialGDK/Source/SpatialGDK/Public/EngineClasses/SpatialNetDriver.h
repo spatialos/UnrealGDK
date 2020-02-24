@@ -75,9 +75,9 @@ public:
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
 	virtual void Shutdown() override;
 	virtual void NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection) override;
+	virtual void OnOwnerUpdated(AActor* Actor, AActor* OldOwner) override;
 	// End UNetDriver interface.
 
-	virtual void OnOwnerUpdated(AActor* Actor);
 
 	void OnConnectionToSpatialOSSucceeded();
 	void OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
@@ -156,8 +156,6 @@ public:
 	SpatialActorGroupManager* ActorGroupManager;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
-
-	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
 	// If this worker is authoritative over the translation, the manager will be instantiated.
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;

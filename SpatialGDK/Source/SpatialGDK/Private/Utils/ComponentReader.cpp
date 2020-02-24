@@ -16,6 +16,12 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialComponentReader);
 
+DECLARE_CYCLE_STAT(TEXT("Reader ApplyPropertyUpdates"), STAT_ReaderApplyPropertyUpdates, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Reader ApplyHandoverPropertyUpdates"), STAT_ReaderApplyHandoverPropertyUpdates, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Reader ApplyFastArrayUpdate"), STAT_ReaderApplyFastArrayUpdate, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Reader ApplyProperty"), STAT_ReaderApplyProperty, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Reader ApplyArray"), STAT_ReaderApplyArray, STATGROUP_SpatialNet);
+
 namespace
 {
 	bool FORCEINLINE ObjectRefSetsAreSame(const TSet< FUnrealObjectRef >& A, const TSet< FUnrealObjectRef >& B)
@@ -166,112 +172,136 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 	TArray<UProperty*> RepNotifies;
 
-	for (uint32 FieldId : UpdatedIds)
 	{
-		// FieldId is the same as rep handle
-		if (FieldId == 0 || (int)FieldId - 1 >= BaseHandleToCmdIndex.Num())
+		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
+		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
+
+		for (uint32 FieldId : UpdatedIds)
 		{
-			UE_LOG(LogSpatialComponentReader, Error, TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: %lld, Component: %d"), *Object.GetPathName(), FieldId, Channel.GetEntityId(), ComponentId);
-			continue;
-		}
-
-		int32 CmdIndex = BaseHandleToCmdIndex[FieldId - 1].CmdIndex;
-		const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
-		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
-		int32 ShadowOffset = Cmd.ShadowOffset;
-
-		if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
-		{
-			// This swaps Role/RemoteRole as we write it
-			const FRepLayoutCmd& SwappedCmd = (!bIsAuthServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
-
-			uint8* Data = (uint8*)&Object + SwappedCmd.Offset;
-
-			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
+			// FieldId is the same as rep handle
+			if (FieldId == 0 || (int)FieldId - 1 >= BaseHandleToCmdIndex.Num())
 			{
-				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
-				if (ArrayProperty == nullptr)
-				{
-					UE_LOG(LogSpatialComponentReader, Error, TEXT("Failed to apply Schema Object %s. One of it's properties is null"), *Object.GetName());
-					continue;
-				}
-
-				// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
-				if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
-				{
-					TArray<uint8> ValueData = GetBytesFromSchema(ComponentObject, FieldId);
-					int64 CountBits = ValueData.Num() * 8;
-					TSet<FUnrealObjectRef> NewMappedRefs;
-					TSet<FUnrealObjectRef> NewUnresolvedRefs;
-					FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewMappedRefs, NewUnresolvedRefs);
-
-					if (ValueData.Num() > 0)
-					{
-						FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, &Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct);
-					}
-
-					FObjectReferences* CurEntry = RootObjectReferencesMap.Find(SwappedCmd.Offset);
-					const bool bHasReferences = NewUnresolvedRefs.Num() > 0 || NewMappedRefs.Num() > 0;
-
-					if (ReferencesChanged(RootObjectReferencesMap, SwappedCmd.Offset, bHasReferences, NewMappedRefs, NewUnresolvedRefs))
-					{
-						if (bHasReferences)
-						{
-							RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, MoveTemp(NewMappedRefs), MoveTemp(NewUnresolvedRefs), ShadowOffset, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
-						}
-						else
-						{
-							RootObjectReferencesMap.Remove(SwappedCmd.Offset);
-						}
-						bOutReferencesChanged = true;
-					}
-				}
-				else
-				{
-					ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, ShadowOffset, Cmd.ParentIndex, bOutReferencesChanged);
-				}
-			}
-			else
-			{
-				ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data, SwappedCmd.Offset, ShadowOffset, Cmd.ParentIndex, bOutReferencesChanged);
+				UE_LOG(LogSpatialComponentReader, Error, TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: %lld, Component: %d"), *Object.GetPathName(), FieldId, Channel.GetEntityId(), ComponentId);
+				continue;
 			}
 
-			if (Cmd.Property->GetFName() == NAME_RemoteRole)
-			{
-				// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
-				// the client RPCs component.
-				UByteProperty* ByteProperty = Cast<UByteProperty>(Cmd.Property);
-				if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
-				{
-					ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
-				}
-			}
+			int32 CmdIndex = BaseHandleToCmdIndex[FieldId - 1].CmdIndex;
+			const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
+			const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
+			int32 ShadowOffset = Cmd.ShadowOffset;
 
-			// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
-			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+			if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
 			{
+				// This swaps Role/RemoteRole as we write it
+				const FRepLayoutCmd& SwappedCmd = (!bIsAuthServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
+
+				uint8* Data = (uint8*)&Object + SwappedCmd.Offset;
+
+				// If the property has RepNotifies, update with local data and possibly initialize the shadow data
+				if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+				{
 #if ENGINE_MINOR_VERSION <= 22
-				bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+					FRepStateStaticBuffer& ShadowData = RepState->StaticBuffer;
 #else
-				bool bIsIdentical = Cmd.Property->Identical(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+					FRepStateStaticBuffer& ShadowData = RepState->GetReceivingRepState()->StaticBuffer;
 #endif
-
-				// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
-				if (bIsInitialData)
-				{
-					if (!bIsIdentical)
+					if (ShadowData.Num() == 0)
 					{
-						RepNotifies.AddUnique(Parent.Property);
+						Channel.ResetShadowData(*Replicator->RepLayout.Get(), ShadowData, &Object);
+					}
+					else
+					{
+						Cmd.Property->CopySingleValue(ShadowData.GetData() + SwappedCmd.ShadowOffset, Data);
+					}
+				}
+
+				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
+				{
+					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
+					if (ArrayProperty == nullptr)
+					{
+						UE_LOG(LogSpatialComponentReader, Error, TEXT("Failed to apply Schema Object %s. One of it's properties is null"), *Object.GetName());
+						continue;
+					}
+
+					// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
+					if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
+					{
+						SCOPE_CYCLE_COUNTER(STAT_ReaderApplyFastArrayUpdate);
+
+						TArray<uint8> ValueData = GetBytesFromSchema(ComponentObject, FieldId);
+						int64 CountBits = ValueData.Num() * 8;
+						TSet<FUnrealObjectRef> NewMappedRefs;
+						TSet<FUnrealObjectRef> NewUnresolvedRefs;
+						FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewMappedRefs, NewUnresolvedRefs);
+
+						if (ValueData.Num() > 0)
+						{
+							FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, &Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct);
+						}
+
+						FObjectReferences* CurEntry = RootObjectReferencesMap.Find(SwappedCmd.Offset);
+						const bool bHasReferences = NewUnresolvedRefs.Num() > 0 || NewMappedRefs.Num() > 0;
+
+						if (ReferencesChanged(RootObjectReferencesMap, SwappedCmd.Offset, bHasReferences, NewMappedRefs, NewUnresolvedRefs))
+						{
+							if (bHasReferences)
+							{
+								RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, MoveTemp(NewMappedRefs), MoveTemp(NewUnresolvedRefs), ShadowOffset, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
+							}
+							else
+							{
+								RootObjectReferencesMap.Remove(SwappedCmd.Offset);
+							}
+							bOutReferencesChanged = true;
+						}
+					}
+					else
+					{
+						ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, ShadowOffset, Cmd.ParentIndex, bOutReferencesChanged);
 					}
 				}
 				else
 				{
-					if (Parent.RepNotifyCondition == REPNOTIFY_Always || !bIsIdentical)
+					ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data, SwappedCmd.Offset, ShadowOffset, Cmd.ParentIndex, bOutReferencesChanged);
+				}
+
+				if (Cmd.Property->GetFName() == NAME_RemoteRole)
+				{
+					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+					// the client RPCs component.
+					UByteProperty* ByteProperty = Cast<UByteProperty>(Cmd.Property);
+					if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
 					{
-						RepNotifies.AddUnique(Parent.Property);
+						ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
 					}
 				}
 
+				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
+				if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+				{
+	#if ENGINE_MINOR_VERSION <= 22
+					bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+	#else
+					bool bIsIdentical = Cmd.Property->Identical(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+	#endif
+
+					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
+					if (bIsInitialData)
+					{
+						if (!bIsIdentical)
+						{
+							RepNotifies.AddUnique(Parent.Property);
+						}
+					}
+					else
+					{
+						if (Parent.RepNotifyCondition == REPNOTIFY_Always || !bIsIdentical)
+						{
+							RepNotifies.AddUnique(Parent.Property);
+						}
+					}
+				}
 			}
 		}
 	}
@@ -283,6 +313,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData, const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId, bool& bOutReferencesChanged)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReaderApplyHandoverPropertyUpdates);
+
 	FObjectReplicator* Replicator = Channel.PreReceiveSpatialUpdate(&Object);
 	if (Replicator == nullptr)
 	{
@@ -319,6 +351,8 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 
 void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 ShadowOffset, int32 ParentIndex, bool& bOutReferencesChanged)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReaderApplyProperty);
+
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
 		TArray<uint8> ValueData = IndexBytesFromSchema(Object, FieldId, Index);
@@ -460,6 +494,8 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 
 void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, UArrayProperty* Property, uint8* Data, int32 Offset, int32 ShadowOffset, int32 ParentIndex, bool& bOutReferencesChanged)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReaderApplyArray);
+
 	FObjectReferencesMap* ArrayObjectReferences;
 	bool bNewArrayMap = false;
 	if (FObjectReferences* ExistingEntry = InObjectReferencesMap.Find(Offset))

@@ -13,9 +13,9 @@ generate_build_configuration_steps () {
     # See https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html for possible configurations 
     ENGINE_COMMIT_HASH="${1}"
 
-    # if BUILD_ALL_CONFIGURATIONS environment variable exists, then...
+    # if the BUILD_ALL_CONFIGURATIONS environment variable doesn't exist, then...
     if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
-        echo "Building for all supported configurations. Generating appropriate steps..."
+        echo "Building for subset of supported configurations. Generating the appropriate steps..."
         
         # Win64 Development Editor build configuration
         upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development"
@@ -23,7 +23,7 @@ generate_build_configuration_steps () {
         # Linux Development NoEditor build configuration
         upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
     else
-        echo "Building for specified subset of supported configurations. Generating the appropriate steps..."
+        echo "Building for all supported configurations. Generating the appropriate steps..."
         
         # Editor builds (Test and Shipping build states do not exist for the Editor build target)
         for BUILD_STATE in "DebugGame" "Development"; do
