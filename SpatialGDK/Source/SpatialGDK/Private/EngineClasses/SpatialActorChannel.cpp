@@ -587,7 +587,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
 	}
 
-	uint32 NumBytesWriten = 0;
+	ReplicationBytesWriten = 0;
 
 	// If any properties have changed, send a component update.
 	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
@@ -598,7 +598,10 @@ int64 USpatialActorChannel::ReplicateActor()
 			// so we know what subobjects are relevant for replication when creating the entity.
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
-			Sender->SendCreateEntityRequest(this);
+			uint32 BytesWriten = 0;
+			Sender->SendCreateEntityRequest(this, BytesWriten);
+			ReplicationBytesWriten += BytesWriten;
+
 			bCreatedEntity = true;
 
 			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
@@ -608,9 +611,11 @@ int64 USpatialActorChannel::ReplicateActor()
 		else
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
+
 			uint32 BytesWriten = 0;
 			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState, BytesWriten);
-			NumBytesWriten += BytesWriten;
+			ReplicationBytesWriten += BytesWriten;
+
 			bInterestDirty = false;
 		}
 
@@ -676,7 +681,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			{
 				uint32 BytesWriten = 0;
 				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState, BytesWriten);
-				NumBytesWriten += BytesWriten;
+				ReplicationBytesWriten += BytesWriten;
 			}
 		}
 
@@ -746,15 +751,15 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	bForceCompareProperties = false;		// Only do this once per frame when set
 
-	if (NumBytesWriten > 0)
+	if (ReplicationBytesWriten > 0)
 	{
 		if (USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection))
 		{
-			SpatialConnection->AddQueuedBytes(NumBytesWriten);
+			SpatialConnection->AddQueuedBytes(ReplicationBytesWriten);
 		}
 	}
 
-	return NumBytesWriten;
+	return ReplicationBytesWriten;
 }
 
 void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
@@ -785,7 +790,9 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	// Check to see if we already have authority over the subobject to be added
 	if (NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_Data]))
 	{
-		Sender->SendAddComponent(this, Object, *Info);
+		uint32 BytesWritten = 0;
+		Sender->SendAddComponent(this, Object, *Info, BytesWritten);
+		ReplicationBytesWriten += BytesWritten;
 	}
 	else
 	{
@@ -899,6 +906,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
 		uint32 BytesWriten = 0;
 		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr, BytesWriten);
+		ReplicationBytesWriten += BytesWriten;
 
 		SendingRepState->HistoryEnd++;
 	}
@@ -1165,7 +1173,8 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		{
 			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Create entity request timed out. Retrying. "
 				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
-			Sender->SendCreateEntityRequest(this);
+			uint32 BytesWriten = 0;
+			Sender->SendCreateEntityRequest(this, BytesWriten);
 		}
 		break;
 	case WORKER_STATUS_CODE_APPLICATION_ERROR:

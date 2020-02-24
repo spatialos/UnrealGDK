@@ -81,11 +81,11 @@ public:
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
-	void SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info);
+	void SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
 	void SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info);
 	void SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent);
 
-	void SendCreateEntityRequest(USpatialActorChannel* Channel);
+	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	void RetireEntity(const Worker_EntityId EntityId);
 
 	// Creates an entity containing just a tombstone component and the minimal data to resolve an actor.
@@ -134,7 +134,7 @@ private:
 	void CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> Components);
 
 	// Actor Lifecycle
-	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
+	Worker_RequestId CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
 
 	void AddTombstoneToEntity(const Worker_EntityId EntityId);

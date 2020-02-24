@@ -539,7 +539,8 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			{
 				if (UObject* Object = PendingSubobjectAttachment.Subobject.Get())
 				{
-					Sender->SendAddComponent(PendingSubobjectAttachment.Channel, Object, *PendingSubobjectAttachment.Info);
+					uint32 BytesWritten = 0;
+					Sender->SendAddComponent(PendingSubobjectAttachment.Channel, Object, *PendingSubobjectAttachment.Info, BytesWritten);
 				}
 			}
 

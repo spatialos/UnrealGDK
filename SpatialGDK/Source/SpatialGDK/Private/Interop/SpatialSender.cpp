@@ -71,10 +71,12 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
 }
 
-Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
+Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
+	uint32 BytesWritten = 0;
 	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
-	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs);
+	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs, BytesWritten);
+	OutBytesWritten += BytesWritten;
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
@@ -105,14 +107,16 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
 }
 
-void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo)
+void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo, uint32& OutBytesWritten)
 {
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
 	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
 
-	TArray<FWorkerComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+	uint32 BytesWritten = 0;
+	TArray<FWorkerComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, BytesWritten);
+	OutBytesWritten += BytesWritten;
 
 	for (int i = 0; i < SubobjectDatas.Num(); i++)
 	{
@@ -870,11 +874,14 @@ void USpatialSender::ProcessPositionUpdates()
 	ChannelsToUpdatePosition.Empty();
 }
 
-void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)
+void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
 	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s with EntityId %lld"), *Channel->Actor->GetName(), Channel->GetEntityId());
 
-	Worker_RequestId RequestId = CreateEntity(Channel);
+	uint32 BytesWritten = 0;
+	Worker_RequestId RequestId = CreateEntity(Channel, BytesWritten);
+	OutBytesWritten += BytesWritten;
+
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
