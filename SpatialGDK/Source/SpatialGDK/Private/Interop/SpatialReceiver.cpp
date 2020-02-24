@@ -253,6 +253,11 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
+	if (Op.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID)
+	{
+		RemoveActor(Op.entity_id);
+	}
+
 	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{
 		// If this is a multi-cast RPC component, the RPC service should be informed to handle it.
@@ -323,12 +328,7 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 		return;
 	}
 
-
-	if (Op.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID)
-	{
-		RemoveActor(Op.entity_id);
-	}
-	else if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id).Get()))
+	if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id).Get()))
 	{
 		FUnrealObjectRef ObjectRef(Op.entity_id, Op.component_id);
 		if (Op.component_id == SpatialConstants::DORMANT_COMPONENT_ID)
