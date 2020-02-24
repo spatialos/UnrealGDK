@@ -566,33 +566,24 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	}
 }
 
-void USpatialSender::SetAclWriteAuthority(
-	const Worker_EntityId EntityId,
-	const PhysicalWorkerName& DestinationWorkerId,
-	const WorkerRequirementSet& ReadAcl,
-	const WorkerRequirementSet& ClientRequirementSet,
-	const TArray<Worker_ComponentId>& ComponentIds)
+void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request)
 {
 	check(NetDriver);
 
-	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *DestinationWorkerId);
+	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *Request.OwningWorkerId);
 
-	const WorkerAttributeSet ACLAttributeSet = { SpatialConstants::ZoningAttribute };
 	const WorkerAttributeSet OwningServerWorkerAttributeSet = { WriteWorkerId };
 
-	EntityAcl NewAcl = EntityAcl();
+	EntityAcl NewAcl;
 
-	NewAcl.ReadAcl = ReadAcl;
+	NewAcl.ReadAcl = Request.ReadAcl;
 
-	for (const Worker_ComponentId& ComponentId : ComponentIds)
+	for (const Worker_ComponentId& ComponentId : Request.ComponentIds)
 	{
 		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
 			|| ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 		{
-			if (ClientRequirementSet.Num() == 1)
-			{
-				NewAcl.ComponentWriteAcl.Add(ComponentId, ClientRequirementSet);
-			}
+			NewAcl.ComponentWriteAcl.Add(ComponentId, Request.ClientRequirementSet);
 			continue;
 		}
 
@@ -600,20 +591,17 @@ void USpatialSender::SetAclWriteAuthority(
 
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
-			RequirementSet.Add(ACLAttributeSet);
+			NewAcl.ComponentWriteAcl.Add(ComponentId, { LoadBalancerAttributeSet });
+			continue;
 		}
-		else
-		{
-			RequirementSet.Add(OwningServerWorkerAttributeSet);
-		}
-
-		NewAcl.ComponentWriteAcl.Add(ComponentId, RequirementSet);
+	
+		NewAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
 	}
 
-	UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("(%s) Setting Acl WriteAuth for entity %lld to workerid: %s"), *NetDriver->Connection->GetWorkerId(), EntityId, *DestinationWorkerId);
+	UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("(%s) Setting Acl WriteAuth for entity %lld to %s"), *NetDriver->Connection->GetWorkerId(), Request.EntityId, *Request.OwningWorkerId);
 
 	FWorkerComponentUpdate Update = NewAcl.CreateEntityAclUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+	NetDriver->Connection->SendComponentUpdate(Request.EntityId, &Update);
 }
 
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)

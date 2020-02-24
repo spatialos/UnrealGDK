@@ -67,14 +67,13 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	WorkerAttributeSet WorkerAttributeOrSpecificWorker{ Info.WorkerType.ToString() };
 	VirtualWorkerId IntendedVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
-	// Add Zoning Attribute if we are using the load balancer.
+	// Add Load Balancer Attribute if we are using the load balancer.
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		WorkerAttributeSet ZoningAttributeSet = { SpatialConstants::ZoningAttribute };
-		AnyServerRequirementSet.Add(ZoningAttributeSet);
-		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
-		AnyServerOrOwningClientRequirementSet.Add(ZoningAttributeSet);
+		AnyServerRequirementSet.Add(SpatialConstants::LoadBalancerAttributeSet);
+		AnyServerOrClientRequirementSet.Add(SpatialConstants::LoadBalancerAttributeSet);
+		AnyServerOrOwningClientRequirementSet.Add(SpatialConstants::LoadBalancerAttributeSet);
 
 		const UAbstractLBStrategy* LBStrategy = NetDriver->LoadBalanceStrategy;
 		check(LBStrategy != nullptr);
@@ -134,7 +133,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		const WorkerAttributeSet ACLAttributeSet = { SpatialConstants::ZoningAttribute };
+		const WorkerAttributeSet ACLAttributeSet = { SpatialConstants::LoadBalancerAttributeSet };
 		const WorkerRequirementSet ACLRequirementSet = { ACLAttributeSet };
 		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ACLRequirementSet);
 		ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
@@ -424,7 +423,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		const WorkerAttributeSet ZoningAttributeSet = { SpatialConstants::ZoningAttribute };
+		const WorkerAttributeSet ZoningAttributeSet = { SpatialConstants::LoadBalancerAttributeSet };
 		AnyServerRequirementSet.Add(ZoningAttributeSet);
 		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
 	}

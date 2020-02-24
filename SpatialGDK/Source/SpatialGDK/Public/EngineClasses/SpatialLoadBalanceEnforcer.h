@@ -41,22 +41,12 @@ public:
 private:
 
 	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
-	bool AclAssignmentRequestIsQueued(const Worker_EntityId EntityId);
-	bool CanEnforce(Worker_EntityId EntityId);
+	bool AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const;
+	bool CanEnforce(Worker_EntityId EntityId) const;
 
 	const PhysicalWorkerName WorkerId;
 	TWeakObjectPtr<const USpatialStaticComponentView> StaticComponentView;
 	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
-	struct WriteAuthAssignmentRequest
-	{
-		WriteAuthAssignmentRequest(Worker_EntityId InputEntityId)
-			: EntityId(InputEntityId)
-			, ProcessAttempts(0)
-		{}
-		Worker_EntityId EntityId;
-		int32 ProcessAttempts;
-	};
-
-	TArray<WriteAuthAssignmentRequest> AclWriteAuthAssignmentRequests;
+	TSet<Worker_EntityId> AclWriteAuthAssignmentRequests;
 };

@@ -370,6 +370,8 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
+	// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
+	// This way systems that depend on having non-stale state can function correctly.
 	StaticComponentView->OnAuthorityChange(Op);
 
 	if (Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID && LoadBalanceEnforcer != nullptr)
@@ -379,6 +381,8 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 
 	if (bInCriticalSection)
 	{
+		// The actor receiving flow requires authority to be handled after all components have been received, so buffer those if we
+		// are in a critical section to be handled later.
 		PendingAuthorityChanges.Add(Op);
 		return;
 	}
