@@ -262,7 +262,7 @@ void UOwnershipLockingPolicy::RemoveOwnershipHierarchyRootInformation(AActor* Hi
 	}
 
 	// Find Actors in this root Actor's hierarchy which are explicitly locked.
-	TArray<const AActor*>& ExplicitlyLockedActorsWithThisActorOnPath = LockedOwnershipRootActorToExplicitlyLockedActors.FindOrAdd(HierarchyRoot);
+	TArray<const AActor*>& ExplicitlyLockedActorsWithThisActorOnPath = LockedOwnershipRootActorToExplicitlyLockedActors.FindChecked(HierarchyRoot);
 	check(ExplicitlyLockedActorsWithThisActorOnPath.Num() > 0);
 
 	// If there's only one explicitly locked Actor in the hierarchy, we're removing the only Actor with this root,
