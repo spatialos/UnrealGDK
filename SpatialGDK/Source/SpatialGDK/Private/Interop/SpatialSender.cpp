@@ -591,11 +591,11 @@ void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclW
 
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
-			NewAcl.ComponentWriteAcl.Add(ComponentId, { LoadBalancerAttributeSet });
+			NewAcl.ComponentWriteAcl.Add(ComponentId, { SpatialConstants::LoadBalancerAttributeSet });
 			continue;
 		}
 	
-		NewAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
+		NewAcl.ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
 	}
 
 	UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("(%s) Setting Acl WriteAuth for entity %lld to %s"), *NetDriver->Connection->GetWorkerId(), Request.EntityId, *Request.OwningWorkerId);
