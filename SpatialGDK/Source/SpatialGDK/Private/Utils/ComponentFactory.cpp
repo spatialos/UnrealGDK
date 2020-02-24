@@ -50,8 +50,7 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 {
 	SCOPE_CYCLE_COUNTER(STAT_FactoryProcessPropertyUpdates);
 
-	uint32 NumBytesWritten = 0;
-	const uint32 NumBytesStart = Schema_GetWriteBufferLength(ComponentObject);
+	const uint32 BytesStart = Schema_GetWriteBufferLength(ComponentObject);
 
 	// Populate the replicated data component updates from the replicated property changelist.
 	if (Changes.RepChanged.Num() > 0)
@@ -147,14 +146,14 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 		}
 	}
 
-	const uint32 NumBytesEnd = Schema_GetWriteBufferLength(ComponentObject);
+	const uint32 BytesEnd = Schema_GetWriteBufferLength(ComponentObject);
 
-	return NumBytesEnd - NumBytesStart;
+	return BytesEnd - BytesStart;
 }
 
 uint32 ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TraceKey* OutLatencyTraceId, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
 {
-	const uint32 NumBytesStart = Schema_GetWriteBufferLength(ComponentObject);
+	const uint32 BytesStart = Schema_GetWriteBufferLength(ComponentObject);
 
 	for (uint16 ChangedHandle : Changes)
 	{
@@ -178,9 +177,9 @@ uint32 ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject
 		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, ClearedIds);
 	}
 
-	const uint32 NumBytesEnd = Schema_GetWriteBufferLength(ComponentObject);
+	const uint32 BytesEnd = Schema_GetWriteBufferLength(ComponentObject);
 
-	return NumBytesEnd - NumBytesStart;
+	return BytesEnd - BytesStart;
 }
 
 void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TArray<Schema_FieldId>* ClearedIds)

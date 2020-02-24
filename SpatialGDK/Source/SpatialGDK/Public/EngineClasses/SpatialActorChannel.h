@@ -310,7 +310,7 @@ private:
 
 	uint8 FramesTillDormancyAllowed = 0;
 
-	uint32 ReplicationBytesWriten = 0;
+	uint32 ReplicationBytesWritten = 0;
 
 	// Shadow data for Handover properties.
 	// For each object with handover properties, we store a blob of memory which contains

@@ -310,7 +310,7 @@ void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString E
 	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(Delegate));
 }
 
-void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges, uint32& NumBytesWriten)
+void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendComponentUpdates);
 	Worker_EntityId EntityId = Channel->GetEntityId();
@@ -320,9 +320,9 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Object);
 	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer);
 
-	uint32 BytesWriten = 0;
-	TArray<FWorkerComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, BytesWriten);
-	NumBytesWriten += BytesWriten;
+	uint32 BytesWritten = 0;
+	TArray<FWorkerComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, BytesWritten);
+	OutBytesWritten += BytesWritten;
 
 	for(int i = 0; i < ComponentUpdates.Num(); i++)
 	{

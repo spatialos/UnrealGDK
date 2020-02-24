@@ -587,7 +587,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
 	}
 
-	ReplicationBytesWriten = 0;
+	ReplicationBytesWritten = 0;
 
 	// If any properties have changed, send a component update.
 	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
@@ -598,9 +598,9 @@ int64 USpatialActorChannel::ReplicateActor()
 			// so we know what subobjects are relevant for replication when creating the entity.
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
-			uint32 BytesWriten = 0;
-			Sender->SendCreateEntityRequest(this, BytesWriten);
-			ReplicationBytesWriten += BytesWriten;
+			uint32 BytesWritten = 0;
+			Sender->SendCreateEntityRequest(this, BytesWritten);
+			ReplicationBytesWritten += BytesWritten;
 
 			bCreatedEntity = true;
 
@@ -612,9 +612,9 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
 
-			uint32 BytesWriten = 0;
-			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState, BytesWriten);
-			ReplicationBytesWriten += BytesWriten;
+			uint32 BytesWritten = 0;
+			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState, BytesWritten);
+			ReplicationBytesWritten += BytesWritten;
 
 			bInterestDirty = false;
 		}
@@ -679,9 +679,9 @@ int64 USpatialActorChannel::ReplicateActor()
 			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
 			if (SubobjectHandoverChangeState.Num() > 0)
 			{
-				uint32 BytesWriten = 0;
-				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState, BytesWriten);
-				ReplicationBytesWriten += BytesWriten;
+				uint32 BytesWritten = 0;
+				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState, BytesWritten);
+				ReplicationBytesWritten += BytesWritten;
 			}
 		}
 
@@ -751,15 +751,15 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	bForceCompareProperties = false;		// Only do this once per frame when set
 
-	if (ReplicationBytesWriten > 0)
+	if (ReplicationBytesWritten > 0)
 	{
 		if (USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection))
 		{
-			SpatialConnection->AddQueuedBytes(ReplicationBytesWriten);
+			SpatialConnection->AddQueuedBytes(ReplicationBytesWritten);
 		}
 	}
 
-	return ReplicationBytesWriten;
+	return ReplicationBytesWritten;
 }
 
 void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
@@ -792,7 +792,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	{
 		uint32 BytesWritten = 0;
 		Sender->SendAddComponent(this, Object, *Info, BytesWritten);
-		ReplicationBytesWriten += BytesWritten;
+		ReplicationBytesWritten += BytesWritten;
 	}
 	else
 	{
@@ -904,9 +904,9 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		}
 
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
-		uint32 BytesWriten = 0;
-		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr, BytesWriten);
-		ReplicationBytesWriten += BytesWriten;
+		uint32 BytesWritten = 0;
+		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr, BytesWritten);
+		ReplicationBytesWritten += BytesWritten;
 
 		SendingRepState->HistoryEnd++;
 	}
@@ -1173,8 +1173,16 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		{
 			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Create entity request timed out. Retrying. "
 				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
-			uint32 BytesWriten = 0;
-			Sender->SendCreateEntityRequest(this, BytesWriten);
+			uint32 BytesWritten = 0;
+			Sender->SendCreateEntityRequest(this, BytesWritten);
+
+			if (BytesWritten > 0)
+			{
+				if (USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection))
+				{
+					SpatialConnection->AddQueuedBytes(BytesWritten);
+				}
+			}
 		}
 		break;
 	case WORKER_STATUS_CODE_APPLICATION_ERROR:
