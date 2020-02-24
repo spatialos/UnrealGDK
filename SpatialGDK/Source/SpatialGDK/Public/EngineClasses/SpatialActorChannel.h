@@ -155,10 +155,10 @@ public:
 		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
 	}
 
-	inline void OnClientAuthorityChange(Worker_AuthorityChangeOp Op)
+	inline void OnClientAuthorityChange(const Worker_AuthorityChangeOp& Op)
 	{
 		check(Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
-		bIsAuthClient = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? true : false;
+		bIsAuthClient = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE;
 	}
 
 	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
@@ -167,10 +167,10 @@ public:
 		return bIsAuthClient;
 	}
 
-	inline void OnServerAuthorityChange(Worker_AuthorityChangeOp Op)
+	inline void OnServerAuthorityChange(const Worker_AuthorityChangeOp& Op)
 	{
 		check(Op.component_id == SpatialConstants::POSITION_COMPONENT_ID);
-		bIsAuthServer = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? true : false;
+		bIsAuthServer = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE;
 	}
 
 	inline bool IsAuthoritativeServer() const

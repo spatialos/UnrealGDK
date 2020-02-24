@@ -155,7 +155,7 @@ bool USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_EntityId
 		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor, EntityId);
 	}
 
-	if (GetEntityIdFromObject(Actor) == SpatialConstants::INVALID_ENTITY_ID)
+	if (GetEntityIdFromObject(Actor) != EntityId)
 	{
 		UE_LOG(LogSpatialPackageMap, Error, TEXT("ResolveEntityActor failed for Actor: %s with NetGUID: %s and passed entity ID; %lld"), *Actor->GetName(), *NetGUID.ToString(), EntityId);
 		return false;

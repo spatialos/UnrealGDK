@@ -1578,9 +1578,9 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (LoadBalanceEnforcer.IsValid())
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
-			for(const auto& Elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
+			for(const auto& AclAssignmentRequest : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
 			{
-				Sender->SetAclWriteAuthority(Elem.EntityId, Elem.OwningWorkerId, Elem.ReadAcl, Elem.ClientRequirementSet, Elem.ComponentIds);
+				Sender->SetAclWriteAuthority(AclAssignmentRequest);
 			}
 		}
 	}
