@@ -48,5 +48,5 @@ private:
 	TWeakObjectPtr<const USpatialStaticComponentView> StaticComponentView;
 	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
-	TSet<Worker_EntityId> AclWriteAuthAssignmentRequests;
+	TArray<Worker_EntityId> AclWriteAuthAssignmentRequests;
 };
