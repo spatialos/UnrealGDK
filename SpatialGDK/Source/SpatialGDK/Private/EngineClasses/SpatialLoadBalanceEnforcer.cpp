@@ -171,10 +171,7 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 		CompletedRequests.Add(EntityId);
 	}
 
-	for (Worker_EntityId& IdToRemove : CompletedRequests)
-	{
-		AclWriteAuthAssignmentRequests.Remove(IdToRemove);
-	}
+	AclWriteAuthAssignmentRequests.RemoveAll(CompletedRequests);
 
 	return PendingRequests;
 }
