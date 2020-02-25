@@ -45,3 +45,41 @@ $build_configuration = $build_state + $(If ("$build_target" -eq "") { "" } Else 
 if ($lastExitCode -ne 0) {
     throw "Failed to build testing project."
 }
+
+    Start-Event "build-android-client" "build-unreal-gdk-example-project-:windows:"
+
+        $unreal_uat_path = "$unreal_path\Engine\Build\BatchFiles\RunUAT.bat"
+        $build_server_proc = Start-Process -PassThru -NoNewWindow -FilePath $unreal_uat_path -ArgumentList @(`
+            "-ScriptsForProject=`"$test_repo_uproject_path`"", `
+            "BuildCookRun", `
+            "-nocompileeditor", `
+            "-nop4", `
+            "-project=`"$test_repo_uproject_path`"", `
+            "-cook", `
+            "-stage", `
+            "-archive", `
+            "-archivedirectory=$($exampleproject_home)/cooked-android", `
+            "-package", `
+            "-clientconfig=Development", `
+            "-ue4exe=$unreal_path/Engine/Binaries/Win64/UE4Editor-Cmd.exe", `
+            "-pak", `
+            "-prereqs", `
+            "-nodebuginfo", `
+            "-targetplatform=Android", `
+            "-cookflavor=Multi", `
+            "-build", `
+            "-utf8output", `
+            "-compile"
+        )
+
+        $build_server_handle = $build_server_proc.Handle
+        Wait-Process -Id (Get-Process -InputObject $build_server_proc).id
+
+        # Rename the FBuild.tmp back to FBuild.exe clean this up when UNR-2965 is complete
+        Rename-Item -Path "C:\Program Files\fastbuild\FBuild.tmp" -NewName "FBuild.exe"
+
+        if ($build_server_proc.ExitCode -ne 0) {
+            Write-Log "Failed to build Android Development Client. Error: $($build_server_proc.ExitCode)"
+            Throw "Failed to build Android Development Client"
+        }
+    Finish-Event "build-android-client" "build-unreal-gdk-example-project-:windows:"
