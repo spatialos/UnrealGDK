@@ -40,6 +40,7 @@ DECLARE_CYCLE_STAT(TEXT("GetOwnerWorkerAttribute"), STAT_GetOwnerWorkerAttribute
 DECLARE_CYCLE_STAT(TEXT("CallUpdateEntityACLs"), STAT_CallUpdateEntityACLs, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("OnUpdateEntityACLSuccess"), STAT_OnUpdateEntityACLSuccess, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("IsAuthoritativeServer"), STAT_IsAuthoritativeServer, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("NumReplicatedActorBytes"), STAT_NumReplicatedActorBytes, STATGROUP_SpatialNet);
 
 namespace
 {
@@ -750,6 +751,8 @@ int64 USpatialActorChannel::ReplicateActor()
 	bIsReplicatingActor = false;
 
 	bForceCompareProperties = false;		// Only do this once per frame when set
+
+	INC_DWORD_STAT_BY(STAT_NumReplicatedActorBytes, ReplicationBytesWritten);
 
 	return ReplicationBytesWritten * 8;
 }
