@@ -97,8 +97,15 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	// This is a temporary measure until we can look into replication graph support, required due to UNR-832
-	checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
+	/**
+	* MIDWINTER_GDK_CHANGE_BEGIN
+	* (09/20/19) - Evan Kau - Enabling replication driver for Spatial OS by removing this check
+	*/
+	// // This is a temporary measure until we can look into replication graph support, required due to UNR-832
+	// checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
+	/**
+	* MIDWINTER_GDK_CHANGE_END
+	*/
 
 	bConnectAsClient = bInitAsClient;
 
@@ -959,6 +966,17 @@ void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNet
 	GetNetworkObjectList().MarkDormant(Actor, NetConnection, NumConnections, this);
 
 	// Intentionally don't call Super::NotifyActorFullyDormantForConnection
+	/**
+	* MIDWINTER_GDK_CHANGE_BEGIN
+	* (10/03/19) - Evan Kau - If we have the replication graph, make sure dormancy information is sent over there, too
+	*/
+	if (GetReplicationDriver() != nullptr)
+	{
+		GetReplicationDriver()->NotifyActorFullyDormantForConnection(Actor, NetConnection);
+	}
+	/**
+	* MIDWINTER_GDK_CHANGE_END
+	*/
 }
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
@@ -1447,6 +1465,21 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 	// Bump the ReplicationFrame value to invalidate any properties marked as "unchanged" for this frame.
 	ReplicationFrame++;
+
+	/**
+	* MIDWINTER_GDK_CHANGE_BEGIN
+	* (09/20/19) - Evan Kau - Enabling replication driver for Spatial OS
+	*/
+	if (UReplicationDriver * repDriver = GetReplicationDriver())
+	{
+		//if (CVar_Scav_RepGraphEnabledSpatial)
+		{
+			return repDriver->ServerReplicateActors(DeltaSeconds);
+		}
+	}
+	/**
+	* MIDWINTER_GDK_CHANGE_END
+	*/
 
 	const int32 NumClientsToTick = ServerReplicateActors_PrepConnections(DeltaSeconds);
 
