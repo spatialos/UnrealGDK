@@ -433,11 +433,6 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 	}
 }
 
-PhysicalWorkerName USpatialConnectionManager::GetWorkerId() const
-{
-	return WorkerConnection->GetWorkerId();
-}
-
 void USpatialConnectionManager::OnConnectionSuccess()
 {
 	bIsConnected = true;

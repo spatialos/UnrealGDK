@@ -13,6 +13,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Utils/SpatialDebugger.h"
@@ -176,7 +177,7 @@ void USpatialGameInstance::Init()
 void USpatialGameInstance::HandleOnConnected()
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Successfully connected to SpatialOS"));
-	SpatialWorkerId = SpatialConnectionManager->GetWorkerId();
+	SpatialWorkerId = SpatialConnectionManager->GetWorkerConnection()->GetWorkerId();
 #if TRACE_LIB_ACTIVE
 	SpatialLatencyTracer->SetWorkerId(SpatialWorkerId);
 

@@ -41,8 +41,6 @@ public:
 
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
-	PhysicalWorkerName GetWorkerId() const;
-
 	void SetConnectionType(ESpatialConnectionType InConnectionType);
 
 	// TODO: UNR-2753
