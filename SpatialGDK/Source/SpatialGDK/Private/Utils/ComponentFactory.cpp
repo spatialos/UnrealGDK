@@ -337,7 +337,7 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 {
 	TArray<FWorkerComponentData> ComponentDatas;
 
-	OutBytesWritten = 0
+	OutBytesWritten = 0;
 
 	if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
@@ -400,7 +400,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 {
 	TArray<FWorkerComponentUpdate> ComponentUpdates;
 
-	OutBytesWritten = 0
+	OutBytesWritten = 0;
 
 	if (RepChangeState)
 	{
@@ -468,7 +468,7 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
 	}
 
-	if (BytesWritten == 0)
+	if (OutBytesWritten == 0)
 	{
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 	}
@@ -493,7 +493,7 @@ FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
 	}
 
-	if (BytesWritten == 0)
+	if (OutBytesWritten == 0)
 	{
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 	}

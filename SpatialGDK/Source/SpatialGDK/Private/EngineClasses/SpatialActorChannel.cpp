@@ -751,15 +751,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	bForceCompareProperties = false;		// Only do this once per frame when set
 
-	if (ReplicationBytesWritten > 0)
-	{
-		if (USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection))
-		{
-			SpatialConnection->AddQueuedBytes(ReplicationBytesWritten);
-		}
-	}
-
-	return ReplicationBytesWritten;
+	return ReplicationBytesWritten * 8;
 }
 
 void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
@@ -1173,16 +1165,10 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		{
 			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Create entity request timed out. Retrying. "
 				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+
+			// TODO: UNR-664 - Track these bytes written to use in saturation.
 			uint32 BytesWritten = 0;
 			Sender->SendCreateEntityRequest(this, BytesWritten);
-
-			if (BytesWritten > 0)
-			{
-				if (USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Connection))
-				{
-					SpatialConnection->AddQueuedBytes(BytesWritten);
-				}
-			}
 		}
 		break;
 	case WORKER_STATUS_CODE_APPLICATION_ERROR:

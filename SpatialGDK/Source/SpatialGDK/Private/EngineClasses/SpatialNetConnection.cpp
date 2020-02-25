@@ -66,7 +66,9 @@ bool USpatialNetConnection::ClientHasInitializedLevelFor(const AActor* TestActor
 
 int32 USpatialNetConnection::IsNetReady(bool Saturate)
 {
-	return QueuedBits <= 0;
+	// TODO: UNR-664 - Currently we do not report the number of bits sent when replicating, this means channel saturation cannot be checked properly.		return QueuedBits <= 0;
+	// This will always return true until we solve this.
+	return true;
 }
 
 void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)

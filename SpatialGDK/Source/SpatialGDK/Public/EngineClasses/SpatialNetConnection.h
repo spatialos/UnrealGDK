@@ -53,8 +53,6 @@ public:
 
 	void ClientNotifyClientHasQuit();
 
-	void AddQueuedBytes(int32 Bytes) { QueuedBits += (Bytes * 8); };
-
 	UPROPERTY()
 	bool bReliableSpatialConnection;
 
