@@ -13,7 +13,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
 
 class SpatialVirtualWorkerTranslator;
 
-class SpatialLoadBalanceEnforcer
+class SPATIALGDK_API SpatialLoadBalanceEnforcer
 {
 public:
 	struct AclWriteAuthorityRequest
