@@ -102,8 +102,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	if (bFullScan)
 	{
-		Schema::DeleteGeneratedSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
-		Schema::CreateGeneratedSchemaFolder();
+		Schema::RefreshGeneratedSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
 	}
 
 	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
