@@ -67,17 +67,17 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 	FName EffectiveWorkerType = Info.WorkerType;
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	if (SpatialSettings->bEnableOffloading)
 	{
 		EffectiveWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(USpatialStatics::GetActorGroupForActor(Actor));
 	}
 
-	const WorkerAttributeSet WorkerAttributeOrSpecificWorker{ EffectiveWorkerType.ToString() };
+	WorkerAttributeSet WorkerAttributeOrSpecificWorker{ EffectiveWorkerType.ToString() };
 	VirtualWorkerId IntendedVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
 	// Add Zoning Attribute if we are using the load balancer.
-	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
 		WorkerAttributeSet ZoningAttributeSet = { SpatialConstants::ZoningAttribute };

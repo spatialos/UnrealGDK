@@ -265,7 +265,7 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 
 		for (auto Actor : LoadedLevel->Actors)
 		{
-			if (Actor->GetIsReplicated() && !LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
+			if (Actor->GetIsReplicated() && !((USpatialNetDriver*)OwningWorld->GetNetDriver())->LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
 			{
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
