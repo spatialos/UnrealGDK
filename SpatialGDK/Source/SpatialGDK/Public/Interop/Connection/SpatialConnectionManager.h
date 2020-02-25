@@ -42,7 +42,6 @@ public:
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
 	PhysicalWorkerName GetWorkerId() const;
-	const TArray<FString>& GetWorkerAttributes() const;
 
 	void SetConnectionType(ESpatialConnectionType InConnectionType);
 

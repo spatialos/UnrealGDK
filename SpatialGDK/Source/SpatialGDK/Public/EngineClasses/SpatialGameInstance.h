@@ -39,11 +39,11 @@ public:
 	virtual void Init() override;
 	//~ End UGameInstance Interface
 
-	// The SpatialWorkerConnection must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
-	void CreateNewSpatialWorkerConnection();
+	// The SpatiaConnectionManager must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
+	void CreateNewSpatialConnectionManager();
 
-	// Destroying the SpatialWorkerConnection disconnects us from SpatialOS.
-	void DestroySpatialWorkerConnection();
+	// Destroying the SpatialConnectionManager disconnects us from SpatialOS.
+	void DestroySpatialConnectionManager();
 
 	FORCEINLINE USpatialConnectionManager* GetSpatialConnectionManager() { return SpatialConnectionManager; }
 	FORCEINLINE USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }

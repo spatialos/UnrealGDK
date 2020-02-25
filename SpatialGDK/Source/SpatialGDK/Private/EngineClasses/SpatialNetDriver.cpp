@@ -230,8 +230,8 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	if (!bPersistSpatialConnection)
 	{
-		GameInstance->DestroySpatialWorkerConnection();
-		GameInstance->CreateNewSpatialWorkerConnection();
+		GameInstance->DestroySpatialConnectionManager();
+		GameInstance->CreateNewSpatialConnectionManager();
 	}
 	else
 	{
@@ -799,7 +799,7 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			if (UWorld* LocalWorld = GetWorld())
 			{
-				Cast<USpatialGameInstance>(LocalWorld->GetGameInstance())->DestroySpatialWorkerConnection();
+				Cast<USpatialGameInstance>(LocalWorld->GetGameInstance())->DestroySpatialConnectionManager();
 			}
 			Connection = nullptr;
 		}

@@ -438,11 +438,6 @@ PhysicalWorkerName USpatialConnectionManager::GetWorkerId() const
 	return WorkerConnection->GetWorkerId();
 }
 
-const TArray<FString>& USpatialConnectionManager::GetWorkerAttributes() const
-{
-	return WorkerConnection->GetWorkerAttributes();
-}
-
 void USpatialConnectionManager::OnConnectionSuccess()
 {
 	bIsConnected = true;

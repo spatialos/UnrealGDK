@@ -71,12 +71,12 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 	return bHasSpatialNetDriver;
 }
 
-void USpatialGameInstance::CreateNewSpatialWorkerConnection()
+void USpatialGameInstance::CreateNewSpatialConnectionManager()
 {
 	SpatialConnectionManager = NewObject<USpatialConnectionManager>(this);
 }
 
-void USpatialGameInstance::DestroySpatialWorkerConnection()
+void USpatialGameInstance::DestroySpatialConnectionManager()
 {
 	if (SpatialConnectionManager != nullptr)
 	{
@@ -91,7 +91,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 	if (HasSpatialNetDriver())
 	{
 		// If we are using spatial networking then prepare a spatial connection.
-		CreateNewSpatialWorkerConnection();
+		CreateNewSpatialConnectionManager();
 	}
 
 	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
@@ -103,7 +103,7 @@ void USpatialGameInstance::TryConnectToSpatial()
 	if (HasSpatialNetDriver())
 	{
 		// If we are using spatial networking then prepare a spatial connection.
-		CreateNewSpatialWorkerConnection();
+		CreateNewSpatialConnectionManager();
 
 		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
 		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
