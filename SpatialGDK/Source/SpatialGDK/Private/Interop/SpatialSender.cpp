@@ -559,11 +559,8 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
-	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
-		NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
-	}
+	// Also notify the enforcer directly on the worker that sends the component update, as the update will short circuit
+	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
 }
 
 void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request)
