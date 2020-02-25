@@ -26,7 +26,7 @@ void SpatialOSDispatcherSpy::OnRemoveComponent(const Worker_RemoveComponentOp& O
 void SpatialOSDispatcherSpy::FlushRemoveComponentOps()
 {}
 
-void SpatialOSDispatcherSpy::DropAllComponentOpsForRemovedEntity(Worker_EntityId EntityId)
+void SpatialOSDispatcherSpy::DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId)
 {}
 
 void SpatialOSDispatcherSpy::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
