@@ -528,36 +528,44 @@ void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& Co
 	
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	if (DeleteGeneratedSchemaFiles(*GDKSchemaCopyDir))
+	if (RefreshGeneratedSchemaFiles(*GDKSchemaCopyDir))
 	{
-		if (!PlatformFile.CreateDirectoryTree(*GDKSchemaCopyDir))
+		if (!PlatformFile.CopyDirectoryTree(*GDKSchemaCopyDir, *GDKSchemaDir, true /*bOverwriteExisting*/))
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create gdk schema directory '%s'! Please make sure the parent directory is writeable."), *GDKSchemaCopyDir);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not copy gdk schema to '%s'! Please make sure the directory is writeable."), *GDKSchemaCopyDir);
 		}
 	}
 
-	if (DeleteGeneratedSchemaFiles(*CoreSDKSchemaCopyDir))
+	if (RefreshGeneratedSchemaFiles(*CoreSDKSchemaCopyDir))
 	{
-		if (!PlatformFile.CreateDirectoryTree(*CoreSDKSchemaCopyDir))
+		if (!PlatformFile.CopyDirectoryTree(*CoreSDKSchemaCopyDir, *CoreSDKSchemaDir, true /*bOverwriteExisting*/))
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create standard library schema directory '%s'! Please make sure the parent directory is writeable."), *GDKSchemaCopyDir);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not copy standard library schema to '%s'! Please make sure the directory is writeable."), *CoreSDKSchemaCopyDir);
 		}
 	}
+}
 
-	if (!PlatformFile.CopyDirectoryTree(*GDKSchemaCopyDir, *GDKSchemaDir, true /*bOverwriteExisting*/))
+bool RefreshGeneratedSchemaFiles(const FString& SchemaOutputPath)
+{
+	if (!DeleteGeneratedSchemaFiles(SchemaOutputPath))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not copy gdk schema to '%s'! Please make sure the directory is writeable."), *GDKSchemaCopyDir);
+		return false;
 	}
 
-	if (!PlatformFile.CopyDirectoryTree(*CoreSDKSchemaCopyDir, *CoreSDKSchemaDir, true /*bOverwriteExisting*/))
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	if (!PlatformFile.CreateDirectoryTree(*SchemaOutputPath))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not copy standard library schema to '%s'! Please make sure the directory is writeable."), *CoreSDKSchemaCopyDir);
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create gdk schema directory '%s'! Please make sure the parent directory is writeable."), *SchemaOutputPath);
+		return false;
+
 	}
+	return true;
 }
 
 bool DeleteGeneratedSchemaFiles(const FString& SchemaOutputPath)
 {
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
 	if (PlatformFile.DirectoryExists(*SchemaOutputPath))
 	{
 		if (!PlatformFile.DeleteDirectoryRecursively(*SchemaOutputPath))
@@ -567,13 +575,6 @@ bool DeleteGeneratedSchemaFiles(const FString& SchemaOutputPath)
 		}
 	}
 	return true;
-}
-
-void CreateGeneratedSchemaFolder()
-{
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
-	PlatformFile.CreateDirectoryTree(*SchemaOutputPath);
 }
 
 void ResetSchemaGeneratorState()
@@ -589,8 +590,7 @@ void ResetSchemaGeneratorState()
  void ResetSchemaGeneratorStateAndCleanupFolders()
 {
 	ResetSchemaGeneratorState();
-	DeleteGeneratedSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
-	CreateGeneratedSchemaFolder();
+	RefreshGeneratedSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
 }
 
 bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
