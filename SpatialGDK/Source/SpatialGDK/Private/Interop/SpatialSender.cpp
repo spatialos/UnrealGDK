@@ -292,20 +292,20 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 					// This is a failure but there is already a log inside TryResolveNewDynamicSubbojectAndGetClassInfo
 					continue;
 				}
-
-				ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-				{
-					if (SubobjectInfo->SchemaComponents[Type] != SpatialConstants::INVALID_COMPONENT_ID)
-					{
-						ComponentWriteAcl.Add(SubobjectInfo->SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
-					}
-				});
 			}
 
 			const FClassInfo& SubobjectInfo = ClassInfoManager->GetOrCreateClassInfoByObject(Subobject);
 
 			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
+
+			ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+			{
+				if (SubobjectInfo.SchemaComponents[Type] != SpatialConstants::INVALID_COMPONENT_ID)
+				{
+					ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
+				}
+			});
 
 			TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 			ComponentDatas.Append(ActorSubobjectDatas);
@@ -539,15 +539,23 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 }
 
 // Apply (and clean up) any updates queued, due to being sent previously when they didn't have authority.
-void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId)
+void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	if (TArray<Worker_ComponentUpdate>* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
 	{
-		for (Worker_ComponentUpdate& Update : *UpdatesQueuedUntilAuthority)
+		for (auto It = UpdatesQueuedUntilAuthority->CreateIterator(); It; It++)
 		{
-			Connection->SendComponentUpdate(EntityId, &Update);
+			if (ComponentId == It->component_id)
+			{
+				Connection->SendComponentUpdate(EntityId, &(*It));
+				It.RemoveCurrent();
+			}
 		}
-		UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
+
+		if (UpdatesQueuedUntilAuthority->Num() == 0)
+		{
+			UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
+		}
 	}
 }
 

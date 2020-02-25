@@ -102,7 +102,7 @@ public:
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
-	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
+	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	void FlushPackedRPCs();
 
