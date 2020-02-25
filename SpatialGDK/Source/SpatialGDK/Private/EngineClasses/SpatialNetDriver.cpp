@@ -32,7 +32,7 @@
 #include "Interop/SpatialWorkerFlags.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
-#include "LoadBalancing/ReferenceCountedLockingPolicy.h"
+#include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ComponentFactory.h"
@@ -443,7 +443,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		if (WorldSettings == nullptr || WorldSettings->LockingPolicy == nullptr)
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
-			LockingPolicy = NewObject<UReferenceCountedLockingPolicy>(this);
+			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
 		else
 		{
@@ -966,6 +966,11 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 	if (!IsServer())
 	{
 		return;
+	}
+
+	if (LockingPolicy != nullptr)
+	{
+		LockingPolicy->OnOwnerUpdated(Actor, OldOwner);
 	}
 
 	// If PackageMap doesn't exist, we haven't connected yet, which means
