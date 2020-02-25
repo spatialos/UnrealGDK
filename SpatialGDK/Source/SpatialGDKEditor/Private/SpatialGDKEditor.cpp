@@ -95,12 +95,13 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
 	}
 
+	// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
+	FString GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
+	FString CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
+	Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
+
 	if (bFullScan)
 	{
-		// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
-		FString GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
-		FString CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
-		Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
 		Schema::DeleteGeneratedSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
 		Schema::CreateGeneratedSchemaFolder();
 	}
