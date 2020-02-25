@@ -609,7 +609,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_an_Actor_class_with_multiple_object_components_WHEN_
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_multiple_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist)
+SCHEMA_GENERATOR_TEST(GIVEN_multiple_schema_files_exist_WHEN_refresh_generated_files_THEN_schema_files_exist)
 {
 	SchemaTestFixture Fixture;
 
@@ -623,25 +623,25 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_schema_files_exist_WHEN_deleted_generated_f
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// WHEN
-	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+	SpatialGDKEditor::Schema::RefreshSchemaFiles(SchemaOutputFolder);
 
 	// THEN
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	TestFalse("Schema directory does not exist", PlatformFile.DirectoryExists(*SchemaOutputFolder));
+	TestTrue("Schema directory does not exist", PlatformFile.DirectoryExists(*SchemaOutputFolder));
 
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_no_schema_files_exist_WHEN_deleted_generated_files_THEN_no_schema_files_exist)
+SCHEMA_GENERATOR_TEST(GIVEN_no_schema_files_exist_WHEN_refresh_generated_files_THEN_schema_files_exist)
 {
 	// GIVEN
 
 	// WHEN
-	SpatialGDKEditor::Schema::DeleteGeneratedSchemaFiles(SchemaOutputFolder);
+	SpatialGDKEditor::Schema::RefreshSchemaFiles(SchemaOutputFolder);
 
 	// THEN
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	TestFalse("Schema directory does not exist", PlatformFile.DirectoryExists(*SchemaOutputFolder));
+	TestTrue("Schema directory does not exist", PlatformFile.DirectoryExists(*SchemaOutputFolder));
 
 	return true;
 }

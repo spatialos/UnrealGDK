@@ -38,9 +38,7 @@ namespace SpatialGDKEditor
 		
 		SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists();
 		
-		SPATIALGDKEDITOR_API bool RefreshGeneratedSchemaFiles(const FString& SchemaOutputPath);
-
-		SPATIALGDKEDITOR_API bool DeleteGeneratedSchemaFiles(const FString& SchemaOutputPath);
+		SPATIALGDKEDITOR_API bool RefreshSchemaFiles(const FString& SchemaOutputPath);
 		
 		SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& CoreSDKSchemaCopyDir);
 		
