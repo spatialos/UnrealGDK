@@ -56,7 +56,7 @@ public:
 	virtual void OnRemoveEntity(const Worker_RemoveEntityOp& Op) override;
 	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) override;
 	virtual void FlushRemoveComponentOps() override;
-	virtual void RemoveComponentOpsForEntity(Worker_EntityId EntityId) override;
+	virtual void DropAllComponentOpsForRemovedEntity(Worker_EntityId EntityId) override;
 	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) override;
 
 	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
