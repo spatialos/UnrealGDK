@@ -8,19 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`0.8.1-preview`] - 2020-xx-xx
 ### Adapted from 0.6.5
-### Internal:
+### Features:
 Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
 - Local deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
-
-### Features:
 - Updated the version of the local API service used by the UnrealGDK.
 - The Spatial output log will now be open by default.
 
 ### Bug fixes:
 - Replicated references to newly created dynamic subobjects will now be resolved correctly.
 - Fixed a bug that caused the local API service to memory leak.
-- Cloud deployment flow will now correctly report errors when a deployment fails to launch due to a missing assembly.
+- Errors are now correctly reported when you try to launch a cloud deployment without an assembly.
 
 ## [`0.8.0-preview`] - 2019-12-17
 
@@ -30,9 +28,11 @@ Features listed in the internal section are not ready to use but, in the spirit 
 1. `git checkout 4.23-SpatialOSUnrealGDK-preview`
 1. `git pull`
 1. Download and install the `-v15 clang-8.0.1-based` toolchain from this [Unreal Engine Documentation page](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html).
+1. Navigate to the root of GDK repo and run `Setup.bat`.
 1. Run `Setup.bat`, which is located in the root directory of the `UnrealEngine` repository.
 1. Run `GenerateProjectFiles.bat`, which is in the same root directory.
-For more information, check the [Keep your GDK up to date](https://docs.improbable.io/unreal/preview/content/upgrading) SpatialOS documentation.
+
+For more information, check the [Keep your GDK up to date](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) SpatialOS documentation.
 
 
 ### Features:
