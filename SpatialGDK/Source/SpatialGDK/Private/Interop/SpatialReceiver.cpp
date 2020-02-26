@@ -540,6 +540,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			{
 				if (UObject* Object = PendingSubobjectAttachment.Subobject.Get())
 				{
+					// TODO: UNR-664 - We should track the bytes sent here and factor them into channel saturation.
 					uint32 BytesWritten = 0;
 					Sender->SendAddComponent(PendingSubobjectAttachment.Channel, Object, *PendingSubobjectAttachment.Info, BytesWritten);
 				}
