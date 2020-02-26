@@ -49,8 +49,8 @@ void InitialiseVirtualWorkerTranslator(SpatialVirtualWorkerTranslator* VirtualWo
 {
 	Schema_Object* DataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
 
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 1, ValidWorkerOne);
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 2, ValidWorkerTwo);
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, VirtualWorkerOne, ValidWorkerOne);
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, VirtualWorkerTwo, ValidWorkerTwo);
 
 	VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(DataObject);
 }
