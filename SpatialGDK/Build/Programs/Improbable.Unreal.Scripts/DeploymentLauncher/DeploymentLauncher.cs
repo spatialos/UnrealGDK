@@ -109,7 +109,7 @@ namespace Improbable
 
         private static int CreateDeployment(string[] args)
         {
-            bool launchSimPlayerDeployment = args.Length == 11;
+            bool launchSimPlayerDeployment = args.Length == 12;
 
             var projectName = args[1];
             var assemblyName = args[2];
