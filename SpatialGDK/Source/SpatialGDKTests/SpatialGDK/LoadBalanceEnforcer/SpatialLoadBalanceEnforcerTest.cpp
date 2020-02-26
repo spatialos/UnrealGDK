@@ -45,22 +45,17 @@ void AddEntityToStaticComponentView(USpatialStaticComponentView& StaticComponent
 	}
 }
 
-void InitialiseVirtualWorkerTranslator(SpatialVirtualWorkerTranslator* VirtualWorkerTranslator)
+TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
 {
+	ULBStrategyStub* LoadBalanceStrategy = NewObject<ULBStrategyStub>();
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, ValidWorkerOne);
+
 	Schema_Object* DataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
 
 	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, VirtualWorkerOne, ValidWorkerOne);
 	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, VirtualWorkerTwo, ValidWorkerTwo);
 
 	VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(DataObject);
-}
-
-TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
-{
-	ULBStrategyStub* LoadBalanceStrategy = NewObject<ULBStrategyStub>();
-	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, ValidWorkerOne);
-
-	InitialiseVirtualWorkerTranslator(VirtualWorkerTranslator.Get());
 
 	return VirtualWorkerTranslator;
 }
