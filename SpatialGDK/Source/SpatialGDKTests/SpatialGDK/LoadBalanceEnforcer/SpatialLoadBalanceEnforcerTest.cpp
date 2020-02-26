@@ -255,3 +255,144 @@ LOADBALANCEENFORCER_TEST(GIVEN_authority_change_when_authoritative_over_authorit
 
 	return true;
 }
+
+LOADBALANCEENFORCER_TEST(GIVEN_acl_authority_loss_WHEN_request_is_queued_THEN_return_no_acl_assignment_requests)
+{
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
+
+	// Set up the world in such a way that we can enforce the authority, and we are not already the authoritative worker so should try and assign authority.
+	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
+	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+
+	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+
+	Worker_AuthorityChangeOp AuthOp;
+	AuthOp.entity_id = EntityIdOne;
+	AuthOp.authority = WORKER_AUTHORITY_AUTHORITATIVE;
+	AuthOp.component_id = SpatialConstants::ENTITY_ACL_COMPONENT_ID;
+
+	LoadBalanceEnforcer->OnAclAuthorityChanged(AuthOp);
+
+	// At this point, we expect there to be a queued request.
+	TestTrue("Assignment request is queued", LoadBalanceEnforcer->AclAssignmentRequestIsQueued(EntityIdOne));
+
+	AuthOp.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
+
+	LoadBalanceEnforcer->OnAclAuthorityChanged(AuthOp);
+
+	// Now we should have dropped that request.
+
+	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> ACLRequests = LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests();
+
+	bool bSuccess = ACLRequests.Num() == 0;
+	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
+
+	return true;
+}
+
+LOADBALANCEENFORCER_TEST(GIVEN_entity_removal_WHEN_request_is_queued_THEN_return_no_acl_assignment_requests)
+{
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
+
+	// Set up the world in such a way that we can enforce the authority, and we are not already the authoritative worker so should try and assign authority.
+	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
+	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+
+	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+
+	Worker_AuthorityChangeOp AuthOp;
+	AuthOp.entity_id = EntityIdOne;
+	AuthOp.authority = WORKER_AUTHORITY_AUTHORITATIVE;
+	AuthOp.component_id = SpatialConstants::ENTITY_ACL_COMPONENT_ID;
+
+	LoadBalanceEnforcer->OnAclAuthorityChanged(AuthOp);
+
+	// At this point, we expect there to be a queued request.
+	TestTrue("Assignment request is queued", LoadBalanceEnforcer->AclAssignmentRequestIsQueued(EntityIdOne));
+
+	Worker_RemoveEntityOp EntityOp;
+	EntityOp.entity_id = EntityIdOne;
+
+	LoadBalanceEnforcer->OnEntityRemoved(EntityOp);
+
+	// Now we should have dropped that request.
+
+	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> ACLRequests = LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests();
+
+	bool bSuccess = ACLRequests.Num() == 0;
+	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
+
+	return true;
+}
+
+LOADBALANCEENFORCER_TEST(GIVEN_authority_intent_component_removal_WHEN_request_is_queued_THEN_return_no_acl_assignment_requests)
+{
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
+
+	// Set up the world in such a way that we can enforce the authority, and we are not already the authoritative worker so should try and assign authority.
+	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
+	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+
+	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+
+	Worker_AuthorityChangeOp AuthOp;
+	AuthOp.entity_id = EntityIdOne;
+	AuthOp.authority = WORKER_AUTHORITY_AUTHORITATIVE;
+	AuthOp.component_id = SpatialConstants::ENTITY_ACL_COMPONENT_ID;
+
+	LoadBalanceEnforcer->OnAclAuthorityChanged(AuthOp);
+
+	// At this point, we expect there to be a queued request.
+	TestTrue("Assignment request is queued", LoadBalanceEnforcer->AclAssignmentRequestIsQueued(EntityIdOne));
+
+	Worker_RemoveComponentOp ComponentOp;
+	ComponentOp.entity_id = EntityIdOne;
+	ComponentOp.component_id = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
+
+	LoadBalanceEnforcer->OnLoadBalancingComponentRemoved(ComponentOp);
+
+	// Now we should have dropped that request.
+
+	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> ACLRequests = LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests();
+
+	bool bSuccess = ACLRequests.Num() == 0;
+	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
+
+	return true;
+}
+
+LOADBALANCEENFORCER_TEST(GIVEN_acl_component_removal_WHEN_request_is_queued_THEN_return_no_acl_assignment_requests)
+{
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
+
+	// Set up the world in such a way that we can enforce the authority, and we are not already the authoritative worker so should try and assign authority.
+	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
+	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+
+	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+
+	Worker_AuthorityChangeOp AuthOp;
+	AuthOp.entity_id = EntityIdOne;
+	AuthOp.authority = WORKER_AUTHORITY_AUTHORITATIVE;
+	AuthOp.component_id = SpatialConstants::ENTITY_ACL_COMPONENT_ID;
+
+	LoadBalanceEnforcer->OnAclAuthorityChanged(AuthOp);
+
+	// At this point, we expect there to be a queued request.
+	TestTrue("Assignment request is queued", LoadBalanceEnforcer->AclAssignmentRequestIsQueued(EntityIdOne));
+
+	Worker_RemoveComponentOp ComponentOp;
+	ComponentOp.entity_id = EntityIdOne;
+	ComponentOp.component_id = SpatialConstants::ENTITY_ACL_COMPONENT_ID;
+
+	LoadBalanceEnforcer->OnLoadBalancingComponentRemoved(ComponentOp);
+
+	// Now we should have dropped that request.
+
+	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> ACLRequests = LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests();
+
+	bool bSuccess = ACLRequests.Num() == 0;
+	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
+
+	return true;
+}

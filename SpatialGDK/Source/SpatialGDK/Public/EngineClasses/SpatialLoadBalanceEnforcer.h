@@ -35,13 +35,14 @@ public:
 	void OnAclAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
 
 	void MaybeQueueAclAssignmentRequest(const Worker_EntityId EntityId);
+	// Visible for testing
+	bool AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const;
 
 	TArray<AclWriteAuthorityRequest> ProcessQueuedAclAssignmentRequests();
 
 private:
 
 	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
-	bool AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const;
 	bool CanEnforce(Worker_EntityId EntityId) const;
 
 	const PhysicalWorkerName WorkerId;

@@ -123,6 +123,11 @@ void SpatialLoadBalanceEnforcer::MaybeQueueAclAssignmentRequest(const Worker_Ent
 	QueueAclAssignmentRequest(EntityId);
 }
 
+bool SpatialLoadBalanceEnforcer::AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const
+{
+	return AclWriteAuthAssignmentRequests.Contains(EntityId);
+}
+
 TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceEnforcer::ProcessQueuedAclAssignmentRequests()
 {
 	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> PendingRequests;
@@ -193,11 +198,6 @@ void SpatialLoadBalanceEnforcer::QueueAclAssignmentRequest(const Worker_EntityId
 {
 	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("Queueing ACL assignment request for entity %lld on worker %s."), EntityId, *WorkerId);
 	AclWriteAuthAssignmentRequests.Add(EntityId);
-}
-
-bool SpatialLoadBalanceEnforcer::AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const
-{
-	return AclWriteAuthAssignmentRequests.Contains(EntityId);
 }
 
 bool SpatialLoadBalanceEnforcer::CanEnforce(Worker_EntityId EntityId) const
