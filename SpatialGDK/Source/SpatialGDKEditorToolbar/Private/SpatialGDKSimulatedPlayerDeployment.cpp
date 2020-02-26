@@ -570,12 +570,12 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 	{
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 		FString BuiltWorkerFolder = GetDefault<USpatialGDKEditorSettings>()->GetBuiltWorkerFolder();
-		FString SimPlayersFileName = TEXT("UnrealSimulatedPlayer@Linux.zip");
-		FString SimPlayerFilePath = FPaths::Combine(BuiltWorkerFolder, SimPlayersFileName);
+		FString BuiltSimPlayersName = TEXT("UnrealSimulatedPlayer@Linux.zip");
+		FString BuiltSimPlayerPath = FPaths::Combine(BuiltWorkerFolder, BuiltSimPlayersName);
 
-		if (!PlatformFile.FileExists(*SimPlayerFilePath))
+		if (!PlatformFile.FileExists(*BuiltSimPlayerPath))
 		{
-			FString MissingSimPlayerBuildText = FString::Printf(TEXT("Warning: Detected that %s is missing. To launch a successful SimPlayer deployment ensure that SimPlayers is built and uploaded."), *SimPlayersFileName);
+			FString MissingSimPlayerBuildText = FString::Printf(TEXT("Warning: Detected that %s is missing. To launch a successful SimPlayer deployment ensure that SimPlayers is built and uploaded."), *BuiltSimPlayersName);
 			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(MissingSimPlayerBuildText));
 		}
 	}
