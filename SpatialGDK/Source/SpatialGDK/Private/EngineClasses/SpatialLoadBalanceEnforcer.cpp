@@ -97,9 +97,16 @@ void SpatialLoadBalanceEnforcer::MaybeQueueAclAssignmentRequest(const Worker_Ent
 
 	const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
 	const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
-	if (OwningWorkerId != nullptr
-		&& *OwningWorkerId == WorkerId
-		&& StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
+
+	check(OwningWorkerId != nullptr);
+	if (OwningWorkerId == nullptr)
+	{
+		UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Couldn't find mapped worker for entity %lld. This shouldn't happen! Virtual worker ID: %d"),
+			EntityId, AuthorityIntentComponent->VirtualWorkerId);
+		return;
+	}
+
+	if (*OwningWorkerId == WorkerId && StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("No need to queue newly authoritative entity because this worker is already authoritative. Entity: %lld. Worker: %s."),
 			EntityId, *WorkerId);
@@ -152,8 +159,11 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 		if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 		{
 			EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-			// We always assign a client endpoint requirement set. It might be empty, but to be consistent with the previous state we grab it here anyway.
-			WorkerRequirementSet* ClientRequirementSet = Acl->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
+			WorkerRequirementSet ClientRequirementSet;
+			if (WorkerRequirementSet* RpcRequirmentSet = Acl->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())))
+			{
+				ClientRequirementSet = *RpcRequirmentSet;
+			}
 			TArray<Worker_ComponentId> ComponentIds;
 			Acl->ComponentWriteAcl.GetKeys(ComponentIds);
 			PendingRequests.Push(
@@ -161,7 +171,7 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 					EntityId,
 					*DestinationWorkerId,
 					Acl->ReadAcl,
-					*ClientRequirementSet,
+					ClientRequirementSet,
 					ComponentIds
 				});
 		

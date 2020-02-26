@@ -586,7 +586,7 @@ void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclW
 
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
-			NewAcl.ComponentWriteAcl.Add(ComponentId, { SpatialConstants::LoadBalancerAttributeSet });
+			NewAcl.ComponentWriteAcl.Add(ComponentId, { SpatialConstants::GetLoadBalancerAttributeSet(GetDefault<USpatialGDKSettings>()->LoadBalancingWorkerType.WorkerTypeName) });
 			continue;
 		}
 	

@@ -6,6 +6,7 @@
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"
 #include "UObject/Script.h"
+#include "Utils/SpatialActorGroupManager.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -260,8 +261,6 @@ const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 const FString SCHEMA_DATABASE_FILE_PATH  = TEXT("Spatial/SchemaDatabase");
 const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 
-const WorkerAttributeSet LoadBalancerAttributeSet = { DefaultServerWorkerType.ToString() };
-
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
 {
@@ -357,6 +356,15 @@ inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
 {
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
+}
+
+inline WorkerAttributeSet GetLoadBalancerAttributeSet(FName LoadBalancingWorkerType)
+{
+	if (LoadBalancingWorkerType == "")
+	{
+		return { DefaultServerWorkerType.ToString() };
+	}
+	return { LoadBalancingWorkerType.ToString() };
 }
 
 } // ::SpatialConstants
