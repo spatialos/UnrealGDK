@@ -59,6 +59,8 @@ public:
 
 	USpatialWorkerConnection* GetWorkerConnection() { return WorkerConnection; }
 
+	void RequestDeploymentLoginTokens();
+
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
@@ -70,7 +72,6 @@ private:
 	ESpatialConnectionType GetConnectionType() const;
 
 	void StartDevelopmentAuth(const FString& DevAuthToken);
-	void RequestDeploymentLoginTokens();
 	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
 	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
 	void ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens);
