@@ -2,17 +2,37 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "EngineClasses/SpatialNetConnection.h"
 
 #include "Components/SceneComponent.h"
+#include "Containers/Array.h"
+#include "Containers/UnrealString.h"
 #include "Engine/EngineTypes.h"
-#include "EngineClasses/SpatialNetConnection.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerController.h"
+#include "Math/Vector.h"
 
 namespace SpatialGDK
 {
+
+inline AActor* GetHierarchyRoot(const AActor* Actor)
+{
+	check(Actor != nullptr);
+
+	AActor* Owner = Actor->GetOwner();
+	if (Owner == nullptr || Owner->IsPendingKillPending())
+	{
+		return nullptr;
+	}
+
+	while (Owner->GetOwner() != nullptr && !Owner->GetOwner()->IsPendingKillPending())
+	{
+		Owner = Owner->GetOwner();
+	}
+
+	return Owner;
+}
 
 inline FString GetOwnerWorkerAttribute(AActor* Actor)
 {

@@ -59,6 +59,7 @@ If it fails because the DLL is not available, file a WRK ticket for the Worker t
 1. `git push --set-upstream origin 4.xx-SpatialOSUnrealGDK-x.y.z-rc` to push the branch.
 1. Repeat the above steps for all supported `4.xx` engine versions.
 1. Announce the branch and the commit hash it uses in the `#unreal-gdk-release` channel.
+1. Make sure to update UnrealGDKExampleProjectVersion.txt and UnrealGDKVersion.txt so that they contain the relevant release tag for the UnrealGDK and UnrealGDKExampleProject.
 
 ### Create the `UnrealGDKExampleProject` release candidate
 1. `git clone` the [UnrealGDKExampleProject](https://github.com/spatialos/UnrealGDKExampleProject).
