@@ -71,10 +71,10 @@ If it fails because the DLL is not available, file a WRK ticket for the Worker t
 1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
 
 ## Build your release candidate engine
-1. Open http://localhost:8080/reference/1.0/content/get-started/dependencies.
+1. Open https://documentation.improbable.io/gdk-for-unreal/docs/get-started-1-get-the-dependencies.
 1. Uninstall all dependencies listed on this page so that you can accurately validate our installation steps.
 1. If you have one, delete your local clone of `UnrealEngine`.
-1. Follow the installation steps on http://localhost:8080/reference/1.0/content/get-started/dependencies.
+1. Follow the installation steps on https://documentation.improbable.io/gdk-for-unreal/docs/get-started-1-get-the-dependencies.
 1. When you clone the `UnrealEngine`, be sure to checkout `x.y.z-rc-x` so you're building the release version.
 
 ## Implementing fixes
@@ -93,42 +93,17 @@ The workflow for this is:
 1. Notify #unreal-gdk-release that the release candidate has been updated.
 1. **Judgment call**: If the fix was isolated, continue the validation steps from where you left off. If the fix was significant, restart testing from scratch. Consult the rest of the team if you are unsure which to choose.
 
-## Validation (GDK Starter Template)
-1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/gdk-template, bearing in mind the following caveat:
-* When you clone the GDK into the `Plugins` folder, be sure to checkout the release candidate branch, so you're working with the release version.
-2. Launch a local SpatialOS deployment, then a standalone server-worker, and then connect two standalone clients to it. To do this:
-* In your file browser, click `LaunchSpatial.bat` in order to run it.
-* In your file browser, click `LaunchServer.bat` in order to run it.
-* In your file browser, click `LaunchClient.bat` in order to run it.
-* Run the same script again in order to launch the second client
-* Run and shoot eachother with the clients as a smoke test.
-* Open the `UE4 Console` and enter the command `open 127.0.0.1`. The desired effect is that the client disconnect and then re-connects to the map. If you can continue to play after executing the command then you've succesfully tested client travel.
+## Validation (GDK, Starter Template and Example Project)
+You must perform these steps twice, once in the EU region and once in CN.
 
-3. Launch a local SpatialOS deployment, then connect two machines as clients using your local network. To do this:
-* Ensure that both machines are on the same network.
-* On your own machine, in your terminal, `cd` to `<ProjectRoot>`.
-* Build out a windows client by running:
-`Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProject Win64 Development YourProject.uproject`
-* Send the client you just built to the other machine you'll be using to connect. You can find it at: `\spatial\build\assembly\worker\UnrealClient@Windows.zip`
-* Still on your server machine, discover your local IP address by runing `ipconfig`. It's the one entitled `IPv4 Address`.
-* Still in your server machine, in a terminal window, `cd` to `<ProjectRoot>\spatial\` and run the following command: `spatial local launch default_launch.json --runtime_ip=<your local IP address>`
-* Still on your server machine, run `LaunchServer.bat`.
-* On the machine you're going to run your clients on, unzip `UnrealClient@Windows.zip`.
-* On the machine you're going to run your clients on, in a terminal window, `cd` to the unzipped `UnrealClient@Windows` direcory and run the following command: `_YourProject.exe <local IP address of server machine> -workerType UnrealClient -useExternalIpForBridge true`
-* Repeat the above step in order to launch the second client
-* Run and shoot eachother with the clients as a smoke test.
-* You can now turn off the machine that's running the client, and return to your own machine.
-
-## Validation (UnrealGDKExampleProject)
-1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/example-project/exampleproject-intro. All tests must pass.
-
-## Validation (Playtest)
-1. Follow these steps: https://brevi.link/unreal-release-playtests. All tests must pass.
+1. Open the [Component Release](https://improbabletest.testrail.io/index.php?/suites/view/72) test suite and click run test.
+1. Name your test run in this format: Component release: GDK [UnrealGDK version], UE (Unreal Engine version), [region].
+1. Execute the test runs.
 
 ## Validation (Docs)
 1. @techwriters in [#docs](https://improbable.slack.com/archives/C0TBQAB5X) and ask them what's changes in the docs since the last release.
-2. Proof read the pages that have changed.
-3. Spend an additional 20 minutes reading the docs and ensuring that nothing is incorrect.
+1. Proof read the pages that have changed.
+1. Spend an additional 20 minutes reading the docs and ensuring that nothing is incorrect.
 
 ## Release
 
@@ -172,8 +147,6 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 1. Notify @techwriters in [#docs](https://improbable.slack.com/archives/C0TBQAB5X) that they may publish the new version of the docs.
 
 **Announce**
-Only announce full releases, not `preview` ones.
-
 1. Announce the release in:
 
 * Forums
@@ -181,7 +154,7 @@ Only announce full releases, not `preview` ones.
 * Slack (`#releases`)
 * Email (`unreal-interest@`)
 
-Congratulations, you've done the release!
+Congratulations, you've completed the release process!
 
 ## Clean up
 
