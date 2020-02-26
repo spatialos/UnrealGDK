@@ -73,10 +73,8 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	uint32 BytesWritten = 0;
 	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
-	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs, BytesWritten);
-	OutBytesWritten += BytesWritten;
+	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs, OutBytesWritten);
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
@@ -114,9 +112,7 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 
 	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
 
-	uint32 BytesWritten = 0;
-	TArray<FWorkerComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, BytesWritten);
-	OutBytesWritten += BytesWritten;
+	TArray<FWorkerComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
 
 	for (int i = 0; i < SubobjectDatas.Num(); i++)
 	{
@@ -320,9 +316,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Object);
 	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer);
 
-	uint32 BytesWritten = 0;
-	TArray<FWorkerComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, BytesWritten);
-	OutBytesWritten += BytesWritten;
+	TArray<FWorkerComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
 
 	for(int i = 0; i < ComponentUpdates.Num(); i++)
 	{
@@ -878,9 +872,7 @@ void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, uint
 {
 	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s with EntityId %lld"), *Channel->Actor->GetName(), Channel->GetEntityId());
 
-	uint32 BytesWritten = 0;
-	Worker_RequestId RequestId = CreateEntity(Channel, BytesWritten);
-	OutBytesWritten += BytesWritten;
+	Worker_RequestId RequestId = CreateEntity(Channel, OutBytesWritten);
 
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
