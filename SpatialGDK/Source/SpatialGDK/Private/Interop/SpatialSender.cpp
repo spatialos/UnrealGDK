@@ -638,6 +638,11 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		}
 	}
 
+	if (bShouldDrop)
+	{
+		return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::TimedOut, bShouldDrop };
+	}
+
 	ERPCResult Result = SendRPCInternal(TargetObject, Function, Params.Payload);
 
 	if (Result == ERPCResult::NoAuthority)
