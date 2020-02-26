@@ -346,12 +346,6 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 		Writer.Printf("uint32 initially_present_multicast_rpc_count = {0};", FieldId++);
 	}
 
-	if (ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID)
-	{
-		// CrossServer RPC uses commands, only exists on ServerRPCEndpoint
-		Writer.Print("command Void server_to_server_rpc_command(UnrealRPCPayload);");
-	}
-
 	Writer.Outdent().Print("}");
 }
 
@@ -645,6 +639,22 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 	GenerateSubobjectSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath, ActorSchemaData, ActorClassPathToSchema.Find(Class->GetPathName()));
 
 	ActorClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
+
+	// Cache the NCD for this Actor
+	if (AActor* CDO = Class->GetDefaultObject<AActor>())
+	{
+		const float NCD = CDO->NetCullDistanceSquared;
+		if (NetCullDistanceToComponentId.Find(NCD) == nullptr)
+		{
+			if (FMath::FloorToFloat(NCD) != NCD)
+			{
+				UE_LOG(LogSchemaGenerator, Warning, TEXT("Fractional Net Cull Distance values are not supported and may result in incorrect behaviour. "
+					"Please modify class's (%s) Net Cull Distance Squared value (%f)"), *Class->GetPathName(), NCD);
+			}
+
+			NetCullDistanceToComponentId.Add(NCD, 0);
+		}
+	}
 
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
 }

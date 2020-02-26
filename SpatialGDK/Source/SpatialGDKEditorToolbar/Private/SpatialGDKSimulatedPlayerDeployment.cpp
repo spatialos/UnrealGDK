@@ -2,19 +2,21 @@
 
 #include "SpatialGDKSimulatedPlayerDeployment.h"
 
+#include "Async/Async.h"
 #include "DesktopPlatformModule.h"
 #include "EditorDirectories.h"
 #include "EditorStyleSet.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
-#include "Templates/SharedPointer.h"
+#include "Runtime/Launch/Resources/Version.h"
+#include "SpatialCommandUtils.h"
+#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorToolbar.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
-#include "Async/Async.h"
-#include "Runtime/Launch/Resources/Version.h"
+#include "Templates/SharedPointer.h"
 #include "Textures/SlateIcon.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
@@ -145,6 +147,49 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited, ETextCommit::Default)
 								]
 							]
+							// RuntimeVersion
+							+ SVerticalBox::Slot()
+								.AutoHeight()
+								.Padding(2.0f)
+								[
+									SNew(SHorizontalBox)
+									+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Use GDK Pinned Version"))))
+									.ToolTipText(FText::FromString(FString(TEXT("Whether to use the SpatialOS Runtime version associated to the current GDK version"))))
+								]
+							+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SCheckBox)
+									.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsUsingGDKPinnedRuntimeVersion)
+									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedUsePinnedVersion)
+								]
+								]
+							+ SVerticalBox::Slot()
+								.AutoHeight()
+								.Padding(2.0f)
+								[
+									SNew(SHorizontalBox)
+									+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Runtime Version"))))
+									.ToolTipText(FText::FromString(FString(TEXT("User supplied version of the SpatialOS runtime to use"))))
+								]
+							+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SEditableTextBox)
+									.Text(this, &SSpatialGDKSimulatedPlayerDeployment::GetSpatialOSRuntimeVersionToUseText)
+									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnRuntimeCustomVersionCommited)
+									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnRuntimeCustomVersionCommited, ETextCommit::Default)
+									.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::IsUsingCustomRuntimeVersion)
+								]
+								]
 							// Pirmary Deployment Name 
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -418,6 +463,18 @@ void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited(const
 	SpatialGDKSettings->SetPrimaryDeploymentName(InText.ToString());
 }
 
+void SSpatialGDKSimulatedPlayerDeployment::OnCheckedUsePinnedVersion(ECheckBoxState NewCheckedState)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetUseGDKPinnedRuntimeVersion(NewCheckedState == ECheckBoxState::Checked);
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnRuntimeCustomVersionCommited(const FText& InText, ETextCommit::Type InCommitType)
+{
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetCustomCloudSpatialOSRuntimeVersion(InText.ToString());
+}
+
 void SSpatialGDKSimulatedPlayerDeployment::OnSnapshotPathPicked(const FString& PickedPath)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
@@ -491,23 +548,6 @@ void SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited(ui
 	SpatialGDKSettings->SetNumberOfSimulatedPlayers(NewValue);
 }
 
-bool SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth()
-{
-	FString SpatialInfoArgs = TEXT("auth login");
-	FString SpatialInfoResult;
-	FString StdErr;
-	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpatialExe, *SpatialInfoArgs, &ExitCode, &SpatialInfoResult, &StdErr);
-
-	bool bSuccess = ExitCode == 0;
-	if (!bSuccess)
-	{
-		UE_LOG(LogSpatialGDKSimulatedPlayerDeployment, Warning, TEXT("Spatial auth login failed. Error Code: %d, Error Message: %s"), ExitCode, *SpatialInfoResult);
-	}
-
-	return bSuccess;
-}
-
 FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -524,31 +564,32 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		return FReply::Handled();
 	}
 
+	if (ToolbarPtr)
+	{
+		ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
+	}
+
 	auto LaunchCloudDeployment = [this, ToolbarPtr]()
 	{
 		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
 		{
-			if (ToolbarPtr)
-			{
-				ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
-			}
-
 			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
 				FSimpleDelegate::CreateLambda([]()
-			{
-				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
-					ToolbarPtr->OnShowSuccessNotification("Successfully launched cloud deployment.");
-				}
-			}),
+					if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+					{
+						ToolbarPtr->OnShowSuccessNotification("Successfully launched cloud deployment.");
+					}
+				}),
 
 				FSimpleDelegate::CreateLambda([]()
-			{
-				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
-					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
-				}
-			}));
+					if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
+					{
+						ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
+					}
+				})
+			);
 
 			return;
 		}
@@ -561,25 +602,22 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 	};
 
-	if (!AttemptSpatialAuthResult.IsReady() || AttemptSpatialAuthResult.Get() == false)
-	{
 #if ENGINE_MINOR_VERSION <= 22
-		AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth,
+	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
 #else
-		AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, SSpatialGDKSimulatedPlayerDeployment::AttemptSpatialAuth,
+	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
 #endif
-			[this, LaunchCloudDeployment]()
-		{
-			if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
-			{
-				LaunchCloudDeployment();
-			}
-		});
-	}
-	else
+		[this, LaunchCloudDeployment, ToolbarPtr]()
 	{
-		LaunchCloudDeployment();
-	}
+		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
+		{
+			LaunchCloudDeployment();
+		}
+		else
+		{
+			ToolbarPtr->OnShowTaskStartNotification(TEXT("Spatial auth failed attempting to launch cloud deployment."));
+		}
+	});
 
 	return FReply::Handled();
 }
@@ -649,4 +687,22 @@ ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled()
 bool SSpatialGDKSimulatedPlayerDeployment::IsDeploymentConfigurationValid() const
 {
 	return true;
+}
+
+ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsUsingGDKPinnedRuntimeVersion() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->GetUseGDKPinnedRuntimeVersion() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+}
+
+bool SSpatialGDKSimulatedPlayerDeployment::IsUsingCustomRuntimeVersion() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return !SpatialGDKSettings->GetUseGDKPinnedRuntimeVersion();
+}
+
+FText SSpatialGDKSimulatedPlayerDeployment::GetSpatialOSRuntimeVersionToUseText() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return FText::FromString(SpatialGDKSettings->GetSpatialOSRuntimeVersionForCloud());
 }

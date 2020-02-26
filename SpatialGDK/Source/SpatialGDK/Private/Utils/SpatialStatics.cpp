@@ -9,6 +9,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/InspectionColors.h"
 #include "Utils/SpatialActorGroupManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
@@ -58,6 +59,21 @@ bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& 
 	}
 
 	return false;
+}
+
+TArray<FDistanceFrequencyPair> USpatialStatics::GetNCDDistanceRatios()
+{
+	return GetDefault<USpatialGDKSettings>()->InterestRangeFrequencyPairs;
+}
+
+float USpatialStatics::GetFullFrequencyNetCullDistanceRatio()
+{
+	return GetDefault<USpatialGDKSettings>()->FullFrequencyNetCullDistanceRatio;
+}
+
+FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName)
+{
+	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
 bool USpatialStatics::IsSpatialOffloadingEnabled()

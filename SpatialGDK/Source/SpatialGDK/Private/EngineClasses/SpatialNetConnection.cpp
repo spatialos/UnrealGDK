@@ -71,11 +71,19 @@ int32 USpatialNetConnection::IsNetReady(bool Saturate)
 	return true;
 }
 
+#if ENGINE_MINOR_VERSION <= 23
 void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)
+#else
+void USpatialNetConnection::UpdateLevelVisibility(const struct FUpdateLevelVisibilityLevelInfo& LevelVisibility)
+#endif
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialNetConnectionUpdateLevelVisibility);
 
+#if ENGINE_MINOR_VERSION <= 23
 	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
+#else
+	UNetConnection::UpdateLevelVisibility(LevelVisibility);
+#endif
 
 	// We want to update our interest as fast as possible
 	// So we send an Interest update immediately.
@@ -107,7 +115,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 			return;
 		}
 
-		Worker_ComponentUpdate Update = {};
+		FWorkerComponentUpdate Update = {};
 		Update.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
 		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -163,7 +171,7 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 	{
 		if (USpatialNetConnection* Connection = WeakThis.Get())
 		{
-			Worker_ComponentUpdate ComponentUpdate = {};
+			FWorkerComponentUpdate ComponentUpdate = {};
 
 			ComponentUpdate.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
 			ComponentUpdate.schema_type = Schema_CreateComponentUpdate();

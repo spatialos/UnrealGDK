@@ -32,5 +32,4 @@ public:
 
 	TSharedPtr<FUICommandInfo> StartSpatialService;
 	TSharedPtr<FUICommandInfo> StopSpatialService;
-	TSharedPtr<FUICommandInfo> UpdateIOSClient;
 };

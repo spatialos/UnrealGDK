@@ -17,11 +17,11 @@ bool SpatialGDKCloudLaunch()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-
 	FString LauncherCreateArguments = FString::Printf(
-		TEXT("create %s %s %s \"%s\" \"%s\" %s"),
+		TEXT("create %s %s %s %s \"%s\" \"%s\" %s"),
 		*FSpatialGDKServicesModule::GetProjectName(),
 		*SpatialGDKSettings->GetAssemblyName(),
+		*SpatialGDKSettings->GetSpatialOSRuntimeVersionForCloud(),
 		*SpatialGDKSettings->GetPrimaryDeploymentName(),
 		*SpatialGDKSettings->GetPrimaryLaunchConfigPath(),
 		*SpatialGDKSettings->GetSnapshotPath(),
@@ -48,6 +48,10 @@ bool SpatialGDKCloudLaunch()
 	if (OutCode != 0)
 	{
 		UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("Cloud Launch failed with code %d: %s"), OutCode, *OutString);
+		if (!OutErr.IsEmpty())
+		{
+			UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("%s"), *OutErr);
+		}
 		bSuccess = false;
 	}
 
@@ -76,6 +80,10 @@ bool SpatialGDKCloudStop()
 	if (OutCode != 0)
 	{
 		UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("Cloud Launch failed with code %d: %s"), OutCode, *OutString);
+		if (!OutErr.IsEmpty())
+		{
+			UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("%s"), *OutErr);
+		}
 		bSuccess = false;
 	}
 

@@ -12,6 +12,9 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 #define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
 
@@ -20,18 +23,37 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bShowSpatialServiceButton(false)
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
+	, bUseGDKPinnedRuntimeVersion(true)
 	, bExposeRuntimeIP(false)
 	, ExposedRuntimeIP(TEXT(""))
 	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
 	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
+	, bUseDevelopmentAuthenticationFlow(false)
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
-	, ServicesRegion(EServicesRegion::Default)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
 	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
+}
+
+const FString& USpatialGDKEditorSettings::GetSpatialOSRuntimeVersionForLocal() const
+{
+	if (bUseGDKPinnedRuntimeVersion)
+	{
+		return SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion;
+	}
+	return LocalRuntimeVersion;
+}
+
+const FString& USpatialGDKEditorSettings::GetSpatialOSRuntimeVersionForCloud() const
+{
+	if (bUseGDKPinnedRuntimeVersion)
+	{
+		return SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion;
+	}
+	return CloudRuntimeVersion;
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
@@ -54,6 +76,18 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		SetRuntimeWorkerTypes();
 		SetLevelEditorPlaySettingsWorkerTypes();
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseDevelopmentAuthenticationFlow))
+	{
+		SetRuntimeUseDevelopmentAuthenticationFlow();
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, DevelopmentAuthenticationToken))
+	{
+		SetRuntimeDevelopmentAuthenticationToken();
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, DevelopmentDeploymentToConnect))
+	{
+		SetRuntimeDevelopmentDeploymentToConnect();
+	}
 }
 
 void USpatialGDKEditorSettings::PostInitProperties()
@@ -66,6 +100,9 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->SaveConfig();
 
 	SetRuntimeWorkerTypes();
+	SetRuntimeUseDevelopmentAuthenticationFlow();
+	SetRuntimeDevelopmentAuthenticationToken();
+	SetRuntimeDevelopmentDeploymentToConnect();
 	SetLevelEditorPlaySettingsWorkerTypes();
 }
 
@@ -87,8 +124,26 @@ void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
 		RuntimeSettings->ServerWorkerTypes.Empty(WorkerTypes.Num());
 		RuntimeSettings->ServerWorkerTypes.Append(WorkerTypes);
 		RuntimeSettings->PostEditChange();
-		RuntimeSettings->SaveConfig(CPF_Config, *RuntimeSettings->GetDefaultConfigFilename());
+		RuntimeSettings->UpdateSinglePropertyInConfigFile(RuntimeSettings->GetClass()->FindPropertyByName(GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServerWorkerTypes)), RuntimeSettings->GetDefaultConfigFilename());
 	}
+}
+
+void USpatialGDKEditorSettings::SetRuntimeUseDevelopmentAuthenticationFlow()
+{
+	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+	RuntimeSettings->bUseDevelopmentAuthenticationFlow = bUseDevelopmentAuthenticationFlow;
+}
+
+void USpatialGDKEditorSettings::SetRuntimeDevelopmentAuthenticationToken()
+{
+	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+	RuntimeSettings->DevelopmentAuthenticationToken = DevelopmentAuthenticationToken;
+}
+
+void USpatialGDKEditorSettings::SetRuntimeDevelopmentDeploymentToConnect()
+{
+	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+	RuntimeSettings->DevelopmentDeploymentToConnect = DevelopmentDeploymentToConnect;
 }
 
 void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
@@ -181,6 +236,18 @@ void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 	SaveConfig();
 }
 
+void USpatialGDKEditorSettings::SetUseGDKPinnedRuntimeVersion(bool Use)
+{
+	bUseGDKPinnedRuntimeVersion = Use;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetCustomCloudSpatialOSRuntimeVersion(const FString& Version)
+{
+	CloudRuntimeVersion = Version;
+	SaveConfig();
+}
+
 void USpatialGDKEditorSettings::SetSimulatedPlayerDeploymentName(const FString& Name)
 {
 	SimulatedPlayerDeploymentName = Name;
@@ -193,21 +260,69 @@ void USpatialGDKEditorSettings::SetNumberOfSimulatedPlayers(uint32 Number)
 	SaveConfig();
 }
 
-bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& LaunchConfigPath)
+bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched)
 {
-	FString FileContents;
-	FFileHelper::LoadFileToString(FileContents, *LaunchConfigPath);
-
-	const FRegexPattern ManualWorkerFlagPattern("\"manual_worker_connection_only\" *: *true");
-	FRegexMatcher ManualWorkerFlagMatcher(ManualWorkerFlagPattern, FileContents);
-
-	if (ManualWorkerFlagMatcher.FindNext())
+	TSharedPtr<FJsonValue> LaunchConfigJson;
 	{
-		UE_LOG(LogSpatialEditorSettings, Warning, TEXT("Launch configuration for cloud deployment has \"manual_worker_connection_only\" set to true. This means server workers will need to be connected manually."));
-		return true;
+		TUniquePtr<FArchive> ConfigFile(IFileManager::Get().CreateFileReader(*LaunchConfigPath));
+
+		if (!ConfigFile)
+		{
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Could not open configuration file %s"), *LaunchConfigPath);
+			return false;
+		}
+
+		TSharedRef<TJsonReader<char>> JsonReader = TJsonReader<char>::Create(ConfigFile.Get());
+
+		FJsonSerializer::Deserialize(*JsonReader, LaunchConfigJson);
 	}
 
-	return false;
+	const TSharedPtr<FJsonObject>* LaunchConfigJsonRootObject;
+
+	if (!LaunchConfigJson || !LaunchConfigJson->TryGetObject(LaunchConfigJsonRootObject))
+	{
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Invalid configuration file %s"), *LaunchConfigPath);
+		return false;
+	}
+
+	const TSharedPtr<FJsonObject>* LoadBalancingField;
+	if (!(*LaunchConfigJsonRootObject)->TryGetObjectField("load_balancing", LoadBalancingField))
+	{
+		return false;
+	}
+
+	const TArray<TSharedPtr<FJsonValue>>* LayerConfigurations;
+	if (!(*LoadBalancingField)->TryGetArrayField("layer_configurations", LayerConfigurations))
+	{
+		return false;
+	}
+
+	for (const auto& LayerConfigurationValue : *LayerConfigurations)
+	{
+		if (const TSharedPtr<FJsonObject> LayerConfiguration = LayerConfigurationValue->AsObject())
+		{
+			const TSharedPtr<FJsonObject>* OptionsField;
+			bool ManualWorkerConnectionFlag;
+
+			// Check manual_worker_connection flag, if it exists.
+			if (LayerConfiguration->TryGetObjectField("options", OptionsField)
+			 && (*OptionsField)->TryGetBoolField("manual_worker_connection_only", ManualWorkerConnectionFlag)
+			 && ManualWorkerConnectionFlag)
+			{
+				FString WorkerName;
+				if (LayerConfiguration->TryGetStringField("layer", WorkerName))
+				{
+					OutWorkersManuallyLaunched.Add(WorkerName);
+				}
+				else
+				{
+					UE_LOG(LogSpatialEditorSettings, Error, TEXT("Invalid configuration file %s, Layer configuration missing its layer field"), *LaunchConfigPath);
+				}
+			}
+		}
+	}
+
+	return OutWorkersManuallyLaunched.Num() != 0;
 }
 
 bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
@@ -258,9 +373,17 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		}
 	}
 
-	if (IsManualWorkerConnectionSet(GetPrimaryLaunchConfigPath()))
+	TArray<FString> WorkersManuallyLaunched;
+	if (IsManualWorkerConnectionSet(GetPrimaryLaunchConfigPath(), WorkersManuallyLaunched))
 	{
-		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("AllowManualWorkerConnection", "Chosen launch configuration will not automatically launch servers. Do you want to continue?")) != EAppReturnType::Yes)
+		FString WorkersReportString (LOCTEXT("AllowManualWorkerConnection", "Chosen launch configuration will not automatically launch the following worker types. Do you want to continue?\n").ToString());
+
+		for (const FString& Worker : WorkersManuallyLaunched)
+		{
+			WorkersReportString.Append(FString::Printf(TEXT(" - %s\n"), *Worker));
+		}
+
+		if (FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(WorkersReportString)) != EAppReturnType::Yes)
 		{
 			return false;
 		}

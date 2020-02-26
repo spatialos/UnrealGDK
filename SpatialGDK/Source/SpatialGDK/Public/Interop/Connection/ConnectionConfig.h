@@ -30,11 +30,6 @@ struct FConnectionConfig
 		FParse::Bool(CommandLine, TEXT("enableProtocolLogging"), EnableProtocolLoggingAtStartup);
 		FParse::Value(CommandLine, TEXT("protocolLoggingPrefix"), ProtocolLoggingPrefix);
         
-#if PLATFORM_IOS || PLATFORM_ANDROID
-		// On a mobile platform, you can only be a client worker, and therefore use the external IP.
-		WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
-		UseExternalIp = true;
-#endif
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString == TEXT("Tcp"))
@@ -96,14 +91,22 @@ public:
 	void LoadDefaults()
 	{
 		UseExternalIp = true;
-		LocatorHost = SpatialConstants::LOCATOR_HOST;
+
+		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
+		{
+			LocatorHost = SpatialConstants::LOCATOR_HOST_CN;
+		}
+		else
+		{
+			LocatorHost = SpatialConstants::LOCATOR_HOST;
+		}
 	}
 
 	bool TryLoadCommandLineArgs()
 	{
 		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
-		bSuccess &= FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
+		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
 		bSuccess &= FParse::Value(CommandLine, TEXT("playerIdentityToken"), PlayerIdentityToken);
 		bSuccess &= FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
 		return bSuccess;
@@ -112,6 +115,49 @@ public:
 	FString LocatorHost;
 	FString PlayerIdentityToken;
 	FString LoginToken;
+};
+
+class FDevAuthConfig : public FLocatorConfig
+{
+public:
+	FDevAuthConfig()
+	{
+		LoadDefaults();
+	}
+
+	void LoadDefaults()
+	{
+		UseExternalIp = true;
+		PlayerId = SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID;
+
+		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
+		{
+			LocatorHost = SpatialConstants::LOCATOR_HOST_CN;
+		}
+		else
+		{
+			LocatorHost = SpatialConstants::LOCATOR_HOST;
+		}
+	}
+
+	bool TryLoadCommandLineArgs()
+	{
+		bool bSuccess = true;
+		const TCHAR* CommandLine = FCommandLine::Get();
+		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
+		FParse::Value(CommandLine, TEXT("deployment"), Deployment);
+		FParse::Value(CommandLine, TEXT("playerId"), PlayerId);
+		FParse::Value(CommandLine, TEXT("displayName"), DisplayName);
+		FParse::Value(CommandLine, TEXT("metaData"), MetaData);
+		bSuccess = FParse::Value(CommandLine, TEXT("devAuthToken"), DevelopmentAuthToken);
+		return bSuccess;
+	}
+
+	FString DevelopmentAuthToken;
+	FString Deployment;
+	FString PlayerId;
+	FString DisplayName;
+	FString MetaData;
 };
 
 class FReceptionistConfig : public FConnectionConfig
@@ -168,5 +214,4 @@ public:
 
 private:
 	FString ReceptionistHost;
-
 };

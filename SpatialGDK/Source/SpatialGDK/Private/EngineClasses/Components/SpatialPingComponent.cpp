@@ -16,7 +16,11 @@ USpatialPingComponent::USpatialPingComponent(const FObjectInitializer& ObjectIni
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 
+#if ENGINE_MINOR_VERSION <= 23
 	bReplicates = true;
+#else
+	SetIsReplicatedByDefault(true);
+#endif
 }
 
 void USpatialPingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -64,7 +68,7 @@ void USpatialPingComponent::SetPingEnabled(bool bSetEnabled)
 	}
 
 	// Only execute on owning local client.
-	if (!OwningController->HasAuthority())
+	if (OwningController->IsNetMode(NM_Client) && OwningController->GetLocalRole() == ROLE_AutonomousProxy)
 	{
 		if (bSetEnabled && !bIsPingEnabled)
 		{

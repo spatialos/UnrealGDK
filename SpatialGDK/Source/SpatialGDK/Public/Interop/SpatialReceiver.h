@@ -8,6 +8,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Interop/SpatialOSDispatcherInterface.h"
 #include "Interop/SpatialRPCService.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/RPCPayload.h"
@@ -40,15 +41,8 @@ struct PendingAddComponentWrapper
 	TUniquePtr<SpatialGDK::DynamicComponent> Data;
 };
 
-DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseOp&);
-DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, const Worker_ReserveEntityIdsResponseOp&);
-DECLARE_DELEGATE_OneParam(CreateEntityDelegate, const Worker_CreateEntityResponseOp&);
-
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityAddedDelegate, const Worker_EntityId);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityRemovedDelegate, const Worker_EntityId);
-
 UCLASS()
-class USpatialReceiver : public UObject
+class USpatialReceiver : public UObject, public SpatialOSDispatcherInterface
 {
 	GENERATED_BODY()
 
@@ -56,34 +50,34 @@ public:
 	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService);
 
 	// Dispatcher Calls
-	void OnCriticalSection(bool InCriticalSection);
-	void OnAddEntity(const Worker_AddEntityOp& Op);
-	void OnAddComponent(const Worker_AddComponentOp& Op);
-	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);
-	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
-	void FlushRemoveComponentOps();
-	void RemoveComponentOpsForEntity(Worker_EntityId EntityId);
-	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
+	virtual void OnCriticalSection(bool InCriticalSection) override;
+	virtual void OnAddEntity(const Worker_AddEntityOp& Op) override;
+	virtual void OnAddComponent(const Worker_AddComponentOp& Op) override;
+	virtual void OnRemoveEntity(const Worker_RemoveEntityOp& Op) override;
+	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) override;
+	virtual void FlushRemoveComponentOps() override;
+	virtual void RemoveComponentOpsForEntity(Worker_EntityId EntityId) override;
+	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) override;
 
-	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
+	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
 
 	// This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling SpatialRPCService::ExtractRPCsForEntity.
-	bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload);
+	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
 
-	void OnCommandRequest(const Worker_CommandRequestOp& Op);
-	void OnCommandResponse(const Worker_CommandResponseOp& Op);
+	virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) override;
+	virtual void OnCommandResponse(const Worker_CommandResponseOp& Op) override;
 
-	void OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op);
-	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
+	virtual void OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op) override;
+	virtual void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op) override;
 
-	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
-	void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC);
+	virtual void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel) override;
+	virtual void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) override;
 
-	void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate);
-	void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate);
-	void AddCreateEntityDelegate(Worker_RequestId RequestId, const CreateEntityDelegate& Delegate);
+	virtual void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate) override;
+	virtual void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate) override;
+	virtual void AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate) override;
 
-	void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op);
+	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) override;
 
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();
@@ -121,7 +115,7 @@ private:
 	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp &Op, const Worker_ComponentId RPCEndpointComponentId, bool bPacked);
 	void HandleRPC(const Worker_ComponentUpdateOp& Op);
 
-	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel, const FClassInfo& ActorClassInfo);
+	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel, const FClassInfo& ActorClassInfo, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentData& Data);
 	
 	// This is called for AddComponentOps not in a critical section, which means they are not a part of the initial entity creation.
@@ -139,12 +133,10 @@ private:
 
 	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload InPayload);
 
-	void ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped);
 
-	void ProcessQueuedResolvedObjects();
 	void ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, SpatialGDK::RPCsOnEntityCreation& QueuedRPCs);
 	void UpdateShadowData(Worker_EntityId EntityId);
 	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
@@ -233,8 +225,6 @@ private:
 	// Useful to manage entities going in and out of interest, in order to recover references to actors.
 	FObjectToRepStateMap ObjectRefToRepStateMap;
 
-	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
-	
 	FRPCContainer IncomingRPCs;
 
 	bool bInCriticalSection;

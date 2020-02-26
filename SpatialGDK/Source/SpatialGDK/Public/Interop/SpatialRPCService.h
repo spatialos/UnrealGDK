@@ -83,7 +83,7 @@ public:
 	struct UpdateToSend
 	{
 		Worker_EntityId EntityId;
-		Worker_ComponentUpdate Update;
+		FWorkerComponentUpdate Update;
 	};
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
 	TArray<Worker_ComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
@@ -93,8 +93,8 @@ public:
 	// stops retrieving RPCs.
 	void ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
-	void OnCheckoutEntity(Worker_EntityId EntityId);
-	void OnRemoveEntity(Worker_EntityId EntityId);
+	void OnCheckoutMulticastRPCComponentOnEntity(Worker_EntityId EntityId);
+	void OnRemoveMulticastRPCComponentForEntity(Worker_EntityId EntityId);
 
 	void OnEndpointAuthorityGained(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);

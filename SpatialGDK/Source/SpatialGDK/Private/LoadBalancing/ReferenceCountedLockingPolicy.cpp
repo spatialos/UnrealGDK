@@ -7,7 +7,7 @@
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Component.h"
 
-#include "GameFramework/Actor.h"
+#include "Improbable/SpatialEngineDelegates.h"
 
 DEFINE_LOG_CATEGORY(LogReferenceCountedLockingPolicy);
 
@@ -75,12 +75,18 @@ ActorLockToken UReferenceCountedLockingPolicy::AcquireLock(AActor* Actor, FStrin
 	return NextToken++;
 }
 
-void UReferenceCountedLockingPolicy::ReleaseLock(ActorLockToken Token)
+bool UReferenceCountedLockingPolicy::ReleaseLock(const ActorLockToken Token)
 {
-	const auto NameAndActor = TokenToNameAndActor.FindAndRemoveChecked(Token);
-	const AActor* Actor = NameAndActor.Actor;
-	const FString& Name = NameAndActor.LockName;
-	UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Releasing actor migration lock. Actor: %s. Token: %d. Lock name: %s"), *Actor->GetName(), Token, *Name);
+	const LockNameAndActor* NameAndActor = TokenToNameAndActor.Find(Token);
+	if (NameAndActor == nullptr)
+	{
+		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Called ReleaseLock for unidentified Actor lock token. Token: %d."), Token);
+		return false;
+	}
+
+	const AActor* Actor = NameAndActor->Actor;
+	const FString& Name = NameAndActor->LockName;
+	UE_LOG(LogReferenceCountedLockingPolicy, Log, TEXT("Releasing Actor migration lock. Actor: %s. Token: %d. Lock name: %s"), *Actor->GetName(), Token, *Name);
 
 	check(ActorToLockingState.Contains(Actor));
 
@@ -99,6 +105,10 @@ void UReferenceCountedLockingPolicy::ReleaseLock(ActorLockToken Token)
 			--ActorLockingState.LockCount;
 		}
 	}
+
+	TokenToNameAndActor.Remove(Token);
+
+	return true;
 }
 
 bool UReferenceCountedLockingPolicy::IsLocked(const AActor* Actor) const
@@ -126,4 +136,30 @@ void UReferenceCountedLockingPolicy::OnLockedActorDeleted(AActor* DestroyedActor
 		TokenToNameAndActor.Remove(Token);
 	}
 	ActorToLockingState.Remove(DestroyedActor);
+}
+
+bool UReferenceCountedLockingPolicy::AcquireLockFromDelegate(AActor* ActorToLock, const FString& DelegateLockIdentifier)
+{
+	ActorLockToken LockToken = AcquireLock(ActorToLock, DelegateLockIdentifier);
+	if (LockToken == SpatialConstants::INVALID_ACTOR_LOCK_TOKEN)
+	{
+		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("AcquireLock called from engine delegate returned an invalid token"));
+		return false;
+	}
+
+	check(!DelegateLockingIdentifierToActorLockToken.Contains(DelegateLockIdentifier));
+	DelegateLockingIdentifierToActorLockToken.Add(DelegateLockIdentifier, LockToken);
+	return true;
+}
+
+bool UReferenceCountedLockingPolicy::ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier)
+{
+	if (!DelegateLockingIdentifierToActorLockToken.Contains(DelegateLockIdentifier))
+	{
+		UE_LOG(LogReferenceCountedLockingPolicy, Error, TEXT("Executed ReleaseLockDelegate for unidentified delegate lock identifier. Token: %s."), *DelegateLockIdentifier);
+		return false;
+	}
+	ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(DelegateLockIdentifier);
+	bool ReleaseSucceeded = ReleaseLock(LockToken);
+	return ReleaseSucceeded;
 }

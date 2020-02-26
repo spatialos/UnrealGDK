@@ -2,7 +2,6 @@
 
 #include "EngineClasses/SpatialGameInstance.h"
 
-#include "Engine/Engine.h"
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
 #if WITH_EDITOR
@@ -103,7 +102,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 }
 #endif
 
-void USpatialGameInstance::StartGameInstance()
+void USpatialGameInstance::TryConnectToSpatial()
 {
 	if (HasSpatialNetDriver())
 	{
@@ -129,6 +128,11 @@ void USpatialGameInstance::StartGameInstance()
 			}
 		}
 	}
+}
+
+void USpatialGameInstance::StartGameInstance()
+{
+	TryConnectToSpatial();
 
 	Super::StartGameInstance();
 }

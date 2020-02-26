@@ -10,8 +10,10 @@
 #include "Utils/SchemaDatabase.h"
 
 #include "CoreMinimal.h"
+#include "GeneralProjectSettings.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/FileHelper.h"
+#include "Misc/PackageName.h"
 
 #define LOCTEXT_NAMESPACE "SpatialGDKEDitorSchemaGeneratorTest"
 
@@ -239,7 +241,11 @@ const TSet<UClass*>& AllTestClassesSet()
 	return TestClassesSet;
 };
 
+#if ENGINE_MINOR_VERSION <= 23
 FString ExpectedContentsDirectory = TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema");
+#else
+FString ExpectedContentsDirectory = TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema_4.24");
+#endif
 TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActor", "SpatialTypeActor.schema" },
 	{ "NonSpatialTypeActor", "NonSpatialTypeActor.schema" },
@@ -840,6 +846,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 		"relevant.schema",
 		"rpc_components.schema",
 		"rpc_payload.schema",
+		"server_worker.schema",
 		"singleton.schema",
 		"spawndata.schema",
 		"spawner.schema",

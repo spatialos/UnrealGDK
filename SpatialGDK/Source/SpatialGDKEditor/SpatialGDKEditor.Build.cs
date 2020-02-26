@@ -7,7 +7,13 @@ public class SpatialGDKEditor : ModuleRules
 	public SpatialGDKEditor(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        bUseUnity = false;
+#pragma warning disable 0618
+        bFasterWithoutUnity = true;             // Deprecated in 4.24, replace with bUseUnity = false; once we drop support for 4.23
+        if (Target.Version.MinorVersion == 24)  // Due to a bug in 4.24, bFasterWithoutUnity is inversed, fixed in master, so should hopefully roll into the next release, remove this once it does
+        {
+            bFasterWithoutUnity = false;
+        }
+#pragma warning restore 0618
 
         PrivateDependencyModuleNames.AddRange(
 			new string[] {
@@ -16,7 +22,8 @@ public class SpatialGDKEditor : ModuleRules
 				"EditorStyle",
 				"Engine",
  				"EngineSettings",
-				"Json",
+ 				"IOSRuntimeSettings",
+ 				"Json",
 				"PropertyEditor",
 				"Slate",
 				"SlateCore",
@@ -24,7 +31,7 @@ public class SpatialGDKEditor : ModuleRules
 				"SpatialGDKServices",
 				"UnrealEd",
 				"GameplayAbilities"
-            });
+			});
 
 		PrivateIncludePaths.AddRange(
 			new string[]

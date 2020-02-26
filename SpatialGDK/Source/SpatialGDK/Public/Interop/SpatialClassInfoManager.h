@@ -113,10 +113,23 @@ public:
 	
 	const FRPCInfo& GetRPCInfo(UObject* Object, UFunction* Function);
 
-	Worker_ComponentId GetComponentIdFromLevelPath(const FString& LevelPath);
-	bool IsSublevelComponent(Worker_ComponentId ComponentId);
+	Worker_ComponentId GetComponentIdFromLevelPath(const FString& LevelPath) const;
+	bool IsSublevelComponent(Worker_ComponentId ComponentId) const;
 
-	TArray<Worker_ComponentId> GetComponentIdsForComponentType(const ESchemaComponentType ComponentType);
+	const TMap<float, Worker_ComponentId>& GetNetCullDistanceToComponentIds() const;
+
+	Worker_ComponentId GetComponentIdForNetCullDistance(float NetCullDistance) const;
+	Worker_ComponentId ComputeActorInterestComponentId(const AActor* Actor) const;
+
+	bool IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const;
+
+	const TArray<Worker_ComponentId>& GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const;
+
+	// Used to check if component is used for qbi tracking only
+	bool IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const;
+
+	// Tries to find ClassInfo corresponding to an unused dynamic subobject on the given entity
+	const FClassInfo* GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient);
 
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
