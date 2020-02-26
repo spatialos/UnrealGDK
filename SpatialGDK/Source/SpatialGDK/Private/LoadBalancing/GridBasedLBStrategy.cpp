@@ -35,28 +35,30 @@ void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver)
 	const float ColumnWidth = WorldWidth / Cols;
 	const float RowHeight = WorldHeight / Rows;
 
-	float XMin = WorldWidthMin;
-	float YMin = WorldHeightMin;
+	// We would like the inspector's representation of the load balancing strategy to match our intuition.
+	// +x is forward, so rows are perpendicular to the x-axis and columns are perpendicular to the y-axis.
+	float XMin = WorldHeightMin;
+	float YMin = WorldWidthMin;
 	float XMax, YMax;
 
 	for (uint32 Col = 0; Col < Cols; ++Col)
 	{
-		XMax = XMin + ColumnWidth;
+		YMax = YMin + ColumnWidth;
 
 		for (uint32 Row = 0; Row < Rows; ++Row)
 		{
-			YMax = YMin + RowHeight;
+			XMax = XMin + RowHeight;
 
 			FVector2D Min(XMin, YMin);
 			FVector2D Max(XMax, YMax);
 			FBox2D Cell(Min, Max);
 			WorkerCells.Add(Cell);
 
-			YMin = YMax;
+			XMin = XMax;
 		}
 
-		YMin = WorldHeightMin;
-		XMin = XMax;
+		XMin = WorldHeightMin;
+		YMin = YMax;
 	}
 }
 
