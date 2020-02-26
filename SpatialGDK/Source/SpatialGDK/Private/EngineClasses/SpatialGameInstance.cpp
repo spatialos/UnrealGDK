@@ -12,6 +12,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
+#include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
@@ -71,22 +72,17 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 	return bHasSpatialNetDriver;
 }
 
-void USpatialGameInstance::CreateNewSpatialWorkerConnection()
+void USpatialGameInstance::CreateNewSpatialConnectionManager()
 {
-	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
-
-#if TRACE_LIB_ACTIVE
-	SpatialConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
-	SpatialConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
-#endif
+	SpatialConnectionManager = NewObject<USpatialConnectionManager>(this);
 }
 
-void USpatialGameInstance::DestroySpatialWorkerConnection()
+void USpatialGameInstance::DestroySpatialConnectionManager()
 {
-	if (SpatialConnection != nullptr)
+	if (SpatialConnectionManager != nullptr)
 	{
-		SpatialConnection->DestroyConnection();
-		SpatialConnection = nullptr;
+		SpatialConnectionManager->DestroyConnection();
+		SpatialConnectionManager = nullptr;
 	}
 }
 
@@ -96,7 +92,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 	if (HasSpatialNetDriver())
 	{
 		// If we are using spatial networking then prepare a spatial connection.
-		CreateNewSpatialWorkerConnection();
+		CreateNewSpatialConnectionManager();
 	}
 
 	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
@@ -108,7 +104,7 @@ void USpatialGameInstance::TryConnectToSpatial()
 	if (HasSpatialNetDriver())
 	{
 		// If we are using spatial networking then prepare a spatial connection.
-		CreateNewSpatialWorkerConnection();
+		CreateNewSpatialConnectionManager();
 
 		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
 		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
@@ -181,9 +177,13 @@ void USpatialGameInstance::Init()
 void USpatialGameInstance::HandleOnConnected()
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Successfully connected to SpatialOS"));
-	SpatialWorkerId = SpatialConnection->GetWorkerId();
+	SpatialWorkerId = SpatialConnectionManager->GetWorkerConnection()->GetWorkerId();
 #if TRACE_LIB_ACTIVE
 	SpatialLatencyTracer->SetWorkerId(SpatialWorkerId);
+
+	USpatialWorkerConnection* WorkerConnection = SpatialConnectionManager->GetWorkerConnection();
+	WorkerConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
+	WorkerConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
 #endif
 	OnConnected.Broadcast();
 }
