@@ -629,16 +629,20 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::MissingFunctionInfo, bShouldDrop };
 	}
 
-	ERPCResult Result = SendRPCInternal(TargetObject, Function, Params.Payload);
-
 	if (AActor* TargetActor = Cast<AActor>(TargetObject))
 	{
 		if (TargetActor->IsPendingKillPending())
 		{
 			bShouldDrop = true;
+			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::ActorPendingKill, bShouldDrop };
 		}
+	}
 
-		if (Result == ERPCResult::NoAuthority)
+	ERPCResult Result = SendRPCInternal(TargetObject, Function, Params.Payload);
+
+	if (Result == ERPCResult::NoAuthority)
+	{
+		if (AActor* TargetActor = Cast<AActor>(TargetObject))
 		{
 			bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
 		}
