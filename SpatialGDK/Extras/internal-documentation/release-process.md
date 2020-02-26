@@ -29,7 +29,7 @@ To check that Xbox-compatible Worker SDK DLLs are available.
 A correct command looks something like this:<br>
 `spatial package get worker_sdk c-dynamic-x86_64-xdk180401-xbone 13.7.1 c-sdk-13.7.1-180401.zip`<br>
 If it succeeds it will download a DLL.<br>
-If it fails because the DLL is not available, file a WRK ticket for the Worker team to generate the required DLL(s). See [WRK-1275](https://improbableio.atlassian.net/browse/WRK-1275) for an example.
+If it fails because the DLL is not available, file a WRK ticket for the Worker team to generate the required DLL(s). See [WRK-1676](https://improbableio.atlassian.net/browse/WRK-1676) for an example.
 
 ### Create the `UnrealGDK` release candidate
 1. Notify `#dev-unreal-internal` that you intend to commence a release. Ask if anyone `@here` knows of any blocking defects in code or docs that should be resolved prior to commencement of the release process.
@@ -69,12 +69,6 @@ If it fails because the DLL is not available, file a WRK ticket for the Worker t
 1. `git checkout -b x.y.z-rc` in order to create release candidate branch.
 1. `git push --set-upstream origin x.y.z-rc` to push the branch.
 1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
-
-### Serve docs locally
-It is vital that you test using the docs for the release version that you are about to publish, not with the currently live docs that relate to the previous version.
-1. cd `UnrealGDK`
-1. git checkout `docs-release`
-1. `improbadoc serve <path to x.y.z-rc-x docs>`
 
 ## Build your release candidate engine
 1. Open http://localhost:8080/reference/1.0/content/get-started/dependencies.
@@ -132,9 +126,9 @@ The workflow for this is:
 1. Follow these steps: https://brevi.link/unreal-release-playtests. All tests must pass.
 
 ## Validation (Docs)
-1. Upload docs to docs-testing using Improbadoc.
-1. Validate that Improbadoc reports no linting errors.
-1. Read the docs for five minutes to ensure nothing looks broken.
+1. @techwriters in [#docs](https://improbable.slack.com/archives/C0TBQAB5X) and ask them what's changes in the docs since the last release.
+2. Proof read the pages that have changed.
+3. Spend an additional 20 minutes reading the docs and ensuring that nothing is incorrect.
 
 ## Release
 
@@ -175,9 +169,7 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 1. In `UnrealGDK`, merge `release` into `master`.
 
 **Documentation**
-1. Publish the docs to live using Improbadoc commands listed [here](https://improbableio.atlassian.net/wiki/spaces/GBU/pages/327485360/Publishing+GDK+Docs).
-1. Update the [roadmap](https://github.com/spatialos/UnrealGDK/projects/1), moving the release from **Planned** to **Released**, and linking to the release.
-1. Audit the [known issues](https://github.com/spatialos/UnrealGDK/issues), and ensure all fixed issues are updated/removed.
+1. Notify @techwriters in [#docs](https://improbable.slack.com/archives/C0TBQAB5X) that they may publish the new version of the docs.
 
 **Announce**
 Only announce full releases, not `preview` ones.
