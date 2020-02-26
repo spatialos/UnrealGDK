@@ -6,7 +6,6 @@
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"
 #include "UObject/Script.h"
-#include "Utils/SpatialActorGroupManager.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
