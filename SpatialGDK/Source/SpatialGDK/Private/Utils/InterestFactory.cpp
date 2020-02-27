@@ -261,55 +261,67 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
 
 Interest InterestFactory::CreateServerWorkerInterest(const USpatialNetDriver& NetDriver)
 {
-	QueryConstraint Constraint;
-
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bEnableServerQBI)
 	{
 		UE_LOG(LogInterestFactory, Warning, TEXT("For performance reasons, it's recommended to disable server QBI"));
 	}
 
+	Interest ServerInterest;
+	ComponentInterest ServerComponentInterest;
+	Query ServerQuery;
+	QueryConstraint Constraint;
+
+	// Set the result type of the query
+	if (SpatialGDKSettings->bEnableResultTypes)
+	{
+		ServerQuery.ResultComponentId = ServerNonAuthInterestResultType;
+	}
+	else
+	{
+		ServerQuery.FullSnapshotResult = true;
+	}
+
 	if (!SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
 	{
 		// In offloading scenarios, hijack the server worker entity to ensure each server has interest in all entities
 		Constraint.ComponentConstraint = SpatialConstants::POSITION_COMPONENT_ID;
-	}
-	else
-	{
-		// Ensure server worker receives always relevant entities
-		Constraint = CreateAlwaysRelevantConstraint();
+		ServerQuery.Constraint = Constraint;
+
+		// No need to add any further interest as we are already interested in everything
+		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+		return ServerInterest;
 	}
 
-	Query Query;
-	Query.Constraint = Constraint;
-	if (SpatialGDKSettings->bEnableResultTypes)
-	{
-		Query.ResultComponentId = ServerNonAuthInterestResultType;
-	}
-	else
-	{
-		Query.FullSnapshotResult = true;
-	}
+	// If we aren't offloading, the server gets more granular interest.
 
-	ComponentInterest Queries;
-	Queries.Queries.Add(Query);
+	// Ensure server worker receives always relevant entities
+	QueryConstraint AlwaysRelevantConstraint = CreateAlwaysRelevantConstraint();
 
+	Constraint = AlwaysRelevantConstraint;
+
+	// If we aren't using the load balancer, there is no need for further interest as we are either offloading or single server,
+	// so will checkout everything we care about through authority.
 	if (SpatialGDKSettings->bEnableUnrealLoadBalancer && SpatialGDKSettings->bEnableServerQBI)
 	{
 		if (const UAbstractLBStrategy* LoadBalancer = NetDriver.LoadBalanceStrategy)
 		{
 			// The load balancer won't be ready when the worker initially connects to SpatialOS. It needs
 			// to wait for the virtual worker mappings to be replicated.
+			// This function will be called again when that is the case in order to update the interest on the server entity.
 			if (LoadBalancer->IsReady())
 			{
-				LoadBalancer->CreateWorkerInterestQueries(Queries.Queries);
+				QueryConstraint LoadBalancerConstraint = LoadBalancer->GetWorkerInterestQueryConstraint();
+
+				Constraint.OrConstraint.Empty();
+				Constraint.OrConstraint.Add(AlwaysRelevantConstraint);
+				Constraint.OrConstraint.Add(LoadBalancerConstraint);
 			}
 		}
 	}
 
-	Interest ServerInterest;
-	ServerInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, Queries);
-
+	ServerQuery.Constraint = Constraint;
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
 	return ServerInterest;
 }
 
@@ -342,29 +354,6 @@ Interest InterestFactory::CreateInterest() const
 	}
 
 	return ResultInterest;
-}
-
-void InterestFactory::AddActorInterest(Interest& OutInterest) const
-{
-	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints();
-
-	if (!SystemConstraints.IsValid())
-	{
-		return;
-	}
-
-	Query NewQuery;
-	NewQuery.Constraint = SystemConstraints;
-	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
-	{
-		NewQuery.ResultComponentId = ServerNonAuthInterestResultType;
-	}
-	else
-	{
-		NewQuery.FullSnapshotResult = true;
-	}
-
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, NewQuery);
 }
 
 void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) const

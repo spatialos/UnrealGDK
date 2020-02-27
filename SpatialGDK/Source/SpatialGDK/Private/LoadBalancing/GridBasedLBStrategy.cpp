@@ -3,7 +3,6 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
-#include "Schema/Interest.h"
 #include "Utils/SpatialActorUtils.h"
 
 #include "Templates/Tuple.h"
@@ -102,25 +101,28 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 }
 
-void UGridBasedLBStrategy::CreateWorkerInterestQueries(TArray<SpatialGDK::Query>& OutQueries) const
+SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstraint() const
 {
 	// For a grid-based strategy, the interest area is the cell that the worker is authoritative over plus some border region.
-	// If there is only a single server, then there is no need to create interest since the worker has authority over the entire world (in principle, at least).
 	check(IsReady());
 	check(InterestBorder >= 0);
-	if (Rows * Cols > 0)
+	check(Rows * Cols > 0);
+
+	// If there is only one worker, this special cases to a "true" constraint (Component constraint for the position component).
+	if (Rows * Cols == 1)
 	{
-		const FBox2D Interest2D = WorkerCells[LocalVirtualWorkerId - 1].ExpandBy(InterestBorder);
-		const FVector Min = FVector{ Interest2D.Min.X, Interest2D.Min.Y, FLT_MIN };
-		const FVector Max = FVector{ Interest2D.Max.X, Interest2D.Max.Y, FLT_MAX };
-		const FBox Interest3D = FBox{ Min, Max };
-		SpatialGDK::QueryConstraint Constraint;
-		Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Interest3D.GetCenter()), SpatialGDK::EdgeLength::FromFVector(2 * Interest3D.GetExtent()) };
-		SpatialGDK::Query Query;
-		Query.Constraint = Constraint;
-		Query.FullSnapshotResult = true;
-		OutQueries.Add(Query);
+		SpatialGDK::QueryConstraint TrueConstraint;
+		TrueConstraint.ComponentConstraint = SpatialConstants::POSITION_COMPONENT_ID;
+		return TrueConstraint;
 	}
+
+	const FBox2D Interest2D = WorkerCells[LocalVirtualWorkerId - 1].ExpandBy(InterestBorder);
+	const FVector Min = FVector{ Interest2D.Min.X, Interest2D.Min.Y, FLT_MIN };
+	const FVector Max = FVector{ Interest2D.Max.X, Interest2D.Max.Y, FLT_MAX };
+	const FBox Interest3D = FBox{ Min, Max };
+	SpatialGDK::QueryConstraint Constraint;
+	Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Interest3D.GetCenter()), SpatialGDK::EdgeLength::FromFVector(2 * Interest3D.GetExtent()) };
+	return Constraint;
 }
 
 bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location)

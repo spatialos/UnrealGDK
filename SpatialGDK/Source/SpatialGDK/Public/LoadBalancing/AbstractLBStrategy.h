@@ -6,6 +6,7 @@
 #include "SpatialConstants.h"
 
 #include "CoreMinimal.h"
+#include "Schema/Interest.h"
 #include "UObject/NoExportTypes.h"
 
 #include "AbstractLBStrategy.generated.h"
@@ -50,9 +51,9 @@ public:
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;)
 
 	/**
-		* Add any interest queries required by this worker based on the load balancing strategy used.
-		*/
-	virtual void CreateWorkerInterestQueries(TArray<SpatialGDK::Query>& OutQueries) const PURE_VIRTUAL(UAbstractLBStrategy::CreateWorkerInterestQueries, )
+	* Create the query constraints required by this worker based on the load balancing strategy used.
+	*/
+	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const PURE_VIRTUAL(UAbstractLBStrategy::GetWorkerInterestQueryConstraint, return {};)
 
 protected:
 

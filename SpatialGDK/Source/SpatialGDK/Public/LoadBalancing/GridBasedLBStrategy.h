@@ -7,6 +7,7 @@
 #include "CoreMinimal.h"
 #include "Math/Box2D.h"
 #include "Math/Vector2D.h"
+#include "Schema/Interest.h"
 
 #include "GridBasedLBStrategy.generated.h"
 
@@ -43,7 +44,7 @@ public:
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 
-	virtual void CreateWorkerInterestQueries(TArray<SpatialGDK::Query>& OutQueries) const override;
+	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const override;
 /* End UAbstractLBStrategy Interface */
 
 	LBStrategyRegions GetLBStrategyRegions() const;
