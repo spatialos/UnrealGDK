@@ -244,6 +244,7 @@ const TSet<UClass*>& AllTestClassesSet()
 #if ENGINE_MINOR_VERSION <= 23
 FString ExpectedContentsDirectory = TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema");
 #else
+// Remove this once we fix 4.22 and 4.23: UNR-2988
 FString ExpectedContentsDirectory = TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema_4.24");
 #endif
 TMap<FString, FString> ExpectedContentsFilenames = {
