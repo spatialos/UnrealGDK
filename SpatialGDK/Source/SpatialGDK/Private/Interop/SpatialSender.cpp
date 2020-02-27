@@ -606,19 +606,11 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendRPC);
 
-	bool bShouldDrop = false;
-
-	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
-	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime < TimeDiff)
-	{
-		bShouldDrop = true;
-	}
-
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
-		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::UnresolvedTargetObject, bShouldDrop };
+		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::UnresolvedTargetObject, true };
 	}
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 
@@ -626,21 +618,21 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::MissingFunctionInfo, bShouldDrop };
+		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::MissingFunctionInfo, true };
+	}
+
+	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
+	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime < TimeDiff)
+	{
+		return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::TimedOut, true };
 	}
 
 	if (AActor* TargetActor = Cast<AActor>(TargetObject))
 	{
 		if (TargetActor->IsPendingKillPending())
 		{
-			bShouldDrop = true;
-			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::ActorPendingKill, bShouldDrop };
+			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::ActorPendingKill, true };
 		}
-	}
-
-	if (bShouldDrop)
-	{
-		return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::TimedOut, bShouldDrop };
 	}
 
 	ERPCResult Result = SendRPCInternal(TargetObject, Function, Params.Payload);
@@ -649,11 +641,12 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	{
 		if (AActor* TargetActor = Cast<AActor>(TargetObject))
 		{
-			bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
+			bool bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
+			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result, bShouldDrop };
 		}
 	}
 
-	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result, bShouldDrop };
+	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result, false };
 }
 
 #if !UE_BUILD_SHIPPING
