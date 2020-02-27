@@ -595,6 +595,11 @@ void UGlobalStateManager::BeginDestroy()
 
 void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 {
+	// This logic is not used in offloading.
+	if (USpatialStatics::IsSpatialOffloadingEnabled()) {
+		return;
+	}
+
 	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
 	{
 		AActor* Actor = *It;
@@ -611,11 +616,6 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 
 void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 {
-	// This logic is not used in offloading.
-	if (USpatialStatics::IsSpatialOffloadingEnabled()) {
-		return;
-	}
-
 	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
 	{
 		AActor* Actor = *It;

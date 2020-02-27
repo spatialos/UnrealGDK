@@ -883,19 +883,22 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		for (UObject* SubObject : ActorChannel->CreateSubObjects)
+		if (NetDriver->GetWorld() != nullptr && !NetDriver->GetWorld()->IsPendingKillOrUnreachable())
 		{
-			if (SubObject)
+			for (UObject* SubObject : ActorChannel->CreateSubObjects)
 			{
-				FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(SubObject, Cast<USpatialPackageMapClient>(PackageMap));
-				// Unmap this object so we can remap it if it becomes relevant again in the future
-				MoveMappedObjectToUnmapped(ObjectRef);
+				if (SubObject)
+				{
+					FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(SubObject, Cast<USpatialPackageMapClient>(PackageMap));
+					// Unmap this object so we can remap it if it becomes relevant again in the future
+					MoveMappedObjectToUnmapped(ObjectRef);
+				}
 			}
-		}
 
-		FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Actor, Cast<USpatialPackageMapClient>(PackageMap));
-		// Unmap this object so we can remap it if it becomes relevant again in the future
-		MoveMappedObjectToUnmapped(ObjectRef);
+			FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Actor, Cast<USpatialPackageMapClient>(PackageMap));
+			// Unmap this object so we can remap it if it becomes relevant again in the future
+			MoveMappedObjectToUnmapped(ObjectRef);
+		}
 
 		for (auto& ChannelRefs : ActorChannel->ObjectReferenceMap)
 		{
@@ -1061,6 +1064,13 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 	if (!SpawnDataComp->Scale.Equals(FVector::OneVector, Epsilon))
 	{
 		NewActor->SetActorScale3D(SpawnDataComp->Scale);
+	}
+
+	// Don't have authority over Actor until SpatialOS delegates authority, if zoning is enabled
+	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	{
+		NewActor->Role = ROLE_SimulatedProxy;
+		NewActor->RemoteRole = ROLE_Authority;
 	}
 
 	return NewActor;

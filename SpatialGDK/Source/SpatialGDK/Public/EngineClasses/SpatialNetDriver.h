@@ -228,6 +228,9 @@ private:
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
 
+	UFUNCTION()
+	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
+
 	void OnActorSpawned(AActor* Actor);
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);

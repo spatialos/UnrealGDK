@@ -218,23 +218,29 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 		return;
 	}
 
-	if (USpatialStatics::IsSpatialOffloadingEnabled())
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
-		if (OwningWorld->WorldType != EWorldType::PIE
-			&& OwningWorld->WorldType != EWorldType::Game
-			&& OwningWorld->WorldType != EWorldType::GamePreview)
+		return;
+	}
+
+	if (OwningWorld->WorldType != EWorldType::PIE
+		&& OwningWorld->WorldType != EWorldType::Game
+		&& OwningWorld->WorldType != EWorldType::GamePreview)
+	{
+		return;
+	}
+
+	for (int32 ActorIndex = 0; ActorIndex < LoadedLevel->Actors.Num(); ActorIndex++)
+	{
+		AActor* Actor = LoadedLevel->Actors[ActorIndex];
+		if (Actor == nullptr)
 		{
-			return;
+			continue;
 		}
 
-		for (int32 ActorIndex = 0; ActorIndex < LoadedLevel->Actors.Num(); ActorIndex++)
+		if (USpatialStatics::IsSpatialOffloadingEnabled())
 		{
-			AActor* Actor = LoadedLevel->Actors[ActorIndex];
-			if (Actor == nullptr)
-			{
-				continue;
-			}
-
+			check(!GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer);
 			if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
 			{
 				if (!Actor->bNetLoadOnNonAuthServer)
@@ -250,22 +256,11 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 				}
 			}
 		}
-	}
-	else if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
-	{
-		// Necessary for levels loaded before connecting to Spatial
-		if (GlobalStateManager == nullptr)
-		{
-			return;
-		}
 
-		// If load balancing is enabled and lb strategy says we should have authority over a
-		// loaded level Actor then also set Role_Authority on Actors in the sublevel.
-		const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-
-		for (auto Actor : LoadedLevel->Actors)
+		if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
 		{
-			if (Actor->GetIsReplicated() && !((USpatialNetDriver*)OwningWorld->GetNetDriver())->LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
+			check(!USpatialStatics::IsSpatialOffloadingEnabled());
+			if (Actor->GetIsReplicated())
 			{
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;

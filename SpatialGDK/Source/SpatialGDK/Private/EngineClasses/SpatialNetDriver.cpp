@@ -104,6 +104,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
+	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
+
 	if (GetWorld() != nullptr)
 	{
 		GetWorld()->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateUObject(this, &USpatialNetDriver::OnActorSpawned));
@@ -577,7 +579,7 @@ void USpatialNetDriver::GSMQueryDelegateFunction(const Worker_EntityQueryRespons
 		return;
 	}
 	else if (bNewAcceptingPlayers != true ||
-			 QuerySessionId != SessionId)
+		QuerySessionId != SessionId)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("GlobalStateManager did not match expected state. Will retry query for GSM."));
 		RetryQueryGSM();
@@ -681,6 +683,41 @@ void USpatialNetDriver::MakePlayerSpawnRequest()
 		PlayerSpawner->SendPlayerSpawnRequest();
 		bWaitingToSpawn = false;
 		bPersistSpatialConnection = false;
+	}
+}
+
+void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
+{
+	// Callback got called on a World that's not associated with this NetDriver.
+	// Don't do anything.
+	if (OwningWorld != World)
+	{
+		return;
+	}
+
+	// Necessary for levels loaded before connecting to Spatial
+	if (GlobalStateManager == nullptr)
+	{
+		return;
+	}
+
+	// If load balancing is enabled and lb strategy says we should have authority
+	// over a loaded level Actor then also set Role_Authority on Actors in the sublevel.
+	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
+	if (!bLoadBalancingEnabled)
+	{
+		// If load balancing is disabled then exit early.
+		return;
+	}
+
+	for (auto Actor : LoadedLevel->Actors)
+	{
+		if (Actor->GetIsReplicated() &&
+			(LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
+		{
+			Actor->Role = ROLE_Authority;
+			Actor->RemoteRole = ROLE_SimulatedProxy;
+		}
 	}
 }
 
@@ -803,7 +840,6 @@ void USpatialNetDriver::BeginDestroy()
 	}
 #endif
 
-	// null out reference to ActorGroupManger
 	ActorGroupManager = nullptr;
 }
 
@@ -1577,7 +1613,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (LoadBalanceEnforcer.IsValid())
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
-			for(const auto& Elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
+			for (const auto& Elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
 			{
 				Sender->SetAclWriteAuthority(Elem.EntityId, Elem.OwningWorkerId);
 			}
@@ -2265,7 +2301,7 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 
 	if (!bIsReadyToStart)
 	{
-	    return;
+		return;
 	}
 
 	for (Worker_OpList* OpList : QueuedStartupOpLists)
