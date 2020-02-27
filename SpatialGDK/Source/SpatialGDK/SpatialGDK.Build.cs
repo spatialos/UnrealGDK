@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Diagnostics;
-using Tools.DotNETCommon;
 using UnrealBuildTool;
 
 public class SpatialGDK : ModuleRules
@@ -17,11 +16,6 @@ public class SpatialGDK : ModuleRules
         bFasterWithoutUnity = true;
 
         PrivateIncludePaths.Add("SpatialGDK/Private");
-
-        var WorkerSDKPath = Path.GetFullPath(Path.Combine(ModuleDirectory, "Public", "WorkerSDK"));
-
-        PublicIncludePaths.Add(WorkerSDKPath); // Worker SDK uses a different include format <improbable/x.h>
-        PrivateIncludePaths.Add(WorkerSDKPath);
 
         PublicDependencyModuleNames.AddRange(
             new string[]
@@ -36,11 +30,11 @@ public class SpatialGDK : ModuleRules
                 "Sockets",
             });
 
-        if (Target.bBuildEditor)
-        {
-            PublicDependencyModuleNames.Add("UnrealEd");
-            PublicDependencyModuleNames.Add("SpatialGDKServices");
-        }
+		if (Target.bBuildEditor)
+		{
+			PublicDependencyModuleNames.Add("UnrealEd");
+			PublicDependencyModuleNames.Add("SpatialGDKServices");
+		}
 
         if (Target.bWithPerfCounters)
         {
@@ -48,11 +42,6 @@ public class SpatialGDK : ModuleRules
         }
 
         var WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
-
-        var WorkerLibraryPaths = new List<string>
-            {
-                WorkerLibraryDir,
-            };
 
         string LibPrefix = "improbable_";
         string ImportLibSuffix = "";
@@ -94,19 +83,6 @@ public class SpatialGDK : ModuleRules
             LibPrefix = "libimprobable_";
             ImportLibSuffix = SharedLibSuffix = "_static.a";
         }
-        else if (Target.Platform == UnrealTargetPlatform.Android)
-        {
-            LibPrefix = "improbable_";
-            WorkerLibraryPaths.AddRange(new string[]
-            {
-                Path.Combine(WorkerLibraryDir, "arm64-v8a"),
-                Path.Combine(WorkerLibraryDir, "armeabi-v7a"),
-                Path.Combine(WorkerLibraryDir, "x86_64"),
-            });
-
-            string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
-            AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(PluginPath, "SpatialGDK_APL.xml"));
-        }
         else
         {
             throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
@@ -115,54 +91,12 @@ public class SpatialGDK : ModuleRules
         string WorkerImportLib = System.String.Format("{0}worker{1}", LibPrefix, ImportLibSuffix);
         string WorkerSharedLib = System.String.Format("{0}worker{1}", LibPrefix, SharedLibSuffix);
 
-        if (Target.Platform != UnrealTargetPlatform.Android)
+        PublicAdditionalLibraries.AddRange(new[] { Path.Combine(WorkerLibraryDir, WorkerImportLib) });
+        PublicLibraryPaths.Add(WorkerLibraryDir);
+        RuntimeDependencies.Add(Path.Combine(WorkerLibraryDir, WorkerSharedLib), StagedFileType.NonUFS);
+        if (bAddDelayLoad)
         {
-            RuntimeDependencies.Add(Path.Combine(WorkerLibraryDir, WorkerSharedLib), StagedFileType.NonUFS);
-            if (bAddDelayLoad)
-            {
-                PublicDelayLoadDLLs.Add(WorkerSharedLib);
-            }
-
-            WorkerImportLib = Path.Combine(WorkerLibraryDir, WorkerImportLib);
+            PublicDelayLoadDLLs.Add(WorkerSharedLib);
         }
-
-        PublicAdditionalLibraries.Add(WorkerImportLib);
-        PublicLibraryPaths.AddRange(WorkerLibraryPaths);
-
-        // Detect existence of trace library, if present add preprocessor
-        string TraceStaticLibPath = "";
-        string TraceDynamicLib = "";
-        string TraceDynamicLibPath = "";
-        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
-        {
-            TraceStaticLibPath = Path.Combine(WorkerLibraryDir, "trace_dynamic.lib");
-            TraceDynamicLib = "trace_dynamic.dll";
-            TraceDynamicLibPath = Path.Combine(WorkerLibraryDir, TraceDynamicLib);
-        }
-        else if (Target.Platform == UnrealTargetPlatform.Linux)
-        {
-            TraceStaticLibPath = Path.Combine(WorkerLibraryDir, "libtrace_dynamic.so");
-            TraceDynamicLib = "libtrace_dynamic.so";
-            TraceDynamicLibPath = Path.Combine(WorkerLibraryDir, TraceDynamicLib);
-        }
-
-        if (File.Exists(TraceStaticLibPath) && File.Exists(TraceDynamicLibPath))
-        {
-            Log.TraceInformation("Detection of trace libraries found at {0} and {1}, enabling trace functionality.", TraceStaticLibPath, TraceDynamicLibPath);
-            PublicDefinitions.Add("TRACE_LIB_ACTIVE=1");
-
-            PublicAdditionalLibraries.Add(TraceStaticLibPath);
-
-            RuntimeDependencies.Add(TraceDynamicLibPath, StagedFileType.NonUFS);
-            if (bAddDelayLoad)
-            {
-                PublicDelayLoadDLLs.Add(TraceDynamicLib);
-            }
-        }
-        else
-        {
-            Log.TraceInformation("Didn't find trace libraries at {0} and {1}, disabling trace functionality.", TraceStaticLibPath, TraceDynamicLibPath);
-            PublicDefinitions.Add("TRACE_LIB_ACTIVE=0");
-        }
-    }
+	}
 }

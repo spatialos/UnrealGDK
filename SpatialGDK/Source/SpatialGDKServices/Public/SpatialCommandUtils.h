@@ -10,5 +10,5 @@ class SpatialCommandUtils
 {
 public:
 
-	SPATIALGDKSERVICES_API static bool AttemptSpatialAuth(bool bIsRunningInChina);
+	SPATIALGDKSERVICES_API static bool AttemptSpatialAuth(bool IsRunningInChina);
 };

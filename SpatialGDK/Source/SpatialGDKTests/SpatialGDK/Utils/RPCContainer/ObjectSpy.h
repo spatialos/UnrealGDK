@@ -10,8 +10,8 @@
 
 namespace SpyUtils
 {
-	TArray<uint8> RPCTypeToByteArray(ERPCType Type);
-	ERPCType ByteArrayToRPCType(const TArray<uint8>& Array);
+	TArray<uint8> SchemaTypeToByteArray(ESchemaComponentType Type);
+	ESchemaComponentType ByteArrayToSchemaType(const TArray<uint8>& Array);
 } // namespace SpyUtils
 
 UCLASS()
@@ -21,5 +21,5 @@ class UObjectSpy : public UObject
 public:
 	FRPCErrorInfo ProcessRPC(const FPendingRPCParams& Params);
 
-	TMap<ERPCType, TArray<uint32>> ProcessedRPCIndices;
+	TMap<ESchemaComponentType, TArray<uint32>> ProcessedRPCIndices;
 };

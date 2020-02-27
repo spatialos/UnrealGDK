@@ -11,20 +11,20 @@
 
 #include "SpatialMetrics.generated.h"
 
+class USpatialNetDriver;
 class USpatialWorkerConnection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialMetrics, Log, All);
 
 UCLASS()
-class SPATIALGDK_API USpatialMetrics : public UObject
+class USpatialMetrics : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialWorkerConnection* Connection,
-		float MaxServerTickRate, bool bIsServer);
+	void Init(USpatialNetDriver* InNetDriver);
 
-	void TickMetrics(float NetDriverTime);
+	void TickMetrics();
 
 	double CalculateLoad() const;
 
@@ -43,26 +43,18 @@ public:
 	void SpatialModifySetting(const FString& Name, float Value);
 	void OnModifySettingCommand(Schema_Object* CommandPayload);
 
-	void TrackSentRPC(UFunction* Function, ERPCType RPCType, int PayloadSize);
+	void TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize);
 
 	void HandleWorkerMetrics(Worker_Op* Op);
 
 	// The user can bind their own delegate to handle worker metrics.
 	typedef TMap<FString, double> WorkerMetrics;
-	DECLARE_MULTICAST_DELEGATE_OneParam(WorkerMetricsDelegate, WorkerMetrics);
+	DECLARE_MULTICAST_DELEGATE_OneParam(WorkerMetricsDelegate, WorkerMetrics)
 	WorkerMetricsDelegate WorkerMetricsRecieved;
 
-	// Delegate used to poll for the current player controller's reference
-	DECLARE_DELEGATE_RetVal(FUnrealObjectRef, FControllerRefProviderDelegate);
-	FControllerRefProviderDelegate ControllerRefProvider;
-
 private:
-
 	UPROPERTY()
-	USpatialWorkerConnection* Connection;
-
-	bool bIsServer;
-	float NetServerMaxTickRate;
+	USpatialNetDriver* NetDriver;
 
 	float TimeOfLastReport;
 	float TimeSinceLastReport;
@@ -78,7 +70,7 @@ private:
 	// tracking on the server.
 	struct RPCStat
 	{
-		ERPCType Type;
+		ESchemaComponentType Type;
 		FString Name;
 		int Calls;
 		int TotalPayload;

@@ -18,9 +18,8 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Kismet/GameplayStatics.h"
-#include "Schema/ServerWorker.h"
+#include "Runtime/Engine/Public/TimerManager.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
@@ -30,12 +29,13 @@ DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
 using namespace SpatialGDK;
 
-void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
+void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 	Receiver = InNetDriver->Receiver;
+	TimerManager = InTimerManager;
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 #if WITH_EDITOR
@@ -47,17 +47,15 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 		bool bRunUnderOneProcess = true;
 		PlayInSettings->GetRunUnderOneProcess(bRunUnderOneProcess);
 
-		if (!bRunUnderOneProcess && !PrePIEEndedHandle.IsValid())
+		if (!bRunUnderOneProcess)
 		{
-			PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::OnPrePIEEnded);
+			FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::OnPrePIEEnded);
 		}
 	}
 #endif // WITH_EDITOR
   
 	bAcceptingPlayers = false;
-	bHasSentReadyForVirtualWorkerAssignment = false;
 	bCanBeginPlay = false;
-	bCanSpawnWithAuthority = false;
 }
 
 void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& Data)
@@ -70,47 +68,20 @@ void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Dat
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 	
+	// Set the Deployment Map URL.
 	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
 
-	bAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
-
-	DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
-
-	SchemaHash = Schema_GetUint32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH);
+	// Set the AcceptingPlayers state.
+	bool bDataAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
+	ApplyAcceptingPlayersUpdate(bDataAcceptingPlayers);
 }
 
 void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
-
-	TrySendWorkerReadyToBeginPlay();
-}
-
-void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
-{
-	// Once a worker has received the StartupActorManager AddComponent op, we say that a
-	// worker is ready to begin play. This means if the GSM-authoritative worker then sets
-	// canBeginPlay=true it will be received as a ComponentUpdate and so we can differentiate
-	// from when canBeginPlay=true was loaded from the snapshot and was received as an
-	// AddComponent. This is important for handling startup Actors correctly in a zoned
-	// environment.
-	const bool bHasReceivedStartupActorData = StaticComponentView->HasComponent(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-	const bool bWorkerEntityCreated = NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID;
-	if (bHasSentReadyForVirtualWorkerAssignment || !bHasReceivedStartupActorData || !bWorkerEntityCreated)
-	{
-		return;
-	}
-
-	FWorkerComponentUpdate Update = {};
-	Update.component_id = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate();
-	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
-	Schema_AddBool(UpdateObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
-
-	bHasSentReadyForVirtualWorkerAssignment = true;
-	NetDriver->Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &Update);
+	const bool bCanBeginPlayData = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
+	ApplyCanBeginPlayUpdate(bCanBeginPlayData);
 }
 
 void UGlobalStateManager::ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update)
@@ -134,17 +105,20 @@ void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate&
 
 	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID) == 1)
 	{
-		bAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
+		bool bUpdateAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
+		ApplyAcceptingPlayersUpdate(bUpdateAcceptingPlayers);
 	}
+}
 
-	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID) == 1)
+void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate)
+{
+	if (bAcceptingPlayersUpdate != bAcceptingPlayers)
 	{
-		DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
-	}
+		UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - AcceptingPlayers: %s"), bAcceptingPlayersUpdate ? TEXT("true") : TEXT("false"));
+		bAcceptingPlayers = bAcceptingPlayersUpdate;
 
-	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH) == 1)
-	{
-		SchemaHash = Schema_GetUint32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH);
+		// Tell the SpatialNetDriver that AcceptingPlayers has changed.
+		NetDriver->OnAcceptingPlayersChanged(bAcceptingPlayersUpdate);
 	}
 }
 
@@ -152,7 +126,6 @@ void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate&
 void UGlobalStateManager::OnPrePIEEnded(bool bValue)
 {
 	SendShutdownMultiProcessRequest();
-	FEditorDelegates::PrePIEEnded.Remove(PrePIEEndedHandle);
 }
 
 void UGlobalStateManager::SendShutdownMultiProcessRequest()
@@ -179,8 +152,6 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 		
 		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server. 
 		SetAcceptingPlayers(false);
-		DeploymentSessionId = 0;
-		SendSessionIdUpdate();
 
 		// If we have multiple servers, they need to be informed of PIE session ending.
 		SendShutdownAdditionalServersEvent();
@@ -217,7 +188,7 @@ void UGlobalStateManager::SendShutdownAdditionalServersEvent()
 		return;
 	}
 
-	FWorkerComponentUpdate ComponentUpdate = {};
+	Worker_ComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
@@ -232,8 +203,16 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentU
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
-	bCanSpawnWithAuthority = true;
+	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID) == 1)
+	{
+		const bool bCanBeginPlayUpdate = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
+		ApplyCanBeginPlayUpdate(bCanBeginPlayUpdate);
+	}
+}
+
+void UGlobalStateManager::ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate)
+{
+	bCanBeginPlay = bCanBeginPlayUpdate;
 }
 
 void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActorClass)
@@ -254,13 +233,13 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 		return;
 	}
 
-	TPair<AActor*, USpatialActorChannel*>* ActorChannelPair = SingletonClassPathToActorChannels.Find(SingletonActorClass->GetPathName());
+	TPair<AActor*, USpatialActorChannel*>* ActorChannelPair = NetDriver->SingletonActorChannels.Find(SingletonActorClass);
 	if (ActorChannelPair == nullptr)
 	{
 		// Dynamically spawn singleton actor if we have queued up data - ala USpatialReceiver::ReceiveActor - JIRA: 735
 
 		// No local actor has registered itself as replicatible on this worker
-		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor no actor registered for class %s"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor no actor registered"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -270,7 +249,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	if (Channel != nullptr)
 	{
 		// Channel has already been setup
-		UE_LOG(LogGlobalStateManager, Verbose, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup for %s"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Verbose, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -281,7 +260,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 
 	Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
 
-	if (StaticComponentView->HasAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID))
+	if (StaticComponentView->GetAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		SingletonActor->Role = ROLE_Authority;
 		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
@@ -331,7 +310,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 
 	UClass* SingletonActorClass = SingletonActor->GetClass();
 
-	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = SingletonClassPathToActorChannels.FindOrAdd(SingletonActorClass->GetPathName());
+	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = NetDriver->SingletonActorChannels.FindOrAdd(SingletonActorClass);
 	USpatialActorChannel*& Channel = ActorChannelPair.Value;
 	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
 	ActorChannelPair.Key = SingletonActor;
@@ -356,7 +335,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 		{
 			check(NetDriver->PackageMap->GetObjectFromEntityId(*SingletonEntityId) == nullptr);
 			NetDriver->PackageMap->ResolveEntityActor(SingletonActor, *SingletonEntityId);
-			if (!StaticComponentView->HasAuthority(*SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID))
+			if (StaticComponentView->GetAuthority(*SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) != WORKER_AUTHORITY_AUTHORITATIVE)
 			{
 				SingletonActor->Role = ROLE_SimulatedProxy;
 				SingletonActor->RemoteRole = ROLE_Authority;
@@ -379,16 +358,9 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	return Channel;
 }
 
-void UGlobalStateManager::RemoveSingletonInstance(const AActor* SingletonActor)
-{
-	check(SingletonActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton));
-
-	SingletonClassPathToActorChannels.Remove(SingletonActor->GetClass()->GetPathName());
-}
-
 void UGlobalStateManager::RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel)
 {
-	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = SingletonClassPathToActorChannels.FindOrAdd(SingletonActor->GetClass()->GetPathName());
+	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = NetDriver->SingletonActorChannels.FindOrAdd(SingletonActor->GetClass());
 
 	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
 	check(ActorChannelPair.Value == nullptr || ActorChannelPair.Value == SingletonChannel);
@@ -399,7 +371,7 @@ void UGlobalStateManager::RegisterSingletonChannel(AActor* SingletonActor, USpat
 
 void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 {
-	for (auto& ClassToActorChannel : SingletonClassPathToActorChannels)
+	for (auto& ClassToActorChannel : NetDriver->SingletonActorChannels)
 	{
 		auto& ActorChannelPair = ClassToActorChannel.Value;
 		AddSingleton(ActorChannelPair.Key);
@@ -417,7 +389,7 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 		return;
 	}
 
-	FWorkerComponentUpdate Update = {};
+	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -439,36 +411,13 @@ bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId) const
 	return false;
 }
 
-void UGlobalStateManager::SetDeploymentState()
-{
-	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
-
-	// Send the component update that we can now accept players.
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting deployment URL to '%s'"), *NetDriver->GetWorld()->URL.Map);
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting schema hash to '%u'"), NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
-
-	FWorkerComponentUpdate Update = {};
-	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate();
-	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
-
-	// Set the map URL on the GSM.
-	AddStringToSchema(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID, NetDriver->GetWorld()->URL.Map);
-
-	// Set the schema hash for connecting workers to check against
-	Schema_AddUint32(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH, NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
-
-	// Component updates are short circuited so we set the updated state here and then send the component update.
-	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
-}
-
 void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 {
 	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
 
 	// Send the component update that we can now accept players.
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
-	FWorkerComponentUpdate Update = {};
+	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -479,11 +428,23 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	// Set the AcceptingPlayers state on the GSM
 	Schema_AddBool(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID, static_cast<uint8_t>(bInAcceptingPlayers));
 
-	// Set the schema hash for connecting workers to check against
-	Schema_AddUint32(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH, NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
-
 	// Component updates are short circuited so we set the updated state here and then send the component update.
 	bAcceptingPlayers = bInAcceptingPlayers;
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+}
+
+void UGlobalStateManager::SetCanBeginPlay(const bool bInCanBeginPlay)
+{
+	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
+
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate();
+	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bInCanBeginPlay));
+
+	bCanBeginPlay = bInCanBeginPlay;
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
@@ -502,7 +463,6 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		{
 			GlobalStateManagerEntityId = AuthOp.entity_id;
-			SetDeploymentState();
 			SetAcceptingPlayers(true);
 			break;
 		}
@@ -513,18 +473,14 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 		}
 		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		{
-			// The bCanSpawnWithAuthority member determines whether a server-side worker
-			// should consider calling BeginPlay on startup Actors if the load-balancing
-			// strategy dictates that the worker should have authority over the Actor
-			// (providing Unreal load balancing is enabled). This should only happen for
-			// workers launching for fresh deployments, since for restarted workers and
-			// when deployments are launched from a snapshot, the entities representing
-			// startup Actors should already exist. If bCanBeginPlay is set to false, this
-			// means it's a fresh deployment, so bCanSpawnWithAuthority should be true.
-			// Conversely, if bCanBeginPlay is set to true, this worker is either a restarted
-			// crashed worker or in a deployment loaded from snapshot, so bCanSpawnWithAuthority
-			// should be false.
-			bCanSpawnWithAuthority = !bCanBeginPlay;
+			// We can reach this point with bCanBeginPlay==true if the server
+			// that was authoritative over the GSM restarts.
+			if (!bCanBeginPlay)
+			{
+				BecomeAuthoritativeOverAllActors();
+				SetCanBeginPlay(true);
+			}
+
 			break;
 		}
 		default:
@@ -548,25 +504,6 @@ bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId)
 	}
 }
 
-void UGlobalStateManager::ResetGSM()
-{
-	UE_LOG(LogGlobalStateManager, Display, TEXT("GlobalStateManager singletons are being reset. Session restarting."));
-
-	SingletonNameToEntityId.Empty();
-	SetAcceptingPlayers(false);
-
-	// Reset the BeginPlay flag so Startup Actors are properly managed.
-	SendCanBeginPlayUpdate(false);
-
-	// Reset the Singleton map so Singletons are recreated.
-	FWorkerComponentUpdate Update = {};
-	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate();
-	Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
-
-	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
-}
-
 void UGlobalStateManager::BeginDestroy()
 {
 	Super::BeginDestroy();
@@ -578,10 +515,10 @@ void UGlobalStateManager::BeginDestroy()
 		if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
 		{
 			// Reset the BeginPlay flag so Startup Actors are properly managed.
-			SendCanBeginPlayUpdate(false);
+			SetCanBeginPlay(false);
 
 			// Reset the Singleton map so Singletons are recreated.
-			FWorkerComponentUpdate Update = {};
+			Worker_ComponentUpdate Update = {};
 			Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 			Update.schema_type = Schema_CreateComponentUpdate();
 			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
@@ -590,6 +527,11 @@ void UGlobalStateManager::BeginDestroy()
 		}
 	}
 #endif
+}
+
+bool UGlobalStateManager::HasAuthority()
+{
+	return NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
 }
 
 void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
@@ -608,77 +550,17 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 	}
 }
 
-void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
-{
-	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
-	{
-		AActor* Actor = *It;
-		if (Actor != nullptr && !Actor->IsPendingKill())
-		{
-			if (Actor->GetIsReplicated() && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
-			{
-				Actor->Role = ROLE_Authority;
-				Actor->RemoteRole = ROLE_SimulatedProxy;
-			}
-		}
-	}
-}
-
 void UGlobalStateManager::TriggerBeginPlay()
 {
-	const bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-	if (bHasGSMAuthority)
-	{
-		SendCanBeginPlayUpdate(true);
-	}
-
-	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority
-	if (bCanSpawnWithAuthority)
-	{
-		if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
-		{
-			BecomeAuthoritativeOverActorsBasedOnLBStrategy();
-		}
-		else
-		{
-			BecomeAuthoritativeOverAllActors();
-		}
-	}
+	check(IsReadyToCallBeginPlay());
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
 }
 
-bool UGlobalStateManager::GetCanBeginPlay() const
-{
-	return bCanBeginPlay;
-}
-
-bool UGlobalStateManager::IsReady() const
-{
-	return GetCanBeginPlay() || NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-}
-
-void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
-{
-	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
-
-	bCanBeginPlay = bInCanBeginPlay;
-
-	FWorkerComponentUpdate Update = {};
-	Update.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate();
-	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
-
-	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bCanBeginPlay));
-
-	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
-}
-
 // Queries for the GlobalStateManager in the deployment.
-// bRetryUntilRecievedExpectedValues will continue querying until the state of AcceptingPlayers and SessionId are the same as the given arguments
-// This is so clients know when to connect to the deployment.
-void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
+// bRetryUntilAcceptingPlayers will continue querying until the state of AcceptingPlayers is true, this is so clients know when to connect to the deployment.
+void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 {
 	Worker_ComponentConstraint GSMComponentConstraint{};
 	GSMComponentConstraint.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
@@ -695,7 +577,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
 
 	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this, Callback](const Worker_EntityQueryResponseOp& Op)
+	GSMQueryDelegate.BindLambda([this, bRetryUntilAcceptingPlayers](const Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -707,30 +589,28 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 		}
 		else
 		{
-			if (NetDriver->VirtualWorkerTranslator.IsValid())
+			bool bNewAcceptingPlayers = GetAcceptingPlayersFromQueryResponse(Op);
+
+			if (!bNewAcceptingPlayers && bRetryUntilAcceptingPlayers)
 			{
-				ApplyVirtualWorkerMappingFromQueryResponse(Op);
+				UE_LOG(LogGlobalStateManager, Log, TEXT("Not yet accepting new players. Will retry query for GSM."));
+				RetryQueryGSM(bRetryUntilAcceptingPlayers);
 			}
-			ApplyDeploymentMapDataFromQueryResponse(Op);
-			Callback.ExecuteIfBound(Op);
+			else
+			{
+				ApplyDeploymentMapDataFromQueryResponse(Op);
+			}
+
+			return;
+		}
+
+		if (bRetryUntilAcceptingPlayers)
+		{
+			RetryQueryGSM(bRetryUntilAcceptingPlayers);
 		}
 	});
 
 	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
-}
-
-void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
-{
-	check(NetDriver->VirtualWorkerTranslator.IsValid());
-	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
-	{
-		Worker_ComponentData Data = Op.results[0].components[i];
-		if (Data.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
-		{
-			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
-		}
-	}
 }
 
 void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
@@ -745,12 +625,9 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_E
 	}
 }
 
-bool UGlobalStateManager::GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers, int32& OutSessionId)
+bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
 	checkf(Op.result_count == 1, TEXT("There should never be more than one GSM"));
-
-	bool AcceptingPlayersFound = false;
-	bool SessionIdFound = false;
 
 	// Iterate over each component on the GSM until we get the DeploymentMap component.
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
@@ -762,48 +639,43 @@ bool UGlobalStateManager::GetAcceptingPlayersAndSessionIdFromQueryResponse(const
 
 			if (Schema_GetBoolCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID) == 1)
 			{
-				OutAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
-				AcceptingPlayersFound = true;
-			}
-
-			if (Schema_GetUint32Count(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID) == 1)
-			{
-				OutSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
-				SessionIdFound = true;
-			}
-
-			if (AcceptingPlayersFound && SessionIdFound)
-			{
-				return true;
+				bool bDataAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
+				return bDataAcceptingPlayers;
 			}
 		}
 	}
 
-	UE_LOG(LogGlobalStateManager, Warning, TEXT("Entity query response for the GSM did not contain both AcceptingPlayers and SessionId states."));
+	UE_LOG(LogGlobalStateManager, Warning, TEXT("Entity query response for the GSM did not contain an AcceptingPlayers state."));
 
 	return false;
+}
+
+void UGlobalStateManager::RetryQueryGSM(bool bRetryUntilAcceptingPlayers)
+{
+	// TODO: UNR-656 - TLDR: Hack to get around runtime not giving data on streaming queries unless you have write authority.
+	// There is currently a bug in runtime which prevents clients from being able to have read access on the component via the streaming query.
+	// This means that the clients never actually receive updates or data on the GSM. To get around this we are making timed entity queries to
+	// find the state of the GSM and the accepting players. Remove this work-around when the runtime bug is fixed.
+	float RetryTimerDelay = SpatialConstants::ENTITY_QUERY_RETRY_WAIT_SECONDS;
+
+	// In PIE we want to retry the entity query as soon as possible.
+#if WITH_EDITOR
+	RetryTimerDelay = 0.1f;
+#endif
+
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
+	FTimerHandle RetryTimer;
+	TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<UGlobalStateManager>(this), bRetryUntilAcceptingPlayers]()
+	{
+		if (UGlobalStateManager* GSM = WeakThis.Get())
+		{
+			GSM->QueryGSM(bRetryUntilAcceptingPlayers);
+		}
+	}, RetryTimerDelay, false);
 }
 
 void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 {
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;
-}
-
-void UGlobalStateManager::IncrementSessionID()
-{
-	DeploymentSessionId++;
-	SendSessionIdUpdate();
-}
-
-void UGlobalStateManager::SendSessionIdUpdate()
-{
-	FWorkerComponentUpdate Update = {};
-	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate();
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
-
-	Schema_AddInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID, DeploymentSessionId);
-
-	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }

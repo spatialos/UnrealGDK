@@ -30,7 +30,7 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 		return;
 	}
 
-	if (bLogToSpatial && Connection != nullptr)
+	if (bLogToSpatial && Connection->IsConnected())
 	{
 #if WITH_EDITOR
 		if (GPlayInEditorID != PIEIndex)

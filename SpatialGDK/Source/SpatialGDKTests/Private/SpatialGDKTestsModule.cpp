@@ -10,11 +10,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKTests);
 
 IMPLEMENT_MODULE(FSpatialGDKTestsModule, SpatialGDKTests);
 
-void InitializeSpatialFlagEarlyValues();
-
 void FSpatialGDKTestsModule::StartupModule()
 {
-	InitializeSpatialFlagEarlyValues();
 }
 
 void FSpatialGDKTestsModule::ShutdownModule()

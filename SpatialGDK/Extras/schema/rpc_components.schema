@@ -2,9 +2,21 @@
 package unreal;
 
 import "unreal/gdk/core_types.schema";
-import "unreal/gdk/rpc_payload.schema";
 
-component UnrealClientRPCEndpointLegacy {
+type UnrealRPCPayload {
+    uint32 offset = 1;
+    uint32 rpc_index = 2;
+    bytes rpc_payload = 3;
+}
+
+type UnrealPackedRPCPayload {
+    uint32 offset = 1;
+    uint32 rpc_index = 2;
+    bytes rpc_payload = 3;
+    EntityId entity = 4;
+}
+
+component UnrealClientRPCEndpoint {
     id = 9990;
     // Set to true when authority is gained, indicating that RPCs can be received
     bool ready = 1;
@@ -12,20 +24,16 @@ component UnrealClientRPCEndpointLegacy {
     event UnrealPackedRPCPayload packed_client_to_server_rpc;
 }
 
-component UnrealServerRPCEndpointLegacy {
+component UnrealServerRPCEndPoint {
     id = 9989;
     // Set to true when authority is gained, indicating that RPCs can be received
     bool ready = 1;
     event UnrealRPCPayload server_to_client_rpc_event;
     event UnrealPackedRPCPayload packed_server_to_client_rpc;
-}
-
-component UnrealServerToServerCommandEndpoint {
-    id = 9973;
     command Void server_to_server_rpc_command(UnrealRPCPayload);
 }
 
-component UnrealMulticastRPCEndpointLegacy {
+component UnrealMulticastRPCEndpoint {
     id = 9987;
     event UnrealRPCPayload unreliable_multicast_rpc;
 }

@@ -44,7 +44,7 @@ struct Coordinates
 	}
 };
 
-static const Coordinates DeploymentOrigin{ 0, 0, 0 };
+static const Coordinates Origin{ 0, 0, 0 };
 
 inline void AddCoordinateToSchema(Schema_Object* Object, Schema_FieldId Id, const Coordinates& Coordinate)
 {
@@ -55,9 +55,9 @@ inline void AddCoordinateToSchema(Schema_Object* Object, Schema_FieldId Id, cons
 	Schema_AddDouble(CoordsObject, 3, Coordinate.Z);
 }
 
-inline Coordinates IndexCoordinateFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
-	Schema_Object* CoordsObject = Schema_IndexObject(Object, Id, Index);
+	Schema_Object* CoordsObject = Schema_GetObject(Object, Id);
 
 	Coordinates Coordinate;
 	Coordinate.X = Schema_GetDouble(CoordsObject, 1);
@@ -65,11 +65,6 @@ inline Coordinates IndexCoordinateFromSchema(Schema_Object* Object, Schema_Field
 	Coordinate.Z = Schema_GetDouble(CoordsObject, 3);
 
 	return Coordinate;
-}
-
-inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId Id)
-{
-	return IndexCoordinateFromSchema(Object, Id, 0);
 }
 
 struct EntityAcl : Component

@@ -2,37 +2,16 @@
 
 #pragma once
 
-#include "EngineClasses/SpatialNetConnection.h"
+#include "CoreMinimal.h"
 
 #include "Components/SceneComponent.h"
-#include "Containers/Array.h"
-#include "Containers/UnrealString.h"
 #include "Engine/EngineTypes.h"
+#include "EngineClasses/SpatialNetConnection.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"
-#include "GameFramework/PlayerController.h"
-#include "Math/Vector.h"
 
 namespace SpatialGDK
 {
-
-inline AActor* GetHierarchyRoot(const AActor* Actor)
-{
-	check(Actor != nullptr);
-
-	AActor* Owner = Actor->GetOwner();
-	if (Owner == nullptr || Owner->IsPendingKillPending())
-	{
-		return nullptr;
-	}
-
-	while (Owner->GetOwner() != nullptr && !Owner->GetOwner()->IsPendingKillPending())
-	{
-		Owner = Owner->GetOwner();
-	}
-
-	return Owner;
-}
 
 inline FString GetOwnerWorkerAttribute(AActor* Actor)
 {
@@ -49,7 +28,6 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 	FVector Location = FVector::ZeroVector;
 
 	// If the Actor is a Controller, use its Pawn's position,
-	// Otherwise if the Actor is a PlayerController, use its last spectator sync location, otherwise its focal point
 	// Otherwise if the Actor has an Owner, use its position.
 	// Otherwise if the Actor has a well defined location then use that
 	// Otherwise use the origin
@@ -58,17 +36,6 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 	{
 		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();
 		Location = PawnRootComponent ? PawnRootComponent->GetComponentLocation() : FVector::ZeroVector;
-	}
-	else if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
-	{
-		if (PlayerController->IsInState(NAME_Spectating))
-		{
-			Location = PlayerController->LastSpectatorSyncLocation;
-		}
-		else
-		{
-			Location = PlayerController->GetFocalLocation();
-		}
 	}
 	else if (InActor->GetOwner() != nullptr && InActor->GetOwner()->GetIsReplicated())
 	{

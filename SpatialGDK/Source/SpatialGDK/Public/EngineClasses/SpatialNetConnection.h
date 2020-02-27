@@ -50,6 +50,7 @@ public:
 	void DisableHeartbeat();
 
 	void OnHeartbeat();
+	void UpdateActorInterest(AActor* Actor);
 
 	void ClientNotifyClientHasQuit();
 

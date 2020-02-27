@@ -13,24 +13,15 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags)
+void USpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics)
 {
-	check(InReceiver != nullptr);
 	Receiver = InReceiver;
-
-	check(InStaticComponentView != nullptr);
 	StaticComponentView = InStaticComponentView;
-
-	check(InSpatialMetrics != nullptr);
 	SpatialMetrics = InSpatialMetrics;
-	SpatialWorkerFlags = InSpatialWorkerFlags;
 }
 
-void SpatialDispatcher::ProcessOps(Worker_OpList* OpList)
+void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 {
-	check(Receiver.IsValid());
-	check(StaticComponentView.IsValid());
-
 	for (size_t i = 0; i < OpList->op_count; ++i)
 	{
 		Worker_Op* Op = &OpList->ops[i];
@@ -62,7 +53,7 @@ void SpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
 			Receiver->OnRemoveEntity(Op->op.remove_entity);
 			StaticComponentView->OnRemoveEntity(Op->op.remove_entity.entity_id);
-			Receiver->DropQueuedRemoveComponentOpsForEntity(Op->op.remove_entity.entity_id);
+			Receiver->RemoveComponentOpsForEntity(Op->op.remove_entity.entity_id);
 			break;
 
 		// Components
@@ -105,14 +96,13 @@ void SpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			break;
 
 		case WORKER_OP_TYPE_FLAG_UPDATE:
-			SpatialWorkerFlags->ApplyWorkerFlagUpdate(Op->op.flag_update);
+			USpatialWorkerFlags::ApplyWorkerFlagUpdate(Op->op.flag_update);
 			break;
 		case WORKER_OP_TYPE_LOG_MESSAGE:
 			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->op.log_message.message));
 			break;
 		case WORKER_OP_TYPE_METRICS:
 #if !UE_BUILD_SHIPPING
-			check(SpatialMetrics.IsValid());
 			SpatialMetrics->HandleWorkerMetrics(Op);
 #endif
 			break;
@@ -129,17 +119,16 @@ void SpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 	Receiver->FlushRetryRPCs();
 }
 
-bool SpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op) const
+bool USpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op) const
 {
 	Worker_ComponentId ComponentId = SpatialGDK::GetComponentId(Op);
 	return SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID;
 }
 
-void SpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
+void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 {
 	Worker_ComponentId ComponentId = SpatialGDK::GetComponentId(Op);
 	check(ComponentId != SpatialConstants::INVALID_COMPONENT_ID);
-	check(StaticComponentView.IsValid());
 
 	switch (Op->op_type)
 	{
@@ -161,7 +150,7 @@ void SpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 	}
 }
 
-SpatialDispatcher::FCallbackId SpatialDispatcher::OnAddComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AddComponentOp&)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::OnAddComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AddComponentOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_ADD_COMPONENT, [Callback](const Worker_Op* Op)
 	{
@@ -169,7 +158,7 @@ SpatialDispatcher::FCallbackId SpatialDispatcher::OnAddComponent(Worker_Componen
 	});
 }
 
-SpatialDispatcher::FCallbackId SpatialDispatcher::OnRemoveComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_RemoveComponentOp&)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::OnRemoveComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_RemoveComponentOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_REMOVE_COMPONENT, [Callback](const Worker_Op* Op)
 	{
@@ -177,14 +166,14 @@ SpatialDispatcher::FCallbackId SpatialDispatcher::OnRemoveComponent(Worker_Compo
 	});
 }
 
-SpatialDispatcher::FCallbackId SpatialDispatcher::OnAuthorityChange(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::OnAuthorityChange(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_AUTHORITY_CHANGE, [Callback](const Worker_Op* Op)
 	{
 		Callback(Op->op.authority_change);
 	});
 }
-SpatialDispatcher::FCallbackId SpatialDispatcher::OnComponentUpdate(Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::OnComponentUpdate(Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMPONENT_UPDATE, [Callback](const Worker_Op* Op)
 	{
@@ -192,7 +181,7 @@ SpatialDispatcher::FCallbackId SpatialDispatcher::OnComponentUpdate(Worker_Compo
 	});
 }
 
-SpatialDispatcher::FCallbackId SpatialDispatcher::OnCommandRequest(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandRequestOp&)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::OnCommandRequest(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandRequestOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMMAND_REQUEST, [Callback](const Worker_Op* Op)
 	{
@@ -200,7 +189,7 @@ SpatialDispatcher::FCallbackId SpatialDispatcher::OnCommandRequest(Worker_Compon
 	});
 }
 
-SpatialDispatcher::FCallbackId SpatialDispatcher::OnCommandResponse(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::OnCommandResponse(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMMAND_RESPONSE, [Callback](const Worker_Op* Op)
 	{
@@ -208,7 +197,7 @@ SpatialDispatcher::FCallbackId SpatialDispatcher::OnCommandResponse(Worker_Compo
 	});
 }
 
-SpatialDispatcher::FCallbackId SpatialDispatcher::AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback)
 {
 	check(SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID);
 	const FCallbackId NewCallbackId = NextCallbackId++;
@@ -217,7 +206,7 @@ SpatialDispatcher::FCallbackId SpatialDispatcher::AddGenericOpCallback(Worker_Co
 	return NewCallbackId;
 }
 
-bool SpatialDispatcher::RemoveOpCallback(FCallbackId CallbackId)
+bool USpatialDispatcher::RemoveOpCallback(FCallbackId CallbackId)
 {
 	CallbackIdData* CallbackData = CallbackIdToDataMap.Find(CallbackId);
 	if (CallbackData == nullptr)
@@ -262,7 +251,7 @@ bool SpatialDispatcher::RemoveOpCallback(FCallbackId CallbackId)
 	return true;
 }
 
-void SpatialDispatcher::RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op)
+void USpatialDispatcher::RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op)
 {
 	OpTypeToCallbacksMap* OpTypeCallbacks = ComponentOpTypeToCallbacksMap.Find(ComponentId);
 	if (OpTypeCallbacks == nullptr)
@@ -282,12 +271,12 @@ void SpatialDispatcher::RunCallbacks(Worker_ComponentId ComponentId, const Worke
 	}
 }
 
-void SpatialDispatcher::MarkOpToSkip(const Worker_Op* Op)
+void USpatialDispatcher::MarkOpToSkip(const Worker_Op* Op)
 {
 	OpsToSkip.Add(Op);
 }
 
-int SpatialDispatcher::GetNumOpsToSkip() const
+int USpatialDispatcher::GetNumOpsToSkip() const
 {
 	return OpsToSkip.Num();
 }

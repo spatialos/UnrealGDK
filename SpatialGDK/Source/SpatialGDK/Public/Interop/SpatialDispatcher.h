@@ -13,19 +13,23 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "SpatialDispatcher.generated.h"
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
 
 class USpatialMetrics;
 class USpatialReceiver;
 class USpatialStaticComponentView;
-class USpatialWorkerFlags;
 
-class SPATIALGDK_API SpatialDispatcher
+UCLASS()
+class SPATIALGDK_API USpatialDispatcher : public UObject
 {
+	GENERATED_BODY()
+
 public:
 	using FCallbackId = uint32;
 
-	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags);
+	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics);
 	void ProcessOps(Worker_OpList* OpList);
 
 	// The following 2 methods should *only* be used by the Startup OpList Queueing flow
@@ -64,12 +68,14 @@ private:
 	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
 
-	TWeakObjectPtr<USpatialReceiver> Receiver;
-	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
-	TWeakObjectPtr<USpatialMetrics> SpatialMetrics;
+	UPROPERTY()
+	USpatialReceiver* Receiver;
 
 	UPROPERTY()
-	USpatialWorkerFlags* SpatialWorkerFlags;
+	USpatialStaticComponentView* StaticComponentView;
+
+	UPROPERTY()
+	USpatialMetrics* SpatialMetrics;
 
 	// This index is incremented and returned every time an AddOpCallback function is called.
 	// CallbackIds enable you to deregister callbacks using the RemoveOpCallback function. 

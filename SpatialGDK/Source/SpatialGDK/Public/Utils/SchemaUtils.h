@@ -80,9 +80,9 @@ inline void AddWorkerRequirementSetToSchema(Schema_Object* Object, Schema_FieldI
 	}
 }
 
-inline WorkerRequirementSet IndexWorkerRequirementSetFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline WorkerRequirementSet GetWorkerRequirementSetFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
-	Schema_Object* RequirementSetObject = Schema_IndexObject(Object, Id, Index);
+	Schema_Object* RequirementSetObject = Schema_GetObject(Object, Id);
 
 	int32 AttributeSetCount = (int32)Schema_GetObjectCount(RequirementSetObject, 1);
 	WorkerRequirementSet RequirementSet;
@@ -105,11 +105,6 @@ inline WorkerRequirementSet IndexWorkerRequirementSetFromSchema(Schema_Object* O
 	}
 
 	return RequirementSet;
-}
-
-inline WorkerRequirementSet GetWorkerRequirementSetFromSchema(Schema_Object* Object, Schema_FieldId Id)
-{
-	return IndexWorkerRequirementSetFromSchema(Object, Id, 0);
 }
 
 inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const FUnrealObjectRef& ObjectRef)
@@ -209,11 +204,11 @@ inline void AddRotatorToSchema(Schema_Object* Object, Schema_FieldId Id, FRotato
 	Schema_AddFloat(RotatorObject, 3, Rotator.Roll);
 }
 
-inline FRotator IndexRotatorFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline FRotator GetRotatorFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
 	FRotator Rotator;
 
-	Schema_Object* RotatorObject = Schema_IndexObject(Object, Id, Index);
+	Schema_Object* RotatorObject = Schema_GetObject(Object, Id);
 
 	Rotator.Pitch = Schema_GetFloat(RotatorObject, 1);
 	Rotator.Yaw = Schema_GetFloat(RotatorObject, 2);
@@ -222,11 +217,6 @@ inline FRotator IndexRotatorFromSchema(Schema_Object* Object, Schema_FieldId Id,
 	return Rotator;
 }
 
-inline FRotator GetRotatorFromSchema(Schema_Object* Object, Schema_FieldId Id)
-{
-	return IndexRotatorFromSchema(Object, Id, 0);
-}
-	
 inline void AddVectorToSchema(Schema_Object* Object, Schema_FieldId Id, FVector Vector)
 {
 	Schema_Object* VectorObject = Schema_AddObject(Object, Id);
@@ -236,22 +226,17 @@ inline void AddVectorToSchema(Schema_Object* Object, Schema_FieldId Id, FVector 
 	Schema_AddFloat(VectorObject, 3, Vector.Z);
 }
 
-inline FVector IndexVectorFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline FVector GetVectorFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
 	FVector Vector;
 
-	Schema_Object* VectorObject = Schema_IndexObject(Object, Id, Index);
+	Schema_Object* VectorObject = Schema_GetObject(Object, Id);
 
 	Vector.X = Schema_GetFloat(VectorObject, 1);
 	Vector.Y = Schema_GetFloat(VectorObject, 2);
 	Vector.Z = Schema_GetFloat(VectorObject, 3);
 
 	return Vector;
-}
-
-inline FVector GetVectorFromSchema(Schema_Object* Object, Schema_FieldId Id)
-{
-	return IndexVectorFromSchema(Object, Id, 0);
 }
 
 // Generates the full path from an ObjectRef, if it has paths. Writes the result to OutPath.

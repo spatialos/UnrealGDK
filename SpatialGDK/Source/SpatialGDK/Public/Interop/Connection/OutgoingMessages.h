@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
 #pragma once
 
 #include "Containers/Array.h"
@@ -9,7 +8,6 @@
 #include "Templates/UnrealTemplate.h"
 #include "Templates/UniquePtr.h"
 #include "UObject/NameTypes.h"
-#include "Utils/SpatialLatencyTracer.h"
 
 #include <string>
 
@@ -55,13 +53,13 @@ struct FReserveEntityIdsRequest : FOutgoingMessage
 
 struct FCreateEntityRequest : FOutgoingMessage
 {
-	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const Worker_EntityId* InEntityId)
+	FCreateEntityRequest(TArray<Worker_ComponentData>&& InComponents, const Worker_EntityId* InEntityId)
 		: FOutgoingMessage(EOutgoingMessageType::CreateEntityRequest)
 		, Components(MoveTemp(InComponents))
 		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<Worker_EntityId>())
 	{}
 
-	TArray<FWorkerComponentData> Components;
+	TArray<Worker_ComponentData> Components;
 	TOptional<Worker_EntityId> EntityId;
 };
 
@@ -77,14 +75,14 @@ struct FDeleteEntityRequest : FOutgoingMessage
 
 struct FAddComponent : FOutgoingMessage
 {
-	FAddComponent(Worker_EntityId InEntityId, const FWorkerComponentData& InData)
+	FAddComponent(Worker_EntityId InEntityId, const Worker_ComponentData& InData)
 		: FOutgoingMessage(EOutgoingMessageType::AddComponent)
 		, EntityId(InEntityId)
 		, Data(InData)
 	{}
 
 	Worker_EntityId EntityId;
-	FWorkerComponentData Data;
+	Worker_ComponentData Data;
 };
 
 struct FRemoveComponent : FOutgoingMessage
@@ -101,14 +99,14 @@ struct FRemoveComponent : FOutgoingMessage
 
 struct FComponentUpdate : FOutgoingMessage
 {
-	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate)
+	FComponentUpdate(Worker_EntityId InEntityId, const Worker_ComponentUpdate& InComponentUpdate)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentUpdate)
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)
 	{}
 
 	Worker_EntityId EntityId;
-	FWorkerComponentUpdate Update;
+	Worker_ComponentUpdate Update;
 };
 
 struct FCommandRequest : FOutgoingMessage

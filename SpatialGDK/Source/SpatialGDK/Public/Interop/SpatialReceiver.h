@@ -8,8 +8,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialClassInfoManager.h"
-#include "Interop/SpatialOSDispatcherInterface.h"
-#include "Interop/SpatialRPCService.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/SpawnData.h"
@@ -28,7 +26,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 class USpatialNetConnection;
 class USpatialSender;
 class UGlobalStateManager;
-class SpatialLoadBalanceEnforcer;
 
 struct PendingAddComponentWrapper
 {
@@ -41,43 +38,112 @@ struct PendingAddComponentWrapper
 	TUniquePtr<SpatialGDK::DynamicComponent> Data;
 };
 
+struct FObjectReferences
+{
+	FObjectReferences() = default;
+	FObjectReferences(FObjectReferences&& Other)
+		: UnresolvedRefs(MoveTemp(Other.UnresolvedRefs))
+		, bSingleProp(Other.bSingleProp)
+		, bFastArrayProp(Other.bFastArrayProp)
+		, Buffer(MoveTemp(Other.Buffer))
+		, NumBufferBits(Other.NumBufferBits)
+		, Array(MoveTemp(Other.Array))
+		, ShadowOffset(Other.ShadowOffset)
+		, ParentIndex(Other.ParentIndex)
+		, Property(Other.Property) {}
+
+	// Single property constructor
+	FObjectReferences(const FUnrealObjectRef& InUnresolvedRef, int32 InCmdIndex, int32 InParentIndex, UProperty* InProperty)
+		: bSingleProp(true), bFastArrayProp(false), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty)
+	{
+		UnresolvedRefs.Add(InUnresolvedRef);
+	}
+
+	// Struct (memory stream) constructor
+	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, const TSet<FUnrealObjectRef>& InUnresolvedRefs, int32 InCmdIndex, int32 InParentIndex, UProperty* InProperty, bool InFastArrayProp = false)
+		: UnresolvedRefs(InUnresolvedRefs), bSingleProp(false), bFastArrayProp(InFastArrayProp), Buffer(InBuffer), NumBufferBits(InNumBufferBits), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty) {}
+
+	// Array constructor
+	FObjectReferences(FObjectReferencesMap* InArray, int32 InCmdIndex, int32 InParentIndex, UProperty* InProperty)
+		: bSingleProp(false), bFastArrayProp(false), Array(InArray), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty) {}
+
+	TSet<FUnrealObjectRef>				UnresolvedRefs;
+
+	bool								bSingleProp;
+	bool								bFastArrayProp;
+	TArray<uint8>						Buffer;
+	int32								NumBufferBits;
+
+	TUniquePtr<FObjectReferencesMap>	Array;
+	int32								ShadowOffset;
+	int32								ParentIndex;
+	UProperty*							Property;
+};
+
+struct FPendingIncomingRPC
+{
+	FPendingIncomingRPC(const TSet<FUnrealObjectRef>& InUnresolvedRefs, UObject* InTargetObject, UFunction* InFunction, const SpatialGDK::RPCPayload& InPayload)
+		: UnresolvedRefs(InUnresolvedRefs), TargetObject(InTargetObject), Function(InFunction), Payload(InPayload) {}
+
+	TSet<FUnrealObjectRef> UnresolvedRefs;
+	TWeakObjectPtr<UObject> TargetObject;
+	UFunction* Function;
+	SpatialGDK::RPCPayload Payload;
+	FString SenderWorkerId;
+};
+
+struct FPendingSubobjectAttachment
+{
+	USpatialActorChannel* Channel;
+	const FClassInfo* Info;
+	TWeakObjectPtr<UObject> Subobject;
+
+	TSet<Worker_ComponentId> PendingAuthorityDelegations;
+};
+
+using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
+
+DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseOp&);
+DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, const Worker_ReserveEntityIdsResponseOp&);
+DECLARE_DELEGATE_OneParam(CreateEntityDelegate, const Worker_CreateEntityResponseOp&);
+
 UCLASS()
-class USpatialReceiver : public UObject, public SpatialOSDispatcherInterface
+class USpatialReceiver : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService);
+	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager);
 
 	// Dispatcher Calls
-	virtual void OnCriticalSection(bool InCriticalSection) override;
-	virtual void OnAddEntity(const Worker_AddEntityOp& Op) override;
-	virtual void OnAddComponent(const Worker_AddComponentOp& Op) override;
-	virtual void OnRemoveEntity(const Worker_RemoveEntityOp& Op) override;
-	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) override;
-	virtual void FlushRemoveComponentOps() override;
-	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) override;
-	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) override;
+	void OnCriticalSection(bool InCriticalSection);
+	void OnAddEntity(const Worker_AddEntityOp& Op);
+	void OnAddComponent(const Worker_AddComponentOp& Op);
+	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);
+	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
+	void FlushRemoveComponentOps();
+	void RemoveComponentOpsForEntity(Worker_EntityId EntityId);
+	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
-	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
+	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
+	void HandleRPC(const Worker_ComponentUpdateOp& Op);
 
-	// This gets bound to a delegate in SpatialRPCService and is called for each RPC extracted when calling SpatialRPCService::ExtractRPCsForEntity.
-	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
+	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp &Op, const Worker_ComponentId RPCEndpointComponentId, bool bPacked);
 
-	virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) override;
-	virtual void OnCommandResponse(const Worker_CommandResponseOp& Op) override;
+	void OnCommandRequest(const Worker_CommandRequestOp& Op);
+	void OnCommandResponse(const Worker_CommandResponseOp& Op);
 
-	virtual void OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op) override;
-	virtual void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op) override;
+	void OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op);
+	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 
-	virtual void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel) override;
-	virtual void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) override;
+	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
+	void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC);
 
-	virtual void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate) override;
-	virtual void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate) override;
-	virtual void AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate) override;
+	void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate);
+	void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate);
+	void AddCreateEntityDelegate(Worker_RequestId RequestId, const CreateEntityDelegate& Delegate);
 
-	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) override;
+	void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();
@@ -85,15 +151,9 @@ public:
 	void OnDisconnect(Worker_DisconnectOp& Op);
 
 	void RemoveActor(Worker_EntityId EntityId);
-	bool IsPendingOpsOnChannel(USpatialActorChannel& Channel);
-
-	void ClearPendingRPCs(Worker_EntityId EntityId);
-
-	void CleanupRepStateMap(FSpatialObjectRepState& Replicator);
-	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
+	bool IsPendingOpsOnChannel(USpatialActorChannel* Channel);
 
 private:
-
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
 
@@ -111,18 +171,13 @@ private:
 	void HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
 	void HandleActorAuthority(const Worker_AuthorityChangeOp& Op);
 
-	void HandleRPCLegacy(const Worker_ComponentUpdateOp& Op);
-	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp &Op, const Worker_ComponentId RPCEndpointComponentId, bool bPacked);
-	void HandleRPC(const Worker_ComponentUpdateOp& Op);
-
-	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel& Channel, const FClassInfo& ActorClassInfo, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
-	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentData& Data);
-	
+	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel* Channel, const FClassInfo& ActorClassInfo);
+	void ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, const Worker_ComponentData& Data);
 	// This is called for AddComponentOps not in a critical section, which means they are not a part of the initial entity creation.
 	void HandleIndividualAddComponent(const Worker_AddComponentOp& Op);
 	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info);
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel, bool bIsHandover);
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
 	ERPCResult ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId, bool bApplyWithUnresolvedRefs = false);
@@ -131,12 +186,16 @@ private:
 
 	bool IsReceivedEntityTornOff(Worker_EntityId EntityId);
 
-	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload InPayload);
+	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs);
 
+	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
+
+	void ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
-	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped);
+	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
 
+	void ProcessQueuedResolvedObjects();
 	void ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, SpatialGDK::RPCsOnEntityCreation& QueuedRPCs);
 	void UpdateShadowData(Worker_EntityId EntityId);
 	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
@@ -147,51 +206,10 @@ private:
 
 	void PeriodicallyProcessIncomingRPCs();
 
-	// TODO: Refactor into a separate class so we can add automated tests for this. UNR-2649
-	static bool NeedToLoadClass(const FString& ClassPath);
-	static FString GetPackagePath(const FString& ClassPath);
-
-	void StartAsyncLoadingClass(const FString& ClassPath, Worker_EntityId EntityId);
-	void OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result);
-
-	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
-
-	struct QueuedOpForAsyncLoad
-	{
-		Worker_Op Op;
-		Worker_ComponentData* AcquiredData;
-		Worker_ComponentUpdate* AcquiredUpdate;
-	};
-	void QueueAddComponentOpForAsyncLoad(const Worker_AddComponentOp& Op);
-	void QueueRemoveComponentOpForAsyncLoad(const Worker_RemoveComponentOp& Op);
-	void QueueAuthorityOpForAsyncLoad(const Worker_AuthorityChangeOp& Op);
-	void QueueComponentUpdateOpForAsyncLoad(const Worker_ComponentUpdateOp& Op);
-
-	TArray<PendingAddComponentWrapper> ExtractAddComponents(Worker_EntityId Entity);
-	TArray<QueuedOpForAsyncLoad> ExtractAuthorityOps(Worker_EntityId Entity);
-
-	struct CriticalSectionSaveState
-	{
-		CriticalSectionSaveState(USpatialReceiver& InReceiver);
-		~CriticalSectionSaveState();
-
-		USpatialReceiver& Receiver;
-
-		bool bInCriticalSection;
-		TArray<Worker_EntityId> PendingAddEntities;
-		TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
-		TArray<PendingAddComponentWrapper> PendingAddComponents;
-	};
-
-	void HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op);
-	// END TODO
-
 public:
+	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
-
-	FOnEntityAddedDelegate OnEntityAddedDelegate;
-	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
 
 private:
 	UPROPERTY()
@@ -212,19 +230,13 @@ private:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
-	SpatialLoadBalanceEnforcer* LoadBalanceEnforcer;
-
 	FTimerManager* TimerManager;
 
-	SpatialGDK::SpatialRPCService* RPCService;
+	// TODO: Figure out how to remove entries when Channel/Actor gets deleted - UNR:100
+	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
+	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 
-	// Helper struct to manage FSpatialObjectRepState update cycle.
-	struct RepStateUpdateHelper;
-
-	// Map from references to replicated objects to properties using these references.
-	// Useful to manage entities going in and out of interest, in order to recover references to actors.
-	FObjectToRepStateMap ObjectRefToRepStateMap;
-
+	TMap<FUnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
 	FRPCContainer IncomingRPCs;
 
 	bool bInCriticalSection;
@@ -246,15 +258,4 @@ private:
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
-
-	// TODO: Refactor into a separate class so we can add automated tests for this. UNR-2649
-	struct EntityWaitingForAsyncLoad
-	{
-		FString ClassPath;
-		TArray<PendingAddComponentWrapper> InitialPendingAddComponents;
-		TArray<QueuedOpForAsyncLoad> PendingOps;
-	};
-	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
-	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
-	// END TODO
 };

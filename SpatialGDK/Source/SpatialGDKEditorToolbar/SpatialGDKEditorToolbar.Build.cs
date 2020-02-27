@@ -21,7 +21,6 @@ public class SpatialGDKEditorToolbar : ModuleRules
                 "Engine",
                 "EngineSettings",
                 "InputCore",
-                "IOSRuntimeSettings",
                 "LevelEditor",
                 "Projects",
                 "Slate",

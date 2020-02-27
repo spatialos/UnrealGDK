@@ -5,28 +5,25 @@
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GeneralProjectSettings.h"
-#include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Utils/InspectionColors.h"
-#include "Utils/SpatialActorGroupManager.h"
+#include "Utils/ActorGroupManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
-    return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+    return GetDefault<UGeneralProjectSettings>()->bSpatialNetworking;
 }
 
-SpatialActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* WorldContext)
+UActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* WorldContext)
 {
 	if (const UWorld* World = WorldContext->GetWorld())
 	{
 		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 		{
-			check(SpatialNetDriver->ActorGroupManager.IsValid());
-			return SpatialNetDriver->ActorGroupManager.Get();
+			return SpatialNetDriver->ActorGroupManager;
 		}
 	}
 	return nullptr;
@@ -43,37 +40,6 @@ FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
 	}
 
 	return NAME_None;
-}
-
-bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& InFlagName, FString& OutFlagValue)
-{
-	if (const UWorld* World = WorldContext->GetWorld())
-	{
-		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
-		{
-			if (const USpatialWorkerFlags* SpatialWorkerFlags = SpatialNetDriver->SpatialWorkerFlags) 
-			{
-				return SpatialWorkerFlags->GetWorkerFlag(InFlagName, OutFlagValue);
-			}
-		}
-	}
-
-	return false;
-}
-
-TArray<FDistanceFrequencyPair> USpatialStatics::GetNCDDistanceRatios()
-{
-	return GetDefault<USpatialGDKSettings>()->InterestRangeFrequencyPairs;
-}
-
-float USpatialStatics::GetFullFrequencyNetCullDistanceRatio()
-{
-	return GetDefault<USpatialGDKSettings>()->FullFrequencyNetCullDistanceRatio;
-}
-
-FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName)
-{
-	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
 bool USpatialStatics::IsSpatialOffloadingEnabled()
@@ -93,7 +59,7 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 
 bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
 {
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
 		const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
 		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
@@ -110,7 +76,7 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 
 bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup)
 {
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
 		const FName ActorGroupWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(ActorGroup);
 		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
@@ -127,7 +93,7 @@ bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const
 
 FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
 {
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(Actor))
+	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(Actor))
 	{
 		UClass* ActorClass = Actor->GetClass();
 		return ActorGroupManager->GetActorGroupForClass(ActorClass);
@@ -138,7 +104,7 @@ FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
 
 FName USpatialStatics::GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
 {
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
 		return ActorGroupManager->GetActorGroupForClass(ActorClass);
 	}

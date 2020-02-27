@@ -5,10 +5,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SpatialActorUtils.h"
 
-#include "Templates/Tuple.h"
-
-DEFINE_LOG_CATEGORY(LogGridBasedLBStrategy);
-
 UGridBasedLBStrategy::UGridBasedLBStrategy()
 	: Super()
 	, Rows(1)
@@ -22,8 +18,6 @@ void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver)
 {
 	Super::Init(InNetDriver);
 
-	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("GridBasedLBStrategy initialized with Rows = %d and Cols = %d."), Rows, Cols);
-
 	for (uint32 i = 1; i <= Rows * Cols; i++)
 	{
 		VirtualWorkerIds.Add(i);
@@ -35,55 +29,53 @@ void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver)
 	const float ColumnWidth = WorldWidth / Cols;
 	const float RowHeight = WorldHeight / Rows;
 
-	// We would like the inspector's representation of the load balancing strategy to match our intuition.
-	// +x is forward, so rows are perpendicular to the x-axis and columns are perpendicular to the y-axis.
-	float XMin = WorldHeightMin;
-	float YMin = WorldWidthMin;
+	float XMin = WorldWidthMin;
+	float YMin = WorldHeightMin;
 	float XMax, YMax;
 
 	for (uint32 Col = 0; Col < Cols; ++Col)
 	{
-		YMax = YMin + ColumnWidth;
+		XMax = XMin + ColumnWidth;
 
 		for (uint32 Row = 0; Row < Rows; ++Row)
 		{
-			XMax = XMin + RowHeight;
+			YMax = YMin + RowHeight;
 
 			FVector2D Min(XMin, YMin);
 			FVector2D Max(XMax, YMax);
 			FBox2D Cell(Min, Max);
 			WorkerCells.Add(Cell);
 
-			XMin = XMax;
+			YMin = YMax;
 		}
 
-		XMin = WorldHeightMin;
-		YMin = YMax;
+		YMin = WorldHeightMin;
+		XMin = XMax;
 	}
 }
 
-TSet<VirtualWorkerId> UGridBasedLBStrategy::GetVirtualWorkerIds() const
+TSet<uint32> UGridBasedLBStrategy::GetVirtualWorkerIds() const
 {
-	return TSet<VirtualWorkerId>(VirtualWorkerIds);
+	return TSet<uint32>(VirtualWorkerIds);
 }
 
-bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
+bool UGridBasedLBStrategy::ShouldRelinquishAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
-		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to relinquish authority for Actor %s."), *AActor::GetDebugName(&Actor));
 		return false;
 	}
 
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
-	return IsInside(WorkerCells[LocalVirtualWorkerId - 1], Actor2DLocation);
+
+
+	return !IsInside(WorkerCells[LocalVirtualWorkerId - 1], Actor2DLocation);
 }
 
-VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
+uint32 UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
-		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to decide on authority for Actor %s."), *AActor::GetDebugName(&Actor));
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
@@ -104,16 +96,4 @@ bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location
 {
 	return Location.X >= Box.Min.X && Location.Y >= Box.Min.Y
 		&& Location.X < Box.Max.X && Location.Y < Box.Max.Y;
-}
-
-UGridBasedLBStrategy::LBStrategyRegions UGridBasedLBStrategy::GetLBStrategyRegions() const
-{
-	LBStrategyRegions VirtualWorkerToCell;
-	VirtualWorkerToCell.SetNum(WorkerCells.Num());
-
-	for (int i = 0; i < WorkerCells.Num(); i++)
-	{
-		VirtualWorkerToCell[i] = MakeTuple(VirtualWorkerIds[i], WorkerCells[i]);
-	}
-	return VirtualWorkerToCell;
 }

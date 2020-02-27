@@ -2,16 +2,15 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+
 #include "Schema/Component.h"
 #include "Schema/StandardLibrary.h"
+#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-
-#include "Containers/Map.h"
-#include "Templates/UniquePtr.h"
-#include "UObject/Object.h"
 
 #include "SpatialStaticComponentView.generated.h"
 
@@ -21,23 +20,23 @@ class SPATIALGDK_API USpatialStaticComponentView : public UObject
 	GENERATED_BODY()
 
 public:
-	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	template <typename T>
-	T* GetComponentData(Worker_EntityId EntityId) const
+	T* GetComponentData(Worker_EntityId EntityId)
 	{
-		if (const auto* ComponentStorageMap = EntityComponentMap.Find(EntityId))
+		if (TMap<Worker_ComponentId, TUniquePtr<SpatialGDK::ComponentStorageBase>>* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 		{
-			if (const TUniquePtr<SpatialGDK::Component>* Component = ComponentStorageMap->Find(T::ComponentId))
+			if (TUniquePtr<SpatialGDK::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
 			{
-				return static_cast<T*>(Component->Get());
+				return &(static_cast<SpatialGDK::ComponentStorage<T>*>(Component->Get())->Get());
 			}
 		}
 
 		return nullptr;
 	}
-
-	bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	void OnAddComponent(const Worker_AddComponentOp& Op);
 	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
@@ -45,11 +44,7 @@ public:
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
-	void GetEntityIds(TArray<Worker_EntityId_Key>& OutEntityIds) const { EntityComponentMap.GetKeys(OutEntityIds); }
-
 private:
-	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
-
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
-	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, TUniquePtr<SpatialGDK::Component>>> EntityComponentMap;
+	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, TUniquePtr<SpatialGDK::ComponentStorageBase>>> EntityComponentMap;
 };

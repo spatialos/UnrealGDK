@@ -2,12 +2,9 @@
 
 #pragma once
 
-#include "SpatialCommonTypes.h"
-#include "SpatialConstants.h"
-
 #include "CoreMinimal.h"
+#include "SpatialConstants.h"
 #include "UObject/NoExportTypes.h"
-
 #include "AbstractLBStrategy.generated.h"
 
 class USpatialNetDriver;
@@ -21,7 +18,7 @@ class USpatialNetDriver;
  *      VirtualWorkerIds from GetVirtualWorkerIds() and begin assinging workers.
  *    (Other Workers): SetLocalVirtualWorkerId when assigned a VirtualWorkerId.
  * 4. For each Actor being replicated:
- *   a) Check if authority should be relinquished by calling ShouldHaveAuthority
+ *   a) Check if authority should be relinquished by calling ShouldRelinquishAuthority
  *   b) If true: Send authority change request to Translator/Enforcer passing in new
  *        VirtualWorkerId returned by WhoShouldHaveAuthority
  */
@@ -33,18 +30,18 @@ class SPATIALGDK_API UAbstractLBStrategy : public UObject
 public:
 	UAbstractLBStrategy();
 
-	virtual void Init(const USpatialNetDriver* InNetDriver) {}
+	virtual void Init(const USpatialNetDriver* InNetDriver);
 
 	bool IsReady() const { return LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
 
-	void SetLocalVirtualWorkerId(VirtualWorkerId LocalVirtualWorkerId);
+	void SetLocalVirtualWorkerId(uint32 LocalVirtualWorkerId);
 
-	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
+	virtual TSet<uint32> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
 
-	virtual bool ShouldHaveAuthority(const AActor& Actor) const { return false; }
-	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;)
+	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const { return false; }
+	virtual uint32 WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID; )
 
 protected:
 
-	VirtualWorkerId LocalVirtualWorkerId;
+	uint32 LocalVirtualWorkerId;
 };

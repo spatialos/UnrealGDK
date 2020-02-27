@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Engine/PackageMapClient.h"
 
-#include "EngineClasses/AbstractSpatialPackageMapClient.h"
 #include "Schema/UnrealMetadata.h"
 #include "Schema/UnrealObjectRef.h"
 
@@ -20,7 +19,7 @@ class UEntityPool;
 class FTimerManager;
 
 UCLASS()
-class SPATIALGDK_API USpatialPackageMapClient : public UAbstractSpatialPackageMapClient
+class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()		
 public:
@@ -32,7 +31,7 @@ public:
 	bool IsEntityIdPendingCreation(Worker_EntityId EntityId) const;
 	void RemovePendingCreationEntityId(Worker_EntityId EntityId);
 
-	bool ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
+	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
 	void ResolveSubobject(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
 	void RemoveEntityActor(Worker_EntityId EntityId);
@@ -51,7 +50,7 @@ public:
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId& EntityId);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
-	virtual Worker_EntityId GetEntityIdFromObject(const UObject* Object) override;
+	Worker_EntityId GetEntityIdFromObject(const UObject* Object);
 
 	AActor* GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef);
 
@@ -63,9 +62,6 @@ public:
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
 	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
-
-	// Pending object references, being asynchronously loaded.
-	TSet<FNetworkGUID> PendingReferences;
 
 private:
 	UPROPERTY()

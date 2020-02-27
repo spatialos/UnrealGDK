@@ -4,9 +4,9 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialCommandUtils);
 
-bool SpatialCommandUtils::AttemptSpatialAuth(bool bIsRunningInChina)
+bool SpatialCommandUtils::AttemptSpatialAuth(bool IsRunningInChina)
 {
-	FString SpatialInfoArgs = bIsRunningInChina ? TEXT("auth login --environment=cn-production") : TEXT("auth login");
+	FString SpatialInfoArgs = IsRunningInChina ? TEXT("auth login --environment=cn-production") : TEXT("auth login");
 	FString SpatialInfoResult;
 	FString StdErr;
 	int32 ExitCode;

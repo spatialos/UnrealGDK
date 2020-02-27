@@ -1,32 +1,34 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#if WITH_EDITOR
+#include "Interop/Connection/EditorWorkerController.h"
+#endif
 
+#include "EngineClasses/SpatialGameInstance.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Engine/World.h"
+#include "UnrealEngine.h"
 #include "Async/Async.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
+#include "Misc/Paths.h"
+
+#include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/ErrorCodeRemapping.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
 
-void USpatialWorkerConnection::SetConection(Worker_Connection* WorkerConnectionIn)
+void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
 {
-	WorkerConnection = WorkerConnectionIn;
-
-	CacheWorkerAttributes();
-	if (WorkerConnectionIn != nullptr && Worker_Connection_IsConnected(WorkerConnectionIn))
-	{
-		if (OpsProcessingThread == nullptr)
-		{
-			InitializeOpsProcessingThread();
-		}
-	}
+	GameInstance = InGameInstance;
 }
 
 void USpatialWorkerConnection::FinishDestroy()
 {
-	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Destorying SpatialWorkerconnection."));
-
 	DestroyConnection();
 
 	Super::FinishDestroy();
@@ -51,8 +53,287 @@ void USpatialWorkerConnection::DestroyConnection()
 		WorkerConnection = nullptr;
 	}
 
+	if (WorkerLocator)
+	{
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerLocator = WorkerLocator]
+		{
+			Worker_Locator_Destroy(WorkerLocator);
+		});
+
+		WorkerLocator = nullptr;
+	}
+
+	bIsConnected = false;
 	NextRequestId = 0;
 	KeepRunning.AtomicSet(true);
+}
+
+void USpatialWorkerConnection::Connect(bool bInitAsClient)
+{
+	if (bIsConnected)
+	{
+		OnConnectionSuccess();
+		return;
+	}
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
+	{
+		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
+		LocatorConfig.UseExternalIp = true;
+		StartDevelopmentAuth(SpatialGDKSettings->DevelopmentAuthenticationToken);
+		return;
+	}
+
+	switch (GetConnectionType())
+	{
+	case SpatialConnectionType::Receptionist:
+		ConnectToReceptionist(bInitAsClient);
+		break;
+	case SpatialConnectionType::Locator:
+		ConnectToLocator();
+		break;
+	}
+}
+
+void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
+{
+	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to get login token, StatusCode: %d, Error: %s"), LoginTokens->status.code, UTF8_TO_TCHAR(LoginTokens->status.detail));
+		return;
+	}
+
+	if (LoginTokens->login_token_count == 0)
+	{
+		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No deployment found to connect to. Did you add the 'dev_login' tag to the deployment you want to connect to?"));
+		return;
+	}
+
+	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
+	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
+	const FString& DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
+	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
+	if (DeploymentToConnect.IsEmpty())
+	{
+		Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
+	}
+	else
+	{
+		for (uint32 i = 0; i < LoginTokens->login_token_count; i++)
+		{
+			FString DeploymentName = FString(LoginTokens->login_tokens[i].deployment_name);
+			if (DeploymentToConnect.Compare(DeploymentName) == 0)
+			{
+				Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
+				break;
+			}
+		}
+	}
+	Connection->ConnectToLocator();
+}
+
+void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
+{
+	if (PIToken->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to get PlayerIdentityToken, StatusCode: %d, Error: %s"), PIToken->status.code, UTF8_TO_TCHAR(PIToken->status.detail));
+		return;
+	}
+
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully received PIToken: %s"), UTF8_TO_TCHAR(PIToken->player_identity_token));
+	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
+	Connection->LocatorConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
+	Worker_Alpha_LoginTokensRequest LTParams{};
+	LTParams.player_identity_token = PIToken->player_identity_token;
+	FTCHARToUTF8 WorkerType(*Connection->LocatorConfig.WorkerType);
+	LTParams.worker_type = WorkerType.Get();
+	LTParams.use_insecure_connection = false;
+
+	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*Connection->LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
+	{
+		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, Connection, &USpatialWorkerConnection::OnLoginTokens);
+	}
+}
+
+void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
+{
+	Worker_Alpha_PlayerIdentityTokenRequest PITParams{};
+	FTCHARToUTF8 DAToken(*DevAuthToken);
+	FTCHARToUTF8 PlayerId(*SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
+	PITParams.development_authentication_token = DAToken.Get();
+	PITParams.player_id = PlayerId.Get();
+	PITParams.display_name = "";
+	PITParams.metadata = "";
+	PITParams.use_insecure_connection = false;
+
+	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &PITParams))
+	{
+		Worker_Alpha_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialWorkerConnection::OnPlayerIdentityToken);
+	}
+}
+
+void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
+{
+	if (ReceptionistConfig.WorkerType.IsEmpty())
+	{
+		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType.ToString() : SpatialConstants::DefaultServerWorkerType.ToString();
+		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
+	}
+
+#if WITH_EDITOR
+	SpatialGDKServices::InitWorkers(bConnectAsClient, GetSpatialNetDriverChecked()->PlayInEditorID, ReceptionistConfig.WorkerId);
+#endif
+
+	if (ReceptionistConfig.WorkerId.IsEmpty())
+	{
+		ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
+	}
+
+	// TODO UNR-1271: Move creation of connection parameters into a function somehow
+	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
+	FTCHARToUTF8 WorkerTypeCStr(*ReceptionistConfig.WorkerType);
+	ConnectionParams.worker_type = WorkerTypeCStr.Get();
+	ConnectionParams.enable_protocol_logging_at_startup = ReceptionistConfig.EnableProtocolLoggingAtStartup;
+
+	FString FinalProtocolLoggingPrefix;
+	if (!ReceptionistConfig.ProtocolLoggingPrefix.IsEmpty())
+	{
+		FinalProtocolLoggingPrefix = ReceptionistConfig.ProtocolLoggingPrefix;
+	}
+	else
+	{
+		FinalProtocolLoggingPrefix = ReceptionistConfig.WorkerId;
+	}
+	FTCHARToUTF8 ProtocolLoggingPrefixCStr(*FinalProtocolLoggingPrefix);
+	ConnectionParams.protocol_logging.log_prefix = ProtocolLoggingPrefixCStr.Get();
+
+	Worker_ComponentVtable DefaultVtable = {};
+	ConnectionParams.component_vtable_count = 0;
+	ConnectionParams.default_component_vtable = &DefaultVtable;
+
+	ConnectionParams.network.connection_type = ReceptionistConfig.LinkProtocol;
+	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
+	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
+
+	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
+	// TODO: UNR-2212 - Worker SDK 14.1.0 has a bug where upstream and downstream compression are swapped so we set the upstream settings to use compression.
+	Worker_Alpha_CompressionParameters EnableCompressionParams{};
+	ConnectionParams.network.modular_udp.upstream_compression = &EnableCompressionParams;
+	ConnectionParams.network.modular_udp.downstream_compression = nullptr;
+
+	ConnectionParams.enable_dynamic_components = true;
+	// end TODO
+
+	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
+		TCHAR_TO_UTF8(*ReceptionistConfig.ReceptionistHost), ReceptionistConfig.ReceptionistPort,
+		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionParams);
+
+	FinishConnecting(ConnectionFuture);
+}
+
+void USpatialWorkerConnection::ConnectToLocator()
+{
+	if (LocatorConfig.WorkerType.IsEmpty())
+	{
+		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
+		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *LocatorConfig.WorkerType);
+	}
+
+	if (LocatorConfig.WorkerId.IsEmpty())
+	{
+		LocatorConfig.WorkerId = LocatorConfig.WorkerType + FGuid::NewGuid().ToString();
+	}
+
+	FTCHARToUTF8 PlayerIdentityTokenCStr(*LocatorConfig.PlayerIdentityToken);
+	FTCHARToUTF8 LoginTokenCStr(*LocatorConfig.LoginToken);
+
+	Worker_LocatorParameters LocatorParams = {};
+	FString ProjectName;
+	FParse::Value(FCommandLine::Get(), TEXT("projectName"), ProjectName);
+	LocatorParams.project_name = TCHAR_TO_UTF8(*ProjectName);
+	LocatorParams.credentials_type = Worker_LocatorCredentialsTypes::WORKER_LOCATOR_PLAYER_IDENTITY_CREDENTIALS;
+	LocatorParams.player_identity.player_identity_token = PlayerIdentityTokenCStr.Get();
+	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
+
+	// Connect to the locator on the default port(0 will choose the default)
+	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LocatorParams);
+
+	// TODO UNR-1271: Move creation of connection parameters into a function somehow
+	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
+	FTCHARToUTF8 WorkerTypeCStr(*LocatorConfig.WorkerType);
+	ConnectionParams.worker_type = WorkerTypeCStr.Get();
+	ConnectionParams.enable_protocol_logging_at_startup = LocatorConfig.EnableProtocolLoggingAtStartup;
+
+	Worker_ComponentVtable DefaultVtable = {};
+	ConnectionParams.component_vtable_count = 0;
+	ConnectionParams.default_component_vtable = &DefaultVtable;
+
+	ConnectionParams.network.connection_type = LocatorConfig.LinkProtocol;
+	ConnectionParams.network.use_external_ip = LocatorConfig.UseExternalIp;
+	ConnectionParams.network.tcp.multiplex_level = LocatorConfig.TcpMultiplexLevel;
+
+	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
+	// TODO: UNR-2212 - Worker SDK 14.1.0 has a bug where upstream and downstream compression are swapped so we set the upstream settings to use compression.
+	Worker_Alpha_CompressionParameters EnableCompressionParams{};
+	ConnectionParams.network.modular_udp.upstream_compression = &EnableCompressionParams;
+	ConnectionParams.network.modular_udp.downstream_compression = nullptr;
+
+	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
+	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
+
+	ConnectionParams.enable_dynamic_components = true;
+	// end TODO
+
+	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);
+
+	FinishConnecting(ConnectionFuture);
+}
+
+void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture)
+{
+	TWeakObjectPtr<USpatialWorkerConnection> WeakSpatialWorkerConnection(this);
+
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialWorkerConnection]
+	{
+		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+		Worker_ConnectionFuture_Destroy(ConnectionFuture);
+
+		AsyncTask(ENamedThreads::GameThread, [WeakSpatialWorkerConnection, NewCAPIWorkerConnection]
+		{
+			USpatialWorkerConnection* SpatialWorkerConnection = WeakSpatialWorkerConnection.Get();
+
+			if (SpatialWorkerConnection == nullptr)
+			{
+				return;
+			}
+
+			SpatialWorkerConnection->WorkerConnection = NewCAPIWorkerConnection;
+
+			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
+			{
+				SpatialWorkerConnection->CacheWorkerAttributes();
+				SpatialWorkerConnection->OnConnectionSuccess();
+			}
+			else
+			{
+				// TODO: Try to reconnect - UNR-576
+				SpatialWorkerConnection->OnConnectionFailure();
+			}
+		});
+	});
+}
+
+SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
+{
+	if (!LocatorConfig.PlayerIdentityToken.IsEmpty())
+	{
+		return SpatialConnectionType::Locator;
+	}
+	else
+	{
+		return SpatialConnectionType::Receptionist;
+	}
 }
 
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
@@ -74,7 +355,7 @@ Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t 
 	return NextRequestId++;
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData>&& Components, const Worker_EntityId* EntityId)
+Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId)
 {
 	QueueOutgoingMessage<FCreateEntityRequest>(MoveTemp(Components), EntityId);
 	return NextRequestId++;
@@ -86,7 +367,7 @@ Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_Entity
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData)
+void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData)
 {
 	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData);
 }
@@ -96,7 +377,7 @@ void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Wor
 	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
 }
 
-void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const FWorkerComponentUpdate* ComponentUpdate)
+void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate)
 {
 	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate);
 }
@@ -138,9 +419,9 @@ void USpatialWorkerConnection::SendMetrics(const SpatialMetrics& Metrics)
 	QueueOutgoingMessage<FMetrics>(Metrics);
 }
 
-PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const
+FString USpatialWorkerConnection::GetWorkerId() const
 {
-	return PhysicalWorkerName(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
+	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
 }
 
 const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
@@ -165,6 +446,54 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	}
 }
 
+USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
+{
+	UNetDriver* NetDriver = GameInstance->GetWorld()->GetNetDriver();
+
+	// On the client, the world might not be completely set up.
+	// in this case we can use the PendingNetGame to get the NetDriver
+	if (NetDriver == nullptr)
+	{
+		NetDriver = GameInstance->GetWorldContext()->PendingNetGame->GetNetDriver();
+	}
+
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
+	checkf(SpatialNetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
+	return SpatialNetDriver;
+}
+
+void USpatialWorkerConnection::OnConnectionSuccess()
+{
+	bIsConnected = true;
+
+	if (OpsProcessingThread == nullptr)
+	{
+		InitializeOpsProcessingThread();
+	}
+
+	GetSpatialNetDriverChecked()->OnConnectedToSpatialOS();
+	GameInstance->HandleOnConnected();
+}
+
+void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
+{
+	bIsConnected = false;
+	GameInstance->HandleOnConnectionFailed(Reason);
+}
+
+void USpatialWorkerConnection::OnConnectionFailure()
+{
+	bIsConnected = false;
+
+	if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+	{
+		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
+		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
+
+		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
+	}
+}
+
 bool USpatialWorkerConnection::Init()
 {
 	OpsUpdateInterval = 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
@@ -174,13 +503,12 @@ bool USpatialWorkerConnection::Init()
 
 uint32 USpatialWorkerConnection::Run()
 {
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	check(!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread);
-
 	while (KeepRunning)
 	{
 		FPlatformProcess::Sleep(OpsUpdateInterval);
+
 		QueueLatestOpList();
+
 		ProcessOutgoingMessages();
 	}
 
@@ -220,8 +548,6 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		TUniquePtr<FOutgoingMessage> OutgoingMessage;
 		OutgoingMessagesQueue.Dequeue(OutgoingMessage);
 
-		OnDequeueMessage.Broadcast(OutgoingMessage.Get());
-
 		static const Worker_UpdateParameters DisableLoopback{ /*loopback*/ WORKER_COMPONENT_UPDATE_LOOPBACK_NONE };
 
 		switch (OutgoingMessage->Type)
@@ -239,23 +565,9 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FCreateEntityRequest* Message = static_cast<FCreateEntityRequest*>(OutgoingMessage.Get());
 
-#if TRACE_LIB_ACTIVE
-			// We have to unpack these as Worker_ComponentData is not the same as FWorkerComponentData
-			TArray<Worker_ComponentData> UnpackedComponentData;
-			UnpackedComponentData.SetNum(Message->Components.Num());
-			for (int i = 0, Num = Message->Components.Num(); i < Num; i++)
-			{
-				UnpackedComponentData[i] = Message->Components[i];
-			}
-			Worker_ComponentData* ComponentData = UnpackedComponentData.GetData();
-			uint32 ComponentCount = UnpackedComponentData.Num();
-#else
-			Worker_ComponentData* ComponentData = Message->Components.GetData();
-			uint32 ComponentCount = Message->Components.Num();
-#endif
 			Worker_Connection_SendCreateEntityRequest(WorkerConnection,
-				ComponentCount,
-				ComponentData,
+				Message->Components.Num(),
+				Message->Components.GetData(),
 				Message->EntityId.IsSet() ? &(Message->EntityId.GetValue()) : nullptr,
 				nullptr);
 			break;
@@ -297,7 +609,6 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 				Message->EntityId,
 				&Message->Update,
 				&DisableLoopback);
-
 			break;
 		}
 		case EOutgoingMessageType::CommandRequest:
@@ -422,7 +733,5 @@ void USpatialWorkerConnection::QueueOutgoingMessage(ArgsType&&... Args)
 {
 	// TODO UNR-1271: As later optimization, we can change the queue to hold a union
 	// of all outgoing message types, rather than having a pointer.
-	auto Message = MakeUnique<T>(Forward<ArgsType>(Args)...);
-	OnEnqueueMessage.Broadcast(Message.Get());
-	OutgoingMessagesQueue.Enqueue(MoveTemp(Message));
+	OutgoingMessagesQueue.Enqueue(MakeUnique<T>(Forward<ArgsType>(Args)...));
 }

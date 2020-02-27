@@ -25,8 +25,6 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema & Snapshot Generation Commandlet Started"));
 
-	TGuardValue<bool> UnattendedScriptGuard(GIsRunningUnattendedScript, GIsRunningUnattendedScript || IsRunningCommandlet());
-
 	TArray<FString> Tokens;
 	TArray<FString> Switches;
 	TMap<FString, FString> Params;
