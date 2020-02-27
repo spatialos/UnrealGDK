@@ -11,7 +11,7 @@
   "MarketplaceURL": "",
   "SupportURL": "https://forums.improbable.io/",
   "EnabledByDefault": true,
-  "CanContainContent": false,
+  "CanContainContent": true,
   "IsBetaVersion": false,
   "Installed": true,
   "Modules": [
@@ -19,7 +19,7 @@
       "Name": "SpatialGDK",
       "Type": "Runtime",
       "LoadingPhase": "PreDefault",
-      "WhitelistPlatforms": [ "Win64", "Linux", "Mac", "XboxOne", "PS4", "IOS" ]
+      "WhitelistPlatforms": [ "Win64", "Linux", "Mac", "XboxOne", "PS4", "IOS", "Android" ]
     },
     {
       "Name": "SpatialGDKEditor",
@@ -31,7 +31,7 @@
       "Name": "SpatialGDKEditorToolbar",
       "Type": "Editor",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64" ]
+      "WhitelistPlatforms": [ "Win64", "Mac" ]
     },
     {
       "Name": "SpatialGDKEditorCommandlet",
@@ -43,12 +43,12 @@
       "Name": "SpatialGDKServices",
       "Type": "Editor",
       "LoadingPhase": "PreDefault",
-      "WhitelistPlatforms": [ "Win64" ]
+      "WhitelistPlatforms": [ "Win64", "Mac" ]
     },
     {
       "Name": "SpatialGDKTests",
       "Type": "Editor",
-      "LoadingPhase": "Default",
+      "LoadingPhase": "PreLoadingScreen",
       "WhitelistPlatforms": [ "Win64" ]
     }
   ],

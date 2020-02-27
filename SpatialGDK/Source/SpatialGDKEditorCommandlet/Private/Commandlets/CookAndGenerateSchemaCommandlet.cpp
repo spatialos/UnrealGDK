@@ -67,10 +67,15 @@ UCookAndGenerateSchemaCommandlet::UCookAndGenerateSchemaCommandlet()
 
 int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 {
-	// Force spatial networking
-	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = true;
-
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Cook and Generate Schema Started."));
+
+	TGuardValue<bool> UnattendedScriptGuard(GIsRunningUnattendedScript, GIsRunningUnattendedScript || IsRunningCommandlet());
+
+#if ENGINE_MINOR_VERSION <= 22
+	// Force spatial networking
+	GetMutableDefault<UGeneralProjectSettings>()->SetUsesSpatialNetworking(true);
+#endif
+
 	FObjectListener ObjectListener;
 	TSet<FSoftClassPath> ReferencedClasses;
 	ObjectListener.StartListening(&ReferencedClasses);
@@ -138,20 +143,22 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	SpatialGDKGenerateSchemaForClasses(Classes);
 
 	GenerateSchemaForSublevels();
+	GenerateSchemaForRPCEndpoints();
+	GenerateSchemaForNCDs();
 
 	FTimespan Duration = FDateTime::Now() - StartTime;
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Schema Generation Finished in %.2f seconds"), Duration.GetTotalSeconds());
-	
-	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
-	{
-		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to save schema database."));
-		return 0;
-	}
 
 	if (!RunSchemaCompiler())
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to run schema compiler."));
+		return 0;
+	} 
+
+	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
+	{
+		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to save schema database."));
 		return 0;
 	}
 

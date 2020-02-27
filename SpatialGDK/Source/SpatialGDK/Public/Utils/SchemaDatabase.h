@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "Containers/StaticArray.h"
@@ -91,12 +93,31 @@ public:
 	TMap<FString, uint32> LevelPathToComponentId;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	TMap<uint32, FString> ComponentIdToClassPath;
+	TMap<float, uint32> NetCullDistanceToComponentId;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	TSet<uint32> LevelComponentIds;
+	TSet<uint32> NetCullDistanceComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TMap<uint32, FString> ComponentIdToClassPath;
+
+	// These component ID lists for each data type are stored separately as you cannot have nested maps in a UPROPERTY
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<uint32> DataComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<uint32> OwnerOnlyComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<uint32> HandoverComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<uint32> LevelComponentIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 NextAvailableComponentId;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	uint32 SchemaDescriptorHash;
 };
 

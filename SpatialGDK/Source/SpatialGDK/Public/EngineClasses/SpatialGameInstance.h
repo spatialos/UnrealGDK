@@ -7,12 +7,15 @@
 
 #include "SpatialGameInstance.generated.h"
 
-class USpatialWorkerConnection;
+class USpatialLatencyTracer;
+class USpatialConnectionManager;
+class UGlobalStateManager;
+class USpatialStaticComponentView;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
-DECLARE_EVENT(USpatialWorkerConnection, FOnConnectedEvent);
-DECLARE_EVENT_OneParam(USpatialWorkerConnection, FOnConnectionFailedEvent, const FString&);
+DECLARE_EVENT(USpatialGameInstance, FOnConnectedEvent);
+DECLARE_EVENT_OneParam(USpatialGameInstance, FOnConnectionFailedEvent, const FString&);
 
 UCLASS(config = Engine)
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
@@ -32,16 +35,20 @@ public:
 	virtual bool ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& Ar, UObject* Executor) override;
 	//~ End UObject Interface
 
-	// bResponsibleForSnapshotLoading exists to have persistent knowledge if this worker has authority over the GSM during ServerTravel.
-	bool bResponsibleForSnapshotLoading = false;
+	//~ Begin UGameInstance Interface
+	virtual void Init() override;
+	//~ End UGameInstance Interface
 
-	// The SpatialWorkerConnection must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
-	void CreateNewSpatialWorkerConnection();
+	// The SpatiaConnectionManager must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
+	void CreateNewSpatialConnectionManager();
 
-	// Destroying the SpatialWorkerConnection disconnects us from SpatialOS.
-	void DestroySpatialWorkerConnection();
+	// Destroying the SpatialConnectionManager disconnects us from SpatialOS.
+	void DestroySpatialConnectionManager();
 
-	FORCEINLINE USpatialWorkerConnection* GetSpatialWorkerConnection() { return SpatialConnection; }
+	FORCEINLINE USpatialConnectionManager* GetSpatialConnectionManager() { return SpatialConnectionManager; }
+	FORCEINLINE USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
+	FORCEINLINE UGlobalStateManager* GetGlobalStateManager() { return GlobalStateManager; };
+	FORCEINLINE USpatialStaticComponentView* GetStaticComponentView() { return StaticComponentView; };
 
 	void HandleOnConnected();
 	void HandleOnConnectionFailed(const FString& Reason);
@@ -51,18 +58,34 @@ public:
 	// Invoked when this worker fails to initiate a connection to SpatialOS
 	FOnConnectionFailedEvent OnConnectionFailed;
 
+	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
+	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
+
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.
 	bool HasSpatialNetDriver() const;
 
 private:
-
 	// SpatialConnection is stored here for persistence between map travels.
 	UPROPERTY()
-	USpatialWorkerConnection* SpatialConnection;
+	USpatialConnectionManager* SpatialConnectionManager;
+
+	bool bFirstConnectionToSpatialOSAttempted = false;
 
 	// If this flag is set to true standalone clients will not attempt to connect to a deployment automatically if a 'loginToken' exists in arguments.
 	UPROPERTY(Config)
 	bool bPreventAutoConnectWithLocator;
+
+	UPROPERTY()
+	USpatialLatencyTracer* SpatialLatencyTracer = nullptr;
+
+	// GlobalStateManager must persist when server traveling
+	UPROPERTY()
+	UGlobalStateManager* GlobalStateManager;
+
+	// StaticComponentView must persist when server traveling
+	UPROPERTY()
+	USpatialStaticComponentView* StaticComponentView;
+
 };

@@ -2,9 +2,17 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+
+#include "CoreMinimal.h"
+#include "Math/Box2D.h"
+#include "Math/Vector2D.h"
+
 #include "GridBasedLBStrategy.generated.h"
+
+class SpatialVirtualWorkerTranslator;
+
+DECLARE_LOG_CATEGORY_EXTERN(LogGridBasedLBStrategy, Log, All)
 
 /**
  * A load balancing strategy that divides the world into a grid.
@@ -25,14 +33,18 @@ class SPATIALGDK_API UGridBasedLBStrategy : public UAbstractLBStrategy
 public:
 	UGridBasedLBStrategy();
 
+	using LBStrategyRegions = TArray<TPair<VirtualWorkerId, FBox2D>>;
+
 /* UAbstractLBStrategy Interface */
-	virtual void Init(const class USpatialNetDriver* InNetDriver) override;
+	virtual void Init(const USpatialNetDriver* InNetDriver) override;
 
-	virtual TSet<uint32> GetVirtualWorkerIds() const;
+	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;
 
-	virtual bool ShouldRelinquishAuthority(const AActor& Actor) const override;
-	virtual uint32 WhoShouldHaveAuthority(const AActor& Actor) const override;
+	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
+	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 /* End UAbstractLBStrategy Interface */
+
+	LBStrategyRegions GetLBStrategyRegions() const;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")
@@ -49,7 +61,7 @@ protected:
 
 private:
 
-	TArray<uint32> VirtualWorkerIds;
+	TArray<VirtualWorkerId> VirtualWorkerIds;
 
 	TArray<FBox2D> WorkerCells;
 

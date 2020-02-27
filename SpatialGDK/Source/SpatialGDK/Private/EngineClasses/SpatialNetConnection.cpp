@@ -18,6 +18,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialNetConnection);
 
+DECLARE_CYCLE_STAT(TEXT("UpdateLevelVisibility"), STAT_SpatialNetConnectionUpdateLevelVisibility, STATGROUP_SpatialNet);
+
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
@@ -71,12 +73,15 @@ int32 USpatialNetConnection::IsNetReady(bool Saturate)
 
 void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialNetConnectionUpdateLevelVisibility);
+
 	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
 
 	// We want to update our interest as fast as possible
 	// So we send an Interest update immediately.
-	UpdateActorInterest(Cast<AActor>(PlayerController));
-	UpdateActorInterest(Cast<AActor>(PlayerController->GetPawn()));
+
+	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
+	Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
 }
 
 void USpatialNetConnection::FlushDormancy(AActor* Actor)
@@ -92,22 +97,6 @@ void USpatialNetConnection::FlushDormancy(AActor* Actor)
 	}
 }
 
-void USpatialNetConnection::UpdateActorInterest(AActor* Actor)
-{
-	if (Actor == nullptr)
-	{
-		return;
-	}
-
-	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
-
-	Sender->UpdateInterestComponent(Actor);
-	for (const auto& Child : Actor->Children)
-	{
-		UpdateActorInterest(Child);
-	}
-}
-
 void USpatialNetConnection::ClientNotifyClientHasQuit()
 {
 	if (PlayerControllerEntity != SpatialConstants::INVALID_ENTITY_ID)
@@ -118,7 +107,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 			return;
 		}
 
-		Worker_ComponentUpdate Update = {};
+		FWorkerComponentUpdate Update = {};
 		Update.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
 		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -135,6 +124,8 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 
 void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)
 {
+	UE_LOG(LogSpatialNetConnection, Log, TEXT("Init Heartbeat component: NetConnection %s, PlayerController entity %lld"), *GetName(), PlayerControllerEntity);
+
 	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID, TEXT("InitHeartbeat: PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity, InPlayerControllerEntity);
 	PlayerControllerEntity = InPlayerControllerEntity;
 	TimerManager = InTimerManager;
@@ -151,6 +142,11 @@ void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_
 
 void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 {
+	float Timeout = GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds;
+#if WITH_EDITOR
+	Timeout = GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutWithEditorSeconds;
+#endif
+
 	TimerManager->SetTimer(HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]()
 	{
 		if (USpatialNetConnection* Connection = WeakThis.Get())
@@ -158,7 +154,7 @@ void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 			// This client timed out. Disconnect it and trigger OnDisconnected logic.
 			Connection->CleanUp();
 		}
-	}, GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds, false);
+	}, Timeout, false);
 }
 
 void USpatialNetConnection::SetHeartbeatEventTimer()
@@ -167,7 +163,7 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 	{
 		if (USpatialNetConnection* Connection = WeakThis.Get())
 		{
-			Worker_ComponentUpdate ComponentUpdate = {};
+			FWorkerComponentUpdate ComponentUpdate = {};
 
 			ComponentUpdate.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
 			ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
@@ -175,7 +171,7 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 			Schema_AddObject(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
 
 			USpatialWorkerConnection* WorkerConnection = Cast<USpatialNetDriver>(Connection->Driver)->Connection;
-			if (WorkerConnection->IsConnected())
+			if (WorkerConnection != nullptr)
 			{
 				WorkerConnection->SendComponentUpdate(Connection->PlayerControllerEntity, &ComponentUpdate);
 			}
