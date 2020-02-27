@@ -205,8 +205,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
 			Sender->NetDriver->GlobalStateManager->TrySendWorkerReadyToBeginPlay();
-			FWorkerComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(*Sender->NetDriver).CreateInterestUpdate();
-			Sender->Connection->SendComponentUpdate(Sender->NetDriver->WorkerEntityId, &InterestUpdate);
+			Sender->SendServerWorkerEntityInterestUpdate();
 			
 			return;
 		}

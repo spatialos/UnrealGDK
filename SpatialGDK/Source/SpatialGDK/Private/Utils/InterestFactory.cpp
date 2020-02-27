@@ -313,8 +313,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const USpatialNetDriver& Ne
 			{
 				QueryConstraint LoadBalancerConstraint = LoadBalancer->GetWorkerInterestQueryConstraint();
 
-				Constraint.OrConstraint.Empty();
-				Constraint.OrConstraint.Add(AlwaysRelevantConstraint);
+				// This makes the assumption that the always relevant constraint is an or constraint in order to flatten the constraint.
 				Constraint.OrConstraint.Add(LoadBalancerConstraint);
 			}
 		}
@@ -336,19 +335,14 @@ Interest InterestFactory::CreateInterest() const
 		AddPlayerControllerActorInterest(ResultInterest);
 	}
 
-	if (Actor->GetNetConnection() != nullptr && Settings->bEnableResultTypes)
-	{
-		// Clients need to see owner only and server RPC components on entities they have authority over
-		AddClientSelfInterest(ResultInterest);
-	}
-
-	if (Settings->bEnableServerQBI)
-	{
-		return Interest{};
-	}
-
 	if (Settings->bEnableResultTypes)
 	{
+		if (Actor->GetNetConnection() != nullptr)
+		{
+			// Clients need to see owner only and server RPC components on entities they have authority over
+			AddClientSelfInterest(ResultInterest);
+		}
+
 		// Every actor needs a self query for the server to the client RPC endpoint
 		AddServerSelfInterest(ResultInterest);
 	}
