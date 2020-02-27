@@ -34,6 +34,7 @@ public:
 	virtual ActorLockToken AcquireLock(AActor* Actor, FString LockName = TEXT("")) PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLock, return SpatialConstants::INVALID_ACTOR_LOCK_TOKEN;);
 	virtual bool ReleaseLock(const ActorLockToken Token) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLock, return false;);
 	virtual bool IsLocked(const AActor* Actor) const PURE_VIRTUAL(UAbstractLockingPolicy::IsLocked, return false;);
+	virtual void OnOwnerUpdated(const AActor* Actor, const AActor* OldOwner) PURE_VIRTUAL(UAbstractLockingPolicy::OnOwnerUpdated, return;);
 
 protected:
 	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;

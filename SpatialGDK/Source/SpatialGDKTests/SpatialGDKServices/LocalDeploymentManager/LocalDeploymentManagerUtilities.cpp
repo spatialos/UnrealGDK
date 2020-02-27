@@ -60,8 +60,9 @@ bool FStartDeployment::Update()
 		const FString LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
 		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
 		const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
+		const FString RuntimeVersion = SpatialGDKSettings->GetSpatialOSRuntimeVersionForLocal();
 
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName]
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion]
 		{
 			if (!GenerateWorkerJson())
 			{
@@ -85,7 +86,7 @@ bool FStartDeployment::Update()
 				return;
 			}
 
-			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, TEXT(""));
+			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName, TEXT(""), nullptr);
 		});
 	}
 

@@ -35,7 +35,7 @@ DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
 DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel, STATGROUP_SpatialNet);
 
-DECLARE_CYCLE_STAT(TEXT("Receiver CritSection"), STAT_ReceiverCritSection, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver LeaveCritSection"), STAT_ReceiverLeaveCritSection, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver AddEntity"), STAT_ReceiverAddEntity, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver RemoveEntity"), STAT_ReceiverRemoveEntity, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver AddComponent"), STAT_ReceiverAddComponent, STATGROUP_SpatialNet);
@@ -50,6 +50,10 @@ DECLARE_CYCLE_STAT(TEXT("Receiver AuthorityChange"), STAT_ReceiverAuthChange, ST
 DECLARE_CYCLE_STAT(TEXT("Receiver ReserveEntityIds"), STAT_ReceiverReserveEntityIds, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver CreateEntityResponse"), STAT_ReceiverCreateEntityResponse, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver EntityQueryResponse"), STAT_ReceiverEntityQueryResponse, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver FlushRemoveComponents"), STAT_ReceiverFlushRemoveComponents, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver ReceiveActor"), STAT_ReceiverReceiveActor, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService)
@@ -70,7 +74,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
 {
-	SCOPE_CYCLE_COUNTER(STAT_ReceiverCritSection);
 	if (InCriticalSection)
 	{
 		EnterCriticalSection();
@@ -90,6 +93,8 @@ void USpatialReceiver::EnterCriticalSection()
 
 void USpatialReceiver::LeaveCriticalSection()
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverLeaveCritSection);
+
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Leaving critical section."));
 	check(bInCriticalSection);
 
@@ -156,6 +161,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
+	case SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
@@ -255,6 +261,8 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 
 void USpatialReceiver::FlushRemoveComponentOps()
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverFlushRemoveComponents);
+
 	for (const auto& Op : QueuedRemoveComponentOps)
 	{
 		ProcessRemoveComponent(Op);
@@ -263,8 +271,9 @@ void USpatialReceiver::FlushRemoveComponentOps()
 	QueuedRemoveComponentOps.Empty();
 }
 
-void USpatialReceiver::RemoveComponentOpsForEntity(Worker_EntityId EntityId)
+void USpatialReceiver::DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId)
 {
+	// Drop any remove components ops for a removed entity because we cannot process them once we no longer see the entity.
 	for (auto& RemoveComponentOp : QueuedRemoveComponentOps)
 	{
 		if (RemoveComponentOp.entity_id == EntityId)
@@ -443,7 +452,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
-			Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id);
+			Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id, Op.component_id);
 		}
 
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
@@ -481,7 +490,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						// The following check will return false on non-authoritative servers if the Pawn hasn't been received yet.
 						if (APawn* PawnFromPlayerState = PlayerState->GetPawn())
 						{
-							check(PlayerState->bIsABot || PawnFromPlayerState->IsPlayerControlled());
 							if (PawnFromPlayerState->IsPlayerControlled())
 							{
 								PawnFromPlayerState->RemoteRole = ROLE_AutonomousProxy;
@@ -625,6 +633,8 @@ bool USpatialReceiver::IsReceivedEntityTornOff(Worker_EntityId EntityId)
 
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverReceiveActor);
+	
 	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
 	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
 
@@ -828,6 +838,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverRemoveActor);
+
 	TWeakObjectPtr<UObject> WeakActor = PackageMap->GetObjectFromEntityId(EntityId);
 
 	// Actor has not been resolved yet or has already been destroyed. Clean up surrounding bookkeeping.
@@ -1540,7 +1552,6 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 			{
 				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
 
-
 				// In a zoned multiworker scenario we might not have gained authority over the current entity in this bundle in time
 				// before processing so don't ApplyRPCs to an entity that we don't have authority over.
 				if (!StaticComponentView->HasAuthority(ObjectRef.Entity, RPCEndpointComponentId))
@@ -1790,6 +1801,8 @@ ERPCResult USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunction* 
 
 FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 {
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverApplyRPC);
+
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{

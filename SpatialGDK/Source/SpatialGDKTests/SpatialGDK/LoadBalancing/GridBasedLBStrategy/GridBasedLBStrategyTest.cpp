@@ -110,7 +110,7 @@ bool FWaitForActor::Update()
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckShouldRelinquishAuthority, FAutomationTestBase*, Test, FName, Handle, bool, bExpected);
 bool FCheckShouldRelinquishAuthority::Update()
 {
-	bool bActual = Strat->ShouldRelinquishAuthority(*TestActors[Handle]);
+	bool bActual = !Strat->ShouldHaveAuthority(*TestActors[Handle]);
 
 	Test->TestEqual(FString::Printf(TEXT("Should Relinquish Authority. Actual: %d, Expected: %d"), bActual, bExpected), bActual, bExpected);
 
@@ -243,7 +243,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_sho
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 0));
+	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 1, 10000.f, 10000.f, 0));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(-2.f, 0.f, 0.f)));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor1"));
@@ -278,7 +278,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_re
 	AutomationOpenMap("/Engine/Maps/Entry");
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(-2500.f, 0.f, 0.f)));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(0.f, -2500.f, 0.f)));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor1"));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 0));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", false));

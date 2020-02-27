@@ -12,6 +12,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Net/NetworkProfiler.h"
 #include "Schema/AuthorityIntent.h"
@@ -19,6 +20,7 @@
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
+#include "Schema/ServerWorker.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
 #include "SpatialConstants.h"
@@ -35,10 +37,12 @@ DEFINE_LOG_CATEGORY(LogSpatialSender);
 
 using namespace SpatialGDK;
 
-DECLARE_CYCLE_STAT(TEXT("SendComponentUpdates"), STAT_SpatialSenderSendComponentUpdates, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("ResetOutgoingUpdate"), STAT_SpatialSenderResetOutgoingUpdate, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("QueueOutgoingUpdate"), STAT_SpatialSenderQueueOutgoingUpdate, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("UpdateInterestComponent"), STAT_SpatialSenderUpdateInterestComponent, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Sender SendComponentUpdates"), STAT_SpatialSenderSendComponentUpdates, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Sender ResetOutgoingUpdate"), STAT_SpatialSenderResetOutgoingUpdate, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Sender QueueOutgoingUpdate"), STAT_SpatialSenderQueueOutgoingUpdate, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Sender UpdateInterestComponent"), STAT_SpatialSenderUpdateInterestComponent, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Sender FlushRetryRPCs"), STAT_SpatialSenderFlushRetryRPCs, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Sender SendRPC"), STAT_SpatialSenderSendRPC, STATGROUP_SpatialNet);
 
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex)
 	: TargetObject(InTargetObject)
@@ -48,14 +52,6 @@ FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* I
 	, Payload(InPayload)
 	, Attempts(1)
 	, RetryIndex(InRetryIndex)
-{
-}
-
-FPendingRPC::FPendingRPC(FPendingRPC&& Other)
-	: Offset(Other.Offset)
-	, Index(Other.Index)
-	, Data(MoveTemp(Other.Data))
-	, Entity(Other.Entity)
 {
 }
 
@@ -183,12 +179,14 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, WorkerIdPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
+	ComponentWriteAcl.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, WorkerIdPermission);
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(InterestFactory::CreateServerWorkerInterest().CreateInterestData());
+	Components.Add(ServerWorker(Connection->GetWorkerId(), false).CreateServerWorkerData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
@@ -204,6 +202,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
+			Sender->NetDriver->GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 			return;
 		}
 
@@ -339,15 +338,23 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 }
 
 // Apply (and clean up) any updates queued, due to being sent previously when they didn't have authority.
-void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId)
+void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	if (TArray<FWorkerComponentUpdate>* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
 	{
-		for(auto& Component : *UpdatesQueuedUntilAuthority)
+		for (auto It = UpdatesQueuedUntilAuthority->CreateIterator(); It; It++)
 		{
-			Connection->SendComponentUpdate(EntityId, &Component);			
+			if (ComponentId == It->component_id)
+			{
+				Connection->SendComponentUpdate(EntityId, &(*It));
+				It.RemoveCurrent();
+			}
 		}
-		UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
+
+		if (UpdatesQueuedUntilAuthority->Num() == 0)
+		{
+			UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
+		}
 	}
 }
 
@@ -596,6 +603,8 @@ void USpatialSender::SetAclWriteAuthority(const Worker_EntityId EntityId, const 
 
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendRPC);
+
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
@@ -656,7 +665,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 	{
 	case ERPCType::CrossServer:
 	{
-		Worker_ComponentId ComponentId = SpatialConstants::GetCrossServerRPCComponent(SpatialGDKSettings->UseRPCRingBuffer());
+		Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
@@ -804,6 +813,8 @@ void USpatialSender::EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 
 void USpatialSender::FlushRetryRPCs()
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderFlushRetryRPCs);
+	
 	// Retried RPCs are sorted by their index.
 	RetryRPCs.Sort([](const TSharedRef<FReliableRPCForRetry>& A, const TSharedRef<FReliableRPCForRetry>& B) { return A->RetryIndex < B->RetryIndex; });
 	for (auto& RetryRPC : RetryRPCs)
@@ -955,9 +966,9 @@ Worker_CommandRequest USpatialSender::CreateRetryRPCCommandRequest(const FReliab
 	return CommandRequest;
 }
 
-Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId EventIndex)
+FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId EventIndex)
 {
-	Worker_ComponentUpdate ComponentUpdate = {};
+	FWorkerComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = ComponentId;
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
@@ -968,6 +979,10 @@ Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 	ensure(TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
 	Payload.WriteToSchemaObject(EventData);
+
+#if TRACE_LIB_ACTIVE
+	ComponentUpdate.Trace = Payload.Trace;
+#endif
 
 	return ComponentUpdate;
 }

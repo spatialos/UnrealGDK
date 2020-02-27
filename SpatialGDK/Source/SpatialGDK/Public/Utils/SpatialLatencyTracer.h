@@ -26,6 +26,20 @@ namespace SpatialGDK
 	struct FOutgoingMessage;
 }  // namespace SpatialGDK
 
+/**
+ * Enum that maps Unreal's log verbosity to allow use in settings.
+**/
+UENUM()
+namespace ETraceType
+{
+	enum Type
+	{
+		RPC,
+		Property,
+		Tagged
+	};
+}
+
 UCLASS()
 class SPATIALGDK_API USpatialLatencyTracer : public UObject
 {
@@ -133,22 +147,15 @@ private:
 	using ActorTagKey = TPair<const AActor*, FString>;
 	using TraceSpan = improbable::trace::Span;
 
-	enum class ETraceType : uint8
-	{
-		RPC,
-		Property,
-		Tagged
-	};
-
 	bool BeginLatencyTrace_Internal(const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
-	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue);
+	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType::Type Type, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayloadContinue);
 	bool EndLatencyTrace_Internal(const FSpatialLatencyPayload& LatencyPayload);
 
 	FSpatialLatencyPayload RetrievePayload_Internal(const UObject* Actor, const FString& Key);
 
 	bool IsLatencyTraceActive_Internal();
 
-	TraceKey CreateNewTraceEntry(const AActor* Actor, const FString& Target, ETraceType Type);
+	TraceKey CreateNewTraceEntry(const AActor* Actor, const FString& Target, ETraceType::Type Type);
 
 	TraceKey GenerateNewTraceKey();
 	TraceSpan* GetActiveTrace();
@@ -173,6 +180,7 @@ private:
 	TMap<ActorPropertyKey, TraceKey> TrackingProperties;
 	TMap<ActorTagKey, TraceKey> TrackingTags;
 	TMap<TraceKey, TraceSpan> TraceMap;
+	TMap<FSpatialLatencyPayload, TraceKey> PayloadToTraceKeys;
 
 public:
 

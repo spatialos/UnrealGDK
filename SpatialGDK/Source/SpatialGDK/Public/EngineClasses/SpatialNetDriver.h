@@ -30,6 +30,7 @@ class UEntityPool;
 class UGlobalStateManager;
 class USpatialActorChannel;
 class USpatialClassInfoManager;
+class USpatialConnectionManager;
 class USpatialGameInstance;
 class USpatialMetrics;
 class USpatialNetConnection;
@@ -75,9 +76,8 @@ public:
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
 	virtual void Shutdown() override;
 	virtual void NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection) override;
+	virtual void OnOwnerUpdated(AActor* Actor, AActor* OldOwner) override;
 	// End UNetDriver interface.
-
-	virtual void OnOwnerUpdated(AActor* Actor);
 
 	void OnConnectionToSpatialOSSucceeded();
 	void OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
@@ -123,6 +123,8 @@ public:
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
+	UPROPERTY()
+	USpatialConnectionManager* ConnectionManager;
 	UPROPERTY()
 	USpatialSender* Sender;
 	UPROPERTY()

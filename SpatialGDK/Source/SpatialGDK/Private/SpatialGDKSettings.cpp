@@ -12,6 +12,26 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
 
+namespace
+{
+	void CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, bool& bOutValue)
+	{
+		if(FParse::Param(CommandLine, Parameter))
+		{
+			bOutValue = true;
+		}
+		else
+		{
+			TCHAR TempStr[16];
+			if (FParse::Value(CommandLine, Parameter, TempStr, 16) && TempStr[0] == '=')
+			{
+				bOutValue = FCString::ToBool(TempStr + 1); // + 1 to skip =
+			}
+		}
+		UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, bOutValue ? TEXT("enabled") : TEXT("disabled"));
+	}
+}
+
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, EntityPoolInitialReservationCount(3000)
@@ -22,7 +42,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, HeartbeatTimeoutWithEditorSeconds(10000.0f)
 	, ActorReplicationRateLimit(0)
 	, EntityCreationRateLimit(0)
-	, UseIsActorRelevantForConnection(false)
+	, bUseIsActorRelevantForConnection(false)
 	, OpsUpdateRate(1000.0f)
 	, bEnableHandover(true)
 	, MaxNetCullDistanceSquared(900000000.0f) // Set to twice the default Actor NetCullDistanceSquared (300m)
@@ -59,6 +79,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableNetCullDistanceInterest(false)
 	, bEnableNetCullDistanceFrequency(false)
 	, FullFrequencyNetCullDistanceRatio(1.0f)
+	, bUseSecureClientConnection(false)
+	, bUseSecureServerConnection(false)
 	, bUseDevelopmentAuthenticationFlow(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
@@ -70,46 +92,18 @@ void USpatialGDKSettings::PostInitProperties()
 
 	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
-
-	if (FParse::Param(CommandLine, TEXT("OverrideSpatialOffloading")))
-	{
-		bEnableOffloading = true;
-	}
-	else
-	{
-		FParse::Bool(CommandLine, TEXT("OverrideSpatialOffloading="), bEnableOffloading);
-	}
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Offloading is %s."), bEnableOffloading ? TEXT("enabled") : TEXT("disabled"));
-
-	if (FParse::Param(CommandLine, TEXT("OverrideServerInterest")))
-	{
-		bEnableServerQBI = true;
-	}
-	else
-	{
-		FParse::Bool(CommandLine, TEXT("OverrideServerInterest="), bEnableServerQBI);
-	}
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Server interest is %s."), bEnableServerQBI ? TEXT("enabled") : TEXT("disabled"));
-
-	if (FParse::Param(CommandLine, TEXT("OverrideHandover")))
-	{
-		bEnableHandover = true;
-	}
-	else
-	{
-		FParse::Bool(CommandLine, TEXT("OverrideHandover="), bEnableHandover);
-	}
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Handover is %s."), bEnableHandover ? TEXT("enabled") : TEXT("disabled"));
-
-	if (FParse::Param(CommandLine, TEXT("OverrideLoadBalancer")))
-	{
-		bEnableUnrealLoadBalancer = true;
-	}
-	else
-	{
-		FParse::Bool(CommandLine, TEXT("OverrideLoadBalancer="), bEnableUnrealLoadBalancer);
-	}
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Unreal load balancing is %s."), bEnableUnrealLoadBalancer ? TEXT("enabled") : TEXT("disabled"));
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialOffloading"), TEXT("Offloading"), bEnableOffloading);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideServerInterest"), TEXT("Server interest"), bEnableServerQBI);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideLoadBalancer"), TEXT("Load balancer"), bEnableUnrealLoadBalancer);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCPacking"), TEXT("RPC packing"), bPackRPCs);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread"), TEXT("Spatial worker connection on game thread"), bRunSpatialWorkerConnectionOnGameThread);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideResultTypes"), TEXT("Result types"), bEnableResultTypes);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterest"), TEXT("Net cull distance interest"), bEnableNetCullDistanceInterest);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"), bEnableNetCullDistanceFrequency);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"), bUseIsActorRelevantForConnection);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
 
 	if (bEnableUnrealLoadBalancer)
 	{
@@ -122,35 +116,6 @@ void USpatialGDKSettings::PostInitProperties()
 			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
 		}
 	}
-
-	if (FParse::Param(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread")))
-	{
-		bRunSpatialWorkerConnectionOnGameThread = true;
-	}
-	else
-	{
-		FParse::Bool(CommandLine, TEXT("OverrideSpatialWorkerConnectionOnGameThread="), bRunSpatialWorkerConnectionOnGameThread);
-	}
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("SpatialWorkerConnection on the Game thread is %s."), bRunSpatialWorkerConnectionOnGameThread ? TEXT("enabled") : TEXT("disabled"));
-
-	if (FParse::Param(CommandLine, TEXT("OverrideResultTypes")))
-	{
-		bEnableResultTypes = true;
-	}
-	else
-	{
-		FParse::Bool(CommandLine, TEXT("OverrideResultTypes="), bEnableResultTypes);
-	}
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Result types are %s."), bEnableResultTypes ? TEXT("enabled") : TEXT("disabled"));
-
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Handover is %s."), bEnableHandover ? TEXT("enabled") : TEXT("disabled"));
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Server QBI is %s."), bEnableServerQBI ? TEXT("enabled") : TEXT("disabled"));
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("RPC ring buffers are %s."), bUseRPCRingBuffers ? TEXT("enabled") : TEXT("disabled"));
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("RPC packing is %s."), bPackRPCs ? TEXT("enabled") : TEXT("disabled"));
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Net Cull Distance interest is %s."), bEnableNetCullDistanceInterest ? TEXT("enabled") : TEXT("disabled"));
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Net Cull Distance interest with frequency is %s."), bEnableNetCullDistanceFrequency ? TEXT("enabled") : TEXT("disabled"));
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Use Is Actor Relevant For Connection is %s."), UseIsActorRelevantForConnection ? TEXT("enabled") : TEXT("disabled"));
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Batch Spatial Position Updates is %s."), bBatchSpatialPositionUpdates ? TEXT("enabled") : TEXT("disabled"));
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
