@@ -35,7 +35,7 @@ namespace
 		}
 	};
 
-	UEStream UStream;
+	UEStream Stream;
 
 #if TRACE_LIB_ACTIVE
 	improbable::trace::SpanContext ReadSpanContext(const void* TraceBytes, const void* SpanBytes)
@@ -66,8 +66,8 @@ void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const F
 
 	StackdriverExporter::Register({ TCHAR_TO_UTF8(*ProjectId) });
 
-	std::cout.rdbuf(&UStream);
-	std::cerr.rdbuf(&UStream);
+	std::cout.rdbuf(&Stream);
+	std::cerr.rdbuf(&Stream);
 
 	StdoutExporter::Register();
 #endif // TRACE_LIB_ACTIVE
