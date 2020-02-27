@@ -120,6 +120,8 @@ public:
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
+	TWeakObjectPtr<USpatialNetConnection> FindWorkerConnectionFromWorkerId(const FString& WorkerId);
+	void CleanUpConnection(USpatialNetConnection* ConnectionCleanedUp);
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
@@ -190,6 +192,8 @@ private:
 	TArray<Worker_OpList*> QueuedStartupOpLists;
 	TSet<Worker_EntityId_Key> DormantEntities;
 	TSet<TWeakObjectPtr<USpatialActorChannel>> PendingDormantChannels;
+
+	TMap<FString, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
 	FTimerManager TimerManager;
 

@@ -172,6 +172,15 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		{
 			LoadBalanceEnforcer->OnLoadBalancingComponentAdded(Op);
 		}
+	case SpatialConstants::WORKER_COMPONENT_ID:
+		/*case SpatialConstants::PLAYERIDENTITY_COMPONENT_ID:*/
+		if (StaticComponentView->HasComponent(Op.entity_id, SpatialConstants::WORKER_COMPONENT_ID)
+			/*&& StaticComponentView->HasComponent(Op.entity_id, SpatialConstants::PLAYERIDENTITY_COMPONENT_ID)*/)
+		{
+			Worker* WorkerData = StaticComponentView->GetComponentData<Worker>(Op.entity_id);
+			WorkerConnectionEntity.Add(Op.entity_id, WorkerData->WorkerId);
+			UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s 's system identity was checked out."), *WorkerData->WorkerId);
+		}
 		return;
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 		// The RPC service needs to be informed when a multi-cast RPC component is added.
@@ -243,6 +252,27 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 	}
 
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
+
+	if (NetDriver->IsServer()
+		&& StaticComponentView->HasComponent(Op.entity_id, SpatialConstants::WORKER_COMPONENT_ID)
+		/*&& StaticComponentView->HasComponent(Op.entity_id, SpatialConstants::PLAYERIDENTITY_COMPONENT_ID)*/)
+	{
+		if (FString* WorkerName = WorkerConnectionEntity.Find(Op.entity_id))
+		{
+			TWeakObjectPtr<USpatialNetConnection> PlayerConnectionPtr = NetDriver->FindWorkerConnectionFromWorkerId(*WorkerName);
+			if (USpatialNetConnection* PlayerConnection = PlayerConnectionPtr.Get())
+			{
+				if (APlayerController* Controller = PlayerConnection->GetPlayerController(NetDriver->World))
+				{
+					Worker_EntityId PCEntity = PackageMap->GetEntityIdFromObject(Controller);
+					AuthorityPlayerControllerConnectionMap.Remove(PCEntity);
+				}
+
+				PlayerConnection->CleanUp();
+			}
+			WorkerConnectionEntity.Remove(Op.entity_id);
+		}
+	}
 }
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
@@ -914,19 +944,22 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		for (UObject* SubObject : ActorChannel->CreateSubObjects)
+		if (NetDriver->World)
 		{
-			if (SubObject)
+			for (UObject* SubObject : ActorChannel->CreateSubObjects)
 			{
-				FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(SubObject, Cast<USpatialPackageMapClient>(PackageMap));
-				// Unmap this object so we can remap it if it becomes relevant again in the future
-				MoveMappedObjectToUnmapped(ObjectRef);
+				if (SubObject)
+				{
+					FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(SubObject, Cast<USpatialPackageMapClient>(PackageMap));
+					// Unmap this object so we can remap it if it becomes relevant again in the future
+					MoveMappedObjectToUnmapped(ObjectRef);
+				}
 			}
-		}
 
-		FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Actor, Cast<USpatialPackageMapClient>(PackageMap));
-		// Unmap this object so we can remap it if it becomes relevant again in the future
-		MoveMappedObjectToUnmapped(ObjectRef);
+			FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Actor, Cast<USpatialPackageMapClient>(PackageMap));
+			// Unmap this object so we can remap it if it becomes relevant again in the future
+			MoveMappedObjectToUnmapped(ObjectRef);
+		}
 
 		for (auto& ChannelRefs : ActorChannel->ObjectReferenceMap)
 		{

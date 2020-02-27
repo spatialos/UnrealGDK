@@ -244,6 +244,7 @@ private:
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
+	TMap<Worker_EntityId_Key, FString> WorkerConnectionEntity;
 
 	// TODO: Refactor into a separate class so we can add automated tests for this. UNR-2649
 	struct EntityWaitingForAsyncLoad
