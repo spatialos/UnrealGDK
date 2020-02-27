@@ -62,7 +62,7 @@ void SpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
 			Receiver->OnRemoveEntity(Op->op.remove_entity);
 			StaticComponentView->OnRemoveEntity(Op->op.remove_entity.entity_id);
-			Receiver->RemoveComponentOpsForEntity(Op->op.remove_entity.entity_id);
+			Receiver->DropQueuedRemoveComponentOpsForEntity(Op->op.remove_entity.entity_id);
 			break;
 
 		// Components

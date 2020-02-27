@@ -271,8 +271,9 @@ void USpatialReceiver::FlushRemoveComponentOps()
 	QueuedRemoveComponentOps.Empty();
 }
 
-void USpatialReceiver::RemoveComponentOpsForEntity(Worker_EntityId EntityId)
+void USpatialReceiver::DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId)
 {
+	// Drop any remove components ops for a removed entity because we cannot process them once we no longer see the entity.
 	for (auto& RemoveComponentOp : QueuedRemoveComponentOps)
 	{
 		if (RemoveComponentOp.entity_id == EntityId)
