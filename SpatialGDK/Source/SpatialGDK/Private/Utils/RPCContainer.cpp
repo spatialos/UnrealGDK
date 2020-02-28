@@ -62,11 +62,12 @@ namespace
 		const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
 
 		// The format is expected to be:
-		// Function <objectName>::<functionName> sending/execution queued on server/client for <duration>. Reason: <reason>
-		FString OutputLog = FString::Printf(TEXT("Function %s::%s %s queued on %s for %s. Reason: %s"),
+		// Function <objectName>::<functionName> sending/execution dropped/queued on server/client for <duration>. Reason: <reason>
+		FString OutputLog = FString::Printf(TEXT("Function %s::%s %s %s on %s for %s. Reason: %s"),
 			ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
 			ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
 			ErrorInfo.QueueType == ERPCQueueType::Send ? TEXT("sending") : ErrorInfo.QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
+			ErrorInfo.bShouldDrop ? TEXT("dropped") : TEXT("queued"),
 			ErrorInfo.bIsServer ? TEXT("server") : TEXT("client"),
 			*TimeDiff.ToString(),
 			*ERPCResultToString(ErrorInfo.ErrorCode));
@@ -191,7 +192,6 @@ bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 #if !UE_BUILD_SHIPPING
 		LogRPCError(ErrorInfo, Params);
 #endif
-
-		return false;
+		return ErrorInfo.bShouldDrop;
 	}
 }

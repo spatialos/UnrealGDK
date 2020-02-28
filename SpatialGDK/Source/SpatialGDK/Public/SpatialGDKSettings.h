@@ -149,6 +149,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Processing Received RPC With Unresolved Refs"))
 	float QueuedIncomingRPCWaitTime;
 
+	/** Seconds to wait before dropping an outgoing RPC.*/
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Dropping Outgoing RPC"))
+	float QueuedOutgoingRPCWaitTime;
+
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates")
 	float PositionUpdateFrequency;

@@ -26,6 +26,8 @@ enum class ERPCResult : uint8_t
 	UnresolvedTargetObject,
 	MissingFunctionInfo,
 	UnresolvedParameters,
+	ActorPendingKill,
+	TimedOut,
 
 	// Sender specific
 	NoActorChannel,
@@ -61,6 +63,7 @@ struct FRPCErrorInfo
 	bool bIsServer = false;
 	ERPCQueueType QueueType = ERPCQueueType::Unknown;
 	ERPCResult ErrorCode = ERPCResult::Unknown;
+	bool bShouldDrop = false;
 };
 
 struct SPATIALGDK_API FPendingRPCParams
