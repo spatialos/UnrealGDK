@@ -26,19 +26,6 @@ DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 static const FString SpatialServiceVersion(TEXT("20200120.115350.8d6b779c82"));
 
-namespace
-{
-	FString GetDomainEnvironmentStr(bool bIsInChina)
-	{
-		FString DomainEnvironmentStr;
-		if (bIsInChina)
-		{
-			DomainEnvironmentStr = TEXT("--environment=cn-production");
-		}
-		return DomainEnvironmentStr;
-	}
-} // anonymous namespace
-
 FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
 	, bSpatialServiceRunning(false)
@@ -48,12 +35,16 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	, bStartingSpatialService(false)
 	, bStoppingSpatialService(false)
 {
+}
+
+void FLocalDeploymentManager::PreInit(bool IsInChina)
+{
 #if PLATFORM_WINDOWS
 	// Don't kick off background processes when running commandlets
 	if (IsRunningCommandlet() == false)
 	{
 		// Check for the existence of Spatial and Spot. If they don't exist then don't start any background processes. Disable spatial networking if either is true.
-		if (!FSpatialGDKServicesModule::SpatialPreRunChecks())
+		if (!FSpatialGDKServicesModule::SpatialPreRunChecks(IsInChina))
 		{
 			UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Pre run checks for LocalDeploymentManager failed. Local deployments cannot be started. Spatial networking will be disabled."));
 			GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = false;
@@ -135,10 +126,10 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
-		FString BuildConfigArgs = FString::Printf(TEXT("worker build build-config %s"), *GetDomainEnvironmentStr(bIsInChina));
+		FString BuildConfigArgs = FString::Printf(TEXT("worker build build-config"));
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
-		FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
+		SpatialCommandUtils::ExecuteSpatialCommandAndReadOutput(BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode, bIsInChina);
 
 		if (ExitCode == ExitCodeSuccess)
 		{
@@ -497,7 +488,7 @@ bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
 
 	bStartingSpatialService = true;
 
-	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s %s"), *SpatialServiceVersion, *GetDomainEnvironmentStr(bIsInChina));
+	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s"), *SpatialServiceVersion);
 
 	// Pass exposed runtime IP if one has been specified
 	if (!RuntimeIPToExpose.IsEmpty())
@@ -509,7 +500,8 @@ bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
 	FString ServiceStartResult;
 	int32 ExitCode;
 
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStartResult, ExitCode);
+
+	SpatialCommandUtils::ExecuteSpatialCommandAndReadOutput(SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStartResult, ExitCode, bIsInChina);
 
 	bStartingSpatialService = false;
 
@@ -540,11 +532,11 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 
 	bStoppingSpatialService = true;
 
-	FString SpatialServiceStartArgs = FString::Printf(TEXT("service stop %s"), *GetDomainEnvironmentStr(bIsInChina));
+	FString SpatialServiceStartArgs = FString::Printf(TEXT("service stop"));
 	FString ServiceStopResult;
 	int32 ExitCode;
 
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(FSpatialGDKServicesModule::GetSpatialExe(), SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStopResult, ExitCode);
+	SpatialCommandUtils::ExecuteSpatialCommandAndReadOutput(SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStopResult, ExitCode, bIsInChina);
 	bStoppingSpatialService = false;
 
 	if (ExitCode == ExitCodeSuccess)
