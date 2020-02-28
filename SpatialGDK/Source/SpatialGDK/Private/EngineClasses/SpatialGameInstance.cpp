@@ -206,26 +206,14 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 {
 	const FString WorkerType = GetSpatialWorkerType().ToString();
 
-	if (OwningWorld != GetWorld())
+	if (OwningWorld != GetWorld()
+		|| !OwningWorld->IsServer()
+		|| !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
+		|| (OwningWorld->WorldType != EWorldType::PIE
+			&& OwningWorld->WorldType != EWorldType::Game
+			&& OwningWorld->WorldType != EWorldType::GamePreview))
 	{
-		// Not current world. Another server running in the same process.
-		return;
-	}
-
-	if (!OwningWorld->IsServer())
-	{
-		return;
-	}
-
-	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
-	{
-		return;
-	}
-
-	if (OwningWorld->WorldType != EWorldType::PIE
-		&& OwningWorld->WorldType != EWorldType::Game
-		&& OwningWorld->WorldType != EWorldType::GamePreview)
-	{
+		// We only want to do something if this is the correct process and we are on a spatial server, and we are in-game
 		return;
 	}
 
@@ -248,7 +236,7 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 				}
 				else
 				{
-					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s Not actor group owner of startup actor %s, Exchanging Roles"), *WorkerType, *GetPathNameSafe(Actor));
+					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("WorkerType %s is not the actor group owner of startup actor %s, exchanging Roles"), *WorkerType, *GetPathNameSafe(Actor));
 					ENetRole Temp = Actor->Role;
 					Actor->Role = Actor->RemoteRole;
 					Actor->RemoteRole = Temp;
@@ -261,6 +249,7 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 			check(!USpatialStatics::IsSpatialOffloadingEnabled());
 			if (Actor->GetIsReplicated())
 			{
+				// Always wait for authority to be delegated down from SpatialOS, if using zoning
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
 			}
