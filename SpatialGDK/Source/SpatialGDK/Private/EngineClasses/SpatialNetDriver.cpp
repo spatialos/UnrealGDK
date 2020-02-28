@@ -97,16 +97,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	/**
-	* MIDWINTER_GDK_CHANGE_BEGIN
-	* (09/20/19) - Evan Kau - Enabling replication driver for Spatial OS by removing this check
-	*/
-	// // This is a temporary measure until we can look into replication graph support, required due to UNR-832
-	// checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
-	/**
-	* MIDWINTER_GDK_CHANGE_END
-	*/
-
 	bConnectAsClient = bInitAsClient;
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
@@ -965,18 +955,12 @@ void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNet
 	const int NumConnections = 1;
 	GetNetworkObjectList().MarkDormant(Actor, NetConnection, NumConnections, this);
 
-	// Intentionally don't call Super::NotifyActorFullyDormantForConnection
-	/**
-	* MIDWINTER_GDK_CHANGE_BEGIN
-	* (10/03/19) - Evan Kau - If we have the replication graph, make sure dormancy information is sent over there, too
-	*/
-	if (GetReplicationDriver() != nullptr)
+	if (UReplicationDriver* RepDriver = GetReplicationDriver())
 	{
-		GetReplicationDriver()->NotifyActorFullyDormantForConnection(Actor, NetConnection);
+		RepDriver->NotifyActorFullyDormantForConnection(Actor, NetConnection);
 	}
-	/**
-	* MIDWINTER_GDK_CHANGE_END
-	*/
+
+	// Intentionally don't call Super::NotifyActorFullyDormantForConnection
 }
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
@@ -1461,25 +1445,15 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	check(SpatialConnection && SpatialConnection->bReliableSpatialConnection);
 	check(World);
 
+	if (UReplicationDriver* RepDriver = GetReplicationDriver())
+	{
+		return RepDriver->ServerReplicateActors(DeltaSeconds);
+	}
+
 	int32 Updated = 0;
 
 	// Bump the ReplicationFrame value to invalidate any properties marked as "unchanged" for this frame.
 	ReplicationFrame++;
-
-	/**
-	* MIDWINTER_GDK_CHANGE_BEGIN
-	* (09/20/19) - Evan Kau - Enabling replication driver for Spatial OS
-	*/
-	if (UReplicationDriver * repDriver = GetReplicationDriver())
-	{
-		//if (CVar_Scav_RepGraphEnabledSpatial)
-		{
-			return repDriver->ServerReplicateActors(DeltaSeconds);
-		}
-	}
-	/**
-	* MIDWINTER_GDK_CHANGE_END
-	*/
 
 	const int32 NumClientsToTick = ServerReplicateActors_PrepConnections(DeltaSeconds);
 
