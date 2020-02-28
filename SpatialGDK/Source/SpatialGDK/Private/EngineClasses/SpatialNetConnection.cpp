@@ -36,7 +36,10 @@ void USpatialNetConnection::BeginDestroy()
 
 void USpatialNetConnection::CleanUp()
 {
-	Cast<USpatialNetDriver>(Driver)->CleanUpConnection(this);
+	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver))
+	{
+		SpatialNetDriver->CleanUpConnection(this);
+	}
 
 	Super::CleanUp();
 }
