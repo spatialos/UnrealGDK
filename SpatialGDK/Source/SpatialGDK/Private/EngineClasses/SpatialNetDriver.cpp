@@ -2258,8 +2258,11 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 
 		if (bIsReadyToStart)
 		{
-			// We know at this point that we have all the information to set the worker's interest query.
-			Sender->UpdateWorkerEntityInterestAndPosition();
+			if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+			{
+				// We know at this point that we have all the information to set the worker's interest query.
+				Sender->UpdateWorkerEntityInterestAndPosition();
+			}
 
 			// We've found and dispatched all ops we need for startup,
 			// trigger BeginPlay() on the GSM and process the queued ops.
