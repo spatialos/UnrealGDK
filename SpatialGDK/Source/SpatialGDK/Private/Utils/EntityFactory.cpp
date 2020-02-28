@@ -21,6 +21,7 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
+#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 
@@ -66,15 +67,13 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
-	FName EffectiveWorkerType = Info.WorkerType;
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
-	if (SpatialSettings->bEnableOffloading)
-	{
-		EffectiveWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(USpatialStatics::GetActorGroupForActor(Actor));
-	}
+	const FName AclAuthoritativeWorkerType = SpatialSettings->bEnableOffloading ?
+		ActorGroupManager->GetWorkerTypeForActorGroup(USpatialStatics::GetActorGroupForActor(Actor)) :
+		Info.WorkerType;
 
-	WorkerAttributeSet WorkerAttributeOrSpecificWorker{ EffectiveWorkerType.ToString() };
+	WorkerAttributeSet WorkerAttributeOrSpecificWorker{ AclAuthoritativeWorkerType.ToString() };
 	VirtualWorkerId IntendedVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
 	// Add Zoning Attribute if we are using the load balancer.
@@ -150,7 +149,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	}
 	else
 	{
-		const WorkerAttributeSet ACLAttributeSet = { EffectiveWorkerType.ToString() };
+		const WorkerAttributeSet ACLAttributeSet = { AclAuthoritativeWorkerType.ToString() };
 		const WorkerRequirementSet ACLRequirementSet = { ACLAttributeSet };
 		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ACLRequirementSet);
 	}

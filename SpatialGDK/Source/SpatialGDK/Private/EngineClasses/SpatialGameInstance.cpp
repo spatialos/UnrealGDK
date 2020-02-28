@@ -257,7 +257,7 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 			}
 		}
 
-		if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+		else if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
 		{
 			check(!USpatialStatics::IsSpatialOffloadingEnabled());
 			if (Actor->GetIsReplicated())

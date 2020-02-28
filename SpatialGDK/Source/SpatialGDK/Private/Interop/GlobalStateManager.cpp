@@ -596,7 +596,8 @@ void UGlobalStateManager::BeginDestroy()
 void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 {
 	// This logic is not used in offloading.
-	if (USpatialStatics::IsSpatialOffloadingEnabled()) {
+	if (USpatialStatics::IsSpatialOffloadingEnabled())
+	{
 		return;
 	}
 

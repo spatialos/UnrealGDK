@@ -3,7 +3,6 @@
 #pragma once
  
 #include "SpatialCommonTypes.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialStatics.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -17,6 +16,7 @@ class USpatialNetDriver;
 class USpatialPackageMap;
 class USpatialClassInfoManager;
 class USpatialPackageMapClient;
+class SpatialActorGroupManager;
  
 namespace SpatialGDK
 {

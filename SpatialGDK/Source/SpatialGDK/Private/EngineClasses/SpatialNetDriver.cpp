@@ -40,6 +40,7 @@
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
+#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
@@ -605,23 +606,12 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 
 void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 {
-	if (!Actor->GetIsReplicated())
+	if (!Actor->GetIsReplicated() ||
+		Actor->GetLocalRole() != ROLE_Authority ||
+		Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton | SPATIALCLASS_NotSpatialType) ||
+		USpatialStatics::IsActorGroupOwnerForActor(Actor))
 	{
-		return;
-	}
-
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton | SPATIALCLASS_NotSpatialType))
-	{
-		return;
-	}
-
-	if (Actor->GetLocalRole() != ROLE_Authority)
-	{
-		return;
-	}
-
-	if (USpatialStatics::IsActorGroupOwnerForActor(Actor))
-	{
+		// We only want to delete actors which are replicated and we somehow gain local authority over, while not the actor group owner
 		return;
 	}
 

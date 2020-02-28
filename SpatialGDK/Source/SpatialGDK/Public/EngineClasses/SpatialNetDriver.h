@@ -10,7 +10,6 @@
 #include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
-#include "Utils/SpatialActorGroupManager.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
@@ -41,6 +40,7 @@ class USpatialSender;
 class USpatialStaticComponentView;
 class USpatialWorkerConnection;
 class USpatialWorkerFlags;
+class SpatialActorGroupManager;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
