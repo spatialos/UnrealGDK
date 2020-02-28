@@ -312,8 +312,12 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 			{
 				QueryConstraint LoadBalancerConstraint = LBStrategy->GetWorkerInterestQueryConstraint();
 
-				// This makes the assumption that the always relevant constraint is an or constraint in order to flatten the constraint.
-				Constraint.OrConstraint.Add(LoadBalancerConstraint);
+				// Rather than adding the load balancer constraint at the end, reorder the constraints to have the large spatial
+				// constraint at the front. This is more likely to be efficient.
+				QueryConstraint NewConstraint;
+				NewConstraint.OrConstraint.Add(LoadBalancerConstraint);
+				NewConstraint.OrConstraint.Add(AlwaysRelevantConstraint);
+				Constraint = NewConstraint;
 			}
 		}
 	}
