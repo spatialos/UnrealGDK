@@ -12,7 +12,6 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectIterator.h"
@@ -259,7 +258,7 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
 	return CreateInterest().CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest(const USpatialNetDriver& NetDriver)
+Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bEnableServerQBI)
@@ -304,14 +303,14 @@ Interest InterestFactory::CreateServerWorkerInterest(const USpatialNetDriver& Ne
 	// so will checkout everything we care about through authority.
 	if (SpatialGDKSettings->bEnableUnrealLoadBalancer && SpatialGDKSettings->bEnableServerQBI)
 	{
-		if (const UAbstractLBStrategy* LoadBalancer = NetDriver.LoadBalanceStrategy)
+		if (LBStrategy != nullptr)
 		{
 			// The load balancer won't be ready when the worker initially connects to SpatialOS. It needs
 			// to wait for the virtual worker mappings to be replicated.
 			// This function will be called again when that is the case in order to update the interest on the server entity.
-			if (LoadBalancer->IsReady())
+			if (LBStrategy->IsReady())
 			{
-				QueryConstraint LoadBalancerConstraint = LoadBalancer->GetWorkerInterestQueryConstraint();
+				QueryConstraint LoadBalancerConstraint = LBStrategy->GetWorkerInterestQueryConstraint();
 
 				// This makes the assumption that the always relevant constraint is an or constraint in order to flatten the constraint.
 				Constraint.OrConstraint.Add(LoadBalancerConstraint);

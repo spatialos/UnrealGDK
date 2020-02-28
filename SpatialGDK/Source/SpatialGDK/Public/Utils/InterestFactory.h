@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Interop/SpatialClassInfoManager.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/Interest.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
@@ -25,7 +26,7 @@ public:
 	Worker_ComponentData CreateInterestData() const;
 	Worker_ComponentUpdate CreateInterestUpdate() const;
 
-	static Interest CreateServerWorkerInterest(const USpatialNetDriver& NetDriver);
+	static Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy);
 
 private:
 	// Build the checkout radius constraints for client workers

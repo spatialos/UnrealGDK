@@ -188,7 +188,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(ServerWorker(Connection->GetWorkerId(), false).CreateServerWorkerData());
 	check(NetDriver != nullptr);
-	Components.Add(InterestFactory::CreateServerWorkerInterest(*NetDriver).CreateInterestData());
+	Components.Add(InterestFactory::CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
@@ -321,12 +321,12 @@ void USpatialSender::UpdateWorkerEntityInterestAndPosition()
 	}
 
 	// Update the interest. If it's ready, also adds interest according to the load balancing strategy.
-	FWorkerComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(*NetDriver).CreateInterestUpdate();
+	FWorkerComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestUpdate();
 	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
 
 	if (NetDriver->LoadBalanceStrategy->IsReady())
 	{
-		// Also update the position of thew worker entity to the centre of the load balancing region.
+		// Also update the position of the worker entity to the centre of the load balancing region.
 		SendPositionUpdate(NetDriver->WorkerEntityId, NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition());
 	}
 }

@@ -120,7 +120,7 @@ public:
 
 	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 	void CreateServerWorkerEntity(int AttemptCounter = 1);
-	void SendServerWorkerEntityInterestUpdate();
+	void UpdateWorkerEntityInterestAndPosition();
 
 	void ClearPendingRPCs(const Worker_EntityId EntityId);
 
