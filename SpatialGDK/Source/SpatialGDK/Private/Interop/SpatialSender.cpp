@@ -69,8 +69,6 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
 
-	OutgoingRPCs.bIsServer = NetDriver->IsServer();
-	OutgoingRPCs.QueueType = ERPCQueueType::Send;
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
 }
 

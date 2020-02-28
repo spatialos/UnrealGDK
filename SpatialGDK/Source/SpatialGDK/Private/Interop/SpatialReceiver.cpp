@@ -68,8 +68,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
 
-	IncomingRPCs.bIsServer = NetDriver->IsServer();
-	IncomingRPCs.QueueType = ERPCQueueType::Receive;
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialReceiver::ApplyRPC));
 	PeriodicallyProcessIncomingRPCs();
 }

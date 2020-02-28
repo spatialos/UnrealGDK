@@ -87,8 +87,8 @@ class SPATIALGDK_API FRPCContainer
 {
 public:
 	// Moveable, not copyable.
-	FRPCContainer(bool bIsServer, ERPCQueueType QueueType);
-	FRPCContainer() = default;
+	FRPCContainer(ERPCQueueType QueueType);
+	FRPCContainer() = delete;
 	FRPCContainer(const FRPCContainer&) = delete;
 	FRPCContainer(FRPCContainer&&) = default;
 	FRPCContainer& operator=(const FRPCContainer&) = delete;
@@ -104,9 +104,6 @@ public:
 
 	static const double SECONDS_BEFORE_WARNING;
 
-	bool bIsServer = false;
-	ERPCQueueType QueueType = ERPCQueueType::Unknown;
-
 private:
 	using FArrayOfParams = TArray<FPendingRPCParams>;
 	using FRPCMap = TMap<Worker_EntityId_Key, FArrayOfParams>;
@@ -117,4 +114,6 @@ private:
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
 	bool bAlreadyProcessingRPCs = false;
+
+	ERPCQueueType QueueType = ERPCQueueType::Unknown;
 };
