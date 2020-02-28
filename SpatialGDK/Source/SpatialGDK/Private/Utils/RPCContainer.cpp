@@ -172,8 +172,8 @@ bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, E
 	return false;
 }
  
-FRPCContainer::FRPCContainer(ERPCQueueType QueueType)
-	: QueueType(QueueType)
+FRPCContainer::FRPCContainer(ERPCQueueType InQueueType)
+	: QueueType(InQueueType)
 {
 }
 
