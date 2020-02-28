@@ -24,14 +24,15 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
 #include "SpatialConstants.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
+#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialSender);
 
@@ -609,7 +610,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
-		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::UnresolvedTargetObject };
+		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::UnresolvedTargetObject, true };
 	}
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 
@@ -617,12 +618,35 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::MissingFunctionInfo };
+		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::MissingFunctionInfo, true };
+	}
+
+	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
+	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime < TimeDiff)
+	{
+		return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::TimedOut, true };
+	}
+
+	if (AActor* TargetActor = Cast<AActor>(TargetObject))
+	{
+		if (TargetActor->IsPendingKillPending())
+		{
+			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::ActorPendingKill, true };
+		}
 	}
 
 	ERPCResult Result = SendRPCInternal(TargetObject, Function, Params.Payload);
 
-	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result };
+	if (Result == ERPCResult::NoAuthority)
+	{
+		if (AActor* TargetActor = Cast<AActor>(TargetObject))
+		{
+			bool bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
+			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result, bShouldDrop };
+		}
+	}
+
+	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result, false };
 }
 
 #if !UE_BUILD_SHIPPING
@@ -632,6 +656,35 @@ void USpatialSender::TrackRPC(AActor* Actor, UFunction* Function, const RPCPaylo
 	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
 }
 #endif
+
+bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_EntityId TargetEntity)
+{
+	bool WillHaveAuthorityOverActor = true;
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
+	{
+		if (!USpatialStatics::IsActorGroupOwnerForActor(TargetActor))
+		{
+			WillHaveAuthorityOverActor = false;
+		}
+	}
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	{
+		if (NetDriver->VirtualWorkerTranslator != nullptr)
+		{
+			if (const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(TargetEntity))
+			{
+				if (AuthorityIntentComponent->VirtualWorkerId != NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId())
+				{
+					WillHaveAuthorityOverActor = false;
+				}
+			}
+		}
+	}
+
+	return WillHaveAuthorityOverActor;
+}
 
 ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload)
 {
