@@ -8,7 +8,7 @@ DEFINE_LOG_CATEGORY(LogSpatialCommandUtils);
 namespace
 {
 	FString ChinaEnvironmentArgument = TEXT(" --environment=cn-production");
-}
+} // anonymous namespace
 
 void SpatialCommandUtils::ExecuteSpatialCommandAndReadOutput(FString Arguments, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode, bool bIsRunningInChina)
 {
