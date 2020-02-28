@@ -2,7 +2,6 @@
 
 #include "EngineClasses/SpatialGameInstance.h"
 
-#include "Engine/Engine.h"
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
 #if WITH_EDITOR
