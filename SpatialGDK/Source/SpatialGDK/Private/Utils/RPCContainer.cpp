@@ -57,7 +57,7 @@ namespace
 		}
 	}
 
-	void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params)
+	void LogRPCError(const FRPCErrorInfo& ErrorInfo, bool bIsServer, ERPCQueueType QueueType, const FPendingRPCParams& Params)
 	{
 		const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
 
@@ -66,9 +66,9 @@ namespace
 		FString OutputLog = FString::Printf(TEXT("Function %s::%s %s %s on %s for %s. Reason: %s"),
 			ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
 			ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
-			ErrorInfo.QueueType == ERPCQueueType::Send ? TEXT("sending") : ErrorInfo.QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
+			QueueType == ERPCQueueType::Send ? TEXT("sending") : QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
 			ErrorInfo.bShouldDrop ? TEXT("dropped") : TEXT("queued"),
-			ErrorInfo.bIsServer ? TEXT("server") : TEXT("client"),
+			bIsServer ? TEXT("server") : TEXT("client"),
 			*TimeDiff.ToString(),
 			*ERPCResultToString(ErrorInfo.ErrorCode));
 
@@ -173,6 +173,12 @@ bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, E
 	return false;
 }
  
+FRPCContainer::FRPCContainer(bool bIsServer, ERPCQueueType QueueType)
+	: bIsServer(bIsServer)
+	, QueueType(QueueType)
+{
+}
+
 void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 {
 	ProcessingFunction = Function;
@@ -190,7 +196,7 @@ bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 	else
 	{
 #if !UE_BUILD_SHIPPING
-		LogRPCError(ErrorInfo, Params);
+		LogRPCError(ErrorInfo, bIsServer, QueueType, Params);
 #endif
 		return ErrorInfo.bShouldDrop;
 	}
