@@ -30,6 +30,7 @@ USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectIni
 void USpatialNetConnection::BeginDestroy()
 {
 	DisableHeartbeat();
+	
 	Super::BeginDestroy();
 }
 

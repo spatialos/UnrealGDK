@@ -173,14 +173,12 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			LoadBalanceEnforcer->OnLoadBalancingComponentAdded(Op);
 		}
 	case SpatialConstants::WORKER_COMPONENT_ID:
-		/*case SpatialConstants::PLAYERIDENTITY_COMPONENT_ID:*/
-		if (StaticComponentView->HasComponent(Op.entity_id, SpatialConstants::WORKER_COMPONENT_ID)
-			/*&& StaticComponentView->HasComponent(Op.entity_id, SpatialConstants::PLAYERIDENTITY_COMPONENT_ID)*/)
-		{
-			Worker* WorkerData = StaticComponentView->GetComponentData<Worker>(Op.entity_id);
-			WorkerConnectionEntity.Add(Op.entity_id, WorkerData->WorkerId);
-			UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s 's system identity was checked out."), *WorkerData->WorkerId);
-		}
+	{
+		// Register system identity for a worker connection, to know when a player has disconnected.
+		Worker* WorkerData = StaticComponentView->GetComponentData<Worker>(Op.entity_id);
+		WorkerConnectionEntity.Add(Op.entity_id, WorkerData->WorkerId);
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s 's system identity was checked out."), *WorkerData->WorkerId);
+	}
 		return;
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 		// The RPC service needs to be informed when a multi-cast RPC component is added.
@@ -253,22 +251,23 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
 
-	if (NetDriver->IsServer()
-		&& StaticComponentView->HasComponent(Op.entity_id, SpatialConstants::WORKER_COMPONENT_ID)
-		/*&& StaticComponentView->HasComponent(Op.entity_id, SpatialConstants::PLAYERIDENTITY_COMPONENT_ID)*/)
+	if (NetDriver->IsServer())
 	{
 		if (FString* WorkerName = WorkerConnectionEntity.Find(Op.entity_id))
 		{
 			TWeakObjectPtr<USpatialNetConnection> PlayerConnectionPtr = NetDriver->FindWorkerConnectionFromWorkerId(*WorkerName);
 			if (USpatialNetConnection* PlayerConnection = PlayerConnectionPtr.Get())
 			{
-				if (APlayerController* Controller = PlayerConnection->GetPlayerController(NetDriver->World))
+				if (APlayerController* Controller = PlayerConnection->GetPlayerController(nullptr))
 				{
 					Worker_EntityId PCEntity = PackageMap->GetEntityIdFromObject(Controller);
-					AuthorityPlayerControllerConnectionMap.Remove(PCEntity);
+					if (AuthorityPlayerControllerConnectionMap.Find(PCEntity))
+					{
+						UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s disconnected after its system identity was removed."), *(*WorkerName));
+						PlayerConnection->CleanUp();
+						AuthorityPlayerControllerConnectionMap.Remove(PCEntity);
+					}
 				}
-
-				PlayerConnection->CleanUp();
 			}
 			WorkerConnectionEntity.Remove(Op.entity_id);
 		}

@@ -1789,7 +1789,7 @@ namespace
 
 		if (AttrOffset < 0)
 		{
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Error : Worker attribute does not contain workerId : %s"), *WorkerAttribute);
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Error : Worker attribute does not contain workerId : %s"), *WorkerAttribute);
 			return {};
 		}
 		
@@ -1831,7 +1831,7 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	// Register workerId and its connection.
 	if(TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(SpatialConnection->WorkerAttribute))
 	{
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Worker %s 's NetConnection created."), *WorkerId.GetValue());
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %s 's NetConnection created."), *WorkerId.GetValue());
 
 		//check(WorkerConnections.Find(WorkerId) == nullptr);
 		WorkerConnections.Add(WorkerId.GetValue(), SpatialConnection);
