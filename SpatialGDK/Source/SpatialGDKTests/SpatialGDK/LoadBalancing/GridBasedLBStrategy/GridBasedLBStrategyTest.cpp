@@ -247,6 +247,23 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_one_cell_WHEN_get_worker_interest_for_virtual_wor
 	return true;
 }
 
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_entity_position_for_virtual_worker_THEN_returns_correct_position)
+{
+	Strat = UTestGridBasedLBStrategy::Create(2, 2, 10000.f, 10000.f, 1000.0f);
+	Strat->Init();
+
+	// Take the top right corner, as then all our testing numbers can be positive.
+	Strat->SetLocalVirtualWorkerId(4);
+
+	FVector WorkerPosition = Strat->GetWorkerEntityPosition();
+
+	FVector TestPosition = FVector{ 2500.0f, 2500.0f, 0.0f };
+
+	TestEqual("Worker entity position is as expected", WorkerPosition, TestPosition);
+
+	return true;
+}
+
 }  // anonymous namespace
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false)
