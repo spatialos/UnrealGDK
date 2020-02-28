@@ -30,7 +30,11 @@ public:
 	virtual int32 IsNetReady(bool Saturate) override;
 
 	/** Called by PlayerController to tell connection about client level visibility change */
+#if ENGINE_MINOR_VERSION <= 23
 	virtual void UpdateLevelVisibility(const FName& PackageName, bool bIsVisible) override;
+#else
+	virtual void UpdateLevelVisibility(const struct FUpdateLevelVisibilityLevelInfo& LevelVisibility) override;
+#endif
 
 	virtual void FlushDormancy(class AActor* Actor) override;
 
