@@ -19,9 +19,9 @@ UGridBasedLBStrategy::UGridBasedLBStrategy()
 {
 }
 
-void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver)
+void UGridBasedLBStrategy::Init()
 {
-	Super::Init(InNetDriver);
+	Super::Init();
 
 	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("GridBasedLBStrategy initialized with Rows = %d and Cols = %d."), Rows, Cols);
 

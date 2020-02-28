@@ -205,7 +205,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
 			Sender->NetDriver->GlobalStateManager->TrySendWorkerReadyToBeginPlay();
-			Sender->SendServerWorkerEntityInterestUpdate();
+			Sender->UpdateWorkerEntityInterestAndPosition();
 			
 			return;
 		}
@@ -310,17 +310,22 @@ void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString E
 	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(Delegate));
 }
 
-void USpatialSender::SendServerWorkerEntityInterestUpdate()
+void USpatialSender::UpdateWorkerEntityInterestAndPosition()
 {
 	check(Connection != nullptr);
 	check(NetDriver != nullptr);
 	if (NetDriver->WorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		// Can't set interest yet
+		// No worker entity to update.
 		return;
 	}
+
+	// Update the interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(*NetDriver).CreateInterestUpdate();
 	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
+
+	// Also update the position of thew worker entity to the centre of the load balancing region.
+
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)

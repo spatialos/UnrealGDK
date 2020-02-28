@@ -37,7 +37,7 @@ public:
 	using LBStrategyRegions = TArray<TPair<VirtualWorkerId, FBox2D>>;
 
 /* UAbstractLBStrategy Interface */
-	virtual void Init(const USpatialNetDriver* InNetDriver) override;
+	virtual void Init() override;
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;
 
