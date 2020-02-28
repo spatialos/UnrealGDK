@@ -3,15 +3,16 @@
 #include "CoreMinimal.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
-#include "LoadBalancing/GridBasedLBStrategy.h"
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameStateBase.h"
-#include "Schema/StandardLibrary.h"
-#include "SpatialConstants.h"
-#include "Tests/TestDefinitions.h"
-#include "TestGridBasedLBStrategy.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
+#include "Tests/TestDefinitions.h"
+
+#include "LoadBalancing/GridBasedLBStrategy.h"
+#include "Schema/StandardLibrary.h"
+#include "SpatialConstants.h"
+#include "TestGridBasedLBStrategy.h"
 
 #define GRIDBASEDLBSTRATEGY_TEST(TestName) \
 	GDK_TEST(Core, UGridBasedLBStrategy, TestName)

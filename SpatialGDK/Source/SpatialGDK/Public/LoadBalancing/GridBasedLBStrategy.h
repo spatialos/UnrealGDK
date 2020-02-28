@@ -7,7 +7,6 @@
 #include "CoreMinimal.h"
 #include "Math/Box2D.h"
 #include "Math/Vector2D.h"
-#include "Schema/Interest.h"
 
 #include "GridBasedLBStrategy.generated.h"
 

@@ -11,13 +11,6 @@
 
 #include "AbstractLBStrategy.generated.h"
 
-namespace SpatialGDK
-{
-	struct Query;
-}
-class USpatialClassInfoManager;
-class USpatialNetDriver;
-
 /**
  * This class can be used to define a load balancing strategy.
  * At runtime, all unreal workers will:
