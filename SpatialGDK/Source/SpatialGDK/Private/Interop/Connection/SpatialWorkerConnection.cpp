@@ -112,11 +112,22 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 
 	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
+	Connection->ProcessLoginTokensResponse(LoginTokens);
+}
+
+void USpatialWorkerConnection::ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens)
+{
+	// If LoginTokenResCallback is callable and returns true, return early.
+	if (LoginTokenResCallback && LoginTokenResCallback(LoginTokens))
+	{
+		return;
+	}
+
 	const FString& DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
 	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
 	if (DeploymentToConnect.IsEmpty())
 	{
-		Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
+		LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
 	}
 	else
 	{
@@ -125,12 +136,12 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 			FString DeploymentName = FString(LoginTokens->login_tokens[i].deployment_name);
 			if (DeploymentToConnect.Compare(DeploymentName) == 0)
 			{
-				Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
+				LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
 				break;
 			}
 		}
 	}
-	Connection->ConnectToLocator();
+	ConnectToLocator();
 }
 
 void USpatialWorkerConnection::RequestDeploymentLoginTokens()
