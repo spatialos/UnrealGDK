@@ -605,9 +605,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			// so we know what subobjects are relevant for replication when creating the entity.
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
-			uint32 BytesWritten = 0;
-			Sender->SendCreateEntityRequest(this, BytesWritten);
-			ReplicationBytesWritten += BytesWritten;
+			Sender->SendCreateEntityRequest(this, ReplicationBytesWritten);
 
 			bCreatedEntity = true;
 
@@ -619,9 +617,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
 
-			uint32 BytesWritten = 0;
-			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState, BytesWritten);
-			ReplicationBytesWritten += BytesWritten;
+			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState, ReplicationBytesWritten);
 
 			bInterestDirty = false;
 		}
@@ -686,9 +682,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
 			if (SubobjectHandoverChangeState.Num() > 0)
 			{
-				uint32 BytesWritten = 0;
-				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState, BytesWritten);
-				ReplicationBytesWritten += BytesWritten;
+				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState, ReplicationBytesWritten);
 			}
 		}
 
@@ -791,9 +785,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	// Check to see if we already have authority over the subobject to be added
 	if (NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_Data]))
 	{
-		uint32 BytesWritten = 0;
-		Sender->SendAddComponent(this, Object, *Info, BytesWritten);
-		ReplicationBytesWritten += BytesWritten;
+		Sender->SendAddComponent(this, Object, *Info, ReplicationBytesWritten);
 	}
 	else
 	{
@@ -905,9 +897,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		}
 
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
-		uint32 BytesWritten = 0;
-		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr, BytesWritten);
-		ReplicationBytesWritten += BytesWritten;
+		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr, ReplicationBytesWritten);
 
 		SendingRepState->HistoryEnd++;
 	}

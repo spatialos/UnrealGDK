@@ -337,8 +337,6 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 {
 	TArray<FWorkerComponentData> ComponentDatas;
 
-	OutBytesWritten = 0;
-
 	if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		uint32 BytesWritten = 0;
@@ -372,7 +370,7 @@ FWorkerComponentData ComponentFactory::CreateComponentData(Worker_ComponentId Co
 
 	// We're currently ignoring ClearedId fields, which is problematic if the initial replicated state
 	// is different to what the default state is (the client will have the incorrect data). UNR:959
-	OutBytesWritten = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true, GetTraceKeyFromComponentObject(ComponentData));
+	OutBytesWritten += FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true, GetTraceKeyFromComponentObject(ComponentData));
 
 	return ComponentData;
 }
@@ -391,7 +389,7 @@ FWorkerComponentData ComponentFactory::CreateHandoverComponentData(Worker_Compon
 	FWorkerComponentData ComponentData = CreateEmptyComponentData(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	OutBytesWritten = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, true, GetTraceKeyFromComponentObject(ComponentData));
+	OutBytesWritten += FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, true, GetTraceKeyFromComponentObject(ComponentData));
 
 	return ComponentData;
 }
@@ -399,8 +397,6 @@ FWorkerComponentData ComponentFactory::CreateHandoverComponentData(Worker_Compon
 TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState, uint32& OutBytesWritten)
 {
 	TArray<FWorkerComponentUpdate> ComponentUpdates;
-
-	OutBytesWritten = 0;
 
 	if (RepChangeState)
 	{
@@ -461,14 +457,15 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	OutBytesWritten = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
+	uint32 BytesWritten = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
+	OutBytesWritten += BytesWritten;
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
 		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
 	}
 
-	if (OutBytesWritten == 0)
+	if (BytesWritten == 0)
 	{
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 	}
@@ -486,14 +483,15 @@ FWorkerComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	OutBytesWritten = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
+	uint32 BytesWritten = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
+	OutBytesWritten += BytesWritten;
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
 		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
 	}
 
-	if (OutBytesWritten == 0)
+	if (BytesWritten == 0)
 	{
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 	}
