@@ -1,10 +1,5 @@
-<html>
-<head>
-<meta http-equiv="refresh" content="5;url=https://documentation.improbable.io/gdk-for-unreal/docs" />
-<title>Page Moved</title>
-</head>
-<body>
-<h2>Our documentation has moved</h2> 
-<p>This page will automatically re-direct in a few seconds. If it doesn't, click <a href="https://documentation.improbable.io/gdk-for-unreal/docs">here</a> to go to the new documentation.</P>
-</body>
-</html>
+# The SpatialOS GDK for Unreal (alpha) documentation on GitHub
+
+This documentation on GitHub is a copy of the [GDK documentation on the SpatialOS documentation website](https://docs.improbable.io/unreal/latest). Due to this, the internal links do not work and the image links are broken. 
+
+We recommend you use the GDK documentation on the SpatialOS documentation website and not on GitHub.

@@ -1,10 +1,8 @@
-<html>
-<head>
-<meta http-equiv="refresh" content="5;url=https://documentation.improbable.io/gdk-for-unreal/docs" />
-<title>Page Moved</title>
-</head>
-<body>
-<h2>Our documentation has moved</h2> 
-<p>This page will automatically re-direct in a few seconds. If it doesn't, click <a href="https://documentation.improbable.io/gdk-for-unreal/docs">here</a> to go to the new documentation.</P>
-</body>
-</html>
+<%(TOC)%>
+# Recommended use 
+
+We are releasing the GDK in [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) so we can react to feedback and iterate on development quickly. To facilitate this, during our alpha stage we don't have a formal deprecation cycle for APIs and workflows. This means that everything and anything can change. In addition, documentation is limited and some aspects of the GDK are not optimized and stability on a single server is significantly better than multi-server deployments.
+
+Given these considerations, for now we recommend using the GDK in projects in the evaluation or prototype stage. This ensures that your project's requirements are in line with the GDK's timeline.
+
+Although the GDK is not fully ready in terms of performance and stability yet, this is a great time to get involved and shape it with us. We are committed to improving the GDK rapidly, aiming for a more stable release in Q2 2019 ([development roadmap](https://github.com/spatialos/UnrealGDK/projects/1)). See the [full feature list](https://docs.improbable.io/unreal/latest/features) on the documentation website.
