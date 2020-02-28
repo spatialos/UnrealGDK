@@ -45,6 +45,8 @@ public:
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const override;
+
+	virtual FVector GetWorkerEntityPosition() const override;
 /* End UAbstractLBStrategy Interface */
 
 	LBStrategyRegions GetLBStrategyRegions() const;

@@ -320,12 +320,15 @@ void USpatialSender::UpdateWorkerEntityInterestAndPosition()
 		return;
 	}
 
-	// Update the interest according to the load balancing strategy.
+	// Update the interest. If it's ready, also adds interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(*NetDriver).CreateInterestUpdate();
 	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
 
-	// Also update the position of thew worker entity to the centre of the load balancing region.
-
+	if (NetDriver->LoadBalanceStrategy->IsReady())
+	{
+		// Also update the position of thew worker entity to the centre of the load balancing region.
+		SendPositionUpdate(NetDriver->WorkerEntityId, NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition());
+	}
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)

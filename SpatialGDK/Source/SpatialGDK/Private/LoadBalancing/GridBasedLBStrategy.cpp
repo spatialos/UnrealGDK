@@ -125,6 +125,13 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 	return Constraint;
 }
 
+FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
+{
+	check(IsReady());
+	const FVector2D Centre = WorkerCells[LocalVirtualWorkerId - 1].GetCenter();
+	return FVector{ Centre.X, Centre.Y, 0.f };
+}
+
 bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location)
 {
 	return Location.X >= Box.Min.X && Location.Y >= Box.Min.Y
