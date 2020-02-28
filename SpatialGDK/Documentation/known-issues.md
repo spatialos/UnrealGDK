@@ -1,14 +1,10 @@
-<%(TOC)%>
-# Known issues
-
-For the current state of support of Unreal features, including any workarounds for features which are not fully supported yet, see the [Unreal features support page]({{urlRoot}}/unreal-features-support).
-
-For all other known issues, please visit [this board](https://github.com/spatialos/UnrealGDK/projects/2) on Github. Feel free to contribute and subscribe to any issue, and raise new ones from [this page](https://github.com/spatialos/UnrealGDK/issues).
-
-<br/>
-
-<br/>--------<br/>
-
-*2019-04-25 Page updated with editorial review* </br>
-*2019-04-25 Removed outdated known issues from this page and added links to current known issues.*
-<br/>
+<html>
+<head>
+<meta http-equiv="refresh" content="5;url=https://documentation.improbable.io/gdk-for-unreal/docs" />
+<title>Page Moved</title>
+</head>
+<body>
+<h2>Our documentation has moved</h2> 
+<p>This page will automatically re-direct in a few seconds. If it doesn't, click <a href="https://documentation.improbable.io/gdk-for-unreal/docs">here</a> to go to the new documentation.</P>
+</body>
+</html>
