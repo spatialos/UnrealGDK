@@ -14,6 +14,7 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #endif
 
+#include "EngineStats.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -31,6 +32,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
+DEFINE_STAT(STAT_NumReplicatedActorBytes)
+
 DECLARE_CYCLE_STAT(TEXT("ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
@@ -40,7 +43,6 @@ DECLARE_CYCLE_STAT(TEXT("GetOwnerWorkerAttribute"), STAT_GetOwnerWorkerAttribute
 DECLARE_CYCLE_STAT(TEXT("CallUpdateEntityACLs"), STAT_CallUpdateEntityACLs, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("OnUpdateEntityACLSuccess"), STAT_OnUpdateEntityACLSuccess, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("IsAuthoritativeServer"), STAT_IsAuthoritativeServer, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("SpatialNumReplicatedActorBytes"), STAT_SpatialNumReplicatedActorBytes, STATGROUP_SpatialNet);
 
 namespace
 {
@@ -415,7 +417,7 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 
 int64 USpatialActorChannel::ReplicateActor()
 {
-	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
+	SET_DWORD_STAT(STAT_NumReplicatedActorBytes, 0);
 
 	if (!IsReadyForReplication())
 	{
@@ -756,7 +758,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	bForceCompareProperties = false;		// Only do this once per frame when set
 
-	INC_DWORD_STAT_BY(STAT_SpatialNumReplicatedActorBytes, ReplicationBytesWritten);
+	INC_DWORD_STAT_BY(STAT_NumReplicatedActorBytes, ReplicationBytesWritten);
 
 	return ReplicationBytesWritten * 8;
 }
