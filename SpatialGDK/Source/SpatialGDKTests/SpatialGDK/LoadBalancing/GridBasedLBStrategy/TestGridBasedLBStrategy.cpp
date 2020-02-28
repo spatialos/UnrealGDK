@@ -14,3 +14,18 @@ UGridBasedLBStrategy* UTestGridBasedLBStrategy::Create(uint32 InRows, uint32 InC
 
 	return Strat;
 }
+
+UGridBasedLBStrategy* UTestGridBasedLBStrategy::Create(uint32 InRows, uint32 InCols, float WorldWidth, float WorldHeight, float InterestBorder)
+{
+	UTestGridBasedLBStrategy* Strat = NewObject<UTestGridBasedLBStrategy>();
+
+	Strat->Rows = InRows;
+	Strat->Cols = InCols;
+
+	Strat->WorldWidth = WorldWidth;
+	Strat->WorldHeight = WorldHeight;
+
+	Strat->InterestBorder = InterestBorder;
+
+	return Strat;
+}

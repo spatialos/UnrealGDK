@@ -6,6 +6,7 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameStateBase.h"
+#include "Schema/StandardLibrary.h"
 #include "SpatialConstants.h"
 #include "Tests/TestDefinitions.h"
 #include "TestGridBasedLBStrategy.h"
@@ -199,6 +200,48 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is
 	Strat->SetLocalVirtualWorkerId(123);
 
 	TestTrue("IsReady After LocalVirtualWorkerId Set", Strat->IsReady());
+
+	return true;
+}
+
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_interest_for_virtual_worker_THEN_returns_correct_constraint)
+{
+	Strat = UTestGridBasedLBStrategy::Create(2, 2, 10000.f, 10000.f, 1000.0f);
+	Strat->Init(nullptr);
+
+	// Take the top right corner, as then all our testing numbers can be positive.
+	Strat->SetLocalVirtualWorkerId(4);
+
+	SpatialGDK::QueryConstraint StratConstraint = Strat->GetWorkerInterestQueryConstraint();
+
+	SpatialGDK::BoxConstraint Box = StratConstraint.BoxConstraint.GetValue();
+
+	// y is the vertical axis in SpatialOS coordinates.
+	SpatialGDK::Coordinates TestCentre = SpatialGDK::Coordinates{ 25.0, 0.0, 25.0 };
+	// The constraint will be a 50x50 box around the centre, expanded by 10 in every direction because of the interest border, so +20 to x and z.
+	double TestEdgeLength = 70;
+
+	TestEqual("Centre of the interest grid is as expected", Box.Center, TestCentre);
+	TestEqual("Edge length in x is as expected", Box.EdgeLength.X, TestEdgeLength);
+	TestEqual("Edge length in z is as expected", Box.EdgeLength.Z, TestEdgeLength);
+
+	// The height of the box is "some very large number which is effectively infinite", so just sanity check it here. 
+	TestTrue("Edge length in y is greater than 0", Box.EdgeLength.Y > 0);
+
+	return true;
+}
+
+GRIDBASEDLBSTRATEGY_TEST(GIVEN_one_cell_WHEN_get_worker_interest_for_virtual_worker_THEN_returns_special_case_true_constraint)
+{
+	Strat = UTestGridBasedLBStrategy::Create(1, 1, 10000.f, 10000.f, 1000.0f);
+	Strat->Init(nullptr);
+
+	Strat->SetLocalVirtualWorkerId(1);
+
+	SpatialGDK::QueryConstraint StratConstraint = Strat->GetWorkerInterestQueryConstraint();
+
+	TestTrue("Constraint is a component constraint", StratConstraint.ComponentConstraint.IsSet());
+	TestTrue("Constraint is for the position component", StratConstraint.ComponentConstraint.GetValue() == SpatialConstants::POSITION_COMPONENT_ID);
 
 	return true;
 }
