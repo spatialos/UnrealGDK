@@ -181,7 +181,7 @@ private:
 
 	SpatialGDK::SpatialRPCService* RPCService;
 
-	FRPCContainer OutgoingRPCs = FRPCContainer(ERPCQueueType::Send);
+	FRPCContainer OutgoingRPCs{ ERPCQueueType::Send };
 	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 
 	TArray<TSharedRef<FReliableRPCForRetry>> RetryRPCs;

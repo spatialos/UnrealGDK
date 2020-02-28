@@ -225,7 +225,7 @@ private:
 	// Useful to manage entities going in and out of interest, in order to recover references to actors.
 	FObjectToRepStateMap ObjectRefToRepStateMap;
 
-	FRPCContainer IncomingRPCs = FRPCContainer(ERPCQueueType::Receive);
+	FRPCContainer IncomingRPCs{ ERPCQueueType::Receive };
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddEntities;
