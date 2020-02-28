@@ -1,11 +1,10 @@
-# Support 
-
-We provide free technical support to all users via our [forums](https://forums.improbable.io/) and our [Discord](https://discordapp.com/channels/311273633307951114/) channels. 
-
-For more details, see [Support](https://docs.improbable.io/reference/latest/shared/pricing-and-support/support).
-
-We also offer additional paid tiers of support. For more details, [get in touch](https://improbable.io/contact-us).
-
-
-<br/>------<br/>
-_2019-05-20 Page updated with editorial review_
+<html>
+<head>
+<meta http-equiv="refresh" content="5;url=https://documentation.improbable.io/gdk-for-unreal/docs" />
+<title>Page Moved</title>
+</head>
+<body>
+<h2>Our documentation has moved</h2> 
+<p>This page will automatically re-direct in a few seconds. If it doesn't, click <a href="https://documentation.improbable.io/gdk-for-unreal/docs">here</a> to go to the new documentation.</P>
+</body>
+</html>
