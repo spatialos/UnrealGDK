@@ -277,7 +277,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 		ServerQuery.FullSnapshotResult = true;
 	}
 
-	if (!SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
+	if (SpatialGDKSettings->bEnableOffloading)
 	{
 		// In offloading scenarios, hijack the server worker entity to ensure each server has interest in all entities
 		Constraint.ComponentConstraint = SpatialConstants::POSITION_COMPONENT_ID;
@@ -297,7 +297,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 
 	// If we aren't using the load balancer, there is no need for further interest as we are either offloading or single server,
 	// so will checkout everything we care about through authority.
-	if (SpatialGDKSettings->bEnableUnrealLoadBalancer && SpatialGDKSettings->bEnableServerQBI)
+	if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
 	{
 		if (LBStrategy != nullptr)
 		{
