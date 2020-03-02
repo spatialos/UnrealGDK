@@ -236,12 +236,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverRemoveEntity);
-	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
-	{
-		// Pretend we never saw this entity.
-		EntitiesWaitingForAsyncLoad.Remove(Op.entity_id);
-		return;
-	}
 
 	if (LoadBalanceEnforcer != nullptr)
 	{
@@ -255,7 +249,15 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
 	if (Op.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID)
 	{
-		RemoveActor(Op.entity_id);
+		if (IsEntityWaitingForAsyncLoad(Op.entity_id))
+		{
+			// Pretend we never saw this actor.
+			EntitiesWaitingForAsyncLoad.Remove(Op.entity_id);
+		}
+		else
+		{
+			RemoveActor(Op.entity_id);
+		}
 	}
 
 	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
