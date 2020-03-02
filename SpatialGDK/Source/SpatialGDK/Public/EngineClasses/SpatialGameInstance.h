@@ -4,10 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "Utils/SpatialActorGroupManager.h"
 
 #include "SpatialGameInstance.generated.h"
 
-class SpatialActorGroupManager;
 class USpatialLatencyTracer;
 class USpatialConnectionManager;
 class UGlobalStateManager;

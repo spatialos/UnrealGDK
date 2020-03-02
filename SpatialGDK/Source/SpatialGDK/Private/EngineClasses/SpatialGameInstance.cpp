@@ -15,7 +15,6 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
