@@ -24,6 +24,7 @@
 
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
+class SpatialActorGroupManager;
 class UAbstractLBStrategy;
 class UEntityPool;
 class UGlobalStateManager;
@@ -40,7 +41,6 @@ class USpatialSender;
 class USpatialStaticComponentView;
 class USpatialWorkerConnection;
 class USpatialWorkerFlags;
-class SpatialActorGroupManager;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 

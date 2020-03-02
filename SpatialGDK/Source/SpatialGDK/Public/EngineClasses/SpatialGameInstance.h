@@ -1,13 +1,13 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
-#include "Utils/SpatialActorGroupManager.h"
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 
 #include "SpatialGameInstance.generated.h"
 
+class SpatialActorGroupManager;
 class USpatialLatencyTracer;
 class USpatialConnectionManager;
 class UGlobalStateManager;

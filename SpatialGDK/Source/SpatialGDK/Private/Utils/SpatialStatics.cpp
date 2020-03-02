@@ -89,12 +89,13 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 		return false;
 	}
 
-	if (Actor->bUseNetOwnerActorGroup && Actor->GetOwner() != nullptr)
+	const AActor* EffectiveActor = Actor;
+	while (EffectiveActor->bUseNetOwnerActorGroup && EffectiveActor->GetOwner() != nullptr)
 	{
-		return IsActorGroupOwnerForActor(Actor->GetOwner());
+		EffectiveActor = EffectiveActor->GetOwner();
 	}
 
-	return IsActorGroupOwnerForClass(Actor, Actor->GetClass());
+	return IsActorGroupOwnerForClass(EffectiveActor, EffectiveActor->GetClass());
 }
 
 bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
