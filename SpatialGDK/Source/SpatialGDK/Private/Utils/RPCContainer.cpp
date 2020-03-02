@@ -57,17 +57,17 @@ namespace
 		}
 	}
 
-	void LogRPCError(const FRPCErrorInfo& ErrorInfo, const FPendingRPCParams& Params)
+	void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const FPendingRPCParams& Params)
 	{
 		const FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
 
 		// The format is expected to be:
-		// Function <objectName>::<functionName> sending/execution queued on server/client for <duration>. Reason: <reason>
-		FString OutputLog = FString::Printf(TEXT("Function %s::%s %s queued on %s for %s. Reason: %s"),
+		// Function <objectName>::<functionName> sending/execution dropped/queued for <duration>. Reason: <reason>
+		FString OutputLog = FString::Printf(TEXT("Function %s::%s %s %s for %s. Reason: %s"),
 			ErrorInfo.TargetObject.IsValid() ? *ErrorInfo.TargetObject->GetName() : TEXT("UNKNOWN"),
 			ErrorInfo.Function.IsValid() ? *ErrorInfo.Function->GetName() : TEXT("UNKNOWN"),
-			ErrorInfo.QueueType == ERPCQueueType::Send ? TEXT("sending") : ErrorInfo.QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
-			ErrorInfo.bIsServer ? TEXT("server") : TEXT("client"),
+			QueueType == ERPCQueueType::Send ? TEXT("sending") : QueueType == ERPCQueueType::Receive ? TEXT("execution") : TEXT("UNKNOWN"),
+			ErrorInfo.bShouldDrop ? TEXT("dropped") : TEXT("queued"),
 			*TimeDiff.ToString(),
 			*ERPCResultToString(ErrorInfo.ErrorCode));
 
@@ -172,6 +172,11 @@ bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, E
 	return false;
 }
  
+FRPCContainer::FRPCContainer(ERPCQueueType InQueueType)
+	: QueueType(InQueueType)
+{
+}
+
 void FRPCContainer::BindProcessingFunction(const FProcessRPCDelegate& Function)
 {
 	ProcessingFunction = Function;
@@ -189,9 +194,8 @@ bool FRPCContainer::ApplyFunction(FPendingRPCParams& Params)
 	else
 	{
 #if !UE_BUILD_SHIPPING
-		LogRPCError(ErrorInfo, Params);
+		LogRPCError(ErrorInfo, QueueType, Params);
 #endif
-
-		return false;
+		return ErrorInfo.bShouldDrop;
 	}
 }

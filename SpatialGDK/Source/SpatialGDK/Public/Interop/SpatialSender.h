@@ -153,6 +153,9 @@ private:
 #if !UE_BUILD_SHIPPING
 	void TrackRPC(AActor* Actor, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const ERPCType RPCType);
 #endif
+
+	bool WillHaveAuthorityOverActor(AActor* TargetActor, Worker_EntityId TargetEntity);
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
@@ -178,7 +181,7 @@ private:
 
 	SpatialGDK::SpatialRPCService* RPCService;
 
-	FRPCContainer OutgoingRPCs;
+	FRPCContainer OutgoingRPCs{ ERPCQueueType::Send };
 	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 
 	TArray<TSharedRef<FReliableRPCForRetry>> RetryRPCs;
