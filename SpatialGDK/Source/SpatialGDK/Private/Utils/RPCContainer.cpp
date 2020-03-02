@@ -3,12 +3,11 @@
 #include "Utils/RPCContainer.h"
 
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogRPCContainer);
 
 using namespace SpatialGDK;
-
-const double FRPCContainer::SECONDS_BEFORE_WARNING = 2.0;
 
 namespace
 {
@@ -71,7 +70,15 @@ namespace
 			*TimeDiff.ToString(),
 			*ERPCResultToString(ErrorInfo.ErrorCode));
 
-		if (TimeDiff.GetTotalSeconds() > FRPCContainer::SECONDS_BEFORE_WARNING)
+		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+		check(SpatialGDKSettings != nullptr);
+		float SecondsBeforeWarning = SpatialGDKSettings->RPCQueueWarningDefaultTimeout;
+		if (const float* CustomSecondsBeforeWarning = SpatialGDKSettings->RPCQueueWarningTimeouts.Find(ErrorInfo.ErrorCode))
+		{
+			SecondsBeforeWarning = *CustomSecondsBeforeWarning;
+		}
+
+		if (TimeDiff.GetTotalSeconds() > SecondsBeforeWarning)
 		{
 			UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 		}

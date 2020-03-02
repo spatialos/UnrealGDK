@@ -7,6 +7,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+#include "Utils/RPCContainer.h"
 
 #include "SpatialGDKSettings.generated.h"
 
@@ -294,6 +295,12 @@ public:
 	/** Do async loading for new classes when checking out entities. */
 	UPROPERTY(Config)
 	bool bAsyncLoadNewClassesOnEntityCheckout;
+
+	UPROPERTY(EditAnywhere, config, Category = "Queued RPC Warning Timeouts", AdvancedDisplay, meta = (DisplayName = "For a given RPC failure type, the time it will queue before reporting warnings to the logs."))
+	TMap<ERPCResult, float> RPCQueueWarningTimeouts;
+
+	UPROPERTY(EditAnywhere, config, Category = "Queued RPC Warning Timeouts", AdvancedDisplay, meta = (DisplayName = "Default time before a queued RPC will start reporting warnings to the logs."))
+	float RPCQueueWarningDefaultTimeout;
 
 	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
 
