@@ -32,8 +32,6 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
-DEFINE_STAT(STAT_NumReplicatedActorBytes)
-
 DECLARE_CYCLE_STAT(TEXT("ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
@@ -418,7 +416,6 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 int64 USpatialActorChannel::ReplicateActor()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
-	SET_DWORD_STAT(STAT_NumReplicatedActorBytes, 0);
 
 	if (!IsReadyForReplication())
 	{
@@ -753,6 +750,10 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	bForceCompareProperties = false;		// Only do this once per frame when set
 
+	if (ReplicationBytesWritten > 0)
+	{
+		INC_DWORD_STAT_BY(STAT_NumReplicatedActors, 1);
+	}
 	INC_DWORD_STAT_BY(STAT_NumReplicatedActorBytes, ReplicationBytesWritten);
 
 	return ReplicationBytesWritten * 8;
