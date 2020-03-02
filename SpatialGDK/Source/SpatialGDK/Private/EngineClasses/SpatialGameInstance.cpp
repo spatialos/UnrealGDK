@@ -177,6 +177,8 @@ void USpatialGameInstance::Init()
 
 	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
 	ActorGroupManager->Init();
+
+	checkf(!(GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer && USpatialStatics::IsSpatialOffloadingEnabled()), TEXT("Offloading and the Unreal Load Balancer are enabled at the same time, this is currently not supported. Please change your project settings."));
 }
 
 void USpatialGameInstance::HandleOnConnected()
@@ -227,7 +229,6 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 
 		if (USpatialStatics::IsSpatialOffloadingEnabled())
 		{
-			check(!GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer);
 			if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
 			{
 				if (!Actor->bNetLoadOnNonAuthServer)
@@ -246,7 +247,6 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 
 		else if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
 		{
-			check(!USpatialStatics::IsSpatialOffloadingEnabled());
 			if (Actor->GetIsReplicated())
 			{
 				// Always wait for authority to be delegated down from SpatialOS, if using zoning

@@ -702,8 +702,7 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 
 	for (auto Actor : LoadedLevel->Actors)
 	{
-		if (Actor->GetIsReplicated() &&
-			(LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
+		if (Actor->GetIsReplicated() && LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
 		{
 			Actor->Role = ROLE_Authority;
 			Actor->RemoteRole = ROLE_SimulatedProxy;
