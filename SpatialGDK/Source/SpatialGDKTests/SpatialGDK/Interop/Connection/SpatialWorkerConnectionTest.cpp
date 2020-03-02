@@ -97,26 +97,6 @@ bool FSendReserveEntityIdsRequest::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendCreateEntityRequest, USpatialConnectionManager*, ConnectionManager);
-bool FSendCreateEntityRequest::Update()
-{
-	TArray<FWorkerComponentData> Components;
-	const Worker_EntityId* EntityId = nullptr;
-	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId);
-
-	return true;
-}
-
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendDeleteEntityRequest, USpatialConnectionManager*, ConnectionManager);
-bool FSendDeleteEntityRequest::Update()
-{
-	const Worker_EntityId EntityId = 0;
-	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendDeleteEntityRequest(EntityId);
-
-	return true;
-}
 
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FFindWorkerResponseOfType, FAutomationTestBase*, Test, USpatialConnectionManager*, ConnectionManager, uint8_t, ExpectedOpType);
 bool FFindWorkerResponseOfType::Update()
@@ -250,40 +230,6 @@ WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_reserve_entity_ids_requ
 	// THEN
 	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ConnectionManagers.ServerConnectionManager, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE));
 	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ConnectionManagers.ClientConnectionManager, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE));
-
-	return true;
-}
-
-WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_create_entity_request_sent_THEN_create_entity_response_received)
-{
-	// GIVEN
-	FDeploymentFixture Deployment(this);
-	FConnectionManagersFixture ConnectionManagers;
-
-	// WHEN
-	ADD_LATENT_AUTOMATION_COMMAND(FSendCreateEntityRequest(ConnectionManagers.ClientConnectionManager));
-	ADD_LATENT_AUTOMATION_COMMAND(FSendCreateEntityRequest(ConnectionManagers.ServerConnectionManager));
-
-	// THEN
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ConnectionManagers.ServerConnectionManager, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE));
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ConnectionManagers.ClientConnectionManager, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE));
-
-	return true;
-}
-
-WORKERCONNECTION_TEST(GIVEN_valid_worker_connection_WHEN_delete_entity_request_sent_THEN_delete_entity_response_received)
-{
-	// GIVEN
-	FDeploymentFixture Deployment(this);
-	FConnectionManagersFixture ConnectionManagers;
-
-	// WHEN
-	ADD_LATENT_AUTOMATION_COMMAND(FSendDeleteEntityRequest(ConnectionManagers.ClientConnectionManager));
-	ADD_LATENT_AUTOMATION_COMMAND(FSendDeleteEntityRequest(ConnectionManagers.ServerConnectionManager));
-
-	// THEN
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ConnectionManagers.ServerConnectionManager, WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE));
-	ADD_LATENT_AUTOMATION_COMMAND(FFindWorkerResponseOfType(this, ConnectionManagers.ClientConnectionManager, WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE));
 
 	return true;
 }
