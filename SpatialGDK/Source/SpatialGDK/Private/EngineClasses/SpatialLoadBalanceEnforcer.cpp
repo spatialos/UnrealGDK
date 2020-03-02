@@ -140,8 +140,8 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 		const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
 		if (AuthorityIntentComponent == nullptr)
 		{
-			// This happens if the authority intent component is removed in the same tick as a request is queued.
-			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Cannot process entity as AuthIntent component has been removed since the request was queued. EntityId: %lld"), EntityId);
+			// This happens if the authority intent component is removed in the same tick as a request is queued, but the request was not removed from the queue- shouldn't happen.
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as AuthIntent component has been removed since the request was queued. EntityId: %lld"), EntityId);
 			CompletedRequests.Add(EntityId);
 			continue;
 		}
