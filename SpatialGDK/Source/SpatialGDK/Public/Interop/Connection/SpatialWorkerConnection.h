@@ -24,7 +24,7 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 	GENERATED_BODY()
 
 public:
-	void SetConection(Worker_Connection* WorkerConnectionIn);
+	void SetConnection(Worker_Connection* WorkerConnectionIn);
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 
