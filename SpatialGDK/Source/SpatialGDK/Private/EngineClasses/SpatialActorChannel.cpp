@@ -417,6 +417,7 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 
 int64 USpatialActorChannel::ReplicateActor()
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
 	SET_DWORD_STAT(STAT_NumReplicatedActorBytes, 0);
 
 	if (!IsReadyForReplication())
