@@ -38,7 +38,10 @@ void USpatialNetConnection::CleanUp()
 {
 	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver))
 	{
-		SpatialNetDriver->CleanUpConnection(this);
+		if (!WorkerAttribute.IsEmpty())
+		{
+			SpatialNetDriver->CleanUpConnection(this);
+		}
 	}
 
 	Super::CleanUp();
