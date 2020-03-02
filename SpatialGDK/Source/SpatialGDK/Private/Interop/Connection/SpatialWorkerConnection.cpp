@@ -9,12 +9,14 @@ DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
 
-void USpatialWorkerConnection::SetConection(Worker_Connection* WorkerConnectionIn)
+void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn)
 {
 	WorkerConnection = WorkerConnectionIn;
 
 	CacheWorkerAttributes();
-	if (WorkerConnectionIn != nullptr && Worker_Connection_IsConnected(WorkerConnectionIn))
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();    
+	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)  
 	{
 		if (OpsProcessingThread == nullptr)
 		{
