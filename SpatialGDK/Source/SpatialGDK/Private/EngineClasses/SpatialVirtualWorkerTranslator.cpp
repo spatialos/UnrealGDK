@@ -22,7 +22,7 @@ const PhysicalWorkerName* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVi
 
 void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject)
 {
-    UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("ApplyVirtualWorkerManagerData"));
+    UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%d) ApplyVirtualWorkerManagerData"), LocalVirtualWorkerId);
 
 	// The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID. 
 	ApplyMappingFromSchema(ComponentObject);

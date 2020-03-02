@@ -22,6 +22,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialClassInfoManager.h"
@@ -229,17 +230,17 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	if (!bPersistSpatialConnection)
 	{
-		GameInstance->DestroySpatialWorkerConnection();
-		GameInstance->CreateNewSpatialWorkerConnection();
+		GameInstance->DestroySpatialConnectionManager();
+		GameInstance->CreateNewSpatialConnectionManager();
 	}
 	else
 	{
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Getting existing connection, not creating a new one"));
 	}
 
-	Connection = GameInstance->GetSpatialWorkerConnection();
-	Connection->OnConnectedCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSSucceeded);
-	Connection->OnFailedToConnectCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed);
+	ConnectionManager = GameInstance->GetSpatialConnectionManager();
+	ConnectionManager->OnConnectedCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSSucceeded);
+	ConnectionManager->OnFailedToConnectCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed);
 
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
@@ -247,34 +248,37 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
 	{
 		GameInstance->SetFirstConnectionToSpatialOSAttempted();
-		if (!Connection->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
+		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
 		{
-			Connection->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
+			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
 		}
 	}
 	else if (URL.Host == SpatialConstants::RECONNECT_USING_COMMANDLINE_ARGUMENTS)
 	{
-		if (!Connection->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
+		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
 		{
-			Connection->SetConnectionType(ESpatialConnectionType::Receptionist);
-			Connection->ReceptionistConfig.LoadDefaults();
-			Connection->ReceptionistConfig.WorkerType = SpatialWorkerType;
+			ConnectionManager->SetConnectionType(ESpatialConnectionType::Receptionist);
+			ConnectionManager->ReceptionistConfig.LoadDefaults();
+			ConnectionManager->ReceptionistConfig.WorkerType = SpatialWorkerType;
 		}
 	}
 	else
 	{
-		Connection->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
+		ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
 	}
 
 #if WITH_EDITOR
-	Connection->Connect(bConnectAsClient, PlayInEditorID);
+	ConnectionManager->Connect(bConnectAsClient, PlayInEditorID);
 #else
-	Connection->Connect(bConnectAsClient, 0);
+	ConnectionManager->Connect(bConnectAsClient, 0);
 #endif
 }
 
 void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 {
+	Connection = ConnectionManager->GetWorkerConnection();
+	check(Connection);
+
 	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
 	// There may be more than one of these connections in the future for different replication conditions.
 	if (!bConnectAsClient)
@@ -795,7 +799,7 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			if (UWorld* LocalWorld = GetWorld())
 			{
-				Cast<USpatialGameInstance>(LocalWorld->GetGameInstance())->DestroySpatialWorkerConnection();
+				Cast<USpatialGameInstance>(LocalWorld->GetGameInstance())->DestroySpatialConnectionManager();
 			}
 			Connection = nullptr;
 		}
@@ -1550,10 +1554,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 		if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 		{
-			if (Connection->IsConnected())
-			{
-				Connection->QueueLatestOpList();
-			}
+			Connection->QueueLatestOpList();
 		}
 
 		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
@@ -1752,7 +1753,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 	{
-		if (Connection != nullptr && Connection->IsConnected())
+		if (Connection != nullptr)
 		{
 			Connection->ProcessOutgoingMessages();
 		}

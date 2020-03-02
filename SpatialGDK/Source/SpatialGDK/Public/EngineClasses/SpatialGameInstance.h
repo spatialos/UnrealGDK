@@ -8,7 +8,7 @@
 #include "SpatialGameInstance.generated.h"
 
 class USpatialLatencyTracer;
-class USpatialWorkerConnection;
+class USpatialConnectionManager;
 class UGlobalStateManager;
 class USpatialStaticComponentView;
 
@@ -39,13 +39,13 @@ public:
 	virtual void Init() override;
 	//~ End UGameInstance Interface
 
-	// The SpatialWorkerConnection must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
-	void CreateNewSpatialWorkerConnection();
+	// The SpatiaConnectionManager must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
+	void CreateNewSpatialConnectionManager();
 
-	// Destroying the SpatialWorkerConnection disconnects us from SpatialOS.
-	void DestroySpatialWorkerConnection();
+	// Destroying the SpatialConnectionManager disconnects us from SpatialOS.
+	void DestroySpatialConnectionManager();
 
-	FORCEINLINE USpatialWorkerConnection* GetSpatialWorkerConnection() { return SpatialConnection; }
+	FORCEINLINE USpatialConnectionManager* GetSpatialConnectionManager() { return SpatialConnectionManager; }
 	FORCEINLINE USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
 	FORCEINLINE UGlobalStateManager* GetGlobalStateManager() { return GlobalStateManager; };
 	FORCEINLINE USpatialStaticComponentView* GetStaticComponentView() { return StaticComponentView; };
@@ -69,7 +69,7 @@ protected:
 private:
 	// SpatialConnection is stored here for persistence between map travels.
 	UPROPERTY()
-	USpatialWorkerConnection* SpatialConnection;
+	USpatialConnectionManager* SpatialConnectionManager;
 
 	bool bFirstConnectionToSpatialOSAttempted = false;
 
