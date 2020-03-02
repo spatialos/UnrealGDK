@@ -177,7 +177,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		{
 			// Register system identity for a worker connection, to know when a player has disconnected.
 			Worker* WorkerData = StaticComponentView->GetComponentData<Worker>(Op.entity_id);
-			WorkerConnectionEntity.Add(Op.entity_id, WorkerData->WorkerId);
+			WorkerConnectionEntities.Add(Op.entity_id, WorkerData->WorkerId);
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s 's system identity was checked out."), *WorkerData->WorkerId);
 		}
 		return;
@@ -254,7 +254,8 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 	if (NetDriver->IsServer())
 	{
-		if (FString* WorkerName = WorkerConnectionEntity.Find(Op.entity_id))
+		// Check to see if we are removing a system entity for a worker connection. If so clean up the ClientConnection to delete any and all actors for this connection's controller.
+		if (FString* WorkerName = WorkerConnectionEntities.Find(Op.entity_id))
 		{
 			TWeakObjectPtr<USpatialNetConnection> ClientConnectionPtr = NetDriver->FindClientConnectionFromWorkerId(*WorkerName);
 			if (USpatialNetConnection* ClientConnection = ClientConnectionPtr.Get())
@@ -270,7 +271,7 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 					}
 				}
 			}
-			WorkerConnectionEntity.Remove(Op.entity_id);
+			WorkerConnectionEntities.Remove(Op.entity_id);
 		}
 	}
 }

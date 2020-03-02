@@ -38,7 +38,7 @@ void USpatialNetConnection::CleanUp()
 {
 	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver))
 	{
-		SpatialNetDriver->CleanUpConnection(this);
+		SpatialNetDriver->CleanUpClientConnection(this);
 	}
 
 	Super::CleanUp();
