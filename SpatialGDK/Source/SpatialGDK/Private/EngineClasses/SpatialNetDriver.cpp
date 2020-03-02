@@ -1784,7 +1784,7 @@ namespace
 {
 	TOptional<FString> ExtractWorkerIDFromAttribute(const FString& WorkerAttribute)
 	{
-		const FString WorkerIdAttr = "workerId:";
+		const FString WorkerIdAttr = TEXT("workerId:");
 		int32 AttrOffset = WorkerAttribute.Find(WorkerIdAttr);
 
 		if (AttrOffset < 0)
@@ -1829,11 +1829,10 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	SpatialConnection->WorkerAttribute = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
 
 	// Register workerId and its connection.
-	if(TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(SpatialConnection->WorkerAttribute))
+	if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(SpatialConnection->WorkerAttribute))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %s 's NetConnection created."), *WorkerId.GetValue());
 
-		//check(WorkerConnections.Find(WorkerId) == nullptr);
 		WorkerConnections.Add(WorkerId.GetValue(), SpatialConnection);
 	}
 
@@ -1868,19 +1867,22 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	return true;
 }
 
-void USpatialNetDriver::CleanUpConnection(USpatialNetConnection* ConnectionCleanedUp)
+void USpatialNetDriver::CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp)
 {
-	if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(*ConnectionCleanedUp->WorkerAttribute))
+	if (!ConnectionCleanedUp->WorkerAttribute.IsEmpty())
 	{
-		WorkerConnections.Remove(WorkerId.GetValue());
+		if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(*ConnectionCleanedUp->WorkerAttribute))
+		{
+			WorkerConnections.Remove(WorkerId.GetValue());
+		}
 	}
 }
 
-TWeakObjectPtr<USpatialNetConnection> USpatialNetDriver::FindWorkerConnectionFromWorkerId(const FString& WorkerId)
+TWeakObjectPtr<USpatialNetConnection> USpatialNetDriver::FindClientConnectionFromWorkerId(const FString& WorkerId)
 {
-	if (TWeakObjectPtr<USpatialNetConnection>* PlayerConnectionPtr = WorkerConnections.Find(WorkerId))
+	if (TWeakObjectPtr<USpatialNetConnection>* ClientConnectionPtr = WorkerConnections.Find(WorkerId))
 	{
-		return *PlayerConnectionPtr;
+		return *ClientConnectionPtr;
 	}
 
 	return {};
