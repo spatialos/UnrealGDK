@@ -232,7 +232,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		// Check for overrides in the travel URL.
 		if (!URL.Host.IsEmpty() && URL.Host.Compare(SpatialConstants::LOCAL_HOST) != 0)
 		{
-			Connection->ReceptionistConfig.ReceptionistHost = URL.Host;
+			Connection->ReceptionistConfig.SetReceptionistHost(URL.Host);
 		}
 
 		bool bHasUseExternalIpOption = URL.HasOption(TEXT("useExternalIpForBridge"));

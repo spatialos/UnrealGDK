@@ -71,6 +71,8 @@ public:
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
+	bool TrySetupConnectionConfigFromCommandLine(const FString& SpatialWorkerType);
+
 	void RequestDeploymentLoginTokens();
 
 private:

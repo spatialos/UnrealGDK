@@ -144,6 +144,30 @@ void USpatialWorkerConnection::ProcessLoginTokensResponse(const Worker_Alpha_Log
 	ConnectToLocator();
 }
 
+bool USpatialWorkerConnection::TrySetupConnectionConfigFromCommandLine(const FString& SpatialWorkerType)
+{
+	bool bSuccessfullyLoaded = LocatorConfig.TryLoadCommandLineArgs();
+	if (bSuccessfullyLoaded)
+	{
+		LocatorConfig.WorkerType = SpatialWorkerType;
+	}
+	else
+	{
+		bSuccessfullyLoaded = LocatorConfig.TryLoadCommandLineArgs();
+		if (bSuccessfullyLoaded)
+		{
+			LocatorConfig.WorkerType = SpatialWorkerType;
+		}
+		else
+		{
+			bSuccessfullyLoaded = ReceptionistConfig.TryLoadCommandLineArgs();
+			ReceptionistConfig.WorkerType = SpatialWorkerType;
+		}
+	}
+
+	return bSuccessfullyLoaded;
+}
+
 void USpatialWorkerConnection::RequestDeploymentLoginTokens()
 {
 	Worker_Alpha_LoginTokensRequest LTParams{};
@@ -244,7 +268,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
-		TCHAR_TO_UTF8(*ReceptionistConfig.ReceptionistHost), ReceptionistConfig.ReceptionistPort,
+		TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.ReceptionistPort,
 		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionParams);
 
 	FinishConnecting(ConnectionFuture);

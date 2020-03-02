@@ -57,59 +57,92 @@ struct FConnectionConfig
 	uint8 TcpMultiplexLevel;
 };
 
-struct FReceptionistConfig : public FConnectionConfig
+class FReceptionistConfig : public FConnectionConfig
 {
+public:
 	FReceptionistConfig()
-		: ReceptionistPort(SpatialConstants::DEFAULT_PORT)
 	{
+		LoadDefaults();
+	}
+
+	void LoadDefaults()
+	{
+		ReceptionistPort = SpatialConstants::DEFAULT_PORT;
+		SetReceptionistHost(GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost);
+	}
+
+	bool TryLoadCommandLineArgs()
+	{
+		bool bSuccess = true;
 		const TCHAR* CommandLine = FCommandLine::Get();
 
-		// Parse the commandline for receptionistHost, if it exists then use this as the host IP.
+		// Parse the command line for receptionistHost, if it exists then use this as the host IP.
 		if (!FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost))
 		{
 			// If a receptionistHost is not specified then parse for an IP address as the first argument and use this instead.
 			// This is how native Unreal handles connecting to other IPs, a map name can also be specified, in this case we use the default IP.
-			FParse::Token(CommandLine, ReceptionistHost, 0);
-
+			FString URLAddress;
+			FParse::Token(CommandLine, URLAddress, 0);
 			FRegexPattern Ipv4RegexPattern(TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"));
-
-			FRegexMatcher IpV4RegexMatcher(Ipv4RegexPattern, *ReceptionistHost);
-			if (!IpV4RegexMatcher.FindNext())
+			FRegexMatcher IpV4RegexMatcher(Ipv4RegexPattern, *URLAddress);
+			bSuccess = IpV4RegexMatcher.FindNext();
+			if (bSuccess)
 			{
-				// If an IP is not specified then use default.
-				ReceptionistHost = GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost;
-				if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
-				{
-					UseExternalIp = true;
-				}
+				SetReceptionistHost(URLAddress);
 			}
 		}
 
 		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
+		return bSuccess;
 	}
 
-	FString ReceptionistHost;
+	void SetReceptionistHost(const FString& host)
+	{
+		ReceptionistHost = host;
+		if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
+		{
+			UseExternalIp = true;
+		}
+	}
+
+	FString GetReceptionistHost() const { return ReceptionistHost; }
+
 	uint16 ReceptionistPort;
+
+private:
+	FString ReceptionistHost;
 };
 
-struct FLocatorConfig : public FConnectionConfig
+class FLocatorConfig : public FConnectionConfig
 {
+public:
 	FLocatorConfig()
 	{
-		const TCHAR* CommandLine = FCommandLine::Get();
-		if (!FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost))
+		LoadDefaults();
+	}
+
+	void LoadDefaults()
+	{
+		UseExternalIp = true;
+
+		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
 		{
-			if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
-			{
-				LocatorHost = SpatialConstants::LOCATOR_HOST_CN;
-			}
-			else
-			{
-				LocatorHost = SpatialConstants::LOCATOR_HOST;
-			}
+			LocatorHost = SpatialConstants::LOCATOR_HOST_CN;
 		}
-		FParse::Value(CommandLine, TEXT("playerIdentityToken"), PlayerIdentityToken);
-		FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
+		else
+		{
+			LocatorHost = SpatialConstants::LOCATOR_HOST;
+		}
+	}
+
+	bool TryLoadCommandLineArgs()
+	{
+		bool bSuccess = true;
+		const TCHAR* CommandLine = FCommandLine::Get();
+		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
+		bSuccess &= FParse::Value(CommandLine, TEXT("playerIdentityToken"), PlayerIdentityToken);
+		bSuccess &= FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
+		return bSuccess;
 	}
 
 	FString LocatorHost;
