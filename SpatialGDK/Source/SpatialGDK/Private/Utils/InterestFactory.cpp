@@ -2,18 +2,18 @@
 
 #include "Utils/InterestFactory.h"
 
-#include "Engine/World.h"
-#include "Engine/Classes/GameFramework/Actor.h"
-#include "GameFramework/PlayerController.h"
-#include "UObject/UObjectIterator.h"
-#include "Utils/CheckoutRadiusConstraintUtils.h"
-
 #include "EngineClasses/Components/ActorInterestComponent.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
+#include "Utils/CheckoutRadiusConstraintUtils.h"
+
+#include "Engine/World.h"
+#include "Engine/Classes/GameFramework/Actor.h"
+#include "GameFramework/PlayerController.h"
 #include "UObject/UObjectIterator.h"
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);

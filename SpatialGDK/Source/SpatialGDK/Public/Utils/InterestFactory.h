@@ -3,11 +3,11 @@
 #pragma once
 
 #include "Interop/SpatialClassInfoManager.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/Interest.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
+class UAbstractLBStrategy;
 class USpatialClassInfoManager;
 class USpatialPackageMapClient;
 class AActor;
