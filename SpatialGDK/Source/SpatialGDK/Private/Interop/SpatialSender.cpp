@@ -610,7 +610,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
-		return FRPCErrorInfo{ nullptr, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::UnresolvedTargetObject, true };
+		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, true };
 	}
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
 
@@ -618,20 +618,20 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
-		return FRPCErrorInfo{ TargetObject, nullptr, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::MissingFunctionInfo, true };
+		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, true };
 	}
 
 	const float TimeDiff = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
 	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCWaitTime < TimeDiff)
 	{
-		return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::TimedOut, true };
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::TimedOut, true };
 	}
 
 	if (AActor* TargetActor = Cast<AActor>(TargetObject))
 	{
 		if (TargetActor->IsPendingKillPending())
 		{
-			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, ERPCResult::ActorPendingKill, true };
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::ActorPendingKill, true };
 		}
 	}
 
@@ -642,11 +642,11 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		if (AActor* TargetActor = Cast<AActor>(TargetObject))
 		{
 			bool bShouldDrop = !WillHaveAuthorityOverActor(TargetActor, Params.ObjectRef.Entity);
-			return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result, bShouldDrop };
+			return FRPCErrorInfo{ TargetObject, Function, Result, bShouldDrop };
 		}
 	}
 
-	return FRPCErrorInfo{ TargetObject, Function, NetDriver->IsServer(), ERPCQueueType::Send, Result, false };
+	return FRPCErrorInfo{ TargetObject, Function, Result, false };
 }
 
 #if !UE_BUILD_SHIPPING
