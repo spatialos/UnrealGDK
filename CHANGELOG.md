@@ -87,6 +87,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed an issue where newly created subobjects would have empty state when RepNotify was called for a property pointing to that subobject.
 - Fixed an issue where deleted, initially dormant startup actors would still be present on other workers.
 - Force activation of RPC ring buffer when load balancing is enabled, to allow RPC handover when authority changes
+- Fixed crash caused by state persisting across a transition from one deployment to another in SpatialGameInstance
 
 ### External contributors:
 @DW-Sebastien
