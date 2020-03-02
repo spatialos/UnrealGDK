@@ -60,8 +60,6 @@ struct FRPCErrorInfo
 
 	TWeakObjectPtr<UObject> TargetObject = nullptr;
 	TWeakObjectPtr<UFunction> Function = nullptr;
-	bool bIsServer = false;
-	ERPCQueueType QueueType = ERPCQueueType::Unknown;
 	ERPCResult ErrorCode = ERPCResult::Unknown;
 	bool bShouldDrop = false;
 };
@@ -89,7 +87,8 @@ class SPATIALGDK_API FRPCContainer
 {
 public:
 	// Moveable, not copyable.
-	FRPCContainer() = default;
+	FRPCContainer(ERPCQueueType QueueType);
+	FRPCContainer() = delete;
 	FRPCContainer(const FRPCContainer&) = delete;
 	FRPCContainer(FRPCContainer&&) = default;
 	FRPCContainer& operator=(const FRPCContainer&) = delete;
@@ -115,4 +114,6 @@ private:
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
 	bool bAlreadyProcessingRPCs = false;
+
+	ERPCQueueType QueueType = ERPCQueueType::Unknown;
 };
