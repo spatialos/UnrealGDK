@@ -423,6 +423,11 @@ public:
 		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/generated/"));
 	}
 
+	FORCEINLINE FString GetBuiltWorkerFolder() const
+	{
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/worker/"));
+	}
+
 	FORCEINLINE FString GetSpatialOSCommandLineLaunchFlags() const
 	{
 		FString CommandLineLaunchFlags = TEXT("");

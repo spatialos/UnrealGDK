@@ -2,6 +2,7 @@
 
 #include "Tests/TestDefinitions.h"
 
+#include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "SpatialGDKTests/SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
@@ -31,7 +32,7 @@ void ConnectionProcessed(bool bConnectAsClient)
 	}
 }
 } // anonymous namespace
-
+ 
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForSeconds, double, Seconds);
 bool FWaitForSeconds::Update()
 {
@@ -47,17 +48,17 @@ bool FWaitForSeconds::Update()
 	}
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetupWorkerConnection, USpatialWorkerConnection*, Connection, bool, bConnectAsClient);
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetupWorkerConnection, USpatialConnectionManager*, ConnectionManager, bool, bConnectAsClient);
 bool FSetupWorkerConnection::Update()
 {
 	const FURL TestURL = {};
 	FString WorkerType = "AutomationWorker";
 
-	Connection->OnConnectedCallback.BindLambda([bConnectAsClient = this->bConnectAsClient]()
+	ConnectionManager->OnConnectedCallback.BindLambda([bConnectAsClient = this->bConnectAsClient]()
 	{
 		ConnectionProcessed(bConnectAsClient);
 	});
-	Connection->OnFailedToConnectCallback.BindLambda([bConnectAsClient = this->bConnectAsClient](uint8_t ErrorCode, const FString& ErrorMessage)
+	ConnectionManager->OnFailedToConnectCallback.BindLambda([bConnectAsClient = this->bConnectAsClient](uint8_t ErrorCode, const FString& ErrorMessage)
 	{
 		ConnectionProcessed(bConnectAsClient);
 	});
@@ -66,9 +67,9 @@ bool FSetupWorkerConnection::Update()
 
 	int32 PlayInEditorID = 0;
 #if WITH_EDITOR
-	Connection->Connect(bConnectAsClient, PlayInEditorID);
+	ConnectionManager->Connect(bConnectAsClient, PlayInEditorID);
 #else
-	Connection->Connect(bConnectAsClient, 0);
+	ConnectionManager->Connect(bConnectAsClient, 0);
 #endif
 	return true;
 }
@@ -82,42 +83,46 @@ bool FWaitForClientAndServerWorkerConnection::Update()
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckConnectionStatus, FAutomationTestBase*, Test, USpatialWorkerConnection*, Connection, bool, bExpectedIsConnected);
 bool FCheckConnectionStatus::Update()
 {
-	Test->TestTrue(TEXT("Worker connection status is valid"), Connection->IsConnected() == bExpectedIsConnected);
+	Test->TestTrue(TEXT("Worker connection status is valid"), ConnectionManager->IsConnected() == bExpectedIsConnected);
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendReserveEntityIdsRequest, USpatialWorkerConnection*, Connection);
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendReserveEntityIdsRequest, USpatialConnectionManager*, ConnectionManager);
 bool FSendReserveEntityIdsRequest::Update()
 {
 	uint32_t NumOfEntities = 1;
+	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	Connection->SendReserveEntityIdsRequest(NumOfEntities);
 
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendCreateEntityRequest, USpatialWorkerConnection*, Connection);
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendCreateEntityRequest, USpatialConnectionManager*, ConnectionManager);
 bool FSendCreateEntityRequest::Update()
 {
 	TArray<FWorkerComponentData> Components;
 	const Worker_EntityId* EntityId = nullptr;
+	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId);
 
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendDeleteEntityRequest, USpatialWorkerConnection*, Connection);
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSendDeleteEntityRequest, USpatialConnectionManager*, ConnectionManager);
 bool FSendDeleteEntityRequest::Update()
 {
 	const Worker_EntityId EntityId = 0;
+	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	Connection->SendDeleteEntityRequest(EntityId);
 
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FFindWorkerResponseOfType, FAutomationTestBase*, Test, USpatialWorkerConnection*, Connection, uint8_t, ExpectedOpType);
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FFindWorkerResponseOfType, FAutomationTestBase*, Test, USpatialConnectionManager*, ConnectionManager, uint8_t, ExpectedOpType);
 bool FFindWorkerResponseOfType::Update()
 {
 	bool bFoundOpOfExpectedType = false;
+	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	for (const auto& OpList : Connection->GetOpList())
 	{
 		for (uint32_t i = 0; i < OpList->op_count; i++)
