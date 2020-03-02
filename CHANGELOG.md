@@ -57,7 +57,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The `InstallGDK` scripts now `git clone` the correct version of the `UnrealGDK` and `UnrealGDKExampleProject` for the `UnrealEngine` branch you have checked out. They read `UnrealGDKVersion.txt` & `UnrealGDKExampleProjectVersion.txt` to determine what the correct branches are.
 - Unreal Engine `4.24.3` is now supported. You can find the `4.24.3` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.24-SpatialOSUnrealGDK).
 - Enabling the Unreal GDK load balancer now creates a single query per server worker, depending on the defined load balancing strategy.
-- The flag `--OverrideServerInterest` has been removed.
+- The `bEnableServerQBI` property has been removed, and the flag `--OverrideServerInterest` has been removed.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
