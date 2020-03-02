@@ -261,10 +261,6 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
 Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialGDKSettings->bEnableServerQBI)
-	{
-		UE_LOG(LogInterestFactory, Warning, TEXT("For performance reasons, it's recommended to disable server QBI"));
-	}
 
 	Interest ServerInterest;
 	ComponentInterest ServerComponentInterest;

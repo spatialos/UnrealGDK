@@ -108,14 +108,6 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 	check(InterestBorder >= 0);
 	check(Rows * Cols > 0);
 
-	// If there is only one worker, this special cases to a "true" constraint (Component constraint for the position component).
-	if (Rows * Cols == 1)
-	{
-		SpatialGDK::QueryConstraint TrueConstraint;
-		TrueConstraint.ComponentConstraint = SpatialConstants::POSITION_COMPONENT_ID;
-		return TrueConstraint;
-	}
-
 	const FBox2D Interest2D = WorkerCells[LocalVirtualWorkerId - 1].ExpandBy(InterestBorder);
 	const FVector Min = FVector{ Interest2D.Min.X, Interest2D.Min.Y, -FLT_MAX };
 	const FVector Max = FVector{ Interest2D.Max.X, Interest2D.Max.Y, FLT_MAX };

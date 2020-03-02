@@ -2261,7 +2261,7 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 			if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
 			{
 				// We know at this point that we have all the information to set the worker's interest query.
-				Sender->UpdateWorkerEntityInterestAndPosition();
+				Sender->UpdateServerWorkerEntityInterestAndPosition();
 			}
 
 			// We've found and dispatched all ops we need for startup,

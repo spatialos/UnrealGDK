@@ -205,7 +205,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
 			Sender->NetDriver->GlobalStateManager->TrySendWorkerReadyToBeginPlay();
-			Sender->UpdateWorkerEntityInterestAndPosition();
+			Sender->UpdateServerWorkerEntityInterestAndPosition();
 			
 			return;
 		}
@@ -310,7 +310,7 @@ void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString E
 	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(Delegate));
 }
 
-void USpatialSender::UpdateWorkerEntityInterestAndPosition()
+void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 {
 	check(Connection != nullptr);
 	check(NetDriver != nullptr);

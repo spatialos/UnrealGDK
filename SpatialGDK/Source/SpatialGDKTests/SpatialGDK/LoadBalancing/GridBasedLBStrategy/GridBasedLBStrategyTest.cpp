@@ -232,21 +232,6 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_interest_for_virtual_w
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_one_cell_WHEN_get_worker_interest_for_virtual_worker_THEN_returns_special_case_true_constraint)
-{
-	Strat = UTestGridBasedLBStrategy::Create(1, 1, 10000.f, 10000.f, 1000.0f);
-	Strat->Init();
-
-	Strat->SetLocalVirtualWorkerId(1);
-
-	SpatialGDK::QueryConstraint StratConstraint = Strat->GetWorkerInterestQueryConstraint();
-
-	TestTrue("Constraint is a component constraint", StratConstraint.ComponentConstraint.IsSet());
-	TestTrue("Constraint is for the position component", StratConstraint.ComponentConstraint.GetValue() == SpatialConstants::POSITION_COMPONENT_ID);
-
-	return true;
-}
-
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_entity_position_for_virtual_worker_THEN_returns_correct_position)
 {
 	Strat = UTestGridBasedLBStrategy::Create(2, 2, 10000.f, 10000.f, 1000.0f);
