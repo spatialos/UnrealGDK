@@ -611,14 +611,14 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 		Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton | SPATIALCLASS_NotSpatialType) ||
 		USpatialStatics::IsActorGroupOwnerForActor(Actor))
 	{
-		// We only want to delete actors which are replicated and we somehow gain local authority over, while not the actor group owner
+		// We only want to delete actors which are replicated and we somehow gain local authority over, while not the actor group owner.
 		return;
 	}
 
 	FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
 	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker %s spawned replicated actor %s (owner: %s) but is not actor group owner for actor group %s. The actor will be destroyed in 0.01s"),
 		*WorkerType, *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), *USpatialStatics::GetActorGroupForActor(Actor).ToString());
-	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would complain
+	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would complain if we destroyed it.
 	Actor->TearOff();
 	Actor->SetLifeSpan(0.01f);
 }
