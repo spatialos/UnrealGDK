@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simulated Player worker configurations now require a dev auth token and deployment flag instead of a login token and player identity token. See the Example Project for an example of how to set this up.
 
 ### Features:
+- Added a new variable `QueuedOutgoingRPCWaitTime`. Outgoing RPCs will now be dropped if: more than `QueuedOutgoingRPCWaitTime` time has passed; the worker is never expected to become authoritative in zoning/offloading scenario; the Actor is being destroyed.
 - Updated the version of the local API service used by the UnrealGDK.
 - The GDK now uses SpatialOS `14.4.0`.
 - In local deployments of the Example Project you can now launch Simulated Players in one click. Running `LaunchSimPlayerClient.bat` will launch a single Simulated Player client. Running `Launch10SimPlayerClients.bat` will launch 10.
@@ -54,6 +55,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added settings to choose which runtime version to launch with local and cloud deployment launch command.
 - With the `--OverrideResultTypes` flag flipped, servers will no longer check out server RPC components on actors they do not own. This should give a bandwidth saving to server workers in offloaded and zoned games.
 - The `InstallGDK` scripts now `git clone` the correct version of the `UnrealGDK` and `UnrealGDKExampleProject` for the `UnrealEngine` branch you have checked out. They read `UnrealGDKVersion.txt` & `UnrealGDKExampleProjectVersion.txt` to determine what the correct branches are.
+- Unreal Engine `4.24.3` is now supported. You can find the `4.24.3` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.24-SpatialOSUnrealGDK).
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.

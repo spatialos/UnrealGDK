@@ -9,6 +9,8 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
+#include "HAL/PlatformFilemanager.h"
+#include "Misc/MessageDialog.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "SpatialCommandUtils.h"
 #include "SpatialGDKSettings.h"
@@ -562,6 +564,20 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		}
 
 		return FReply::Handled();
+	}
+
+	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
+	{
+		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+		FString BuiltWorkerFolder = GetDefault<USpatialGDKEditorSettings>()->GetBuiltWorkerFolder();
+		FString BuiltSimPlayersName = TEXT("UnrealSimulatedPlayer@Linux.zip");
+		FString BuiltSimPlayerPath = FPaths::Combine(BuiltWorkerFolder, BuiltSimPlayersName);
+
+		if (!PlatformFile.FileExists(*BuiltSimPlayerPath))
+		{
+			FString MissingSimPlayerBuildText = FString::Printf(TEXT("Warning: Detected that %s is missing. To launch a successful SimPlayer deployment ensure that SimPlayers is built and uploaded."), *BuiltSimPlayersName);
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(MissingSimPlayerBuildText));
+		}
 	}
 
 	if (ToolbarPtr)
