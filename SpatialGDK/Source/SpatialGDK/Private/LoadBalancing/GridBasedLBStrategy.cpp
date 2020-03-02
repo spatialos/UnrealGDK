@@ -105,7 +105,6 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 {
 	// For a grid-based strategy, the interest area is the cell that the worker is authoritative over plus some border region.
 	check(IsReady());
-	check(InterestBorder >= 0);
 	check(Rows * Cols > 0);
 
 	const FBox2D Interest2D = WorkerCells[LocalVirtualWorkerId - 1].ExpandBy(InterestBorder);

@@ -295,26 +295,24 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 
 	Constraint = AlwaysRelevantConstraint;
 
-	// If we aren't using the load balancer, there is no need for further interest as we are either offloading or single server,
-	// so will checkout everything we care about through authority.
+	// If we are using the unreal load balancer, we also add the server worker interest defined by the load balancing strategy.
 	if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
 	{
-		if (LBStrategy != nullptr)
+		check(LBStrategy != nullptr);
+		
+		// The load balancer won't be ready when the worker initially connects to SpatialOS. It needs
+		// to wait for the virtual worker mappings to be replicated.
+		// This function will be called again when that is the case in order to update the interest on the server entity.
+		if (LBStrategy->IsReady())
 		{
-			// The load balancer won't be ready when the worker initially connects to SpatialOS. It needs
-			// to wait for the virtual worker mappings to be replicated.
-			// This function will be called again when that is the case in order to update the interest on the server entity.
-			if (LBStrategy->IsReady())
-			{
-				QueryConstraint LoadBalancerConstraint = LBStrategy->GetWorkerInterestQueryConstraint();
+			QueryConstraint LoadBalancerConstraint = LBStrategy->GetWorkerInterestQueryConstraint();
 
-				// Rather than adding the load balancer constraint at the end, reorder the constraints to have the large spatial
-				// constraint at the front. This is more likely to be efficient.
-				QueryConstraint NewConstraint;
-				NewConstraint.OrConstraint.Add(LoadBalancerConstraint);
-				NewConstraint.OrConstraint.Add(AlwaysRelevantConstraint);
-				Constraint = NewConstraint;
-			}
+			// Rather than adding the load balancer constraint at the end, reorder the constraints to have the large spatial
+			// constraint at the front. This is more likely to be efficient.
+			QueryConstraint NewConstraint;
+			NewConstraint.OrConstraint.Add(LoadBalancerConstraint);
+			NewConstraint.OrConstraint.Add(AlwaysRelevantConstraint);
+			Constraint = NewConstraint;
 		}
 	}
 

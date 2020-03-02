@@ -188,6 +188,8 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(ServerWorker(Connection->GetWorkerId(), false).CreateServerWorkerData());
 	check(NetDriver != nullptr);
+	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in order
+	// to set the interest of the server worker according to the strategy.
 	Components.Add(InterestFactory::CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
@@ -205,8 +207,6 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 		{
 			Sender->NetDriver->WorkerEntityId = Op.entity_id;
 			Sender->NetDriver->GlobalStateManager->TrySendWorkerReadyToBeginPlay();
-			Sender->UpdateServerWorkerEntityInterestAndPosition();
-			
 			return;
 		}
 
