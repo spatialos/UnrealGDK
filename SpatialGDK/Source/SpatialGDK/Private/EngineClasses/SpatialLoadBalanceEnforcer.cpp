@@ -165,9 +165,9 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 		{
 			EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
 			WorkerRequirementSet ClientRequirementSet;
-			if (WorkerRequirementSet* RpcRequirmentSet = Acl->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())))
+			if (WorkerRequirementSet* RpcRequirementSet = Acl->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())))
 			{
-				ClientRequirementSet = *RpcRequirmentSet;
+				ClientRequirementSet = *RpcRequirementSet;
 			}
 			TArray<Worker_ComponentId> ComponentIds;
 			Acl->ComponentWriteAcl.GetKeys(ComponentIds);

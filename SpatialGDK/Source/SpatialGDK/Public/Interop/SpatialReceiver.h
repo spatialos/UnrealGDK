@@ -93,7 +93,6 @@ public:
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
 
 private:
-
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
 
@@ -187,14 +186,12 @@ private:
 	// END TODO
 
 public:
-
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
 	FOnEntityAddedDelegate OnEntityAddedDelegate;
 	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
 
 private:
-
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 

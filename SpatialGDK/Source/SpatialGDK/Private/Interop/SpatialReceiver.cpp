@@ -364,13 +364,6 @@ void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 
 void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
-	SCOPE_CYCLE_COUNTER(STAT_ReceiverAuthChange);
-	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
-	{
-		QueueAuthorityOpForAsyncLoad(Op);
-		return;
-	}
-
 	// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
 	// This way systems that depend on having non-stale state can function correctly.
 	StaticComponentView->OnAuthorityChange(Op);
@@ -378,6 +371,13 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 	if (Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID && LoadBalanceEnforcer != nullptr)
 	{
 		LoadBalanceEnforcer->OnAclAuthorityChanged(Op);
+	}
+
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverAuthChange);
+	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
+	{
+		QueueAuthorityOpForAsyncLoad(Op);
+		return;
 	}
 
 	if (bInCriticalSection)
@@ -2572,7 +2572,7 @@ void USpatialReceiver::HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op)
 		ProcessRemoveComponent(Op.Op.op.remove_component);
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		OnAuthorityChange(Op.Op.op.authority_change);
+		HandleActorAuthority(Op.Op.op.authority_change);
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
 		OnComponentUpdate(Op.Op.op.component_update);
