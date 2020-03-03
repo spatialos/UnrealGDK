@@ -268,6 +268,8 @@ private:
 public:
 	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
 
+	float GetSecondsBeforeWarning(const ERPCResult Result) const;
+
 	/** The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and break snapshot compatibility. */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
 	uint32 MaxRPCRingBufferSize;

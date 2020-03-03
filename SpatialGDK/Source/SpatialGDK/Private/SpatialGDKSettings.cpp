@@ -192,3 +192,13 @@ bool USpatialGDKSettings::UseRPCRingBuffer() const
 	// RPC Ring buffer are necessary in order to do RPC handover, something legacy RPC does not handle.
 	return bUseRPCRingBuffers || bEnableUnrealLoadBalancer;
 }
+
+float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) const
+{
+	if (const float* CustomSecondsBeforeWarning = RPCQueueWarningTimeouts.Find(Result))
+	{
+		return *CustomSecondsBeforeWarning;
+	}
+
+	return RPCQueueWarningDefaultTimeout;
+}

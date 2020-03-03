@@ -72,13 +72,8 @@ namespace
 
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 		check(SpatialGDKSettings != nullptr);
-		float SecondsBeforeWarning = SpatialGDKSettings->RPCQueueWarningDefaultTimeout;
-		if (const float* CustomSecondsBeforeWarning = SpatialGDKSettings->RPCQueueWarningTimeouts.Find(ErrorInfo.ErrorCode))
-		{
-			SecondsBeforeWarning = *CustomSecondsBeforeWarning;
-		}
 
-		if (TimeDiff.GetTotalSeconds() > SecondsBeforeWarning)
+		if (TimeDiff.GetTotalSeconds() > SpatialGDKSettings->GetSecondsBeforeWarning(ErrorInfo.ErrorCode))
 		{
 			UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 		}
