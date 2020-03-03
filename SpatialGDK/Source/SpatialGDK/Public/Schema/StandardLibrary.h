@@ -42,6 +42,11 @@ struct Coordinates
 
 		return Location;
 	}
+
+	inline bool operator!=(const Coordinates& Right) const
+	{
+		return X != Right.X || Y != Right.Y || Z != Right.Z;
+	}
 };
 
 static const Coordinates DeploymentOrigin{ 0, 0, 0 };
