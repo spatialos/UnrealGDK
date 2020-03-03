@@ -10,22 +10,22 @@ namespace
 {
 	const float DEFAULT_WORKER_REGION_HEIGHT = 30.0f;
 	const float DEFAULT_WORKER_REGION_OPACITY = 0.7f;
-	const FString WORKER_REGION_ACTOR_NAME = TEXT("WorkerRegionPlane");
+	const FString WORKER_REGION_ACTOR_NAME = TEXT("WorkerRegionCuboid");
 	const FName WORKER_REGION_MATERIAL_OPACITY_PARAM = TEXT("Opacity");
 	const FName WORKER_REGION_MATERIAL_COLOR_PARAM = TEXT("Color");
-	const FString PLANE_MESH_PATH = TEXT("/Engine/BasicShapes/Plane.Plane");
+	const FString CUBE_MESH_PATH = TEXT("/Engine/BasicShapes/Cube.Cube");
 }
 
 AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	Mesh = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(this, *WORKER_REGION_ACTOR_NAME);
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneAsset(*PLANE_MESH_PATH);
-	Mesh->SetStaticMesh(PlaneAsset.Object);
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeAsset(*CUBE_MESH_PATH);
+	Mesh->SetStaticMesh(CubeAsset.Object);
 	SetRootComponent(Mesh);
 }
 
-void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D& Extents)
+void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D& Extents, const float VerticalScale)
 {
 	SetHeight(DEFAULT_WORKER_REGION_HEIGHT);
 
@@ -33,7 +33,7 @@ void AWorkerRegion::Init(UMaterial* Material, const FColor& Color, const FBox2D&
 	Mesh->SetMaterial(0, MaterialInstance);
 	SetOpacity(DEFAULT_WORKER_REGION_OPACITY);
 	SetColor(Color);
-	SetExtents(Extents);
+	SetPositionAndScale(Extents, VerticalScale);
 }
 
 void AWorkerRegion::SetHeight(const float Height)
@@ -47,7 +47,7 @@ void AWorkerRegion::SetOpacity(const float Opacity)
 	MaterialInstance->SetScalarParameterValue(WORKER_REGION_MATERIAL_OPACITY_PARAM, Opacity);
 }
 
-void AWorkerRegion::SetExtents(const FBox2D& Extents)
+void AWorkerRegion::SetPositionAndScale(const FBox2D& Extents, const float VerticalScale)
 {
 	const FVector CurrentLocation = GetActorLocation();
 
@@ -62,7 +62,7 @@ void AWorkerRegion::SetExtents(const FBox2D& Extents)
 	const float ScaleY = (MaxY - MinY) / 100;
 
 	SetActorLocation(FVector(CenterX, CenterY,  CurrentLocation.Z));
-	SetActorScale3D(FVector(ScaleX, ScaleY,  1));
+	SetActorScale3D(FVector(ScaleX, ScaleY, VerticalScale));
 }
 
 void AWorkerRegion::SetColor(const FColor& Color)
