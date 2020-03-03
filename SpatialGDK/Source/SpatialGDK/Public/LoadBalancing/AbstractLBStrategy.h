@@ -6,11 +6,10 @@
 #include "SpatialConstants.h"
 
 #include "CoreMinimal.h"
+#include "Schema/Interest.h"
 #include "UObject/NoExportTypes.h"
 
 #include "AbstractLBStrategy.generated.h"
-
-class USpatialNetDriver;
 
 /**
  * This class can be used to define a load balancing strategy.
@@ -33,7 +32,7 @@ class SPATIALGDK_API UAbstractLBStrategy : public UObject
 public:
 	UAbstractLBStrategy();
 
-	virtual void Init(const USpatialNetDriver* InNetDriver) {}
+	virtual void Init() {}
 
 	bool IsReady() const { return LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID; }
 
@@ -43,6 +42,16 @@ public:
 
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const { return false; }
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;)
+
+	/**
+	* Get the query constraints required by this worker based on the load balancing strategy used.
+	*/
+	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const PURE_VIRTUAL(UAbstractLBStrategy::GetWorkerInterestQueryConstraint, return {};)
+
+	/**
+	* Get a logical worker entity position for this strategy. For example, the centre of a grid square in a grid-based strategy. Optional- otherwise returns the origin.
+	*/
+	virtual FVector GetWorkerEntityPosition() const { return FVector::ZeroVector; }
 
 protected:
 

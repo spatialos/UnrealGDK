@@ -76,13 +76,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	WorkerAttributeSet WorkerAttributeOrSpecificWorker{ AclAuthoritativeWorkerType.ToString() };
 	VirtualWorkerId IntendedVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
-	// Add Zoning Attribute if we are using the load balancer.
+	// Add Load Balancer Attribute if we are using the load balancer.
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		WorkerAttributeSet ZoningAttributeSet = { SpatialConstants::ZoningAttribute };
-		AnyServerRequirementSet.Add(ZoningAttributeSet);
-		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
-		AnyServerOrOwningClientRequirementSet.Add(ZoningAttributeSet);
+		AnyServerRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
+		AnyServerOrClientRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
+		AnyServerOrOwningClientRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
 
 		const UAbstractLBStrategy* LBStrategy = NetDriver->LoadBalanceStrategy;
 		check(LBStrategy != nullptr);
@@ -142,8 +141,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		const WorkerAttributeSet ACLAttributeSet = { SpatialConstants::ZoningAttribute };
-		const WorkerRequirementSet ACLRequirementSet = { ACLAttributeSet };
+		const WorkerRequirementSet ACLRequirementSet = { SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName) };
 		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ACLRequirementSet);
 		ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	}
@@ -432,9 +430,8 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
-		const WorkerAttributeSet ZoningAttributeSet = { SpatialConstants::ZoningAttribute };
-		AnyServerRequirementSet.Add(ZoningAttributeSet);
-		AnyServerOrClientRequirementSet.Add(ZoningAttributeSet);
+		AnyServerRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
+		AnyServerOrClientRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->LoadBalancingWorkerType.WorkerTypeName));
 	}
 
 	WorkerRequirementSet ReadAcl;
