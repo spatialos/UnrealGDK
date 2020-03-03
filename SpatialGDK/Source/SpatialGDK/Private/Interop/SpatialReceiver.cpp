@@ -172,6 +172,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		{
 			LoadBalanceEnforcer->OnLoadBalancingComponentAdded(Op);
 		}
+		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
 		if(NetDriver->IsServer())
 		{

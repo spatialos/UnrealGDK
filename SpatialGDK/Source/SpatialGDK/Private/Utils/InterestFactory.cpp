@@ -325,7 +325,11 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	// TODO : Migrate the LoadBalancer to use the checked-out worker components instead of making a query ?
 
 	ServerQuery = Query();
-	if (SpatialGDKSettings->bEnableResultTypes)
+	if (!SpatialGDKSettings->bEnableResultTypes)
+	{
+		ServerQuery.FullSnapshotResult = true;
+	}
+	else
 	{
 		ServerQuery.ResultComponentId.Add(SpatialConstants::WORKER_COMPONENT_ID);
 	}
