@@ -233,7 +233,7 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 			{
 				if (!Actor->bNetLoadOnNonAuthServer)
 				{
-					Actor->Destroy();
+					Actor->Destroy(true);
 				}
 				else
 				{
