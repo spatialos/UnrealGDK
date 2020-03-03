@@ -431,7 +431,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		{
 			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->LoadBalanceStrategy);
 		}
-		LoadBalanceStrategy->Init(this);
+		LoadBalanceStrategy->Init();
 	}
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
@@ -1584,9 +1584,9 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (LoadBalanceEnforcer.IsValid())
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
-			for(const auto& Elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
+			for(const auto& AclAssignmentRequest : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
 			{
-				Sender->SetAclWriteAuthority(Elem.EntityId, Elem.OwningWorkerId);
+				Sender->SetAclWriteAuthority(AclAssignmentRequest);
 			}
 		}
 	}
@@ -2258,6 +2258,12 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 
 		if (bIsReadyToStart)
 		{
+			if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+			{
+				// We know at this point that we have all the information to set the worker's interest query.
+				Sender->UpdateServerWorkerEntityInterestAndPosition();
+			}
+
 			// We've found and dispatched all ops we need for startup,
 			// trigger BeginPlay() on the GSM and process the queued ops.
 			// Note that FindAndDispatchStartupOps() will have notified the Dispatcher
