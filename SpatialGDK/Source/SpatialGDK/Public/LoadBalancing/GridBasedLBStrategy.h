@@ -36,12 +36,16 @@ public:
 	using LBStrategyRegions = TArray<TPair<VirtualWorkerId, FBox2D>>;
 
 /* UAbstractLBStrategy Interface */
-	virtual void Init(const USpatialNetDriver* InNetDriver) override;
+	virtual void Init() override;
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;
 
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
+
+	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const override;
+
+	virtual FVector GetWorkerEntityPosition() const override;
 /* End UAbstractLBStrategy Interface */
 
 	LBStrategyRegions GetLBStrategyRegions() const;
@@ -58,6 +62,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")
 	float WorldHeight;
+
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0"), Category = "Grid Based Load Balancing")
+	float InterestBorder;
 
 private:
 

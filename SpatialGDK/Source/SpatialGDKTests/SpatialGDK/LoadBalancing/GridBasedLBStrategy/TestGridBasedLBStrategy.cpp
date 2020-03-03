@@ -2,7 +2,7 @@
 
 #include "TestGridBasedLBStrategy.h"
 
-UGridBasedLBStrategy* UTestGridBasedLBStrategy::Create(uint32 InRows, uint32 InCols, float WorldWidth, float WorldHeight)
+UGridBasedLBStrategy* UTestGridBasedLBStrategy::Create(uint32 InRows, uint32 InCols, float WorldWidth, float WorldHeight, float InterestBorder)
 {
 	UTestGridBasedLBStrategy* Strat = NewObject<UTestGridBasedLBStrategy>();
 
@@ -11,6 +11,8 @@ UGridBasedLBStrategy* UTestGridBasedLBStrategy::Create(uint32 InRows, uint32 InC
 
 	Strat->WorldWidth = WorldWidth;
 	Strat->WorldHeight = WorldHeight;
+
+	Strat->InterestBorder = InterestBorder;
 
 	return Strat;
 }

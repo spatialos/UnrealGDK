@@ -15,12 +15,13 @@ UGridBasedLBStrategy::UGridBasedLBStrategy()
 	, Cols(1)
 	, WorldWidth(10000.f)
 	, WorldHeight(10000.f)
+	, InterestBorder(0.f)
 {
 }
 
-void UGridBasedLBStrategy::Init(const USpatialNetDriver* InNetDriver)
+void UGridBasedLBStrategy::Init()
 {
-	Super::Init(InNetDriver);
+	Super::Init();
 
 	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("GridBasedLBStrategy initialized with Rows = %d and Cols = %d."), Rows, Cols);
 
@@ -98,6 +99,27 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 	}
 
 	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+}
+
+SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstraint() const
+{
+	// For a grid-based strategy, the interest area is the cell that the worker is authoritative over plus some border region.
+	check(IsReady());
+
+	const FBox2D Interest2D = WorkerCells[LocalVirtualWorkerId - 1].ExpandBy(InterestBorder);
+	const FVector Min = FVector{ Interest2D.Min.X, Interest2D.Min.Y, -FLT_MAX };
+	const FVector Max = FVector{ Interest2D.Max.X, Interest2D.Max.Y, FLT_MAX };
+	const FBox Interest3D = FBox{ Min, Max };
+	SpatialGDK::QueryConstraint Constraint;
+	Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Interest3D.GetCenter()), SpatialGDK::EdgeLength::FromFVector(2 * Interest3D.GetExtent()) };
+	return Constraint;
+}
+
+FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
+{
+	check(IsReady());
+	const FVector2D Centre = WorkerCells[LocalVirtualWorkerId - 1].GetCenter();
+	return FVector{ Centre.X, Centre.Y, 0.f };
 }
 
 bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location)
