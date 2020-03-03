@@ -2,17 +2,18 @@
 
 #include "Utils/InterestFactory.h"
 
+#include "EngineClasses/Components/ActorInterestComponent.h"
+#include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
+#include "SpatialGDKSettings.h"
+#include "SpatialConstants.h"
+#include "Utils/CheckoutRadiusConstraintUtils.h"
+
 #include "Engine/World.h"
 #include "Engine/Classes/GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
-#include "UObject/UObjectIterator.h"
-#include "Utils/CheckoutRadiusConstraintUtils.h"
-
-#include "EngineClasses/Components/ActorInterestComponent.h"
-#include "EngineClasses/SpatialNetConnection.h"
-#include "EngineClasses/SpatialPackageMapClient.h"
-#include "SpatialGDKSettings.h"
-#include "SpatialConstants.h"
 #include "UObject/UObjectIterator.h"
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
@@ -257,44 +258,66 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
 	return CreateInterest().CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest()
+Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy)
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	Interest ServerInterest;
+	ComponentInterest ServerComponentInterest;
+	Query ServerQuery;
 	QueryConstraint Constraint;
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialGDKSettings->bEnableServerQBI)
+	// Set the result type of the query
+	if (SpatialGDKSettings->bEnableResultTypes)
 	{
-		UE_LOG(LogInterestFactory, Warning, TEXT("For performance reasons, it's recommended to disable server QBI"));
+		ServerQuery.ResultComponentId = ServerNonAuthInterestResultType;
+	}
+	else
+	{
+		ServerQuery.FullSnapshotResult = true;
 	}
 
-	if (!SpatialGDKSettings->bEnableServerQBI && SpatialGDKSettings->bEnableOffloading)
+	if (SpatialGDKSettings->bEnableOffloading)
 	{
 		// In offloading scenarios, hijack the server worker entity to ensure each server has interest in all entities
 		Constraint.ComponentConstraint = SpatialConstants::POSITION_COMPONENT_ID;
+		ServerQuery.Constraint = Constraint;
+
+		// No need to add any further interest as we are already interested in everything
+		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+		return ServerInterest;
 	}
-	else
+
+	// If we aren't offloading, the server gets more granular interest.
+
+	// Ensure server worker receives always relevant entities
+	QueryConstraint AlwaysRelevantConstraint = CreateAlwaysRelevantConstraint();
+
+	Constraint = AlwaysRelevantConstraint;
+
+	// If we are using the unreal load balancer, we also add the server worker interest defined by the load balancing strategy.
+	if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
 	{
-		// Ensure server worker receives always relevant entities
-		Constraint = CreateAlwaysRelevantConstraint();
+		check(LBStrategy != nullptr);
+		
+		// The load balancer won't be ready when the worker initially connects to SpatialOS. It needs
+		// to wait for the virtual worker mappings to be replicated.
+		// This function will be called again when that is the case in order to update the interest on the server entity.
+		if (LBStrategy->IsReady())
+		{
+			QueryConstraint LoadBalancerConstraint = LBStrategy->GetWorkerInterestQueryConstraint();
+
+			// Rather than adding the load balancer constraint at the end, reorder the constraints to have the large spatial
+			// constraint at the front. This is more likely to be efficient.
+			QueryConstraint NewConstraint;
+			NewConstraint.OrConstraint.Add(LoadBalancerConstraint);
+			NewConstraint.OrConstraint.Add(AlwaysRelevantConstraint);
+			Constraint = NewConstraint;
+		}
 	}
 
-	Query Query;
-	Query.Constraint = Constraint;
-	if (SpatialGDKSettings->bEnableResultTypes)
-	{
-		Query.ResultComponentId = ServerNonAuthInterestResultType;
-	}
-	else
-	{
-		Query.FullSnapshotResult = true;
-	}
-
-	ComponentInterest Queries;
-	Queries.Queries.Add(Query);
-
-	Interest ServerInterest;
-	ServerInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, Queries);
-
+	ServerQuery.Constraint = Constraint;
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
 	return ServerInterest;
 }
 
@@ -309,49 +332,19 @@ Interest InterestFactory::CreateInterest() const
 		AddPlayerControllerActorInterest(ResultInterest);
 	}
 
-	if (Actor->GetNetConnection() != nullptr && Settings->bEnableResultTypes)
-	{
-		// Clients need to see owner only and server RPC components on entities they have authority over
-		AddClientSelfInterest(ResultInterest);
-	}
-
-	if (Settings->bEnableServerQBI)
-	{
-		// If we have server QBI, every actor needs a query for the server
-		// TODO(jacques): Use worker interest instead (UNR-2656)
-		AddActorInterest(ResultInterest);
-	}
-
 	if (Settings->bEnableResultTypes)
 	{
+		if (Actor->GetNetConnection() != nullptr)
+		{
+			// Clients need to see owner only and server RPC components on entities they have authority over
+			AddClientSelfInterest(ResultInterest);
+		}
+
 		// Every actor needs a self query for the server to the client RPC endpoint
 		AddServerSelfInterest(ResultInterest);
 	}
 
 	return ResultInterest;
-}
-
-void InterestFactory::AddActorInterest(Interest& OutInterest) const
-{
-	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints();
-
-	if (!SystemConstraints.IsValid())
-	{
-		return;
-	}
-
-	Query NewQuery;
-	NewQuery.Constraint = SystemConstraints;
-	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
-	{
-		NewQuery.ResultComponentId = ServerNonAuthInterestResultType;
-	}
-	else
-	{
-		NewQuery.FullSnapshotResult = true;
-	}
-
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, NewQuery);
 }
 
 void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) const
