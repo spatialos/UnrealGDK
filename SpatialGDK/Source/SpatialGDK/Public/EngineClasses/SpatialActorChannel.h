@@ -164,7 +164,32 @@ public:
 	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
 	inline bool IsAuthoritativeClient() const
 	{
-		return bIsAuthClient;
+		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
+		{
+			return bIsAuthClient;
+		}
+
+		// If we aren't using result types, we have to actually look at the ACL to see if we should be authoritative or not to guess if we are going to receive authority
+		// in order to send dynamic interest overrides correctly for this client. If we don't do this there's a good chance we will see that there is no server RPC endpoint
+		// on this entity when we try to send any RPCs immediately after checking out the entity, which can lead to inconsistent state.
+		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
+		if (const SpatialGDK::EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId))
+		{
+			if (const WorkerRequirementSet* WorkerRequirementsSet = EntityACL->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))) {
+				for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
+				{
+					for (const FString& Attribute : AttributeSet)
+					{
+						if (WorkerAttributes.Contains(Attribute))
+						{
+							return true;
+						}
+					}
+				}
+			}
+		}
+	
+		return false;
 	}
 
 	inline void OnServerAuthorityChange(const Worker_AuthorityChangeOp& Op)
