@@ -32,6 +32,7 @@ public class SpatialGDK : ModuleRules
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
+                "SpatialGDKCommon",
                 "Core",
                 "CoreUObject",
                 "Engine",

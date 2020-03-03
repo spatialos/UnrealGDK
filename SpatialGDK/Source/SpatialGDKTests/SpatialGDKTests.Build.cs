@@ -18,6 +18,7 @@ public class SpatialGDKTests : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[] {
 				"SpatialGDK",
+				"SpatialGDKCommon",
 				"SpatialGDKEditor",
 				"SpatialGDKServices",
 				"Core",
