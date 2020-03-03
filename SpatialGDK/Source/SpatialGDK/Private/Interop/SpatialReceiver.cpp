@@ -19,6 +19,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
+#include "Schema/AuthorityIntent.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/SpawnData.h"
@@ -36,7 +37,6 @@ DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel, STATGROUP_SpatialNet);
 
 DECLARE_CYCLE_STAT(TEXT("Receiver LeaveCritSection"), STAT_ReceiverLeaveCritSection, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("Receiver AddEntity"), STAT_ReceiverAddEntity, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver RemoveEntity"), STAT_ReceiverRemoveEntity, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver AddComponent"), STAT_ReceiverAddComponent, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver ComponentUpdate"), STAT_ReceiverComponentUpdate, STATGROUP_SpatialNet);
@@ -98,7 +98,7 @@ void USpatialReceiver::LeaveCriticalSection()
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Leaving critical section."));
 	check(bInCriticalSection);
 
-	for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
+	for (Worker_EntityId& PendingAddEntity : PendingAddActors)
 	{
 		ReceiveActor(PendingAddEntity);
 		if (!IsEntityWaitingForAsyncLoad(PendingAddEntity))
@@ -114,19 +114,14 @@ void USpatialReceiver::LeaveCriticalSection()
 
 	// Mark that we've left the critical section.
 	bInCriticalSection = false;
-	PendingAddEntities.Empty();
+	PendingAddActors.Empty();
 	PendingAddComponents.Empty();
 	PendingAuthorityChanges.Empty();
 }
 
 void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
 {
-	SCOPE_CYCLE_COUNTER(STAT_ReceiverAddEntity);
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddEntity: %lld"), Op.entity_id);
-
-	check(bInCriticalSection);
-
-	PendingAddEntities.Emplace(Op.entity_id);
 }
 
 void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
@@ -143,14 +138,12 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 
 	switch (Op.data.component_id)
 	{
-	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 	case SpatialConstants::METADATA_COMPONENT_ID:
 	case SpatialConstants::POSITION_COMPONENT_ID:
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
-	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
@@ -162,11 +155,23 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
+		return;
+	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
+		// The unreal metadata component is used to indicate when an actor needs to be created from the entity.
+		// This means we need to be inside a critical section, otherwise we may not have all the requisite information at the point of creating the actor.
+		check(bInCriticalSection);
+		PendingAddActors.Emplace(Op.entity_id);
+		return;
+	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		if (LoadBalanceEnforcer != nullptr)
+		{
+			LoadBalanceEnforcer->OnLoadBalancingComponentAdded(Op);
+		}
 		return;
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 		// The RPC service needs to be informed when a multi-cast RPC component is added.
@@ -231,23 +236,39 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverRemoveEntity);
-	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
+
+	if (LoadBalanceEnforcer != nullptr)
 	{
-		// Pretend we never saw this entity.
-		EntitiesWaitingForAsyncLoad.Remove(Op.entity_id);
-		return;
+		LoadBalanceEnforcer->OnEntityRemoved(Op);
 	}
 
-	RemoveActor(Op.entity_id);
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
 }
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
+	if (Op.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID)
+	{
+		if (IsEntityWaitingForAsyncLoad(Op.entity_id))
+		{
+			// Pretend we never saw this actor.
+			EntitiesWaitingForAsyncLoad.Remove(Op.entity_id);
+		}
+		else
+		{
+			RemoveActor(Op.entity_id);
+		}
+	}
+
 	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{
 		// If this is a multi-cast RPC component, the RPC service should be informed to handle it.
 		RPCService->OnRemoveMulticastRPCComponentForEntity(Op.entity_id);
+	}
+
+	if ((Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID || Op.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) && LoadBalanceEnforcer != nullptr)
+	{
+		LoadBalanceEnforcer->OnLoadBalancingComponentRemoved(Op);
 	}
 
 	// We are queuing here because if an Actor is removed from your view, remove component ops will be
@@ -343,6 +364,15 @@ void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 
 void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
+	// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
+	// This way systems that depend on having non-stale state can function correctly.
+	StaticComponentView->OnAuthorityChange(Op);
+
+	if (Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID && LoadBalanceEnforcer != nullptr)
+	{
+		LoadBalanceEnforcer->OnAclAuthorityChanged(Op);
+	}
+
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverAuthChange);
 	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
 	{
@@ -352,6 +382,8 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 
 	if (bInCriticalSection)
 	{
+		// The actor receiving flow requires authority to be handled after all components have been received, so buffer those if we
+		// are in a critical section to be handled later.
 		PendingAuthorityChanges.Add(Op);
 		return;
 	}
@@ -395,8 +427,6 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 
 void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 {
-	StaticComponentView->OnAuthorityChange(Op);
-
 	if (GlobalStateManager->HandlesComponent(Op.component_id))
 	{
 		GlobalStateManager->AuthorityChanged(Op);
@@ -411,11 +441,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		NetDriver->VirtualWorkerTranslationManager->AuthorityChanged(Op);
 	}
 
-	if (LoadBalanceEnforcer != nullptr)
-	{
-		LoadBalanceEnforcer->AuthorityChanged(Op);
-	}
-
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
 		NetDriver->SpatialDebugger->ActorAuthorityChanged(Op);
@@ -425,6 +450,15 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 	if (Actor == nullptr)
 	{
 		return;
+	}
+
+	if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
+	{
+		NetDriver->GetActorChannelByEntityId(Op.entity_id)->OnServerAuthorityChange(Op);
+	}
+	else if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+	{
+		NetDriver->GetActorChannelByEntityId(Op.entity_id)->OnClientAuthorityChange(Op);
 	}
 
 	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY
@@ -634,18 +668,15 @@ bool USpatialReceiver::IsReceivedEntityTornOff(Worker_EntityId EntityId)
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverReceiveActor);
-	
+
 	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
 	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
 
 	SpawnData* SpawnDataComp = StaticComponentView->GetComponentData<SpawnData>(EntityId);
 	UnrealMetadata* UnrealMetadataComp = StaticComponentView->GetComponentData<UnrealMetadata>(EntityId);
 
-	if (UnrealMetadataComp == nullptr)
-	{
-		// Not an Unreal entity
-		return;
-	}
+	// This function should only ever be called if we have received an unreal metadata component.
+	check(UnrealMetadataComp != nullptr);
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -2408,7 +2439,7 @@ void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* 
 			CriticalSectionSaveState CriticalSectionState(*this);
 
 			EntityWaitingForAsyncLoad AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindAndRemoveChecked(Entity);
-			PendingAddEntities.Add(Entity);
+			PendingAddActors.Add(Entity);
 			PendingAddComponents = MoveTemp(AsyncLoadEntity.InitialPendingAddComponents);
 			LeaveCriticalSection();
 
@@ -2541,7 +2572,7 @@ void USpatialReceiver::HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op)
 		ProcessRemoveComponent(Op.Op.op.remove_component);
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		OnAuthorityChange(Op.Op.op.authority_change);
+		HandleActorAuthority(Op.Op.op.authority_change);
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
 		OnComponentUpdate(Op.Op.op.component_update);
@@ -2558,10 +2589,10 @@ USpatialReceiver::CriticalSectionSaveState::CriticalSectionSaveState(USpatialRec
 {
 	if (bInCriticalSection)
 	{
-		PendingAddEntities = MoveTemp(Receiver.PendingAddEntities);
+		PendingAddActors = MoveTemp(Receiver.PendingAddActors);
 		PendingAuthorityChanges = MoveTemp(Receiver.PendingAuthorityChanges);
 		PendingAddComponents = MoveTemp(Receiver.PendingAddComponents);
-		Receiver.PendingAddEntities.Empty();
+		Receiver.PendingAddActors.Empty();
 		Receiver.PendingAuthorityChanges.Empty();
 		Receiver.PendingAddComponents.Empty();
 	}
@@ -2572,7 +2603,7 @@ USpatialReceiver::CriticalSectionSaveState::~CriticalSectionSaveState()
 {
 	if (bInCriticalSection)
 	{
-		Receiver.PendingAddEntities = MoveTemp(PendingAddEntities);
+		Receiver.PendingAddActors = MoveTemp(PendingAddActors);
 		Receiver.PendingAuthorityChanges = MoveTemp(PendingAuthorityChanges);
 		Receiver.PendingAddComponents = MoveTemp(PendingAddComponents);
 	}

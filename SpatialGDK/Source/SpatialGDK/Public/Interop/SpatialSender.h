@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialRPCService.h"
@@ -75,7 +76,7 @@ public:
 	void SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
-	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& DestinationWorkerId);
+	void SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request);
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	ERPCResult SendRPCInternal(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload);
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response);

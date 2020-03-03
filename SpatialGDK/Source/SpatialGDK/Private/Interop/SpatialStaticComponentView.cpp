@@ -30,7 +30,6 @@ Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId Entit
 	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
-// TODO UNR-640 - Need to fix for authority loss imminent
 bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
 {
 	return GetAuthority(EntityId, ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
