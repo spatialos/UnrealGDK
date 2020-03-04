@@ -56,7 +56,7 @@ private:
 	TMap<float, TArray<QueryConstraint>> GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
 	void GetActorUserDefinedQueryConstraints(const AActor* InActor, TMap<float, TArray<QueryConstraint>>& OutFrequencyToConstraints, bool bRecurseChildren) const;
 
-	TArray<Query> GetNetCullDistanceFrequencyQueries() const;
+	TArray<Query> GetNetCullDistanceFrequencyQueries(const QueryConstraint LevelConstraint) const;
 
 	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd);
 

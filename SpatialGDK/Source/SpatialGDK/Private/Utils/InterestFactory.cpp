@@ -411,7 +411,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 	// They are added as separate queries for the same reason- different frequencies.
 	if (SpatialGDKSettings->bEnableNetCullDistanceFrequency)
 	{
-		for (const auto& FrequencyQuery : GetNetCullDistanceFrequencyQueries())
+		for (const auto& FrequencyQuery : GetNetCullDistanceFrequencyQueries(LevelConstraints))
 		{
 			AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, FrequencyQuery);
 		}
@@ -555,7 +555,7 @@ void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor,
 	}
 }
 
-TArray<Query> InterestFactory::GetNetCullDistanceFrequencyQueries() const
+TArray<Query> InterestFactory::GetNetCullDistanceFrequencyQueries(const QueryConstraint LevelConstraint) const
 {
 	TArray<Query> FrequencyQueries;
 
@@ -567,14 +567,14 @@ TArray<Query> InterestFactory::GetNetCullDistanceFrequencyQueries() const
 
 		NewQuery.Constraint.AndConstraint.Add(RadiusCheckoutConstraints.Constraint);
 
-		if (LevelConstraints.IsValid())
+		if (LevelConstraint.IsValid())
 		{
-			NewQuery.Constraint.AndConstraint.Add(LevelConstraints);
+			NewQuery.Constraint.AndConstraint.Add(LevelConstraint);
 		}
 
 		NewQuery.Frequency = RadiusCheckoutConstraints.Frequency;
 
-		if (SpatialGDKSettings->bEnableResultTypes)
+		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 		{
 			NewQuery.ResultComponentId = ClientNonAuthInterestResultType;
 		}
@@ -583,7 +583,7 @@ TArray<Query> InterestFactory::GetNetCullDistanceFrequencyQueries() const
 			NewQuery.FullSnapshotResult = true;
 		}
 
-		FrequencyQueries.Add(FrequencyQueries);
+		FrequencyQueries.Add(NewQuery);
 	}
 
 	return FrequencyQueries;
