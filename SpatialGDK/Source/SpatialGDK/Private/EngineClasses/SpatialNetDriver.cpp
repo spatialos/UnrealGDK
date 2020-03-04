@@ -681,25 +681,18 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 {
 	// Callback got called on a World that's not associated with this NetDriver.
 	// Don't do anything.
-	if (OwningWorld != World)
+	if (OwningWorld != World
+		|| !OwningWorld->IsServer()
+		|| GlobalStateManager == nullptr
+		|| !GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
 	{
+		// If the world isn't our owning world, we are a client, or we loaded the levels
+		// before connecting to Spatial, or the load balancer is disabled, we exit early
 		return;
 	}
 
-	// Necessary for levels loaded before connecting to Spatial
-	if (GlobalStateManager == nullptr)
-	{
-		return;
-	}
-
-	// If load balancing is enabled and lb strategy says we should have authority
+	// If load balancing is enabled and LB strategy says we should have authority
 	// over a loaded level Actor then also set Role_Authority on Actors in the sublevel.
-	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
-	if (!bLoadBalancingEnabled)
-	{
-		// If load balancing is disabled then exit early.
-		return;
-	}
 
 	for (auto Actor : LoadedLevel->Actors)
 	{
