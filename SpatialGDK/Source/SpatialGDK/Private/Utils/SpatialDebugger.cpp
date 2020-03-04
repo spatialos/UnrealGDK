@@ -159,36 +159,44 @@ void ASpatialDebugger::OnAuthorityGained()
 	}
 }
 
+void ASpatialDebugger::CreateWorkerRegions()
+{
+	UMaterial* WorkerRegionMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_REGION_MATERIAL);
+	if (WorkerRegionMaterial == nullptr)
+	{
+		UE_LOG(LogSpatialDebugger, Error, TEXT("Worker regions were not rendered. Could not find default material: %s"),
+			*DEFAULT_WORKER_REGION_MATERIAL);
+		return;
+	}
+
+	// Create new actors for all new worker regions
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.bNoFail = true;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
+	{
+		AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
+		WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionData.Extents, WorkerRegionVerticalScale);
+		WorkerRegion->SetActorEnableCollision(false);
+	}
+}
+
+void ASpatialDebugger::DestroyWorkerRegions()
+{
+	TArray<AActor*> WorkerRegionsToRemove;
+	UGameplayStatics::GetAllActorsOfClass(this, AWorkerRegion::StaticClass(), WorkerRegionsToRemove);
+	for (AActor* WorkerRegion : WorkerRegionsToRemove)
+	{
+		WorkerRegion->Destroy();
+	}
+}
+
 void ASpatialDebugger::OnRep_SetWorkerRegions()
 {
-	if (NetDriver != nullptr && !NetDriver->IsServer())
+	if (NetDriver != nullptr && !NetDriver->IsServer() && DrawDebugDelegateHandle.IsValid() && bShowWorkerRegions)
 	{
-		UMaterial* WorkerRegionMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WORKER_REGION_MATERIAL);
-		if (WorkerRegionMaterial == nullptr)
-		{
-			UE_LOG(LogSpatialDebugger, Error, TEXT("Worker regions were not rendered. Could not find default material: %s"),
-				*DEFAULT_WORKER_REGION_MATERIAL);
-			return;
-		}
-
-		// Naively delete all old worker regions
-		TArray<AActor*> OldWorkerRegions;
-		UGameplayStatics::GetAllActorsOfClass(this, AWorkerRegion::StaticClass(), OldWorkerRegions);
-		for (AActor* OldWorkerRegion : OldWorkerRegions)
-		{
-			OldWorkerRegion->Destroy();
-		}
-
-		// Create new actors for all new worker regions
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.bNoFail = true;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
-		{
-			AWorkerRegion* WorkerRegion = GetWorld()->SpawnActor<AWorkerRegion>(SpawnParams);
-			WorkerRegion->Init(WorkerRegionMaterial, WorkerRegionData.Color, WorkerRegionData.Extents);
-			WorkerRegion->SetActorEnableCollision(false);
-		}
+		DestroyWorkerRegions();
+		CreateWorkerRegions();
 	}
 }
 
@@ -210,6 +218,7 @@ void ASpatialDebugger::Destroyed()
 	if (DrawDebugDelegateHandle.IsValid())
 	{
 		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
+		DestroyWorkerRegions();
 	}
 
 	Super::Destroyed();
@@ -495,9 +504,14 @@ void ASpatialDebugger::SpatialToggleDebugger()
 	{
 		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
 		DrawDebugDelegateHandle.Reset();
+		DestroyWorkerRegions();
 	}
 	else
 	{
 		DrawDebugDelegateHandle = UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialDebugger::DrawDebug));
+		if (bShowWorkerRegions)
+		{
+			CreateWorkerRegions();
+		}
 	}
 }
