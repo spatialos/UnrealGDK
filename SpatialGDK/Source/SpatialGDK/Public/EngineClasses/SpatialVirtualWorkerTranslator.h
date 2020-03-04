@@ -35,6 +35,7 @@ public:
 	// TODO(harkness): Do we want to copy this data? Otherwise it's only guaranteed to be valid until
 	// the next mapping update.
 	const PhysicalWorkerName* GetPhysicalWorkerForVirtualWorker(VirtualWorkerId Id) const;
+	Worker_EntityId GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const;
 
 	// On receiving a version of the translation state, apply that to the internal mapping.
 	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
@@ -42,7 +43,7 @@ public:
 private:
 	TWeakObjectPtr<UAbstractLBStrategy> LoadBalanceStrategy;
 
-	TMap<VirtualWorkerId, PhysicalWorkerName> VirtualToPhysicalWorkerMapping;
+	TMap<VirtualWorkerId, TPair<PhysicalWorkerName, Worker_EntityId>> VirtualToPhysicalWorkerMapping;
 
 	bool bIsReady;
 
@@ -54,5 +55,5 @@ private:
 	void ApplyMappingFromSchema(Schema_Object* Object);
 	bool IsValidMapping(Schema_Object* Object) const;
 
-	void UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName Name);
+	void UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName Name, Worker_EntityId ServerWorkerEntityId);
 };

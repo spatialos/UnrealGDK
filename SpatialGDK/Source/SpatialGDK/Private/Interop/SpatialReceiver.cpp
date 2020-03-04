@@ -1665,16 +1665,15 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
 	{
-		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
-
-		// Op.caller_attribute_set has two attributes.
-		// 1. The attribute of the worker type
-		// 2. The attribute of the specific worker that sent the request
-		// We want to give authority to the specific worker, so we grab the second element from the attribute set.
-		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Payload, Op.caller_attribute_set.attributes[1], Op.request_id);
+		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequestOnServer(Op);
 		return;
 	}
-	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
+	else if (Op.request.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID && CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
+	{
+		NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(Op);
+		return;
+	}
+	else if(Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
 		Sender->ClearRPCsOnEntityCreation(Op.entity_id);
 		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
@@ -1742,7 +1741,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_CommandResponseOp& Op)
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandResponse);
 	if (Op.response.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
 	{
-		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponse(Op);
+		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponseOnClient(Op);
 		return;
 	}
 
@@ -2103,12 +2102,10 @@ bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel& Channel)
 	return false;
 }
 
-
 void USpatialReceiver::ClearPendingRPCs(Worker_EntityId EntityId)
 {
 	IncomingRPCs.DropForEntity(EntityId);
 }
-
 
 void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload InPayload)
 {

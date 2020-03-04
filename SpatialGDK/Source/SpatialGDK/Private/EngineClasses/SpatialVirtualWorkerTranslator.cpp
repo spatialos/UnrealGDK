@@ -17,7 +17,22 @@ SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrate
 
 const PhysicalWorkerName* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVirtualWorker(VirtualWorkerId Id) const
 {
-	return VirtualToPhysicalWorkerMapping.Find(Id);
+	if (const TPair<PhysicalWorkerName, Worker_EntityId>* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
+	{
+		return &PhysicalWorkerInfo->Get<0>();
+	}
+
+	return nullptr;
+}
+
+Worker_EntityId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const
+{
+	if (const TPair<PhysicalWorkerName, Worker_EntityId>* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
+	{
+		return PhysicalWorkerInfo->Get<1>();
+	}
+
+	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
 void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject)
@@ -29,7 +44,7 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 
 	for (const auto& Entry : VirtualToPhysicalWorkerMapping)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Translator assignment: %d - %s"), Entry.Key, *(Entry.Value));
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), Entry.Key, *(Entry.Value.Get<0>()), Entry.Value.Get<1>());
 	}
 }
 
@@ -81,15 +96,16 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 		Schema_Object* MappingObject = Schema_IndexObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);
 		VirtualWorkerId VirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
 		PhysicalWorkerName PhysicalWorkerName = SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME);
+		Worker_EntityId ServerWorkerEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
 
 		// Insert each into the provided map.
-		UpdateMapping(VirtualWorkerId, PhysicalWorkerName);
+		UpdateMapping(VirtualWorkerId, PhysicalWorkerName, ServerWorkerEntityId);
 	}
 }
 
-void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName Name)
+void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName Name, Worker_EntityId ServerWorkerEntityId)
 {
-	VirtualToPhysicalWorkerMapping.Add(Id, Name);
+	VirtualToPhysicalWorkerMapping.Add(Id, MakeTuple(Name, ServerWorkerEntityId));
 
 	if (LocalVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID && Name == LocalPhysicalWorkerName)
 	{

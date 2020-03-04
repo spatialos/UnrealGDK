@@ -59,7 +59,8 @@ void SpatialVirtualWorkerTranslationManager::WriteMappingToSchema(Schema_Object*
 	{
 		Schema_Object* EntryObject = Schema_AddObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 		Schema_AddUint32(EntryObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, Entry.Key);
-		SpatialGDK::AddStringToSchema(EntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, Entry.Value);
+		SpatialGDK::AddStringToSchema(EntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, Entry.Value.Get<0>());
+		Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID, Entry.Value.Get<1>());
 	}
 }
 
@@ -95,7 +96,7 @@ void SpatialVirtualWorkerTranslationManager::ConstructVirtualWorkerMappingFromQu
 				{
 					// TODO(zoning): Currently, this only works if server workers never die. Once we want to support replacing
 					// workers, this will need to process UnassignWorker before processing AssignWorker.
-					AssignWorker(SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID));
+					AssignWorker(SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID), Entity.entity_id);
 				}
 			}
 		}
@@ -187,7 +188,7 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	}
 }
 
-void SpatialVirtualWorkerTranslationManager::AssignWorker(const PhysicalWorkerName& Name)
+void SpatialVirtualWorkerTranslationManager::AssignWorker(const PhysicalWorkerName& Name, const Worker_EntityId& ServerWorkerEntityId)
 {
 	if (PhysicalToVirtualWorkerMapping.Contains(Name))
 	{
@@ -198,7 +199,7 @@ void SpatialVirtualWorkerTranslationManager::AssignWorker(const PhysicalWorkerNa
 	VirtualWorkerId Id;
 	UnassignedVirtualWorkers.Dequeue(Id);
 
-	VirtualToPhysicalWorkerMapping.Add(Id, Name);
+	VirtualToPhysicalWorkerMapping.Add(Id, MakeTuple(Name, ServerWorkerEntityId));
 	PhysicalToVirtualWorkerMapping.Add(Name, Id);
 
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Assigned VirtualWorker %d to simulate on Worker %s"), Id, *Name);

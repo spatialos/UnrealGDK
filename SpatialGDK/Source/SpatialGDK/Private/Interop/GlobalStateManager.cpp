@@ -473,14 +473,8 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	// Set the map URL on the GSM.
-	AddStringToSchema(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID, NetDriver->GetWorld()->URL.Map);
-
 	// Set the AcceptingPlayers state on the GSM
 	Schema_AddBool(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID, static_cast<uint8_t>(bInAcceptingPlayers));
-
-	// Set the schema hash for connecting workers to check against
-	Schema_AddUint32(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH, NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
 
 	// Component updates are short circuited so we set the updated state here and then send the component update.
 	bAcceptingPlayers = bInAcceptingPlayers;
@@ -503,7 +497,10 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 		{
 			GlobalStateManagerEntityId = AuthOp.entity_id;
 			SetDeploymentState();
-			SetAcceptingPlayers(true);
+			if (!bAcceptingPlayers && IsReady())
+			{
+				SetAcceptingPlayers(true);
+			}
 			break;
 		}
 		case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -626,10 +623,16 @@ void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
-	const bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-	if (bHasGSMAuthority)
+	const bool bHasStartupActorAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	if (bHasStartupActorAuthority)
 	{
 		SendCanBeginPlayUpdate(true);
+	}
+
+	const bool bHasDeploymentMapAuth = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
+	if (bHasDeploymentMapAuth && !bAcceptingPlayers)
+	{
+		SetAcceptingPlayers(true);
 	}
 
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority

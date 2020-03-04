@@ -182,6 +182,7 @@ const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID					= 1;
 const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID				= 1;
 const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID							= 1;
 const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME						= 2;
+const Schema_FieldId MAPPING_SERVER_WORKER_ENTITY_ID					= 3;
 const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerName");
 
 // WorkerEntity Field IDs.
@@ -198,12 +199,25 @@ const Schema_FieldId SPATIAL_DEBUGGING_IS_LOCKED                         = 5;
 // ServerWorker Field IDs.
 const Schema_FieldId SERVER_WORKER_NAME_ID								 = 1;
 const Schema_FieldId SERVER_WORKER_READY_TO_BEGIN_PLAY_ID				 = 2;
+const Schema_FieldId SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID		 = 1;
+
+// SpawnPlayerRequest type IDs.
+const Schema_FieldId SPAWN_PLAYER_URL_ID								 = 1;
+const Schema_FieldId SPAWN_PLAYER_UNIQUE_ID								 = 2;
+const Schema_FieldId SPAWN_PLAYER_PLATFORM_NAME_ID						 = 3;
+const Schema_FieldId SPAWN_PLAYER_IS_SIMULATED_ID						 = 4;
+const Schema_FieldId SPAWN_PLAYER_CLIENT_WORKER_ID						 = 5;
+
+// ForwardSpawnPlayerRequest type IDs.
+const Schema_FieldId FORWARD_SPAWN_PLAYER_START_ACTOR_ID				 = 1;
+const Schema_FieldId FORWARD_SPAWN_PLAYER_DATA_ID						 = 2;
 
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
 
 const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
+const float FORWARD_PLAYER_SPAWN_COMMAND_WAIT_SECONDS = 0.2f;
 
 const FName DefaultActorGroup = FName(TEXT("Default"));
 

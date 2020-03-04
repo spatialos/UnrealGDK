@@ -1932,7 +1932,7 @@ void USpatialNetDriver::ProcessPendingDormancy()
 	PendingDormantChannels = MoveTemp(RemainingChannels);
 }
 
-void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName)
+void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, AActor* TargetPlayerStart)
 {
 	USpatialNetConnection* SpatialConnection = nullptr;
 
@@ -1943,7 +1943,7 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 	}
 
 	FString ErrorMsg;
-	SpatialConnection->PlayerController = GetWorld()->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, SpatialConnection->PlayerId, ErrorMsg);
+	SpatialConnection->PlayerController = GetWorld()->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, SpatialConnection->PlayerId, ErrorMsg, 0, TargetPlayerStart);
 
 	if (SpatialConnection->PlayerController == nullptr)
 	{
