@@ -10,7 +10,7 @@
 
 namespace SpatialGDK
 {
-struct Query;
+struct QueryConstraint;
 }
 class USpatialClassInfoManager;
 
@@ -26,7 +26,7 @@ public:
 	UActorInterestComponent() = default;
 	~UActorInterestComponent() = default;
 
-	void CreateQueries(const USpatialClassInfoManager& ClassInfoManager, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
+	void PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager, TMap<float, TArray<SpatialGDK::QueryConstraint>>& OutFrequencyToQueryConstraints) const;
 
 	/**
 	 * Whether to use NetCullDistanceSquared to generate constraints relative to the Actor that this component is attached to.

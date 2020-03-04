@@ -52,8 +52,9 @@ private:
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest) const;
 
-	void GetActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const;
-	TArray<Query> GetUserDefinedQueries(const QueryConstraint& LevelConstraints) const;
+	TArray<Query> GetUserDefinedQueries(const AActor* InActor) const;
+	TMap<float, TArray<QueryConstraint>> GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
+	void GetActorUserDefinedQueryConstraints(const AActor* InActor, TMap<float, TArray<QueryConstraint>>& OutFrequencyToConstraints, bool bRecurseChildren) const;
 
 	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd);
 
