@@ -301,17 +301,22 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 
 int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 {
-	if (Reason != EChannelCloseReason::Dormancy)
-	{
-		DeleteEntityIfAuthoritative();
-		NetDriver->PackageMap->RemoveEntityActor(EntityId);
-	}
-	else
+	if (Reason == EChannelCloseReason::Dormancy)
 	{
 		// Closed for dormancy reasons, ensure we update the component state of this entity.
 		const bool bMakeDormant = true;
 		NetDriver->RefreshActorDormancy(Actor, bMakeDormant);
 		NetDriver->RegisterDormantEntityId(EntityId);
+	}
+	else if (Reason == EChannelCloseReason::Relevancy)
+	{
+		check(IsAuthoritativeServer());
+		// Do nothing except close actor channel - this should only get processed on auth server
+	}
+	else
+	{
+		DeleteEntityIfAuthoritative();
+		NetDriver->PackageMap->RemoveEntityActor(EntityId);
 	}
 
 	NetDriver->RemoveActorChannel(EntityId, *this);
