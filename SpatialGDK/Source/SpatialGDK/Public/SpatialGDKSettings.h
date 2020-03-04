@@ -190,11 +190,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (DisplayName = "Maximum Dynamically Attached Subobjects Per Class"))
 	uint32 MaxDynamicallyAttachedSubobjectsPerClass;
 
-	/** EXPERIMENTAL - This is a stop-gap until we can better define server interest on system entities.
-	Disabling this is not supported in a zoned-worker environment*/
-	UPROPERTY(config)
-	bool bEnableServerQBI;
-
 	/** EXPERIMENTAL - Adds granular result types for queries.
 	Granular here means specifically the required Unreal components for spawning other actors and all data type components.
 	Needs testing thoroughly before making default. May be replaced by component set result types instead. */

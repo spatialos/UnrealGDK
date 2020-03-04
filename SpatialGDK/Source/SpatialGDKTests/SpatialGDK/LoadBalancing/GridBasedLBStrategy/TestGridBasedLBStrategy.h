@@ -16,6 +16,5 @@ class SPATIALGDKTESTS_API UTestGridBasedLBStrategy : public UGridBasedLBStrategy
 
 public:
 
-	static UGridBasedLBStrategy* Create(uint32 Rows, uint32 Cols, float WorldWidth, float WorldHeight);
-
+	static UGridBasedLBStrategy* Create(uint32 Rows, uint32 Cols, float WorldWidth, float WorldHeight, float InterestBorder = 0.0f);
 };

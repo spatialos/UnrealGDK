@@ -7,6 +7,7 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
+class UAbstractLBStrategy;
 class USpatialClassInfoManager;
 class USpatialPackageMapClient;
 class AActor;
@@ -25,7 +26,7 @@ public:
 	Worker_ComponentData CreateInterestData() const;
 	Worker_ComponentUpdate CreateInterestUpdate() const;
 
-	static Interest CreateServerWorkerInterest();
+	static Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy);
 
 private:
 	// Build the checkout radius constraints for client workers
