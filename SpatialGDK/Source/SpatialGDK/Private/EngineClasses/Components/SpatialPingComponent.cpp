@@ -199,10 +199,13 @@ FSpatialPingAverageData USpatialPingComponent::GetAverageData() const
 	}
 	Data.WindowSize = LastPingMeasurements.Num();
 
-	Data.TotalAvg = TotalPing / TotalNum;
-	Data.TotalMin = TotalMin;
-	Data.TotalMax = TotalMax;
-	Data.TotalNum = TotalNum;
+	if (TotalNum > 0)
+	{
+		Data.TotalAvg = TotalPing / TotalNum;
+		Data.TotalMin = TotalMin;
+		Data.TotalMax = TotalMax;
+		Data.TotalNum = TotalNum;
+	}
 
 	return Data;
 }
