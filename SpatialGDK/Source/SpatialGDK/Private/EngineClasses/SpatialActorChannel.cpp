@@ -605,13 +605,8 @@ int64 USpatialActorChannel::ReplicateActor()
 			bCreatedEntity = true;
 
 			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
-			// Only happens with LoadBalancing enabled, since with single server we will always have authority, and with offloading we shouldn't
-			// be spawning things we will not be authoritative over (we delete the actor and log an error in USpatialNetDriver::OnActorSpawned).
-			if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
-			{
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
-			}
+			Actor->Role = ROLE_SimulatedProxy;
+			Actor->RemoteRole = ROLE_Authority;
 		}
 		else
 		{
