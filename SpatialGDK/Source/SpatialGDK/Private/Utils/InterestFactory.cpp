@@ -490,7 +490,7 @@ TArray<Query> InterestFactory::GetUserDefinedQueries(const AActor* InActor, cons
 		// which includes all components required for a client to see non-authoritative actors.
 		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 		{
-			UserQuery.ResultComponentId == ClientNonAuthInterestResultType;
+			UserQuery.ResultComponentId = ClientNonAuthInterestResultType;
 		}
 		else
 		{
