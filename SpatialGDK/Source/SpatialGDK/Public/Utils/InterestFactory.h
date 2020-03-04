@@ -52,9 +52,11 @@ private:
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest) const;
 
-	TArray<Query> GetUserDefinedQueries(const AActor* InActor) const;
+	TArray<Query> GetUserDefinedQueries(const AActor* InActor, const QueryConstraint LevelConstraint) const;
 	TMap<float, TArray<QueryConstraint>> GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
 	void GetActorUserDefinedQueryConstraints(const AActor* InActor, TMap<float, TArray<QueryConstraint>>& OutFrequencyToConstraints, bool bRecurseChildren) const;
+
+	TArray<Query> GetNetCullDistanceFrequencyQueries() const;
 
 	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd);
 
