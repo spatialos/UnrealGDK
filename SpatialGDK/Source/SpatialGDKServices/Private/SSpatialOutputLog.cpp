@@ -254,21 +254,59 @@ void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 	});
 }
 
-void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
+void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 {
-	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
-	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) logger=(.*\\.)?(.*) msg=(.*)"));
-	FRegexMatcher LogMatcher(LogPattern, LogLine);
+	// If this line could not be matched then it's most likely an error with a stack trace. Attempt to use the ErrorLine formatter.
+	const FRegexPattern ErrorPattern = FRegexPattern(TEXT("level=(.*) msg=(.*) code=(.*) code_string=(.*) error=(.*) stack=(.*)"));
+	FRegexMatcher ErrorMatcher(ErrorPattern, LogLine);
 
-	if (!LogMatcher.FindNext())
+	if (!ErrorMatcher.FindNext())
 	{
 		UE_LOG(LogSpatialOutputLog, Error, TEXT("Failed to parse log line: %s"), *LogLine);
 		return;
 	}
 
+	FString ErrorLevelText = ErrorMatcher.GetCaptureGroup(1);
+	FString Message = ErrorMatcher.GetCaptureGroup(2);
+	FString ErrorCode = ErrorMatcher.GetCaptureGroup(3);
+	FString ErrorCodeString = ErrorMatcher.GetCaptureGroup(4);
+	FString ErrorMessage = ErrorMatcher.GetCaptureGroup(5);
+	FString Stack = ErrorMatcher.GetCaptureGroup(6);
+
+	// TODO: Build a single cohesive log message out of this mess
+
+	// The stack message comes with partially escaped characters.
+	Stack = Stack.ReplaceEscapedCharWithChar();
+
+	// Format the log message to be easy to read.
+	FString LogMessage = FString::Printf(TEXT("%s \n Code: %s \n Code String: %s \n Error: %s \n Stack: %s"), *Message, *ErrorCode, *ErrorCodeString, *ErrorMessage, *Stack);
+
+	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Error;
+
+	FString LogCategory = TEXT("SpatialService");
+
+	// Serialization must be done on the game thread.
+	AsyncTask(ENamedThreads::GameThread, [this, LogMessage, LogVerbosity, LogCategory]
+	{
+		Serialize(*LogMessage, LogVerbosity, FName(*LogCategory));
+	});
+}
+
+void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
+{
+	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
+	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) msg=(.*) loggerName=(.*\\.)?(.*)"));
+	FRegexMatcher LogMatcher(LogPattern, LogLine);
+
+	if (!LogMatcher.FindNext())
+	{
+		FormatAndPrintRawErrorLine(LogLine);
+		return;
+	}
+
 	FString LogLevelText = LogMatcher.GetCaptureGroup(1);
-	FString LogCategory = LogMatcher.GetCaptureGroup(3);
-	FString LogMessage = LogMatcher.GetCaptureGroup(4);
+	FString LogMessage = LogMatcher.GetCaptureGroup(2);
+	FString LogCategory = LogMatcher.GetCaptureGroup(4);
 
 	// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
 	// msg=[WORKER_NAME:WORKER_TYPE] ... e.g. msg=[UnrealWorkerF5C56488482FEDC37B10E382770067E3:UnrealWorker]
