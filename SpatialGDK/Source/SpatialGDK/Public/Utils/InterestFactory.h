@@ -16,6 +16,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 
 namespace SpatialGDK
 {
+using FrequencyToConstraintsMap = TMap<float, TArray<QueryConstraint>>;
+
 class SPATIALGDK_API InterestFactory
 {
 public:
@@ -53,8 +55,8 @@ private:
 	void AddServerSelfInterest(Interest& OutInterest) const;
 
 	TArray<Query> GetUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraint) const;
-	TMap<float, TArray<QueryConstraint>> GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
-	void GetActorUserDefinedQueryConstraints(const AActor* InActor, TMap<float, TArray<QueryConstraint>>& OutFrequencyToConstraints, bool bRecurseChildren) const;
+	FrequencyToConstraintsMap GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
+	void GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints, bool bRecurseChildren) const;
 
 	TArray<Query> GetNetCullDistanceFrequencyQueries(const QueryConstraint& LevelConstraint) const;
 

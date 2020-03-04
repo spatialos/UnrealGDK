@@ -458,18 +458,15 @@ TArray<Query> InterestFactory::GetUserDefinedQueries(const AActor* InActor, cons
 {
 	SCOPE_CYCLE_COUNTER(STAT_InterestFactoryAddUserDefinedQueries);
 
-	TMap<float, TArray<QueryConstraint>> FrequencyToConstraintsMap = GetUserDefinedFrequencyToConstraintsMap(InActor);
+	FrequencyToConstraintsMap FrequencyConstraintsMap = GetUserDefinedFrequencyToConstraintsMap(InActor);
 	TArray<Query> Queries;
 
-	for (const auto& FrequencyToConstraints : FrequencyToConstraintsMap)
+	for (const auto& FrequencyToConstraints : FrequencyConstraintsMap)
 	{
 		Query UserQuery;
 		QueryConstraint UserConstraint;
-		// Assign this query a frequency if it's specified. Otherwise leave it empty for no rate limiting.
-		if (FrequencyToConstraints.Key != 0)
-		{
-			UserQuery.Frequency = FrequencyToConstraints.Key;
-		}
+
+		UserQuery.Frequency = FrequencyToConstraints.Key;
 
 		// If there is only one constraint, don't make the constraint an OR.
 		if (FrequencyToConstraints.Value.Num() == 1)
@@ -501,7 +498,7 @@ TArray<Query> InterestFactory::GetUserDefinedQueries(const AActor* InActor, cons
 	return Queries;
 }
 
-TMap<float, TArray<QueryConstraint>> InterestFactory::GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const
+FrequencyToConstraintsMap InterestFactory::GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const
 {
 	// This function builds a frequency to constraint map rather than queries. It does this for two reasons:
 	// - We need to set the result type later
@@ -524,7 +521,7 @@ TMap<float, TArray<QueryConstraint>> InterestFactory::GetUserDefinedFrequencyToC
 	return FrequencyToConstraints;
 }
 
-void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor, TMap<float, TArray<QueryConstraint>>& OutFrequencyToConstraints, bool bRecurseChildren) const
+void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints, bool bRecurseChildren) const
 {
 	check(ClassInfoManager);
 

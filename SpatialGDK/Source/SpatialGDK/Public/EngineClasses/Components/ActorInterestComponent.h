@@ -10,7 +10,7 @@
 
 namespace SpatialGDK
 {
-struct QueryConstraint;
+	using FrequencyToConstraintsMap = TMap<float, TArray<QueryConstraint>>;
 }
 class USpatialClassInfoManager;
 
@@ -26,7 +26,7 @@ public:
 	UActorInterestComponent() = default;
 	~UActorInterestComponent() = default;
 
-	void PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager, TMap<float, TArray<SpatialGDK::QueryConstraint>>& OutFrequencyToQueryConstraints) const;
+	void PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const;
 
 	/**
 	 * Whether to use NetCullDistanceSquared to generate constraints relative to the Actor that this component is attached to.
