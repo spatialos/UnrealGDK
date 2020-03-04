@@ -76,6 +76,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, UdpClientDownstreamUpdateIntervalMS(1)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
+	, RPCQueueWarningDefaultTimeout(2.0f)
 	, bEnableNetCullDistanceInterest(false)
 	, bEnableNetCullDistanceFrequency(false)
 	, FullFrequencyNetCullDistanceRatio(1.0f)
@@ -184,4 +185,14 @@ bool USpatialGDKSettings::UseRPCRingBuffer() const
 {
 	// RPC Ring buffer are necessary in order to do RPC handover, something legacy RPC does not handle.
 	return bUseRPCRingBuffers || bEnableUnrealLoadBalancer;
+}
+
+float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) const
+{
+	if (const float* CustomSecondsBeforeWarning = RPCQueueWarningTimeouts.Find(Result))
+	{
+		return *CustomSecondsBeforeWarning;
+	}
+
+	return RPCQueueWarningDefaultTimeout;
 }
