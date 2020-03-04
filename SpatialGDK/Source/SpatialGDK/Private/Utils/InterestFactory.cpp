@@ -454,7 +454,7 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 	OutInterest.ComponentInterestMap[ComponentId].Queries.Add(QueryToAdd);
 }
 
-TArray<Query> InterestFactory::GetUserDefinedQueries(const AActor* InActor, const QueryConstraint LevelConstraint) const
+TArray<Query> InterestFactory::GetUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraint) const
 {
 	SCOPE_CYCLE_COUNTER(STAT_InterestFactoryAddUserDefinedQueries);
 
@@ -555,7 +555,7 @@ void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor,
 	}
 }
 
-TArray<Query> InterestFactory::GetNetCullDistanceFrequencyQueries(const QueryConstraint LevelConstraint) const
+TArray<Query> InterestFactory::GetNetCullDistanceFrequencyQueries(const QueryConstraint& LevelConstraint) const
 {
 	TArray<Query> FrequencyQueries;
 
