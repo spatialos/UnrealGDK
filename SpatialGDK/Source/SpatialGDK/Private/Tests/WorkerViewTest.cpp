@@ -18,7 +18,22 @@ WORKERVIEW_TEST(GIVEN_empty_WorkerView_WHEN_GenerateViewDelta_called_THEN_ViewDe
 	return true;
 }
 
-WORKERVIEW_TEST(GIVEN_WorkerView_with_MessagesToSend_WHEN_FlushLocalChanges_called_THEN_non_empty_MessagesToSend_returned)
+WORKERVIEW_TEST(GIVEN_WorkerView_with_one_CreateEntityRequest_WHEN_FlushLocalChanges_called_THEN_one_MessagesToSend_returned)
+{
+	return true;
+}
+
+WORKERVIEW_TEST(GIVEN_WorkerView_with_multiple_CreateEntityRequest_WHEN_FlushLocalChanges_called_THEN_mutliple_MessagesToSend_returned)
+{
+	return true;
+}
+
+WORKERVIEW_TEST(GIVEN_WorkerView_with_one_op_enqued_WHEN_GenerateViewDelta_called_THEN_ViewDelta_with_one_op_returned)
+{
+	return true;
+}
+
+WORKERVIEW_TEST(GIVEN_WorkerView_with_multiple_ops_engued_WHEN_GenerateViewDelta_called_THEN_ViewDelta_with_multiple_ops_returned)
 {
 	return true;
 }
