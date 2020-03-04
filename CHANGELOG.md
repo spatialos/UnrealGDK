@@ -45,7 +45,6 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - With the `--OverrideResultTypes` flag flipped, servers will no longer check out server RPC components on actors they do not own. This should give a bandwidth saving to server workers in offloaded and zoned games.
 - The `InstallGDK` scripts now `git clone` the correct version of the `UnrealGDK` and `UnrealGDKExampleProject` for the `UnrealEngine` branch you have checked out. They read `UnrealGDKVersion.txt` & `UnrealGDKExampleProjectVersion.txt` to determine what the correct branches are.
 - Unreal Engine `4.24.3` is now supported. You can find the `4.24.3` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.24-SpatialOSUnrealGDK).
-- Enabling the Unreal GDK load balancer now creates a single query per server worker, depending on the defined load balancing strategy.
 - The `bEnableServerQBI` property has been removed, and the flag `--OverrideServerInterest` has been removed.
 
 ## Bug fixes:
@@ -90,6 +89,7 @@ Features listed in the internal section are not ready to use but, in the spirit 
 - Added partial framework for use in future UnrealGDK controlled loadbalancing.
 - Added an AuthorityIntent component to be used in the future for UnrealGDK code to control loadbalancing.
 - Load Balancing Strategies and Locking Strategies can be set per-level using SpatialWorldSettings.
+- Enabling the Unreal GDK load balancer now creates a single query per server worker, depending on the defined load balancing strategy.
 - The logic responsible for taking an Actor and generating the array of Components that represents it as an Entity in SpatialOS has been extracted into `EntityFactory`.
 - DeploymentLauncher can parse a .pb.json launch configuration.
 
