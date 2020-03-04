@@ -251,7 +251,11 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		}
 	}
 
-	Connection->Connect(bConnectAsClient);
+#if WITH_EDITOR
+	Connection->Connect(bConnectAsClient, PlayInEditorID);
+#else
+	Connection->Connect(bConnectAsClient, 0);
+#endif
 }
 
 void USpatialNetDriver::OnConnectedToSpatialOS()

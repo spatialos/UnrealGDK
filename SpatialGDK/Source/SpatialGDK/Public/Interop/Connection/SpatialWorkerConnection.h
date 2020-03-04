@@ -45,7 +45,7 @@ public:
     /// @param Callback - callback function.
 	void RegisterOnLoginTokensCallback(const LoginTokenResponseCallback& Callback) {LoginTokenResCallback = Callback;}
 
-	void Connect(bool bConnectAsClient);
+	void Connect(bool bConnectAsClient, uint32 PlayInEditorI);
 
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
@@ -74,7 +74,7 @@ public:
 	void RequestDeploymentLoginTokens();
 
 private:
-	void ConnectToReceptionist(bool bConnectAsClient);
+	void ConnectToReceptionist(bool bConnectAsClient, uint32 PlayInEditorID);
 	void ConnectToLocator();
 	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 

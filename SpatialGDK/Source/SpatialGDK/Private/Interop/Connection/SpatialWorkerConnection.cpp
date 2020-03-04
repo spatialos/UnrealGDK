@@ -68,7 +68,7 @@ void USpatialWorkerConnection::DestroyConnection()
 	KeepRunning.AtomicSet(true);
 }
 
-void USpatialWorkerConnection::Connect(bool bInitAsClient)
+void USpatialWorkerConnection::Connect(bool bInitAsClient, uint32 PlayInEditorID)
 {
 	if (bIsConnected)
 	{
@@ -88,7 +88,7 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 	switch (GetConnectionType())
 	{
 	case SpatialConnectionType::Receptionist:
-		ConnectToReceptionist(bInitAsClient);
+		ConnectToReceptionist(bInitAsClient, PlayInEditorID);
 		break;
 	case SpatialConnectionType::Locator:
 		ConnectToLocator();
@@ -191,7 +191,7 @@ void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
 	}
 }
 
-void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
+void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient, uint32 PlayInEditorID)
 {
 	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
@@ -200,7 +200,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	}
 
 #if WITH_EDITOR
-	SpatialGDKServices::InitWorkers(bConnectAsClient, GetSpatialNetDriverChecked()->PlayInEditorID, ReceptionistConfig.WorkerId);
+	SpatialGDKServices::InitWorkers(bConnectAsClient, PlayInEditorID, ReceptionistConfig.WorkerId);
 #endif
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
