@@ -122,7 +122,7 @@ private:
 
 	TArray<float> LastPingMeasurements;
 
-	double TotalPing = 0.0;
+	float TotalPing = 0.0f;
 	float TotalMin = 1.0f;
 	float TotalMax = 0.0f;
 	int TotalNum = 0;

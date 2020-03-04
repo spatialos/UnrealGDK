@@ -188,7 +188,7 @@ FSpatialPingAverageData USpatialPingComponent::GetAverageData() const
 
 	if (LastPingMeasurements.Num() > 0)
 	{
-		double Total = 0.0;
+		float Total = 0.0f;
 		for (float Ping : LastPingMeasurements)
 		{
 			Total += Ping;
