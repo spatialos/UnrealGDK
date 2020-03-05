@@ -62,6 +62,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::Persistence>(Op.data);
 		break;
+	case SpatialConstants::WORKER_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::Worker>(Op.data);
+		break;
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::SpawnData>(Op.data);
 		break;
