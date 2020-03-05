@@ -33,6 +33,7 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/ActorGroupManager.h"
 #include "Utils/EntityPool.h"
+#include "Utils/ErrorCodeRemapping.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialMetrics.h"
@@ -121,7 +122,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
 	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
-	// from OnConnectedToSpatialOS callback which could be executed with the async
+	// from OnConnectionToSpatialOSSucceeded callback which could be executed with the async
 	// loading thread suspended (e.g. when resuming rendering thread), in which
 	// case we'll crash upon trying to load SchemaDatabase.
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
@@ -216,6 +217,8 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	}
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
+	Connection->OnConnectedCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSSucceeded);
+	Connection->OnFailedToConnectCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed);
 
 	if (URL.HasOption(TEXT("locator")))
 	{
@@ -258,7 +261,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 #endif
 }
 
-void USpatialNetDriver::OnConnectedToSpatialOS()
+void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 {
 	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
 	// There may be more than one of these connections in the future for different replication conditions.
@@ -279,6 +282,17 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	{
 		Sender->CreateServerWorkerEntity();
 		HandleOngoingServerTravel();
+	}
+}
+
+void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage)
+{
+	if (const USpatialGameInstance* GameInstance = GetGameInstance())
+	{
+		if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+		{
+			GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
+		}
 	}
 }
 
@@ -621,7 +635,6 @@ void USpatialNetDriver::BeginDestroy()
 			{
 				Cast<USpatialGameInstance>(LocalWorld->GetGameInstance())->DestroySpatialWorkerConnection();
 			}
-
 			Connection = nullptr;
 		}
 	}
