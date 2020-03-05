@@ -59,6 +59,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Enabling the Unreal GDK load balancer now creates a single query per server worker, depending on the defined load balancing strategy.
 - The `bEnableServerQBI` property has been removed, and the flag `--OverrideServerInterest` has been removed.
 - SpatialDebugger worker regions are now cuboids rather than planes, and can have their WorkerRegionVerticalScale adjusted via a setting in the SpatialDebugger.
+- Added custom warning timeouts per RPC failure condition.
+- SpatialPingComponent can now also report average ping measurements over a specified number of recent pings. You can specify the number of measurements recorded in `PingMeasurementsWindowSize` and get the measurement data by calling `GetAverageData`. There is also a delegate `OnRecordPing` that will be broadcast whenever a new ping measurement is recorded.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
@@ -90,6 +92,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed an issue where newly created subobjects would have empty state when RepNotify was called for a property pointing to that subobject.
 - Fixed an issue where deleted, initially dormant startup actors would still be present on other workers.
 - Force activation of RPC ring buffer when load balancing is enabled, to allow RPC handover when authority changes
+- Fixed a race where a client leaving the deployment could leave its actor behind on the server, to be cleaned up after a long timeout.
 
 ### External contributors:
 @DW-Sebastien

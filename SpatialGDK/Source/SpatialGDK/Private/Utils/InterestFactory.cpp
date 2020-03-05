@@ -318,6 +318,23 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 
 	ServerQuery.Constraint = Constraint;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+
+	// Add another query to get the worker system entities.
+	// It allows us to know when a client has disconnected.
+	// TODO UNR-3042 : Migrate the VirtualWorkerTranslationManager to use the checked-out worker components instead of making a query.
+
+	ServerQuery = Query();
+	if (!SpatialGDKSettings->bEnableResultTypes)
+	{
+		ServerQuery.FullSnapshotResult = true;
+	}
+	else
+	{
+		ServerQuery.ResultComponentId.Add(SpatialConstants::WORKER_COMPONENT_ID);
+	}
+	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+
 	return ServerInterest;
 }
 
