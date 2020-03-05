@@ -403,6 +403,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		else
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial auth failed attempting to launch local deployment."));
+			bStartingDeployment = false;
 		}
 
 		CallBack(bSuccess);
