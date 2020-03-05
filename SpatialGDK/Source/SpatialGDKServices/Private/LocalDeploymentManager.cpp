@@ -287,7 +287,6 @@ bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FStrin
 	FString StdErr;
 	int32 ExitCode;
 	FPlatformProcess::ExecProcess(*FSpatialGDKServicesModule::GetSpotExe(), *SpotCreateArgs, &ExitCode, &SpotCreateResult, &StdErr);
-	bStartingDeployment = false;
 
 	if (ExitCode != ExitCodeSuccess)
 	{
@@ -403,8 +402,8 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		else
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial auth failed attempting to launch local deployment."));
-			bStartingDeployment = false;
 		}
+		bStartingDeployment = false;
 
 		CallBack(bSuccess);
 	});
