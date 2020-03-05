@@ -234,6 +234,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient, uint
 	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
 	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
 
+	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
 	Worker_CompressionParameters  EnableCompressionParams{};
 	ConnectionParams.network.modular_kcp.upstream_compression = nullptr;
 	ConnectionParams.network.modular_kcp.downstream_compression = &EnableCompressionParams;
@@ -289,6 +290,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	ConnectionParams.network.use_external_ip = LocatorConfig.UseExternalIp;
 	ConnectionParams.network.tcp.multiplex_level = LocatorConfig.TcpMultiplexLevel;
 
+	// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
 	Worker_CompressionParameters EnableCompressionParams{};
 	ConnectionParams.network.modular_kcp.upstream_compression = nullptr;
 	ConnectionParams.network.modular_kcp.downstream_compression = &EnableCompressionParams;
