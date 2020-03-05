@@ -340,7 +340,7 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
 			{
 				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
-				SpatialConnectionManager->WorkerConnection->SetConection(NewCAPIWorkerConnection);
+				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection);
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
 			else

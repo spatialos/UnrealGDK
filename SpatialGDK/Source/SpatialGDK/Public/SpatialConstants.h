@@ -260,8 +260,6 @@ const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 const FString SCHEMA_DATABASE_FILE_PATH  = TEXT("Spatial/SchemaDatabase");
 const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 
-const FString ZoningAttribute = DefaultServerWorkerType.ToString();
-
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>
 {
@@ -312,8 +310,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 	GSM_SHUTDOWN_COMPONENT_ID,
 
 	// Unreal load balancing components
-	VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
-	AUTHORITY_INTENT_COMPONENT_ID
+	VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID
 };
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest query.
@@ -358,6 +355,15 @@ inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
 {
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
+}
+
+inline WorkerAttributeSet GetLoadBalancerAttributeSet(FName LoadBalancingWorkerType)
+{
+	if (LoadBalancingWorkerType == "")
+	{
+		return { DefaultServerWorkerType.ToString() };
+	}
+	return { LoadBalancingWorkerType.ToString() };
 }
 
 } // ::SpatialConstants

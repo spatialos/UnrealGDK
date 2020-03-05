@@ -7,6 +7,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+#include "Utils/RPCContainer.h"
 
 #include "SpatialGDKSettings.generated.h"
 
@@ -189,11 +190,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (DisplayName = "Maximum Dynamically Attached Subobjects Per Class"))
 	uint32 MaxDynamicallyAttachedSubobjectsPerClass;
 
-	/** EXPERIMENTAL - This is a stop-gap until we can better define server interest on system entities.
-	Disabling this is not supported in a zoned-worker environment*/
-	UPROPERTY(config)
-	bool bEnableServerQBI;
-
 	/** EXPERIMENTAL - Adds granular result types for queries.
 	Granular here means specifically the required Unreal components for spawning other actors and all data type components.
 	Needs testing thoroughly before making default. May be replaced by component set result types instead. */
@@ -267,6 +263,8 @@ private:
 public:
 	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
 
+	float GetSecondsBeforeWarning(const ERPCResult Result) const;
+
 	/** The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and break snapshot compatibility. */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
 	uint32 MaxRPCRingBufferSize;
@@ -294,6 +292,12 @@ public:
 	/** Do async loading for new classes when checking out entities. */
 	UPROPERTY(Config)
 	bool bAsyncLoadNewClassesOnEntityCheckout;
+
+	UPROPERTY(EditAnywhere, config, Category = "Queued RPC Warning Timeouts", AdvancedDisplay, meta = (DisplayName = "For a given RPC failure type, the time it will queue before reporting warnings to the logs."))
+	TMap<ERPCResult, float> RPCQueueWarningTimeouts;
+
+	UPROPERTY(EditAnywhere, config, Category = "Queued RPC Warning Timeouts", AdvancedDisplay, meta = (DisplayName = "Default time before a queued RPC will start reporting warnings to the logs."))
+	float RPCQueueWarningDefaultTimeout;
 
 	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
 

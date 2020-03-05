@@ -56,7 +56,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseFrameTimeAsLoad(false)
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
-	, bEnableServerQBI(true)
 	, bEnableResultTypes(false)
 	, bPackRPCs(false)
 	, ServicesRegion(EServicesRegion::Default)
@@ -77,6 +76,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, UdpClientDownstreamUpdateIntervalMS(1)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
+	, RPCQueueWarningDefaultTimeout(2.0f)
 	, bEnableNetCullDistanceInterest(false)
 	, bEnableNetCullDistanceFrequency(false)
 	, FullFrequencyNetCullDistanceRatio(1.0f)
@@ -94,7 +94,6 @@ void USpatialGDKSettings::PostInitProperties()
 	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideSpatialOffloading"), TEXT("Offloading"), bEnableOffloading);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideServerInterest"), TEXT("Server interest"), bEnableServerQBI);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideLoadBalancer"), TEXT("Load balancer"), bEnableUnrealLoadBalancer);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
@@ -108,10 +107,6 @@ void USpatialGDKSettings::PostInitProperties()
 
 	if (bEnableUnrealLoadBalancer)
 	{
-		if (bEnableServerQBI == false)
-		{
-			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but server interest is disabled."));
-		}
 		if (bEnableHandover == false)
 		{
 			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
@@ -190,4 +185,14 @@ bool USpatialGDKSettings::UseRPCRingBuffer() const
 {
 	// RPC Ring buffer are necessary in order to do RPC handover, something legacy RPC does not handle.
 	return bUseRPCRingBuffers || bEnableUnrealLoadBalancer;
+}
+
+float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) const
+{
+	if (const float* CustomSecondsBeforeWarning = RPCQueueWarningTimeouts.Find(Result))
+	{
+		return *CustomSecondsBeforeWarning;
+	}
+
+	return RPCQueueWarningDefaultTimeout;
 }

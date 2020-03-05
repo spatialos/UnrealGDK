@@ -244,8 +244,9 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
+
 	FString SpatialWorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
-	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
+	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted() && !GameInstance->GetPreventAutoConnectWithLocator())
 	{
 		GameInstance->SetFirstConnectionToSpatialOSAttempted();
 		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
@@ -431,7 +432,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		{
 			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->LoadBalanceStrategy);
 		}
-		LoadBalanceStrategy->Init(this);
+		LoadBalanceStrategy->Init();
 	}
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
@@ -1586,9 +1587,9 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (LoadBalanceEnforcer.IsValid())
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
-			for(const auto& Elem : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
+			for(const auto& AclAssignmentRequest : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
 			{
-				Sender->SetAclWriteAuthority(Elem.EntityId, Elem.OwningWorkerId);
+				Sender->SetAclWriteAuthority(AclAssignmentRequest);
 			}
 		}
 	}
@@ -2260,6 +2261,12 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 
 		if (bIsReadyToStart)
 		{
+			if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+			{
+				// We know at this point that we have all the information to set the worker's interest query.
+				Sender->UpdateServerWorkerEntityInterestAndPosition();
+			}
+
 			// We've found and dispatched all ops we need for startup,
 			// trigger BeginPlay() on the GSM and process the queued ops.
 			// Note that FindAndDispatchStartupOps() will have notified the Dispatcher

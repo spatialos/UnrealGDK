@@ -18,7 +18,8 @@ struct FPendingRPCParams;
 struct FRPCErrorInfo;
 DECLARE_DELEGATE_RetVal_OneParam(FRPCErrorInfo, FProcessRPCDelegate, const FPendingRPCParams&)
 
-enum class ERPCResult : uint8_t
+UENUM()
+enum class ERPCResult : uint8
 {
 	Success,
 
@@ -101,8 +102,6 @@ public:
 	void DropForEntity(const Worker_EntityId& EntityId);
 
 	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ERPCType Type) const;
-
-	static const double SECONDS_BEFORE_WARNING;
 
 private:
 	using FArrayOfParams = TArray<FPendingRPCParams>;

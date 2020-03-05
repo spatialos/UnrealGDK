@@ -3,12 +3,11 @@
 #include "Utils/RPCContainer.h"
 
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogRPCContainer);
 
 using namespace SpatialGDK;
-
-const double FRPCContainer::SECONDS_BEFORE_WARNING = 2.0;
 
 namespace
 {
@@ -27,6 +26,12 @@ namespace
 
 		case ERPCResult::UnresolvedParameters:
 			return TEXT("Unresolved Parameters");
+
+		case ERPCResult::ActorPendingKill:
+			return TEXT("Actor Pending Kill");
+
+		case ERPCResult::TimedOut:
+			return TEXT("Timed Out");
 
 		case ERPCResult::NoActorChannel:
 			return TEXT("No Actor Channel");
@@ -71,7 +76,10 @@ namespace
 			*TimeDiff.ToString(),
 			*ERPCResultToString(ErrorInfo.ErrorCode));
 
-		if (TimeDiff.GetTotalSeconds() > FRPCContainer::SECONDS_BEFORE_WARNING)
+		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+		check(SpatialGDKSettings != nullptr);
+
+		if (TimeDiff.GetTotalSeconds() > SpatialGDKSettings->GetSecondsBeforeWarning(ErrorInfo.ErrorCode))
 		{
 			UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 		}
