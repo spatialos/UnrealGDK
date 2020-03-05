@@ -155,12 +155,6 @@ public:
 		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
 	}
 
-	inline void OnClientAuthorityChange(const Worker_AuthorityChangeOp& Op)
-	{
-		check(Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
-		bIsAuthClient = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE;
-	}
-
 	inline void SetClientAuthority(const bool IsAuth)
 	{
 		bIsAuthClient = IsAuth;
@@ -196,12 +190,6 @@ public:
 		}
 	
 		return false;
-	}
-
-	inline void OnServerAuthorityChange(const Worker_AuthorityChangeOp& Op)
-	{
-		check(Op.component_id == SpatialConstants::POSITION_COMPONENT_ID);
-		bIsAuthServer = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE;
 	}
 
 	inline void SetServerAuthority(const bool IsAuth)
