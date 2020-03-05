@@ -325,6 +325,12 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Connection")
 	bool bUseSecureServerConnection;
 
+	/**
+	 * Enable to ensure server workers always express interest such that any server is interested in a super set of
+	 * client interest. This will cause servers to make most of the same queries as their delegated client queries.
+	 * Intended to be used in development before interest in your game has been optimised to ensure correct functionality.
+	 */
+
 public:
 	// UI Hidden settings passed through from SpatialGDKEditorSettings
 	bool bUseDevelopmentAuthenticationFlow;
