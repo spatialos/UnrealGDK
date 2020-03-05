@@ -161,6 +161,12 @@ public:
 		bIsAuthClient = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE;
 	}
 
+	inline void SetClientAuthority(const bool IsAuth)
+	{
+		bIsAuthClient = IsAuth;
+	}
+
+
 	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
 	inline bool IsAuthoritativeClient() const
 	{
@@ -196,6 +202,11 @@ public:
 	{
 		check(Op.component_id == SpatialConstants::POSITION_COMPONENT_ID);
 		bIsAuthServer = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE;
+	}
+
+	inline void SetServerAuthority(const bool IsAuth)
+	{
+		bIsAuthServer = IsAuth;
 	}
 
 	inline bool IsAuthoritativeServer() const
