@@ -267,8 +267,7 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 					if (AuthorityPlayerControllerConnectionMap.Find(PCEntity))
 					{
 						UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s disconnected after its system identity was removed."), *(*WorkerName));
-						ClientConnection->CleanUp();
-						AuthorityPlayerControllerConnectionMap.Remove(PCEntity);
+						CloseClientConnection(ClientConnection, PCEntity);
 					}
 				}
 			}
@@ -2399,9 +2398,14 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 		GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
 	{
 		// Client has disconnected, let's clean up their connection.
-		NetConnection->CleanUp();
-		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
+		CloseClientConnection(NetConnection, Op.entity_id);
 	}
+}
+
+void USpatialReceiver::CloseClientConnection(USpatialNetConnection* ClientConnection, Worker_EntityId PlayerControllerEntityId)
+{
+	ClientConnection->CleanUp();
+	AuthorityPlayerControllerConnectionMap.Remove(PlayerControllerEntityId);
 }
 
 void USpatialReceiver::PeriodicallyProcessIncomingRPCs()

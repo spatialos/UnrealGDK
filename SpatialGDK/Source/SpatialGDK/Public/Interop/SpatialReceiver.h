@@ -143,6 +143,7 @@ private:
 	AActor* FindSingletonActor(UClass* SingletonClass);
 
 	void OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp& Op);
+	void CloseClientConnection(USpatialNetConnection* Client, Worker_EntityId);
 
 	void PeriodicallyProcessIncomingRPCs();
 
