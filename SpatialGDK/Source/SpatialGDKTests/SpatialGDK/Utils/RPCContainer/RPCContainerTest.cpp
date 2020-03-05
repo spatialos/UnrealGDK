@@ -8,6 +8,7 @@
 
 #include "Utils/RPCContainer.h"
 #include "Schema/RPCPayload.h"
+#include "SpatialGDKSettings.h"
 
 #include "CoreMinimal.h"
 
@@ -196,7 +197,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_2_seconds_THEN_warning_is_logged)
+RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_RPCQueueWarningDefaultTimeout_seconds_THEN_warning_is_logged)
 {
 	UObjectStub* TargetObject = NewObject<UObjectStub>();
 	FPendingRPCParams Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
@@ -206,7 +207,9 @@ RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_2_secon
 
 	AddExpectedError(TEXT("Unresolved Parameters"), EAutomationExpectedErrorFlags::Contains, 1);
 
-	FPlatformProcess::Sleep(FRPCContainer::SECONDS_BEFORE_WARNING);
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	check(SpatialGDKSettings != nullptr);
+	FPlatformProcess::Sleep(SpatialGDKSettings->RPCQueueWarningDefaultTimeout);
 	RPCs.ProcessRPCs();
 
     return true;
