@@ -59,6 +59,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Enabling the Unreal GDK load balancer now creates a single query per server worker, depending on the defined load balancing strategy.
 - The `bEnableServerQBI` property has been removed, and the flag `--OverrideServerInterest` has been removed.
 - SpatialDebugger worker regions are now cuboids rather than planes, and can have their WorkerRegionVerticalScale adjusted via a setting in the SpatialDebugger.
+- Added custom warning timeouts per RPC failure condition
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
