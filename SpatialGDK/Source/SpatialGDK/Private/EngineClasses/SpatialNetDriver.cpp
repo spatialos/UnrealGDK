@@ -670,11 +670,6 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		return;
 	}
 
-	if (!IsServer())
-	{
-		return;
-	}
-
 	// If load balancing disabled but this worker is GSM authoritative then make sure
 	// we set Role_Authority on Actors in the sublevel. Also, if load balancing is
 	// enabled and lb strategy says we should have authority over a loaded level Actor

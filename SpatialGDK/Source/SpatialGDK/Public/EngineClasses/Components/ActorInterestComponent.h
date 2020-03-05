@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Interop/SpatialInterestConstraints.h"
-#include "Schema/Interest.h"
+#include "SpatialCommonTypes.h"
 
 #include "ActorInterestComponent.generated.h"
 
