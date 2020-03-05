@@ -43,8 +43,6 @@ private:
 
 	Interest CreateInterest() const;
 
-	// Only uses Defined Constraint
-	void AddActorInterest(Interest& OutInterest) const;
 	// Defined Constraint AND Level Constraint
 	void AddPlayerControllerActorInterest(Interest& OutInterest) const;
 	// The components clients need to see on entities they are have authority over that they don't already see through authority.
@@ -52,7 +50,7 @@ private:
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest) const;
 
-	TArray<Query> GetUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraint) const;
+	void AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const;
 	FrequencyToConstraintsMap GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
 	void GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints, bool bRecurseChildren) const;
 

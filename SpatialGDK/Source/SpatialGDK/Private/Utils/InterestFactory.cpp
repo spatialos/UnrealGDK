@@ -402,10 +402,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 	AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, ClientQuery);
 
 	// Could be multiple queries due to different frequencies, so have to add them all separately.
-	for (const auto& UserQuery : GetUserDefinedQueries(Actor, LevelConstraints))
-	{
-		AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, UserQuery);
-	}
+	AddUserDefinedQueries(OutInterest, Actor, LevelConstraints);
 
 	// If net cull distance frequency queries are enabled, build and add those separately as they have to be built each time.
 	// They are added as separate queries for the same reason- different frequencies.
@@ -454,12 +451,12 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 	OutInterest.ComponentInterestMap[ComponentId].Queries.Add(QueryToAdd);
 }
 
-TArray<Query> InterestFactory::GetUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraint) const
+void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const
 {
 	SCOPE_CYCLE_COUNTER(STAT_InterestFactoryAddUserDefinedQueries);
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
 	FrequencyToConstraintsMap FrequencyConstraintsMap = GetUserDefinedFrequencyToConstraintsMap(InActor);
-	TArray<Query> Queries;
 
 	for (const auto& FrequencyToConstraints : FrequencyConstraintsMap)
 	{
@@ -493,9 +490,30 @@ TArray<Query> InterestFactory::GetUserDefinedQueries(const AActor* InActor, cons
 		{
 			UserQuery.FullSnapshotResult = true;
 		}
-		Queries.Add(UserQuery);
+		
+		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(Settings->UseRPCRingBuffer()), UserQuery);
+
+		// Add the user interest to the server as well if load balancing is enabled and the client queries on server flag is flipped
+		// Need to check if load balancing is enabled otherwise there is not chance the client could see and entity the server can't,
+		// which is what the client queries on server flag is to avoid.
+		if (Settings->bEnableUnrealLoadBalancer && Settings->bEnableClientQueriesOnServer)
+		{
+			Query ServerUserQuery;
+			ServerUserQuery.Constraint = UserConstraint;
+			ServerUserQuery.Frequency = FrequencyToConstraints.Key;
+
+			if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
+			{
+				ServerUserQuery.ResultComponentId = ServerNonAuthInterestResultType;
+			}
+			else
+			{
+				ServerUserQuery.FullSnapshotResult = true;
+			}
+
+			AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerUserQuery);
+		}
 	}
-	return Queries;
 }
 
 FrequencyToConstraintsMap InterestFactory::GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const
