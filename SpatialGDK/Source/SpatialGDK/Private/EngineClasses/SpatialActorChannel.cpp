@@ -531,12 +531,6 @@ int64 USpatialActorChannel::ReplicateActor()
 #if USE_NETWORK_PROFILER 
 	const uint32 ActorReplicateStartTime = GNetworkProfiler.IsTrackingEnabled() ? FPlatformTime::Cycles() : 0;
 #endif
-	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
-	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
-	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
-	{
-		PlayerController->SendClientAdjustment();
-	}
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 

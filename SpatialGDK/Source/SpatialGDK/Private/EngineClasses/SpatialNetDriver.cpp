@@ -1521,6 +1521,13 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		{
 			new(ConnectionViewers)FNetViewer(ClientConnection, DeltaSeconds);
 
+			// send ClientAdjustment if necessary
+			// we do this here so that we send a maximum of one per packet to that client; there is no value in stacking additional corrections
+			if (ClientConnection->PlayerController)
+			{
+				ClientConnection->PlayerController->SendClientAdjustment();
+			}
+
 			if (ClientConnection->Children.Num() > 0)
 			{
 				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Child connections present on Spatial client connection %s! We don't support splitscreen yet, so this will not function correctly."), *ClientConnection->GetName());
