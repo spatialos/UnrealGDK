@@ -6,10 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2020-xx-xx
 
-## [`0.8.1-preview`] - 2020-xx-xx
-### Adapted from 0.6.5
+## [`0.8.1-preview`] - 2020-05-12
 ### Features:
-Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
 - Local deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
 - Updated the version of the local API service used by the UnrealGDK.
@@ -130,12 +128,6 @@ Features listed in the internal section are not ready to use but, in the spirit 
 - Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
 - When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
 - Fixed a crash upon checking out an actor with a deleted static subobject.
-
-## [`0.6.5`] - 2020-01-13
-### Internal:
-Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
-- **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
-- Local deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
 
 ## [`0.6.4`] - 2019-12-13
 ### Bug fixes:
