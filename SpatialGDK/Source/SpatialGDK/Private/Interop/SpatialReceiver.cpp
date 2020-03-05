@@ -173,6 +173,15 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			LoadBalanceEnforcer->OnLoadBalancingComponentAdded(Op);
 		}
 		return;
+	case SpatialConstants::WORKER_COMPONENT_ID:
+		if(NetDriver->IsServer())
+		{
+			// Register system identity for a worker connection, to know when a player has disconnected.
+			Worker* WorkerData = StaticComponentView->GetComponentData<Worker>(Op.entity_id);
+			WorkerConnectionEntities.Add(Op.entity_id, WorkerData->WorkerId);
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s 's system identity was checked out."), *WorkerData->WorkerId);
+		}
+		return;
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 		// The RPC service needs to be informed when a multi-cast RPC component is added.
 		if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
@@ -243,6 +252,28 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 	}
 
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
+
+	if (NetDriver->IsServer())
+	{
+		// Check to see if we are removing a system entity for a worker connection. If so clean up the ClientConnection to delete any and all actors for this connection's controller.
+		if (FString* WorkerName = WorkerConnectionEntities.Find(Op.entity_id))
+		{
+			TWeakObjectPtr<USpatialNetConnection> ClientConnectionPtr = NetDriver->FindClientConnectionFromWorkerId(*WorkerName);
+			if (USpatialNetConnection* ClientConnection = ClientConnectionPtr.Get())
+			{
+				if (APlayerController* Controller = ClientConnection->GetPlayerController(/*InWorld*/ nullptr))
+				{
+					Worker_EntityId PCEntity = PackageMap->GetEntityIdFromObject(Controller);
+					if (AuthorityPlayerControllerConnectionMap.Find(PCEntity))
+					{
+						UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s disconnected after its system identity was removed."), *(*WorkerName));
+						CloseClientConnection(ClientConnection, PCEntity);
+					}
+				}
+			}
+			WorkerConnectionEntities.Remove(Op.entity_id);
+		}
+	}
 }
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
@@ -914,19 +945,22 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		for (UObject* SubObject : ActorChannel->CreateSubObjects)
+		if (NetDriver->World)
 		{
-			if (SubObject)
+			for (UObject* SubObject : ActorChannel->CreateSubObjects)
 			{
-				FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(SubObject, Cast<USpatialPackageMapClient>(PackageMap));
-				// Unmap this object so we can remap it if it becomes relevant again in the future
-				MoveMappedObjectToUnmapped(ObjectRef);
+				if (SubObject)
+				{
+					FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(SubObject, Cast<USpatialPackageMapClient>(PackageMap));
+					// Unmap this object so we can remap it if it becomes relevant again in the future
+					MoveMappedObjectToUnmapped(ObjectRef);
+				}
 			}
-		}
 
-		FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Actor, Cast<USpatialPackageMapClient>(PackageMap));
-		// Unmap this object so we can remap it if it becomes relevant again in the future
-		MoveMappedObjectToUnmapped(ObjectRef);
+			FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Actor, Cast<USpatialPackageMapClient>(PackageMap));
+			// Unmap this object so we can remap it if it becomes relevant again in the future
+			MoveMappedObjectToUnmapped(ObjectRef);
+		}
 
 		for (auto& ChannelRefs : ActorChannel->ObjectReferenceMap)
 		{
@@ -2364,9 +2398,14 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 		GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
 	{
 		// Client has disconnected, let's clean up their connection.
-		NetConnection->CleanUp();
-		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
+		CloseClientConnection(NetConnection, Op.entity_id);
 	}
+}
+
+void USpatialReceiver::CloseClientConnection(USpatialNetConnection* ClientConnection, Worker_EntityId PlayerControllerEntityId)
+{
+	ClientConnection->CleanUp();
+	AuthorityPlayerControllerConnectionMap.Remove(PlayerControllerEntityId);
 }
 
 void USpatialReceiver::PeriodicallyProcessIncomingRPCs()

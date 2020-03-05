@@ -44,6 +44,7 @@ public:
 	virtual FString LowLevelGetRemoteAddress(bool bAppendPort = false) override { return TEXT(""); }
 	virtual FString LowLevelDescribe() override { return TEXT(""); }
 	virtual FString RemoteAddressToString() override { return TEXT(""); }
+	virtual void CleanUp() override;
 	///////
 	// End NetConnection Interface
 

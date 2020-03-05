@@ -1781,6 +1781,23 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 	}
 }
 
+namespace
+{
+	TOptional<FString> ExtractWorkerIDFromAttribute(const FString& WorkerAttribute)
+	{
+		const FString WorkerIdAttr = TEXT("workerId:");
+		int32 AttrOffset = WorkerAttribute.Find(WorkerIdAttr);
+
+		if (AttrOffset < 0)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Error : Worker attribute does not contain workerId : %s"), *WorkerAttribute);
+			return {};
+		}
+		
+		return WorkerAttribute.RightChop(AttrOffset + WorkerIdAttr.Len());
+	}
+}
+
 bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn)
 {
 	check(*OutConn == nullptr);
@@ -1812,6 +1829,14 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	check(WorkerAttributeOption);
 	SpatialConnection->WorkerAttribute = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
 
+	// Register workerId and its connection.
+	if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(SpatialConnection->WorkerAttribute))
+	{
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %s 's NetConnection created."), *WorkerId.GetValue());
+
+		WorkerConnections.Add(WorkerId.GetValue(), SpatialConnection);
+	}
+
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
 	// Note that in the initial implementation, we carry over no data about the user here (such as a unique player id, or the real IP)
 	// In the future it would make sense to add metadata to the Spawn request and pass it here.
@@ -1841,6 +1866,27 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	GameMode->GameWelcomePlayer(SpatialConnection, RedirectURL);
 
 	return true;
+}
+
+void USpatialNetDriver::CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp)
+{
+	if (!ConnectionCleanedUp->WorkerAttribute.IsEmpty())
+	{
+		if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(*ConnectionCleanedUp->WorkerAttribute))
+		{
+			WorkerConnections.Remove(WorkerId.GetValue());
+		}
+	}
+}
+
+TWeakObjectPtr<USpatialNetConnection> USpatialNetDriver::FindClientConnectionFromWorkerId(const FString& WorkerId)
+{
+	if (TWeakObjectPtr<USpatialNetConnection>* ClientConnectionPtr = WorkerConnections.Find(WorkerId))
+	{
+		return *ClientConnectionPtr;
+	}
+
+	return {};
 }
 
 void USpatialNetDriver::ProcessPendingDormancy()
