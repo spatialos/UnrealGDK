@@ -16,8 +16,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 
 namespace SpatialGDK
 {
-using FrequencyToConstraintsMap = TMap<float, TArray<QueryConstraint>>;
-
 class SPATIALGDK_API InterestFactory
 {
 public:

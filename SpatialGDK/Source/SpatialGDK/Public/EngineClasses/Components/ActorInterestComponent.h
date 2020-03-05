@@ -5,13 +5,10 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Interop/SpatialInterestConstraints.h"
+#include "Schema/Interest.h"
 
 #include "ActorInterestComponent.generated.h"
 
-namespace SpatialGDK
-{
-	using FrequencyToConstraintsMap = TMap<float, TArray<QueryConstraint>>;
-}
 class USpatialClassInfoManager;
 
 /**

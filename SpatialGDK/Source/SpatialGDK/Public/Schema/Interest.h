@@ -6,8 +6,8 @@
 
 namespace SpatialGDK
 {
-
 using EdgeLength = Coordinates;
+using FrequencyToConstraintsMap = TMap<float, TArray<struct QueryConstraint>>;
 
 struct SphereConstraint
 {

@@ -504,7 +504,7 @@ FrequencyToConstraintsMap InterestFactory::GetUserDefinedFrequencyToConstraintsM
 	// - We need to set the result type later
 	// - The map implicitly removes duplicates queries that have the same constraint. Result types are set for each query and these are large,
 	//   so worth simplifying as much as possible.
-	TMap<float, TArray<QueryConstraint>> FrequencyToConstraints;
+	FrequencyToConstraintsMap FrequencyToConstraints;
 
 	if (const APlayerController* PlayerController = Cast<APlayerController>(InActor))
 	{
