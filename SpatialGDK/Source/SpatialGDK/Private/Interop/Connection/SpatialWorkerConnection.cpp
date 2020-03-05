@@ -6,7 +6,6 @@
 #endif
 
 #include "EngineClasses/SpatialGameInstance.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Engine/World.h"
 #include "UnrealEngine.h"
 #include "Async/Async.h"
@@ -14,7 +13,6 @@
 #include "Engine/World.h"
 #include "Misc/Paths.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
 
@@ -464,22 +462,6 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	}
 }
 
-USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
-{
-	UNetDriver* NetDriver = GameInstance->GetWorld()->GetNetDriver();
-
-	// On the client, the world might not be completely set up.
-	// in this case we can use the PendingNetGame to get the NetDriver
-	if (NetDriver == nullptr)
-	{
-		NetDriver = GameInstance->GetWorldContext()->PendingNetGame->GetNetDriver();
-	}
-
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
-	checkf(SpatialNetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
-	return SpatialNetDriver;
-}
-
 void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
@@ -489,7 +471,7 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 		InitializeOpsProcessingThread();
 	}
 
-	GetSpatialNetDriverChecked()->OnConnectedToSpatialOS();
+	OnConnectedCallback.ExecuteIfBound();
 	GameInstance->HandleOnConnected();
 }
 
@@ -507,8 +489,7 @@ void USpatialWorkerConnection::OnConnectionFailure()
 	{
 		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
 		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
-
-		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
+		OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 	}
 }
 

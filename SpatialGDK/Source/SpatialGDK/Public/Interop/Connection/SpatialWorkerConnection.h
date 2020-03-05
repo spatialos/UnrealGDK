@@ -71,6 +71,12 @@ public:
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
+	DECLARE_DELEGATE(OnConnectionToSpatialOSSucceededDelegate)
+	OnConnectionToSpatialOSSucceededDelegate OnConnectedCallback;
+
+	DECLARE_DELEGATE_TwoParams(OnConnectionToSpatialOSFailedDelegate, uint8_t, const FString&);
+	OnConnectionToSpatialOSFailedDelegate OnFailedToConnectCallback;
+
 	void RequestDeploymentLoginTokens();
 
 private:
@@ -85,8 +91,6 @@ private:
 	SpatialConnectionType GetConnectionType() const;
 
 	void CacheWorkerAttributes();
-
-	class USpatialNetDriver* GetSpatialNetDriverChecked() const;
 
 	// Begin FRunnable Interface
 	virtual bool Init() override;
