@@ -35,130 +35,6 @@ void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* 
 	NumberOfAttempts = 0;
 }
 
-void USpatialPlayerSpawner::ReceivePlayerSpawnRequestOnServer(const Worker_CommandRequestOp& Op)
-{
-	FString WorkerID(UTF8_TO_TCHAR(Op.caller_worker_id));
-
-	// Accept the player if we have not already accepted a player from this worker.
-	bool bAlreadyHasPlayer;
-	WorkersWithPlayersSpawned.Emplace(WorkerID, &bAlreadyHasPlayer);
-	if (bAlreadyHasPlayer)
-	{
-		return;
-	}
-
-	Schema_Object* RequestPayload = Schema_GetCommandRequestObject(Op.request.schema_type);
-	FindPlayerStartAndProcessPlayerSpawn(RequestPayload);
-
-	const Worker_CommandResponse Response = PlayerSpawner::CreatePlayerSpawnResponse();
-	NetDriver->Connection->SendCommandResponse(Op.request_id, &Response);
-}
-
-void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* SpawnPlayerRequest)
-{
-	// We need to specifically extract the URL from the PlayerSpawn request for finding a PlayerStart.
-	const FURL Url = PlayerSpawner::ExtractUrlFromPlayerSpawnParams(SpawnPlayerRequest);
-	const AActor* PlayerStartActor = NetDriver->GetWorld()->GetAuthGameMode()->FindPlayerStart(nullptr, Url.Portal);
-
-	// If load-balancing is enabled AND the strategy dictates that another worker should have authority over
-	// the chosen PlayerStart THEN the spawn request is forwarded to that worker to prevent an initial player
-	// migration. Immediate player migrations can still happen if
-	// 1) the load-balancing strategy has different rules for PlayerStart Actors and Characters / Controllers /
-	// Player States or,
-	// 2) the load-balancing strategy can change the authoritative virtual worker ID for a PlayerStart Actor
-	// during the lifetime of a deployment.
-	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
-	{
-		check(NetDriver->LoadBalanceStrategy != nullptr);
-		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*PlayerStartActor))
-		{
-			// If we fail to forward the spawn request, we default to the normal player spawning flow.
-			const bool bSuccessfullyForwardedRequest = ForwardSpawnRequestToStrategizedServer(SpawnPlayerRequest, PlayerStartActor);
-			if (bSuccessfullyForwardedRequest)
-			{
-				return;
-			}
-		}
-	}
-
-	PassSpawnRequestToNetDriver(SpawnPlayerRequest, PlayerStartActor);
-}
-
-void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_CommandRequestOp& Op)
-{
-	Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
-	Schema_Object* PlayerSpawnData = Schema_GetObject(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_DATA_ID);
-	FString ClientWorkerID = GetStringFromSchema(PlayerSpawnData, SpatialConstants::SPAWN_PLAYER_CLIENT_WORKER_ID);
-
-	// Accept the player if we have not already accepted a player from this worker.
-	bool bAlreadyHasPlayer;
-	WorkersWithPlayersSpawned.Emplace(ClientWorkerID, &bAlreadyHasPlayer);
-	if (bAlreadyHasPlayer)
-	{
-		return;
-	}
-
-	FUnrealObjectRef PlayerStartRef = GetObjectRefFromSchema(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_START_ACTOR_ID);
-	bool bRefIsUnresolved;
-	AActor* PlayerStart = Cast<AActor>(FUnrealObjectRef::ToObjectPtr(PlayerStartRef, NetDriver->PackageMap, bRefIsUnresolved));
-	if (PlayerStart == nullptr || bRefIsUnresolved)
-	{
-		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("PlayerStart Actor UnrealObjectRef was invalid on forwarded player spawn request worker: %s. Defaulting to normal player spawning flow."), *ClientWorkerID);
-	}
-
-	PassSpawnRequestToNetDriver(PlayerSpawnData, PlayerStart);
-
-	Worker_CommandResponse Response = ServerWorker::CreateForwardPlayerSpawnReponse();
-	NetDriver->Connection->SendCommandResponse(Op.request_id, &Response);
-}
-
-void USpatialPlayerSpawner::PassSpawnRequestToNetDriver(Schema_Object* PlayerSpawnData, const AActor* PlayerStart)
-{
-	FURL Url;
-	FUniqueNetIdRepl UniqueId;
-	FName OnlinePlatformName;
-	FString ClientWorkerId;
-	PlayerSpawner::ExtractPlayerSpawnParams(PlayerSpawnData, Url, UniqueId, OnlinePlatformName, ClientWorkerId);
-
-	NetDriver->AcceptNewPlayer(Url, UniqueId, OnlinePlatformName);
-}
-
-// Copies the fields from the SpawnPlayerRequest argument into a ForwardSpawnPlayerRequest (along with the PlayerStart UnrealObjectRef).
-bool USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_Object* OriginalPlayerSpawnRequest, const AActor* PlayerStart)
-{
-	// Find which virtual worker should have authority of the PlayerStart.
-	const VirtualWorkerId SpawningVirtualWorker = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*PlayerStart);
-	if (SpawningVirtualWorker == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-	{
-		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Load-balance strategy returned invalid virtual worker ID for selected PlayerStart Actor: %s. Defaulting to normal player spawning flow."), *GetNameSafe(PlayerStart));
-		return false;
-	}
-
-	// Find the server worker entity corresponding to the PlayerStart strategized virtual worker.
-	const Worker_EntityId ServerWorkerEntity = NetDriver->VirtualWorkerTranslator->GetServerWorkerEntityForVirtualWorker(SpawningVirtualWorker);
-	if (ServerWorkerEntity == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Virtual worker translator returned invalid server worker entity ID. Virtual worker: %d. Defaulting to normal player spawning flow."), SpawningVirtualWorker);
-		return false;
-	}
-
-	// To pass the PlayerStart Actor to another worker we use a FUnrealObjectRef.
-	FUnrealObjectRef PlayerStartObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(PlayerStart);
-
-	// Create a request using the PlayerStart reference and by copying the data from the player spawn request from the client.
-	// The Schema_CommandRequest is constructed separately from the Worker_CommandRequest so we can store it in the outgoing
-	// map for future retries.
-	Schema_CommandRequest* ForwardSpawnPlayerSchemaRequest = Schema_CreateCommandRequest();
-	ServerWorker::CreateForwardPlayerSpawnSchemaRequest(ForwardSpawnPlayerSchemaRequest, PlayerStartObjectRef, OriginalPlayerSpawnRequest);
-	Worker_CommandRequest ForwardSpawnPlayerRequest = ServerWorker::CreateForwardPlayerSpawnRequest(Schema_CopyCommandRequest(ForwardSpawnPlayerSchemaRequest));
-
-	Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(ServerWorkerEntity, &ForwardSpawnPlayerRequest, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID);
-
-	OutgoingForwardPlayerSpawnRequests.Add(RequestId, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>(ForwardSpawnPlayerSchemaRequest));
-
-	return true;
-}
-
 void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 {
 	// Send an entity query for the SpatialSpawner and bind a delegate so that once it's found, we send a spawn command.
@@ -207,6 +83,144 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	++NumberOfAttempts;
 }
 
+void USpatialPlayerSpawner::ReceivePlayerSpawnRequestOnServer(const Worker_CommandRequestOp& Op)
+{
+	UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Received player spawn request on server"));
+
+	FString WorkerID(UTF8_TO_TCHAR(Op.caller_worker_id));
+
+	// Accept the player if we have not already accepted a player from this worker.
+	bool bAlreadyHasPlayer;
+	WorkersWithPlayersSpawned.Emplace(WorkerID, &bAlreadyHasPlayer);
+	if (bAlreadyHasPlayer)
+	{
+		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Ignoring duplicate player spawn request. Client worker ID: %s", *ClientWorkerID));
+		return;
+	}
+
+	Schema_Object* RequestPayload = Schema_GetCommandRequestObject(Op.request.schema_type);
+	FindPlayerStartAndProcessPlayerSpawn(RequestPayload);
+
+	const Worker_CommandResponse Response = PlayerSpawner::CreatePlayerSpawnResponse();
+	NetDriver->Connection->SendCommandResponse(Op.request_id, &Response);
+}
+
+void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* SpawnPlayerRequest)
+{
+	// We need to specifically extract the URL from the PlayerSpawn request for finding a PlayerStart.
+	const FURL Url = PlayerSpawner::ExtractUrlFromPlayerSpawnParams(SpawnPlayerRequest);
+	const AActor* PlayerStartActor = NetDriver->GetWorld()->GetAuthGameMode()->FindPlayerStart(nullptr, Url.Portal);
+
+	// If load-balancing is enabled AND the strategy dictates that another worker should have authority over
+	// the chosen PlayerStart THEN the spawn request is forwarded to that worker to prevent an initial player
+	// migration. Immediate player migrations can still happen if
+	// 1) the load-balancing strategy has different rules for PlayerStart Actors and Characters / Controllers /
+	// Player States or,
+	// 2) the load-balancing strategy can change the authoritative virtual worker ID for a PlayerStart Actor
+	// during the lifetime of a deployment.
+	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	{
+		check(NetDriver->LoadBalanceStrategy != nullptr);
+		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*PlayerStartActor))
+		{
+			// If we fail to forward the spawn request, we default to the normal player spawning flow.
+			const bool bSuccessfullyForwardedRequest = ForwardSpawnRequestToStrategizedServer(SpawnPlayerRequest, PlayerStartActor);
+			if (bSuccessfullyForwardedRequest)
+			{
+				return;
+			}
+		}
+		else
+		{
+			UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Handling player spawn request locally. Client ID: %s.",
+				*GetStringFromSchema(OriginalPlayerSpawnRequest, SpatialConstants::SPAWN_PLAYER_CLIENT_WORKER_ID)));
+		}
+	}
+
+	PassSpawnRequestToNetDriver(SpawnPlayerRequest, PlayerStartActor);
+}
+
+void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_CommandRequestOp& Op)
+{
+	Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
+	Schema_Object* PlayerSpawnData = Schema_GetObject(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_DATA_ID);
+	FString ClientWorkerID = GetStringFromSchema(PlayerSpawnData, SpatialConstants::SPAWN_PLAYER_CLIENT_WORKER_ID);
+
+	// Accept the player if we have not already accepted a player from this worker.
+	bool bAlreadyHasPlayer;
+	WorkersWithPlayersSpawned.Emplace(ClientWorkerID, &bAlreadyHasPlayer);
+	if (bAlreadyHasPlayer)
+	{
+		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Ignoring duplicate forward player spawn request. Client worker ID: %s", *ClientWorkerID));
+		return;
+	}
+
+	FUnrealObjectRef PlayerStartRef = GetObjectRefFromSchema(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_START_ACTOR_ID);
+	bool bRefIsUnresolved;
+	AActor* PlayerStart = Cast<AActor>(FUnrealObjectRef::ToObjectPtr(PlayerStartRef, NetDriver->PackageMap, bRefIsUnresolved));
+	if (PlayerStart == nullptr || bRefIsUnresolved)
+	{
+		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("PlayerStart Actor UnrealObjectRef was invalid on forwarded player spawn request worker: %s. Defaulting to normal player spawning flow."), *ClientWorkerID);
+	}
+
+	UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Received forward player spawn request. Client worker ID: %s. PlayerStart: %s", *ClientWorkerID, *PlayerStart->GetName()));
+
+	PassSpawnRequestToNetDriver(PlayerSpawnData, PlayerStart);
+
+	Worker_CommandResponse Response = ServerWorker::CreateForwardPlayerSpawnReponse();
+	NetDriver->Connection->SendCommandResponse(Op.request_id, &Response);
+}
+
+void USpatialPlayerSpawner::PassSpawnRequestToNetDriver(Schema_Object* PlayerSpawnData, const AActor* PlayerStart)
+{
+	FURL Url;
+	FUniqueNetIdRepl UniqueId;
+	FName OnlinePlatformName;
+	FString ClientWorkerId;
+	PlayerSpawner::ExtractPlayerSpawnParams(PlayerSpawnData, Url, UniqueId, OnlinePlatformName, ClientWorkerId);
+
+	NetDriver->AcceptNewPlayer(Url, UniqueId, OnlinePlatformName);
+}
+
+// Copies the fields from the SpawnPlayerRequest argument into a ForwardSpawnPlayerRequest (along with the PlayerStart UnrealObjectRef).
+bool USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_Object* OriginalPlayerSpawnRequest, const AActor* PlayerStart)
+{
+	// Find which virtual worker should have authority of the PlayerStart.
+	const VirtualWorkerId SpawningVirtualWorker = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*PlayerStart);
+	if (SpawningVirtualWorker == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+	{
+		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Load-balance strategy returned invalid virtual worker ID for selected PlayerStart Actor: %s. Defaulting to normal player spawning flow."), *GetNameSafe(PlayerStart));
+		return false;
+	}
+
+	// Find the server worker entity corresponding to the PlayerStart strategized virtual worker.
+	const Worker_EntityId ServerWorkerEntity = NetDriver->VirtualWorkerTranslator->GetServerWorkerEntityForVirtualWorker(SpawningVirtualWorker);
+	if (ServerWorkerEntity == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Virtual worker translator returned invalid server worker entity ID. Virtual worker: %d. Defaulting to normal player spawning flow."), SpawningVirtualWorker);
+		return false;
+	}
+
+	UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Forwarding player spawn request to strategized worker. Client ID: %s. PlayerStart: %s. Strategeized virtual worker %d. Forward server worker entity: %lld",
+		*GetStringFromSchema(OriginalPlayerSpawnRequest, SpatialConstants::SPAWN_PLAYER_CLIENT_WORKER_ID), *GetNameSafe(PlayerStart), SpawningVirtualWorker, ServerWorkerEntity));
+
+	// To pass the PlayerStart Actor to another worker we use a FUnrealObjectRef.
+	FUnrealObjectRef PlayerStartObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(PlayerStart);
+
+	// Create a request using the PlayerStart reference and by copying the data from the player spawn request from the client.
+	// The Schema_CommandRequest is constructed separately from the Worker_CommandRequest so we can store it in the outgoing
+	// map for future retries.
+	Schema_CommandRequest* ForwardSpawnPlayerSchemaRequest = Schema_CreateCommandRequest();
+	ServerWorker::CreateForwardPlayerSpawnSchemaRequest(ForwardSpawnPlayerSchemaRequest, PlayerStartObjectRef, OriginalPlayerSpawnRequest);
+	Worker_CommandRequest ForwardSpawnPlayerRequest = ServerWorker::CreateForwardPlayerSpawnRequest(Schema_CopyCommandRequest(ForwardSpawnPlayerSchemaRequest));
+
+	Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(ServerWorkerEntity, &ForwardSpawnPlayerRequest, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID);
+
+	OutgoingForwardPlayerSpawnRequests.Add(RequestId, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>(ForwardSpawnPlayerSchemaRequest));
+
+	return true;
+}
+
 void USpatialPlayerSpawner::ReceivePlayerSpawnResponseOnClient(const Worker_CommandResponseOp& Op)
 {
 	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
@@ -244,7 +258,7 @@ void USpatialPlayerSpawner::ReceiveForwardPlayerSpawnResponse(const Worker_Comma
 		return;
 	}
 
-	UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Retrying ForwardPlayerSpawn request. Previously it failed: \"%s\""),
+	UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("ForwardPlayerSpawn request failed: \"%s\". Retrying"),
 			UTF8_TO_TCHAR(Op.message));
 
 	FTimerHandle RetryTimer;
@@ -265,6 +279,7 @@ void USpatialPlayerSpawner::ReceiveForwardPlayerSpawnResponse(const Worker_Comma
 				{
 					Schema_Object* SpawnPlayerData = Schema_GetObject(OldRequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_DATA_ID);
 					Spawner->FindPlayerStartAndProcessPlayerSpawn(SpawnPlayerData);
+					UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Target PlayerStart to spawn player was no longer valid after forwarding failed. Finding another PlayerStart."));
 					return;
 				}
 
@@ -281,30 +296,30 @@ void USpatialPlayerSpawner::ReceiveForwardPlayerSpawnResponse(const Worker_Comma
 
 void USpatialPlayerSpawner::ObtainPlayerParams(FURL& OutLoginURL, FUniqueNetIdRepl& OutUniqueId, FName& OutOnlinePlatformName, bool& OutIsSimulatedPlayer, FString& OutClientWorkerId) const
 {
-	const FWorldContext* WorldContext = GEngine->GetWorldContextFromWorld(NetDriver->GetWorld());
+	const FWorldContext* const WorldContext = GEngine->GetWorldContextFromWorld(NetDriver->GetWorld());
 	check(WorldContext->OwningGameInstance);
 
 	// This code is adapted from PendingNetGame.cpp:242
-	if (const ULocalPlayer* LocalPlayer = WorldContext->OwningGameInstance->GetFirstGamePlayer())
+	if (ULocalPlayer* LocalPlayer = WorldContext->OwningGameInstance->GetFirstGamePlayer())
 	{
 		// Send the player nickname if available
 		FString OverrideName = LocalPlayer->GetNickname();
 		if (OverrideName.Len() > 0)
 		{
-			OutLoginURL.AddOption(*FString::Printf(TEXT("Name=%s"), *OverrideName));
+			LoginURL.AddOption(*FString::Printf(TEXT("Name=%s"), *OverrideName));
 		}
 
 		// Send any game-specific url options for this player
-		const FString GameUrlOptions = LocalPlayer->GetGameLoginOptions();
+		FString GameUrlOptions = LocalPlayer->GetGameLoginOptions();
 		if (GameUrlOptions.Len() > 0)
 		{
-			OutLoginURL.AddOption(*FString::Printf(TEXT("%s"), *GameUrlOptions));
+			LoginURL.AddOption(*FString::Printf(TEXT("%s"), *GameUrlOptions));
 		}
 		// Pull in options from the current world URL (to preserve options added to a travel URL)
 		const TArray<FString>& LastURLOptions = WorldContext->LastURL.Op;
 		for (const FString& Op : LastURLOptions)
 		{
-			OutLoginURL.AddOption(*Op);
+			LoginURL.AddOption(*Op);
 		}
 		LoginURL.Portal = WorldContext->LastURL.Portal;
 
