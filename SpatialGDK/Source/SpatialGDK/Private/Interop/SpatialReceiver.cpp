@@ -1097,12 +1097,8 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 		NewActor->SetActorScale3D(SpawnDataComp->Scale);
 	}
 
-	// Don't have authority over Actor until SpatialOS delegates authority, if zoning is enabled
-	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
-	{
-		NewActor->Role = ROLE_SimulatedProxy;
-		NewActor->RemoteRole = ROLE_Authority;
-	}
+	NewActor->Role = ROLE_SimulatedProxy;
+	NewActor->RemoteRole = ROLE_Authority;
 
 	return NewActor;
 }

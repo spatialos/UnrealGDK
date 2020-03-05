@@ -684,10 +684,11 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 	if (OwningWorld != World
 		|| !OwningWorld->IsServer()
 		|| GlobalStateManager == nullptr
-		|| !GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+		|| !GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer
+		|| !LoadBalanceStrategy->IsReady())
 	{
 		// If the world isn't our owning world, we are a client, or we loaded the levels
-		// before connecting to Spatial, or the load balancer is disabled, we exit early
+		// before connecting to Spatial, or the load balancer is disabled / not ready, we exit early
 		return;
 	}
 
