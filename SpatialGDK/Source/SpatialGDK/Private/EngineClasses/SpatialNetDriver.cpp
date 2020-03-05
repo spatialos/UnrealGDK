@@ -2292,7 +2292,7 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 		}
 	}
 
-	if (IsServer())
+	if (IsServer() && Channel != nullptr)
 	{
 		Channel->SetServerAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID));
 	}

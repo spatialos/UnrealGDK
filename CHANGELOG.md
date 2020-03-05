@@ -62,6 +62,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added custom warning timeouts per RPC failure condition.
 - SpatialPingComponent can now also report average ping measurements over a specified number of recent pings. You can specify the number of measurements recorded in `PingMeasurementsWindowSize` and get the measurement data by calling `GetAverageData`. There is also a delegate `OnRecordPing` that will be broadcast whenever a new ping measurement is recorded.
 - The Spatial Output Log window now displays deployment startup errors.
+- Added `bEnableClientQueriesOnServer` (defaulted true) which makes the same queries on the server as on clients if the unreal load balancer is enabled. This is to avoid clients seeing entities the server does not if the server's interest query has not been configured correctly.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
