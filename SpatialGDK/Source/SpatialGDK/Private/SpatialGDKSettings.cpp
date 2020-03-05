@@ -83,6 +83,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureClientConnection(false)
 	, bUseSecureServerConnection(false)
 	, bUseDevelopmentAuthenticationFlow(false)
+	, bEnableClientQueriesOnServer(true)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
