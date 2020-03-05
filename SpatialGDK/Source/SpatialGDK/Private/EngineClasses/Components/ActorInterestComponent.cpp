@@ -5,8 +5,10 @@
 #include "Schema/Interest.h"
 #include "Interop/SpatialClassInfoManager.h"
 
-void UActorInterestComponent::CreateQueries(const USpatialClassInfoManager& ClassInfoManager, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const
+void UActorInterestComponent::PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const
 {
+	// Loop through the user specified queries to extract the constraints and frequencies.
+	// We don't construct the actual query at this point because the interest factory enforces the result types.
 	for (const auto& QueryData : Queries)
 	{
 		if (!QueryData.Constraint)
@@ -14,27 +16,18 @@ void UActorInterestComponent::CreateQueries(const USpatialClassInfoManager& Clas
 			continue;
 		}
 
-		SpatialGDK::Query NewQuery{};
-		// Avoid creating an unnecessary AND constraint if there are no AdditionalConstraints to consider.
-		if (AdditionalConstraints.IsValid())
-		{
-			SpatialGDK::QueryConstraint ComponentConstraints;
-			QueryData.Constraint->CreateConstraint(ClassInfoManager, ComponentConstraints);
+		SpatialGDK::QueryConstraint NewQueryConstraint{};
+		QueryData.Constraint->CreateConstraint(ClassInfoManager, NewQueryConstraint);
 
-			NewQuery.Constraint.AndConstraint.Add(ComponentConstraints);
-			NewQuery.Constraint.AndConstraint.Add(AdditionalConstraints);
-		}
-		else
+		// If there is already a query defined with this frequency, group them to avoid making too many queries down the line.
+		// This avoids any extra cost due to duplicate result types across the network if they are large.
+		if (OutFrequencyToQueryConstraints.Find(QueryData.Frequency))
 		{
-			QueryData.Constraint->CreateConstraint(ClassInfoManager, NewQuery.Constraint);
+			OutFrequencyToQueryConstraints.Find(QueryData.Frequency)->Add(NewQueryConstraint);
+			continue;
 		}
-		NewQuery.Frequency = QueryData.Frequency;
-		NewQuery.FullSnapshotResult = true;
 
-		if (NewQuery.Constraint.IsValid())
-		{
-			OutQueries.Push(NewQuery);
-		}
+		TArray<SpatialGDK::QueryConstraint> ConstraintList = { NewQueryConstraint };
+		OutFrequencyToQueryConstraints.Add(QueryData.Frequency, ConstraintList);
 	}
-
 }
