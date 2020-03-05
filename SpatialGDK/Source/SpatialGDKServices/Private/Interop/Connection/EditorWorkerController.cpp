@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "Interop/Connection/EditorWorkerController.h"
 
+#include "SpatialCommandUtils.h"
 #include "SpatialGDKServicesPrivate.h"
 
 #include "Editor.h"
@@ -73,9 +74,8 @@ struct EditorWorkerController
 				"--existing_worker_id %s "
 				"--replacing_worker_id %s"), *ServicePort, *OldWorker, *NewWorker);
 		uint32 ProcessID = 0;
-		FProcHandle ProcHandle = FPlatformProcess::CreateProc(
-			*(CmdExecutable), *CmdArgs, false, true, true, &ProcessID, 2 /*PriorityModifier*/,
-			nullptr, nullptr, nullptr);
+		FProcHandle ProcHandle = SpatialCommandUtils::CreateSpatialProcess(CmdArgs, false, true, true, &ProcessID, 2 /*PriorityModifier*/,
+				nullptr, nullptr, nullptr, false);
 
 		return ProcHandle;
 	}
