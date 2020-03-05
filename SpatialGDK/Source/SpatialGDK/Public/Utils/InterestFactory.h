@@ -16,6 +16,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 
 namespace SpatialGDK
 {
+using ResultType = TArray<Worker_ComponentId>;
+
 class SPATIALGDK_API InterestFactory
 {
 public:
@@ -36,10 +38,10 @@ private:
 	static QueryConstraint CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager);
 
 	// Builds the result types of necessary components for clients
-	static TArray<Worker_ComponentId> CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	static TArray<Worker_ComponentId> CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	static TArray<Worker_ComponentId> CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	static TArray<Worker_ComponentId> CreateServerAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	static ResultType CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	static ResultType CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	static ResultType CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	static ResultType CreateServerAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
 
 	Interest CreateInterest() const;
 
@@ -50,16 +52,16 @@ private:
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest) const;
 
+	// Add the checkout radius, always relevant, or always interested query.
+	void AddSystemQuery(Interest& OutInterest, const QueryConstraint& LevelConstraint) const;
+
 	void AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const;
 	FrequencyToConstraintsMap GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
 	void GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints, bool bRecurseChildren) const;
 
-	TArray<Query> GetNetCullDistanceFrequencyQueries(const QueryConstraint& LevelConstraint) const;
+	void AddNetCullDistanceFrequencyQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const;
 
 	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd);
-
-	// Checkout Constraint OR AlwaysInterested OR AlwaysRelevant Constraint
-	QueryConstraint CreateSystemDefinedConstraints() const;
 
 	// System Defined Constraints
 	QueryConstraint CreateCheckoutRadiusConstraints() const;
@@ -70,6 +72,9 @@ private:
 	QueryConstraint CreateLevelConstraints() const;	
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
+
+	// If the result types flag is flipped, set the specified result type.
+	static void SetResultType(Query& OutQuery, const ResultType& InResultType);
 
 	AActor* Actor;
 	const FClassInfo& Info;
