@@ -653,9 +653,18 @@ void USpatialNetDriver::MakePlayerSpawnRequest()
 
 void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
 {
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("OnLevelAddedToWorld: Level (%s) OwningWorld (%s) World (%s)"),
+		*GetNameSafe(LoadedLevel), *GetNameSafe(OwningWorld), *GetNameSafe(World));
+
 	// Callback got called on a World that's not associated with this NetDriver.
 	// Don't do anything.
 	if (OwningWorld != World)
+	{
+		return;
+	}
+
+	// Not necessary for clients
+	if (!IsServer())
 	{
 		return;
 	}
@@ -675,6 +684,12 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
 	{
 		// If load balancing is disabled and this worker is not GSM authoritative then exit early.
+		return;
+	}
+
+	if (bLoadBalancingEnabled && !LoadBalanceStrategy->IsReady())
+	{
+		// Load balancer isn't ready, this should only occur when servers are loading composition levels on startup, before connecting to spatial
 		return;
 	}
 

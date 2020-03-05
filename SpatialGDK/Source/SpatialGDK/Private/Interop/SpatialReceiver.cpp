@@ -452,13 +452,16 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
-	if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
+	if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 	{
-		NetDriver->GetActorChannelByEntityId(Op.entity_id)->OnServerAuthorityChange(Op);
-	}
-	else if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
-	{
-		NetDriver->GetActorChannelByEntityId(Op.entity_id)->OnClientAuthorityChange(Op);
+		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
+		{
+			Channel->OnServerAuthorityChange(Op);
+		}
+		else if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+		{
+			Channel->OnClientAuthorityChange(Op);
+		}
 	}
 
 	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY
