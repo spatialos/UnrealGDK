@@ -401,37 +401,19 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest) co
 
 	AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, ClientQuery);
 
-	TArray<Query> UserQueries = GetUserDefinedQueries(LevelConstraints);
-	for (const auto& UserQuery : UserQueries)
+	// Could be multiple queries due to different frequencies, so have to add them all separately.
+	for (const auto& UserQuery : GetUserDefinedQueries(Actor, LevelConstraints))
 	{
 		AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, UserQuery);
 	}
 
+	// If net cull distance frequency queries are enabled, build and add those separately as they have to be built each time.
+	// They are added as separate queries for the same reason- different frequencies.
 	if (SpatialGDKSettings->bEnableNetCullDistanceFrequency)
 	{
-		for (const auto& RadiusCheckoutConstraints : CheckoutConstraints)
+		for (const auto& FrequencyQuery : GetNetCullDistanceFrequencyQueries(LevelConstraints))
 		{
-			SpatialGDK::Query NewQuery{};
-
-			NewQuery.Constraint.AndConstraint.Add(RadiusCheckoutConstraints.Constraint);
-
-			if (LevelConstraints.IsValid())
-			{
-				NewQuery.Constraint.AndConstraint.Add(LevelConstraints);
-			}
-
-			NewQuery.Frequency = RadiusCheckoutConstraints.Frequency;
-
-			if (SpatialGDKSettings->bEnableResultTypes)
-			{
-				NewQuery.ResultComponentId = ClientNonAuthInterestResultType;
-			}
-			else
-			{
-				NewQuery.FullSnapshotResult = true;
-			}
-
-			AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, NewQuery);
+			AddComponentQueryPairToInterestComponent(OutInterest, ClientEndpointComponentId, FrequencyQuery);
 		}
 	}
 }
@@ -472,7 +454,74 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 	OutInterest.ComponentInterestMap[ComponentId].Queries.Add(QueryToAdd);
 }
 
-void InterestFactory::GetActorUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries, bool bRecurseChildren) const
+TArray<Query> InterestFactory::GetUserDefinedQueries(const AActor* InActor, const QueryConstraint& LevelConstraint) const
+{
+	SCOPE_CYCLE_COUNTER(STAT_InterestFactoryAddUserDefinedQueries);
+
+	FrequencyToConstraintsMap FrequencyConstraintsMap = GetUserDefinedFrequencyToConstraintsMap(InActor);
+	TArray<Query> Queries;
+
+	for (const auto& FrequencyToConstraints : FrequencyConstraintsMap)
+	{
+		Query UserQuery;
+		QueryConstraint UserConstraint;
+
+		UserQuery.Frequency = FrequencyToConstraints.Key;
+
+		// If there is only one constraint, don't make the constraint an OR.
+		if (FrequencyToConstraints.Value.Num() == 1)
+		{
+			UserConstraint = FrequencyToConstraints.Value[0];
+		}
+		else
+		{
+			UserConstraint.OrConstraint.Append(FrequencyToConstraints.Value);
+		}
+
+		// All constraints have to be limited to the checked out levels, so create an AND constraint with the level.
+		UserQuery.Constraint.AndConstraint.Add(UserConstraint);
+		UserQuery.Constraint.AndConstraint.Add(LevelConstraint);
+
+		// We enforce result type even for user defined queries. Here we are assuming what a user wants from their defined
+		// queries are for their players to check out more actors than they normally would, so use the client non auth result type,
+		// which includes all components required for a client to see non-authoritative actors.
+		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
+		{
+			UserQuery.ResultComponentId = ClientNonAuthInterestResultType;
+		}
+		else
+		{
+			UserQuery.FullSnapshotResult = true;
+		}
+		Queries.Add(UserQuery);
+	}
+	return Queries;
+}
+
+FrequencyToConstraintsMap InterestFactory::GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const
+{
+	// This function builds a frequency to constraint map rather than queries. It does this for two reasons:
+	// - We need to set the result type later
+	// - The map implicitly removes duplicates queries that have the same constraint. Result types are set for each query and these are large,
+	//   so worth simplifying as much as possible.
+	FrequencyToConstraintsMap FrequencyToConstraints;
+
+	if (const APlayerController* PlayerController = Cast<APlayerController>(InActor))
+	{
+		// If this is for a player controller, loop through the pawns of the controller as well, because we only add interest to
+		// the player controller entity but interest can be specified on the pawn of the controller as well.
+		GetActorUserDefinedQueryConstraints(InActor, FrequencyToConstraints, true);
+		GetActorUserDefinedQueryConstraints(PlayerController->GetPawn(), FrequencyToConstraints, true);
+	}
+	else
+	{
+		GetActorUserDefinedQueryConstraints(InActor, FrequencyToConstraints, false);
+	}
+
+	return FrequencyToConstraints;
+}
+
+void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints, bool bRecurseChildren) const
 {
 	check(ClassInfoManager);
 
@@ -481,11 +530,12 @@ void InterestFactory::GetActorUserDefinedQueries(const AActor* InActor, const Qu
 		return;
 	}
 
+	// The defined actor interest component populates the frequency to constraints map with the user defined queries.
 	TArray<UActorInterestComponent*> ActorInterestComponents;
 	InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
 	if (ActorInterestComponents.Num() == 1)
 	{
-		ActorInterestComponents[0]->CreateQueries(*ClassInfoManager, LevelConstraints, OutQueries);
+		ActorInterestComponents[0]->PopulateFrequencyToConstraintsMap(*ClassInfoManager, OutFrequencyToConstraints);
 	}
 	else if (ActorInterestComponents.Num() > 1)
 	{
@@ -497,28 +547,43 @@ void InterestFactory::GetActorUserDefinedQueries(const AActor* InActor, const Qu
 	{
 		for (const auto& Child : InActor->Children)
 		{
-			GetActorUserDefinedQueries(Child, LevelConstraints, OutQueries, true);
+			GetActorUserDefinedQueryConstraints(Child, OutFrequencyToConstraints, true);
 		}
 	}
 }
 
-TArray<Query> InterestFactory::GetUserDefinedQueries(const QueryConstraint& LevelConstraints) const
+TArray<Query> InterestFactory::GetNetCullDistanceFrequencyQueries(const QueryConstraint& LevelConstraint) const
 {
-	SCOPE_CYCLE_COUNTER(STAT_InterestFactoryAddUserDefinedQueries);
+	TArray<Query> FrequencyQueries;
 
-	TArray<Query> Queries;
-
-	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+	// The CheckouConstraints list contains items with a constraint and a frequency.
+	// They are then converted to queries by adding a result type to them, and conjoined with the level constraint.
+	for (const auto& RadiusCheckoutConstraints : CheckoutConstraints)
 	{
-		GetActorUserDefinedQueries(Actor, LevelConstraints, Queries, true);
-		GetActorUserDefinedQueries(PlayerController->GetPawn(), LevelConstraints, Queries, true);
-	}
-	else
-	{
-		GetActorUserDefinedQueries(Actor, LevelConstraints, Queries, false);
+		SpatialGDK::Query NewQuery{};
+
+		NewQuery.Constraint.AndConstraint.Add(RadiusCheckoutConstraints.Constraint);
+
+		if (LevelConstraint.IsValid())
+		{
+			NewQuery.Constraint.AndConstraint.Add(LevelConstraint);
+		}
+
+		NewQuery.Frequency = RadiusCheckoutConstraints.Frequency;
+
+		if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
+		{
+			NewQuery.ResultComponentId = ClientNonAuthInterestResultType;
+		}
+		else
+		{
+			NewQuery.FullSnapshotResult = true;
+		}
+
+		FrequencyQueries.Add(NewQuery);
 	}
 
-	return Queries;
+	return FrequencyQueries;
 }
 
 QueryConstraint InterestFactory::CreateSystemDefinedConstraints() const

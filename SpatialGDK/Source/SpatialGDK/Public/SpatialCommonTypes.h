@@ -46,3 +46,8 @@ struct FTrackableWorkerType : public T
 
 using FWorkerComponentUpdate = FTrackableWorkerType<Worker_ComponentUpdate>;
 using FWorkerComponentData = FTrackableWorkerType<Worker_ComponentData>;
+
+namespace SpatialGDK
+{
+	using FrequencyToConstraintsMap = TMap<float, TArray<struct QueryConstraint>>;
+}

@@ -2262,7 +2262,10 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 
 	check(Actor != nullptr);
 	check(PackageMap != nullptr);
-	check(GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(Actor)) == nullptr);
+
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+
+	check(GetActorChannelByEntityId(EntityId) == nullptr);
 
 	USpatialNetConnection* NetConnection = GetSpatialOSNetConnection();
 	check(NetConnection != nullptr);
@@ -2287,6 +2290,15 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 			Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
 #endif
 		}
+	}
+
+	if (IsServer())
+	{
+		Channel->SetServerAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID));
+	}
+	else
+	{
+		Channel->SetClientAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
 	}
 
 	return Channel;
