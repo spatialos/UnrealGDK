@@ -24,7 +24,7 @@ public:
 	static FString GetSpatialGDKPluginDirectory(const FString& AppendPath = TEXT(""));
 	static const FString& GetSpotExe();
 	static const FString& GetSpatialExe();
-	static bool SpatialPreRunChecks();
+	static bool SpatialPreRunChecks(bool bIsInChina);
 
 	FORCEINLINE static FString GetProjectName()
 	{
