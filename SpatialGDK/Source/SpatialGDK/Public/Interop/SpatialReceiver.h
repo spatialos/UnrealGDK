@@ -93,7 +93,6 @@ public:
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
 
 private:
-
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
 
@@ -178,7 +177,7 @@ private:
 		USpatialReceiver& Receiver;
 
 		bool bInCriticalSection;
-		TArray<Worker_EntityId> PendingAddEntities;
+		TArray<Worker_EntityId> PendingAddActors;
 		TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 		TArray<PendingAddComponentWrapper> PendingAddComponents;
 	};
@@ -187,7 +186,6 @@ private:
 	// END TODO
 
 public:
-
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
 	FOnEntityAddedDelegate OnEntityAddedDelegate;
@@ -225,10 +223,10 @@ private:
 	// Useful to manage entities going in and out of interest, in order to recover references to actors.
 	FObjectToRepStateMap ObjectRefToRepStateMap;
 
-	FRPCContainer IncomingRPCs;
+	FRPCContainer IncomingRPCs{ ERPCQueueType::Receive };
 
 	bool bInCriticalSection;
-	TArray<Worker_EntityId> PendingAddEntities;
+	TArray<Worker_EntityId> PendingAddActors;
 	TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_RemoveComponentOp> QueuedRemoveComponentOps;

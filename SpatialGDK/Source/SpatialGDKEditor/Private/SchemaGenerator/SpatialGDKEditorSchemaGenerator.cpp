@@ -51,7 +51,6 @@ TMap<ESchemaComponentType, TSet<Worker_ComponentId>> SchemaComponentTypeToCompon
 
 // LevelStreaming
 TMap<FString, Worker_ComponentId> LevelPathToComponentId;
-TSet<Worker_ComponentId> LevelComponentIds;
 
 // Prevent name collisions.
 TMap<FString, FString> ClassPathToSchemaName;
@@ -60,7 +59,6 @@ TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 
 // QBI
 TMap<float, Worker_ComponentId> NetCullDistanceToComponentId;
-TSet<Worker_ComponentId> NetCullDistanceComponentIds;
 
 const FString RelativeSchemaDatabaseFilePath = FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH), FPackageName::GetAssetPackageExtension());
 
@@ -327,7 +325,6 @@ void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap
 				{
 					ComponentId = IdGenerator.Next();
 					LevelPathToComponentId.Add(LevelPaths[i].ToString(), ComponentId);
-					LevelComponentIds.Add(ComponentId);
 				}
 				WriteLevelComponent(Writer, FString::Printf(TEXT("%sInd%d"), *LevelNameString, i), ComponentId, LevelPaths[i].ToString());
 				
@@ -342,7 +339,6 @@ void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap
 			{
 				ComponentId = IdGenerator.Next();
 				LevelPathToComponentId.Add(LevelPath, ComponentId);
-				LevelComponentIds.Add(ComponentId);
 			}
 			WriteLevelComponent(Writer, LevelName.ToString(), ComponentId, LevelPath);
 		}
@@ -384,7 +380,6 @@ void GenerateSchemaForNCDs(const FString& SchemaOutputPath)
 		if (NCDComponent.Value == 0)
 		{
 			NCDComponent.Value = IdGenerator.Next();
-			NetCullDistanceComponentIds.Add(NCDComponent.Value);
 		}
 
 		Writer.PrintNewLine();
@@ -459,12 +454,20 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->SubobjectClassPathToSchema = SubobjectClassPathToSchema;
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
 	SchemaDatabase->NetCullDistanceToComponentId = NetCullDistanceToComponentId;
-	SchemaDatabase->NetCullDistanceComponentIds = NetCullDistanceComponentIds;
 	SchemaDatabase->ComponentIdToClassPath = CreateComponentIdToClassPathMap();
 	SchemaDatabase->DataComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Data].Array();
 	SchemaDatabase->OwnerOnlyComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_OwnerOnly].Array();
 	SchemaDatabase->HandoverComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Handover].Array();
-	SchemaDatabase->LevelComponentIds = LevelComponentIds.Array();
+
+	SchemaDatabase->NetCullDistanceComponentIds.Reset();
+	TArray<Worker_ComponentId> NetCullDistanceComponentIds;
+	NetCullDistanceComponentIds.Reserve(NetCullDistanceToComponentId.Num());
+	NetCullDistanceToComponentId.GenerateValueArray(NetCullDistanceComponentIds);
+	SchemaDatabase->NetCullDistanceComponentIds.Append(NetCullDistanceComponentIds);
+
+	SchemaDatabase->LevelComponentIds.Reset(LevelPathToComponentId.Num());
+	LevelPathToComponentId.GenerateValueArray(SchemaDatabase->LevelComponentIds);
+
 
 	FString CompiledSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
 
@@ -665,12 +668,10 @@ void ResetSchemaGeneratorState()
 	{
 		SchemaComponentTypeToComponents.Add(Type, TSet<Worker_ComponentId>());
 	});
-	LevelComponentIds.Empty();
 	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 	SchemaGeneratedClasses.Empty();
 	NetCullDistanceToComponentId.Empty();
-	NetCullDistanceComponentIds.Empty();
 }
 
  void ResetSchemaGeneratorStateAndCleanupFolders()
@@ -712,11 +713,9 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_Data, TSet<Worker_ComponentId>(SchemaDatabase->DataComponentIds));
 		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_OwnerOnly, TSet<Worker_ComponentId>(SchemaDatabase->OwnerOnlyComponentIds));
 		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_Handover, TSet<Worker_ComponentId>(SchemaDatabase->HandoverComponentIds));
-		LevelComponentIds = TSet<Worker_ComponentId>(SchemaDatabase->LevelComponentIds);
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 		NetCullDistanceToComponentId = SchemaDatabase->NetCullDistanceToComponentId;
-		NetCullDistanceComponentIds = SchemaDatabase->NetCullDistanceComponentIds;
 
 		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
 		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)

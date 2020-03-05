@@ -18,7 +18,8 @@ struct FPendingRPCParams;
 struct FRPCErrorInfo;
 DECLARE_DELEGATE_RetVal_OneParam(FRPCErrorInfo, FProcessRPCDelegate, const FPendingRPCParams&)
 
-enum class ERPCResult : uint8_t
+UENUM()
+enum class ERPCResult : uint8
 {
 	Success,
 
@@ -26,6 +27,8 @@ enum class ERPCResult : uint8_t
 	UnresolvedTargetObject,
 	MissingFunctionInfo,
 	UnresolvedParameters,
+	ActorPendingKill,
+	TimedOut,
 
 	// Sender specific
 	NoActorChannel,
@@ -58,9 +61,8 @@ struct FRPCErrorInfo
 
 	TWeakObjectPtr<UObject> TargetObject = nullptr;
 	TWeakObjectPtr<UFunction> Function = nullptr;
-	bool bIsServer = false;
-	ERPCQueueType QueueType = ERPCQueueType::Unknown;
 	ERPCResult ErrorCode = ERPCResult::Unknown;
+	bool bShouldDrop = false;
 };
 
 struct SPATIALGDK_API FPendingRPCParams
@@ -86,7 +88,8 @@ class SPATIALGDK_API FRPCContainer
 {
 public:
 	// Moveable, not copyable.
-	FRPCContainer() = default;
+	FRPCContainer(ERPCQueueType QueueType);
+	FRPCContainer() = delete;
 	FRPCContainer(const FRPCContainer&) = delete;
 	FRPCContainer(FRPCContainer&&) = default;
 	FRPCContainer& operator=(const FRPCContainer&) = delete;
@@ -100,8 +103,6 @@ public:
 
 	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ERPCType Type) const;
 
-	static const double SECONDS_BEFORE_WARNING;
-
 private:
 	using FArrayOfParams = TArray<FPendingRPCParams>;
 	using FRPCMap = TMap<Worker_EntityId_Key, FArrayOfParams>;
@@ -112,4 +113,6 @@ private:
 	RPCContainerType QueuedRPCs;
 	FProcessRPCDelegate ProcessingFunction;
 	bool bAlreadyProcessingRPCs = false;
+
+	ERPCQueueType QueueType = ERPCQueueType::Unknown;
 };

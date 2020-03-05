@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialRPCService.h"
@@ -75,7 +76,7 @@ public:
 	void SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
-	void SetAclWriteAuthority(const Worker_EntityId EntityId, const FString& DestinationWorkerId);
+	void SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request);
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	ERPCResult SendRPCInternal(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload);
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response);
@@ -119,6 +120,7 @@ public:
 
 	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 	void CreateServerWorkerEntity(int AttemptCounter = 1);
+	void UpdateServerWorkerEntityInterestAndPosition();
 
 	void ClearPendingRPCs(const Worker_EntityId EntityId);
 
@@ -153,6 +155,9 @@ private:
 #if !UE_BUILD_SHIPPING
 	void TrackRPC(AActor* Actor, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const ERPCType RPCType);
 #endif
+
+	bool WillHaveAuthorityOverActor(AActor* TargetActor, Worker_EntityId TargetEntity);
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
@@ -178,7 +183,7 @@ private:
 
 	SpatialGDK::SpatialRPCService* RPCService;
 
-	FRPCContainer OutgoingRPCs;
+	FRPCContainer OutgoingRPCs{ ERPCQueueType::Send };
 	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 
 	TArray<TSharedRef<FReliableRPCForRetry>> RetryRPCs;
