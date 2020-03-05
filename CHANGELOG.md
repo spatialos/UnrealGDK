@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`0.8.1-preview`] - 2020-05-12
 ### Features:
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
-- Local deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
+- You can now choose which SpatialOS service region you want to use by adjusting the**Region where services are located** setting. You must use the service region that you're geographically located in.
+- Deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
 - Updated the version of the local API service used by the UnrealGDK.
 - The Spatial output log will now be open by default.
 
