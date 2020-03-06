@@ -518,6 +518,7 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
 			RedirectURL.Host = LastURL.Host;
 			RedirectURL.Port = LastURL.Port;
+			RedirectURL.Portal = LastURL.Portal;
 
 			// Usually the LastURL options are added to the RedirectURL in the FURL constructor.
 			// However this is not the case when TravelType = TRAVEL_Absolute so we must do it explicitly here.
