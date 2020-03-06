@@ -449,7 +449,7 @@ void InterestFactory::AddSystemQuery(Interest& OutInterest, const QueryConstrain
 	// Add the spatial constraint to the server as well to make sure the server sees the same as the client.
 	// The always relevant and always interested are added as part of the server worker query, so leave that here.
 	// Servers also don't need to be level constrained.
-	if (Settings->bEnableUnrealLoadBalancer && Settings->bEnableClientQueriesOnServer)
+	if (Settings->bEnableClientQueriesOnServer)
 	{
 		Query ServerSystemQuery;
 		ServerSystemQuery.Constraint = CheckoutRadiusConstraint;
@@ -503,7 +503,7 @@ void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor*
 		// Add the user interest to the server as well if load balancing is enabled and the client queries on server flag is flipped
 		// Need to check if load balancing is enabled otherwise there is not chance the client could see and entity the server can't,
 		// which is what the client queries on server flag is to avoid.
-		if (Settings->bEnableUnrealLoadBalancer && Settings->bEnableClientQueriesOnServer)
+		if (Settings->bEnableClientQueriesOnServer)
 		{
 			Query ServerUserQuery;
 			ServerUserQuery.Constraint = UserConstraint;
@@ -594,7 +594,7 @@ void InterestFactory::AddNetCullDistanceFrequencyQueries(Interest& OutInterest, 
 		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(Settings->UseRPCRingBuffer()), NewQuery);
 
 		// Add the queries to the server as well to ensure that all entities checked out on the client will be present on the server.
-		if (Settings->bEnableUnrealLoadBalancer && Settings->bEnableClientQueriesOnServer)
+		if (Settings->bEnableClientQueriesOnServer)
 		{
 			Query ServerQuery;
 			ServerQuery.Constraint = CheckoutRadiusConstraintFrequencyPair.Constraint;
