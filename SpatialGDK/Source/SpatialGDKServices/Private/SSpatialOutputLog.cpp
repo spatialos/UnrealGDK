@@ -257,7 +257,6 @@ void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 
 void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 {
-	// If this line could not be matched then it's most likely an error with a stack trace. Attempt to use the ErrorLine formatter.
 	const FRegexPattern ErrorPattern = FRegexPattern(TEXT("level=(.*) msg=(.*) code=(.*) code_string=(.*) error=(.*) stack=(.*)"));
 	FRegexMatcher ErrorMatcher(ErrorPattern, LogLine);
 
@@ -274,9 +273,7 @@ void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 	FString ErrorMessage = ErrorMatcher.GetCaptureGroup(5);
 	FString Stack = ErrorMatcher.GetCaptureGroup(6);
 
-	// TODO: Build a single cohesive log message out of this mess
-
-	// The stack message comes with partially escaped characters.
+	// The stack message comes with double escaped characters.
 	Stack = Stack.ReplaceEscapedCharWithChar();
 
 	// Format the log message to be easy to read.
@@ -284,6 +281,7 @@ void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 
 	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Error;
 
+	// There are currently no logger names included in the errors from Spatial Service and so we always give it this LogCategory.
 	FString LogCategory = TEXT("SpatialService");
 
 	// Serialization must be done on the game thread.
@@ -301,6 +299,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 
 	if (!LogMatcher.FindNext())
 	{
+		// If this line could not be matched then it's most likely an error with a stack trace. Attempt to use the ErrorLine formatter.
 		FormatAndPrintRawErrorLine(LogLine);
 		return;
 	}

@@ -61,6 +61,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - SpatialDebugger worker regions are now cuboids rather than planes, and can have their WorkerRegionVerticalScale adjusted via a setting in the SpatialDebugger.
 - Added custom warning timeouts per RPC failure condition.
 - SpatialPingComponent can now also report average ping measurements over a specified number of recent pings. You can specify the number of measurements recorded in `PingMeasurementsWindowSize` and get the measurement data by calling `GetAverageData`. There is also a delegate `OnRecordPing` that will be broadcast whenever a new ping measurement is recorded.
+- The Spatial Output Log window now displays deployment startup errors.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
