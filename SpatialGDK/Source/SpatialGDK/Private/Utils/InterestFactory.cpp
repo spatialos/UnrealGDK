@@ -432,12 +432,12 @@ void InterestFactory::AddSystemQuery(Interest& OutInterest, const QueryConstrain
 	SystemAndLevelConstraint.AndConstraint.Add(SystemDefinedConstraints);
 	SystemAndLevelConstraint.AndConstraint.Add(LevelConstraint);
 
-	Query SystemQuery;
-	SystemQuery.Constraint = SystemAndLevelConstraint;
+	Query ClientSystemQuery;
+	ClientSystemQuery.Constraint = SystemAndLevelConstraint;
 
-	SetResultType(SystemQuery, ClientNonAuthInterestResultType);
+	SetResultType(ClientSystemQuery, ClientNonAuthInterestResultType);
 
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(Settings->UseRPCRingBuffer()), SystemQuery);
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(Settings->UseRPCRingBuffer()), ClientSystemQuery);
 
 	// Add the spatial and always interested constraint to the server as well to make sure the server sees the same as the client.
 	// The always relevant constraint is added as part of the server worker query, so leave that out here.
