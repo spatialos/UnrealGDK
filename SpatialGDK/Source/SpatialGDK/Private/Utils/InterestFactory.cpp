@@ -271,7 +271,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	// Set the result type of the query
 	if (SpatialGDKSettings->bEnableResultTypes)
 	{
-		ServerQuery.ResultComponentId = ServerNonAuthInterestResultType;
+		ServerQuery.ResultComponentIds = ServerNonAuthInterestResultType;
 	}
 	else
 	{
@@ -382,7 +382,7 @@ void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 	// Just an entity ID constraint is fine, as clients should not become authoritative over entities outside their loaded levels
 	NewQuery.Constraint.EntityIdConstraint = EntityId;
 
-	NewQuery.ResultComponentId = ClientAuthInterestResultType;
+	NewQuery.ResultComponentIds = ClientAuthInterestResultType;
 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()), NewQuery);
 }
@@ -392,13 +392,13 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest) const
 	// Add a query for components all servers need to read client data
 	Query ClientQuery;
 	ClientQuery.Constraint.EntityIdConstraint = EntityId;
-	ClientQuery.ResultComponentId = ServerAuthInterestResultType;
+	ClientQuery.ResultComponentIds = ServerAuthInterestResultType;
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ClientQuery);
 
 	// Add a query for the load balancing worker (whoever is delegated the ACL) to read the authority intent
 	Query LoadBalanceQuery;
 	LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
-	LoadBalanceQuery.ResultComponentId = ResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID };
+	LoadBalanceQuery.ResultComponentIds = ResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID };
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 }
 
@@ -744,7 +744,7 @@ void InterestFactory::SetResultType(Query& OutQuery, const ResultType& InResultT
 {
 	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 	{
-		OutQuery.ResultComponentId = InResultType;
+		OutQuery.ResultComponentIds = InResultType;
 	}
 	else
 	{

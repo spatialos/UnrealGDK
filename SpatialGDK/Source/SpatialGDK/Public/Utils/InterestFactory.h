@@ -16,8 +16,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 
 namespace SpatialGDK
 {
-using ResultType = TArray<Worker_ComponentId>;
-
 class SPATIALGDK_API InterestFactory
 {
 public:
