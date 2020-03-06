@@ -136,7 +136,6 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 	PendingSubobjectAttachment->Subobject = Object;
 	PendingSubobjectAttachment->Channel = Channel;
 	PendingSubobjectAttachment->Info = Info;
-	 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
 		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
