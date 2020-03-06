@@ -325,14 +325,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	// TODO UNR-3042 : Migrate the VirtualWorkerTranslationManager to use the checked-out worker components instead of making a query.
 
 	ServerQuery = Query();
-	if (!SpatialGDKSettings->bEnableResultTypes)
-	{
-		ServerQuery.FullSnapshotResult = true;
-	}
-	else
-	{
-		ServerQuery.ResultComponentId.Add(SpatialConstants::WORKER_COMPONENT_ID);
-	}
+	SetResultType(ServerQuery, ResultType{ SpatialConstants::WORKER_COMPONENT_ID });
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
 
@@ -447,7 +440,7 @@ void InterestFactory::AddSystemQuery(Interest& OutInterest, const QueryConstrain
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(Settings->UseRPCRingBuffer()), SystemQuery);
 
 	// Add the spatial constraint to the server as well to make sure the server sees the same as the client.
-	// The always relevant and always interested are added as part of the server worker query, so leave that here.
+	// The always relevant constraint is added as part of the server worker query, so leave that out here.
 	// Servers also don't need to be level constrained.
 	if (Settings->bEnableClientQueriesOnServer)
 	{
