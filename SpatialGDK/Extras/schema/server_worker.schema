@@ -9,7 +9,9 @@ type ForwardSpawnPlayerRequest {
     UnrealObjectRef player_start = 2;
 }
 
-type ForwardSpawnPlayerResponse { }
+type ForwardSpawnPlayerResponse {
+    bool success = 1;
+}
 
 component ServerWorker {
     id = 9974;

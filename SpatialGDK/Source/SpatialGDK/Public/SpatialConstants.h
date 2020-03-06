@@ -211,6 +211,7 @@ const Schema_FieldId SPAWN_PLAYER_CLIENT_WORKER_ID						 = 5;
 // ForwardSpawnPlayerRequest type IDs.
 const Schema_FieldId FORWARD_SPAWN_PLAYER_START_ACTOR_ID				 = 1;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_DATA_ID						 = 2;
+const Schema_FieldId FORWARD_SPAWN_PLAYER_RESPONSE_SUCCESS_ID			 = 1;
 
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;

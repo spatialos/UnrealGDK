@@ -1668,12 +1668,12 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequestOnServer(Op);
 		return;
 	}
-	else if (Op.request.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID && CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
+	else if (Op.request.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID && CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
 	{
 		NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(Op);
 		return;
 	}
-	else if(Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
+	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
 		Sender->ClearRPCsOnEntityCreation(Op.entity_id);
 		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);

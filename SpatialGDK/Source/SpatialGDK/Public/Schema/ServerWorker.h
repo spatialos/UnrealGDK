@@ -79,19 +79,22 @@ struct ServerWorker : Component
 	static Worker_CommandRequest CreateForwardPlayerSpawnRequest(Schema_CommandRequest* SchemaCommandRequest)
 	{
 		Worker_CommandRequest CommandRequest = {};
-		CommandRequest.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
-		CommandRequest.command_index = SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID;
+		CommandRequest.component_id = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+		CommandRequest.command_index = SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID;
 		CommandRequest.schema_type = SchemaCommandRequest;
 		return CommandRequest;
 	}
 
-	static Worker_CommandResponse CreateForwardPlayerSpawnReponse()
+	static Worker_CommandResponse CreateForwardPlayerSpawnResponse(const bool bSuccess)
 	{
 		Worker_CommandResponse CommandResponse = {};
 		CommandResponse.component_id = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
 		CommandResponse.command_index = SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID;
 		CommandResponse.schema_type = Schema_CreateCommandResponse();
 		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
+
+		Schema_AddBool(ResponseObject, SpatialConstants::FORWARD_SPAWN_PLAYER_RESPONSE_SUCCESS_ID, bSuccess);
+
 		return CommandResponse;
 	}
 

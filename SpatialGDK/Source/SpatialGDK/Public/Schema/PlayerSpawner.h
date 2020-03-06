@@ -34,6 +34,7 @@ struct PlayerSpawner : Component
 
 		Schema_Object* RequestFields = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 		AddSpawnPlayerData(RequestFields, LoginURL, UniqueId, OnlinePlatformName, bIsSimulatedPlayer, ClientWorkerId);
+
 		return CommandRequest;
 	}
 
@@ -43,7 +44,6 @@ struct PlayerSpawner : Component
 		CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 		CommandResponse.command_index = SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID;
 		CommandResponse.schema_type = Schema_CreateCommandResponse();
-		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
 		return CommandResponse;
 	}
 
@@ -67,7 +67,7 @@ struct PlayerSpawner : Component
 		FString ClientWorkerId = GetStringFromSchema(Payload, SpatialConstants::SPAWN_PLAYER_CLIENT_WORKER_ID);
 		URLString.Append(TEXT("?workerAttribute=")).Append(ClientWorkerId);
 
-		const bool bIsSimulatedPlayer = GetBoolFromSchema(Payload, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID);
+		const bool bIsSimulatedPlayer = GetBoolFromSchema(Payload, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID);
 		if (bIsSimulatedPlayer)
 		{
 			URLString += TEXT("?simulatedPlayer=1");
