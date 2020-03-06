@@ -279,15 +279,10 @@ void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 	// Format the log message to be easy to read.
 	FString LogMessage = FString::Printf(TEXT("%s \n Code: %s \n Code String: %s \n Error: %s \n Stack: %s"), *Message, *ErrorCode, *ErrorCodeString, *ErrorMessage, *Stack);
 
-	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Error;
-
-	// There are currently no logger names included in the errors from Spatial Service and so we always give it this LogCategory.
-	FString LogCategory = TEXT("SpatialService");
-
 	// Serialization must be done on the game thread.
-	AsyncTask(ENamedThreads::GameThread, [this, LogMessage, LogVerbosity, LogCategory]
+	AsyncTask(ENamedThreads::GameThread, [this, LogMessage]
 	{
-		Serialize(*LogMessage, LogVerbosity, FName(*LogCategory));
+		Serialize(*LogMessage, ELogVerbosity::Error, FName(TEXT("SpatialService")));
 	});
 }
 
@@ -299,7 +294,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 
 	if (!LogMatcher.FindNext())
 	{
-		// If this line could not be matched then it's most likely an error with a stack trace. Attempt to use the ErrorLine formatter.
+		// If this log line did not match the log line regex then it is an error line which is parsed differently.
 		FormatAndPrintRawErrorLine(LogLine);
 		return;
 	}
