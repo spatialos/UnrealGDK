@@ -103,7 +103,8 @@ void SSpatialOutputLog::StartUpLogDirectoryWatcher(const FString& LogDirectory)
 			// Watch the log directory for changes.
 			if (!FPaths::DirectoryExists(LogDirectory))
 			{
-				UE_LOG(LogSpatialOutputLog, Log, TEXT("Spatial local deployment log directory '%s' does not exist. Attempting to create it."), *LogDirectory);
+				UE_LOG(LogSpatialOutputLog, Log, TEXT("Spatial local deployment log directory '%s' does not exist. Will create it."), *LogDirectory);
+
 				if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*LogDirectory))
 				{
 					UE_LOG(LogSpatialOutputLog, Error, TEXT("Could not create the spatial local deployment log directory. The Spatial Output window will not function."));

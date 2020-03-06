@@ -5,13 +5,10 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Interop/SpatialInterestConstraints.h"
+#include "SpatialCommonTypes.h"
 
 #include "ActorInterestComponent.generated.h"
 
-namespace SpatialGDK
-{
-struct Query;
-}
 class USpatialClassInfoManager;
 
 /**
@@ -26,7 +23,7 @@ public:
 	UActorInterestComponent() = default;
 	~UActorInterestComponent() = default;
 
-	void CreateQueries(const USpatialClassInfoManager& ClassInfoManager, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
+	void PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const;
 
 	/**
 	 * Whether to use NetCullDistanceSquared to generate constraints relative to the Actor that this component is attached to.

@@ -456,6 +456,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	Components.Add(Tombstone().CreateData());
 	Components.Add(EntityAcl(ReadAcl, WriteAclMap()).CreateEntityAclData());
 
+	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
+	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		Components.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
+	}
+
 	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
 	{
 		Components.Add(Persistence().CreatePersistenceData());
