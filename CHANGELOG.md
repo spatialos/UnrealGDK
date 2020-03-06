@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replicated references to newly created dynamic subobjects will now be resolved correctly.
 - Fixed a bug that caused the local API service to memory leak.
 - Errors are now correctly reported when you try to launch a cloud deployment without an assembly.
+- The Start deployment button will no longer become greyed out when a `spatial auth login` process times out.
 
 ## [`0.8.0-preview`] - 2019-12-17
 
