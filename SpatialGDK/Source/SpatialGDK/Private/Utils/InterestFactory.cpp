@@ -37,7 +37,7 @@ static QueryConstraint ClientCheckoutRadiusConstraint;
 
 // Cache the result types of queries.
 static ResultType ClientNonAuthInterestResultType;
-static ResultType ClientAuthInterestResultType ;
+static ResultType ClientAuthInterestResultType;
 static ResultType ServerNonAuthInterestResultType;
 static ResultType ServerAuthInterestResultType;
 
