@@ -1,0 +1,14 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+// The ComponentPresence component should be present on all entities that 
+// should be load-balanced. This contains a single property which is the 
+// list of component IDs that the game server should be authoritative over
+// in order to be correctly simulating the entity. This should be useful in
+// future for deducing entity completeness without critical sections but is 
+// used currently just found enabling dynamic components in a multi-worker
+// environment.
+component ComponentPresence {
+    id = 9972;
+    list<uint32> actor_component_list = 1;
+}

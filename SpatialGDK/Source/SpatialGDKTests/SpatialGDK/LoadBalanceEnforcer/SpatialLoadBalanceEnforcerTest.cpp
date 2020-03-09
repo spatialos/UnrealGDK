@@ -39,6 +39,10 @@ void AddEntityToStaticComponentView(USpatialStaticComponentView& StaticComponent
 		EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID,
 		WORKER_AUTHORITY_AUTHORITATIVE);
 
+	TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(StaticComponentView,
+		EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
+		AuthorityIntentAuthority);
+
 	if (Id != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 	{
 		StaticComponentView.GetComponentData<SpatialGDK::AuthorityIntent>(EntityId)->VirtualWorkerId = Id;
@@ -169,7 +173,7 @@ LOADBALANCEENFORCER_TEST(GIVEN_authority_intent_change_op_WHEN_we_inform_load_ba
 	UpdateOp.entity_id = EntityIdOne;
 	UpdateOp.update.component_id = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
 
-	LoadBalanceEnforcer->OnAuthorityIntentComponentUpdated(UpdateOp);
+	LoadBalanceEnforcer->OnLoadBalancingComponentUpdated(UpdateOp);
 
 	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> ACLRequests = LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests();
 

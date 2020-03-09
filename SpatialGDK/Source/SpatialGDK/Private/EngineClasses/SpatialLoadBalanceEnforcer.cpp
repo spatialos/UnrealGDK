@@ -4,6 +4,7 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Component.h"
+#include "Schema/ComponentPresence.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
 
@@ -20,25 +21,26 @@ SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName&
 	check(InVirtualWorkerTranslator != nullptr);
 }
 
-void SpatialLoadBalanceEnforcer::OnAuthorityIntentComponentUpdated(const Worker_ComponentUpdateOp& Op)
+void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentAdded(const Worker_AddComponentOp& Op)
 {
-	check(Op.update.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
+	// Should only be passed auth intent, ACL or component presence.
+	check(HandlesComponent(Op.data.component_id));
 
 	MaybeQueueAclAssignmentRequest(Op.entity_id);
 }
 
-void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentAdded(const Worker_AddComponentOp& Op)
+void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
-	// Should only be passed auth intent or ACL.
-	check(Op.data.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID || Op.data.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID);
+	// Should only be passed auth intent or component presence.
+	check(HandlesComponent(Op.update.component_id));
 
 	MaybeQueueAclAssignmentRequest(Op.entity_id);
 }
 
 void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentRemoved(const Worker_RemoveComponentOp& Op)
 {
-	// Should only be passed auth intent or ACL.
-	check(Op.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID || Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID);
+	// Should only be passed auth intent, component presence, or ACL.
+	check(HandlesComponent(Op.component_id));
 
 	if (AclAssignmentRequestIsQueued(Op.entity_id))
 	{
@@ -140,8 +142,17 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 		const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
 		if (AuthorityIntentComponent == nullptr)
 		{
-			// This happens if the authority intent component is removed in the same tick as a request is queued, but the request was not removed from the queue- shouldn't happen.
+			// This happens if the authority intent component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as AuthIntent component has been removed since the request was queued. EntityId: %lld"), EntityId);
+			CompletedRequests.Add(EntityId);
+			continue;
+		}
+
+		const SpatialGDK::ComponentPresence* ComponentPresenceComponent = StaticComponentView->GetComponentData<SpatialGDK::ComponentPresence>(EntityId);
+		if (ComponentPresenceComponent == nullptr)
+		{
+			// This happens if the component presence component is removed in the same tick as a request is queued, but the request was not removed from the queue - shouldn't happen.
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Cannot process entity as ComponentPresence component has been removed since the request was queued. EntityId: %lld"), EntityId);
 			CompletedRequests.Add(EntityId);
 			continue;
 		}
@@ -169,8 +180,15 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 			{
 				ClientRequirementSet = *RpcRequirementSet;
 			}
+
 			TArray<Worker_ComponentId> ComponentIds;
 			Acl->ComponentWriteAcl.GetKeys(ComponentIds);
+			// Ensure that every component ID in ComponentPresence is set in the write ACL.
+			for (const auto& RequiredComponentId : ComponentPresenceComponent->ActorComponentList)
+			{
+				ComponentIds.AddUnique(RequiredComponentId);
+			}
+
 			PendingRequests.Push(
 				AclWriteAuthorityRequest{
 					EntityId,
@@ -179,7 +197,6 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 					ClientRequirementSet,
 					ComponentIds
 				});
-		
 		}
 		else
 		{
@@ -206,6 +223,16 @@ bool SpatialLoadBalanceEnforcer::CanEnforce(Worker_EntityId EntityId) const
 	return StaticComponentView->HasComponent(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		// and the authority intent component
 		&& StaticComponentView->HasComponent(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
+		// and the component presence component
+		&& StaticComponentView->HasComponent(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID)
 		// and we have to be able to write to the ACL component.
 		&& StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID);
 }
+
+bool SpatialLoadBalanceEnforcer::HandlesComponent(Worker_ComponentId ComponentId) const
+{
+	return ComponentId == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID
+		|| ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID
+		|| ComponentId == SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
+}
+

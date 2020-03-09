@@ -168,6 +168,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 		if (LoadBalanceEnforcer != nullptr)
 		{
 			LoadBalanceEnforcer->OnLoadBalancingComponentAdded(Op);
@@ -297,7 +298,7 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 		RPCService->OnRemoveMulticastRPCComponentForEntity(Op.entity_id);
 	}
 
-	if ((Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID || Op.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID) && LoadBalanceEnforcer != nullptr)
+	if (LoadBalanceEnforcer != nullptr && LoadBalanceEnforcer->HandlesComponent(Op.component_id))
 	{
 		LoadBalanceEnforcer->OnLoadBalancingComponentRemoved(Op);
 	}
@@ -1468,9 +1469,10 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		HandleRPCLegacy(Op);
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 		if (NetDriver->IsServer() && (LoadBalanceEnforcer != nullptr))
 		{
-			LoadBalanceEnforcer->OnAuthorityIntentComponentUpdated(Op);
+			LoadBalanceEnforcer->OnLoadBalancingComponentUpdated(Op);
 		}
 		return;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:

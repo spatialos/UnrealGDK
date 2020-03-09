@@ -9,6 +9,7 @@
 #include "Interop/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AuthorityIntent.h"
+#include "Schema/ComponentPresence.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
@@ -403,6 +404,17 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentDatas.Add(SubobjectHandoverData);
 
 		ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);
+	}
+
+	// Add ComponentPresence to the entity.
+	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	{
+		ComponentWriteAcl.Add(ComponentPresence::ComponentId, AuthoritativeWorkerRequirementSet);
+
+		// Populate the ComponentPresence component with the list of initially assigned component IDs.
+		TArray<Worker_ComponentId> ComponentPresenceList;
+		ComponentWriteAcl.GenerateKeyArray(ComponentPresenceList);
+		ComponentDatas.Add(ComponentPresence::CreateComponentPresenceData(ComponentPresenceList));
 	}
 
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());

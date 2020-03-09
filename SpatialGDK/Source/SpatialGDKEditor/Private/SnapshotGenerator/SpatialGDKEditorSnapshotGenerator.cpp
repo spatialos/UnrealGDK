@@ -4,6 +4,7 @@
 
 #include "Engine/LevelScriptActor.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Schema/ComponentPresence.h"
 #include "Schema/Interest.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
@@ -141,6 +142,10 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+
+	TArray<Worker_ComponentId> PresentComponentIds;
+	ComponentWriteAcl.GenerateKeyArray(PresentComponentIds);
 
 	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
@@ -150,6 +155,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
 	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(ComponentPresence(PresentComponentIds).CreateComponentPresenceData());
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();
