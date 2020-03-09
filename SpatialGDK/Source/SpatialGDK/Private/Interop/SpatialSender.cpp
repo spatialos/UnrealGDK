@@ -198,7 +198,6 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
 {
 	TArray<Worker_ComponentId> ComponentsToRemove;
-	ComponentsToRemove.SetNum(SCHEMA_Count);
 	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
 	{
 		if (SubobjectComponentId != SpatialConstants::INVALID_COMPONENT_ID)
@@ -330,7 +329,7 @@ TArray<FWorkerComponentData> USpatialSender::CopyEntityComponentData(const TArra
 			Component.reserved,
 			Component.component_id,
 			Schema_CopyComponentData(Component.schema_type),
-			nullptr 
+			nullptr
 		});
 	}
 
@@ -670,7 +669,7 @@ void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclW
 			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::GetLoadBalancerAttributeSet(GetDefault<USpatialGDKSettings>()->LoadBalancingWorkerType.WorkerTypeName) });
 			continue;
 		}
-	
+
 		NewAcl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
 	}
 
@@ -945,7 +944,7 @@ void USpatialSender::EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 void USpatialSender::FlushRetryRPCs()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderFlushRetryRPCs);
-	
+
 	// Retried RPCs are sorted by their index.
 	RetryRPCs.Sort([](const TSharedRef<FReliableRPCForRetry>& A, const TSharedRef<FReliableRPCForRetry>& B) { return A->RetryIndex < B->RetryIndex; });
 	for (auto& RetryRPC : RetryRPCs)

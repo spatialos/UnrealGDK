@@ -1,9 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
-// The ComponentPresence component should be present on all entities that 
-// should be load-balanced. This contains a single property which is the 
-// list of component IDs that are present on the entity. Currently, this 
+// The ComponentPresence component should be present on all entities that
+// should be load-balanced. This contains a single property which is the
+// list of component IDs that are present on the entity. Currently, this
 // is used for enabling dynamic components in a multi-worker environment,
 // and should be useful in future for deducing entity completeness without
 // critical sections.

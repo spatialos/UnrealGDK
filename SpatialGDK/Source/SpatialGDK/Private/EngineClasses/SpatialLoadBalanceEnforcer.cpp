@@ -232,4 +232,3 @@ bool SpatialLoadBalanceEnforcer::HandlesComponent(Worker_ComponentId ComponentId
 		|| ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID
 		|| ComponentId == SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
 }
-

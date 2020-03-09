@@ -815,7 +815,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	{
 		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
 	}
-  
+
 	if (Channel == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
@@ -838,7 +838,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
 #endif
 	}
-  
+
 	Channel->RefreshAuthority();
 
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
