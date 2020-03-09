@@ -81,8 +81,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, FullFrequencyNetCullDistanceRatio(1.0f)
 	, bUseSecureClientConnection(false)
 	, bUseSecureServerConnection(false)
-	, bUseDevelopmentAuthenticationFlow(false)
 	, bUseSpatialView(false)
+	, bUseDevelopmentAuthenticationFlow(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
