@@ -4,8 +4,6 @@
 
 The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine fork and plugin with associated projects. It gives you the features of [SpatialOS](https://documentation.improbable.io/spatialos-overview/docs), within the familiar workflows and APIs of Unreal Engine. For more information, please see the GDK's [documentation website](https://documentation.improbable.io/gdk-for-unreal/docs).
 
-> Please be aware of the [maturity of different features of the GDK](https://documentation.improbable.io/gdk-for-unreal/docs/product-maturity-lifecycle), which will help you understand the feature-completeness, stability, performance, and support levels you can expect from the GDK.  Please also see our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support](https://documentation.improbable.io/gdk-for-unreal/docs/unreal-features-support) pages, and contact us via our forums, or on Discord.
-
 This is the repository for the GDK plugin, which includes the Starter Template (a blank starter project).
 
 In addition to the plugin, the GDK also includes:
