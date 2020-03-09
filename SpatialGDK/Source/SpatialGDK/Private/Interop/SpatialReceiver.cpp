@@ -1744,6 +1744,11 @@ void USpatialReceiver::OnCommandResponse(const Worker_CommandResponseOp& Op)
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponseOnClient(Op);
 		return;
 	}
+	else if (Op.response.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
+	{
+		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(Op);
+		return;
+	}
 
 	ReceiveCommandResponse(Op);
 }
