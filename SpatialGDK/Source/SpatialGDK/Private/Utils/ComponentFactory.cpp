@@ -14,7 +14,7 @@
 #include "Net/NetworkProfiler.h"
 #include "Schema/Interest.h"
 #include "SpatialConstants.h"
-#include "Utils/InterestFactory.h"
+#include "Utils/SpatialInterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialLatencyTracer.h"
 
@@ -428,8 +428,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	// Only support Interest for Actors for now.
 	if (Object->IsA<AActor>() && bInterestHasChanged)
 	{
-		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, EntityId, NetDriver->ClassInfoManager, NetDriver->PackageMap);
-		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());
+		ComponentUpdates.Add(NetDriver->InterestFactory->CreateInterestUpdate((AActor*)Object, Info, EntityId));
 	}
 
 	return ComponentUpdates;

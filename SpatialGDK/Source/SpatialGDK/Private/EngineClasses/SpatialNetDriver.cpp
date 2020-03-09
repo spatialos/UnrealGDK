@@ -38,7 +38,7 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityPool.h"
 #include "Utils/ErrorCodeRemapping.h"
-#include "Utils/InterestFactory.h"
+#include "Utils/SpatialInterestFactory.h"
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
@@ -53,7 +53,7 @@
 using SpatialGDK::ComponentFactory;
 using SpatialGDK::FindFirstOpOfType;
 using SpatialGDK::FindFirstOpOfTypeForComponent;
-using SpatialGDK::InterestFactory;
+using SpatialGDK::SpatialInterestFactory;
 using SpatialGDK::RPCPayload;
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
@@ -148,11 +148,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	{
 		Error = TEXT("Failed to load Spatial SchemaDatabase! Make sure that schema has been generated for your project");
 		return false;
-	}
-
-	if (!bInitAsClient)
-	{
-		InterestFactory::CreateAndCacheInterestState(ClassInfoManager);
 	}
 
 #if WITH_EDITOR
@@ -409,6 +404,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	check(NewPackageMap == PackageMap);
 
 	PackageMap->Init(this, &TimerManager);
+
+	// The interest factory depends on the package map, so is created last.
+	InterestFactory = MakeUnique<SpatialGDK::SpatialInterestFactory>(ClassInfoManager, PackageMap);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
