@@ -272,4 +272,48 @@ struct Persistence : Component
 	}
 };
 
+struct Connection
+{
+	enum ConnectionStatus
+	{
+		UNKNOWN = 0,
+		// The worker requested a bridge from the receptionist, but the bridge has not yet had the worker connect to it.
+		AWAITING_WORKER_CONNECTION = 1,
+		// The worker is connected to the bridge as normal.
+		CONNECTED = 2,
+		// A worker was connected at one point, but is no longer connected. Currently, reconnecting is unsupported.
+		DISCONNECTED = 3
+	};
+
+	void ReadConnectionData(Schema_Object* Object)
+	{
+		Status = (ConnectionStatus)Schema_GetUint32(Object, 1);
+		DataLatencyMs = Schema_GetUint32(Object, 2);
+		ConnectedSinceUtc = Schema_GetUint64(Object, 3);
+	}
+
+	ConnectionStatus Status;
+	uint32 DataLatencyMs;
+	uint64 ConnectedSinceUtc;
+};
+
+struct Worker : Component
+{
+	static const Worker_ComponentId ComponentId = SpatialConstants::WORKER_COMPONENT_ID;
+
+	Worker() = default;
+	Worker(const Worker_ComponentData& Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		WorkerId = GetStringFromSchema(ComponentObject, 1);
+		WorkerType = GetStringFromSchema(ComponentObject, 2);
+		Connection.ReadConnectionData(Schema_GetObject(ComponentObject, 3));
+	}
+
+	FString WorkerId;
+	FString WorkerType;
+	Connection Connection;
+};
+
 } // namespace SpatialGDK

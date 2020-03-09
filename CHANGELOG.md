@@ -47,6 +47,11 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The `bEnableServerQBI` property has been removed, and the flag `--OverrideServerInterest` has been removed.
 - Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK). Please be aware of our [UE version support policy](https://documentation.improbable.io/gdk-for-unreal/docs/versioning-scheme#section-unreal-engine-version-support). 
 - Unreal Engine `4.24.3` is now supported. You can find the `4.24.3` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.24-SpatialOSUnrealGDK). Please be aware of our [UE version support policy](https://documentation.improbable.io/gdk-for-unreal/docs/versioning-scheme#section-unreal-engine-version-support). 
+- SpatialDebugger worker regions are now cuboids rather than planes, and can have their WorkerRegionVerticalScale adjusted via a setting in the SpatialDebugger.
+- Added custom warning timeouts per RPC failure condition.
+- SpatialPingComponent can now also report average ping measurements over a specified number of recent pings. You can specify the number of measurements recorded in `PingMeasurementsWindowSize` and get the measurement data by calling `GetAverageData`. There is also a delegate `OnRecordPing` that will be broadcast whenever a new ping measurement is recorded.
+- The Spatial Output Log window now displays deployment startup errors.
+- Added `bEnableClientQueriesOnServer` (defaulted false) which makes the same queries on the server as on clients if the unreal load balancer is enabled. Enable this to avoid clients seeing entities the server does not if the server's interest query has not been configured correctly.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
@@ -80,6 +85,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Force activation of RPC ring buffer when load balancing is enabled, to allow RPC handover when authority changes
 - Clients will now validate schema against the server and log a warning if they do not match.
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it
+- Fixed a race where a client leaving the deployment could leave its actor behind on the server, to be cleaned up after a long timeout.
+- Fixed crash caused by state persisting across a transition from one deployment to another in SpatialGameInstance
 
 ### Internal:
 Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.

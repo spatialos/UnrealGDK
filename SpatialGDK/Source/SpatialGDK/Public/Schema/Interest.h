@@ -6,7 +6,6 @@
 
 namespace SpatialGDK
 {
-
 using EdgeLength = Coordinates;
 
 struct SphereConstraint

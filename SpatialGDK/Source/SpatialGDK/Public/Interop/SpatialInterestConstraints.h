@@ -32,8 +32,6 @@ public:
 	class UAbstractQueryConstraint* Constraint;
 
 	/**
-	 * Not currently supported.
-	 *
 	 * Used for frequency-based rate limiting. Represents the maximum frequency
 	 * of updates for this particular query. An empty option represents no
 	 * rate-limiting (ie. updates are received as soon as possible). Frequency
@@ -53,7 +51,7 @@ public:
 	 * If multiple queries match the same Entity-Component then the highest of
 	 * all frequencies is used.
 	 */
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Meta = (ClampMin = 0.0), Category = "SpatialGDK")
 	float Frequency;
 };
 

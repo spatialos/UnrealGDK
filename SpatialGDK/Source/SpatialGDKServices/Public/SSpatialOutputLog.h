@@ -42,6 +42,7 @@ private:
 	void CloseLogReader();
 
 	void FormatAndPrintRawLogLine(const FString& LogLine);
+	void FormatAndPrintRawErrorLine(const FString& LogLine);
 
 	void StartUpLogDirectoryWatcher(const FString& LogDirectory);
 	void ShutdownLogDirectoryWatcher(const FString& LogDirectory);
