@@ -44,8 +44,9 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added settings to choose which runtime version to launch with local and cloud deployment launch command.
 - With the `--OverrideResultTypes` flag flipped, servers will no longer check out server RPC components on actors they do not own. This should give a bandwidth saving to server workers in offloaded and zoned games.
 - The `InstallGDK` scripts now `git clone` the correct version of the `UnrealGDK` and `UnrealGDKExampleProject` for the `UnrealEngine` branch you have checked out. They read `UnrealGDKVersion.txt` & `UnrealGDKExampleProjectVersion.txt` to determine what the correct branches are.
-- Unreal Engine `4.24.3` is now supported. You can find the `4.24.3` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.24-SpatialOSUnrealGDK).
 - The `bEnableServerQBI` property has been removed, and the flag `--OverrideServerInterest` has been removed.
+- Unreal Engine `4.23.1` is now supported. You can find the `4.23.1` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK). Please be aware of our [UE version support policy](https://documentation.improbable.io/gdk-for-unreal/docs/versioning-scheme#section-unreal-engine-version-support). 
+- Unreal Engine `4.24.3` is now supported. You can find the `4.24.3` version of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.24-SpatialOSUnrealGDK). Please be aware of our [UE version support policy](https://documentation.improbable.io/gdk-for-unreal/docs/versioning-scheme#section-unreal-engine-version-support). 
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
