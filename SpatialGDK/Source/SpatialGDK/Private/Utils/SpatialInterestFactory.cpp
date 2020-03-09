@@ -697,7 +697,7 @@ QueryConstraint SpatialInterestFactory::CreateLevelConstraints(const AActor* InA
 
 	const TSet<FName>& LoadedLevels = PlayerController->NetConnection->ClientVisibleLevelNames;
 
-	// Create component constraints for every loaded sublevel
+	// Create component constraints for every loaded sub-level
 	for (const auto& LevelPath : LoadedLevels)
 	{
 		const Worker_ComponentId ComponentId = ClassInfoManager->GetComponentIdFromLevelPath(LevelPath.ToString());
