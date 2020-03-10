@@ -3,6 +3,9 @@
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
 
+class SWindow;
+class UTransientUObjectEditor;
+
 class FSpatialGDKEditorModule : public IModuleInterface
 {
 public:

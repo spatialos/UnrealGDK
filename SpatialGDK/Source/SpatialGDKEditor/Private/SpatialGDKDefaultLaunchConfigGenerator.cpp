@@ -7,6 +7,11 @@
 #include "Serialization/JsonWriter.h"
 #include "Misc/FileHelper.h"
 
+#include "Misc/MessageDialog.h"
+
+#include "ISettingsModule.h"
+#include "SpatialGDKSettings.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialGDKDefaultLaunchConfigGenerator);
 
 #define LOCTEXT_NAMESPACE "SpatialGDKDefaultLaunchConfigGenerator"
@@ -28,7 +33,7 @@ bool WriteFlagSection(TSharedRef<TJsonWriter<>> Writer, const FString& Key, cons
 bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunchSection& Worker)
 {
 	Writer->WriteObjectStart();
-		Writer->WriteValue(TEXT("worker_type"), *Worker.WorkerTypeName.ToString());
+		Writer->WriteValue(TEXT("worker_type"), *Worker.WorkerType.WorkerTypeName.ToString());
 		Writer->WriteArrayStart(TEXT("flags"));
 			for (const auto& Flag : Worker.Flags)
 			{
@@ -136,7 +141,7 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatial
 			Writer->WriteArrayStart("layer_configurations");
 			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
 			{
-				WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.bManualWorkerConnectionOnly);
+				WriteLoadbalancingSection(Writer, Worker.WorkerType.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.bManualWorkerConnectionOnly);
 			}
 			Writer->WriteArrayEnd();
 			Writer->WriteObjectEnd(); // Load balancing section end
@@ -147,7 +152,7 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatial
 			}
 			// Write the client worker section
 			FWorkerTypeLaunchSection ClientWorker;
-			ClientWorker.WorkerTypeName = SpatialConstants::DefaultClientWorkerType;
+			ClientWorker.WorkerType.WorkerTypeName = SpatialConstants::DefaultClientWorkerType;
 			ClientWorker.WorkerPermissions.bAllPermissions = true;
 			ClientWorker.bLoginRateLimitEnabled = false;
 			WriteWorkerSection(Writer, ClientWorker);
@@ -166,6 +171,89 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatial
 	}
 
 	return false;
+}
+
+bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& LaunchConfigDesc)
+{
+	//const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	const USpatialGDKSettings* SpatialGDKRuntimeSettings = GetDefault<USpatialGDKSettings>();
+
+	if (const FString* EnableChunkInterest = LaunchConfigDesc.World.LegacyFlags.Find(TEXT("enable_chunk_interest")))
+	{
+		if (*EnableChunkInterest == TEXT("true"))
+		{
+			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. Chunk interest is not supported and this flag needs to be set to false.\n\nDo you want to configure your launch config settings now?")));
+
+			if (Result == EAppReturnType::Yes)
+			{
+				FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
+			}
+
+			return false;
+		}
+	}
+
+	if (!SpatialGDKRuntimeSettings->bEnableHandover && LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
+	{
+		return (Section.Rows * Section.Columns) > 1;
+	}))
+	{
+		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Property handover is disabled and a zoned deployment is specified.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
+
+		if (Result == EAppReturnType::Yes)
+		{
+			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
+		}
+
+		return false;
+	}
+
+	if (LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
+	{
+		return (Section.Rows * Section.Columns) < Section.NumEditorInstances;
+	}))
+	{
+		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Attempting to launch too many servers for load balance configuration.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
+
+		if (Result == EAppReturnType::Yes)
+		{
+			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
+		}
+
+		return false;
+	}
+
+	if (!SpatialGDKRuntimeSettings->ServerWorkerTypes.Contains(SpatialGDKRuntimeSettings->DefaultWorkerType.WorkerTypeName))
+	{
+		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Default Worker Type is invalid, please choose a valid worker type as the default.\n\nDo you want to configure your project settings now?")));
+
+		if (Result == EAppReturnType::Yes)
+		{
+			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
+		}
+
+		return false;
+	}
+
+	if (SpatialGDKRuntimeSettings->bEnableOffloading)
+	{
+		for (const TPair<FName, FActorGroupInfo>& ActorGroup : SpatialGDKRuntimeSettings->ActorGroups)
+		{
+			if (!SpatialGDKRuntimeSettings->ServerWorkerTypes.Contains(ActorGroup.Value.OwningWorkerType.WorkerTypeName))
+			{
+				const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("Actor Group '%s' has an invalid Owning Worker Type, please choose a valid worker type.\n\nDo you want to configure your project settings now?"), *ActorGroup.Key.ToString())));
+
+				if (Result == EAppReturnType::Yes)
+				{
+					FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
+				}
+
+				return false;
+			}
+		}
+	}
+
+	return true;
 }
 
 #undef LOCTEXT_NAMESPACE

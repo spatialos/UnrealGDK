@@ -74,7 +74,7 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
 	{
 		SetRuntimeWorkerTypes();
-		SetLevelEditorPlaySettingsWorkerTypes();
+		//SetLevelEditorPlaySettingsWorkerTypes();
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseDevelopmentAuthenticationFlow))
 	{
@@ -103,29 +103,29 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	SetRuntimeUseDevelopmentAuthenticationFlow();
 	SetRuntimeDevelopmentAuthenticationToken();
 	SetRuntimeDevelopmentDeploymentToConnect();
-	SetLevelEditorPlaySettingsWorkerTypes();
+	//SetLevelEditorPlaySettingsWorkerTypes();
 }
 
 void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
 {
-	TSet<FName> WorkerTypes;
+	//TSet<FName> WorkerTypes;
+	//
+	//for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
+	//{
+	//	if (WorkerLaunch.WorkerTypeName != NAME_None)
+	//	{
+	//		WorkerTypes.Add(WorkerLaunch.WorkerTypeName);
+	//	}
+	//}
 
-	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
-	{
-		if (WorkerLaunch.WorkerTypeName != NAME_None)
-		{
-			WorkerTypes.Add(WorkerLaunch.WorkerTypeName);
-		}
-	}
-
-	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	if (RuntimeSettings != nullptr)
-	{
-		RuntimeSettings->ServerWorkerTypes.Empty(WorkerTypes.Num());
-		RuntimeSettings->ServerWorkerTypes.Append(WorkerTypes);
-		RuntimeSettings->PostEditChange();
-		RuntimeSettings->UpdateSinglePropertyInConfigFile(RuntimeSettings->GetClass()->FindPropertyByName(GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServerWorkerTypes)), RuntimeSettings->GetDefaultConfigFilename());
-	}
+	//USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+	//if (RuntimeSettings != nullptr)
+	//{
+	//	RuntimeSettings->ServerWorkerTypes.Empty(WorkerTypes.Num());
+	//	RuntimeSettings->ServerWorkerTypes.Append(WorkerTypes);
+	//	RuntimeSettings->PostEditChange();
+	//	RuntimeSettings->UpdateSinglePropertyInConfigFile(RuntimeSettings->GetClass()->FindPropertyByName(GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ServerWorkerTypes)), RuntimeSettings->GetDefaultConfigFilename());
+	//}
 }
 
 void USpatialGDKEditorSettings::SetRuntimeUseDevelopmentAuthenticationFlow()
@@ -146,16 +146,16 @@ void USpatialGDKEditorSettings::SetRuntimeDevelopmentDeploymentToConnect()
 	RuntimeSettings->DevelopmentDeploymentToConnect = DevelopmentDeploymentToConnect;
 }
 
-void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
-{
-	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-
-	PlayInSettings->WorkerTypesToLaunch.Empty(LaunchConfigDesc.ServerWorkers.Num());
-	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
-	{
-		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
-	}
-}
+//void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
+//{
+//	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+//
+//	PlayInSettings->WorkerTypesToLaunch.Empty(LaunchConfigDesc.ServerWorkers.Num());
+//	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
+//	{
+//		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerType.WorkerTypeName, WorkerLaunch.NumEditorInstances);
+//	}
+//}
 
 bool USpatialGDKEditorSettings::IsAssemblyNameValid(const FString& Name)
 {
