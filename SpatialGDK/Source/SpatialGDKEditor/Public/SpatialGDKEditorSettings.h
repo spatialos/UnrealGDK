@@ -9,6 +9,7 @@
 #include "UObject/Package.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
+#include "Utils/SpatialActorGroupManager.h"
 
 #include "SpatialGDKEditorSettings.generated.h"
 
@@ -111,8 +112,7 @@ struct FWorkerTypeLaunchSection
 	GENERATED_BODY()
 
 	FWorkerTypeLaunchSection()
-		: WorkerTypeName()
-		, WorkerPermissions()
+		: WorkerPermissions()
 		, MaxConnectionCapacityLimit(0)
 		, bLoginRateLimitEnabled(false)
 		, LoginRateLimit()
@@ -125,7 +125,7 @@ struct FWorkerTypeLaunchSection
 
 	/** The name of the worker type, defined in the filename of its spatialos.<worker_type>.worker.json file. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
-	FName WorkerTypeName;
+	FWorkerType WorkerType;
 
 	/** Defines the worker instance's permissions. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
@@ -174,7 +174,7 @@ struct FSpatialLaunchConfigDescription
 		, World()
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
-		UnrealWorkerDefaultSetting.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
+		UnrealWorkerDefaultSetting.WorkerType = SpatialConstants::DefaultServerWorkerType;
 		UnrealWorkerDefaultSetting.Rows = 1;
 		UnrealWorkerDefaultSetting.Columns = 1;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
@@ -187,7 +187,7 @@ struct FSpatialLaunchConfigDescription
 		, World()
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
-		UnrealWorkerDefaultSetting.WorkerTypeName = WorkerTypeName;
+		UnrealWorkerDefaultSetting.WorkerType = WorkerTypeName;
 		UnrealWorkerDefaultSetting.Rows = 1;
 		UnrealWorkerDefaultSetting.Columns = 1;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
@@ -244,7 +244,7 @@ private:
 	void SetRuntimeDevelopmentDeploymentToConnect();
 
 	/** Set WorkerTypesToLaunch in level editor play settings. */
-	void SetLevelEditorPlaySettingsWorkerTypes();
+	//void SetLevelEditorPlaySettingsWorkerTypes();
 
 public:
 

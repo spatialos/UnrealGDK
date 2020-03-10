@@ -224,7 +224,7 @@ public:
 	TMap<FName, FActorGroupInfo> ActorGroups;
 
 	/** Available server worker types. */
-	UPROPERTY(Config)
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
 	TSet<FName> ServerWorkerTypes;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */

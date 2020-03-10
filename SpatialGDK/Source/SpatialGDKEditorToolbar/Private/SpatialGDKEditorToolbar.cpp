@@ -42,6 +42,11 @@
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
+#include "SpatialWorldSettings.h"
+#include "EditorExtension/LBStrategyEditorExtension.h"
+#include "AbstractLBStrategy.h"
+#include "SpatialGDKEditorModule.h"
+#include "Utils/LaunchConfigEditor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -448,85 +453,9 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	const USpatialGDKSettings* SpatialGDKRuntimeSettings = GetDefault<USpatialGDKSettings>();
 	const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 
-	if (const FString* EnableChunkInterest = LaunchConfigDescription.World.LegacyFlags.Find(TEXT("enable_chunk_interest")))
-	{
-		if (*EnableChunkInterest == TEXT("true"))
-		{
-			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. Chunk interest is not supported and this flag needs to be set to false.\n\nDo you want to configure your launch config settings now?")));
-
-			if (Result == EAppReturnType::Yes)
-			{
-				FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
-			}
-
-			return false;
-		}
-	}
-
-	if (!SpatialGDKRuntimeSettings->bEnableHandover && SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
-		{
-			return (Section.Rows * Section.Columns) > 1;
-		}))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Property handover is disabled and a zoned deployment is specified.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
-
-		if (Result == EAppReturnType::Yes)
-		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
-		}
-
-		return false;
-	}
-
-	if (SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
-		{
-			return (Section.Rows * Section.Columns) < Section.NumEditorInstances;
-		}))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Attempting to launch too many servers for load balance configuration.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
-
-		if (Result == EAppReturnType::Yes)
-		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
-		}
-
-		return false;
-	}
-
-	if (!SpatialGDKRuntimeSettings->ServerWorkerTypes.Contains(SpatialGDKRuntimeSettings->DefaultWorkerType.WorkerTypeName))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Default Worker Type is invalid, please choose a valid worker type as the default.\n\nDo you want to configure your project settings now?")));
-
-		if (Result == EAppReturnType::Yes)
-		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
-		}
-
-		return false;
-	}
-
-	if (SpatialGDKRuntimeSettings->bEnableOffloading)
-	{
-		for (const TPair<FName, FActorGroupInfo>& ActorGroup : SpatialGDKRuntimeSettings->ActorGroups)
-		{
-			if (!SpatialGDKRuntimeSettings->ServerWorkerTypes.Contains(ActorGroup.Value.OwningWorkerType.WorkerTypeName))
-			{
-				const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("Actor Group '%s' has an invalid Owning Worker Type, please choose a valid worker type.\n\nDo you want to configure your project settings now?"), *ActorGroup.Key.ToString())));
-
-				if (Result == EAppReturnType::Yes)
-				{
-					FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
-				}
-
-				return false;
-			}
-		}
-	}
-
-	return true;
+	return ::ValidateGeneratedLaunchConfig(LaunchConfigDescription);
 }
 
 void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
@@ -607,15 +536,16 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	}
 
 	// Get the latest launch config.
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	FString LaunchConfig;
-	if (SpatialGDKSettings->bGenerateDefaultLaunchConfig)
+	if (SpatialGDKEditorSettings->bGenerateDefaultLaunchConfig)
 	{
-		if (!ValidateGeneratedLaunchConfig())
-		{
-			return;
-		}
+		//if (!ValidateGeneratedLaunchConfig())
+		//{
+		//	return;
+		//}
 
 		bool bRedeployRequired = false;
 		if (!GenerateAllDefaultWorkerJsons(bRedeployRequired))
@@ -627,21 +557,76 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			LocalDeploymentManager->SetRedeployRequired();
 		}
 
-		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), TEXT("Improbable/DefaultLaunchConfig.json"));
-		if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
+		UWorld* EditorWorld = GEditor->GetEditorWorldContext(false).World();
+		check(EditorWorld);
+
+		//LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), TEXT("Improbable/DefaultLaunchConfig.json"));
+		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(SpatialGDKServicesConstants::SpatialOSDirectory), FString::Printf(TEXT("%s_LocalLaunchConfig.json"), *EditorWorld->GetMapName()));
+		//if ()
 		{
-			const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
+			FSpatialLaunchConfigDescription LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
+			if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
+			{
+				const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(EditorWorld->GetWorldSettings());
+				if (WorldSettings && WorldSettings->LoadBalanceStrategy)
+				{
+					FIntPoint WorldDimensions;
+					FWorkerTypeLaunchSection WorkerLaunch;
+					WorkerLaunch.bManualWorkerConnectionOnly = true;
+					if (FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(WorldSettings->LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), WorkerLaunch, WorldDimensions))
+					{
+						LaunchConfigDescription.World.Dimensions = WorldDimensions;
+						LaunchConfigDescription.ServerWorkers.Empty(SpatialGDKSettings->ServerWorkerTypes.Num());
+
+						for (auto WorkerType : SpatialGDKSettings->ServerWorkerTypes)
+						{
+							LaunchConfigDescription.ServerWorkers.Add(WorkerLaunch);
+							LaunchConfigDescription.ServerWorkers.Last().WorkerType = WorkerType;
+						}
+					}
+				}
+				else
+				{
+					UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Missing load balancing strategy on map ???"));
+				}
+			}
+
+			if (!::ValidateGeneratedLaunchConfig(LaunchConfigDescription))
+			{
+				return;
+			}
+
 			GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription);
+
+			{
+				for (auto& WorkerLaunchSection : LaunchConfigDescription.ServerWorkers)
+				{
+					WorkerLaunchSection.bManualWorkerConnectionOnly = false;
+				}
+
+				FString CloudLaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(SpatialGDKServicesConstants::SpatialOSDirectory), FString::Printf(TEXT("%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
+				GenerateDefaultLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription);
+			}
+			{
+				ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+
+				PlayInSettings->WorkerTypesToLaunch.Empty(LaunchConfigDescription.ServerWorkers.Num());
+				for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDescription.ServerWorkers)
+				{
+					PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerType.WorkerTypeName, WorkerLaunch.NumEditorInstances);
+				}
+			}
+
 		}
 	}
 	else
 	{
-		LaunchConfig = SpatialGDKSettings->GetSpatialOSLaunchConfig();
+		LaunchConfig = SpatialGDKEditorSettings->GetSpatialOSLaunchConfig();
 	}
 
-	const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
-	const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
-	const FString RuntimeVersion = SpatialGDKSettings->GetSpatialOSRuntimeVersionForLocal();
+	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
+	const FString SnapshotName = SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad();
+	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSpatialOSRuntimeVersionForLocal();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion]
 	{

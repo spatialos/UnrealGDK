@@ -75,6 +75,14 @@ bool FStartDeployment::Update()
 			}
 
 			FSpatialLaunchConfigDescription LaunchConfigDescription(AutomationWorkerType);
+			//
+			//ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+			//
+			//PlayInSettings->WorkerTypesToLaunch.Empty(LaunchConfigDesc.ServerWorkers.Num());
+			//for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
+			//{
+			//	PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerType.WorkerTypeName, WorkerLaunch.NumEditorInstances);
+			//}
 
 			if (!GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription))
 			{
