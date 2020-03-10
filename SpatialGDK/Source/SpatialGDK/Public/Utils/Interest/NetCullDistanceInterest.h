@@ -10,12 +10,13 @@
  * functionality of Unreal given the spatial class info manager.
  *
  * There are three different ways to generate the checkout radius constraint. The default is legacy NCD interest.
- * This generates radius bucket queries where each spatial bucket is conjoined with all the components representing the actors with that
+ * This generates a disjunct of radius bucket queries where each spatial bucket is conjoined with all the components representing the actors with that
  * net cull distance. There is also a minimum radius constraint which is not conjoined with any actor components. This is
  * set to the default NCD.
  *
  * If bEnableNetCullDistanceInterest is true, instead each radius bucket generated will only be conjoined with a single
- * marker component representing that net cull distance interest. An important distinction between this and legacy NCD is that
+ * marker component representing that net cull distance interest. These marker components are added to entities which represent
+ * actors with that defined net cull distance. An important distinction between this and legacy NCD is that
  * all radius buckets now have a conjoined component.
  *
  * Further if also bEnableNetCullDistanceFrequency is true, then for each NCD, multiple queries will be generated.

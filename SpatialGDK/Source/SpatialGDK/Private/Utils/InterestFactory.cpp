@@ -210,6 +210,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, co
 {
 	QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
 
+	// Always relevant and always interested
 	AddSystemQuery(OutInterest, InActor, InInfo, LevelConstraint);
 
 	if (HasUserDefinedConstraint(InActor))
@@ -218,6 +219,7 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, co
 	}
 	else
 	{
+		// If user interest is not defined, add the pre-generated net cull distance queries
 		AddNetCullDistanceQueries(OutInterest, LevelConstraint);
 	}
 }

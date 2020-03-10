@@ -148,10 +148,7 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraintWit
 			continue;
 		}
 		QueryConstraint RadiusDisjunct;
-		for (auto& Constraint : FrequencyConstraintsPair.Value)
-		{
-			RadiusDisjunct.OrConstraint.Add(Constraint);
-		}
+		RadiusDisjunct.OrConstraint.Append(FrequencyConstraintsPair.Value);
 		CheckoutConstraints.Add({ SpatialFrequency, RadiusDisjunct });
 	}
 
