@@ -6,13 +6,13 @@
 #include "LaunchConfigEditor.generated.h"
 
 UCLASS()
-class ULaunchConfigurationEditor : public UTransientUObjectEditor
+class SPATIALGDKEDITOR_API ULaunchConfigurationEditor : public UTransientUObjectEditor
 {
 	GENERATED_BODY()
 
-		UPROPERTY(EditAnywhere)
-		FSpatialLaunchConfigDescription LaunchConfig;
+	UPROPERTY(EditAnywhere)
+	FSpatialLaunchConfigDescription LaunchConfig;
 
 	UFUNCTION(Exec)
-		void SaveConfiguration();
+	void SaveConfiguration();
 };
