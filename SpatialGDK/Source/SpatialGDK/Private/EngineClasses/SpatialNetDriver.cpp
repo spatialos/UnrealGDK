@@ -515,6 +515,7 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
 			RedirectURL.Host = LastURL.Host;
 			RedirectURL.Port = LastURL.Port;
+			RedirectURL.Portal = LastURL.Portal;
 
 			// Usually the LastURL options are added to the RedirectURL in the FURL constructor.
 			// However this is not the case when TravelType = TRAVEL_Absolute so we must do it explicitly here.
@@ -2311,13 +2312,16 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 		}
 	}
 
-	if (IsServer())
+	if (Channel != nullptr)
 	{
-		Channel->SetServerAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID));
-	}
-	else
-	{
-		Channel->SetClientAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
+		if (IsServer())
+		{
+			Channel->SetServerAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID));
+		}
+		else
+		{
+			Channel->SetClientAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
+		}
 	}
 
 	return Channel;
