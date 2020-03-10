@@ -395,3 +395,87 @@ LOADBALANCEENFORCER_TEST(GIVEN_acl_component_removal_WHEN_request_is_queued_THEN
 
 	return true;
 }
+
+LOADBALANCEENFORCER_TEST(GIVEN_component_presence_change_op_WHEN_we_inform_load_balance_enforcer_THEN_queue_authority_request)
+{
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
+
+	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
+	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+
+	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+
+	// Choose some explicit component IDs to add to our ComponentPresence component.
+	Worker_ComponentId TestComponentIdOne = 123;
+	Worker_ComponentId TestComponentIdTwo = 456;
+	TArray<Worker_ComponentId> PresentComponentIds{ TestComponentIdOne, TestComponentIdTwo };
+
+	// Create a ComponentPresence component update op with the required components.
+	Worker_ComponentUpdateOp UpdateOp;
+	UpdateOp.entity_id = EntityIdOne;
+	UpdateOp.update.component_id = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
+	UpdateOp.update.schema_type = Schema_CreateComponentUpdate();
+	Schema_Object* UpdateFields = Schema_GetComponentUpdateFields(UpdateOp.update.schema_type);
+	Schema_AddUint32List(UpdateFields, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, PresentComponentIds.GetData(), PresentComponentIds.Num());
+
+	// Pass the ComponentPresence update to the enforcer to queue an ACL assignment.
+	LoadBalanceEnforcer->OnLoadBalancingComponentUpdated(UpdateOp);
+
+	// Pass the update op to the StaticComponentView so that they can be read when the ACL assigment is processed.
+	StaticComponentView->OnComponentUpdate(UpdateOp);
+
+	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> ACLRequests = LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests();
+
+	bool bSuccess = true;
+	if (ACLRequests.Num() == 1)
+	{
+		bSuccess &= ACLRequests[0].EntityId == EntityIdOne;
+		bSuccess &= ACLRequests[0].OwningWorkerId == ValidWorkerOne;
+		bSuccess &= ACLRequests[0].ComponentIds.Contains(TestComponentIdOne);
+		bSuccess &= ACLRequests[0].ComponentIds.Contains(TestComponentIdTwo);
+	}
+	else
+	{
+		bSuccess = false;
+	}
+
+	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
+
+	return true;
+}
+
+LOADBALANCEENFORCER_TEST(GIVEN_component_presence_component_removal_WHEN_request_is_queued_THEN_return_no_acl_assignment_requests)
+{
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
+
+	// Set up the world in such a way that we can enforce the authority, and we are not already the authoritative worker so should try and assign authority.
+	USpatialStaticComponentView* StaticComponentView = NewObject<USpatialStaticComponentView>();
+	AddEntityToStaticComponentView(*StaticComponentView, EntityIdOne, VirtualWorkerOne, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
+
+	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
+
+	Worker_AuthorityChangeOp AuthOp;
+	AuthOp.entity_id = EntityIdOne;
+	AuthOp.authority = WORKER_AUTHORITY_AUTHORITATIVE;
+	AuthOp.component_id = SpatialConstants::ENTITY_ACL_COMPONENT_ID;
+
+	LoadBalanceEnforcer->OnAclAuthorityChanged(AuthOp);
+
+	// At this point, we expect there to be a queued request.
+	TestTrue("Assignment request is queued", LoadBalanceEnforcer->AclAssignmentRequestIsQueued(EntityIdOne));
+
+	Worker_RemoveComponentOp ComponentOp;
+	ComponentOp.entity_id = EntityIdOne;
+	ComponentOp.component_id = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
+
+	LoadBalanceEnforcer->OnLoadBalancingComponentRemoved(ComponentOp);
+
+	// Now we should have dropped that request.
+
+	TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> ACLRequests = LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests();
+
+	bool bSuccess = ACLRequests.Num() == 0;
+	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
+
+	return true;
+}
