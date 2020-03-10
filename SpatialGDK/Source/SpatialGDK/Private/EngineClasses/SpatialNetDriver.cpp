@@ -2252,6 +2252,11 @@ void USpatialNetDriver::AddPendingDormantChannel(USpatialActorChannel* Channel)
 	PendingDormantChannels.Emplace(Channel);
 }
 
+void USpatialNetDriver::RemovePendingDormantChannel(USpatialActorChannel* Channel)
+{
+	PendingDormantChannels.Remove(Channel);
+}
+
 void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)
 {
 	// Register dormant entities when their actor channel has been closed, but their entity is still alive.

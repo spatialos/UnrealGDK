@@ -343,6 +343,7 @@ USpatialActorChannel* USpatialReceiver::RecreateDormantSpatialChannel(AActor* Ac
 	check(!Channel->bCreatingNewEntity);
 	check(Channel->GetEntityId() == EntityID);
 
+	NetDriver->RemovePendingDormantChannel(Channel);
 	NetDriver->UnregisterDormantEntityId(EntityID);
 
 	return Channel;
@@ -1503,6 +1504,12 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 			if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id)))
 			{
 				Channel = RecreateDormantSpatialChannel(Actor, Op.entity_id);
+
+				// As we haven't removed the dormant component just yet, this might be a single replication update where the actor
+				// remains dormant. Add it back to pending dormancy so the local worker can clean up the channel. If we do process
+				// a dormant component removal later in this frame, we'll clear the channel from pending dormancy channel then.
+				NetDriver->AddPendingDormantChannel(Channel);
+				
 			}
 			else
 			{
