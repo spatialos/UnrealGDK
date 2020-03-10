@@ -28,12 +28,11 @@ generate_build_configuration_steps () {
         if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
             echo "Building for subset of supported configurations. Generating the appropriate steps..."
         
-            SLOW_NETWORKING_TESTS_LOCAL=${SLOW_NETWORKING_TESTS:-false}
+            SLOW_NETWORKING_TESTS_LOCAL="${SLOW_NETWORKING_TESTS:-false}"
             # if the SLOW_NETWORKING_TESTS variable is not set or empty, look at whether this is a nightly build
             if [[ -z "${SLOW_NETWORKING_TESTS+x}" ]]; then
                 if [[ "${NIGHTLY_BUILD:-false,,}" == "true" ]]; then
                     SLOW_NETWORKING_TESTS_LOCAL="true"
-                fi
             fi
 
             if [[ "${SLOW_NETWORKING_TESTS_LOCAL,,}" == "true" ]]; then
@@ -71,7 +70,7 @@ generate_build_configuration_steps () {
 # This script generates steps for each engine version listed in unreal-engine.version, 
 # based on the gdk_build.template.steps.yaml template
 if [[ -z "${ENGINE_VERSION+x}" ]]; then
-    echo "Generating build steps for each engine version listed in unreal-engine.version"  
+    echo "Generating build steps for each engine version listed in unreal-engine.version"
     IFS=$'\n'
     for COMMIT_HASH in $(cat < ci/unreal-engine.version); do
         generate_build_configuration_steps "${COMMIT_HASH}"
