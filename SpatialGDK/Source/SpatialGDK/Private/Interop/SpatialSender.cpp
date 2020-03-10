@@ -26,7 +26,7 @@
 #include "SpatialConstants.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityFactory.h"
-#include "Utils/SpatialInterestFactory.h"
+#include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialDebugger.h"

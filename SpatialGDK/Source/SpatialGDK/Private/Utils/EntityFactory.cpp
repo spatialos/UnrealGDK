@@ -20,7 +20,7 @@
 #include "SpatialConstants.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InspectionColors.h"
-#include "Utils/SpatialInterestFactory.h"
+#include "Utils/InterestFactory.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 
