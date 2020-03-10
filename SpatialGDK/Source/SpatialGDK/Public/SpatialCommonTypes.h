@@ -49,5 +49,12 @@ using FWorkerComponentData = FTrackableWorkerType<Worker_ComponentData>;
 
 namespace SpatialGDK
 {
-	using FrequencyToConstraintsMap = TMap<float, TArray<struct QueryConstraint>>;
+	struct QueryConstraint;
+	struct FrequencyConstraint;
+
+	// Used for deduping queries across frequencies
+	using FrequencyToConstraintsMap = TMap<float, TArray<QueryConstraint>>;
+
+	// A common type for lists of frequency constraints to be converted into queries later
+	using FrequencyConstraints = TArray<FrequencyConstraint>;
 }

@@ -132,6 +132,13 @@ struct Query
 	TSchemaOption<float> Frequency;
 };
 
+// Constraints are typically linked to a corresponding frequency in the GDK use case, but without the result set yet.
+struct FrequencyConstraint
+{
+	TSchemaOption<float> Frequency;
+	QueryConstraint Constraint;
+};
+
 struct ComponentInterest
 {
 	TArray<Query> Queries;

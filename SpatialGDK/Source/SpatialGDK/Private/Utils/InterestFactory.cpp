@@ -40,139 +40,21 @@ void InterestFactory::CreateAndCacheInterestState()
 	ServerAuthInterestResultType = CreateServerAuthInterestResultType();
 }
 
-QueryConstraint InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* InClassInfoManager)
+FrequencyConstraints InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* InClassInfoManager)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	QueryConstraint CheckoutRadiusConstraint;
-	CheckoutConstraints.Empty();
 
 	if (!SpatialGDKSettings->bEnableNetCullDistanceInterest)
 	{
-		CheckoutRadiusConstraint = CreateLegacyNetCullDistanceConstraint(InClassInfoManager);
+		return CheckoutRadiusConstraintUtils::CreateLegacyNetCullDistanceConstraint(InClassInfoManager);
 	}
-	else
+
+	if (!SpatialGDKSettings->bEnableNetCullDistanceFrequency)
 	{
-		if (!SpatialGDKSettings->bEnableNetCullDistanceFrequency)
-		{
-			CheckoutRadiusConstraint = CreateNetCullDistanceConstraint(InClassInfoManager);
-		}
-		else
-		{
-			CheckoutRadiusConstraint = CreateNetCullDistanceConstraintWithFrequency(InClassInfoManager);
-		}
+		return CheckoutRadiusConstraintUtils::CreateNetCullDistanceConstraint(InClassInfoManager);
 	}
 
-	return CheckoutRadiusConstraint;
-}
-
-QueryConstraint InterestFactory::CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* InClassInfoManager)
-{
-	// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
-	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
-	//   - NetCullDistanceSquared on AActor is used to define the default checkout radius with no other constraints.
-	//   - NetCullDistanceSquared on other actor types is used to define additional constraints if needed.
-	//   - If a subtype defines a radius smaller than a parent type, then its requirements are already captured.
-	//   - If a subtype defines a radius larger than all parent types, then it needs an additional constraint.
-	//   - Other than the default from AActor, all radius constraints also include Component constraints to
-	//     capture specific types, including all derived types of that actor.
-
-	QueryConstraint CheckoutRadiusConstraint;
-
-	CheckoutRadiusConstraint.OrConstraint.Add(CheckoutRadiusConstraintUtils::GetDefaultCheckoutRadiusConstraint());
-
-	// Get interest distances for each actor.
-	TMap<UClass*, float> ActorComponentSetToRadius = CheckoutRadiusConstraintUtils::GetActorTypeToRadius();
-
-	// For every interest distance that we still want, build a map from radius to list of actor type components that match that radius.
-	TMap<float, TArray<UClass*>> DistanceToActorTypeComponents = CheckoutRadiusConstraintUtils::DedupeDistancesAcrossActorTypes(
-		ActorComponentSetToRadius);
-
-	// The previously built map removes duplicates of spatial constraints. Now the actual query constraints can be built of the form:
-	// OR(AND(cylinder(radius), OR(actor 1 components, actor 2 components, ...)), ...)
-	// which is equivalent to having a separate spatial query for each actor type if the radius is the same.
-	TArray<QueryConstraint> CheckoutRadiusConstraints = CheckoutRadiusConstraintUtils::BuildNonDefaultActorCheckoutConstraints(
-		DistanceToActorTypeComponents, InClassInfoManager);
-
-	// Add all the different actor queries to the overall checkout constraint.
-	for (auto& ActorCheckoutConstraint : CheckoutRadiusConstraints)
-	{
-		CheckoutRadiusConstraint.OrConstraint.Add(ActorCheckoutConstraint);
-	}
-
-	return CheckoutRadiusConstraint;
-}
-
-QueryConstraint InterestFactory::CreateNetCullDistanceConstraint(USpatialClassInfoManager* InClassInfoManager)
-{
-	QueryConstraint CheckoutRadiusConstraintRoot;
-
-	const TMap<float, Worker_ComponentId>& NetCullDistancesToComponentIds = InClassInfoManager->GetNetCullDistanceToComponentIds();
-
-	for (const auto& DistanceComponentPair : NetCullDistancesToComponentIds)
-	{
-		const float MaxCheckoutRadiusMeters = CheckoutRadiusConstraintUtils::NetCullDistanceSquaredToSpatialDistance(DistanceComponentPair.Key);
-
-		QueryConstraint ComponentConstraint;
-		ComponentConstraint.ComponentConstraint = DistanceComponentPair.Value;
-
-		QueryConstraint RadiusConstraint;
-		RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ MaxCheckoutRadiusMeters };
-
-		QueryConstraint CheckoutRadiusConstraint;
-		CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
-		CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
-
-		CheckoutRadiusConstraintRoot.OrConstraint.Add(CheckoutRadiusConstraint);
-	}
-
-	return CheckoutRadiusConstraintRoot;
-}
-
-QueryConstraint InterestFactory::CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* InClassInfoManager)
-{
-	QueryConstraint CheckoutRadiusConstraintRoot;
-
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	const TMap<float, Worker_ComponentId>& NetCullDistancesToComponentIds = InClassInfoManager->GetNetCullDistanceToComponentIds();
-
-	for (const auto& DistanceComponentPair : NetCullDistancesToComponentIds)
-	{
-		const float MaxCheckoutRadiusMeters = CheckoutRadiusConstraintUtils::NetCullDistanceSquaredToSpatialDistance(DistanceComponentPair.Key);
-
-		QueryConstraint ComponentConstraint;
-		ComponentConstraint.ComponentConstraint = DistanceComponentPair.Value;
-
-		{
-			// Add default interest query which doesn't include a frequency
-			float FullFrequencyCheckoutRadius = MaxCheckoutRadiusMeters * SpatialGDKSettings->FullFrequencyNetCullDistanceRatio;
-
-			QueryConstraint RadiusConstraint;
-			RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ FullFrequencyCheckoutRadius };
-
-			QueryConstraint CheckoutRadiusConstraint;
-			CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
-			CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
-
-			CheckoutRadiusConstraintRoot.OrConstraint.Add(CheckoutRadiusConstraint);
-		}
-
-		// Add interest query for specified distance/frequency pairs
-		for (const auto& DistanceFrequencyPair : SpatialGDKSettings->InterestRangeFrequencyPairs)
-		{
-			float CheckoutRadius = MaxCheckoutRadiusMeters * DistanceFrequencyPair.DistanceRatio;
-
-			QueryConstraint RadiusConstraint;
-			RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
-
-			QueryConstraint CheckoutRadiusConstraint;
-			CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
-			CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
-
-			CheckoutConstraints.Add({ DistanceFrequencyPair.Frequency, CheckoutRadiusConstraint });
-		}
-	}
-
-	return CheckoutRadiusConstraintRoot;
+	return CheckoutRadiusConstraintUtils::CreateNetCullDistanceConstraintWithFrequency(InClassInfoManager);
 }
 
 ResultType InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
@@ -347,13 +229,13 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, co
 
 	AddSystemQuery(OutInterest, InActor, InInfo, LevelConstraint);
 
-	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
-
-	// If net cull distance frequency queries are enabled, build and add those separately as they have to be built each time.
-	// They are added as separate queries for the same reason- different frequencies.
-	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceFrequency)
+	if (HasUserDefinedConstraint(InActor))
 	{
-		AddNetCullDistanceFrequencyQueries(OutInterest, LevelConstraint);
+		AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
+	}
+	else
+	{
+		AddNetCullDistanceQueries(OutInterest, LevelConstraint);
 	}
 }
 
@@ -387,16 +269,10 @@ void InterestFactory::AddSystemQuery(Interest& OutInterest, const AActor* InActo
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraints(InActor);
 	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint(InActor, InInfo);
 	QueryConstraint AlwaysRelevantConstraint = CreateAlwaysRelevantConstraint();
 
 	QueryConstraint SystemDefinedConstraints;
-
-	if (CheckoutRadiusConstraint.IsValid())
-	{
-		SystemDefinedConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
-	}
 
 	if (AlwaysInterestedConstraint.IsValid())
 	{
@@ -420,14 +296,13 @@ void InterestFactory::AddSystemQuery(Interest& OutInterest, const AActor* InActo
 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(Settings->UseRPCRingBuffer()), ClientSystemQuery);
 
-	// Add the spatial and always interested constraint to the server as well to make sure the server sees the same as the client.
+	// Add always interested constraint to the server as well to make sure the server sees the same as the client.
 	// The always relevant constraint is added as part of the server worker query, so leave that out here.
 	// Servers also don't need to be level constrained.
 	if (Settings->bEnableClientQueriesOnServer)
 	{
 		Query ServerSystemQuery;
 		QueryConstraint ServerSystemConstraint;
-		ServerSystemConstraint.OrConstraint.Add(CheckoutRadiusConstraint);
 		ServerSystemConstraint.OrConstraint.Add(AlwaysInterestedConstraint);
 		ServerSystemQuery.Constraint = ServerSystemConstraint;
 
@@ -547,13 +422,13 @@ void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor,
 	}
 }
 
-void InterestFactory::AddNetCullDistanceFrequencyQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const
+void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
 	// The CheckouConstraints list contains items with a constraint and a frequency.
 	// They are then converted to queries by adding a result type to them, and the constraints are conjoined with the level constraint.
-	for (const auto& CheckoutRadiusConstraintFrequencyPair : CheckoutConstraints)
+	for (const auto& CheckoutRadiusConstraintFrequencyPair : ClientCheckoutRadiusConstraint)
 	{
 		Query NewQuery;
 
@@ -594,9 +469,9 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 	OutInterest.ComponentInterestMap[ComponentId].Queries.Add(QueryToAdd);
 }
 
-QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints(const AActor* InActor) const
+bool InterestFactory::HasUserDefinedConstraint(const AActor* InActor) const
 {
-	// If the actor has a component to specify interest and that indicates that we shouldn't generate
+	// If the actor has a component to specify interest and that indicates that we shouldn't add
 	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
 	// there is at most one ActorInterestQueryComponent.
 	TArray<UActorInterestComponent*> ActorInterestComponents;
@@ -607,12 +482,11 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints(const AActor* I
 		check(ActorInterest);
 		if (!ActorInterest->bUseNetCullDistanceSquaredForCheckoutRadius)
 		{
-			return QueryConstraint{};
+			return true;
 		}
 	}
 
-	// Otherwise, return the previously computed checkout radius constraint.
-	return ClientCheckoutRadiusConstraint;
+	return false;
 }
 
 QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const

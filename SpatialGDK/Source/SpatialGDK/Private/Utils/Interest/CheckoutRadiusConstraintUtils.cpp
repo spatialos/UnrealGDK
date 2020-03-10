@@ -8,8 +8,153 @@
 
 DEFINE_LOG_CATEGORY(LogCheckoutRadiusConstraintUtils);
 
+// Use 0 to represent "full" frequency here. It actually represents "never" when set in spatial, so this will be converted
+// to an empty optional later.
+const float FullFrequencyHz = 0.f;
+
 namespace SpatialGDK
 {
+
+FrequencyConstraints CheckoutRadiusConstraintUtils::CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* InClassInfoManager)
+{
+	// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
+	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
+	//   - NetCullDistanceSquared on AActor is used to define the default checkout radius with no other constraints.
+	//   - NetCullDistanceSquared on other actor types is used to define additional constraints if needed.
+	//   - If a subtype defines a radius smaller than a parent type, then its requirements are already captured.
+	//   - If a subtype defines a radius larger than all parent types, then it needs an additional constraint.
+	//   - Other than the default from AActor, all radius constraints also include Component constraints to
+	//     capture specific types, including all derived types of that actor.
+
+	QueryConstraint CheckoutRadiusConstraint;
+
+	CheckoutRadiusConstraint.OrConstraint.Add(CheckoutRadiusConstraintUtils::GetDefaultCheckoutRadiusConstraint());
+
+	// Get interest distances for each actor.
+	TMap<UClass*, float> ActorComponentSetToRadius = CheckoutRadiusConstraintUtils::GetActorTypeToRadius();
+
+	// For every interest distance that we still want, build a map from radius to list of actor type components that match that radius.
+	TMap<float, TArray<UClass*>> DistanceToActorTypeComponents = CheckoutRadiusConstraintUtils::DedupeDistancesAcrossActorTypes(
+		ActorComponentSetToRadius);
+
+	// The previously built map removes duplicates of spatial constraints. Now the actual query constraints can be built of the form:
+	// OR(AND(cylinder(radius), OR(actor 1 components, actor 2 components, ...)), ...)
+	// which is equivalent to having a separate spatial query for each actor type if the radius is the same.
+	TArray<QueryConstraint> CheckoutRadiusConstraints = CheckoutRadiusConstraintUtils::BuildNonDefaultActorCheckoutConstraints(
+		DistanceToActorTypeComponents, InClassInfoManager);
+
+	// Add all the different actor queries to the overall checkout constraint.
+	for (auto& ActorCheckoutConstraint : CheckoutRadiusConstraints)
+	{
+		CheckoutRadiusConstraint.OrConstraint.Add(ActorCheckoutConstraint);
+	}
+
+	return { { TSchemaOption<float>(), CheckoutRadiusConstraint } };
+}
+
+FrequencyConstraints CheckoutRadiusConstraintUtils::CreateNetCullDistanceConstraint(USpatialClassInfoManager* InClassInfoManager)
+{
+	QueryConstraint CheckoutRadiusConstraintRoot;
+
+	const TMap<float, Worker_ComponentId>& NetCullDistancesToComponentIds = InClassInfoManager->GetNetCullDistanceToComponentIds();
+
+	for (const auto& DistanceComponentPair : NetCullDistancesToComponentIds)
+	{
+		const float MaxCheckoutRadiusMeters = CheckoutRadiusConstraintUtils::NetCullDistanceSquaredToSpatialDistance(DistanceComponentPair.Key);
+
+		QueryConstraint ComponentConstraint;
+		ComponentConstraint.ComponentConstraint = DistanceComponentPair.Value;
+
+		QueryConstraint RadiusConstraint;
+		RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ MaxCheckoutRadiusMeters };
+
+		QueryConstraint CheckoutRadiusConstraint;
+		CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
+		CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
+
+		CheckoutRadiusConstraintRoot.OrConstraint.Add(CheckoutRadiusConstraint);
+	}
+
+	return { { TSchemaOption<float>(), CheckoutRadiusConstraintRoot } };
+}
+
+FrequencyConstraints CheckoutRadiusConstraintUtils::CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* InClassInfoManager)
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	const TMap<float, Worker_ComponentId>& NetCullDistancesToComponentIds = InClassInfoManager->GetNetCullDistanceToComponentIds();
+
+	FrequencyToConstraintsMap FrequencyToConstraints;
+
+	for (const auto& DistanceComponentPair : NetCullDistancesToComponentIds)
+	{
+		const float MaxCheckoutRadiusMeters = CheckoutRadiusConstraintUtils::NetCullDistanceSquaredToSpatialDistance(DistanceComponentPair.Key);
+
+		QueryConstraint ComponentConstraint;
+		ComponentConstraint.ComponentConstraint = DistanceComponentPair.Value;
+
+		// Add default interest query which doesn't is at full frequency
+		float FullFrequencyCheckoutRadius = MaxCheckoutRadiusMeters * SpatialGDKSettings->FullFrequencyNetCullDistanceRatio;
+
+		QueryConstraint RadiusConstraint;
+		RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ FullFrequencyCheckoutRadius };
+
+		QueryConstraint CheckoutRadiusConstraint;
+		CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
+		CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
+
+		AddToFrequencyConstraintMap(FullFrequencyHz, CheckoutRadiusConstraint, FrequencyToConstraints);
+
+		// Add interest query for specified distance/frequency pairs
+		for (const auto& DistanceFrequencyPair : SpatialGDKSettings->InterestRangeFrequencyPairs)
+		{
+			float CheckoutRadius = MaxCheckoutRadiusMeters * DistanceFrequencyPair.DistanceRatio;
+
+			QueryConstraint RadiusConstraint;
+			RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
+
+			QueryConstraint CheckoutRadiusConstraint;
+			CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
+			CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
+
+			AddToFrequencyConstraintMap(DistanceFrequencyPair.Frequency, CheckoutRadiusConstraint, FrequencyToConstraints);
+		}
+	}
+
+	FrequencyConstraints CheckoutConstraints;
+
+	// De dupe across frequencies.
+	for (auto& FrequencyConstraintsPair : FrequencyToConstraints)
+	{
+		TSchemaOption<float> SpatialFrequency = FrequencyConstraintsPair.Key == 0 ? TSchemaOption<float>() : TSchemaOption<float>(FrequencyConstraintsPair.Key);
+		if (FrequencyConstraintsPair.Value.Num() == 1)
+		{
+			CheckoutConstraints.Add({ SpatialFrequency, FrequencyConstraintsPair.Value[0] });
+			continue;
+		}
+		QueryConstraint RadiusDisjunct;
+		for (auto& Constraint : FrequencyConstraintsPair.Value)
+		{
+			RadiusDisjunct.OrConstraint.Add(Constraint);
+		}
+		CheckoutConstraints.Add({ SpatialFrequency, RadiusDisjunct });
+	}
+
+	return CheckoutConstraints;
+}
+
+void CheckoutRadiusConstraintUtils::AddToFrequencyConstraintMap(const float Frequency, const QueryConstraint& Constraint, FrequencyToConstraintsMap& OutFrequencyToConstraints)
+{
+	// If there is already a query defined with this frequency, group them to avoid making too many queries down the line.
+	// This avoids any extra cost due to duplicate result types across the network if they are large.
+	if (OutFrequencyToConstraints.Find(Frequency))
+	{
+		OutFrequencyToConstraints.Find(Frequency)->Add(Constraint);
+		return;
+	}
+
+	TArray<QueryConstraint> ConstraintList = { Constraint };
+	OutFrequencyToConstraints.Add(Frequency, ConstraintList);
+}
 
 QueryConstraint CheckoutRadiusConstraintUtils::GetDefaultCheckoutRadiusConstraint()
 {
