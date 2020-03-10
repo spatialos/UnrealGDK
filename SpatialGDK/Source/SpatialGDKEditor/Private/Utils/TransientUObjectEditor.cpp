@@ -6,6 +6,7 @@
 #include "SlateApplication.h"
 #include "SBorder.h"
 #include "SButton.h"
+//#include "SDetailView.h"
 
 //DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKTransientUObjectEditor, Log, All);
 
@@ -61,34 +62,11 @@ void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& Editor
 	TArray<UObject*> ObjectsToView;
 	ObjectsToView.Add(ObjectInstance);
 
-	TSharedRef<SWindow> NewSlateWindow = SNew(SWindow)
-		.Title(FText::FromString(EditorName));
-		//.ClientSize(FVector2D(400, 550));
-
-	// If the main frame exists parent the window to it
-	TSharedPtr< SWindow > ParentWindow;
-	if (FModuleManager::Get().IsModuleLoaded("MainFrame"))
-	{
-		IMainFrameModule& MainFrame = FModuleManager::GetModuleChecked<IMainFrameModule>("MainFrame");
-		ParentWindow = MainFrame.GetParentWindow();
-	}
-
-	if (ParentWindow.IsValid())
-	{
-		// Parent the window to the main frame 
-		FSlateApplication::Get().AddWindowAsNativeChild(NewSlateWindow, ParentWindow.ToSharedRef());
-	}
-	else
-	{
-		FSlateApplication::Get().AddWindow(NewSlateWindow);
-	}
-
 	FDetailsViewArgs Args;
 	Args.bHideSelectionTip = true;
 	Args.bLockable = false;
 	Args.bAllowSearch = false;
 	Args.bShowPropertyMatrixButton = false;
-	Args.bShowScrollBar = false;
 
 	TSharedRef<IDetailsView> DetailView = PropertyEditorModule.CreateDetailView(Args);
 
@@ -113,6 +91,14 @@ void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& Editor
 		[
 			DetailView
 		];
+
+
+	// Expand propeprty view.
+	// Implementation not accessible :(
+	//if (SDetailsView* DetailViewImpl = Cast<SDetailsView>(DetailView))
+	//{
+	//	DetailViewImpl->SetRootExpansionStates(true, false);
+	//}
 
 	// Add UFunction marked Exec as buttons in the editor's window
 	for (TFieldIterator<UFunction> FuncIt(ObjectClass); FuncIt; ++FuncIt)
@@ -143,13 +129,39 @@ void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& Editor
 		}
 	}
 
-	NewSlateWindow->SetContent(
-		SNew(SBorder)
-		.BorderImage(FEditorStyle::GetBrush(TEXT("PropertyWindow.WindowBorder")))
+	TSharedRef<SWindow> NewSlateWindow = SNew(SWindow)
+		.Title(FText::FromString(EditorName))
+		//.AutoCenter(EAutoCenter::PrimaryWorkArea)
+	  //.SizingRule(ESizingRule::Autosized)
 		[
-			VBoxBuilder
-		]
-	);
+			SNew(SBorder)
+			.BorderImage(FEditorStyle::GetBrush(TEXT("PropertyWindow.WindowBorder")))
+			[
+				VBoxBuilder
+			]
+		];
 
-	NewSlateWindow->SetOnWindowClosed(FOnWindowClosed::CreateStatic(&OnTransientUObjectEditorWindowClosed, ObjectInstance));
+	// If the main frame exists parent the window to it
+	TSharedPtr< SWindow > ParentWindow;
+	if (FModuleManager::Get().IsModuleLoaded("MainFrame"))
+	{
+		IMainFrameModule& MainFrame = FModuleManager::GetModuleChecked<IMainFrameModule>("MainFrame");
+		ParentWindow = MainFrame.GetParentWindow();
+	}
+
+	if (ParentWindow.IsValid())
+	{
+		// Parent the window to the main frame 
+		FSlateApplication::Get().AddWindowAsNativeChild(NewSlateWindow, ParentWindow.ToSharedRef());
+	}
+	else
+	{
+		FSlateApplication::Get().AddWindow(NewSlateWindow);
+	}
+
+	NewSlateWindow->RegisterActiveTimer(0.5, FWidgetActiveTimerDelegate::CreateLambda([NewSlateWindow](double, float)
+	{
+		NewSlateWindow->Resize(NewSlateWindow->GetDesiredSize());
+		return EActiveTimerReturnType::Stop;
+	}));
 }
