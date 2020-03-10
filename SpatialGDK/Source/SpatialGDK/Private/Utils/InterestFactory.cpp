@@ -40,7 +40,7 @@ void InterestFactory::CreateAndCacheInterestState()
 	ServerAuthInterestResultType = CreateServerAuthInterestResultType(ClassInfoManager);
 }
 
-QueryConstraint InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager)
+QueryConstraint InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* InClassInfoManager)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	QueryConstraint CheckoutRadiusConstraint;
@@ -48,24 +48,24 @@ QueryConstraint InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialCl
 
 	if (!SpatialGDKSettings->bEnableNetCullDistanceInterest)
 	{
-		CheckoutRadiusConstraint = CreateLegacyNetCullDistanceConstraint(ClassInfoManager);
+		CheckoutRadiusConstraint = CreateLegacyNetCullDistanceConstraint(InClassInfoManager);
 	}
 	else
 	{
 		if (!SpatialGDKSettings->bEnableNetCullDistanceFrequency)
 		{
-			CheckoutRadiusConstraint = CreateNetCullDistanceConstraint(ClassInfoManager);
+			CheckoutRadiusConstraint = CreateNetCullDistanceConstraint(InClassInfoManager);
 		}
 		else
 		{
-			CheckoutRadiusConstraint = CreateNetCullDistanceConstraintWithFrequency(ClassInfoManager);
+			CheckoutRadiusConstraint = CreateNetCullDistanceConstraintWithFrequency(InClassInfoManager);
 		}
 	}
 
 	return CheckoutRadiusConstraint;
 }
 
-QueryConstraint InterestFactory::CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager)
+QueryConstraint InterestFactory::CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* InClassInfoManager)
 {
 	// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
 	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
@@ -91,7 +91,7 @@ QueryConstraint InterestFactory::CreateLegacyNetCullDistanceConstraint(USpatialC
 	// OR(AND(cylinder(radius), OR(actor 1 components, actor 2 components, ...)), ...)
 	// which is equivalent to having a separate spatial query for each actor type if the radius is the same.
 	TArray<QueryConstraint> CheckoutRadiusConstraints = CheckoutRadiusConstraintUtils::BuildNonDefaultActorCheckoutConstraints(
-		DistanceToActorTypeComponents, ClassInfoManager);
+		DistanceToActorTypeComponents, InClassInfoManager);
 
 	// Add all the different actor queries to the overall checkout constraint.
 	for (auto& ActorCheckoutConstraint : CheckoutRadiusConstraints)
@@ -102,11 +102,11 @@ QueryConstraint InterestFactory::CreateLegacyNetCullDistanceConstraint(USpatialC
 	return CheckoutRadiusConstraint;
 }
 
-QueryConstraint InterestFactory::CreateNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager)
+QueryConstraint InterestFactory::CreateNetCullDistanceConstraint(USpatialClassInfoManager* InClassInfoManager)
 {
 	QueryConstraint CheckoutRadiusConstraintRoot;
 
-	const TMap<float, Worker_ComponentId>& NetCullDistancesToComponentIds = ClassInfoManager->GetNetCullDistanceToComponentIds();
+	const TMap<float, Worker_ComponentId>& NetCullDistancesToComponentIds = InClassInfoManager->GetNetCullDistanceToComponentIds();
 
 	for (const auto& DistanceComponentPair : NetCullDistancesToComponentIds)
 	{
@@ -128,12 +128,12 @@ QueryConstraint InterestFactory::CreateNetCullDistanceConstraint(USpatialClassIn
 	return CheckoutRadiusConstraintRoot;
 }
 
-QueryConstraint InterestFactory::CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager)
+QueryConstraint InterestFactory::CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* InClassInfoManager)
 {
 	QueryConstraint CheckoutRadiusConstraintRoot;
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	const TMap<float, Worker_ComponentId>& NetCullDistancesToComponentIds = ClassInfoManager->GetNetCullDistanceToComponentIds();
+	const TMap<float, Worker_ComponentId>& NetCullDistancesToComponentIds = InClassInfoManager->GetNetCullDistanceToComponentIds();
 
 	for (const auto& DistanceComponentPair : NetCullDistancesToComponentIds)
 	{
@@ -175,7 +175,7 @@ QueryConstraint InterestFactory::CreateNetCullDistanceConstraintWithFrequency(US
 	return CheckoutRadiusConstraintRoot;
 }
 
-ResultType InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+ResultType InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
 {
 	ResultType ClientNonAuthResultType;
 
@@ -183,17 +183,17 @@ ResultType InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassI
 	ClientNonAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
 
 	// Add all data components- clients don't need to see handover or owner only components on other entities.
-	ClientNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
+	ClientNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
 
 	// In direct disagreement with the above comment, we add the owner only components as well.
 	// This is because GDK workers currently make assumptions about information being available at the point of possession.
 	// TODO(jacques): fix (unr-2865)
-	ClientNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
+	ClientNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
 
 	return ClientNonAuthResultType;
 }
 
-ResultType InterestFactory::CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+ResultType InterestFactory::CreateClientAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
 {
 	ResultType ClientAuthResultType;
 
@@ -208,7 +208,7 @@ ResultType InterestFactory::CreateClientAuthInterestResultType(USpatialClassInfo
 	return ClientAuthResultType;
 }
 
-ResultType InterestFactory::CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+ResultType InterestFactory::CreateServerNonAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
 {
 	ResultType ServerNonAuthResultType;
 
@@ -216,14 +216,14 @@ ResultType InterestFactory::CreateServerNonAuthInterestResultType(USpatialClassI
 	ServerNonAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST);
 
 	// Add all data, owner only, and handover components
-	ServerNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
-	ServerNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
-	ServerNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Handover));
+	ServerNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
+	ServerNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
+	ServerNonAuthResultType.Append(InClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Handover));
 
 	return ServerNonAuthResultType;
 }
 
-ResultType InterestFactory::CreateServerAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+ResultType InterestFactory::CreateServerAuthInterestResultType()
 {
 	// Just the components that we won't have already checked out through authority
 	return SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST;
@@ -584,7 +584,7 @@ void InterestFactory::AddNetCullDistanceFrequencyQueries(Interest& OutInterest, 
 	}
 }
 
-void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd)
+void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd) const
 {
 	if (!OutInterest.ComponentInterestMap.Contains(ComponentId))
 	{
@@ -643,7 +643,7 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* 
 	return AlwaysInterestedConstraint;
 }
 
-QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint()
+QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint() const
 {
 	QueryConstraint AlwaysRelevantConstraint;
 
@@ -721,7 +721,7 @@ void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8
 	OutConstraint.OrConstraint.Add(EntityIdConstraint);
 }
 
-void InterestFactory::SetResultType(Query& OutQuery, const ResultType& InResultType)
+void InterestFactory::SetResultType(Query& OutQuery, const ResultType& InResultType) const
 {
 	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 	{

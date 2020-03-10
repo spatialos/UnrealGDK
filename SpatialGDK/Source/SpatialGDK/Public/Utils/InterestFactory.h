@@ -37,12 +37,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 namespace SpatialGDK
 {
 
-struct FrequencyConstraint
-{
-	float Frequency;
-	SpatialGDK::QueryConstraint Constraint;
-};
-
 class SPATIALGDK_API InterestFactory
 {
 public:
@@ -60,16 +54,16 @@ private:
 	// Build the checkout radius constraints for client workers
 	// TODO: Pull out into checkout radius constraint utils
 	QueryConstraint CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
-	static QueryConstraint CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager);
-	static QueryConstraint CreateNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager);
+	QueryConstraint CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager);
+	QueryConstraint CreateNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager);
 	QueryConstraint CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager);
 
 	// Builds the result types of necessary components for clients
 	// TODO: create and pull out into result types class
-	static ResultType CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	static ResultType CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	static ResultType CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
-	static ResultType CreateServerAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	ResultType CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	ResultType CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	ResultType CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
+	ResultType CreateServerAuthInterestResultType();
 
 	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
@@ -90,12 +84,12 @@ private:
 
 	void AddNetCullDistanceFrequencyQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const;
 
-	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd);
+	void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd) const;
 
 	// System Defined Constraints
 	QueryConstraint CreateCheckoutRadiusConstraints(const AActor* InActor) const;
 	QueryConstraint CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const;
-	static QueryConstraint CreateAlwaysRelevantConstraint();
+	QueryConstraint CreateAlwaysRelevantConstraint() const;
 
 	// Only checkout entities that are in loaded sub-levels
 	QueryConstraint CreateLevelConstraints(const AActor* InActor) const;
@@ -103,7 +97,13 @@ private:
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
 	// If the result types flag is flipped, set the specified result type.
-	static void SetResultType(Query& OutQuery, const ResultType& InResultType);
+	void SetResultType(Query& OutQuery, const ResultType& InResultType) const;
+
+	struct FrequencyConstraint
+	{
+		float Frequency;
+		SpatialGDK::QueryConstraint Constraint;
+	};
 
 	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;
