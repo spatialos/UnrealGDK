@@ -17,10 +17,6 @@
 #include "SpatialGDKServicesModule.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Input/SButton.h"
-#include "DesktopPlatformModule.h"
-#include "IDesktopPlatform.h"
-#include "SlateApplication.h"
-#include "SpatialGDKDefaultLaunchConfigGenerator.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorLayoutDetails);
 
@@ -103,21 +99,6 @@ void FSpatialGDKEditorLayoutDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
 		[
 			SNew(STextBlock).Text(FText::FromString("Push SpatialOS settings to iOS device"))
 		]
-		];
-
-	IDetailCategoryBuilder& LaunchCategory = DetailBuilder.EditCategory("Launch");
-	LaunchCategory.AddCustomRow(FText::FromString("Configuration Generation"))
-		.ValueContent()
-		.VAlign(VAlign_Center)
-		.MinDesiredWidth(250)
-		[
-			SNew(SButton)
-			.VAlign(VAlign_Center)
-			.OnClicked(this, &FSpatialGDKEditorLayoutDetails::SaveLaunchConfiguration)
-			.Content()
-			[
-				SNew(STextBlock).Text(FText::FromString("Save current launch configuration to..."))
-			]
 		];
 }
 
@@ -312,30 +293,5 @@ FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice()
 #endif
 
 	TryPushCommandLineArgsToDevice(Executable, DeploymentServerArguments, OutCommandLineArgsFile);
-	return FReply::Handled();
-}
-
-FReply FSpatialGDKEditorLayoutDetails::SaveLaunchConfiguration()
-{
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
-
-	FString DefaultOutPath = SpatialGDKServicesConstants::SpatialOSDirectory;
-	TArray<FString> Filenames;
-
-	bool bSaved = DesktopPlatform->SaveFileDialog(
-		FSlateApplication::Get().FindBestParentWindowHandleForDialogs(nullptr),
-		TEXT("Save launch configuration"),
-		DefaultOutPath,
-		TEXT(""),
-		TEXT("JSON Configuration|*.json"),
-		EFileDialogFlags::None,
-		Filenames);
-
-	if (bSaved && Filenames.Num() > 0)
-	{
-		GenerateDefaultLaunchConfig(Filenames[0], &SpatialGDKSettings->LaunchConfigDesc);
-	}
-
 	return FReply::Handled();
 }
