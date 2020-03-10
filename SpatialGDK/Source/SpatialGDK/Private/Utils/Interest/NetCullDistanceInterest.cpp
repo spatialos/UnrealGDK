@@ -125,12 +125,12 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraintWit
 		{
 			float CheckoutRadius = MaxCheckoutRadiusMeters * DistanceFrequencyPair.DistanceRatio;
 
-			QueryConstraint RadiusConstraint;
-			RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
+			QueryConstraint FrequencyRadiusConstraint;
+			FrequencyRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
 
-			QueryConstraint CheckoutRadiusConstraint;
-			CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
-			CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
+			QueryConstraint FrequencyCheckoutRadiusConstraint;
+			FrequencyCheckoutRadiusConstraint.AndConstraint.Add(FrequencyRadiusConstraint);
+			FrequencyCheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
 
 			AddToFrequencyConstraintMap(DistanceFrequencyPair.Frequency, CheckoutRadiusConstraint, FrequencyToConstraints);
 		}
