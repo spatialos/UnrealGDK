@@ -7,10 +7,10 @@
 #include "Misc/ScopeTryLock.h"
 #include "Misc/Paths.h"
 
-#include "Utils/Interest/CheckoutRadiusConstraintUtils.h"
+#include "Utils/Interest/NetCullDistanceInterest.h"
 
 #define CHECKOUT_RADIUS_CONSTRAINT_TEST(TestName) \
-	GDK_TEST(Core, CheckoutRadiusConstraintUtils, TestName)
+	GDK_TEST(Core, NetCullDistanceInterest, TestName)
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKCheckoutRadiusTest, Log, All);
 DEFINE_LOG_CATEGORY(LogSpatialGDKCheckoutRadiusTest);
@@ -27,7 +27,7 @@ namespace SpatialGDK
 		Map.Add(Class1, Radius);
 		Map.Add(Class2, Radius);
 
-		TMap<float, TArray<UClass*>> DedupedMap = CheckoutRadiusConstraintUtils::DedupeDistancesAcrossActorTypes(Map);
+		TMap<float, TArray<UClass*>> DedupedMap = NetCullDistanceInterest::DedupeDistancesAcrossActorTypes(Map);
 
 		int32 ExpectedSize = 1;
 		TestTrue("There is only one entry in the map", DedupedMap.Num() == ExpectedSize);
@@ -52,7 +52,7 @@ namespace SpatialGDK
 		Map.Add(Class1, Radius1);
 		Map.Add(Class2, Radius2);
 
-		TMap<float, TArray<UClass*>> DedupedMap = CheckoutRadiusConstraintUtils::DedupeDistancesAcrossActorTypes(Map);
+		TMap<float, TArray<UClass*>> DedupedMap = NetCullDistanceInterest::DedupeDistancesAcrossActorTypes(Map);
 
 		int32 ExpectedSize = 2;
 		TestTrue("There are two entries in the map", DedupedMap.Num() == ExpectedSize);

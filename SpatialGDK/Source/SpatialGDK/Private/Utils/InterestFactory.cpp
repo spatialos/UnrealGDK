@@ -9,7 +9,7 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
-#include "Utils/Interest/CheckoutRadiusConstraintUtils.h"
+#include "Utils/Interest/NetCullDistanceInterest.h"
 
 #include "Engine/World.h"
 #include "Engine/Classes/GameFramework/Actor.h"
@@ -33,28 +33,11 @@ InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager, U
 
 void InterestFactory::CreateAndCacheInterestState()
 {
-	ClientCheckoutRadiusConstraint = CreateClientCheckoutRadiusConstraint(ClassInfoManager);
+	ClientCheckoutRadiusConstraint = NetCullDistanceInterest::CreateCheckoutRadiusConstraints(ClassInfoManager);
 	ClientNonAuthInterestResultType = CreateClientNonAuthInterestResultType(ClassInfoManager);
 	ClientAuthInterestResultType = CreateClientAuthInterestResultType(ClassInfoManager);
 	ServerNonAuthInterestResultType = CreateServerNonAuthInterestResultType(ClassInfoManager);
 	ServerAuthInterestResultType = CreateServerAuthInterestResultType();
-}
-
-FrequencyConstraints InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* InClassInfoManager)
-{
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	if (!SpatialGDKSettings->bEnableNetCullDistanceInterest)
-	{
-		return CheckoutRadiusConstraintUtils::CreateLegacyNetCullDistanceConstraint(InClassInfoManager);
-	}
-
-	if (!SpatialGDKSettings->bEnableNetCullDistanceFrequency)
-	{
-		return CheckoutRadiusConstraintUtils::CreateNetCullDistanceConstraint(InClassInfoManager);
-	}
-
-	return CheckoutRadiusConstraintUtils::CreateNetCullDistanceConstraintWithFrequency(InClassInfoManager);
 }
 
 ResultType InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* InClassInfoManager)
