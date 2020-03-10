@@ -4,7 +4,10 @@
 
 #include "Schema/Component.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
+
+#include "Containers/Array.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 
@@ -12,7 +15,7 @@ namespace SpatialGDK
 {
 
 struct ComponentPresence : Component
-	{
+{
 	static const Worker_ComponentId ComponentId = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
 
 	ComponentPresence() = default;
