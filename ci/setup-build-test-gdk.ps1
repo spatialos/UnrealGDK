@@ -14,7 +14,7 @@ class TestSuite {
     [ValidateNotNullOrEmpty()][string]$test_project_name
     [ValidateNotNullOrEmpty()][string]$test_results_dir
     [ValidateNotNullOrEmpty()][string]$tests_path
-    [ValidateNotNullOrEmpty()][string]$additional_gdk_options
+    [ValidateNotNull()]       [string]$additional_gdk_options
     [bool]                            $run_with_spatial
 
     TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map, [string] $test_project_name, [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options, [string] $run_with_spatial) {
@@ -49,7 +49,7 @@ if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
 }
 else {
     $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK+/Game/SpatialNetworkingMap", "", $True)
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "LoadbalancerTestResults", "/Game/Spatial_ZoningMap_1S_2C", "bEnableUnrealLoadBalancer=true;`r`nLoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`");", $True)
+    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "LoadbalancerTestResults", "/Game/Spatial_ZoningMap_1S_2C", "bEnableUnrealLoadBalancer=true;LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`")", $True)
 }
 
 if ($slow_networking_tests) {
