@@ -640,31 +640,31 @@ void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclW
 
 	const WorkerAttributeSet OwningServerWorkerAttributeSet = { WriteWorkerId };
 
-	EntityAcl NewAcl = StaticComponentView->GetComponentData<EntityAcl>(Request.EntityId);
+	EntityAcl* NewAcl = StaticComponentView->GetComponentData<EntityAcl>(Request.EntityId);
 
-	NewAcl.ReadAcl = Request.ReadAcl;
+	NewAcl->ReadAcl = Request.ReadAcl;
 
 	for (const Worker_ComponentId& ComponentId : Request.ComponentIds)
 	{
 		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
 			|| ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 		{
-			NewAcl.ComponentWriteAcl.Add(ComponentId, Request.ClientRequirementSet);
+			NewAcl->ComponentWriteAcl.Add(ComponentId, Request.ClientRequirementSet);
 			continue;
 		}
 
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
-			NewAcl.ComponentWriteAcl.Add(ComponentId, { SpatialConstants::GetLoadBalancerAttributeSet(GetDefault<USpatialGDKSettings>()->LoadBalancingWorkerType.WorkerTypeName) });
+			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::GetLoadBalancerAttributeSet(GetDefault<USpatialGDKSettings>()->LoadBalancingWorkerType.WorkerTypeName) });
 			continue;
 		}
 	
-		NewAcl.ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
+		NewAcl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
 	}
 
 	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) Setting Acl WriteAuth for entity %lld to %s"), *NetDriver->Connection->GetWorkerId(), Request.EntityId, *Request.OwningWorkerId);
 
-	FWorkerComponentUpdate Update = NewAcl.CreateEntityAclUpdate();
+	FWorkerComponentUpdate Update = NewAcl->CreateEntityAclUpdate();
 	NetDriver->Connection->SendComponentUpdate(Request.EntityId, &Update);
 }
 
