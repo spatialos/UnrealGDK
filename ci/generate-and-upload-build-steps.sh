@@ -6,7 +6,7 @@ upload_build_configuration_step() {
     export BUILD_PLATFORM="${2}"
     export BUILD_TARGET="${3}"
     export BUILD_STATE="${4}"
-    export TEST_CONFIG="${5}"
+    export TEST_CONFIG="${5:-}"
 
     if [[ ${BUILD_PLATFORM} == "Mac" ]]; then
         export BUILD_COMMAND="./ci/setup-build-test-gdk.sh"
