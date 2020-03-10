@@ -41,14 +41,14 @@ ResultType ClientAuthInterestResultType;
 ResultType ServerNonAuthInterestResultType;
 ResultType ServerAuthInterestResultType;
 
-SpatialInterestFactory::SpatialInterestFactory(USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
+InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
 	: ClassInfoManager(InClassInfoManager)
 	, PackageMap(InPackageMap)
 {
 	CreateAndCacheInterestState();
 }
 
-void SpatialInterestFactory::CreateAndCacheInterestState()
+void InterestFactory::CreateAndCacheInterestState()
 {
 	ClientCheckoutRadiusConstraint = CreateClientCheckoutRadiusConstraint(ClassInfoManager);
 	ClientNonAuthInterestResultType = CreateClientNonAuthInterestResultType(ClassInfoManager);
@@ -57,7 +57,7 @@ void SpatialInterestFactory::CreateAndCacheInterestState()
 	ServerAuthInterestResultType = CreateServerAuthInterestResultType(ClassInfoManager);
 }
 
-QueryConstraint SpatialInterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager)
+QueryConstraint InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	QueryConstraint CheckoutRadiusConstraint;
@@ -82,7 +82,7 @@ QueryConstraint SpatialInterestFactory::CreateClientCheckoutRadiusConstraint(USp
 	return CheckoutRadiusConstraint;
 }
 
-QueryConstraint SpatialInterestFactory::CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager)
+QueryConstraint InterestFactory::CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager)
 {
 	// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
 	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
@@ -119,7 +119,7 @@ QueryConstraint SpatialInterestFactory::CreateLegacyNetCullDistanceConstraint(US
 	return CheckoutRadiusConstraint;
 }
 
-QueryConstraint SpatialInterestFactory::CreateNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager)
+QueryConstraint InterestFactory::CreateNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager)
 {
 	QueryConstraint CheckoutRadiusConstraintRoot;
 
@@ -145,7 +145,7 @@ QueryConstraint SpatialInterestFactory::CreateNetCullDistanceConstraint(USpatial
 	return CheckoutRadiusConstraintRoot;
 }
 
-QueryConstraint SpatialInterestFactory::CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager)
+QueryConstraint InterestFactory::CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager)
 {
 	QueryConstraint CheckoutRadiusConstraintRoot;
 
@@ -192,7 +192,7 @@ QueryConstraint SpatialInterestFactory::CreateNetCullDistanceConstraintWithFrequ
 	return CheckoutRadiusConstraintRoot;
 }
 
-ResultType SpatialInterestFactory::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+ResultType InterestFactory::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
 	ResultType ClientNonAuthResultType;
 
@@ -210,7 +210,7 @@ ResultType SpatialInterestFactory::CreateClientNonAuthInterestResultType(USpatia
 	return ClientNonAuthResultType;
 }
 
-ResultType SpatialInterestFactory::CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+ResultType InterestFactory::CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
 	ResultType ClientAuthResultType;
 
@@ -225,7 +225,7 @@ ResultType SpatialInterestFactory::CreateClientAuthInterestResultType(USpatialCl
 	return ClientAuthResultType;
 }
 
-ResultType SpatialInterestFactory::CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+ResultType InterestFactory::CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
 	ResultType ServerNonAuthResultType;
 
@@ -240,23 +240,23 @@ ResultType SpatialInterestFactory::CreateServerNonAuthInterestResultType(USpatia
 	return ServerNonAuthResultType;
 }
 
-ResultType SpatialInterestFactory::CreateServerAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+ResultType InterestFactory::CreateServerAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
 	// Just the components that we won't have already checked out through authority
 	return SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST;
 }
 
-Worker_ComponentData SpatialInterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
+Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
 {
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestData();
 }
 
-Worker_ComponentUpdate SpatialInterestFactory::CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
+Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
 {
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
-Interest SpatialInterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy)
+Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -330,7 +330,7 @@ Interest SpatialInterestFactory::CreateServerWorkerInterest(const UAbstractLBStr
 	return ServerInterest;
 }
 
-Interest SpatialInterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
+Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -358,7 +358,7 @@ Interest SpatialInterestFactory::CreateInterest(AActor* InActor, const FClassInf
 	return ResultInterest;
 }
 
-void SpatialInterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
+void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
 {
 	QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
 
@@ -374,7 +374,7 @@ void SpatialInterestFactory::AddPlayerControllerActorInterest(Interest& OutInter
 	}
 }
 
-void SpatialInterestFactory::AddClientSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const
+void InterestFactory::AddClientSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const
 {
 	Query NewQuery;
 	// Just an entity ID constraint is fine, as clients should not become authoritative over entities outside their loaded levels
@@ -385,7 +385,7 @@ void SpatialInterestFactory::AddClientSelfInterest(Interest& OutInterest, const 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()), NewQuery);
 }
 
-void SpatialInterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const
+void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const
 {
 	// Add a query for components all servers need to read client data
 	Query ClientQuery;
@@ -400,7 +400,7 @@ void SpatialInterestFactory::AddServerSelfInterest(Interest& OutInterest, const 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 }
 
-void SpatialInterestFactory::AddSystemQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const
+void InterestFactory::AddSystemQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -454,7 +454,7 @@ void SpatialInterestFactory::AddSystemQuery(Interest& OutInterest, const AActor*
 	}
 }
 
-void SpatialInterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const
+void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const
 {
 	SCOPE_CYCLE_COUNTER(STAT_InterestFactoryAddUserDefinedQueries);
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
@@ -510,7 +510,7 @@ void SpatialInterestFactory::AddUserDefinedQueries(Interest& OutInterest, const 
 	}
 }
 
-FrequencyToConstraintsMap SpatialInterestFactory::GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const
+FrequencyToConstraintsMap InterestFactory::GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const
 {
 	// This function builds a frequency to constraint map rather than queries. It does this for two reasons:
 	// - We need to set the result type later
@@ -533,7 +533,7 @@ FrequencyToConstraintsMap SpatialInterestFactory::GetUserDefinedFrequencyToConst
 	return FrequencyToConstraints;
 }
 
-void SpatialInterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints, bool bRecurseChildren) const
+void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints, bool bRecurseChildren) const
 {
 	check(ClassInfoManager);
 
@@ -564,7 +564,7 @@ void SpatialInterestFactory::GetActorUserDefinedQueryConstraints(const AActor* I
 	}
 }
 
-void SpatialInterestFactory::AddNetCullDistanceFrequencyQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const
+void InterestFactory::AddNetCullDistanceFrequencyQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -601,7 +601,7 @@ void SpatialInterestFactory::AddNetCullDistanceFrequencyQueries(Interest& OutInt
 	}
 }
 
-void SpatialInterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd)
+void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd)
 {
 	if (!OutInterest.ComponentInterestMap.Contains(ComponentId))
 	{
@@ -611,7 +611,7 @@ void SpatialInterestFactory::AddComponentQueryPairToInterestComponent(Interest& 
 	OutInterest.ComponentInterestMap[ComponentId].Queries.Add(QueryToAdd);
 }
 
-QueryConstraint SpatialInterestFactory::CreateCheckoutRadiusConstraints(const AActor* InActor) const
+QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints(const AActor* InActor) const
 {
 	// If the actor has a component to specify interest and that indicates that we shouldn't generate
 	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
@@ -632,7 +632,7 @@ QueryConstraint SpatialInterestFactory::CreateCheckoutRadiusConstraints(const AA
 	return ClientCheckoutRadiusConstraint;
 }
 
-QueryConstraint SpatialInterestFactory::CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const
+QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const
 {
 	QueryConstraint AlwaysInterestedConstraint;
 
@@ -660,7 +660,7 @@ QueryConstraint SpatialInterestFactory::CreateAlwaysInterestedConstraint(const A
 	return AlwaysInterestedConstraint;
 }
 
-QueryConstraint SpatialInterestFactory::CreateAlwaysRelevantConstraint()
+QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint()
 {
 	QueryConstraint AlwaysRelevantConstraint;
 
@@ -682,7 +682,7 @@ QueryConstraint SpatialInterestFactory::CreateAlwaysRelevantConstraint()
 	return AlwaysRelevantConstraint;
 }
 
-QueryConstraint SpatialInterestFactory::CreateLevelConstraints(const AActor* InActor) const
+QueryConstraint InterestFactory::CreateLevelConstraints(const AActor* InActor) const
 {
 	QueryConstraint LevelConstraint;
 
@@ -717,7 +717,7 @@ QueryConstraint SpatialInterestFactory::CreateLevelConstraints(const AActor* InA
 	return LevelConstraint;
 }
 
-void SpatialInterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const
+void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const
 {
 	UObject* ObjectOfInterest = Property->GetObjectPropertyValue(Data);
 
@@ -738,7 +738,7 @@ void SpatialInterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property
 	OutConstraint.OrConstraint.Add(EntityIdConstraint);
 }
 
-void SpatialInterestFactory::SetResultType(Query& OutQuery, const ResultType& InResultType)
+void InterestFactory::SetResultType(Query& OutQuery, const ResultType& InResultType)
 {
 	if (GetDefault<USpatialGDKSettings>()->bEnableResultTypes)
 	{

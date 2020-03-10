@@ -156,7 +156,7 @@ public:
 	USpatialWorkerFlags* SpatialWorkerFlags;
 
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
-	TUniquePtr<SpatialGDK::SpatialInterestFactory> InterestFactory;
+	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 

@@ -53,7 +53,7 @@
 using SpatialGDK::ComponentFactory;
 using SpatialGDK::FindFirstOpOfType;
 using SpatialGDK::FindFirstOpOfTypeForComponent;
-using SpatialGDK::SpatialInterestFactory;
+using SpatialGDK::InterestFactory;
 using SpatialGDK::RPCPayload;
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
@@ -406,7 +406,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PackageMap->Init(this, &TimerManager);
 
 	// The interest factory depends on the package map, so is created last.
-	InterestFactory = MakeUnique<SpatialGDK::SpatialInterestFactory>(ClassInfoManager, PackageMap);
+	InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
