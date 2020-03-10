@@ -37,7 +37,7 @@ void InterestFactory::CreateAndCacheInterestState()
 	ClientNonAuthInterestResultType = CreateClientNonAuthInterestResultType(ClassInfoManager);
 	ClientAuthInterestResultType = CreateClientAuthInterestResultType(ClassInfoManager);
 	ServerNonAuthInterestResultType = CreateServerNonAuthInterestResultType(ClassInfoManager);
-	ServerAuthInterestResultType = CreateServerAuthInterestResultType(ClassInfoManager);
+	ServerAuthInterestResultType = CreateServerAuthInterestResultType();
 }
 
 QueryConstraint InterestFactory::CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* InClassInfoManager)
