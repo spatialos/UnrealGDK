@@ -190,7 +190,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	check(NetDriver != nullptr);
 	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in order
 	// to set the interest of the server worker according to the strategy.
-	Components.Add(InterestFactory::CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
+	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
@@ -321,7 +321,7 @@ void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 	}
 
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
-	FWorkerComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestUpdate();
+	FWorkerComponentUpdate InterestUpdate = NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestUpdate();
 	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
 
 	if (NetDriver->LoadBalanceStrategy != nullptr && NetDriver->LoadBalanceStrategy->IsReady())
@@ -1168,8 +1168,7 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 		return;
 	}
 
-	InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), EntityId, NetDriver->ClassInfoManager, NetDriver->PackageMap);
-	FWorkerComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
+	FWorkerComponentUpdate Update = NetDriver->InterestFactory->CreateInterestUpdate(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), EntityId);
 
 	Connection->SendComponentUpdate(EntityId, &Update);
 }

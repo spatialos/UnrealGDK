@@ -150,11 +150,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	if (!bInitAsClient)
-	{
-		InterestFactory::CreateAndCacheInterestState(ClassInfoManager);
-	}
-
 #if WITH_EDITOR
 	PlayInEditorID = GPlayInEditorID;
 
@@ -409,6 +404,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	check(NewPackageMap == PackageMap);
 
 	PackageMap->Init(this, &TimerManager);
+
+	// The interest factory depends on the package map, so is created last.
+	InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
