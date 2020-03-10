@@ -70,7 +70,7 @@ generate_build_configuration_steps () {
 
 # This script generates steps for each engine version listed in unreal-engine.version, 
 # based on the gdk_build.template.steps.yaml template
-if [[ -z "${ENGINE_VERSION}" ]]; then 
+if [[ -z "${ENGINE_VERSION+x}" ]]; then
     echo "Generating build steps for each engine version listed in unreal-engine.version"  
     IFS=$'\n'
     for COMMIT_HASH in $(cat < ci/unreal-engine.version); do
