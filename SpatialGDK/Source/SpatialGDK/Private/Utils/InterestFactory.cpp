@@ -9,7 +9,7 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
-#include "Utils/CheckoutRadiusConstraintUtils.h"
+#include "Utils/Interest/CheckoutRadiusConstraintUtils.h"
 
 #include "Engine/World.h"
 #include "Engine/Classes/GameFramework/Actor.h"

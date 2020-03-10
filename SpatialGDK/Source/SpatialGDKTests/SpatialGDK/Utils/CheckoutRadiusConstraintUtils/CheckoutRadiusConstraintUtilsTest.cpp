@@ -7,7 +7,7 @@
 #include "Misc/ScopeTryLock.h"
 #include "Misc/Paths.h"
 
-#include "Utils/CheckoutRadiusConstraintUtils.h"
+#include "Utils/Interest/CheckoutRadiusConstraintUtils.h"
 
 #define CHECKOUT_RADIUS_CONSTRAINT_TEST(TestName) \
 	GDK_TEST(Core, CheckoutRadiusConstraintUtils, TestName)
