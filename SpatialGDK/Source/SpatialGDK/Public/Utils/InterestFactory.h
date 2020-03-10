@@ -36,6 +36,13 @@ DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 
 namespace SpatialGDK
 {
+
+struct FrequencyConstraint
+{
+	float Frequency;
+	SpatialGDK::QueryConstraint Constraint;
+};
+
 class SPATIALGDK_API InterestFactory
 {
 public:
@@ -52,10 +59,10 @@ private:
 
 	// Build the checkout radius constraints for client workers
 	// TODO: Pull out into checkout radius constraint utils
-	static QueryConstraint CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
+	QueryConstraint CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
 	static QueryConstraint CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager);
 	static QueryConstraint CreateNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager);
-	static QueryConstraint CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager);
+	QueryConstraint CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager);
 
 	// Builds the result types of necessary components for clients
 	// TODO: create and pull out into result types class
@@ -100,6 +107,19 @@ private:
 
 	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;
+
+	// Used to cache checkout radius constraints with frequency settings, so queries can be quickly recreated.
+	TArray<FrequencyConstraint> CheckoutConstraints;
+
+	// The checkout radius constraint is built once for all actors in CreateCheckoutRadiusConstraint as it is equivalent for all actors.
+	// It is built once per net driver initialization.
+	QueryConstraint ClientCheckoutRadiusConstraint;
+
+	// Cache the result types of queries.
+	ResultType ClientNonAuthInterestResultType;
+	ResultType ClientAuthInterestResultType;
+	ResultType ServerNonAuthInterestResultType;
+	ResultType ServerAuthInterestResultType;
 };
 
 } // namespace SpatialGDK

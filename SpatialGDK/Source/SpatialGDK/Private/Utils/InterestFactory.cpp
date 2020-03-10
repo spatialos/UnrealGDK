@@ -23,23 +23,6 @@ DECLARE_CYCLE_STAT(TEXT("AddUserDefinedQueries"), STAT_InterestFactoryAddUserDef
 
 namespace SpatialGDK
 {
-struct FrequencyConstraint
-{
-	float Frequency;
-	SpatialGDK::QueryConstraint Constraint;
-};
-// Used to cache checkout radius constraints with frequency settings, so queries can be quickly recreated.
-TArray<FrequencyConstraint> CheckoutConstraints;
-
-// The checkout radius constraint is built once for all actors in CreateCheckoutRadiusConstraint as it is equivalent for all actors.
-// It is built once per net driver initialization.
-QueryConstraint ClientCheckoutRadiusConstraint;
-
-// Cache the result types of queries.
-ResultType ClientNonAuthInterestResultType;
-ResultType ClientAuthInterestResultType;
-ResultType ServerNonAuthInterestResultType;
-ResultType ServerAuthInterestResultType;
 
 InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
 	: ClassInfoManager(InClassInfoManager)
