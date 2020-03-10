@@ -8,7 +8,7 @@
 #include <WorkerSDK/improbable/c_worker.h>
 
 /**
- * The SpatialInterestFactory is responsible for creating spatial Interest component state and updates for a GDK game.
+ * The InterestFactory is responsible for creating spatial Interest component state and updates for a GDK game.
  *
  * It has two dependencies:
  *   - the class info manager for finding level components and for creating user defined queries from ActorInterestComponents
