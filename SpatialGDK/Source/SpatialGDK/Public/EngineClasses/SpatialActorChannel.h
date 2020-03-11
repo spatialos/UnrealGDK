@@ -14,6 +14,7 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/RepDataUtils.h"
+#include "Utils/SpatialStatics.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
