@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+echo ${OSTYPE}
+if [[ ${OSTYPE} == darwin* ]]; then
+	./ci/cleanup.sh
+else
+	powershell ".\ci\cleanup.ps1"
+fi
