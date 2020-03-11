@@ -35,7 +35,6 @@ class TestSuite {
 [string] $test_repo_map = "NetworkingMap"
 [string] $test_project_name = "NetworkTestProject"
 [string] $test_repo_branch = "master"
-[bool]   $slow_networking_tests = $False
 
 # Allow overriding testing branch via environment variable
 if (Test-Path env:TEST_REPO_BRANCH) {
@@ -49,10 +48,10 @@ if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
 }
 else {
     $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK+/Game/SpatialNetworkingMap", "", $True)
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "LoadbalancerTestResults", "/Game/Spatial_ZoningMap_1S_2C", "bEnableUnrealLoadBalancer=true;LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`")", $True)
+    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "LoadbalancerTestResults", "/Game/Spatial_ZoningMap_1S_2C", "bEnableUnrealLoadBalancer=true,[/Script/SpatialGDK.SpatialGDKSettings]:LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`")", $True)
 }
 
-if ($slow_networking_tests) {
+if ($env:SLOW_NETWORKING_TESTS) {
     $tests[0].tests_path += "+/Game/NetworkingMap"
     $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
 }
