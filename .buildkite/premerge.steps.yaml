@@ -17,7 +17,7 @@ script_runner: &script_runner
   - "scaler_version=2"
   - "working_hours_time_zone=london"
 
-common: &common
+windows: &windows
   agents:
     - "agent_count=1"
     - "capable_of_building=gdk-for-unreal"
@@ -72,4 +72,4 @@ steps:
   - label: "slack-notify"
     if: build.env("SLACK_NOTIFY") == "true" || build.branch == "master"
     commands: "powershell ./ci/build-and-send-slack-notification.ps1"
-    <<: *common
+    <<: *windows
