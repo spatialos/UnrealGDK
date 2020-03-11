@@ -39,11 +39,11 @@ generate_build_configuration_steps () {
 
             if [[ "${SLOW_NETWORKING_TESTS_LOCAL,,}" == "true" ]]; then
                 # Start a build with native tests as a separate step
-                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development" "Native"
+                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development" "$SLOW_NETWORKING_TESTS_LOCAL" "Native"
             fi
 
             # Win64 Development Editor build configuration
-            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development"
+            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development" "$SLOW_NETWORKING_TESTS_LOCAL"
 
             # Linux Development NoEditor build configuration
             upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
