@@ -28,20 +28,19 @@ private:
 class FLBStrategyEditorExtensionManager
 {
 public:
-	SPATIALGDKEDITOR_API static bool GetDefaultLaunchConfiguration(const UAbstractLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions);
+	SPATIALGDKEDITOR_API bool GetDefaultLaunchConfiguration(const UAbstractLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions);
 
 	template <typename Extension>
-	static void RegisterExtension()
+	void RegisterExtension()
 	{
 		RegisterExtension(Extension::ExtendedStrategy::StaticClass(), new Extension);
 	}
 
+	void Cleanup();
+
 private:
 
-	static void RegisterExtension(UClass* StrategyClass, FLBStrategyEditorExtensionInterface* StrategyExtension)
-	{
-		ExtensionMap.Push(decltype(ExtensionMap)::ElementType(StrategyClass, StrategyExtension));
-	}
+	void RegisterExtension(UClass* StrategyClass, FLBStrategyEditorExtensionInterface* StrategyExtension);
 
-	static TArray<TPair<UClass*, FLBStrategyEditorExtensionInterface*>> ExtensionMap;
+	TArray<TPair<UClass*, TUniquePtr<FLBStrategyEditorExtensionInterface>>> ExtensionMap;
 };

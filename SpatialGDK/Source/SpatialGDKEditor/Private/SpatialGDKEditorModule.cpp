@@ -16,15 +16,23 @@
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
 
+FSpatialGDKEditorModule::FSpatialGDKEditorModule()
+	: ExtensionManager(new FLBStrategyEditorExtensionManager)
+{
+
+}
+
 void FSpatialGDKEditorModule::StartupModule()
 {
 	RegisterSettings();
 
-	FLBStrategyEditorExtensionManager::RegisterExtension<FGridLBStrategyEditorExtension>();
+	ExtensionManager->RegisterExtension<FGridLBStrategyEditorExtension>();
 }
 
 void FSpatialGDKEditorModule::ShutdownModule()
 {
+	ExtensionManager->Cleanup();
+
 	if (UObjectInitialized())
 	{
 		UnregisterSettings();
