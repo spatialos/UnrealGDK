@@ -6,11 +6,13 @@
 
 #include "SpatialGDKSettings.h"
 
-DEFINE_LOG_CATEGORY(LogCheckoutRadiusConstraintUtils);
+DEFINE_LOG_CATEGORY(LogNetCullDistanceInterest);
 
 // Use 0 to represent "full" frequency here. Zero actually represents "never" when set in spatial, so this will be converted
 // to an empty optional later.
 const float FullFrequencyHz = 0.f;
+// And this the empty optional type it will be translated to.
+const TSchemaOption<float> FullFrequencyOptional = TSchemaOption<float>();
 
 namespace SpatialGDK
 {
@@ -66,7 +68,7 @@ FrequencyConstraints NetCullDistanceInterest::CreateLegacyNetCullDistanceConstra
 		CheckoutRadiusConstraint.OrConstraint.Add(ActorCheckoutConstraint);
 	}
 
-	return { { TSchemaOption<float>(), CheckoutRadiusConstraint } };
+	return { { FullFrequencyOptional, CheckoutRadiusConstraint } };
 }
 
 FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraint(USpatialClassInfoManager* InClassInfoManager)
@@ -92,7 +94,7 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraint(US
 		CheckoutRadiusConstraintRoot.OrConstraint.Add(CheckoutRadiusConstraint);
 	}
 
-	return { { TSchemaOption<float>(), CheckoutRadiusConstraintRoot } };
+	return { { FullFrequencyOptional, CheckoutRadiusConstraintRoot } };
 }
 
 FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* InClassInfoManager)
@@ -141,7 +143,7 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraintWit
 	// De dupe across frequencies.
 	for (auto& FrequencyConstraintsPair : FrequencyToConstraints)
 	{
-		TSchemaOption<float> SpatialFrequency = FrequencyConstraintsPair.Key == 0 ? TSchemaOption<float>() : TSchemaOption<float>(FrequencyConstraintsPair.Key);
+		TSchemaOption<float> SpatialFrequency = FrequencyConstraintsPair.Key == FullFrequencyHz ? FullFrequencyOptional : TSchemaOption<float>(FrequencyConstraintsPair.Key);
 		if (FrequencyConstraintsPair.Value.Num() == 1)
 		{
 			CheckoutConstraints.Add({ SpatialFrequency, FrequencyConstraintsPair.Value[0] });
@@ -159,14 +161,8 @@ void NetCullDistanceInterest::AddToFrequencyConstraintMap(const float Frequency,
 {
 	// If there is already a query defined with this frequency, group them to avoid making too many queries down the line.
 	// This avoids any extra cost due to duplicate result types across the network if they are large.
-	if (OutFrequencyToConstraints.Find(Frequency))
-	{
-		OutFrequencyToConstraints.Find(Frequency)->Add(Constraint);
-		return;
-	}
-
-	TArray<QueryConstraint> ConstraintList = { Constraint };
-	OutFrequencyToConstraints.Add(Frequency, ConstraintList);
+	TArray<QueryConstraint>& ConstraintList = OutFrequencyToConstraints.FindOrAdd(Frequency);
+	ConstraintList.Add(Constraint);
 }
 
 QueryConstraint NetCullDistanceInterest::GetDefaultCheckoutRadiusConstraint()
@@ -180,7 +176,7 @@ QueryConstraint NetCullDistanceInterest::GetDefaultCheckoutRadiusConstraint()
 
 	if (MaxDistanceSquared != 0.f && DefaultDistanceSquared > MaxDistanceSquared)
 	{
-		UE_LOG(LogCheckoutRadiusConstraintUtils, Warning, TEXT("Default NetCullDistanceSquared is too large, clamping from %f to %f"),
+		UE_LOG(LogNetCullDistanceInterest, Warning, TEXT("Default NetCullDistanceSquared is too large, clamping from %f to %f"),
 			DefaultDistanceSquared, MaxDistanceSquared);
 
 		DefaultDistanceSquared = MaxDistanceSquared;
@@ -229,7 +225,7 @@ TMap<UClass*, float> NetCullDistanceInterest::GetActorTypeToRadius()
 
 			if (MaxDistanceSquared != 0.f && IteratedDefaultActor->NetCullDistanceSquared > MaxDistanceSquared)
 			{
-				UE_LOG(LogCheckoutRadiusConstraintUtils, Warning, TEXT("NetCullDistanceSquared for %s too large, clamping from %f to %f"),
+				UE_LOG(LogNetCullDistanceInterest, Warning, TEXT("NetCullDistanceSquared for %s too large, clamping from %f to %f"),
 					*It->GetName(), ActorNetCullDistanceSquared, MaxDistanceSquared);
 
 				ActorNetCullDistanceSquared = MaxDistanceSquared;

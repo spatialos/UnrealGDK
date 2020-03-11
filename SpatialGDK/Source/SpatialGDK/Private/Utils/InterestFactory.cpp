@@ -211,15 +211,18 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, co
 	QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
 
 	// Always relevant and always interested
-	AddSystemQuery(OutInterest, InActor, InInfo, LevelConstraint);
+	AddAlwaysSomethingQuery(OutInterest, InActor, InInfo, LevelConstraint);
+	bool ShouldAddUserQueries = HasUserDefinedConstraint(InActor);
 
-	if (HasUserDefinedConstraint(InActor))
+	// If there are defined user queries, definitely add those.
+	if (ShouldAddUserQueries)
 	{
 		AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
 	}
-	else
+
+	// Either add the NCD interest because we should add it no matter what, or because there are no user queries to replace it.
+	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceFrequency || !ShouldAddUserQueries)
 	{
-		// If user interest is not defined, add the pre-generated net cull distance queries
 		AddNetCullDistanceQueries(OutInterest, LevelConstraint);
 	}
 }
@@ -250,7 +253,7 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 }
 
-void InterestFactory::AddSystemQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const
+void InterestFactory::AddAlwaysSomethingQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -465,10 +468,7 @@ bool InterestFactory::HasUserDefinedConstraint(const AActor* InActor) const
 	{
 		const UActorInterestComponent* ActorInterest = ActorInterestComponents[0];
 		check(ActorInterest);
-		if (!ActorInterest->bUseNetCullDistanceSquaredForCheckoutRadius)
-		{
-			return true;
-		}
+		return true;
 	}
 
 	return false;

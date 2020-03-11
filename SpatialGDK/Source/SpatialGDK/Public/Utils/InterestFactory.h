@@ -71,8 +71,8 @@ private:
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const;
 
-	// Add the checkout radius, always relevant, or always interested query.
-	void AddSystemQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const;
+	// Add the always relevant and the always interested query.
+	void AddAlwaysSomethingQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const;
 
 	void AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const;
 	FrequencyToConstraintsMap GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
