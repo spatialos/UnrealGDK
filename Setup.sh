@@ -108,10 +108,10 @@ cp -R "${BINARIES_DIR}"/Headers/include/ "${WORKER_SDK_DIR}"
 
 if [[ -d "${SPATIAL_DIR}" ]]; then
     echo "Copying standard library schemas to ${SCHEMA_STD_COPY_DIR}"
-    cp -R "${BINARIES_DIR}/Programs/schema" "${SCHEMA_STD_COPY_DIR}"
+    cp -R "${BINARIES_DIR}/Programs/schema/*" "${SCHEMA_STD_COPY_DIR}"
 
     echo "Copying schemas to ${SCHEMA_COPY_DIR}"
-    cp -R SpatialGDK/Extras/schema "${SCHEMA_COPY_DIR}"
+    cp -R SpatialGDK/Extras/schema/* "${SCHEMA_COPY_DIR}"
 fi
 
 popd
