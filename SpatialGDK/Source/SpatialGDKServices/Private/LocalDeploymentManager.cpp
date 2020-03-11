@@ -37,14 +37,15 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 {
 }
 
-void FLocalDeploymentManager::PreInit(bool IsInChina)
+void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
 {
 #if PLATFORM_WINDOWS
+	bIsInChina = bChinaEnabled;
 	// Don't kick off background processes when running commandlets
 	if (IsRunningCommandlet() == false)
 	{
 		// Check for the existence of Spatial and Spot. If they don't exist then don't start any background processes. Disable spatial networking if either is true.
-		if (!FSpatialGDKServicesModule::SpatialPreRunChecks(IsInChina))
+		if (!FSpatialGDKServicesModule::SpatialPreRunChecks(bIsInChina))
 		{
 			UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Pre run checks for LocalDeploymentManager failed. Local deployments cannot be started. Spatial networking will be disabled."));
 			GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = false;
@@ -88,11 +89,6 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 		});
 	}
 #endif // PLATFORM_WINDOWS
-}
-
-void FLocalDeploymentManager::SetInChina(bool bChinaEnabled)
-{
-	bIsInChina = bChinaEnabled;
 }
 
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
