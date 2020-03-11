@@ -1,43 +1,48 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "Utils/TransientUObjectEditor.h"
 
 #include "PropertyEditor/Public/PropertyEditorModule.h"
 #include "MainFrame/Public/Interfaces/IMainFrameModule.h"
 
-#include "SlateApplication.h"
 #include "SBorder.h"
 #include "SButton.h"
-//#include "SDetailView.h"
+#include "SlateApplication.h"
 
-//DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKTransientUObjectEditor, Log, All);
-
-static void OnTransientUObjectEditorWindowClosed(const TSharedRef<SWindow>& Window, UTransientUObjectEditor* Instance)
+namespace
 {
-	Instance->RemoveFromRoot();
-}
 
-static bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
-{
-	const UProperty& Property = PropertyAndParent.Property;
-
-	if (bHaveTemplate)
+	void OnTransientUObjectEditorWindowClosed(const TSharedRef<SWindow>& Window, UTransientUObjectEditor* Instance)
 	{
-		const UClass* PropertyOwnerClass = Cast<const UClass>(Property.GetOuter());
-		const bool bDisableEditOnTemplate = PropertyOwnerClass
-			&& PropertyOwnerClass->IsNative()
-			&& Property.HasAnyPropertyFlags(CPF_DisableEditOnTemplate);
-		if (bDisableEditOnTemplate)
-		{
-			return false;
-		}
+		Instance->RemoveFromRoot();
 	}
-	return true;
-}
 
-static FReply ExecuteEditorCommand(UTransientUObjectEditor* Instance, UFunction* MethodToExecute)
-{
-	Instance->CallFunctionByNameWithArguments(*MethodToExecute->GetName(), *GLog, nullptr, true);
+	// Copied from FPropertyEditorModule::CreateFloatingDetailsView.
+	bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
+	{
+		const UProperty& Property = PropertyAndParent.Property;
 
-	return FReply::Handled();
+		if (bHaveTemplate)
+		{
+			const UClass* PropertyOwnerClass = Cast<const UClass>(Property.GetOuter());
+			const bool bDisableEditOnTemplate = PropertyOwnerClass
+				&& PropertyOwnerClass->IsNative()
+				&& Property.HasAnyPropertyFlags(CPF_DisableEditOnTemplate);
+
+			if (bDisableEditOnTemplate)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	FReply ExecuteEditorCommand(UTransientUObjectEditor* Instance, UFunction* MethodToExecute)
+	{
+		Instance->CallFunctionByNameWithArguments(*MethodToExecute->GetName(), *GLog, nullptr, true);
+
+		return FReply::Handled();
+	}
 }
 
 // Rewrite of FPropertyEditorModule::CreateFloatingDetailsView to use the detail property view in a new window.
@@ -50,7 +55,6 @@ void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& Editor
 
 	if (!ObjectClass->IsChildOf<UTransientUObjectEditor>())
 	{
-		//UE_LOG(LogSpatialGDKTransientUObjectEditor, Error, TEXT("Class %s is not a class compatible with TransientUObjectEditor"), *ObjectClass->GetName());
 		return;
 	}
 
@@ -92,14 +96,6 @@ void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& Editor
 			DetailView
 		];
 
-
-	// Expand propeprty view.
-	// Implementation not accessible :(
-	//if (SDetailsView* DetailViewImpl = Cast<SDetailsView>(DetailView))
-	//{
-	//	DetailViewImpl->SetRootExpansionStates(true, false);
-	//}
-
 	// Add UFunction marked Exec as buttons in the editor's window
 	for (TFieldIterator<UFunction> FuncIt(ObjectClass); FuncIt; ++FuncIt)
 	{
@@ -131,8 +127,6 @@ void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& Editor
 
 	TSharedRef<SWindow> NewSlateWindow = SNew(SWindow)
 		.Title(FText::FromString(EditorName))
-		//.AutoCenter(EAutoCenter::PrimaryWorkArea)
-	  //.SizingRule(ESizingRule::Autosized)
 		[
 			SNew(SBorder)
 			.BorderImage(FEditorStyle::GetBrush(TEXT("PropertyWindow.WindowBorder")))
@@ -142,7 +136,7 @@ void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& Editor
 		];
 
 	// If the main frame exists parent the window to it
-	TSharedPtr< SWindow > ParentWindow;
+	TSharedPtr<SWindow> ParentWindow;
 	if (FModuleManager::Get().IsModuleLoaded("MainFrame"))
 	{
 		IMainFrameModule& MainFrame = FModuleManager::GetModuleChecked<IMainFrameModule>("MainFrame");

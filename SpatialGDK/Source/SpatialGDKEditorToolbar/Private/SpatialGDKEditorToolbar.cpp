@@ -33,6 +33,7 @@
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKSimulatedPlayerDeployment.h"
+#include "Utils/LaunchConfigEditor.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -42,8 +43,6 @@
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
-
-#include "Utils/LaunchConfigEditor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -313,6 +312,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 
 TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuContent()
 {
+	// First parameter is whether to close the menu's window after a selection has been made.
 	FMenuBuilder MenuBuilder(true, PluginCommands);
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKSchemaOptionsHeader", "Schema Generation"));
 	{
@@ -326,6 +326,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuCont
 
 TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuContent()
 {
+	// First parameter is whether to close the menu's window after a selection has been made.
 	FMenuBuilder MenuBuilder(true, PluginCommands);
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKDeploymentOptionsHeader", "Deployment Tools"));
 	{
@@ -640,7 +641,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	if (SpatialGDKSettings->bGenerateDefaultLaunchConfig)
 	{
 		if (!ValidateGeneratedLaunchConfig())
-	{
+		{
 			return;
 		}
 

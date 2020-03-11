@@ -1,4 +1,9 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
+
+#include "CoreMinimal.h"
+#include "Object.h"
 
 #include "TransientUObjectEditor.generated.h"
 
