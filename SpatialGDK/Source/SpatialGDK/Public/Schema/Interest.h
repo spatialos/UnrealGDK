@@ -6,8 +6,8 @@
 
 namespace SpatialGDK
 {
-
 using EdgeLength = Coordinates;
+using ResultType = TArray<Worker_ComponentId>;
 
 struct SphereConstraint
 {
@@ -112,7 +112,7 @@ struct Query
 
 	// Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid.
 	TSchemaOption<bool> FullSnapshotResult; // Whether all components should be included or none.
-	TArray<uint32> ResultComponentId; // Which components should be included.
+	ResultType ResultComponentIds; // Which components should be included.
 
 	// Used for frequency-based rate limiting. Represents the maximum frequency of updates for this
 	// particular query. An empty option represents no rate-limiting (ie. updates are received
@@ -222,7 +222,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 
 inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestObject, Schema_FieldId Id, const Query& Query)
 {
-	checkf(!(Query.FullSnapshotResult.IsSet() && Query.ResultComponentId.Num() > 0), TEXT("Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid."));
+	checkf(!(Query.FullSnapshotResult.IsSet() && Query.ResultComponentIds.Num() > 0), TEXT("Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid."));
 
 	Schema_Object* QueryObject = Schema_AddObject(ComponentInterestObject, Id);
 
@@ -233,7 +233,7 @@ inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestOb
 		Schema_AddBool(QueryObject, 2, *Query.FullSnapshotResult);
 	}
 
-	for (uint32 ComponentId : Query.ResultComponentId)
+	for (uint32 ComponentId : Query.ResultComponentIds)
 	{
 		Schema_AddUint32(QueryObject, 3, ComponentId);
 	}
@@ -367,10 +367,10 @@ inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint
 	}
 
 	uint32 ResultComponentIdCount = Schema_GetObjectCount(QueryObject, 3);
-	NewQuery.ResultComponentId.Reserve(ResultComponentIdCount);
+	NewQuery.ResultComponentIds.Reserve(ResultComponentIdCount);
 	for (uint32 ComponentIdIndex = 0; ComponentIdIndex < ResultComponentIdCount; ComponentIdIndex++)
 	{
-		NewQuery.ResultComponentId.Add(Schema_IndexUint32(QueryObject, 3, ComponentIdIndex));
+		NewQuery.ResultComponentIds.Add(Schema_IndexUint32(QueryObject, 3, ComponentIdIndex));
 	}
 
 	if (Schema_GetObjectCount(QueryObject, 4) > 0)

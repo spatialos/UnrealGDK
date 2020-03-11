@@ -25,7 +25,7 @@ DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 #define LOCTEXT_NAMESPACE "FLocalDeploymentManager"
 
-static const FString SpatialServiceVersion(TEXT("20200120.115350.8d6b779c82"));
+static const FString SpatialServiceVersion(TEXT("20200121.174928.6ae1ccd1b7"));
 
 namespace
 {
@@ -356,7 +356,7 @@ bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FStrin
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Local deployment creation failed. Deployment status: %s"), *DeploymentStatus);
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Local deployment creation failed. Deployment status: %s. Please check the 'Spatial Output' window for more details."), *DeploymentStatus);
 		}
 	}
 	else

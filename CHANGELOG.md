@@ -61,6 +61,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - SpatialDebugger worker regions are now cuboids rather than planes, and can have their WorkerRegionVerticalScale adjusted via a setting in the SpatialDebugger.
 - Added custom warning timeouts per RPC failure condition.
 - SpatialPingComponent can now also report average ping measurements over a specified number of recent pings. You can specify the number of measurements recorded in `PingMeasurementsWindowSize` and get the measurement data by calling `GetAverageData`. There is also a delegate `OnRecordPing` that will be broadcast whenever a new ping measurement is recorded.
+- The Spatial Output Log window now displays deployment startup errors.
+- Added `bEnableClientQueriesOnServer` (defaulted false) which makes the same queries on the server as on clients if the unreal load balancer is enabled. Enable this to avoid clients seeing entities the server does not if the server's interest query has not been configured correctly.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
@@ -93,6 +95,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed an issue where deleted, initially dormant startup actors would still be present on other workers.
 - Force activation of RPC ring buffer when load balancing is enabled, to allow RPC handover when authority changes
 - Fixed a race where a client leaving the deployment could leave its actor behind on the server, to be cleaned up after a long timeout.
+- Fixed crash caused by state persisting across a transition from one deployment to another in SpatialGameInstance
 
 ### External contributors:
 @DW-Sebastien

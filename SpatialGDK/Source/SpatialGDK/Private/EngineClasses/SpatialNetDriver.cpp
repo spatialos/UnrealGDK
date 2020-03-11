@@ -150,11 +150,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	if (!bInitAsClient)
-	{
-		InterestFactory::CreateAndCacheInterestState(ClassInfoManager);
-	}
-
 #if WITH_EDITOR
 	PlayInEditorID = GPlayInEditorID;
 
@@ -409,6 +404,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	check(NewPackageMap == PackageMap);
 
 	PackageMap->Init(this, &TimerManager);
+
+	// The interest factory depends on the package map, so is created last.
+	InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
@@ -518,6 +516,7 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
 			RedirectURL.Host = LastURL.Host;
 			RedirectURL.Port = LastURL.Port;
+			RedirectURL.Portal = LastURL.Portal;
 
 			// Usually the LastURL options are added to the RedirectURL in the FURL constructor.
 			// However this is not the case when TravelType = TRAVEL_Absolute so we must do it explicitly here.
@@ -657,9 +656,18 @@ void USpatialNetDriver::MakePlayerSpawnRequest()
 
 void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
 {
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("OnLevelAddedToWorld: Level (%s) OwningWorld (%s) World (%s)"),
+		*GetNameSafe(LoadedLevel), *GetNameSafe(OwningWorld), *GetNameSafe(World));
+
 	// Callback got called on a World that's not associated with this NetDriver.
 	// Don't do anything.
 	if (OwningWorld != World)
+	{
+		return;
+	}
+
+	// Not necessary for clients
+	if (!IsServer())
 	{
 		return;
 	}
@@ -679,6 +687,12 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
 	{
 		// If load balancing is disabled and this worker is not GSM authoritative then exit early.
+		return;
+	}
+
+	if (bLoadBalancingEnabled && !LoadBalanceStrategy->IsReady())
+	{
+		// Load balancer isn't ready, this should only occur when servers are loading composition levels on startup, before connecting to spatial
 		return;
 	}
 
@@ -2249,7 +2263,10 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 
 	check(Actor != nullptr);
 	check(PackageMap != nullptr);
-	check(GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(Actor)) == nullptr);
+
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+
+	check(GetActorChannelByEntityId(EntityId) == nullptr);
 
 	USpatialNetConnection* NetConnection = GetSpatialOSNetConnection();
 	check(NetConnection != nullptr);
@@ -2273,6 +2290,18 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 #else
 			Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
 #endif
+		}
+	}
+
+	if (Channel != nullptr)
+	{
+		if (IsServer())
+		{
+			Channel->SetServerAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID));
+		}
+		else
+		{
+			Channel->SetClientAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
 		}
 	}
 
