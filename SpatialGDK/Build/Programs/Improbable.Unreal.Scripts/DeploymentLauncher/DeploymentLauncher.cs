@@ -207,12 +207,6 @@ namespace Improbable
                         $"Unable to launch the deployment(s). This is likely because the project '{projectName}' or assembly '{assemblyName}' doesn't exist.");
                     return 1;
                 }
-                else if (e.Status.StatusCode == Grpc.Core.StatusCode.ResourceExhausted)
-                {
-                    Console.WriteLine(
-                        $"Unable to launch the deployment(s). Cloud cluster resources exhausted, Detail: '{e.Status.Detail}'" );
-                    return 1;
-                }
                 else
                 {
                     throw;
