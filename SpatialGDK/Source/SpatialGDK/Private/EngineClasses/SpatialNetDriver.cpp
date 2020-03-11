@@ -615,7 +615,7 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 		return;
 	}
 
-	FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
+	const FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
 	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker %s spawned replicated actor %s (owner: %s) but is not actor group owner for actor group %s. The actor will be destroyed in 0.01s"),
 		*WorkerType, *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), *USpatialStatics::GetActorGroupForActor(Actor).ToString());
 	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would complain if we destroyed it.
