@@ -98,8 +98,6 @@ private:
 
 	void ShowFailedNotification(const FString& NotificationText);
 
-	bool ValidateGeneratedLaunchConfig() const;
-
 	void GenerateSchema(bool bFullScan);
 
 	bool IsSnapshotGenerated() const;

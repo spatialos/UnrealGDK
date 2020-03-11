@@ -74,7 +74,6 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
 	{
 		SetRuntimeWorkerTypes();
-		SetLevelEditorPlaySettingsWorkerTypes();
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bUseDevelopmentAuthenticationFlow))
 	{
@@ -103,13 +102,12 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	SetRuntimeUseDevelopmentAuthenticationFlow();
 	SetRuntimeDevelopmentAuthenticationToken();
 	SetRuntimeDevelopmentDeploymentToConnect();
-	SetLevelEditorPlaySettingsWorkerTypes();
 }
 
 void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
 {
 	TSet<FName> WorkerTypes;
-
+	
 	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
 	{
 		if (WorkerLaunch.WorkerTypeName != NAME_None)
@@ -146,12 +144,12 @@ void USpatialGDKEditorSettings::SetRuntimeDevelopmentDeploymentToConnect()
 	RuntimeSettings->DevelopmentDeploymentToConnect = DevelopmentDeploymentToConnect;
 }
 
-void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
+void FSpatialLaunchConfigDescription::SetLevelEditorPlaySettingsWorkerTypes()
 {
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
 
-	PlayInSettings->WorkerTypesToLaunch.Empty(LaunchConfigDesc.ServerWorkers.Num());
-	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
+	PlayInSettings->WorkerTypesToLaunch.Empty(ServerWorkers.Num());
+	for (const FWorkerTypeLaunchSection& WorkerLaunch : ServerWorkers)
 	{
 		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
 	}
