@@ -102,9 +102,7 @@ void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& Editor
 		UFunction* Function = *FuncIt;
 		if (Function->HasAnyFunctionFlags(FUNC_Exec) && (Function->NumParms == 0))
 		{
-			const FString FunctionName = Function->GetName();
-			const FText ButtonCaption = FText::FromString(FunctionName);
-			const FString FilterString = FunctionName;
+			const FText ButtonCaption = Function->GetDisplayNameText();
 
 			VBoxBuilder->AddSlot()
 				.AutoHeight()
