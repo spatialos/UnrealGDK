@@ -138,7 +138,8 @@ public:
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			// Make sure we have spatial authority before we replicate with Offloading, as we pretend to have local authority
-			if (USpatialStatics::IsSpatialOffloadingEnabled() && !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID)) {
+			if (USpatialStatics::IsSpatialOffloadingEnabled() && !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+			{
 				return false;
 			}
 
