@@ -210,18 +210,12 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, co
 {
 	QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
 
-	// Always relevant and always interested
-	AddAlwaysSomethingQuery(OutInterest, InActor, InInfo, LevelConstraint);
-	bool ShouldAddUserQueries = HasUserDefinedConstraint(InActor);
+	AddAlwaysRelevantAndInterestedQuery(OutInterest, InActor, InInfo, LevelConstraint);
 
-	// If there are defined user queries, definitely add those.
-	if (ShouldAddUserQueries)
-	{
-		AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
-	}
+	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
 
-	// Either add the NCD interest because we should add it no matter what, or because there are no user queries to replace it.
-	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceFrequency || !ShouldAddUserQueries)
+	// Either add the NCD interest because there are no user interest queries, or because the user interest specified we should.
+	if (ShouldAddNetCullDistanceInterest(InActor))
 	{
 		AddNetCullDistanceQueries(OutInterest, LevelConstraint);
 	}
@@ -253,7 +247,7 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 }
 
-void InterestFactory::AddAlwaysSomethingQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const
+void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -457,7 +451,7 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 	OutInterest.ComponentInterestMap[ComponentId].Queries.Add(QueryToAdd);
 }
 
-bool InterestFactory::HasUserDefinedConstraint(const AActor* InActor) const
+bool InterestFactory::ShouldAddNetCullDistanceInterest(const AActor* InActor) const
 {
 	// If the actor has a component to specify interest and that indicates that we shouldn't add
 	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
@@ -468,10 +462,13 @@ bool InterestFactory::HasUserDefinedConstraint(const AActor* InActor) const
 	{
 		const UActorInterestComponent* ActorInterest = ActorInterestComponents[0];
 		check(ActorInterest);
-		return true;
+		if (!ActorInterest->bUseNetCullDistanceSquaredForCheckoutRadius)
+		{
+			return false;
+		}
 	}
 
-	return false;
+	return true;
 }
 
 QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const

@@ -72,7 +72,7 @@ private:
 	void AddServerSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const;
 
 	// Add the always relevant and the always interested query.
-	void AddAlwaysSomethingQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const;
+	void AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const;
 
 	void AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const;
 	FrequencyToConstraintsMap GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
@@ -83,7 +83,7 @@ private:
 	void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd) const;
 
 	// System Defined Constraints
-	bool HasUserDefinedConstraint(const AActor* InActor) const;
+	bool ShouldAddNetCullDistanceInterest(const AActor* InActor) const;
 	QueryConstraint CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const;
 	QueryConstraint CreateAlwaysRelevantConstraint() const;
 

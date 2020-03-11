@@ -26,7 +26,7 @@
  * n queries per client in total where n is the number of configured frequency buckets.
  */
 
-DECLARE_LOG_CATEGORY_EXTERN(LogCheckoutRadiusConstraintUtils, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogNetCullDistanceInterest, Log, All);
 
 namespace SpatialGDK
 {

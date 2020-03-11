@@ -11,11 +11,12 @@ DEFINE_LOG_CATEGORY(LogNetCullDistanceInterest);
 // Use 0 to represent "full" frequency here. Zero actually represents "never" when set in spatial, so this will be converted
 // to an empty optional later.
 const float FullFrequencyHz = 0.f;
-// And this the empty optional type it will be translated to.
-const TSchemaOption<float> FullFrequencyOptional = TSchemaOption<float>();
 
 namespace SpatialGDK
 {
+
+// And this the empty optional type it will be translated to.
+const TSchemaOption<float> FullFrequencyOptional = TSchemaOption<float>();
 
 FrequencyConstraints NetCullDistanceInterest::CreateCheckoutRadiusConstraints(USpatialClassInfoManager* InClassInfoManager)
 {
@@ -174,7 +175,7 @@ QueryConstraint NetCullDistanceInterest::GetDefaultCheckoutRadiusConstraint()
 
 	float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
 
-	if (MaxDistanceSquared != 0.f && DefaultDistanceSquared > MaxDistanceSquared)
+	if (MaxDistanceSquared > FLT_EPSILON && DefaultDistanceSquared > MaxDistanceSquared)
 	{
 		UE_LOG(LogNetCullDistanceInterest, Warning, TEXT("Default NetCullDistanceSquared is too large, clamping from %f to %f"),
 			DefaultDistanceSquared, MaxDistanceSquared);
@@ -223,7 +224,7 @@ TMap<UClass*, float> NetCullDistanceInterest::GetActorTypeToRadius()
 		{
 			float ActorNetCullDistanceSquared = IteratedDefaultActor->NetCullDistanceSquared;
 
-			if (MaxDistanceSquared != 0.f && IteratedDefaultActor->NetCullDistanceSquared > MaxDistanceSquared)
+			if (MaxDistanceSquared > FLT_EPSILON && IteratedDefaultActor->NetCullDistanceSquared > MaxDistanceSquared)
 			{
 				UE_LOG(LogNetCullDistanceInterest, Warning, TEXT("NetCullDistanceSquared for %s too large, clamping from %f to %f"),
 					*It->GetName(), ActorNetCullDistanceSquared, MaxDistanceSquared);
