@@ -18,11 +18,9 @@ public:
 	FLocalDeploymentManager();
 
 	// Needs to be ran after SetInChina is called.
-	void SPATIALGDKSERVICES_API PreInit(bool IsInChina);
+	void SPATIALGDKSERVICES_API PreInit(bool bChinaEnabled);
 
 	void SPATIALGDKSERVICES_API Init(FString RuntimeIPToExpose);
-
-	void SPATIALGDKSERVICES_API SetInChina(bool IsInChina);
 
 	void SPATIALGDKSERVICES_API RefreshServiceStatus();
 
