@@ -1,0 +1,36 @@
+agent_transients: &agent_transients
+  # This is designed to trap and retry failures because agent lost
+  # connection. Agent exits with -1 in this case.
+  exit_status: -1
+  limit: 3
+
+macos: &macos
+  agents:
+    - "capable_of_building=gdk-for-unreal"
+    - "environment=production"
+    - "permission_set=builder"
+    - "platform=macos"
+    - "queue=${DARWIN_BUILDER_QUEUE:-v4-1583347886-e992ad10-d}"
+  timeout_in_minutes: 600 # TODO(ENG-548): reduce timeout once agent-cold-start is optimised.
+  retry:
+    automatic:
+        # This is designed to trap and retry failures because agent lost connection. Agent exits with -1 in this case.
+      - exit_status: -1
+        limit: 3
+
+env:
+  FASTBUILD_CACHE_PATH: "\\\\gdk-for-unreal-cache.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba\\fastbuild"
+  FASTBUILD_CACHE_MODE: rw
+  FASTBUILD_BROKERAGE_PATH: "\\\\fastbuild-brokerage.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba"
+
+steps:
+  - label: "build-${ENGINE_COMMIT_HASH}-${BUILD_PLATFORM}-${BUILD_TARGET}-${BUILD_STATE}"
+    command: ./ci/setup-build-gdk.sh
+    <<: *macos # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    artifact_paths:
+      - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+    env:
+      ENGINE_COMMIT_HASH: "${ENGINE_COMMIT_HASH}"
+      BUILD_PLATFORM: "${BUILD_PLATFORM}"
+      BUILD_TARGET: "${BUILD_TARGET}"
+      BUILD_STATE: "${BUILD_STATE}"

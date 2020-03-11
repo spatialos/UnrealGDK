@@ -2,11 +2,16 @@
 set -euo pipefail
 
 upload_build_configuration_step() {
-    export ENGINE_COMMIT_HASH=$1
-    export BUILD_PLATFORM=$2
-    export BUILD_TARGET=$3
-    export BUILD_STATE=$4
-    buildkite-agent pipeline upload "ci/gdk_build.template.steps.yaml"
+    export ENGINE_COMMIT_HASH=${1}
+    export BUILD_PLATFORM=${2}
+    export BUILD_TARGET=${3}
+    export BUILD_STATE=${4}
+    export BUILD_COMMAND=${5}
+    if [[ ${BUILD_PLATFORM} == "Mac" ]]; then
+        buildkite-agent pipeline upload "ci/gdk_build_macos.template.steps.yaml"
+    else
+        buildkite-agent pipeline upload "ci/gdk_build_win.template.steps.yaml"
+    fi
 }
 
 generate_build_configuration_steps () {
@@ -22,12 +27,16 @@ generate_build_configuration_steps () {
 
         # Linux Development NoEditor build configuration
         upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
+
+        # MacOS Development Editor build configuration
+        upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "UE4Editor" "Development"
     else
         echo "Building for all supported configurations. Generating the appropriate steps..."
         
         # Editor builds (Test and Shipping build states do not exist for the Editor build target)
         for BUILD_STATE in "DebugGame" "Development"; do
-             upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "${BUILD_STATE}"
+            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "${BUILD_STATE}"
+            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "UE4Editor" "${BUILD_STATE}"
         done
 
         # NoEditor, Client and Server builds
