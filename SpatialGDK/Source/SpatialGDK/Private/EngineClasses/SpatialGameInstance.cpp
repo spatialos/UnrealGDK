@@ -75,6 +75,9 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 void USpatialGameInstance::CreateNewSpatialConnectionManager()
 {
 	SpatialConnectionManager = NewObject<USpatialConnectionManager>(this);
+
+	GlobalStateManager = NewObject<UGlobalStateManager>();
+	StaticComponentView = NewObject<USpatialStaticComponentView>();
 }
 
 void USpatialGameInstance::DestroySpatialConnectionManager()
@@ -83,6 +86,18 @@ void USpatialGameInstance::DestroySpatialConnectionManager()
 	{
 		SpatialConnectionManager->DestroyConnection();
 		SpatialConnectionManager = nullptr;
+	}
+
+	if (GlobalStateManager != nullptr)
+	{
+		GlobalStateManager->ConditionalBeginDestroy();
+		GlobalStateManager = nullptr;
+	}
+
+	if (StaticComponentView != nullptr)
+	{
+		StaticComponentView->ConditionalBeginDestroy();
+		StaticComponentView = nullptr;
 	}
 }
 
@@ -170,9 +185,6 @@ void USpatialGameInstance::Init()
 	Super::Init();
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
-	GlobalStateManager = NewObject<UGlobalStateManager>();
-	StaticComponentView = NewObject<USpatialStaticComponentView>();
-
 	FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
 
 	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();

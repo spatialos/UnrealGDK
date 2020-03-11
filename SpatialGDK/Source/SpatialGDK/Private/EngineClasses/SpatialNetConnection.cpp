@@ -30,8 +30,18 @@ USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectIni
 void USpatialNetConnection::BeginDestroy()
 {
 	DisableHeartbeat();
-
+	
 	Super::BeginDestroy();
+}
+
+void USpatialNetConnection::CleanUp()
+{
+	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver))
+	{
+		SpatialNetDriver->CleanUpClientConnection(this);
+	}
+
+	Super::CleanUp();
 }
 
 void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket /*= 0*/, int32 InPacketOverhead /*= 0*/)

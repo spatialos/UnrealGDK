@@ -61,6 +61,7 @@ public:
 
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
+	bool GetPreventAutoConnectWithLocator() const { return bPreventAutoConnectWithLocator; }
 
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 
