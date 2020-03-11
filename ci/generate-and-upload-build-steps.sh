@@ -6,7 +6,8 @@ upload_build_configuration_step() {
     export BUILD_PLATFORM="${2}"
     export BUILD_TARGET="${3}"
     export BUILD_STATE="${4}"
-    export TEST_CONFIG="${5:-default}"
+    export SLOW_NETWORKING_TESTS="${5:-false}"
+    export TEST_CONFIG="${6:-default}"
 
     if [[ ${BUILD_PLATFORM} == "Mac" ]]; then
         export BUILD_COMMAND="./ci/setup-build-test-gdk.sh"
@@ -23,17 +24,18 @@ generate_build_configuration_steps () {
     # See https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html for possible configurations 
     ENGINE_COMMIT_HASH="${1}"
 
+    SLOW_NETWORKING_TESTS_LOCAL="${SLOW_NETWORKING_TESTS:-false}"
+    # if the SLOW_NETWORKING_TESTS variable is not set or empty, look at whether this is a nightly build
+    if [[ -z "${SLOW_NETWORKING_TESTS+x}" ]]; then
+        if [[ "${NIGHTLY_BUILD:-false,,}" == "true" ]]; then
+            SLOW_NETWORKING_TESTS_LOCAL="true"
+        fi
+    fi
+
     if [[ -z "${MAC_BUILD:-}" ]]; then
         # if the BUILD_ALL_CONFIGURATIONS environment variable doesn't exist, then...
         if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
             echo "Building for subset of supported configurations. Generating the appropriate steps..."
-        
-            SLOW_NETWORKING_TESTS_LOCAL="${SLOW_NETWORKING_TESTS:-false}"
-            # if the SLOW_NETWORKING_TESTS variable is not set or empty, look at whether this is a nightly build
-            if [[ -z "${SLOW_NETWORKING_TESTS+x}" ]]; then
-                if [[ "${NIGHTLY_BUILD:-false,,}" == "true" ]]; then
-                    SLOW_NETWORKING_TESTS_LOCAL="true"
-            fi
 
             if [[ "${SLOW_NETWORKING_TESTS_LOCAL,,}" == "true" ]]; then
                 # Start a build with native tests as a separate step
@@ -50,7 +52,7 @@ generate_build_configuration_steps () {
 
             # Editor builds (Test and Shipping build states do not exist for the Editor build target)
             for BUILD_STATE in "DebugGame" "Development"; do
-                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "${BUILD_STATE}"
+                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "${BUILD_STATE}" "$SLOW_NETWORKING_TESTS_LOCAL"
             done
         fi
     else
