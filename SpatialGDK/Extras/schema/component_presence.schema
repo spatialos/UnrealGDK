@@ -6,7 +6,7 @@ package unreal;
 // list of component IDs that the game server should be authoritative over
 // in order to be correctly simulating the entity. This should be useful in
 // future for deducing entity completeness without critical sections but is 
-// used currently just found enabling dynamic components in a multi-worker
+// used currently just for enabling dynamic components in a multi-worker
 // environment.
 component ComponentPresence {
     id = 9972;
