@@ -92,7 +92,6 @@ struct QueryConstraint
 			return true;
 		}
 
-
 		if (AndConstraint.Num() > 0)
 		{
 			return true;
