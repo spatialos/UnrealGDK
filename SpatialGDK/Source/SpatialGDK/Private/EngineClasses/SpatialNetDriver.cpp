@@ -147,11 +147,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	if (!bInitAsClient)
-	{
-		InterestFactory::CreateAndCacheInterestState(ClassInfoManager);
-	}
-
 #if WITH_EDITOR
 	PlayInEditorID = GPlayInEditorID;
 
@@ -406,6 +401,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	check(NewPackageMap == PackageMap);
 
 	PackageMap->Init(this, &TimerManager);
+
+	// The interest factory depends on the package map, so is created last.
+	InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
@@ -938,6 +936,8 @@ void USpatialNetDriver::Shutdown()
 		}
 	}
 
+	SpatialOutputDevice = nullptr;
+
 	Super::Shutdown();
 
 	// This is done after Super::Shutdown so the NetDriver is given an opportunity to shutdown all open channels, and those
@@ -1450,6 +1450,8 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialServerReplicateActors);
+	SET_DWORD_STAT(STAT_NumReplicatedActorBytes, 0);
+	SET_DWORD_STAT(STAT_NumReplicatedActors, 0);
 
 #if WITH_SERVER_CODE
 	// Only process the stand-in client connection, which is the connection to the runtime itself.

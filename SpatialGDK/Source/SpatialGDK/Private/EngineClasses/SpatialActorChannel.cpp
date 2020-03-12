@@ -14,6 +14,7 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #endif
 
+#include "EngineStats.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -549,7 +550,6 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
-	bool bWroteSomethingImportant = false;
 
 #if ENGINE_MINOR_VERSION <= 22
 	ActorReplicator->ChangelistMgr->Update(ActorReplicator->RepState.Get(), Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
@@ -591,6 +591,8 @@ int64 USpatialActorChannel::ReplicateActor()
 		HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
 	}
 
+	ReplicationBytesWritten = 0;
+
 	// If any properties have changed, send a component update.
 	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
 	{
@@ -600,7 +602,8 @@ int64 USpatialActorChannel::ReplicateActor()
 			// so we know what subobjects are relevant for replication when creating the entity.
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
-			Sender->SendCreateEntityRequest(this);
+			Sender->SendCreateEntityRequest(this, ReplicationBytesWritten);
+
 			bCreatedEntity = true;
 
 			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
@@ -610,11 +613,11 @@ int64 USpatialActorChannel::ReplicateActor()
 		else
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
-			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState);
+
+			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState, ReplicationBytesWritten);
+
 			bInterestDirty = false;
 		}
-
-		bWroteSomethingImportant = true;
 
 		if (RepChanged.Num() > 0)
 		{
@@ -657,7 +660,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
 		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
 		// the same SpatialActorChannel::ReplicateSubobject.
-		bWroteSomethingImportant |= Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
+		Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 
 		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 		{
@@ -676,7 +679,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
 			if (SubobjectHandoverChangeState.Num() > 0)
 			{
-				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState);
+				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState, ReplicationBytesWritten);
 			}
 		}
 
@@ -746,7 +749,13 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	bForceCompareProperties = false;		// Only do this once per frame when set
 
-	return (bWroteSomethingImportant) ? 1 : 0;	// TODO: return number of bits written (UNR-664)
+	if (ReplicationBytesWritten > 0)
+	{
+		INC_DWORD_STAT_BY(STAT_NumReplicatedActors, 1);
+	}
+	INC_DWORD_STAT_BY(STAT_NumReplicatedActorBytes, ReplicationBytesWritten);
+
+	return ReplicationBytesWritten * 8;
 }
 
 void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
@@ -777,7 +786,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	// Check to see if we already have authority over the subobject to be added
 	if (NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_Data]))
 	{
-		Sender->SendAddComponent(this, Object, *Info);
+		Sender->SendAddComponent(this, Object, *Info, ReplicationBytesWritten);
 	}
 	else
 	{
@@ -889,7 +898,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		}
 
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
-		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr);
+		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr, ReplicationBytesWritten);
 
 		SendingRepState->HistoryEnd++;
 	}
@@ -1156,7 +1165,10 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		{
 			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Create entity request timed out. Retrying. "
 				"Actor %s, request id: %d, entity id: %lld, message: %s"), *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
-			Sender->SendCreateEntityRequest(this);
+
+			// TODO: UNR-664 - Track these bytes written to use in saturation.
+			uint32 BytesWritten = 0;
+			Sender->SendCreateEntityRequest(this, BytesWritten);
 		}
 		break;
 	case WORKER_STATUS_CODE_APPLICATION_ERROR:
