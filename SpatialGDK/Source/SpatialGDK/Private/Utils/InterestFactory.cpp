@@ -408,10 +408,15 @@ void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const Que
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-	// The CheckouConstraints list contains items with a constraint and a frequency.
+	// The CheckoutConstraints list contains items with a constraint and a frequency.
 	// They are then converted to queries by adding a result type to them, and the constraints are conjoined with the level constraint.
 	for (const auto& CheckoutRadiusConstraintFrequencyPair : ClientCheckoutRadiusConstraint)
 	{
+		if (!CheckoutRadiusConstraintFrequencyPair.Constraint.IsValid())
+		{
+			continue;
+		}
+
 		Query NewQuery;
 
 		NewQuery.Constraint.AndConstraint.Add(CheckoutRadiusConstraintFrequencyPair.Constraint);

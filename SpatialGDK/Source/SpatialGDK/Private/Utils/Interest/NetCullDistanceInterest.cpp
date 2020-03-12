@@ -135,7 +135,7 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraintWit
 			FrequencyCheckoutRadiusConstraint.AndConstraint.Add(FrequencyRadiusConstraint);
 			FrequencyCheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
 
-			AddToFrequencyConstraintMap(DistanceFrequencyPair.Frequency, CheckoutRadiusConstraint, FrequencyToConstraints);
+			AddToFrequencyConstraintMap(DistanceFrequencyPair.Frequency, FrequencyCheckoutRadiusConstraint, FrequencyToConstraints);
 		}
 	}
 
