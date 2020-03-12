@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-echo ${OSTYPE}
-if [[ ${OSTYPE} == darwin* ]]; then
+echo ${BUILDKITE_AGENT_META_DATA_OS}
+if [[ ${BUILDKITE_AGENT_META_DATA_OS} == darwin* ]]; then
 	./ci/cleanup.sh
+elif [[ ${BUILDKITE_AGENT_META_DATA_OS} == linux* ]]; then
+	exit 0
 else
 	powershell ".\ci\cleanup.ps1"
 fi
