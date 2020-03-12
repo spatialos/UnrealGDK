@@ -25,6 +25,6 @@ void ULaunchConfigurationEditor::SaveConfiguration()
 
 	if (bSaved && Filenames.Num() > 0)
 	{
-		GenerateDefaultLaunchConfig(Filenames[0], &LaunchConfig);
+		GenerateDefaultLaunchConfig(Filenames[0], &LaunchConfiguration);
 	}
 }
