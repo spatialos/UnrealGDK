@@ -12,7 +12,7 @@ pushd "${GDK_HOME}"
     pushd "ci"
         # Allow overriding the engine version if required
         if [[ -n ${ENGINE_COMMIT_HASH:-} ]]; then
-        	VERSION_DESCRIPTION="${ENGINE_COMMIT_HASH}"
+        	VERSION_DESCRIPTION="Mac-${ENGINE_COMMIT_HASH}"
             echo "Using engine version defined by ENGINE_COMMIT_HASH: ${VERSION_DESCRIPTION}"
         else
             # Read Engine version from the file and trim any trailing white spaces and new lines.
