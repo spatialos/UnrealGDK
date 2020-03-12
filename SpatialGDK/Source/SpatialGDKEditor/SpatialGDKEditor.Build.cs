@@ -30,7 +30,8 @@ public class SpatialGDKEditor : ModuleRules
 				"SpatialGDK",
 				"SpatialGDKServices",
 				"UnrealEd",
-				"GameplayAbilities"
+				"GameplayAbilities",
+				"DesktopPlatform"
 			});
 
 		PrivateIncludePaths.AddRange(

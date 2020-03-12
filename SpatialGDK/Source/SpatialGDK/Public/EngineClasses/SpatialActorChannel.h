@@ -332,6 +332,10 @@ private:
 
 	uint8 FramesTillDormancyAllowed = 0;
 
+	// This is incremented in ReplicateActor. It represents how many bytes are sent per call to ReplicateActor.
+	// ReplicationBytesWritten is reset back to 0 at the start of ReplicateActor.
+	uint32 ReplicationBytesWritten = 0;
+
 	// Shadow data for Handover properties.
 	// For each object with handover properties, we store a blob of memory which contains
 	// the state of those properties at the last time we sent them, and is used to detect
