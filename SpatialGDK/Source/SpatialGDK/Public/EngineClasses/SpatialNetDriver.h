@@ -156,10 +156,10 @@ public:
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
 
+	SpatialActorGroupManager* ActorGroupManager;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
-	SpatialActorGroupManager* ActorGroupManager;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 

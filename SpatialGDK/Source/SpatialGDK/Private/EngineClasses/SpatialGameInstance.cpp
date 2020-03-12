@@ -256,11 +256,11 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 				}
 			}
 		}
-		else if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+		else
 		{
 			if (Actor->GetIsReplicated())
 			{
-				// Always wait for authority to be delegated down from SpatialOS, if using zoning
+				// Always wait for authority to be delegated down from SpatialOS, if not using offloading
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
 			}

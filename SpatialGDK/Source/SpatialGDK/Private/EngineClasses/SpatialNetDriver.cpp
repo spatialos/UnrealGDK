@@ -683,34 +683,40 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("OnLevelAddedToWorld: Level (%s) OwningWorld (%s) World (%s)"),
 		*GetNameSafe(LoadedLevel), *GetNameSafe(OwningWorld), *GetNameSafe(World));
 
-	// Callback got called on a World that's not associated with this NetDriver.
-	// Don't do anything.
 	if (OwningWorld != World
 		|| !IsServer()
 		|| GlobalStateManager == nullptr
-		|| !GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer
-		|| !LoadBalanceStrategy->IsReady())
+		|| USpatialStatics::IsSpatialOffloadingEnabled())
 	{
 		// If the world isn't our owning world, we are a client, or we loaded the levels
-		// before connecting to Spatial, or the load balancer is disabled / not ready, we exit early
+		// before connecting to Spatial, or we are running with offloading, we return early.
 		return;
 	}
 
-	// If load balancing is enabled and LB strategy says we should have authority
-	// over a loaded level Actor then also set Role_Authority on Actors in the sublevel.
+	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
+	const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 
-	if (!LoadBalanceStrategy->IsReady())
+	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
 	{
-		// Load balancer isn't ready, this should only occur when servers are loading composition levels on startup, before connecting to spatial
+		// If load balancing is disabled and this worker is not GSM authoritative then exit early.
+		return;
+	}
+
+	if (bLoadBalancingEnabled && !LoadBalanceStrategy->IsReady())
+	{
+		// Load balancer isn't ready, this should only occur when servers are loading composition levels on startup, before connecting to spatial.
 		return;
 	}
 
 	for (auto Actor : LoadedLevel->Actors)
 	{
-		if (Actor->GetIsReplicated() && LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
+		// If load balancing is disabled, we must be the GSM-authoritative worker, so set Role_Authority
+		// otherwise, load balancing is enabled, so check the lb strategy.
+		if (Actor->GetIsReplicated() &&
+			(!bLoadBalancingEnabled || LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
 		{
-			Actor->Role = ROLE_Authority;
-			Actor->RemoteRole = ROLE_SimulatedProxy;
+				Actor->Role = ROLE_Authority;
+				Actor->RemoteRole = ROLE_SimulatedProxy;
 		}
 	}
 }
