@@ -2,12 +2,13 @@
 
 #include "Utils/TransientUObjectEditor.h"
 
-#include "PropertyEditor/Public/PropertyEditorModule.h"
 #include "MainFrame/Public/Interfaces/IMainFrameModule.h"
+#include "PropertyEditor/Public/PropertyEditorModule.h"
 
-#include "SBorder.h"
-#include "SButton.h"
-#include "SlateApplication.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Layout/SBorder.h"
+
 
 namespace
 {
