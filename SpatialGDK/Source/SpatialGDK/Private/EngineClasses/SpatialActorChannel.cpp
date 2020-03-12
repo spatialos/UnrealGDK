@@ -220,7 +220,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	TimeWhenPositionLastUpdated = 0.0f;
 
 	PendingDynamicSubobjects.Empty();
-	SavedOwnerWorkerAttribute.Empty();
+	SavedClientConnectionWorkerId.Empty();
 
 	FramesTillDormancyAllowed = 0;
 
@@ -1084,7 +1084,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
 
-	SavedOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(InActor);
+	SavedClientConnectionWorkerId = SpatialGDK::GetOwnerWorkerAttribute(InActor);
 }
 
 bool USpatialActorChannel::TryResolveActor()
@@ -1316,19 +1316,25 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 void USpatialActorChannel::UpdateEntityACLToNewOwner()
 {
-	FString NewOwnerWorkerAttribute;
+	FString NewClientConnectionWorkerId;
 	{
 		SCOPE_CYCLE_COUNTER(STAT_GetOwnerWorkerAttribute);
-		NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
+		NewClientConnectionWorkerId = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 	}
 
-	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
+	// If load-balancing is enabled, the EntityACL component may be authoritative on a different worker.
+	// In this case, we communicate with the enforcing worker using the ComponentPresence component.
+	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
-		bool bSuccess = Sender->UpdateEntityACLs(EntityId, NewOwnerWorkerAttribute);
+
+	}
+	else if (SavedClientConnectionWorkerId != NewClientConnectionWorkerId)
+	{
+		bool bSuccess = Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
 
 		if (bSuccess)
 		{
-			SavedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
+			SavedClientConnectionWorkerId = NewClientConnectionWorkerId;
 		}
 	}
 }

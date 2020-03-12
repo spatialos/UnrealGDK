@@ -1190,18 +1190,18 @@ void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FStrin
 
 // Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
 // This function updates the authority of that component as the owning connection can change.
-bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
+bool USpatialSender::UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
 {
 	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-
 	if (EntityACL == nullptr)
 	{
+		UE_LOG(LogSpatialSender, Error, TEXT("Trying to update EntityACL but data not present in StaticComponentView! Update will not be sent. Entity: %lld"), EntityId);
 		return false;
 	}
 
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+	if (!StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to update EntityACL but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
+		UE_LOG(LogSpatialSender, Error, TEXT("Trying to update EntityACL but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
 		return false;
 	}
 

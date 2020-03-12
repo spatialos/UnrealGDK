@@ -619,24 +619,21 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			PendingEntitySubobjectDelegations.Remove(EntityComponentPair);
 		}
 	}
-	else
+	else if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 	{
-		if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 		{
-			if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+			// Soft handover isn't supported currently.
+			if (Op.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 			{
-				// Soft handover isn't supported currently.
-				if (Op.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
-				{
-					ActorChannel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
-				}
+				ActorChannel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
 			}
+		}
 
-			// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
-			if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
-			{
-				Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
-			}
+		// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
+		if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
+		{
+			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
 	}
 

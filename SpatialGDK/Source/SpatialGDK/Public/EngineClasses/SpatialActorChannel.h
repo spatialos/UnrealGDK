@@ -328,8 +328,11 @@ private:
 
 	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;
-	// Used on the server to track when the owner changes.
-	FString SavedOwnerWorkerAttribute;
+
+	// Used on the server
+	// Tracks the client worker ID corresponding to the owning connection.
+	// If no owning client connection exists, this will be an empty string.
+	FString SavedClientConnectionWorkerId;
 
 	UPROPERTY(transient)
 	USpatialNetDriver* NetDriver;
