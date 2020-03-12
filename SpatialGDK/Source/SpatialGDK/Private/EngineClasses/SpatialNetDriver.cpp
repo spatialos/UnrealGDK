@@ -946,6 +946,8 @@ void USpatialNetDriver::Shutdown()
 		}
 	}
 
+	SpatialOutputDevice = nullptr;
+
 	Super::Shutdown();
 
 	// This is done after Super::Shutdown so the NetDriver is given an opportunity to shutdown all open channels, and those
