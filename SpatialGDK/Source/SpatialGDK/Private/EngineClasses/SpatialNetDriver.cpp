@@ -1524,7 +1524,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 			// send ClientAdjustment if necessary
 			// we do this here so that we send a maximum of one per packet to that client; there is no value in stacking additional corrections
-			if (ClientConnection->PlayerController)
+			if (ClientConnection->PlayerController != nullptr)
 			{
 				ClientConnection->PlayerController->SendClientAdjustment();
 			}

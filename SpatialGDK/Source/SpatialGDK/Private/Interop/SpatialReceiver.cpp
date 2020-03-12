@@ -1509,7 +1509,6 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 				// remains dormant. Add it back to pending dormancy so the local worker can clean up the channel. If we do process
 				// a dormant component removal later in this frame, we'll clear the channel from pending dormancy channel then.
 				NetDriver->AddPendingDormantChannel(Channel);
-				
 			}
 			else
 			{
