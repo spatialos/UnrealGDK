@@ -22,6 +22,11 @@ if (-Not $?) {
 # copying the plugin into the project's folder bypasses the issue
 New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugins" -Target "$gdk_home"
 
+# Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
+# Has to be this ugly settings modification, because overriding it from the commandline will not pass on this information
+# to spawned Unreal editors (which we do as part of the tests)
+Add-Content -Path "$unreal_path\Engine\Config\BaseEditorSettings.ini" -Value "`r`n[/Script/IntroTutorials.TutorialStateSettings]`r`nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)`r`n"
+
 Write-Output "Generating project files"
 & "$unreal_path\Engine\Binaries\DotNET\UnrealBuildTool.exe" `
     "-projectfiles" `

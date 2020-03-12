@@ -30,8 +30,6 @@ if ($run_with_spatial) {
         "-unattended", # Disable anything requiring user feedback
         "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
         "-run=GenerateSchemaAndSnapshots", # Run the commandlet
-        # Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
-        "-ini:EditorSettings:[/Script/IntroTutorials.TutorialStateSettings]:TutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)"
         "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
     )
 
@@ -63,8 +61,6 @@ $cmd_args_list = @( `
     "-unattended", # Disable anything requiring user feedback
     "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
     "-ini:SpatialGDKSettings:[/Script/SpatialGDK.SpatialGDKSettings]:$additional_gdk_options" # Pass changes to configuration files from above
-    # Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
-    "-ini:EditorSettings:[/Script/IntroTutorials.TutorialStateSettings]:TutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)"
     "-OverrideSpatialNetworking=$run_with_spatial" # A parameter to switch beetween different networking implementations
 )
 
