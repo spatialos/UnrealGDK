@@ -12,8 +12,8 @@ class SPATIALGDKEDITOR_API ULaunchConfigurationEditor : public UTransientUObject
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere)
-	FSpatialLaunchConfigDescription LaunchConfig;
+	UPROPERTY(EditAnywhere, Category = "Launch Configuration")
+	FSpatialLaunchConfigDescription LaunchConfiguration;
 
 	UFUNCTION(Exec)
 	void SaveConfiguration();
