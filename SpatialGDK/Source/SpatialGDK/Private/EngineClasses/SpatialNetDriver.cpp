@@ -1448,6 +1448,8 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialServerReplicateActors);
+	SET_DWORD_STAT(STAT_NumReplicatedActorBytes, 0);
+	SET_DWORD_STAT(STAT_NumReplicatedActors, 0);
 
 #if WITH_SERVER_CODE
 	// Only process the stand-in client connection, which is the connection to the runtime itself.
