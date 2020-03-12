@@ -98,6 +98,8 @@ private:
 
 	void ShowFailedNotification(const FString& NotificationText);
 
+	bool FillWorkerLaunchConfigFromWorldSettings(UWorld& World, FWorkerTypeLaunchSection& OutLaunchConfig, FIntPoint OutWorldDimension);
+
 	void GenerateSchema(bool bFullScan);
 
 	bool IsSnapshotGenerated() const;

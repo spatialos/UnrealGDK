@@ -520,6 +520,31 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 	});
 }
 
+bool FSpatialGDKEditorToolbarModule::FillWorkerLaunchConfigFromWorldSettings(UWorld& World, FWorkerTypeLaunchSection& OutLaunchConfig, FIntPoint OutWorldDimension)
+{
+	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
+
+	if (!WorldSettings)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Missing SpatialWorldSettings on map %s"), *World.GetMapName());
+		return false;
+	}
+
+	if (!WorldSettings->LoadBalanceStrategy)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Missing Load balancing strategy on map %s"), *World.GetMapName());
+		return false;
+	}
+
+	if (!FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(WorldSettings->LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), OutLaunchConfig, OutWorldDimension))
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not get the number of worker to launch for load balancing strategy %s"), WorldSettings->LoadBalanceStrategy->GetName());
+		return false;
+	}
+
+	return true;
+}
+
 void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 {
 	// Don't try and start a local deployment if spatial networking is disabled.
@@ -559,7 +584,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	FString LaunchConfig;
 	if (SpatialGDKEditorSettings->bGenerateDefaultLaunchConfig)
 	{
-
 		bool bRedeployRequired = false;
 		if (!GenerateAllDefaultWorkerJsons(bRedeployRequired))
 		{
@@ -570,36 +594,30 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			LocalDeploymentManager->SetRedeployRequired();
 		}
 
-		UWorld* EditorWorld = GEditor->GetEditorWorldContext(false).World();
-		check(EditorWorld);
-
 		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(SpatialGDKServicesConstants::SpatialOSDirectory), FString::Printf(TEXT("%s_LocalLaunchConfig.json"), *EditorWorld->GetMapName()));
 
 		FSpatialLaunchConfigDescription LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 		if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
 		{
-			const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(EditorWorld->GetWorldSettings());
-			if (WorldSettings && WorldSettings->LoadBalanceStrategy)
-			{
-				FIntPoint WorldDimensions;
-				FWorkerTypeLaunchSection WorkerLaunch;
-				WorkerLaunch.bManualWorkerConnectionOnly = true;
-				if (FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(WorldSettings->LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), WorkerLaunch, WorldDimensions))
-				{
-					LaunchConfigDescription.World.Dimensions = WorldDimensions;
-					LaunchConfigDescription.ServerWorkers.Empty(SpatialGDKSettings->ServerWorkerTypes.Num());
+			FIntPoint WorldDimensions;
+			FWorkerTypeLaunchSection WorkerLaunch;
 
-					for (auto WorkerType : SpatialGDKSettings->ServerWorkerTypes)
-					{
-						LaunchConfigDescription.ServerWorkers.Add(WorkerLaunch);
-						LaunchConfigDescription.ServerWorkers.Last().WorkerTypeName = WorkerType;
-					}
+			if (FillWorkerLaunchConfigFromWorldSettings(*EditorWorld, WorkerLaunch, WorldDimensions))
+			{
+				LaunchConfigDescription.World.Dimensions = WorldDimensions;
+				LaunchConfigDescription.ServerWorkers.Empty(SpatialGDKSettings->ServerWorkerTypes.Num());
+
+				for (auto WorkerType : SpatialGDKSettings->ServerWorkerTypes)
+				{
+					LaunchConfigDescription.ServerWorkers.Add(WorkerLaunch);
+					LaunchConfigDescription.ServerWorkers.Last().WorkerTypeName = WorkerType;
 				}
 			}
-			else
-			{
-				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Missing load balancing strategy on map ???"));
-			}
+		}
+
+		for (auto& WorkerLaunchSection : LaunchConfigDescription.ServerWorkers)
+		{
+			WorkerLaunchSection.bManualWorkerConnectionOnly = true;
 		}
 
 		if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription))
@@ -610,7 +628,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription);
 		LaunchConfigDescription.SetLevelEditorPlaySettingsWorkerTypes();
 
-		// Also create launch config for cloud deployments.
+		// Also create default launch config for cloud deployments.
 		{
 			for (auto& WorkerLaunchSection : LaunchConfigDescription.ServerWorkers)
 			{
@@ -620,8 +638,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			FString CloudLaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(SpatialGDKServicesConstants::SpatialOSDirectory), FString::Printf(TEXT("%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
 			GenerateDefaultLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription);
 		}
-		
-
 	}
 	else
 	{
