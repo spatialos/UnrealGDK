@@ -20,6 +20,7 @@ namespace Improbable.WorkerCoordinator
         private const string InitialStartDelayArg = "coordinator_start_delay_millis";
 
         // Worker flags.
+        private const string RegionFlag = "simulated_players_region";
         private const string DevAuthTokenWorkerFlag = "simulated_players_dev_auth_token";
         private const string TargetDeploymentWorkerFlag = "simulated_players_target_deployment";
         private const string DeploymentTotalNumSimulatedPlayersWorkerFlag = "total_num_simulated_players";
@@ -119,6 +120,7 @@ namespace Improbable.WorkerCoordinator
             var connection = CoordinatorConnection.ConnectAndKeepAlive(Logger, ReceptionistHost, ReceptionistPort, CoordinatorWorkerId, CoordinatorWorkerType);
 
             // Read worker flags.
+            Option<string> region = connection.GetWorkerFlag(RegionFlag);
             Option<string> devAuthTokenOpt = connection.GetWorkerFlag(DevAuthTokenWorkerFlag);
             Option<string> targetDeploymentOpt = connection.GetWorkerFlag(TargetDeploymentWorkerFlag);
             int deploymentTotalNumSimulatedPlayers = int.Parse(GetWorkerFlagOrDefault(connection, DeploymentTotalNumSimulatedPlayersWorkerFlag, "100"));
@@ -152,14 +154,14 @@ namespace Improbable.WorkerCoordinator
                 }
 
                 Thread.Sleep(timeToSleep);
-                StartSimulatedPlayer(clientName, devAuthTokenOpt, targetDeploymentOpt);
+                StartSimulatedPlayer(clientName, region, devAuthTokenOpt, targetDeploymentOpt);
             }
 
             // Wait for all clients to exit.
             WaitForPlayersToExit();
         }
 
-        private void StartSimulatedPlayer(string simulatedPlayerName, Option<string> devAuthTokenOpt, Option<string> targetDeploymentOpt)
+        private void StartSimulatedPlayer(string simulatedPlayerName, Option<string> region, Option<string> devAuthTokenOpt, Option<string> targetDeploymentOpt)
         {
             try
             {
@@ -168,11 +170,11 @@ namespace Improbable.WorkerCoordinator
                 string loginToken = "";
                 if (devAuthTokenOpt.HasValue)
                 {
-                    pit = Authentication.GetDevelopmentPlayerIdentityToken(devAuthTokenOpt.Value, simulatedPlayerName);
+                    pit = Authentication.GetDevelopmentPlayerIdentityToken(devAuthTokenOpt.Value, simulatedPlayerName, region.Value);
 
                     if (targetDeploymentOpt.HasValue)
                     {
-                        var loginTokens = Authentication.GetDevelopmentLoginTokens(SimulatedPlayerWorkerType, pit);
+                        var loginTokens = Authentication.GetDevelopmentLoginTokens(SimulatedPlayerWorkerType, pit, region.Value);
                         loginToken = Authentication.SelectLoginToken(loginTokens, targetDeploymentOpt.Value);
                     }
                     else
