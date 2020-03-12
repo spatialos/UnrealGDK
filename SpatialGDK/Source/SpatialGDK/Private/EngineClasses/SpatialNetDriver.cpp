@@ -609,7 +609,6 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	if (!Actor->GetIsReplicated() ||
 		Actor->GetLocalRole() != ROLE_Authority ||
 		Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) ||
-		Actor->GetClass()->
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
 		USpatialStatics::IsActorGroupOwnerForActor(Actor))
 	{
