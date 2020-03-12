@@ -80,10 +80,9 @@ struct ComponentPresence : Component
 		Schema_GetUint32List(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, ActorComponentList.GetData());
 	}
 
-	// List of component IDs on a SpatialOS entity representing an Actor that a worker simulating
+	// List of component IDs on a SpatialOS entity representing an Actor that a simulating worker 
 	// should have authority over.
 	TArray<Worker_ComponentId> ActorComponentList;
 };
 
 } // namespace SpatialGDK
-
