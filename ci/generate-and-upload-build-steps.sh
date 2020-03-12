@@ -6,8 +6,7 @@ upload_build_configuration_step() {
     export BUILD_PLATFORM="${2}"
     export BUILD_TARGET="${3}"
     export BUILD_STATE="${4}"
-    export SLOW_NETWORKING_TESTS="${5:-false}"
-    export TEST_CONFIG="${6:-default}"
+    export TEST_CONFIG="${5:-default}"
 
     if [[ ${BUILD_PLATFORM} == "Mac" ]]; then
         export BUILD_COMMAND="./ci/setup-build-test-gdk.sh"
@@ -20,14 +19,6 @@ upload_build_configuration_step() {
     sed "$REPLACE_STRING" "ci/gdk_build.template.steps.yaml" | buildkite-agent pipeline upload
 }
 
-SLOW_NETWORKING_TESTS_LOCAL="${SLOW_NETWORKING_TESTS:-false}"
-# if the SLOW_NETWORKING_TESTS variable is not set or empty, look at whether this is a nightly build
-if [[ -z "${SLOW_NETWORKING_TESTS+x}" ]]; then
-    if [[ "${NIGHTLY_BUILD:-false,,}" == "true" ]]; then
-        SLOW_NETWORKING_TESTS_LOCAL="true"
-    fi
-fi
-
 generate_build_configuration_steps () {
     # See https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html for possible configurations 
     ENGINE_COMMIT_HASH="${1}"
@@ -37,13 +28,21 @@ generate_build_configuration_steps () {
         if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
             echo "Building for subset of supported configurations. Generating the appropriate steps..."
 
+            SLOW_NETWORKING_TESTS_LOCAL="${SLOW_NETWORKING_TESTS:-false}"
+            # if the SLOW_NETWORKING_TESTS variable is not set or empty, look at whether this is a nightly build
+            if [[ -z "${SLOW_NETWORKING_TESTS+x}" ]]; then
+                if [[ "${NIGHTLY_BUILD:-false,,}" == "true" ]]; then
+                    SLOW_NETWORKING_TESTS_LOCAL="true"
+                fi
+            fi
+
             if [[ "${SLOW_NETWORKING_TESTS_LOCAL,,}" == "true" ]]; then
                 # Start a build with native tests as a separate step
-                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development" "$SLOW_NETWORKING_TESTS_LOCAL" "Native"
+                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development" "Native"
             fi
 
             # Win64 Development Editor build configuration
-            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development" "$SLOW_NETWORKING_TESTS_LOCAL"
+            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development"
 
             # Linux Development NoEditor build configuration
             upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
@@ -52,7 +51,7 @@ generate_build_configuration_steps () {
 
             # Editor builds (Test and Shipping build states do not exist for the Editor build target)
             for BUILD_STATE in "DebugGame" "Development"; do
-                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "${BUILD_STATE}" "$SLOW_NETWORKING_TESTS_LOCAL"
+                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "${BUILD_STATE}"
             done
         fi
     else
