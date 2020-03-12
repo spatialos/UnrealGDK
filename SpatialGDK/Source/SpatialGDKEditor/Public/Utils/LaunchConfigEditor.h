@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "Utils/TransientUObjectEditor.h"
 #include "SpatialGDKEditorSettings.h"
+#include "Utils/TransientUObjectEditor.h"
 
 #include "LaunchConfigEditor.generated.h"
 
