@@ -97,6 +97,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed a race where a client leaving the deployment could leave its actor behind on the server, to be cleaned up after a long timeout.
 - Fixed crash caused by state persisting across a transition from one deployment to another in SpatialGameInstance.
 - Fixed crash when starting + stopping PIE multiple times.
+- Fixed crash when shadow data was uninitialized when resolving unresolved objects.
 
 ### External contributors:
 @DW-Sebastien
