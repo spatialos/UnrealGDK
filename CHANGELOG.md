@@ -86,7 +86,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Clients will now validate schema against the server and log a warning if they do not match.
 - Starting a local deployment now checks if the required runtime port is blocked and allows the user to kill it.
 - Fixed a race where a client leaving the deployment could leave its actor behind on the server, to be cleaned up after a long timeout.
-- Fixed crash caused by state persisting across a transition from one deployment to another in SpatialGameInstance
+- Fixed crash caused by state persisting across a transition from one deployment to another in SpatialGameInstance.
+- Fixed crash when starting + stopping PIE multiple times.
 
 ### Internal:
 Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
