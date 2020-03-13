@@ -19,13 +19,21 @@
 namespace SpatialGDK
 {
 
+struct SpawnPlayerRequest
+{
+	FURL LoginURL;
+	FUniqueNetIdRepl UniqueId;
+	FName OnlinePlatformName;
+	bool bIsSimulatedPlayer;
+};
+
 struct PlayerSpawner : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 
 	PlayerSpawner() = default;
 
-	static Worker_CommandRequest CreatePlayerSpawnRequest(const FURL& LoginURL, FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, const bool bIsSimulatedPlayer, const FString& ClientWorkerId)
+	static Worker_CommandRequest CreatePlayerSpawnRequest(SpawnPlayerRequest& SpawnRequest)
 	{
 		Worker_CommandRequest CommandRequest = {};
 		CommandRequest.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
@@ -33,7 +41,7 @@ struct PlayerSpawner : Component
 		CommandRequest.schema_type = Schema_CreateCommandRequest();
 
 		Schema_Object* RequestFields = Schema_GetCommandRequestObject(CommandRequest.schema_type);
-		AddSpawnPlayerData(RequestFields, LoginURL, UniqueId, OnlinePlatformName, bIsSimulatedPlayer, ClientWorkerId);
+		AddSpawnPlayerData(RequestFields, SpawnRequest);
 
 		return CommandRequest;
 	}
@@ -47,46 +55,37 @@ struct PlayerSpawner : Component
 		return CommandResponse;
 	}
 
-	static void AddSpawnPlayerData(Schema_Object* RequestObject, const FURL& LoginURL, FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, const bool bIsSimulatedPlayer, const FString& ClientWorkerId)
+	static void AddSpawnPlayerData(Schema_Object* RequestObject, SpawnPlayerRequest& SpawnRequest)
 	{
-		AddStringToSchema(RequestObject, SpatialConstants::SPAWN_PLAYER_URL_ID, *LoginURL.ToString(true));
+		AddStringToSchema(RequestObject, SpatialConstants::SPAWN_PLAYER_URL_ID, SpawnRequest.LoginURL.ToString(true));
 
 		// Write player identity information.
 		FNetBitWriter UniqueIdWriter(0);
-		UniqueIdWriter << UniqueId;
+		UniqueIdWriter << SpawnRequest.UniqueId;
 		AddBytesToSchema(RequestObject, SpatialConstants::SPAWN_PLAYER_UNIQUE_ID, UniqueIdWriter);
-		AddStringToSchema(RequestObject, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID, OnlinePlatformName.ToString());
-		Schema_AddBool(RequestObject, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID, bIsSimulatedPlayer);
-		AddStringToSchema(RequestObject, SpatialConstants::SPAWN_PLAYER_CLIENT_WORKER_ID, ClientWorkerId);
+		AddStringToSchema(RequestObject, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID, SpawnRequest.OnlinePlatformName.ToString());
+		Schema_AddBool(RequestObject, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID, SpawnRequest.bIsSimulatedPlayer);
 	}
 
 	static FURL ExtractUrlFromPlayerSpawnParams(const Schema_Object* Payload)
 	{
-		FString URLString = GetStringFromSchema(Payload, SpatialConstants::SPAWN_PLAYER_URL_ID);
-
-		FString ClientWorkerId = GetStringFromSchema(Payload, SpatialConstants::SPAWN_PLAYER_CLIENT_WORKER_ID);
-		URLString.Append(TEXT("?workerAttribute=")).Append(ClientWorkerId);
-
-		const bool bIsSimulatedPlayer = GetBoolFromSchema(Payload, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID);
-		if (bIsSimulatedPlayer)
-		{
-			URLString += TEXT("?simulatedPlayer=1");
-		}
-
-		return FURL(nullptr, *URLString, TRAVEL_Absolute);
+		return FURL(nullptr, *GetStringFromSchema(Payload, SpatialConstants::SPAWN_PLAYER_URL_ID), TRAVEL_Absolute);
 	}
 
-	static void ExtractPlayerSpawnParams(const Schema_Object* CommandRequestPayload, FURL& LoginURL, FUniqueNetIdRepl& UniqueId, FName& OnlinePlatformName, FString& ClientWorkerID)
+	static SpawnPlayerRequest ExtractPlayerSpawnParams(const Schema_Object* CommandRequestPayload)
 	{
-		LoginURL = ExtractUrlFromPlayerSpawnParams(CommandRequestPayload);
+		const FURL LoginURL = ExtractUrlFromPlayerSpawnParams(CommandRequestPayload);
 
+		FUniqueNetIdRepl UniqueId;
 		TArray<uint8> UniqueIdBytes = GetBytesFromSchema(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_UNIQUE_ID);
 		FNetBitReader UniqueIdReader(nullptr, UniqueIdBytes.GetData(), UniqueIdBytes.Num() * 8);
 		UniqueIdReader << UniqueId;
 
-		OnlinePlatformName = FName(*GetStringFromSchema(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID));
+		const FName OnlinePlatformName = FName(*GetStringFromSchema(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID));
 
-		ClientWorkerID = GetStringFromSchema(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_CLIENT_WORKER_ID);
+		const bool bIsSimulated = GetBoolFromSchema(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID);
+
+		return { LoginURL, UniqueId, OnlinePlatformName, bIsSimulated };
 	}
 
 	static void CopySpawnDataBetweenObjects(const Schema_Object* SpawnPlayerDataSource, Schema_Object* SpawnPlayerDataDestination)
@@ -96,7 +95,6 @@ struct PlayerSpawner : Component
 		AddBytesToSchema(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_UNIQUE_ID, UniqueId.GetData(), UniqueId.Num());
 		AddStringToSchema(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID, GetStringFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID));
 		Schema_AddBool(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID, GetBoolFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID));
-		AddStringToSchema(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_CLIENT_WORKER_ID, GetStringFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_CLIENT_WORKER_ID));
 	}
 };
 

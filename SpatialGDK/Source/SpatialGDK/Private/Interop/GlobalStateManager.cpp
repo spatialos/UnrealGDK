@@ -464,7 +464,17 @@ void UGlobalStateManager::SetDeploymentState()
 
 void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 {
-	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
+	// We should only be able to change whether we're accepting players if:
+	// - we're authoritative over the DeploymentMap which has the acceptingPlayers property,
+	// - we've called BeginPlay (so startup Actors can do initialization before any spawn requests are received),
+	// - we aren't duplicating the current state.
+	const bool bHasDeploymentMapAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
+	const bool bHasBegunPlay = NetDriver->GetWorld()->HasBegunPlay();
+	const bool bIsDuplicatingCurrentState = bAcceptingPlayers == bInAcceptingPlayers;
+	if (!bHasDeploymentMapAuthority || !bHasBegunPlay || bIsDuplicatingCurrentState)
+	{
+		return;
+	}
 
 	// Send the component update that we can now accept players.
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
@@ -497,10 +507,7 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 		{
 			GlobalStateManagerEntityId = AuthOp.entity_id;
 			SetDeploymentState();
-			if (!bAcceptingPlayers && IsReady())
-			{
-				SetAcceptingPlayers(true);
-			}
+			SetAcceptingPlayers(true);
 			break;
 		}
 		case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -629,13 +636,10 @@ void UGlobalStateManager::TriggerBeginPlay()
 		SendCanBeginPlayUpdate(true);
 	}
 
-	const bool bHasDeploymentMapAuth = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
-	if (bHasDeploymentMapAuth && !bAcceptingPlayers)
-	{
-		SetAcceptingPlayers(true);
-	}
+	// This method has early exits internally to ensure the logic is only executed on the correct worher.
+	SetAcceptingPlayers(true);
 
-	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority
+	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
 	if (bCanSpawnWithAuthority)
 	{
 		if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)

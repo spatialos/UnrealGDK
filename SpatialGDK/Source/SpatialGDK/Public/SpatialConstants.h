@@ -206,11 +206,11 @@ const Schema_FieldId SPAWN_PLAYER_URL_ID								 = 1;
 const Schema_FieldId SPAWN_PLAYER_UNIQUE_ID								 = 2;
 const Schema_FieldId SPAWN_PLAYER_PLATFORM_NAME_ID						 = 3;
 const Schema_FieldId SPAWN_PLAYER_IS_SIMULATED_ID						 = 4;
-const Schema_FieldId SPAWN_PLAYER_CLIENT_WORKER_ID						 = 5;
 
 // ForwardSpawnPlayerRequest type IDs.
 const Schema_FieldId FORWARD_SPAWN_PLAYER_START_ACTOR_ID				 = 1;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_DATA_ID						 = 2;
+const Schema_FieldId FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID				 = 3;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_RESPONSE_SUCCESS_ID			 = 1;
 
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.

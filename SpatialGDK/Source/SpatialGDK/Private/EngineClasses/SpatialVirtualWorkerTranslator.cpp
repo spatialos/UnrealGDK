@@ -19,7 +19,7 @@ const PhysicalWorkerName* SpatialVirtualWorkerTranslator::GetPhysicalWorkerForVi
 {
 	if (const TPair<PhysicalWorkerName, Worker_EntityId>* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
 	{
-		return &PhysicalWorkerInfo->Get<0>();
+		return &PhysicalWorkerInfo->Key;
 	}
 
 	return nullptr;
@@ -29,7 +29,7 @@ Worker_EntityId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualW
 {
 	if (const TPair<PhysicalWorkerName, Worker_EntityId>* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
 	{
-		return PhysicalWorkerInfo->Get<1>();
+		return PhysicalWorkerInfo->Value;
 	}
 
 	return SpatialConstants::INVALID_ENTITY_ID;
@@ -44,7 +44,7 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 
 	for (const auto& Entry : VirtualToPhysicalWorkerMapping)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), Entry.Key, *(Entry.Value.Get<0>()), Entry.Value.Get<1>());
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), Entry.Key, *(Entry.Value.Key), Entry.Value.Value);
 	}
 }
 
