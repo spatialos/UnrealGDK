@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "GridLBStrategyEditorExtension.h"
 #include "SpatialGDKEditorSettings.h"
 
@@ -18,8 +20,8 @@ bool FGridLBStrategyEditorExtension::GetDefaultLaunchConfiguration(const UGridBa
 	OutConfiguration.Columns = StrategySpy->Cols;
 	OutConfiguration.NumEditorInstances = StrategySpy->Rows * StrategySpy->Cols;
 
-	// m ? cm ?
-	OutWorldDimensions = FIntPoint(StrategySpy->WorldWidth, StrategySpy->WorldHeight);
+	// Convert from cm to m.
+	OutWorldDimensions = FIntPoint(StrategySpy->WorldWidth / 100, StrategySpy->WorldHeight / 100);
 
 	return true;
 }

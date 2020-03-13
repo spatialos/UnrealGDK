@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "EditorExtension/LBStrategyEditorExtension.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 
