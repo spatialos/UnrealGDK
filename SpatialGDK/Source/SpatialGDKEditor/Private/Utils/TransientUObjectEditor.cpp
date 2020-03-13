@@ -5,9 +5,9 @@
 #include "PropertyEditor/Public/PropertyEditorModule.h"
 #include "MainFrame/Public/Interfaces/IMainFrameModule.h"
 
-#include "SBorder.h"
-#include "SButton.h"
-#include "SlateApplication.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/Input/SButton.h"
+#include "Framework/Application/SlateApplication.h"
 
 namespace
 {

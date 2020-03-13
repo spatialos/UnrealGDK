@@ -4,7 +4,7 @@
 
 #include "DesktopPlatformModule.h"
 #include "IDesktopPlatform.h"
-#include "SlateApplication.h"
+#include "Framework/Application/SlateApplication.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 
 void ULaunchConfigurationEditor::SaveConfiguration()
