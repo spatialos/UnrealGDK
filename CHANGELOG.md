@@ -95,7 +95,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed an issue where deleted, initially dormant startup actors would still be present on other workers.
 - Force activation of RPC ring buffer when load balancing is enabled, to allow RPC handover when authority changes
 - Fixed a race where a client leaving the deployment could leave its actor behind on the server, to be cleaned up after a long timeout.
-- Fixed crash caused by state persisting across a transition from one deployment to another in SpatialGameInstance
+- Fixed crash caused by state persisting across a transition from one deployment to another in SpatialGameInstance.
+- Fixed crash when starting + stopping PIE multiple times.
 
 ### External contributors:
 @DW-Sebastien

@@ -132,6 +132,19 @@ struct Query
 	TSchemaOption<float> Frequency;
 };
 
+// Constraints are typically linked to a corresponding frequency in the GDK use case, but without the result set yet.
+struct FrequencyConstraint
+{
+	TSchemaOption<float> Frequency;
+	QueryConstraint Constraint;
+};
+
+// Used for deduping queries across frequencies
+using FrequencyToConstraintsMap = TMap<float, TArray<QueryConstraint>>;
+
+// A common type for lists of frequency constraints to be converted into queries later
+using FrequencyConstraints = TArray<FrequencyConstraint>;
+
 struct ComponentInterest
 {
 	TArray<Query> Queries;
