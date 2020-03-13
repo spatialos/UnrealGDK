@@ -138,7 +138,7 @@ public:
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			// If the entity already exists, make sure we have spatial authority before we replicate with Offloading, because we pretend to have local authority
-			if (USpatialStatics::IsSpatialOffloadingEnabled() && !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+			if (USpatialStatics::IsSpatialOffloadingEnabled() && !bCreatingNewEntity && !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
 			{
 				return false;
 			}
@@ -197,6 +197,19 @@ public:
 		}
 	
 		return false;
+	}
+
+	// Sets the server and client authorities for this SpatialActorChannel based on the StaticComponentView
+	inline void RefreshAuthority()
+	{
+		if (NetDriver->IsServer())
+		{
+			SetServerAuthority(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID));
+		}
+		else
+		{
+			SetClientAuthority(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
+		}
 	}
 
 	inline void SetServerAuthority(const bool IsAuth)

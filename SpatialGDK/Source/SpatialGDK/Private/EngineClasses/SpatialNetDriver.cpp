@@ -2311,14 +2311,7 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 
 	if (Channel != nullptr)
 	{
-		if (IsServer())
-		{
-			Channel->SetServerAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID));
-		}
-		else
-		{
-			Channel->SetClientAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
-		}
+		Channel->RefreshAuthority();
 	}
 
 	return Channel;
