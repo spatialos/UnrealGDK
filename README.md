@@ -21,7 +21,7 @@ In order to transform Unreal from a single-server engine to a distributed model,
 > In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 
 ## Recommended use
-Please be aware of the [maturity of different features of the GDK](https://documentation.improbable.io/gdk-for-unreal/docs/product-maturity-lifecycle), which will help you understand the feature-completeness, stability, performance, and support levels you can expect from the GDK.  Please also see our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support](https://documentation.improbable.io/gdk-for-unreal/docs/unreal-features-support) pages, and contact us via our forums, or on Discord.
+To understand the feature-completeness, stability, performance, and support levels you can expect from the GDK, see the [product maturity lifecycle page](https://documentation.improbable.io/gdk-for-unreal/docs/product-maturity-lifecycle). For more information, visit the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support](https://documentation.improbable.io/gdk-for-unreal/docs/unreal-features-support) pages, and contact us via our forums, or on Discord.
 
 ## Versioning and support
 Please visit [this page](https://documentation.improbable.io/gdk-for-unreal/docs/versioning-scheme) for a description of the GDK's versioning scheme, and which branches to use when developing.
