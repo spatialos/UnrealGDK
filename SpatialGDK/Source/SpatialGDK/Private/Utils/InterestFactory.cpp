@@ -10,6 +10,7 @@
 #include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
 #include "Utils/Interest/NetCullDistanceInterest.h"
+#include "Utils/Interest/ResultTypes.h"
 
 #include "Engine/World.h"
 #include "Engine/Classes/GameFramework/Actor.h"
