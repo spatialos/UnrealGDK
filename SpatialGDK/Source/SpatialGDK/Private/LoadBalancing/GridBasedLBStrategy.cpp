@@ -107,7 +107,6 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 	check(IsReady());
 
 	const FBox2D Interest2D = WorkerCells[LocalVirtualWorkerId - 1].ExpandBy(InterestBorder);
-	check(Interest2D.GetArea() > 0);
 
 	const FVector2D Center2D = Interest2D.GetCenter();
 	const FVector Center3D{ Center2D.X, Center2D.Y, 0.0f};
