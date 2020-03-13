@@ -24,7 +24,7 @@ namespace
 		InOutPreviousDistance = InheritanceDistance;
 		return true;
 	}
-}
+} // anonymous namespace
 
 bool FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(const UAbstractLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions)
 {
@@ -38,7 +38,7 @@ bool FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(const UAbs
 	FLBStrategyEditorExtensionInterface* StrategyInterface = nullptr;
 	uint32 InheritanceDistance = UINT32_MAX;
 
-	for (auto& Extension : ExtensionMap)
+	for (auto& Extension : Extensions)
 	{
 		if (InheritFromClosest(StrategyClass, Extension.Key, InheritanceDistance))
 		{
@@ -54,12 +54,12 @@ bool FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(const UAbs
 	return false;
 }
 
-void FLBStrategyEditorExtensionManager::RegisterExtension(UClass* StrategyClass, FLBStrategyEditorExtensionInterface* StrategyExtension)
+void FLBStrategyEditorExtensionManager::RegisterExtension(UClass* StrategyClass, TUniquePtr<FLBStrategyEditorExtensionInterface>&& StrategyExtension)
 {
-	ExtensionMap.Push(decltype(ExtensionMap)::ElementType(StrategyClass, StrategyExtension));
+	Extensions.Push(ExtensionArray::ElementType(StrategyClass, MoveTemp(StrategyExtension)));
 }
 
 void FLBStrategyEditorExtensionManager::Cleanup()
 {
-	ExtensionMap.Empty();
+	Extensions.Empty();
 }

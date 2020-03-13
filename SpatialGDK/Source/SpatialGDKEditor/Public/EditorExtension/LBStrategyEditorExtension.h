@@ -35,14 +35,16 @@ public:
 	template <typename Extension>
 	void RegisterExtension()
 	{
-		RegisterExtension(Extension::ExtendedStrategy::StaticClass(), new Extension);
+		RegisterExtension(Extension::ExtendedStrategy::StaticClass(), MakeUnique<Extension>());
 	}
 
 	void Cleanup();
 
 private:
 
-	void RegisterExtension(UClass* StrategyClass, FLBStrategyEditorExtensionInterface* StrategyExtension);
+	void RegisterExtension(UClass* StrategyClass, TUniquePtr<FLBStrategyEditorExtensionInterface>&& StrategyExtension);
 
-	TArray<TPair<UClass*, TUniquePtr<FLBStrategyEditorExtensionInterface>>> ExtensionMap;
+	using ExtensionArray = TArray<TPair<UClass*, TUniquePtr<FLBStrategyEditorExtensionInterface>>>;
+
+	ExtensionArray Extensions;
 };
