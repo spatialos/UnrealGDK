@@ -3,8 +3,8 @@
 #include "Utils/LaunchConfigEditor.h"
 
 #include "DesktopPlatformModule.h"
+#include "Framework/Application/SlateApplication.h"
 #include "IDesktopPlatform.h"
-#include "SlateApplication.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 
 void ULaunchConfigurationEditor::SaveConfiguration()
