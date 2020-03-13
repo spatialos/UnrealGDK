@@ -317,6 +317,10 @@ namespace Improbable
                 });
 
             // Add worker flags to sim deployment JSON.
+            var regionFlag = new JObject();
+            regionFlag.Add("name", "simulated_players_region");
+            regionFlag.Add("value", regionCode);
+
             var devAuthTokenFlag = new JObject();
             devAuthTokenFlag.Add("name", "simulated_players_dev_auth_token");
             devAuthTokenFlag.Add("value", dat.TokenSecret);
@@ -336,6 +340,7 @@ namespace Improbable
             {
                 if (simWorkerConfig.workers[i].worker_type == CoordinatorWorkerName)
                 {
+                    simWorkerConfig.workers[i].flags.Add(regionFlag);
                     simWorkerConfig.workers[i].flags.Add(devAuthTokenFlag);
                     simWorkerConfig.workers[i].flags.Add(targetDeploymentFlag);
                     simWorkerConfig.workers[i].flags.Add(numSimulatedPlayersFlag);
