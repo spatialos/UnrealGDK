@@ -52,11 +52,6 @@ struct ComponentPresence : Component
 
 	Worker_ComponentUpdate CreateComponentPresenceUpdate()
 	{
-		return CreateComponentPresenceUpdate(ActorComponentList);
-	}
-
-	static Worker_ComponentUpdate CreateComponentPresenceUpdate(const TArray<Worker_ComponentId>& ActorComponentList)
-	{
 		Worker_ComponentUpdate Update = {};
 		Update.component_id = ComponentId;
 		Update.schema_type = Schema_CreateComponentUpdate();

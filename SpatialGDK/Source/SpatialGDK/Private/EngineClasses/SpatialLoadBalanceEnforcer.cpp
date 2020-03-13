@@ -23,7 +23,6 @@ SpatialLoadBalanceEnforcer::SpatialLoadBalanceEnforcer(const PhysicalWorkerName&
 
 void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentAdded(const Worker_AddComponentOp& Op)
 {
-	// Should only be passed auth intent, ACL or component presence.
 	check(HandlesComponent(Op.data.component_id));
 
 	MaybeQueueAclAssignmentRequest(Op.entity_id);
@@ -31,7 +30,6 @@ void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentAdded(const Worker_AddC
 
 void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentUpdated(const Worker_ComponentUpdateOp& Op)
 {
-	// Should only be passed auth intent or component presence.
 	check(HandlesComponent(Op.update.component_id));
 
 	MaybeQueueAclAssignmentRequest(Op.entity_id);
@@ -39,7 +37,6 @@ void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentUpdated(const Worker_Co
 
 void SpatialLoadBalanceEnforcer::OnLoadBalancingComponentRemoved(const Worker_RemoveComponentOp& Op)
 {
-	// Should only be passed auth intent, component presence, or ACL.
 	check(HandlesComponent(Op.component_id));
 
 	if (AclAssignmentRequestIsQueued(Op.entity_id))
