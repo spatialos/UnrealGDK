@@ -415,7 +415,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 		// Populate the ComponentPresence component with the list of initially present component IDs.
 		TArray<Worker_ComponentId> ComponentPresenceList;
-		ComponentPresenceList.Init(ComponentData.Num());
+		ComponentPresenceList.Init(ComponentDatas.Num());
 		for (int i = 0; i < ComponentDatas.Num(); i++)
 		{
 			ComponentPresenceList[i] = ComponentDatas[i].component_id;
