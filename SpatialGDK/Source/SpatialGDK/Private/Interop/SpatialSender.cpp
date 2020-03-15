@@ -28,7 +28,6 @@
 #include "Utils/EntityFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
@@ -64,8 +63,8 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
-	check(InNetDriver->ActorGroupManager.IsValid());
-	ActorGroupManager = InNetDriver->ActorGroupManager.Get();
+// 	check(InNetDriver->ActorGroupManager.IsValid());
+// 	ActorGroupManager = InNetDriver->ActorGroupManager.Get();
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
 
@@ -127,6 +126,7 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info)
 {
 	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass());
+	// TODO(harkness): WorkerType is currently not set reasonably...
 	const WorkerAttributeSet WorkerAttribute{ ActorInfo.WorkerType.ToString() };
 	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
 
@@ -837,8 +837,13 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 				{
 					if (const AActor* ConnectionOwner = OwningConnection->OwningActor)
 					{
-						if (!ActorGroupManager->IsSameWorkerType(TargetActor, ConnectionOwner))
+						if (NetDriver->LoadBalanceStrategy == nullptr)
 						{
+							UE_LOG(LogSpatialSender, Verbose, TEXT("Offloading is enabled, but there is no valid Loadbalancing strategy for offloading."));
+							bCanPackRPC = false;
+						}
+						else if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*ConnectionOwner))
+						{ 
 							UE_LOG(LogSpatialSender, Verbose, TEXT("RPC %s Cannot be packed as TargetActor (%s) and Connection Owner (%s) are on different worker types."),
 								*Function->GetName(),
 								*TargetActor->GetName(),

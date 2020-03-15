@@ -38,19 +38,17 @@ public:
 	virtual FVector GetWorkerEntityPosition() const override;
 	/* End UAbstractLBStrategy Interface */
 
-	void SetWorkerType(const FName& WorkerTypeIn) { LocalWorkerType = WorkerTypeIn; }
+	void SetWorkerType(const FName& WorkerTypeIn);
 
 protected:
 
 private:
 
-	FName LocalWorkerType;
-
 	TArray<VirtualWorkerId> VirtualWorkerIds;
 
 	mutable TMap<TSoftClassPtr<AActor>, FName> ClassPathToActorGroup;
 
-	TMap<FName, FName> ActorGroupToWorkerType;
+	TMap<FName, VirtualWorkerId> ActorKeyToVirtualWorkerId;
 
 	FName DefaultWorkerType;
 
@@ -61,10 +59,10 @@ private:
 	// Returns the Server worker type that is authoritative over the ActorGroup
 	// that contains this class (or parent class). Returns DefaultWorkerType
 	// if no mapping is found.
-	FName GetWorkerTypeForClass(TSubclassOf<AActor> Class) const;
+	VirtualWorkerId GetVirtualWorkerIdForClass(TSubclassOf<AActor> Class) const;
 
 	// Returns the Server worker type that is authoritative over this ActorGroup.
-	FName GetWorkerTypeForActorGroup(const FName& ActorGroup) const;
+	VirtualWorkerId GetVirtualWorkerIdForActorGroup(const FName& ActorGroup) const;
 
 	// Returns true if ActorA and ActorB are contained in ActorGroups that are
 	// on the same Server worker type.
@@ -92,7 +90,4 @@ private:
 	 * Returns the ActorGroup this Actor belongs to.
 	 */
 		 FName GetActorGroupForActor(const AActor* Actor) const;
-
-
-		 FName GetCurrentWorkerType() const;
 };

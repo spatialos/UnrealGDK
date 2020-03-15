@@ -10,39 +10,12 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/InspectionColors.h"
-#include "Utils/SpatialActorGroupManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
     return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
-}
-
-SpatialActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* WorldContext)
-{
-	if (const UWorld* World = WorldContext->GetWorld())
-	{
-		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
-		{
-			check(SpatialNetDriver->ActorGroupManager.IsValid());
-			return SpatialNetDriver->ActorGroupManager.Get();
-		}
-	}
-	return nullptr;
-}
-
-FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
-{
-	if (const UWorld* World = WorldContext->GetWorld())
-	{
-		if (const UGameInstance* GameInstance = World->GetGameInstance())
-		{
-			return GameInstance->GetSpatialWorkerType();
-		}
-	}
-
-	return NAME_None;
 }
 
 bool USpatialStatics::GetWorkerFlag(const UObject* WorldContext, const FString& InFlagName, FString& OutFlagValue)
@@ -79,71 +52,6 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 bool USpatialStatics::IsSpatialOffloadingEnabled()
 {
     return IsSpatialNetworkingEnabled() && GetDefault<USpatialGDKSettings>()->bEnableOffloading;
-}
-
-bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
-{
-	if (Actor == nullptr)
-	{
-		return false;
-	}
-
-	return IsActorGroupOwnerForClass(Actor, Actor->GetClass());
-}
-
-bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
-{
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
-	{
-		const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
-		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
-		return ClassWorkerType == CurrentWorkerType;
-	}
-
-	if (const UWorld* World = WorldContextObject->GetWorld())
-	{
-		return World->GetNetMode() != NM_Client;
-	}
-
-	return false;
-}
-
-bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup)
-{
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
-	{
-		const FName ActorGroupWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(ActorGroup);
-		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
-		return ActorGroupWorkerType == CurrentWorkerType;
-	}
-
-	if (const UWorld* World = WorldContextObject->GetWorld())
-	{
-		return World->GetNetMode() != NM_Client;
-	}
-
-	return false;
-}
-
-FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
-{
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(Actor))
-	{
-		UClass* ActorClass = Actor->GetClass();
-		return ActorGroupManager->GetActorGroupForClass(ActorClass);
-	}
-
-	return SpatialConstants::DefaultActorGroup;
-}
-
-FName USpatialStatics::GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
-{
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
-	{
-		return ActorGroupManager->GetActorGroupForClass(ActorClass);
-	}
-
-	return SpatialConstants::DefaultActorGroup;
 }
 
 void USpatialStatics::PrintStringSpatial(UObject* WorldContextObject, const FString& InString /*= FString(TEXT("Hello"))*/, bool bPrintToScreen /*= true*/, FLinearColor TextColor /*= FLinearColor(0.0, 0.66, 1.0)*/, float Duration /*= 2.f*/)

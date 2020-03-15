@@ -103,6 +103,6 @@ void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalW
 			LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
 		}
 
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("VirtualWorkerTranslator is now ready for loadbalancing."));
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("VirtualWorkerTranslator for VirtualWorkerId %d is now ready for loadbalancing."), LocalVirtualWorkerId);
 	}
 }

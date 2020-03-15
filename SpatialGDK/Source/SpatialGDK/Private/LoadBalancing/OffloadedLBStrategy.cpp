@@ -18,9 +18,7 @@ void UOffloadedLBStrategy::Init()
 {
 	Super::Init();
 
-	// TODO(harkness): Find a way to query how many offloading types there are.
-	VirtualWorkerIds.Add(1);
-	VirtualWorkerIds.Add(2);
+	VirtualWorkerId CurrentVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID + 1;
 
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
@@ -28,17 +26,40 @@ void UOffloadedLBStrategy::Init()
 		DefaultWorkerType = Settings->DefaultWorkerType.WorkerTypeName;
 		if (Settings->bEnableOffloading)
 		{
+			// First, add the default ActorGroup.
+			VirtualWorkerIds.Add(CurrentVirtualWorkerId);
+			ActorKeyToVirtualWorkerId.Add("Default", CurrentVirtualWorkerId++);
+
 			for (const TPair<FName, FActorGroupInfo>& ActorGroup : Settings->ActorGroups)
 			{
-				ActorGroupToWorkerType.Add(ActorGroup.Key, ActorGroup.Value.OwningWorkerType.WorkerTypeName);
+				FName WorkerTypeName = ActorGroup.Value.OwningWorkerType.WorkerTypeName;
+				FName ActorGroupKey = ActorGroup.Key;
+				if (!ActorKeyToVirtualWorkerId.Contains(ActorGroupKey))
+				{
+					UE_LOG(LogOffloadedLBStrategy, Log, TEXT("ActorGroup %s has been assigned to VirtualWorkerId %d"), *(ActorGroupKey.ToString()), CurrentVirtualWorkerId);
+					VirtualWorkerIds.Add(CurrentVirtualWorkerId);
+					ActorKeyToVirtualWorkerId.Add(ActorGroupKey, CurrentVirtualWorkerId++);
+				}
 
 				for (const TSoftClassPtr<AActor>& ClassPtr : ActorGroup.Value.ActorClasses)
 				{
-					ClassPathToActorGroup.Add(ClassPtr, ActorGroup.Key);
+					ClassPathToActorGroup.Add(ClassPtr, ActorGroupKey);
 				}
 			}
 		}
 	}
+}
+
+void UOffloadedLBStrategy::SetWorkerType(const FName& WorkerTypeIn)
+{
+// 	if (WorkerTypeIn == DefaultWorkerType)
+// 	{
+// 		LocalVirtualWorkerId = 1;
+// 	}
+// 	else
+// 	{
+// 		LocalVirtualWorkerId = 2;
+// 	}
 }
 
 TSet<VirtualWorkerId> UOffloadedLBStrategy::GetVirtualWorkerIds() const
@@ -50,23 +71,24 @@ bool UOffloadedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
-		UE_LOG(LogOffloadedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to relinquish authority for Actor %s."), *AActor::GetDebugName(&Actor));
+		UE_LOG(LogOffloadedLBStrategy, Warning, TEXT("OffloadedLBStrategy not ready to relinquish authority for Actor %s."), *AActor::GetDebugName(&Actor));
 		// TODO(harkness) Check if this is a valid return?
 		return false;
 	}
 
-	return GetWorkerTypeForClass(Actor.GetClass()) == LocalWorkerType;
+	return GetVirtualWorkerIdForClass(Actor.GetClass()) == LocalVirtualWorkerId;
 }
 
 VirtualWorkerId UOffloadedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
-		UE_LOG(LogOffloadedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to decide on authority for Actor %s."), *AActor::GetDebugName(&Actor));
+		UE_LOG(LogOffloadedLBStrategy, Warning, TEXT("OffloadedLBStrategy not ready to decide on authority for Actor %s."), *AActor::GetDebugName(&Actor));
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
-	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	UE_LOG(LogOffloadedLBStrategy, Log, TEXT("OffloadedLBStrategy returning virtual worker id %d for Actor %s."), GetVirtualWorkerIdForClass(Actor.GetClass()), *AActor::GetDebugName(&Actor));
+	return GetVirtualWorkerIdForClass(Actor.GetClass());
 }
 
 SpatialGDK::QueryConstraint UOffloadedLBStrategy::GetWorkerInterestQueryConstraint() const
@@ -116,26 +138,26 @@ FName UOffloadedLBStrategy::GetActorGroupForClass(const TSubclassOf<AActor> Clas
 	return SpatialConstants::DefaultActorGroup;
 }
 
-FName UOffloadedLBStrategy::GetWorkerTypeForClass(const TSubclassOf<AActor> Class) const
+VirtualWorkerId UOffloadedLBStrategy::GetVirtualWorkerIdForClass(const TSubclassOf<AActor> Class) const
 {
 	const FName ActorGroup = GetActorGroupForClass(Class);
 
-	if (const FName* WorkerType = ActorGroupToWorkerType.Find(ActorGroup))
+	if (const VirtualWorkerId* WorkerId = ActorKeyToVirtualWorkerId.Find(ActorGroup))
 	{
-		return *WorkerType;
+		return *WorkerId;
 	}
 
-	return DefaultWorkerType;
+	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 }
 
-FName UOffloadedLBStrategy::GetWorkerTypeForActorGroup(const FName& ActorGroup) const
+VirtualWorkerId UOffloadedLBStrategy::GetVirtualWorkerIdForActorGroup(const FName& ActorGroup) const
 {
-	if (const FName* WorkerType = ActorGroupToWorkerType.Find(ActorGroup))
+	if (const VirtualWorkerId* WorkerId = ActorKeyToVirtualWorkerId.Find(ActorGroup))
 	{
-		return *WorkerType;
+		return *WorkerId;
 	}
 
-	return DefaultWorkerType;
+	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 }
 
 bool UOffloadedLBStrategy::IsSameWorkerType(const AActor* ActorA, const AActor* ActorB) const
@@ -145,10 +167,10 @@ bool UOffloadedLBStrategy::IsSameWorkerType(const AActor* ActorA, const AActor* 
 		return false;
 	}
 
-	const FName& WorkerTypeA = GetWorkerTypeForClass(ActorA->GetClass());
-	const FName& WorkerTypeB = GetWorkerTypeForClass(ActorB->GetClass());
+	const VirtualWorkerId VirtualWorkerIdA = GetVirtualWorkerIdForClass(ActorA->GetClass());
+	const VirtualWorkerId VirtualWorkerIdB = GetVirtualWorkerIdForClass(ActorB->GetClass());
 
-	return (WorkerTypeA == WorkerTypeB);
+	return (VirtualWorkerIdA == VirtualWorkerIdB);
 }
 
 bool UOffloadedLBStrategy::IsActorGroupOwnerForActor(const AActor* Actor) const
@@ -163,24 +185,17 @@ bool UOffloadedLBStrategy::IsActorGroupOwnerForActor(const AActor* Actor) const
 
 bool UOffloadedLBStrategy::IsActorGroupOwnerForClass(const TSubclassOf<AActor> ActorClass) const
 {
-	const FName ClassWorkerType = GetWorkerTypeForClass(ActorClass);
-	const FName CurrentWorkerType = GetCurrentWorkerType();
-	return ClassWorkerType == CurrentWorkerType;
+	const VirtualWorkerId WorkerId = GetVirtualWorkerIdForClass(ActorClass);
+	return WorkerId == LocalVirtualWorkerId;
 }
 
 bool UOffloadedLBStrategy::IsActorGroupOwner(const FName ActorGroup) const
 {
-	const FName ActorGroupWorkerType = GetWorkerTypeForActorGroup(ActorGroup);
-	const FName CurrentWorkerType = GetCurrentWorkerType();
-	return ActorGroupWorkerType == CurrentWorkerType;
+	const VirtualWorkerId WorkerId = GetVirtualWorkerIdForActorGroup(ActorGroup);
+	return WorkerId == LocalVirtualWorkerId;
 }
 
 FName UOffloadedLBStrategy::GetActorGroupForActor(const AActor* Actor) const
 {
 	return GetActorGroupForClass(Actor->GetClass());
-}
-
-FName UOffloadedLBStrategy::GetCurrentWorkerType() const
-{
-	return LocalWorkerType;
 }

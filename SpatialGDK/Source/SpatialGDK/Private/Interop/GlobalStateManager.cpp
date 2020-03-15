@@ -108,6 +108,7 @@ void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 	Schema_AddBool(UpdateObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Sending ReadyToBeginPlay."));
 
 	bHasSentReadyForVirtualWorkerAssignment = true;
 	NetDriver->Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &Update);

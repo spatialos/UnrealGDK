@@ -24,6 +24,7 @@ void SpatialVirtualWorkerTranslationManager::AddVirtualWorkerIds(const TSet<Virt
 	// Currently, this should only be called once on startup. In the future we may allow for more
 	// flexibility. 
 	check(UnassignedVirtualWorkers.IsEmpty());
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Configuring TranslationManager to expect %d virtual workers."), InVirtualWorkerIds.Num());
 	for (VirtualWorkerId VirtualWorkerId : InVirtualWorkerIds)
 	{
 		UnassignedVirtualWorkers.Enqueue(VirtualWorkerId);
@@ -171,7 +172,7 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	}
 	else
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT(" Processing ServerWorker Entity query response"));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT(" Processing ServerWorker Entity query response with %d workers"), Op.result_count);
 		ConstructVirtualWorkerMappingFromQueryResponse(Op);
 	}
 
