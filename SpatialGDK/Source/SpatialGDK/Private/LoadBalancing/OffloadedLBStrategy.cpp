@@ -24,6 +24,7 @@ void UOffloadedLBStrategy::Init()
 
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
+		// TODO: can we just check that bEnableOffloading is true?
 		DefaultWorkerType = Settings->DefaultWorkerType.WorkerTypeName;
 		if (Settings->bEnableOffloading)
 		{
@@ -54,7 +55,7 @@ bool UOffloadedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 		return false;
 	}
 
-	return false;
+	return GetWorkerTypeForClass(Actor.GetClass()) == LocalWorkerType;
 }
 
 VirtualWorkerId UOffloadedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) const
@@ -84,7 +85,7 @@ FVector UOffloadedLBStrategy::GetWorkerEntityPosition() const
 	return FVector{ 0.f, 0.f, 0.f };
 }
 
-FName UOffloadedLBStrategy::GetActorGroupForClass(const TSubclassOf<AActor> Class)
+FName UOffloadedLBStrategy::GetActorGroupForClass(const TSubclassOf<AActor> Class) const
 {
 	if (Class == nullptr)
 	{
@@ -115,7 +116,7 @@ FName UOffloadedLBStrategy::GetActorGroupForClass(const TSubclassOf<AActor> Clas
 	return SpatialConstants::DefaultActorGroup;
 }
 
-FName UOffloadedLBStrategy::GetWorkerTypeForClass(const TSubclassOf<AActor> Class)
+FName UOffloadedLBStrategy::GetWorkerTypeForClass(const TSubclassOf<AActor> Class) const
 {
 	const FName ActorGroup = GetActorGroupForClass(Class);
 
@@ -137,7 +138,7 @@ FName UOffloadedLBStrategy::GetWorkerTypeForActorGroup(const FName& ActorGroup) 
 	return DefaultWorkerType;
 }
 
-bool UOffloadedLBStrategy::IsSameWorkerType(const AActor* ActorA, const AActor* ActorB)
+bool UOffloadedLBStrategy::IsSameWorkerType(const AActor* ActorA, const AActor* ActorB) const
 {
 	if (ActorA == nullptr || ActorB == nullptr)
 	{
@@ -148,4 +149,38 @@ bool UOffloadedLBStrategy::IsSameWorkerType(const AActor* ActorA, const AActor* 
 	const FName& WorkerTypeB = GetWorkerTypeForClass(ActorB->GetClass());
 
 	return (WorkerTypeA == WorkerTypeB);
+}
+
+bool UOffloadedLBStrategy::IsActorGroupOwnerForActor(const AActor* Actor) const
+{
+	if (Actor == nullptr)
+	{
+		return false;
+	}
+
+	return IsActorGroupOwnerForClass(Actor->GetClass());
+}
+
+bool UOffloadedLBStrategy::IsActorGroupOwnerForClass(const TSubclassOf<AActor> ActorClass) const
+{
+	const FName ClassWorkerType = GetWorkerTypeForClass(ActorClass);
+	const FName CurrentWorkerType = GetCurrentWorkerType();
+	return ClassWorkerType == CurrentWorkerType;
+}
+
+bool UOffloadedLBStrategy::IsActorGroupOwner(const FName ActorGroup) const
+{
+	const FName ActorGroupWorkerType = GetWorkerTypeForActorGroup(ActorGroup);
+	const FName CurrentWorkerType = GetCurrentWorkerType();
+	return ActorGroupWorkerType == CurrentWorkerType;
+}
+
+FName UOffloadedLBStrategy::GetActorGroupForActor(const AActor* Actor) const
+{
+	return GetActorGroupForClass(Actor->GetClass());
+}
+
+FName UOffloadedLBStrategy::GetCurrentWorkerType() const
+{
+	return LocalWorkerType;
 }

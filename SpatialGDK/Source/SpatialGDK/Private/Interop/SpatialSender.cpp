@@ -682,11 +682,15 @@ bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_Enti
 {
 	bool WillHaveAuthorityOverActor = true;
 
+	check(TargetActor != nullptr);
+
 	if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
 	{
-		if (!USpatialStatics::IsActorGroupOwnerForActor(TargetActor))
+		if (NetDriver->LoadBalanceStrategy != nullptr)
 		{
-			WillHaveAuthorityOverActor = false;
+			if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*TargetActor)) {
+				WillHaveAuthorityOverActor = false;
+			}
 		}
 	}
 

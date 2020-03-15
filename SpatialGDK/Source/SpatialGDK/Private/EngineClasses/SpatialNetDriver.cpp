@@ -32,6 +32,7 @@
 #include "Interop/SpatialWorkerFlags.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
+#include "LoadBalancing/OffloadedLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -430,6 +431,12 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		else
 		{
 			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->LoadBalanceStrategy);
+		}
+
+		if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
+		{
+			LoadBalanceStrategy = NewObject<UOffloadedLBStrategy>(this);
+			static_cast<UOffloadedLBStrategy*>(LoadBalanceStrategy)->SetWorkerType(GetGameInstance()->GetSpatialWorkerType());
 		}
 		LoadBalanceStrategy->Init();
 	}
