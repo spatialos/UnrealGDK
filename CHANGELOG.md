@@ -64,6 +64,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - The Spatial Output Log window now displays deployment startup errors.
 - Added `bEnableClientQueriesOnServer` (defaulted false) which makes the same queries on the server as on clients if the unreal load balancer is enabled. Enable this to avoid clients seeing entities the server does not if the server's interest query has not been configured correctly.
 - The new Net Cull Distance client interest model is now enabled by default.
+- Added log warning when AddPendingRPC fails due to ControllerChannelNotListening.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
