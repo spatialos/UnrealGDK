@@ -12,6 +12,7 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/EntityFactory.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/RepLayoutUtils.h"
@@ -130,7 +131,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Worker_Entity GSM;
 	GSM.entity_id = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
-	TArray<Worker_ComponentData> Components;
+	TArray<FWorkerComponentData> Components;
 
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
@@ -152,16 +153,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
 	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
-
-	TArray<Worker_ComponentId> ComponentPresenceList;
-	ComponentPresenceList.SetNum(Components.Num() + 1);
-	for (int i = 0; i < Components.Num(); i++)
-	{
-		ComponentPresenceList[i] = Components[i].component_id;
-	}
-	ComponentPresenceList[Components.Num()] = ComponentPresence::ComponentId;
-
-	Components.Add(ComponentPresence::CreateComponentPresenceData(ComponentPresenceList));
+	Components.Add(ComponentPresence::CreateComponentPresenceData(EntityFactory::GetComponentPresenceList(Components)));
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();

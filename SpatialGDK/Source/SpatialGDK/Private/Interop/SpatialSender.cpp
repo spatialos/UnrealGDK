@@ -152,23 +152,6 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 		}
 	});
 
-	// If the load balancer is enabled and we're not EntityACL authoritative, we need to update the ComponentPresence
-	// component with the new component IDs. If this worker does not have EntityACL authority, this is used to inform
-	// the enforcer of the component IDs to add to the EntityACL.
-	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
-	{
-		check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
-
-		ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
-		for (auto& NewComponentId : NewComponentIds)
-		{
-			ComponentPresenceData->ComponentList.AddUnique(NewComponentId);
-		}
-
-		FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-		Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
-	}
-
 	// If this worker is EntityACL authoritative, we can directly update the component IDs to gain authority over.
 	if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
@@ -185,6 +168,21 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 		FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 		Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
 	}
+
+	// Update the ComponentPresence component with the new component IDs. If this worker does not have EntityACL
+	// authority, this is used to inform the enforcer of the component IDs to add to the EntityACL.
+	{
+		check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
+
+		ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
+		for (auto& NewComponentId : NewComponentIds)
+		{
+			ComponentPresenceData->ComponentList.AddUnique(NewComponentId);
+		}
+
+		FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
+		Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
+	}
 }
 
 void USpatialSender::SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info)
@@ -199,8 +197,7 @@ void USpatialSender::SendRemoveComponent(Worker_EntityId EntityId, const FClassI
 		}
 	}
 
-	// If load-balancing is enabled, we need to update the ComponentPresence ID list.
-	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	// We need to update the ComponentPresence ID list.
 	{
 		check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 
