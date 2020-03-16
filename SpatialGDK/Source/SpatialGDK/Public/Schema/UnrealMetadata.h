@@ -28,8 +28,8 @@ struct UnrealMetadata : Component
 
 	UnrealMetadata() = default;
 
-	UnrealMetadata(const TSchemaOption<FUnrealObjectRef>& InStablyNamedRef, const FString& InOwnerWorkerAttribute, const FString& InClassPath, const TSchemaOption<bool>& InbNetStartup)
-		: StablyNamedRef(InStablyNamedRef), OwnerWorkerAttribute(InOwnerWorkerAttribute), ClassPath(InClassPath), bNetStartup(InbNetStartup) {}
+	UnrealMetadata(const TSchemaOption<FUnrealObjectRef>& InStablyNamedRef, const FString& InClassPath, const TSchemaOption<bool>& InbNetStartup)
+		: StablyNamedRef(InStablyNamedRef), ClassPath(InClassPath), bNetStartup(InbNetStartup) {}
 
 	UnrealMetadata(const Worker_ComponentData& Data)
 	{
@@ -39,12 +39,11 @@ struct UnrealMetadata : Component
 		{
 			StablyNamedRef = GetObjectRefFromSchema(ComponentObject, 1);
 		}
-		OwnerWorkerAttribute = GetStringFromSchema(ComponentObject, 2);
-		ClassPath = GetStringFromSchema(ComponentObject, 3);
+		ClassPath = GetStringFromSchema(ComponentObject, 2);
 
-		if (Schema_GetBoolCount(ComponentObject, 4) == 1)
+		if (Schema_GetBoolCount(ComponentObject, 3) == 1)
 		{
-			bNetStartup = GetBoolFromSchema(ComponentObject, 4);
+			bNetStartup = GetBoolFromSchema(ComponentObject, 3);
 		}
 	}
 
@@ -59,11 +58,10 @@ struct UnrealMetadata : Component
 		{
 			AddObjectRefToSchema(ComponentObject, 1, StablyNamedRef.GetValue());
 		}
-		AddStringToSchema(ComponentObject, 2, OwnerWorkerAttribute);
-		AddStringToSchema(ComponentObject, 3, ClassPath);
+		AddStringToSchema(ComponentObject, 2, ClassPath);
 		if (bNetStartup.IsSet())
 		{
-			Schema_AddBool(ComponentObject, 4, bNetStartup.GetValue());
+			Schema_AddBool(ComponentObject, 3, bNetStartup.GetValue());
 		}
 
 		return Data;
@@ -106,7 +104,6 @@ struct UnrealMetadata : Component
 	}
 
 	TSchemaOption<FUnrealObjectRef> StablyNamedRef;
-	FString OwnerWorkerAttribute;
 	FString ClassPath;
 	TSchemaOption<bool> bNetStartup;
 
