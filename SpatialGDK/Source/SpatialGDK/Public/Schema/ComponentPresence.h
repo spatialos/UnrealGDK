@@ -11,6 +11,7 @@
 #include "Containers/Array.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 namespace SpatialGDK
 {
@@ -21,9 +22,9 @@ struct ComponentPresence : Component
 
 	ComponentPresence() = default;
 
-	ComponentPresence(TArray<Worker_ComponentId>&& InActorComponentList)
-		: ComponentList(MoveTemp(InActorComponentList))
-		, ClientWorkerId(InClientWorkerId)
+	ComponentPresence(TArray<Worker_ComponentId>&& InComponentList, TSchemaOption<PhysicalWorkerName> InPossessingClientWorkerId)
+		: ComponentList(MoveTemp(InComponentList))
+		, PossessingClientWorkerId(InPossessingClientWorkerId)
 	{}
 
 	ComponentPresence(const Worker_ComponentData& Data)
@@ -32,16 +33,16 @@ struct ComponentPresence : Component
 		CopyListFromComponentObject(ComponentObject);
 		if (Schema_GetBytesCount(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID) == 1)
 		{
-			ClientWorkerId = GetObjectRefFromSchema(ComponentObject, 1);
+			PossessingClientWorkerId = GetObjectRefFromSchema(ComponentObject, 1);
 		}
 	}
 
 	Worker_ComponentData CreateComponentPresenceData()
 	{
-		return CreateComponentPresenceData(ComponentList, ClientWorkerId);
+		return CreateComponentPresenceData(ComponentList, PossessingClientWorkerId);
 	}
 
-	static Worker_ComponentData CreateComponentPresenceData(const TArray<Worker_ComponentId>& ComponentList, const TSchemaOption<PhysicalWorkerName>& ClientWorkerId)
+	static Worker_ComponentData CreateComponentPresenceData(const TArray<Worker_ComponentId>& ComponentList, const TSchemaOption<PhysicalWorkerName>& PossessingClientWorkerId)
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -53,9 +54,9 @@ struct ComponentPresence : Component
 			Schema_AddUint32(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, InComponentId);
 		}
 
-		if (ClientWorkerId.IsSet())
+		if (PossessingClientWorkerId.IsSet())
 		{
-			AddStringToSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID, *ClientWorkerId)
+			AddStringToSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID, *PossessingClientWorkerId)
 		}
 
 		return Data;
@@ -63,10 +64,10 @@ struct ComponentPresence : Component
 
 	Worker_ComponentUpdate CreateComponentPresenceUpdate()
 	{
-		return CreateComponentPresenceUpdate(ComponentList, ClientWorkerId);
+		return CreateComponentPresenceUpdate(ComponentList, PossessingClientWorkerId);
 	}
 
-	static Worker_ComponentUpdate CreateComponentPresenceUpdate(const TArray<Worker_ComponentId>& ComponentList, const TSchemaOption<PhysicalWorkerName>& ClientWorkerId)
+	static Worker_ComponentUpdate CreateComponentPresenceUpdate(const TArray<Worker_ComponentId>& ComponentList, const TSchemaOption<PhysicalWorkerName>& PossessingClientWorkerId)
 	{
 		Worker_ComponentUpdate Update = {};
 		Update.component_id = ComponentId;
@@ -76,9 +77,9 @@ struct ComponentPresence : Component
 		Schema_AddUint32List(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID,
 			ComponentList.GetData(), ComponentList.Num());
 
-		if (ClientWorkerId.IsSet())
+		if (PossessingClientWorkerId.IsSet())
 		{
-			AddStringToSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID, *ClientWorkerId)
+			AddStringToSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID, *PossessingClientWorkerId)
 		}
 		else
 		{
@@ -95,11 +96,11 @@ struct ComponentPresence : Component
 
 		if (Schema_GetBytesCount(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID) == 1)
 		{
-			ClientWorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID);
+			PossessingClientWorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID);
 		}
 		else if (Schema_IsComponentUpdateFieldCleared(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID))
 		{
-			ClientWorkerId = FString();
+			PossessingClientWorkerId = FString();
 		}
 	}
 
@@ -144,7 +145,7 @@ struct ComponentPresence : Component
 	TArray<Worker_ComponentId> ComponentList;
 
 	// Client worker ID corresponding to the owning net connection (if exists).
-	TSchemaOption<PhysicalWorkerName> ClientWorkerId;
+	TSchemaOption<PhysicalWorkerName> PossessingClientWorkerId;
 };
 
 } // namespace SpatialGDK

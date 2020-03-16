@@ -12,7 +12,9 @@ component ComponentPresence {
     // components in a multi-worker environment.
     list<uint32> component_list = 1;
 
-    // The client_worker_id is an optional client worker ID string that is set when the
-    // Actor is net-owned by a client connection.
-    option<string> client_worker_id = 2;
+    // The possessing_client_worker_id is an optional worker ID string that is set 
+    // by the simulating worker when the Actor becomes net-owned by a client connection.
+    // The enforcer uses this value to update the EntityACL entry for the client RPC
+    // endpoint (and Heartbeat component, if present).
+    option<string> possessing_client_worker_id = 2;
 }

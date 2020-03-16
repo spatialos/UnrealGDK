@@ -1300,8 +1300,15 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		}
 	}
 
-	UpdateEntityACLToNewOwner();
-	UpdateInterestBucketComponentId();
+	if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
+	{
+	}
+
+	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+	{
+		UpdateEntityACLToNewOwner();
+		UpdateInterestBucketComponentId();
+	}
 
 	for (AActor* Child : Actor->Children)
 	{
@@ -1322,13 +1329,7 @@ void USpatialActorChannel::UpdateEntityACLToNewOwner()
 		NewClientConnectionWorkerId = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 	}
 
-	// If load-balancing is enabled, the EntityACL component may be authoritative on a different worker.
-	// In this case, we communicate with the enforcing worker using the ComponentPresence component.
-	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-
-	}
-	else if (SavedClientConnectionWorkerId != NewClientConnectionWorkerId)
+	if (SavedClientConnectionWorkerId != NewClientConnectionWorkerId)
 	{
 		bool bSuccess = Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
 
@@ -1379,6 +1380,7 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 		Sender->SendComponentInterestForActor(this, GetEntityId(), bNetOwned);
 	}
 }
+
 void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object)
 {
 	CreateSubObjects.Remove(Object);
