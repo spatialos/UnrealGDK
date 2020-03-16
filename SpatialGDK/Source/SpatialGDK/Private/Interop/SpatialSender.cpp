@@ -125,9 +125,7 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 
 void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info)
 {
-	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass());
-	// TODO(harkness): WorkerType is currently not set reasonably...
-	const WorkerAttributeSet WorkerAttribute{ ActorInfo.WorkerType.ToString() };
+	const WorkerAttributeSet WorkerAttribute{ GetDefault<USpatialGDKSettings>()->DefaultWorkerType.WorkerTypeName.ToString() };
 	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
 
 	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());

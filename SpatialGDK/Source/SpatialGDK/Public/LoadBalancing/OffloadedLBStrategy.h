@@ -38,8 +38,6 @@ public:
 	virtual FVector GetWorkerEntityPosition() const override;
 	/* End UAbstractLBStrategy Interface */
 
-	void SetWorkerType(const FName& WorkerTypeIn);
-
 protected:
 
 private:

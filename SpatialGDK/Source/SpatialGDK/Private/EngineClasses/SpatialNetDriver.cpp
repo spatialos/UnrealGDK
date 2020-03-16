@@ -432,12 +432,6 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		{
 			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->LoadBalanceStrategy);
 		}
-
-		if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
-		{
-			LoadBalanceStrategy = NewObject<UOffloadedLBStrategy>(this);
-			static_cast<UOffloadedLBStrategy*>(LoadBalanceStrategy)->SetWorkerType(GetGameInstance()->GetSpatialWorkerType());
-		}
 		LoadBalanceStrategy->Init();
 	}
 

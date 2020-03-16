@@ -50,18 +50,6 @@ void UOffloadedLBStrategy::Init()
 	}
 }
 
-void UOffloadedLBStrategy::SetWorkerType(const FName& WorkerTypeIn)
-{
-// 	if (WorkerTypeIn == DefaultWorkerType)
-// 	{
-// 		LocalVirtualWorkerId = 1;
-// 	}
-// 	else
-// 	{
-// 		LocalVirtualWorkerId = 2;
-// 	}
-}
-
 TSet<VirtualWorkerId> UOffloadedLBStrategy::GetVirtualWorkerIds() const
 {
 	return TSet<VirtualWorkerId>(VirtualWorkerIds);

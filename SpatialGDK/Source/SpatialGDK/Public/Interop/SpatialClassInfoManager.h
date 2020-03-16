@@ -73,10 +73,6 @@ struct FClassInfo
 
 	// Only for Subobject classes
 	TArray<TSharedRef<const FClassInfo>> DynamicSubobjectInfo;
-
-	// TODO: These are disabled for the offloading as loadbalancing spike. To populate them, we'd need to find a new way to populate them.
- 	// FName ActorGroup;
- 	FName WorkerType;
 };
 
 class USpatialNetDriver;

@@ -64,7 +64,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	}
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
-	WorkerAttributeSet WorkerAttributeOrSpecificWorker{ Info.WorkerType.ToString() };
+	WorkerAttributeSet WorkerAttributeOrSpecificWorker{ GetDefault<USpatialGDKSettings>()->DefaultWorkerType.WorkerTypeName.ToString() };
 	VirtualWorkerId IntendedVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
 	// Add Load Balancer Attribute if we are using the load balancer.
@@ -139,7 +139,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	}
 	else
 	{
-		const WorkerAttributeSet ACLAttributeSet = { Info.WorkerType.ToString() };
+		const WorkerAttributeSet ACLAttributeSet{ GetDefault<USpatialGDKSettings>()->DefaultWorkerType.WorkerTypeName.ToString() };
 		const WorkerRequirementSet ACLRequirementSet = { ACLAttributeSet };
 		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ACLRequirementSet);
 	}
