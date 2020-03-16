@@ -133,10 +133,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
-	// Initialize ActorGroupManager as it is a dependency of ClassInfoManager (see below)
-// 	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
-// 	ActorGroupManager->Init();
-
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
 	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
 	// from OnConnectionToSpatialOSSucceeded callback which could be executed with the async

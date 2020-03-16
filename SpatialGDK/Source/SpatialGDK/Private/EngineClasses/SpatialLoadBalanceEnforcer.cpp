@@ -98,7 +98,6 @@ void SpatialLoadBalanceEnforcer::MaybeQueueAclAssignmentRequest(const Worker_Ent
 	const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId);
 	const PhysicalWorkerName* OwningWorkerId = VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent->VirtualWorkerId);
 
-	// check(OwningWorkerId != nullptr);
 	if (OwningWorkerId == nullptr)
 	{
 		UE_LOG(LogSpatialLoadBalanceEnforcer, Error, TEXT("Couldn't find mapped worker for entity %lld. This shouldn't happen! Virtual worker ID: %d"),
