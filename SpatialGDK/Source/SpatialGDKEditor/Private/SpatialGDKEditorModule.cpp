@@ -17,7 +17,7 @@
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
 
 FSpatialGDKEditorModule::FSpatialGDKEditorModule()
-	: ExtensionManager(new FLBStrategyEditorExtensionManager)
+	: ExtensionManager(MakeUnique<FLBStrategyEditorExtensionManager>())
 {
 
 }

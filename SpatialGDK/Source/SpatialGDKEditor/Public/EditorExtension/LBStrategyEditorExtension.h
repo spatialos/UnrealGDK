@@ -5,12 +5,13 @@
 #include "CoreMinimal.h"
 
 class UAbstractLBStrategy;
+class FLBStrategyEditorExtensionManager;
 struct FWorkerTypeLaunchSection;
 
 class FLBStrategyEditorExtensionInterface
 {
 private:
-	friend class FLBStrategyEditorExtensionManager;
+	friend FLBStrategyEditorExtensionManager;
 	virtual bool GetDefaultLaunchConfiguration_Virtual(const UAbstractLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions) const = 0;
 };
 
@@ -18,7 +19,7 @@ template <typename StrategyImpl, typename Implementation>
 class FLBStrategyEditorExtensionTemplate : public FLBStrategyEditorExtensionInterface
 {
 public:
-	typedef StrategyImpl ExtendedStrategy;
+	using ExtendedStrategy = StrategyImpl;
 private:
 
 	bool GetDefaultLaunchConfiguration_Virtual(const UAbstractLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions) const override
