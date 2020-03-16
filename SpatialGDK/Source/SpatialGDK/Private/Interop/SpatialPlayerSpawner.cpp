@@ -8,6 +8,7 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ServerWorker.h"
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/SchemaUtils.h"

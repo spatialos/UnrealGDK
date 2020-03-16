@@ -7,9 +7,9 @@
 #include "Utils/SchemaUtils.h"
 
 #include "Containers/UnrealString.h"
-#include "GameFramework/OnlineReplStructs.h"
 #include "Engine/EngineBaseTypes.h"
 #include "Engine/GameInstance.h"
+#include "GameFramework/OnlineReplStructs.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/CoreNet.h"
 

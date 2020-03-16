@@ -636,7 +636,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 		SendCanBeginPlayUpdate(true);
 	}
 
-	// This method has early exits internally to ensure the logic is only executed on the correct worher.
+	// This method has early exits internally to ensure the logic is only executed on the correct worker.
 	SetAcceptingPlayers(true);
 
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
