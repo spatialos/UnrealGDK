@@ -43,17 +43,27 @@ if (Test-Path env:TEST_REPO_BRANCH) {
 
 $tests = @()
 
-if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "", $False)
-}
-else {
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK+/Game/SpatialNetworkingMap", "", $True)
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "LoadbalancerTestResults", "/Game/Spatial_ZoningMap_1S_2C", "bEnableUnrealLoadBalancer=true;LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`")", $True)
-}
+# If building all configurations, use the test gyms, since the network testing project only compiles for the Editor configs
+if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
+    $test_repo_url = "git@github.com:spatialos/UnrealGDKTestGyms.git"
+    $test_repo_map = "EmptyGym"
+    $test_project_name = "GDKTestGyms"
 
-if ($env:SLOW_NETWORKING_TESTS) {
-    $tests[0].tests_path += "+/Game/NetworkingMap"
-    $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
+    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK", "", $True)
+}
+else{
+    if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "", $False)
+    }
+    else {
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK+/Game/SpatialNetworkingMap", "", $True)
+        $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "LoadbalancerTestResults", "/Game/Spatial_ZoningMap_1S_2C", "bEnableUnrealLoadBalancer=true;LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`")", $True)
+    }
+
+    if ($env:SLOW_NETWORKING_TESTS) {
+        $tests[0].tests_path += "+/Game/NetworkingMap"
+        $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
+    }
 }
 
 . "$PSScriptRoot\common.ps1"
