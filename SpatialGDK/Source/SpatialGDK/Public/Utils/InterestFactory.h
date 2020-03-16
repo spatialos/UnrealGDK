@@ -52,12 +52,8 @@ private:
 	void CreateAndCacheInterestState();
 
 	// Build the checkout radius constraints for client workers
-	// TODO: Pull out into checkout radius constraint utils
-	QueryConstraint CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
-	QueryConstraint CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager);
-	QueryConstraint CreateNetCullDistanceConstraint(USpatialClassInfoManager* ClassInfoManager);
-	QueryConstraint CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* ClassInfoManager);
-
+	FrequencyConstraints CreateClientCheckoutRadiusConstraint(USpatialClassInfoManager* ClassInfoManager);
+	
 	// Builds the result types of necessary components for clients
 	// TODO: create and pull out into result types class
 	ResultType CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager);
@@ -75,19 +71,19 @@ private:
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const;
 
-	// Add the checkout radius, always relevant, or always interested query.
-	void AddSystemQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const;
+	// Add the always relevant and the always interested query.
+	void AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo, const QueryConstraint& LevelConstraint) const;
 
 	void AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const;
 	FrequencyToConstraintsMap GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
 	void GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints, bool bRecurseChildren) const;
 
-	void AddNetCullDistanceFrequencyQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const;
+	void AddNetCullDistanceQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const;
 
 	void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId, const Query& QueryToAdd) const;
 
 	// System Defined Constraints
-	QueryConstraint CreateCheckoutRadiusConstraints(const AActor* InActor) const;
+	bool ShouldAddNetCullDistanceInterest(const AActor* InActor) const;
 	QueryConstraint CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const;
 	QueryConstraint CreateAlwaysRelevantConstraint() const;
 
@@ -99,21 +95,12 @@ private:
 	// If the result types flag is flipped, set the specified result type.
 	void SetResultType(Query& OutQuery, const ResultType& InResultType) const;
 
-	struct FrequencyConstraint
-	{
-		float Frequency;
-		SpatialGDK::QueryConstraint Constraint;
-	};
-
 	USpatialClassInfoManager* ClassInfoManager;
 	USpatialPackageMapClient* PackageMap;
 
-	// Used to cache checkout radius constraints with frequency settings, so queries can be quickly recreated.
-	TArray<FrequencyConstraint> CheckoutConstraints;
-
 	// The checkout radius constraint is built once for all actors in CreateCheckoutRadiusConstraint as it is equivalent for all actors.
 	// It is built once per net driver initialization.
-	QueryConstraint ClientCheckoutRadiusConstraint;
+	FrequencyConstraints ClientCheckoutRadiusConstraint;
 
 	// Cache the result types of queries.
 	ResultType ClientNonAuthInterestResultType;
