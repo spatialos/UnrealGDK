@@ -408,23 +408,9 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);
 	}
 
-	// Add ComponentPresence to the entity.
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
-	{
-		ComponentWriteAcl.Add(ComponentPresence::ComponentId, AuthoritativeWorkerRequirementSet);
-
-		// Populate the ComponentPresence component with the list of initially present component IDs.
-		TArray<Worker_ComponentId> ComponentPresenceList;
-		ComponentPresenceList.SetNum(ComponentDatas.Num() + 1);
-		for (int i = 0; i < ComponentDatas.Num(); i++)
-		{
-			ComponentPresenceList[i] = ComponentDatas[i].component_id;
-		}
-		ComponentPresenceList[ComponentDatas.Num()] = ComponentPresence::ComponentId;
-		ComponentDatas.Add(ComponentPresence::CreateComponentPresenceData(ComponentPresenceList));
-	}
-
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
+
+	ComponentDatas.Add(ComponentPresence::CreateComponentPresenceData(EntityFactory::GetComponentPresenceList(ComponentDatas)));
 
 	return ComponentDatas;
 }
