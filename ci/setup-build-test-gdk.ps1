@@ -17,7 +17,7 @@ class TestSuite {
     [ValidateNotNull()]       [string]$additional_gdk_options
     [bool]                            $run_with_spatial
 
-    TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map, [string] $test_project_name, [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options, [string] $run_with_spatial) {
+    TestSuite([string] $test_repo_url, [string] $test_repo_branch, [string] $test_repo_relative_uproject_path, [string] $test_repo_map, [string] $test_project_name, [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options, [bool] $run_with_spatial) {
         $this.test_repo_url = $test_repo_url
         $this.test_repo_branch = $test_repo_branch
         $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
@@ -44,11 +44,11 @@ if (Test-Path env:TEST_REPO_BRANCH) {
 $tests = @()
 
 if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "VanillaTestResults", "SpatialGDK+/Game/SpatialNetworkingMap", "", $False)
+    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "VanillaTestResults", "/Game/SpatialNetworkingMap", "", $False)
 }
 else {
     $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK+/Game/SpatialNetworkingMap", "", $True)
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "LoadbalancerTestResults", "/Game/Spatial_ZoningMap_1S_2C", "bEnableUnrealLoadBalancer=true,[/Script/SpatialGDK.SpatialGDKSettings]:LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`")", $True)
+    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "LoadbalancerTestResults", "/Game/Spatial_ZoningMap_1S_2C", "bEnableUnrealLoadBalancer=true;LoadBalancingWorkerType=(WorkerTypeName=`"UnrealWorker`")", $True)
 }
 
 if ($env:SLOW_NETWORKING_TESTS) {

@@ -49,6 +49,19 @@ $ue_path_absolute = Force-ResolvePath $unreal_editor_path
 $uproject_path_absolute = Force-ResolvePath $uproject_path
 $output_dir_absolute = Force-ResolvePath $output_dir
 
+$additional_gdk_options_arr = $additional_gdk_options.Split(";")
+$additional_gdk_options = ""
+foreach($additional_gdk_option in $additional_gdk_options_arr) {
+    if($additional_gdk_options == "") {
+        $additional_gdk_options += $additional_gdk_option
+    }
+    else{
+        $additional_gdk_options += ",[/Script/SpatialGDK.SpatialGDKSettings]:"
+        $additional_gdk_options += $additional_gdk_option
+    }
+}
+$additional_gdk_options =
+
 $cmd_args_list = @( `
     "`"$uproject_path_absolute`"", # We need some project to run tests in, but for unit tests the exact project shouldn't matter
     "`"$test_repo_map`"", # The map to run tests in
