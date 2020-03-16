@@ -15,14 +15,18 @@
 
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
+#include "Containers/StringConv.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerStart.h"
+#include "HAL/Platform.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "UObject/SoftObjectPath.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+
+#include <string>
 
 DEFINE_LOG_CATEGORY(LogSpatialPlayerSpawner);
 
@@ -119,7 +123,6 @@ SpatialGDK::SpawnPlayerRequest USpatialPlayerSpawner::ObtainPlayerParams() const
 		}
 		LoginURL.Portal = WorldContext->LastURL.Portal;
 
-
 		// Send the player unique Id at login
 		UniqueId = LocalPlayer->GetPreferredUniqueNetId();
 	}
@@ -160,7 +163,8 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequestOnServer(const Worker_Comma
 {
 	UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Received PlayerSpawn request on server"));
 
-	FString ClientWorkerId(UTF8_TO_TCHAR(Op.caller_worker_id));
+	FUTF8ToTCHAR FStringConversion(reinterpret_cast<const ANSICHAR*>(Op.caller_worker_id), strlen(Op.caller_worker_id));
+	FString ClientWorkerId(FStringConversion.Length(), FStringConversion.Get());
 
 	// Accept the player if we have not already accepted a player from this worker.
 	bool bAlreadyHasPlayer;
