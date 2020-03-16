@@ -285,7 +285,7 @@ FReply FSpatialGDKEditorLayoutDetails::PushCommandLineArgsToIOSDevice()
 	}
 
 	FString Executable = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EngineDir(), TEXT("Binaries/DotNET/IOS/deploymentserver.exe")));
-	FString DeploymentServerArguments = FString::Printf(TEXT("copyfile -bundle \"%s\" -file \"%s\" -file \"/Documents/ue4commandline.txt\""), *(IOSRuntimeSettings->BundleIdentifier), *OutCommandLineArgsFile);
+	FString DeploymentServerArguments = FString::Printf(TEXT("copyfile -bundle \"%s\" -file \"%s\" -file \"/Documents/ue4commandline.txt\""), *(IOSRuntimeSettings->BundleIdentifier.Replace(TEXT("[PROJECT_NAME]"), FApp::GetProjectName())), *OutCommandLineArgsFile);
 
 #if PLATFORM_MAC
 	DeploymentServerArguments = FString::Printf(TEXT("%s %s"), *Executable, *DeploymentServerArguments);

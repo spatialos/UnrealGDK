@@ -1092,6 +1092,8 @@ ERPCResult USpatialSender::AddPendingRPC(UObject* TargetObject, UFunction* Funct
 
 	if (!ControllerChannel->IsListening())
 	{
+		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingRPC: ControllerChannel is not listening for object %s (RPC %s, actor %s, entity %lld): connection owner %s"),
+			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity, *OwningConnection->OwningActor->GetName());
 		return ERPCResult::ControllerChannelNotListening;
 	}
 
