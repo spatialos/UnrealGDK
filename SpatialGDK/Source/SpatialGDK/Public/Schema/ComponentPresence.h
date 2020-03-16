@@ -21,7 +21,7 @@ struct ComponentPresence : Component
 	ComponentPresence() = default;
 
 	ComponentPresence(TArray<Worker_ComponentId> InActorComponentList)
-		: ActorComponentList(InActorComponentList)
+		: ComponentList(InActorComponentList)
 	{}
 
 	ComponentPresence(const Worker_ComponentData& Data)
@@ -32,19 +32,19 @@ struct ComponentPresence : Component
 
 	Worker_ComponentData CreateComponentPresenceData()
 	{
-		return CreateComponentPresenceData(ActorComponentList);
+		return CreateComponentPresenceData(ComponentList);
 	}
 
-	static Worker_ComponentData CreateComponentPresenceData(const TArray<Worker_ComponentId>& ActorComponentList)
+	static Worker_ComponentData CreateComponentPresenceData(const TArray<Worker_ComponentId>& ComponentList)
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
 		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		for (int32 i = 0; i < ActorComponentList.Num(); ++i)
+		for (int32 i = 0; i < ComponentList.Num(); ++i)
 		{
-			Schema_AddUint32(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, ActorComponentList[i]);
+			Schema_AddUint32(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, ComponentList[i]);
 		}
 
 		return Data;
@@ -58,7 +58,7 @@ struct ComponentPresence : Component
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 		Schema_AddUint32List(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID,
-			ActorComponentList.GetData(), ActorComponentList.Num());
+			ComponentList.GetData(), ComponentList.Num());
 
 		return Update;
 	}
@@ -71,13 +71,12 @@ struct ComponentPresence : Component
 
 	void CopyListFromComponentObject(Schema_Object* ComponentObject)
 	{
-		ActorComponentList.SetNum(Schema_GetUint32Count(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID), true);
-		Schema_GetUint32List(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, ActorComponentList.GetData());
+		ComponentList.SetNum(Schema_GetUint32Count(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID), true);
+		Schema_GetUint32List(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, ComponentList.GetData());
 	}
 
-	// List of component IDs on a SpatialOS entity representing an Actor that a simulating worker 
-	// should have authority over.
-	TArray<Worker_ComponentId> ActorComponentList;
+	// List of component IDs that exist on an entity.
+	TArray<Worker_ComponentId> ComponentList;
 };
 
 } // namespace SpatialGDK

@@ -155,7 +155,16 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
 	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(ComponentPresence(PresentComponentIds).CreateComponentPresenceData());
+
+	TArray<Worker_ComponentId> ComponentPresenceList;
+	ComponentPresenceList.SetNum(Components.Num() + 1);
+	for (int i = 0; i < Components.Num(); i++)
+	{
+		ComponentPresenceList[i] = Components[i].component_id;
+	}
+	ComponentPresenceList[Components.Num()] = ComponentPresence::ComponentId;
+
+	Components.Add(ComponentPresence::CreateComponentPresenceData(ComponentPresenceList));
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();

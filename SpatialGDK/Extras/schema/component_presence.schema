@@ -9,5 +9,5 @@ package unreal;
 // critical sections.
 component ComponentPresence {
     id = 9972;
-    list<uint32> actor_component_list = 1;
+    list<uint32> component_list = 1;
 }
