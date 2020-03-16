@@ -179,7 +179,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 		ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 		for (auto& NewComponentId : NewComponentIds)
 		{
-			ComponentPresenceData->ActorComponentList.AddUnique(NewComponentId);
+			ComponentPresenceData->ComponentList.AddUnique(NewComponentId);
 		}
 
 		FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
