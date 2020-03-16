@@ -12,7 +12,8 @@ class SPATIALGDK_API USpatialClassInfoManagerMock : public USpatialClassInfoMana
 	GENERATED_BODY()
 
 public:
-	void Init(TMap<ESchemaComponentType, TArray<Worker_ComponentId>> InComponentTypeToIds);
+
+	void SetComponentIdsForComponentType(ESchemaComponentType ComponentType, TArray<Worker_ComponentId> ComponentIds);
 
 	virtual const TArray<Worker_ComponentId>& GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const override;
 

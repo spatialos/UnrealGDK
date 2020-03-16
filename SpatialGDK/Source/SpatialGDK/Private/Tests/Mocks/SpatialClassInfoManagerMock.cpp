@@ -2,9 +2,9 @@
 
 #include "Tests/Mocks/SpatialClassInfoManagerMock.h"
 
-void USpatialClassInfoManagerMock::Init(TMap<ESchemaComponentType, TArray<Worker_ComponentId>> InComponentTypeToIds)
+void USpatialClassInfoManagerMock::SetComponentIdsForComponentType(ESchemaComponentType ComponentType, TArray<Worker_ComponentId> ComponentIds)
 {
-	ComponentTypeToIds = InComponentTypeToIds;
+	ComponentTypeToIds.Add(ComponentType, ComponentIds);
 }
 
 const TArray<Worker_ComponentId>& USpatialClassInfoManagerMock::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const

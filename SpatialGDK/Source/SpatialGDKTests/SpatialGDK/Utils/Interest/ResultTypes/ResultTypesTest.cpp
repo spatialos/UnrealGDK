@@ -8,6 +8,7 @@
 #define RESULT_TYPES_TEST(TestName) \
 	GDK_TEST(Core, ResultTypes, TestName)
 
+// Sanity check tests for creating result types.
 // Run tests inside the SpatialGDK namespace in order to test static functions.
 namespace SpatialGDK
 {
@@ -18,15 +19,15 @@ namespace SpatialGDK
 	USpatialClassInfoManagerMock* CreateAndPopulateMockClassInfoManager()
 	{
 		USpatialClassInfoManagerMock* ClassInfoManager = NewObject<USpatialClassInfoManagerMock>();
+
+		// Ensure the mock won't be garbage collected
 		ClassInfoManager->AddToRoot();
 
-		TMap<ESchemaComponentType, TArray<Worker_ComponentId>> ComponentTypeToIds;
+		// Initialise with fake generated components
+		ClassInfoManager->SetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data, DataComponentIds);
+		ClassInfoManager->SetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly, OwnerOnlyComponentIds);
+		ClassInfoManager->SetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Handover, HandoverComponentIds);
 
-		ComponentTypeToIds.Add(ESchemaComponentType::SCHEMA_Data, DataComponentIds);
-		ComponentTypeToIds.Add(ESchemaComponentType::SCHEMA_OwnerOnly, OwnerOnlyComponentIds);
-		ComponentTypeToIds.Add(ESchemaComponentType::SCHEMA_Handover, HandoverComponentIds);
-
-		ClassInfoManager->Init(ComponentTypeToIds);
 		return ClassInfoManager;
 	}
 
