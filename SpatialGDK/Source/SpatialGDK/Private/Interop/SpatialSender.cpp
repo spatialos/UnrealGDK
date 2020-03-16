@@ -162,7 +162,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 		ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 		for (auto& NewComponentId : NewComponentIds)
 		{
-			ComponentPresenceData->ActorComponentList.AddUnique(NewComponentId);
+			ComponentPresenceData->ComponentList.AddUnique(NewComponentId);
 		}
 
 		FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
@@ -205,7 +205,7 @@ void USpatialSender::SendRemoveComponent(Worker_EntityId EntityId, const FClassI
 		check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 
 		ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
-		TArray<Worker_ComponentId>* ActorComponentList = &ComponentPresenceData->ActorComponentList;
+		TArray<Worker_ComponentId>* ActorComponentList = &ComponentPresenceData->ComponentList;
 		for (auto RequiredComponentIt = ActorComponentList->CreateIterator(); RequiredComponentIt; RequiredComponentIt++)
 		{
 			if (ComponentsToRemove.Contains(*RequiredComponentIt))

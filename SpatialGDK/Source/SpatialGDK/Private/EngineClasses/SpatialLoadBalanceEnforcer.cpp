@@ -181,7 +181,7 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 			TArray<Worker_ComponentId> ComponentIds;
 			Acl->ComponentWriteAcl.GetKeys(ComponentIds);
 			// Ensure that every component ID in ComponentPresence is set in the write ACL.
-			for (const auto& RequiredComponentId : ComponentPresenceComponent->ActorComponentList)
+			for (const auto& RequiredComponentId : ComponentPresenceComponent->ComponentList)
 			{
 				ComponentIds.AddUnique(RequiredComponentId);
 			}
