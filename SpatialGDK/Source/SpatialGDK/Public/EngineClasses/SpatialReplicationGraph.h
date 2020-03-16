@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "ReplicationGraph.h"
 
 #include "SpatialReplicationGraph.generated.h"

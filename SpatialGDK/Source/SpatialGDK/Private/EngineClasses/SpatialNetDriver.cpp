@@ -1461,13 +1461,14 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	{
 		return 0;
 	}
-	check(SpatialConnection && SpatialConnection->bReliableSpatialConnection);
-	check(World);
+	check(SpatialConnection->bReliableSpatialConnection);
 
 	if (UReplicationDriver* RepDriver = GetReplicationDriver())
 	{
 		return RepDriver->ServerReplicateActors(DeltaSeconds);
 	}
+
+	check(World);
 
 	int32 Updated = 0;
 

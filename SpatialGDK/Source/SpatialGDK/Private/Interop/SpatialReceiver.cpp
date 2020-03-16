@@ -336,7 +336,7 @@ void USpatialReceiver::DropQueuedRemoveComponentOpsForEntity(Worker_EntityId Ent
 	}
 }
 
-USpatialActorChannel* USpatialReceiver::RecreateDormantSpatialChannel(AActor* Actor, Worker_EntityId EntityID)
+USpatialActorChannel* USpatialReceiver::GetOrRecreateChannelForDomantActor(AActor* Actor, Worker_EntityId EntityID)
 {
 	// Receive would normally create channel in ReceiveActor - this function is used to recreate the channel after waking up a dormant actor
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
@@ -367,7 +367,7 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 		FUnrealObjectRef ObjectRef(Op.entity_id, Op.component_id);
 		if (Op.component_id == SpatialConstants::DORMANT_COMPONENT_ID)
 		{
-			RecreateDormantSpatialChannel(Actor, Op.entity_id);
+			GetOrRecreateChannelForDomantActor(Actor, Op.entity_id);
 		}
 		else if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
@@ -1512,7 +1512,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		{
 			if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id)))
 			{
-				Channel = RecreateDormantSpatialChannel(Actor, Op.entity_id);
+				Channel = GetOrRecreateChannelForDomantActor(Actor, Op.entity_id);
 
 				// As we haven't removed the dormant component just yet, this might be a single replication update where the actor
 				// remains dormant. Add it back to pending dormancy so the local worker can clean up the channel. If we do process
