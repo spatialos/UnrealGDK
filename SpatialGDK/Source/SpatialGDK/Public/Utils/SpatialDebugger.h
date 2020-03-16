@@ -95,6 +95,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
 	bool bAutoStart = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Show a transparent Worker Region cuboid representing the area of authority for each server worker"))
+	bool bShowWorkerRegions = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Icon"))
 	UTexture2D *AuthTexture;
 
@@ -115,6 +118,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Color used for any server with an unresolved name"))
 	FColor InvalidServerTintColor = FColor::Magenta;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Vertical scale to apply to each worker region cuboid"))
+	float WorkerRegionVerticalScale = 1.0f;
 
 	UPROPERTY(ReplicatedUsing = OnRep_SetWorkerRegions)
 	TArray<FWorkerRegionInfo> WorkerRegions;
@@ -138,6 +144,9 @@ private:
 
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
+
+	void CreateWorkerRegions();
+	void DestroyWorkerRegions();
 
 	FColor GetTextColorForBackgroundColor(const FColor& BackgroundColor) const;
 	int32 GetNumberOfDigitsIn(int32 SomeNumber) const;

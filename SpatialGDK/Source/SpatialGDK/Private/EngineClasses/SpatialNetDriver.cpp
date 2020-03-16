@@ -147,11 +147,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	if (!bInitAsClient)
-	{
-		InterestFactory::CreateAndCacheInterestState(ClassInfoManager);
-	}
-
 #if WITH_EDITOR
 	PlayInEditorID = GPlayInEditorID;
 
@@ -241,8 +236,9 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
+
 	FString SpatialWorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
-	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
+	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted() && !GameInstance->GetPreventAutoConnectWithLocator())
 	{
 		GameInstance->SetFirstConnectionToSpatialOSAttempted();
 		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
@@ -405,6 +401,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	check(NewPackageMap == PackageMap);
 
 	PackageMap->Init(this, &TimerManager);
+
+	// The interest factory depends on the package map, so is created last.
+	InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
@@ -514,6 +513,7 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 			FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
 			RedirectURL.Host = LastURL.Host;
 			RedirectURL.Port = LastURL.Port;
+			RedirectURL.Portal = LastURL.Portal;
 
 			// Usually the LastURL options are added to the RedirectURL in the FURL constructor.
 			// However this is not the case when TravelType = TRAVEL_Absolute so we must do it explicitly here.
@@ -653,9 +653,18 @@ void USpatialNetDriver::MakePlayerSpawnRequest()
 
 void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
 {
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("OnLevelAddedToWorld: Level (%s) OwningWorld (%s) World (%s)"),
+		*GetNameSafe(LoadedLevel), *GetNameSafe(OwningWorld), *GetNameSafe(World));
+
 	// Callback got called on a World that's not associated with this NetDriver.
 	// Don't do anything.
 	if (OwningWorld != World)
+	{
+		return;
+	}
+
+	// Not necessary for clients
+	if (!IsServer())
 	{
 		return;
 	}
@@ -675,6 +684,12 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
 	{
 		// If load balancing is disabled and this worker is not GSM authoritative then exit early.
+		return;
+	}
+
+	if (bLoadBalancingEnabled && !LoadBalanceStrategy->IsReady())
+	{
+		// Load balancer isn't ready, this should only occur when servers are loading composition levels on startup, before connecting to spatial
 		return;
 	}
 
@@ -920,6 +935,8 @@ void USpatialNetDriver::Shutdown()
 			SpatialNetConnection->ClientNotifyClientHasQuit();
 		}
 	}
+
+	SpatialOutputDevice = nullptr;
 
 	Super::Shutdown();
 
@@ -1428,6 +1445,8 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialServerReplicateActors);
+	SET_DWORD_STAT(STAT_NumReplicatedActorBytes, 0);
+	SET_DWORD_STAT(STAT_NumReplicatedActors, 0);
 
 #if WITH_SERVER_CODE
 	// Only process the stand-in client connection, which is the connection to the runtime itself.
@@ -1777,6 +1796,23 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 	}
 }
 
+namespace
+{
+	TOptional<FString> ExtractWorkerIDFromAttribute(const FString& WorkerAttribute)
+	{
+		const FString WorkerIdAttr = TEXT("workerId:");
+		int32 AttrOffset = WorkerAttribute.Find(WorkerIdAttr);
+
+		if (AttrOffset < 0)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Error : Worker attribute does not contain workerId : %s"), *WorkerAttribute);
+			return {};
+		}
+		
+		return WorkerAttribute.RightChop(AttrOffset + WorkerIdAttr.Len());
+	}
+}
+
 bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, USpatialNetConnection** OutConn)
 {
 	check(*OutConn == nullptr);
@@ -1808,6 +1844,14 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	check(WorkerAttributeOption);
 	SpatialConnection->WorkerAttribute = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
 
+	// Register workerId and its connection.
+	if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(SpatialConnection->WorkerAttribute))
+	{
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %s 's NetConnection created."), *WorkerId.GetValue());
+
+		WorkerConnections.Add(WorkerId.GetValue(), SpatialConnection);
+	}
+
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
 	// Note that in the initial implementation, we carry over no data about the user here (such as a unique player id, or the real IP)
 	// In the future it would make sense to add metadata to the Spawn request and pass it here.
@@ -1837,6 +1881,27 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	GameMode->GameWelcomePlayer(SpatialConnection, RedirectURL);
 
 	return true;
+}
+
+void USpatialNetDriver::CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp)
+{
+	if (!ConnectionCleanedUp->WorkerAttribute.IsEmpty())
+	{
+		if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(*ConnectionCleanedUp->WorkerAttribute))
+		{
+			WorkerConnections.Remove(WorkerId.GetValue());
+		}
+	}
+}
+
+TWeakObjectPtr<USpatialNetConnection> USpatialNetDriver::FindClientConnectionFromWorkerId(const FString& WorkerId)
+{
+	if (TWeakObjectPtr<USpatialNetConnection>* ClientConnectionPtr = WorkerConnections.Find(WorkerId))
+	{
+		return *ClientConnectionPtr;
+	}
+
+	return {};
 }
 
 void USpatialNetDriver::ProcessPendingDormancy()
@@ -2197,7 +2262,10 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 
 	check(Actor != nullptr);
 	check(PackageMap != nullptr);
-	check(GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(Actor)) == nullptr);
+
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+
+	check(GetActorChannelByEntityId(EntityId) == nullptr);
 
 	USpatialNetConnection* NetConnection = GetSpatialOSNetConnection();
 	check(NetConnection != nullptr);
@@ -2221,6 +2289,18 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 #else
 			Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
 #endif
+		}
+	}
+
+	if (Channel != nullptr)
+	{
+		if (IsServer())
+		{
+			Channel->SetServerAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID));
+		}
+		else
+		{
+			Channel->SetClientAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
 		}
 	}
 

@@ -83,12 +83,14 @@ private:
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
 	void ShowSimulatedPlayerDeploymentDialog();
+	void OpenLaunchConfigurationEditor();
 
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
 
 	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
+	TSharedRef<SWidget> CreateLaunchDeploymentMenuContent();
 
 	void ShowTaskStartNotification(const FString& NotificationText);
 

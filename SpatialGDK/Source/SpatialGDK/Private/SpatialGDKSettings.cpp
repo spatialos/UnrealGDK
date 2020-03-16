@@ -56,7 +56,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseFrameTimeAsLoad(false)
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
-	, bEnableResultTypes(false)
+	, bEnableResultTypes(true)
 	, bPackRPCs(false)
 	, ServicesRegion(EServicesRegion::Default)
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
@@ -76,11 +76,13 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, UdpClientDownstreamUpdateIntervalMS(1)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
+	, RPCQueueWarningDefaultTimeout(2.0f)
 	, bEnableNetCullDistanceInterest(false)
 	, bEnableNetCullDistanceFrequency(false)
 	, FullFrequencyNetCullDistanceRatio(1.0f)
 	, bUseSecureClientConnection(false)
 	, bUseSecureServerConnection(false)
+	, bEnableClientQueriesOnServer(false)
 	, bUseDevelopmentAuthenticationFlow(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
@@ -184,4 +186,14 @@ bool USpatialGDKSettings::UseRPCRingBuffer() const
 {
 	// RPC Ring buffer are necessary in order to do RPC handover, something legacy RPC does not handle.
 	return bUseRPCRingBuffers || bEnableUnrealLoadBalancer;
+}
+
+float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) const
+{
+	if (const float* CustomSecondsBeforeWarning = RPCQueueWarningTimeouts.Find(Result))
+	{
+		return *CustomSecondsBeforeWarning;
+	}
+
+	return RPCQueueWarningDefaultTimeout;
 }

@@ -69,10 +69,10 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(this, &USpatialSender::SendRPC));
 }
 
-Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
+Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
 	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
-	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs);
+	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs, OutBytesWritten);
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
@@ -103,14 +103,14 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
 }
 
-void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo)
+void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo, uint32& OutBytesWritten)
 {
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
 	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
 
-	TArray<FWorkerComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+	TArray<FWorkerComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
 
 	for (int i = 0; i < SubobjectDatas.Num(); i++)
 	{
@@ -186,7 +186,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	check(NetDriver != nullptr);
 	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in order
 	// to set the interest of the server worker according to the strategy.
-	Components.Add(InterestFactory::CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
+	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
@@ -317,7 +317,7 @@ void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 	}
 
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
-	FWorkerComponentUpdate InterestUpdate = InterestFactory::CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestUpdate();
+	FWorkerComponentUpdate InterestUpdate = NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestUpdate();
 	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
 
 	if (NetDriver->LoadBalanceStrategy != nullptr && NetDriver->LoadBalanceStrategy->IsReady())
@@ -327,7 +327,7 @@ void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 	}
 }
 
-void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
+void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendComponentUpdates);
 	Worker_EntityId EntityId = Channel->GetEntityId();
@@ -337,7 +337,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Object);
 	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer);
 
-	TArray<FWorkerComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges);
+	TArray<FWorkerComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
 
 	for(int i = 0; i < ComponentUpdates.Num(); i++)
 	{
@@ -947,11 +947,12 @@ void USpatialSender::ProcessPositionUpdates()
 	ChannelsToUpdatePosition.Empty();
 }
 
-void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)
+void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
 	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s with EntityId %lld"), *Channel->Actor->GetName(), Channel->GetEntityId());
 
-	Worker_RequestId RequestId = CreateEntity(Channel);
+	Worker_RequestId RequestId = CreateEntity(Channel, OutBytesWritten);
+
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
@@ -1173,8 +1174,7 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 		return;
 	}
 
-	InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), EntityId, NetDriver->ClassInfoManager, NetDriver->PackageMap);
-	FWorkerComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
+	FWorkerComponentUpdate Update = NetDriver->InterestFactory->CreateInterestUpdate(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), EntityId);
 
 	Connection->SendComponentUpdate(EntityId, &Update);
 }

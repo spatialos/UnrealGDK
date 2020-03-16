@@ -183,6 +183,7 @@ void USpatialPlayerSpawner::ObtainPlayerParams(FURL& LoginURL, FUniqueNetIdRepl&
 		{
 			LoginURL.AddOption(*Op);
 		}
+		LoginURL.Portal = WorldContext->LastURL.Portal;
 
 		// Send the player unique Id at login
 		OutUniqueId = LocalPlayer->GetPreferredUniqueNetId();

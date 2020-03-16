@@ -107,11 +107,16 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 	check(IsReady());
 
 	const FBox2D Interest2D = WorkerCells[LocalVirtualWorkerId - 1].ExpandBy(InterestBorder);
-	const FVector Min = FVector{ Interest2D.Min.X, Interest2D.Min.Y, -FLT_MAX };
-	const FVector Max = FVector{ Interest2D.Max.X, Interest2D.Max.Y, FLT_MAX };
-	const FBox Interest3D = FBox{ Min, Max };
+
+	const FVector2D Center2D = Interest2D.GetCenter();
+	const FVector Center3D{ Center2D.X, Center2D.Y, 0.0f};
+
+	const FVector2D EdgeLengths2D = Interest2D.GetSize();
+	check(EdgeLengths2D.X > 0.0f && EdgeLengths2D.Y > 0.0f);
+	const FVector EdgeLengths3D{ EdgeLengths2D.X, EdgeLengths2D.Y, FLT_MAX};
+
 	SpatialGDK::QueryConstraint Constraint;
-	Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Interest3D.GetCenter()), SpatialGDK::EdgeLength::FromFVector(2 * Interest3D.GetExtent()) };
+	Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D), SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
 	return Constraint;
 }
 

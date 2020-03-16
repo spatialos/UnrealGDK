@@ -82,6 +82,7 @@ const Worker_ComponentId PERSISTENCE_COMPONENT_ID						= 55;
 const Worker_ComponentId INTEREST_COMPONENT_ID							= 58;
 // This is a component on per-worker system entities.
 const Worker_ComponentId WORKER_COMPONENT_ID							= 60;
+const Worker_ComponentId PLAYERIDENTITY_COMPONENT_ID			= 61;
 
 const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID		= 100;
 

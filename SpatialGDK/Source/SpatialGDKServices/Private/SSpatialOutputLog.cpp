@@ -103,8 +103,13 @@ void SSpatialOutputLog::StartUpLogDirectoryWatcher(const FString& LogDirectory)
 			// Watch the log directory for changes.
 			if (!FPaths::DirectoryExists(LogDirectory))
 			{
-				UE_LOG(LogSpatialOutputLog, Error, TEXT("Local deployment log directory does not exist!"));
-				return;
+				UE_LOG(LogSpatialOutputLog, Log, TEXT("Spatial local deployment log directory '%s' does not exist. Will create it."), *LogDirectory);
+
+				if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*LogDirectory))
+				{
+					UE_LOG(LogSpatialOutputLog, Error, TEXT("Could not create the spatial local deployment log directory. The Spatial Output window will not function."));
+					return;
+				}
 			}
 
 			LogDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &SSpatialOutputLog::OnLogDirectoryChanged);
@@ -250,21 +255,53 @@ void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 	});
 }
 
-void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
+void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 {
-	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
-	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) logger=(.*\\.)?(.*) msg=(.*)"));
-	FRegexMatcher LogMatcher(LogPattern, LogLine);
+	const FRegexPattern ErrorPattern = FRegexPattern(TEXT("level=(.*) msg=(.*) code=(.*) code_string=(.*) error=(.*) stack=(.*)"));
+	FRegexMatcher ErrorMatcher(ErrorPattern, LogLine);
 
-	if (!LogMatcher.FindNext())
+	if (!ErrorMatcher.FindNext())
 	{
 		UE_LOG(LogSpatialOutputLog, Error, TEXT("Failed to parse log line: %s"), *LogLine);
 		return;
 	}
 
+	FString ErrorLevelText = ErrorMatcher.GetCaptureGroup(1);
+	FString Message = ErrorMatcher.GetCaptureGroup(2);
+	FString ErrorCode = ErrorMatcher.GetCaptureGroup(3);
+	FString ErrorCodeString = ErrorMatcher.GetCaptureGroup(4);
+	FString ErrorMessage = ErrorMatcher.GetCaptureGroup(5);
+	FString Stack = ErrorMatcher.GetCaptureGroup(6);
+
+	// The stack message comes with double escaped characters.
+	Stack = Stack.ReplaceEscapedCharWithChar();
+
+	// Format the log message to be easy to read.
+	FString LogMessage = FString::Printf(TEXT("%s \n Code: %s \n Code String: %s \n Error: %s \n Stack: %s"), *Message, *ErrorCode, *ErrorCodeString, *ErrorMessage, *Stack);
+
+	// Serialization must be done on the game thread.
+	AsyncTask(ENamedThreads::GameThread, [this, LogMessage]
+	{
+		Serialize(*LogMessage, ELogVerbosity::Error, FName(TEXT("SpatialService")));
+	});
+}
+
+void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
+{
+	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
+	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) msg=(.*) loggerName=(.*\\.)?(.*)"));
+	FRegexMatcher LogMatcher(LogPattern, LogLine);
+
+	if (!LogMatcher.FindNext())
+	{
+		// If this log line did not match the log line regex then it is an error line which is parsed differently.
+		FormatAndPrintRawErrorLine(LogLine);
+		return;
+	}
+
 	FString LogLevelText = LogMatcher.GetCaptureGroup(1);
-	FString LogCategory = LogMatcher.GetCaptureGroup(3);
-	FString LogMessage = LogMatcher.GetCaptureGroup(4);
+	FString LogMessage = LogMatcher.GetCaptureGroup(2);
+	FString LogCategory = LogMatcher.GetCaptureGroup(4);
 
 	// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
 	// msg=[WORKER_NAME:WORKER_TYPE] ... e.g. msg=[UnrealWorkerF5C56488482FEDC37B10E382770067E3:UnrealWorker]

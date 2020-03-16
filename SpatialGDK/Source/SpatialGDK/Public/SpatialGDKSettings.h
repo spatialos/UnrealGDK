@@ -7,6 +7,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+#include "Utils/RPCContainer.h"
 
 #include "SpatialGDKSettings.generated.h"
 
@@ -262,6 +263,8 @@ private:
 public:
 	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
 
+	float GetSecondsBeforeWarning(const ERPCResult Result) const;
+
 	/** The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and break snapshot compatibility. */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
 	uint32 MaxRPCRingBufferSize;
@@ -290,6 +293,12 @@ public:
 	UPROPERTY(Config)
 	bool bAsyncLoadNewClassesOnEntityCheckout;
 
+	UPROPERTY(EditAnywhere, config, Category = "Queued RPC Warning Timeouts", AdvancedDisplay, meta = (DisplayName = "For a given RPC failure type, the time it will queue before reporting warnings to the logs."))
+	TMap<ERPCResult, float> RPCQueueWarningTimeouts;
+
+	UPROPERTY(EditAnywhere, config, Category = "Queued RPC Warning Timeouts", AdvancedDisplay, meta = (DisplayName = "Default time before a queued RPC will start reporting warnings to the logs."))
+	float RPCQueueWarningDefaultTimeout;
+
 	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
 
 	/** Enable to use the new net cull distance component tagging form of interest */
@@ -315,6 +324,14 @@ public:
 	/** Use TLS encryption for UnrealWorker (server) workers connection. May impact performance. */
 	UPROPERTY(EditAnywhere, Config, Category = "Connection")
 	bool bUseSecureServerConnection;
+
+	/**
+	 * Enable to ensure server workers always express interest such that any server is interested in a super set of
+	 * client interest. This will cause servers to make most of the same queries as their delegated client queries.
+	 * Intended to be used in development before interest due to the LB strategy ensures correct functionality.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Interest")
+	bool bEnableClientQueriesOnServer;
 
 public:
 	// UI Hidden settings passed through from SpatialGDKEditorSettings

@@ -173,6 +173,15 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			LoadBalanceEnforcer->OnLoadBalancingComponentAdded(Op);
 		}
 		return;
+	case SpatialConstants::WORKER_COMPONENT_ID:
+		if(NetDriver->IsServer())
+		{
+			// Register system identity for a worker connection, to know when a player has disconnected.
+			Worker* WorkerData = StaticComponentView->GetComponentData<Worker>(Op.entity_id);
+			WorkerConnectionEntities.Add(Op.entity_id, WorkerData->WorkerId);
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s 's system identity was checked out."), *WorkerData->WorkerId);
+		}
+		return;
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 		// The RPC service needs to be informed when a multi-cast RPC component is added.
 		if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
@@ -243,6 +252,28 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 	}
 
 	OnEntityRemovedDelegate.Broadcast(Op.entity_id);
+
+	if (NetDriver->IsServer())
+	{
+		// Check to see if we are removing a system entity for a worker connection. If so clean up the ClientConnection to delete any and all actors for this connection's controller.
+		if (FString* WorkerName = WorkerConnectionEntities.Find(Op.entity_id))
+		{
+			TWeakObjectPtr<USpatialNetConnection> ClientConnectionPtr = NetDriver->FindClientConnectionFromWorkerId(*WorkerName);
+			if (USpatialNetConnection* ClientConnection = ClientConnectionPtr.Get())
+			{
+				if (APlayerController* Controller = ClientConnection->GetPlayerController(/*InWorld*/ nullptr))
+				{
+					Worker_EntityId PCEntity = PackageMap->GetEntityIdFromObject(Controller);
+					if (AuthorityPlayerControllerConnectionMap.Find(PCEntity))
+					{
+						UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s disconnected after its system identity was removed."), *(*WorkerName));
+						CloseClientConnection(ClientConnection, PCEntity);
+					}
+				}
+			}
+			WorkerConnectionEntities.Remove(Op.entity_id);
+		}
+	}
 }
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
@@ -452,13 +483,16 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
-	if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
+	if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 	{
-		NetDriver->GetActorChannelByEntityId(Op.entity_id)->OnServerAuthorityChange(Op);
-	}
-	else if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
-	{
-		NetDriver->GetActorChannelByEntityId(Op.entity_id)->OnClientAuthorityChange(Op);
+		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
+		{
+			Channel->SetServerAuthority(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
+		}
+		else if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+		{
+			Channel->SetClientAuthority(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
+		}
 	}
 
 	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY
@@ -574,7 +608,9 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			{
 				if (UObject* Object = PendingSubobjectAttachment.Subobject.Get())
 				{
-					Sender->SendAddComponent(PendingSubobjectAttachment.Channel, Object, *PendingSubobjectAttachment.Info);
+					// TODO: UNR-664 - We should track the bytes sent here and factor them into channel saturation.
+					uint32 BytesWritten = 0;
+					Sender->SendAddComponent(PendingSubobjectAttachment.Channel, Object, *PendingSubobjectAttachment.Info, BytesWritten);
 				}
 			}
 
@@ -689,10 +725,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
+	AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+	if (EntityActor != nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker. "
-			"Entity id: %lld"), *NetDriver->Connection->GetWorkerId(), *EntityActor->GetName(), EntityId);
+			"Entity ID: %lld"), *NetDriver->Connection->GetWorkerId(), *EntityActor->GetName(), EntityId);
 
 		// Assume SimulatedProxy until we've been delegated Authority
 		bool bAuthority = StaticComponentView->HasAuthority(EntityId, Position::ComponentId);
@@ -707,163 +744,162 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		// If we're a singleton, apply the data, regardless of authority - JIRA: 736
+		return;
 	}
-	else
+
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity has been checked out on a worker which didn't spawn it. "
+		"Entity ID: %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
+
+	UClass* Class = UnrealMetadataComp->GetNativeEntityClass();
+	if (Class == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity has been checked out on the worker which didn't spawn it. "
-			"Entity id: %lld"), *NetDriver->Connection->GetWorkerId(), EntityId);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("The received actor with entity ID %lld couldn't be loaded. The actor (%s) will not be spawned."),
+			EntityId, *UnrealMetadataComp->ClassPath);
+		return;
+	}
 
-		UClass* Class = UnrealMetadataComp->GetNativeEntityClass();
-		if (Class == nullptr)
+	// Make sure ClassInfo exists
+	const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
+
+	// If the received actor is torn off, don't bother spawning it.
+	// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
+	if (IsReceivedEntityTornOff(EntityId))
+	{
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity ID %lld was already torn off. The actor will not be spawned."), EntityId);
+		return;
+	}
+
+	EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp);
+
+	if (EntityActor == nullptr)
+	{
+		// This could be nullptr if:
+		// a stably named actor could not be found
+		// the Actor is a singleton that has arrived over the wire before it has been created on this worker
+		// the class couldn't be loaded
+		return;
+	}
+
+	// RemoveActor immediately if we've received the tombstone component.
+	if (NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
+	{
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity ID %lld was tombstoned. The actor will not be spawned."), EntityId);
+		// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
+		PackageMap->ResolveEntityActor(EntityActor, EntityId);
+		RemoveActor(EntityId);
+		return;
+	}
+
+	UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
+
+	if (NetDriver->IsServer())
+	{
+		if (APlayerController* PlayerController = Cast<APlayerController>(EntityActor))
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("The received actor with entity id %lld couldn't be loaded. The actor (%s) will not be spawned."),
-				EntityId, *UnrealMetadataComp->ClassPath);
-			return;
+			// If entity is a PlayerController, create channel on the PlayerController's connection.
+			Connection = PlayerController->NetConnection;
 		}
+	}
 
-		// Make sure ClassInfo exists
-		const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
+	if (Connection == nullptr)
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Unable to find SpatialOSNetConnection! Has this worker been disconnected from SpatialOS due to a timeout?"));
+		return;
+	}
 
-		// If the received actor is torn off, don't bother spawning it.
-		// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
-		if (IsReceivedEntityTornOff(EntityId))
-		{
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was already torn off. The actor will not be spawned."), EntityId);
-			return;
-		}
+	// Set up actor channel.
+	USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
 
-		EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp);
+	if (!Channel)
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
+		EntityActor->Destroy(true);
+		return;
+	}
 
-		if (EntityActor == nullptr)
-		{
-			// This could be nullptr if:
-			// a stably named actor could not be found
-			// the Actor is a singleton that has arrived over the wire before it has been created on this worker
-			// the class couldn't be loaded
-			return;
-		}
-
-		// RemoveActor immediately if we've received the tombstone component.
-		if (NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
-		{
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was tombstoned. The actor will not be spawned."), EntityId);
-			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
-			PackageMap->ResolveEntityActor(EntityActor, EntityId);
-			RemoveActor(EntityId);
-			return;
-		}
-
-		UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
-
-		if (NetDriver->IsServer())
-		{
-			if (APlayerController* PlayerController = Cast<APlayerController>(EntityActor))
-			{
-				// If entity is a PlayerController, create channel on the PlayerController's connection.
-				Connection = PlayerController->NetConnection;
-			}
-		}
-
-		if (Connection == nullptr)
-		{
-			UE_LOG(LogSpatialReceiver, Error, TEXT("Unable to find SpatialOSNetConnection! Has this worker been disconnected from SpatialOS due to a timeout?"));
-			return;
-		}
-
-		// Set up actor channel.
-		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
-
-		if (!Channel)
-		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
-			EntityActor->Destroy(true);
-			return;
-		}
-
-		if (!PackageMap->ResolveEntityActor(EntityActor, EntityId))
-		{
-			EntityActor->Destroy(true);
-			Channel->Close(EChannelCloseReason::Destroyed);
-			return;
-		}
+	if (!PackageMap->ResolveEntityActor(EntityActor, EntityId))
+	{
+		EntityActor->Destroy(true);
+		Channel->Close(EChannelCloseReason::Destroyed);
+		return;
+	}
 
 #if ENGINE_MINOR_VERSION <= 22
-		Channel->SetChannelActor(EntityActor);
+	Channel->SetChannelActor(EntityActor);
 #else
-		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
+	Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
 #endif
 
-		TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
+	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
 
-		// Apply initial replicated properties.
-		// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
-		// Potentially we could split out the initial actor state and the initial component state
-		for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+	// Apply initial replicated properties.
+	// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
+	// Potentially we could split out the initial actor state and the initial component state
+	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+	{
+		if (ClassInfoManager->IsGeneratedQBIMarkerComponent(PendingAddComponent.ComponentId))
 		{
-			if (ClassInfoManager->IsGeneratedQBIMarkerComponent(PendingAddComponent.ComponentId))
-			{
-				continue;
-			}
-
-			if (PendingAddComponent.EntityId == EntityId)
-			{
-				ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponent.Data->ComponentData, *Channel, ActorClassInfo, ObjectsToResolvePendingOpsFor);
-			}
+			continue;
 		}
 
-		// Resolve things like RepNotify or RPCs after applying component data.
-		for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)
+		if (PendingAddComponent.EntityId == EntityId)
 		{
-			ResolvePendingOperations(ObjectToResolve.Key, ObjectToResolve.Value);
+			ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponent.Data->ComponentData, *Channel, ActorClassInfo, ObjectsToResolvePendingOpsFor);
+		}
+	}
+
+	// Resolve things like RepNotify or RPCs after applying component data.
+	for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)
+	{
+		ResolvePendingOperations(ObjectToResolve.Key, ObjectToResolve.Value);
+	}
+
+	if (!NetDriver->IsServer())
+	{
+		// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
+		// Don't send dynamic interest for this actor if it is otherwise handled by result types.
+		if (!SpatialGDKSettings->bEnableResultTypes)
+		{
+			Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsAuthoritativeClient());
 		}
 
-		if (!NetDriver->IsServer())
+		// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
+		// a player index. For now we don't support split screen, so the number is always 0.
+		if (EntityActor->IsA(APlayerController::StaticClass()))
 		{
-			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-			// Don't send dynamic interest for this actor if it is otherwise handled by result types.
-			if (!SpatialGDKSettings->bEnableResultTypes)
-			{
-				Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsAuthoritativeClient());
-			}
-
-			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
-			// a player index. For now we don't support split screen, so the number is always 0.
-			if (EntityActor->IsA(APlayerController::StaticClass()))
-			{
-				uint8 PlayerIndex = 0;
-				// FInBunch takes size in bits not bytes
-				FInBunch Bunch(NetDriver->ServerConnection, &PlayerIndex, sizeof(PlayerIndex) * 8);
-				EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
-			}
-			else
-			{
-				FInBunch Bunch(NetDriver->ServerConnection);
-				EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
-			}
-
+			uint8 PlayerIndex = 0;
+			// FInBunch takes size in bits not bytes
+			FInBunch Bunch(NetDriver->ServerConnection, &PlayerIndex, sizeof(PlayerIndex) * 8);
+			EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
+		}
+		else
+		{
+			FInBunch Bunch(NetDriver->ServerConnection);
+			EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 		}
 
-		// Taken from PostNetInit
-		if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
-		{
-			// Whenever we receive an actor over the wire, the expectation is that it is not in an authoritative
-			// state.  This is because it should already have had authoritative BeginPlay() called.  If we have
-			// authority here, we are calling BeginPlay() with authority on this actor a 2nd time, which is always incorrect.
-			check(!EntityActor->HasAuthority());
-			EntityActor->DispatchBeginPlay();
-		}
+	}
 
-		if (EntityActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-		{
-			GlobalStateManager->RegisterSingletonChannel(EntityActor, Channel);
-		}
+	// Taken from PostNetInit
+	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
+	{
+		// Whenever we receive an actor over the wire, the expectation is that it is not in an authoritative
+		// state.  This is because it should already have had authoritative BeginPlay() called.  If we have
+		// authority here, we are calling BeginPlay() with authority on this actor a 2nd time, which is always incorrect.
+		check(!EntityActor->HasAuthority());
+		EntityActor->DispatchBeginPlay();
+	}
 
-		EntityActor->UpdateOverlaps();
+	if (EntityActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		GlobalStateManager->RegisterSingletonChannel(EntityActor, Channel);
+	}
 
-		if (StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
-		{
-			NetDriver->AddPendingDormantChannel(Channel);
-		}
+	EntityActor->UpdateOverlaps();
+
+	if (StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
+	{
+		NetDriver->AddPendingDormantChannel(Channel);
 	}
 }
 
@@ -914,19 +950,22 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		for (UObject* SubObject : ActorChannel->CreateSubObjects)
+		if (NetDriver->World)
 		{
-			if (SubObject)
+			for (UObject* SubObject : ActorChannel->CreateSubObjects)
 			{
-				FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(SubObject, Cast<USpatialPackageMapClient>(PackageMap));
-				// Unmap this object so we can remap it if it becomes relevant again in the future
-				MoveMappedObjectToUnmapped(ObjectRef);
+				if (SubObject)
+				{
+					FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(SubObject, Cast<USpatialPackageMapClient>(PackageMap));
+					// Unmap this object so we can remap it if it becomes relevant again in the future
+					MoveMappedObjectToUnmapped(ObjectRef);
+				}
 			}
-		}
 
-		FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Actor, Cast<USpatialPackageMapClient>(PackageMap));
-		// Unmap this object so we can remap it if it becomes relevant again in the future
-		MoveMappedObjectToUnmapped(ObjectRef);
+			FUnrealObjectRef ObjectRef = FUnrealObjectRef::FromObjectPtr(Actor, Cast<USpatialPackageMapClient>(PackageMap));
+			// Unmap this object so we can remap it if it becomes relevant again in the future
+			MoveMappedObjectToUnmapped(ObjectRef);
+		}
 
 		for (auto& ChannelRefs : ActorChannel->ObjectReferenceMap)
 		{
@@ -2364,9 +2403,14 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 		GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
 	{
 		// Client has disconnected, let's clean up their connection.
-		NetConnection->CleanUp();
-		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
+		CloseClientConnection(NetConnection, Op.entity_id);
 	}
+}
+
+void USpatialReceiver::CloseClientConnection(USpatialNetConnection* ClientConnection, Worker_EntityId PlayerControllerEntityId)
+{
+	ClientConnection->CleanUp();
+	AuthorityPlayerControllerConnectionMap.Remove(PlayerControllerEntityId);
 }
 
 void USpatialReceiver::PeriodicallyProcessIncomingRPCs()

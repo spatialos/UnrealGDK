@@ -33,6 +33,7 @@
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKSimulatedPlayerDeployment.h"
+#include "Utils/LaunchConfigEditor.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -215,6 +216,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog),
 		FCanExecuteAction());
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor),
+		FCanExecuteAction());
 	
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartSpatialService,
@@ -291,6 +297,14 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
 #if PLATFORM_WINDOWS
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
+	Builder.AddComboButton(
+		FUIAction(),
+		FOnGetContent::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuContent),
+		LOCTEXT("GDKDeploymentCombo_Label", "Deployment Tools"),
+		TAttribute<FText>(),
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "GDK.Cloud"),
+		true
+	);
 #endif
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
@@ -298,11 +312,23 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 
 TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuContent()
 {
-	FMenuBuilder MenuBuilder(true, PluginCommands);
+	FMenuBuilder MenuBuilder(true /*bInShouldCloseWindowAfterMenuSelection*/, PluginCommands);
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKSchemaOptionsHeader", "Schema Generation"));
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaFull);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase);
+	}
+	MenuBuilder.EndSection();
+
+	return MenuBuilder.MakeWidget();
+}
+
+TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuContent()
+{
+	FMenuBuilder MenuBuilder(true /*bInShouldCloseWindowAfterMenuSelection*/, PluginCommands);
+	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKDeploymentOptionsHeader", "Deployment Tools"));
+	{
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
 	}
 	MenuBuilder.EndSection();
 
@@ -828,6 +854,11 @@ void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
 	);
 
 	FSlateApplication::Get().AddWindow(SimulatedPlayerDeploymentWindowPtr.ToSharedRef());
+}
+
+void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
+{
+	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"));
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
