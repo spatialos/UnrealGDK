@@ -1,10 +1,10 @@
  // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialClassInfoManagerMock.h"
+#include "Tests/Mocks/SpatialClassInfoManagerMock.h"
 
-void USpatialClassInfoManagerMock::SetComponentIdsForComponentType(const ESchemaComponentType ComponentType, TArray<Worker_ComponentId> ComponentIds)
+void USpatialClassInfoManagerMock::Init(TMap<ESchemaComponentType, TArray<Worker_ComponentId>> InComponentTypeToIds)
 {
-    ComponentTypeToIds.Add(ComponentType, ComponentIds);
+	ComponentTypeToIds = InComponentTypeToIds;
 }
 
 const TArray<Worker_ComponentId>& USpatialClassInfoManagerMock::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const

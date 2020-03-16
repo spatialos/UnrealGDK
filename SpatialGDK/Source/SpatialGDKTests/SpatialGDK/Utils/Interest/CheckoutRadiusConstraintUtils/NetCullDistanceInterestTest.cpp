@@ -2,11 +2,6 @@
 
 #include "Tests/TestDefinitions.h"
 
-#include "HAL/IPlatformFileProfilerWrapper.h"
-#include "HAL/PlatformFilemanager.h"
-#include "Misc/ScopeTryLock.h"
-#include "Misc/Paths.h"
-
 #include "Utils/Interest/NetCullDistanceInterest.h"
 
 #define CHECKOUT_RADIUS_CONSTRAINT_TEST(TestName) \
