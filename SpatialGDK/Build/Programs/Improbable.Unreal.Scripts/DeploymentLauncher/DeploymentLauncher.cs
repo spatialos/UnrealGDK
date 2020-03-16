@@ -168,7 +168,7 @@ namespace Improbable
                     StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
                 }
 
-                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, runtimeVersion, mainDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simNumPlayers);
+                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, mainDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simNumPlayers);
 
                 // Wait for both deployments to be created.
                 Console.WriteLine("Waiting for deployments to be ready...");
@@ -219,27 +219,29 @@ namespace Improbable
 
         private static int CreateSimDeployments(string[] args)
         {
-            var projectName = args[1];
-            var assemblyName = args[2];
-            var runtimeVersion = args[3];
-            var targetDeploymentName = args[4];
-            var simDeploymentName = args[5];
-            var simDeploymentJson = args[6];
-            var simDeploymentRegion = args[7];
+            var argIndex = 1;
+            var projectName = args[argIndex++];
+            var assemblyName = args[argIndex++];
+            var targetDeploymentName = args[argIndex++];
+            var simDeploymentName = args[argIndex++];
+            var simDeploymentJson = args[argIndex++];
+            var simDeploymentRegion = args[argIndex++];
 
             var simNumPlayers = 0;
-            if (!Int32.TryParse(args[8], out simNumPlayers))
+            if (!Int32.TryParse(args[argIndex++], out simNumPlayers))
             {
                 Console.WriteLine("Cannot parse the number of simulated players to connect.");
                 return 1;
             }
 
             var autoConnect = false;
-            if (!Boolean.TryParse(args[9], out autoConnect))
+            if (!Boolean.TryParse(args[argIndex++], out autoConnect))
             {
                 Console.WriteLine("Cannot parse the auto-connect flag.");
                 return 1;
             }
+            // This is just a safety net for the precondition enforced in Main
+            System.Diagnostics.Debug.Assert(argIndex == args.Length, "Wrong number of arguments for sim deployments.");
 
             try
             {
@@ -250,7 +252,7 @@ namespace Improbable
                     StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
                 }
 
-                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, runtimeVersion, targetDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simNumPlayers);
+                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, targetDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simNumPlayers);
 
                 // Wait for both deployments to be created.
                 Console.WriteLine("Waiting for the simulated player deployment to be ready...");
@@ -371,7 +373,7 @@ namespace Improbable
         }
 
         private static Operation<Deployment, CreateDeploymentMetadata> CreateSimPlayerDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
-            string projectName, string assemblyName, string runtimeVersion, string mainDeploymentName, string simDeploymentName, string simDeploymentJsonPath, string regionCode, int simNumPlayers)
+            string projectName, string assemblyName, string mainDeploymentName, string simDeploymentName, string simDeploymentJsonPath, string regionCode, int simNumPlayers)
         {
             var playerAuthServiceClient = PlayerAuthServiceClient.Create(GetApiEndpoint(regionCode), GetPlatformRefreshTokenCredential(regionCode));
 
@@ -478,7 +480,7 @@ namespace Improbable
                 Name = simDeploymentName,
                 ProjectName = projectName,
                 RegionCode = regionCode,
-                RuntimeVersion = runtimeVersion
+                // Sim players do not have runtime dependencies for their own deployment.
                 // No snapshot included for the simulated player deployment
             };
 
@@ -609,7 +611,7 @@ namespace Improbable
             Console.WriteLine("Usage:");
             Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <runtime-version> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> <main-deployment-region> [<sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players>]");
             Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment. The deployments can be started in different regions ('EU', 'US', 'AP' and 'CN').");
-            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <runtime-version> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>");
+            Console.WriteLine("DeploymentLauncher createsim <project-name> <assembly-name> <target-deployment-name> <sim-deployment-name> <sim-deployment-json> <sim-deployment-region> <num-sim-players> <auto-connect>");
             Console.WriteLine($"  Starts a simulated player deployment. Can be started in a different region from the target deployment ('EU', 'US', 'AP' and 'CN').");
             Console.WriteLine("DeploymentLauncher stop <project-name> <main-deployment-region> [deployment-id]");
             Console.WriteLine("  Stops the specified deployment within the project.");
@@ -622,7 +624,7 @@ namespace Improbable
         {
             if (args.Length == 0 ||
                 (args[0] == "create" && (args.Length != 12 && args.Length != 8)) ||
-                (args[0] == "createsim" && args.Length != 10) ||
+                (args[0] == "createsim" && args.Length != 9) ||
                 (args[0] == "stop" && (args.Length != 3 && args.Length != 4)) ||
                 (args[0] == "list" && args.Length != 3))
             {
