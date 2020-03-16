@@ -809,6 +809,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	// Set up actor channel.
 	USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
+	Channel->RefreshAuthority();
 
 	if (!Channel)
 	{
@@ -877,7 +878,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			FInBunch Bunch(NetDriver->ServerConnection);
 			EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 		}
-
 	}
 
 	// Taken from PostNetInit
@@ -950,7 +950,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		if (NetDriver->World)
+		if (NetDriver->GetWorld() != nullptr && !NetDriver->GetWorld()->IsPendingKillOrUnreachable())
 		{
 			for (UObject* SubObject : ActorChannel->CreateSubObjects)
 			{

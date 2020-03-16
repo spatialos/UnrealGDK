@@ -64,8 +64,8 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
-	check(InNetDriver->ActorGroupManager.IsValid());
-	ActorGroupManager = InNetDriver->ActorGroupManager.Get();
+	check(InNetDriver->ActorGroupManager != nullptr);
+	ActorGroupManager = InNetDriver->ActorGroupManager;
 	TimerManager = InTimerManager;
 	RPCService = InRPCService;
 
@@ -74,7 +74,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, ActorGroupManager, RPCService);
 	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs, OutBytesWritten);
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
@@ -944,7 +944,7 @@ void USpatialSender::ProcessPositionUpdates()
 
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s with EntityId %lld"), *Channel->Actor->GetName(), Channel->GetEntityId());
+	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"), *Channel->Actor->GetName(), Channel->GetEntityId(), Channel->Actor->HasAuthority());
 
 	Worker_RequestId RequestId = CreateEntity(Channel, OutBytesWritten);
 
@@ -1210,7 +1210,7 @@ void USpatialSender::CreateTombstoneEntity(AActor* Actor)
 
 	const Worker_EntityId EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
 
-	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, ActorGroupManager, RPCService);
 	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
 
 	Components.Add(CreateLevelComponentData(Actor));

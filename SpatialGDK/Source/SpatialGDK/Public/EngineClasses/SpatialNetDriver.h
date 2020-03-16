@@ -26,6 +26,7 @@
 
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
+class SpatialActorGroupManager;
 class UAbstractLBStrategy;
 class UEntityPool;
 class UGlobalStateManager;
@@ -155,7 +156,7 @@ public:
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
 
-	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
+	SpatialActorGroupManager* ActorGroupManager;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
@@ -235,6 +236,8 @@ private:
 
 	UFUNCTION()
 	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
+
+	void OnActorSpawned(AActor* Actor);
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 
