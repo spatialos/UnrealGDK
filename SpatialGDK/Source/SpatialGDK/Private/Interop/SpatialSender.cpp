@@ -214,16 +214,14 @@ void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, c
 	}
 
 	// Update ComponentPresence.
-	{
-		check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
+	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 
-		ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
-		const bool bRemovedComponents = ComponentPresenceData->RemoveComponentIds(ComponentsToRemove);
-		if (bRemovedComponents)
-		{
-			FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-			Connection->SendComponentUpdate(EntityId, &Update);
-		}
+	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
+	const bool bRemovedComponents = ComponentPresenceData->RemoveComponentIds(ComponentsToRemove);
+	if (bRemovedComponents)
+	{
+		FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
+		Connection->SendComponentUpdate(EntityId, &Update);
 	}
 
 	PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
