@@ -12,15 +12,27 @@
 #include "PropertyEditor/Public/PropertyEditorModule.h"
 #include "WorkerTypeCustomization.h"
 
+#include "EditorExtension/GridLBStrategyEditorExtension.h"
+
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
+
+FSpatialGDKEditorModule::FSpatialGDKEditorModule()
+	: ExtensionManager(MakeUnique<FLBStrategyEditorExtensionManager>())
+{
+
+}
 
 void FSpatialGDKEditorModule::StartupModule()
 {
 	RegisterSettings();
+
+	ExtensionManager->RegisterExtension<FGridLBStrategyEditorExtension>();
 }
 
 void FSpatialGDKEditorModule::ShutdownModule()
 {
+	ExtensionManager->Cleanup();
+
 	if (UObjectInitialized())
 	{
 		UnregisterSettings();
