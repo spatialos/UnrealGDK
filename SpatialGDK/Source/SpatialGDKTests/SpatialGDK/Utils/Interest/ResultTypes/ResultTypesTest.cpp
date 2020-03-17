@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Tests/TestDefinitions.h"
-#include "Tests/Mocks/SpatialClassInfoManagerMock.h"
+#include "Mocks/SpatialClassInfoManagerMock.h"
 
 #include "Utils/Interest/ResultTypes.h"
 

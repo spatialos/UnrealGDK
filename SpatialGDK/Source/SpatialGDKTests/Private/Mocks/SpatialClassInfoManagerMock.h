@@ -7,7 +7,7 @@
 #include "SpatialClassInfoManagerMock.generated.h"
 
 UCLASS()
-class SPATIALGDK_API USpatialClassInfoManagerMock : public USpatialClassInfoManager
+class USpatialClassInfoManagerMock : public USpatialClassInfoManager
 {
 	GENERATED_BODY()
 

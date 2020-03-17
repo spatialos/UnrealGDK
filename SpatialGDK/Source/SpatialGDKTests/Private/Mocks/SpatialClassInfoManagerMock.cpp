@@ -1,6 +1,6 @@
  // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Tests/Mocks/SpatialClassInfoManagerMock.h"
+#include "SpatialClassInfoManagerMock.h"
 
 void USpatialClassInfoManagerMock::SetComponentIdsForComponentType(ESchemaComponentType ComponentType, TArray<Worker_ComponentId> ComponentIds)
 {
