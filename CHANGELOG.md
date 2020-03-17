@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2020-xx-xx
 
+## [`0.8.1`] - 2020-03-17
+### Adapted from 0.8.1-preview
+### Features:
+- **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
+- You can now choose which SpatialOS service region you want to use by adjusting the **Region where services are located** setting. You must use the service region that you're geographically located in.
+- Deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
+- Updated the version of the local API service used by the UnrealGDK.
+- The Spatial output log will now be open by default.
+- The GDK now uses SpatialOS 14.5.0.
+
+### Bug fixes:
+- Replicated references to newly created dynamic subobjects will now be resolved correctly.
+- Fixed a bug that caused the local API service to memory leak.
+- Errors are now correctly reported when you try to launch a cloud deployment without an assembly.
+- The Start deployment button will no longer become greyed out when a `spatial auth login` process times out.
+
 ## [`0.8.1-preview`] - 2020-03-16
 ### Features:
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
