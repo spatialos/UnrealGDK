@@ -19,14 +19,17 @@
 namespace
 {
 
-PhysicalWorkerName ValidWorkerOne = TEXT("ValidWorkerOne");
-PhysicalWorkerName ValidWorkerTwo = TEXT("ValidWorkerTwo");
+const PhysicalWorkerName ValidWorkerOne = TEXT("ValidWorkerOne");
+const PhysicalWorkerName ValidWorkerTwo = TEXT("ValidWorkerTwo");
 
-VirtualWorkerId VirtualWorkerOne = 1;
-VirtualWorkerId VirtualWorkerTwo = 2;
+constexpr VirtualWorkerId VirtualWorkerOne = 1;
+constexpr VirtualWorkerId VirtualWorkerTwo = 2;
 
-Worker_EntityId EntityIdOne = 1;
-Worker_EntityId EntityIdTwo = 2;
+constexpr Worker_EntityId EntityIdOne = 1;
+constexpr Worker_EntityId EntityIdTwo = 2;
+
+constexpr Worker_ComponentId TestComponentIdOne = 123;
+constexpr Worker_ComponentId TestComponentIdTwo = 456;
 
 void AddEntityToStaticComponentView(USpatialStaticComponentView& StaticComponentView,
 	const Worker_EntityId EntityId, VirtualWorkerId Id, Worker_Authority AuthorityIntentAuthority)
@@ -405,9 +408,6 @@ LOADBALANCEENFORCER_TEST(GIVEN_component_presence_change_op_WHEN_we_inform_load_
 
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(ValidWorkerOne, StaticComponentView, VirtualWorkerTranslator.Get());
 
-	// Choose some explicit component IDs to add to our ComponentPresence component.
-	Worker_ComponentId TestComponentIdOne = 123;
-	Worker_ComponentId TestComponentIdTwo = 456;
 	TArray<Worker_ComponentId> PresentComponentIds{ TestComponentIdOne, TestComponentIdTwo };
 
 	// Create a ComponentPresence component update op with the required components.
