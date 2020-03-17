@@ -4,6 +4,7 @@
 
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -170,4 +171,15 @@ void USpatialStatics::PrintStringSpatial(UObject* WorldContextObject, const FStr
 void USpatialStatics::PrintTextSpatial(UObject* WorldContextObject, const FText InText /*= INVTEXT("Hello")*/, bool bPrintToScreen /*= true*/, FLinearColor TextColor /*= FLinearColor(0.0, 0.66, 1.0)*/, float Duration /*= 2.f*/)
 {
 	PrintStringSpatial(WorldContextObject, InText.ToString(), bPrintToScreen, TextColor, Duration);
+}
+
+FString USpatialStatics::GetActorEntityIDString(const AActor* Actor)
+{
+	if (Actor != nullptr && const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Actor->GetNetDriver()))
+	{
+		const Worker_EntityId EntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
+		return FString::Printf(TEXT("%lld"), EntityId);
+	}
+
+	return FString();
 }

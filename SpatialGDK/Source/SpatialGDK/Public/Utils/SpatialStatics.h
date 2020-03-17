@@ -108,6 +108,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	static FColor GetInspectorColorForWorkerName(const FString& WorkerName);
 
+	/**
+	 * Returns the entity ID of a given actor, or 0 if we are not using spatial networking.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	static FString GetActorEntityIDString(const AActor* Actor);
+
 private:
 
 	static SpatialActorGroupManager* GetActorGroupManager(const UObject* WorldContext);
