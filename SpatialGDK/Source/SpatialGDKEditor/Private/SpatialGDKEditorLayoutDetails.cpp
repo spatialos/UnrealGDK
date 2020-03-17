@@ -168,7 +168,7 @@ FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 bool FSpatialGDKEditorLayoutDetails::TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile)
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-    const UGeneralProjectSettings* GeneralProjectSettings = GetDefault<UGeneralProjectSettings>();
+	const UGeneralProjectSettings* GeneralProjectSettings = GetDefault<UGeneralProjectSettings>();
 	const FString ProjectName = FApp::GetProjectName();
 
 	// The project path is based on this: https://github.com/improbableio/UnrealEngine/blob/4.22-SpatialOSUnrealGDK-release/Engine/Source/Programs/AutomationTool/AutomationUtils/DeploymentContext.cs#L408
