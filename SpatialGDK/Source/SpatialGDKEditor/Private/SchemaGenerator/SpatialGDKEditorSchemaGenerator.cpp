@@ -2,7 +2,6 @@
 
 #include "SpatialGDKEditorSchemaGenerator.h"
 
-#include "Abilities/GameplayAbility.h"
 #include "AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "Components/SceneComponent.h"

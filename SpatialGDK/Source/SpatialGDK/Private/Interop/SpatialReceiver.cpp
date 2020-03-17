@@ -336,13 +336,14 @@ void USpatialReceiver::DropQueuedRemoveComponentOpsForEntity(Worker_EntityId Ent
 	}
 }
 
-USpatialActorChannel* USpatialReceiver::RecreateDormantSpatialChannel(AActor* Actor, Worker_EntityId EntityID)
+USpatialActorChannel* USpatialReceiver::GetOrRecreateChannelForDomantActor(AActor* Actor, Worker_EntityId EntityID)
 {
 	// Receive would normally create channel in ReceiveActor - this function is used to recreate the channel after waking up a dormant actor
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
 	check(!Channel->bCreatingNewEntity);
 	check(Channel->GetEntityId() == EntityID);
 
+	NetDriver->RemovePendingDormantChannel(Channel);
 	NetDriver->UnregisterDormantEntityId(EntityID);
 
 	return Channel;
@@ -366,7 +367,7 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 		FUnrealObjectRef ObjectRef(Op.entity_id, Op.component_id);
 		if (Op.component_id == SpatialConstants::DORMANT_COMPONENT_ID)
 		{
-			RecreateDormantSpatialChannel(Actor, Op.entity_id);
+			GetOrRecreateChannelForDomantActor(Actor, Op.entity_id);
 		}
 		else if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
@@ -808,10 +809,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 
 	// Set up actor channel.
-	USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
-	Channel->RefreshAuthority();
-
-	if (!Channel)
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	if (Channel == nullptr)
+	{
+		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
+	}
+  
+	if (Channel == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
 		EntityActor->Destroy(true);
@@ -825,11 +829,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
+	if (Channel->Actor == nullptr)
+	{
 #if ENGINE_MINOR_VERSION <= 22
-	Channel->SetChannelActor(EntityActor);
+		Channel->SetChannelActor(EntityActor);
 #else
-	Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
+		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
 #endif
+	}
+  
+	Channel->RefreshAuthority();
 
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
 
@@ -1504,7 +1513,12 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		{
 			if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id)))
 			{
-				Channel = RecreateDormantSpatialChannel(Actor, Op.entity_id);
+				Channel = GetOrRecreateChannelForDomantActor(Actor, Op.entity_id);
+
+				// As we haven't removed the dormant component just yet, this might be a single replication update where the actor
+				// remains dormant. Add it back to pending dormancy so the local worker can clean up the channel. If we do process
+				// a dormant component removal later in this frame, we'll clear the channel from pending dormancy channel then.
+				NetDriver->AddPendingDormantChannel(Channel);
 			}
 			else
 			{

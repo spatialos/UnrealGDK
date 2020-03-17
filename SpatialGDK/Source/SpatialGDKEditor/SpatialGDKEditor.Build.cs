@@ -30,7 +30,6 @@ public class SpatialGDKEditor : ModuleRules
 				"SpatialGDK",
 				"SpatialGDKServices",
 				"UnrealEd",
-				"GameplayAbilities",
 				"DesktopPlatform"
 			});
 

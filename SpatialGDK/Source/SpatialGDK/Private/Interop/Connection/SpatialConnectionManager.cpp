@@ -105,7 +105,7 @@ struct ConfigureConnection
 
 void USpatialConnectionManager::FinishDestroy()
 {
-	UE_LOG(LogSpatialConnectionManager, Log, TEXT("Destorying SpatialConnectionManager."));
+	UE_LOG(LogSpatialConnectionManager, Log, TEXT("Destroying SpatialConnectionManager."));
 
 	DestroyConnection();
 
