@@ -8,6 +8,8 @@
 class SPATIALGDKSERVICES_API FSpatialGDKServicesModule : public IModuleInterface
 {
 public:
+	static FString ProjectName;
+
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
@@ -20,7 +22,19 @@ public:
 
 	static FString GetSpatialOSDirectory(const FString& AppendPath = TEXT(""));
 	static FString GetSpatialGDKPluginDirectory(const FString& AppendPath = TEXT(""));
+	static const FString& GetSpotExe();
+	static const FString& GetSpatialExe();
+	static bool SpatialPreRunChecks(bool bIsInChina);
+
+	FORCEINLINE static FString GetProjectName()
+	{
+		return ProjectName;
+	}
+
+	static bool ParseJson(const FString& RawJsonString, TSharedPtr<FJsonObject>& JsonParsed);
+	static void ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode);
 
 private:
 	FLocalDeploymentManager LocalDeploymentManager;
+	static FString ParseProjectName();
 };

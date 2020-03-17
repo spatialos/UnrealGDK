@@ -13,6 +13,8 @@
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/SCompoundWidget.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSimulatedPlayerDeployment, Log, All);
+
 class SWindow;
 
 enum class ECheckBoxState : uint8;
@@ -40,11 +42,10 @@ private:
 	/** Pointer to the SpatialGDK editor */
 	TWeakPtr<FSpatialGDKEditor> SpatialGDKEditorPtr;
 
+	TFuture<bool> AttemptSpatialAuthResult;
+
 	/** Delegate to commit assembly name */
 	void OnDeploymentAssemblyCommited(const FText& InText, ETextCommit::Type InCommitType);
-
-	/** Delegate to commit project name */
-	void OnProjectNameCommited(const FText& InText, ETextCommit::Type InCommitType);
 
 	/** Delegate to commit primary deployment name */
 	void OnPrimaryDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType);

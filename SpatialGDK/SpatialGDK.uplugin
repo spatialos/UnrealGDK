@@ -1,13 +1,13 @@
 {
   "FileVersion": 3,
-  "Version": 3,
-  "VersionName": "0.6.4",
+  "Version": 5,
+  "VersionName": "0.8.1",
   "FriendlyName": "SpatialOS GDK for Unreal",
   "Description": "The SpatialOS Game Development Kit (GDK) for Unreal Engine allows you to host your game and combine multiple dedicated server instances across one seamless game world whilst using the Unreal Engine networking API.",
   "Category": "SpatialOS",
   "CreatedBy": "Improbable Worlds, Ltd.",
   "CreatedByURL": "https://improbable.io",
-  "DocsURL": "https://docs.improbable.io/unreal/",
+  "DocsURL": "https://documentation.improbable.io/gdk-for-unreal/",
   "MarketplaceURL": "",
   "SupportURL": "https://forums.improbable.io/",
   "EnabledByDefault": true,
@@ -25,7 +25,7 @@
       "Name": "SpatialGDKEditor",
       "Type": "Editor",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64" ]
+      "WhitelistPlatforms": [ "Win64", "Mac" ]
     },
     {
       "Name": "SpatialGDKEditorToolbar",
@@ -37,12 +37,18 @@
       "Name": "SpatialGDKEditorCommandlet",
       "Type": "Editor",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64" ]
+      "WhitelistPlatforms": [ "Win64", "Mac" ]
     },
     {
       "Name": "SpatialGDKServices",
       "Type": "Editor",
       "LoadingPhase": "PreDefault",
+      "WhitelistPlatforms": [ "Win64" ]
+    },
+    {
+      "Name": "SpatialGDKTests",
+      "Type": "Editor",
+      "LoadingPhase": "Default",
       "WhitelistPlatforms": [ "Win64" ]
     }
   ],

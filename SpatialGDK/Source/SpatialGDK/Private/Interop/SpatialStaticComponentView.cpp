@@ -2,6 +2,7 @@
 
 #include "Interop/SpatialStaticComponentView.h"
 
+#include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/Component.h"
 #include "Schema/Heartbeat.h"
@@ -81,6 +82,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ServerRPCEndpoint>>(Op.data);
 		break;
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::AuthorityIntent>>(Op.data);
+		break;
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.
 		Data = nullptr;
@@ -93,11 +97,6 @@ void USpatialStaticComponentView::OnRemoveComponent(const Worker_RemoveComponent
 	if (auto* ComponentMap = EntityComponentMap.Find(Op.entity_id))
 	{
 		ComponentMap->Remove(Op.component_id);
-	}
-
-	if (auto* AuthorityMap = EntityComponentAuthorityMap.Find(Op.entity_id))
-	{
-		AuthorityMap->Remove(Op.component_id);
 	}
 }
 
@@ -125,11 +124,15 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::ServerRPCEndpoint>(Op.entity_id);
 		break;
+	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::AuthorityIntent>(Op.entity_id);
+		break;
 	default:
 		return;
 	}
 
-	if (Component) {
+	if (Component)
+	{
 		Component->ApplyComponentUpdate(Op.update);
 	}
 }

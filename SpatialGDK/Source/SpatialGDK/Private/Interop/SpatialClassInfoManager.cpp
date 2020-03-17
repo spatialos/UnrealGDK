@@ -27,13 +27,28 @@ bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, UActorGro
 	NetDriver = InNetDriver;
 	ActorGroupManager = InActorGroupManager;
 
-	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase"));
+	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
 	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
 
 	if (SchemaDatabase == nullptr)
 	{
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("SchemaDatabase not found! Please generate schema or turn off SpatialOS networking."));
 		QuitGame();
+		return false;
+	}
+
+	return true;
+}
+
+bool USpatialClassInfoManager::ValidateOrExit_IsSupportedClass(const FString& PathName)
+{
+	if (!IsSupportedClass(PathName))
+	{
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is marked as SpatialType, and schema has been generated."), *PathName);
+#if !UE_BUILD_SHIPPING
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *PathName);
+		QuitGame();
+#endif //!UE_BUILD_SHIPPING
 		return false;
 	}
 
@@ -98,11 +113,8 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	Info->Class = Class;
 
 	// Note: we have to add Class to ClassInfoMap before quitting, as it is expected to be in there by GetOrCreateClassInfoByClass. Therefore the quitting logic cannot be moved higher up.
-	if (!IsSupportedClass(ClassPath))
+	if (!ValidateOrExit_IsSupportedClass(ClassPath))
 	{
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is explicitly referenced from the starting scene and schema has been generated."), *ClassPath);
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *ClassPath);
-		QuitGame();
 		return;
 	}
 
@@ -455,16 +467,40 @@ bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentI
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
 }
 
+const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject * Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient)
+{
+	const FClassInfo* Info = nullptr;
+
+	const FClassInfo& SubobjectInfo = GetOrCreateClassInfoByClass(Object->GetClass());
+
+	// Find the first ClassInfo relating to a dynamic subobject
+	// which has not been used on this entity.
+	for (const auto& DynamicSubobjectInfo : SubobjectInfo.DynamicSubobjectInfo)
+	{
+		if (!PackageMapClient->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data])).IsValid())
+		{
+			Info = &DynamicSubobjectInfo.Get();
+			break;
+		}
+	}
+
+	// If all ClassInfos are used up, we error.
+	if (Info == nullptr)
+	{
+		const AActor* Actor = Cast<AActor>(PackageMapClient->GetObjectFromEntityId(EntityId));
+		UE_LOG(LogSpatialPackageMap, Error, TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
+			" the max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), *GetNameSafe(Actor));
+	}
+
+	return Info;
+}
+
 void USpatialClassInfoManager::QuitGame()
 {
 #if WITH_EDITOR
 	// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
 	// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
-#if ENGINE_MINOR_VERSION <= 20
-	UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit);
-#else
 	UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit, false);
-#endif
 
 #else
 	FGenericPlatformMisc::RequestExit(false);

@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -19,9 +20,15 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
-void USpatialPackageMapClient::Init(USpatialNetDriver* InNetDriver)
+void USpatialPackageMapClient::Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager)
 {
-	NetDriver = InNetDriver;
+	bIsServer = NetDriver->IsServer();
+	// Entity Pools should never exist on clients
+	if (bIsServer)
+	{
+		EntityPool = NewObject<UEntityPool>();
+		EntityPool->Init(NetDriver, TimerManager);
+	}
 }
 
 void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
@@ -59,12 +66,12 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor* Actor)
 {
 	check(Actor);
-	checkf(NetDriver->IsServer(), TEXT("Tried to allocate an Entity ID on the client, this shouldn't happen."));
+	checkf(bIsServer, TEXT("Tried to allocate an Entity ID on the client, this shouldn't happen."));
 
-	Worker_EntityId EntityId = NetDriver->EntityPool->GetNextEntityId();
+	Worker_EntityId EntityId = EntityPool->GetNextEntityId();
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
+		UE_LOG(LogSpatialPackageMap, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
 		return EntityId;
 	}
 
@@ -78,17 +85,17 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 {
 	FNetworkGUID NetGUID;
 
-	if (!NetDriver->IsServer())
+	if (!bIsServer)
 	{
 		return NetGUID;
 	}
 
-	if (!Value->IsA<AActor>() && !Value->GetOuter()->IsA<AActor>())
+	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Value->GetTypedOuter<AActor>();
+	if (Actor == nullptr)
 	{
 		return NetGUID;
 	}
 
-	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Cast<AActor>(Value->GetOuter());
 	if (!Actor->GetIsReplicated())
 	{
 		return NetGUID;
@@ -101,7 +108,7 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 	}
 
 	// Resolve as an entity if it is an unregistered actor
-	if (Actor->Role == ROLE_Authority && NetDriver->PackageMap->GetEntityIdFromObject(Actor) == SpatialConstants::INVALID_ENTITY_ID)
+	if (Actor->Role == ROLE_Authority && GetEntityIdFromObject(Actor) == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		Worker_EntityId EntityId = AllocateEntityIdAndResolveActor(Actor);
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
@@ -240,10 +247,44 @@ Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* O
 	return GetUnrealObjectRefFromNetGUID(NetGUID).Entity;
 }
 
+AActor* USpatialPackageMapClient::GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef)
+{
+	if (UClass* SingletonClass = Cast<UClass>(GetObjectFromUnrealObjectRef(SingletonClassRef)))
+	{
+		TArray<AActor*> FoundActors;
+		// USpatialPackageMapClient is an inner object of UNetConnection,
+		// which in turn contains a NetDriver and gets the UWorld it references
+		UGameplayStatics::GetAllActorsOfClass(this, SingletonClass, FoundActors);
+
+		// There should be only one singleton actor per class
+		if (FoundActors.Num() == 1)
+		{
+			return FoundActors[0];
+		}
+
+		FString FullPath;
+		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
+		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("GetSingletonByClassRef: Found %d actors for singleton class: %s"), FoundActors.Num(), *FullPath);
+		return nullptr;
+	}
+	else
+	{
+		FString FullPath;
+		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("GetSingletonByClassRef: Can't resolve singleton class: %s"), *FullPath);
+		return nullptr;
+	}
+}
+
 bool USpatialPackageMapClient::CanClientLoadObject(UObject* Object)
 {
 	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
 	return GuidCache->CanClientLoadObject(Object, NetGUID);
+}
+
+bool USpatialPackageMapClient::IsEntityPoolReady() const
+{
+	return (EntityPool != nullptr) && (EntityPool->IsReady());
 }
 
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
@@ -252,6 +293,36 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 	Ar << Obj;
 
 	return true;
+}
+
+const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
+{
+	AActor* Actor = Object ? Object->GetTypedOuter<AActor>() : nullptr;
+	Worker_EntityId EntityId = GetEntityIdFromObject(Actor);
+
+	if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		FUnrealObjectRef Ref = GetUnrealObjectRefFromObject(Object);
+		if (Ref.IsValid())
+		{
+			UE_LOG(LogSpatialPackageMap, Error, TEXT("Trying to resolve a dynamic subobject twice! Object %s, Actor %s, EntityId %d."), *GetNameSafe(Object), *GetNameSafe(Actor), EntityId);
+			return nullptr;
+		}
+
+		const FClassInfo* Info = Cast<USpatialNetDriver>(GuidCache->Driver)->ClassInfoManager->GetClassInfoForNewSubobject(Object, EntityId, this);
+
+		// If we don't get the info, an error is logged in the above function, that we have exceeded the maximum number of dynamic subobjects on the entity
+		if (Info != nullptr)
+		{
+			ResolveSubobject(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
+		}
+
+		return Info;
+	}
+
+	UE_LOG(LogSpatialPackageMap, Error, TEXT("While trying to resolve a new dynamic subobject %s, the parent actor %s was not resolved."), *GetNameSafe(Object), *GetNameSafe(Actor));
+
+	return nullptr;
 }
 
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)

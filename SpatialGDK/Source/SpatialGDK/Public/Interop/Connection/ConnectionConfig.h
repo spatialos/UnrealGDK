@@ -16,7 +16,7 @@ struct FConnectionConfig
 	FConnectionConfig()
 		: UseExternalIp(false)
 		, EnableProtocolLoggingAtStartup(false)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_KCP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
@@ -35,11 +35,11 @@ struct FConnectionConfig
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString == TEXT("Tcp"))
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_TCP;
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
 		}
 		else if (LinkProtocolString == TEXT("Kcp"))
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_KCP;
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
 		}
 		else if (!LinkProtocolString.IsEmpty())
 		{
@@ -95,9 +95,19 @@ struct FReceptionistConfig : public FConnectionConfig
 struct FLocatorConfig : public FConnectionConfig
 {
 	FLocatorConfig()
-		: LocatorHost(SpatialConstants::LOCATOR_HOST) {
+	{
 		const TCHAR* CommandLine = FCommandLine::Get();
-		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
+		if (!FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost))
+		{
+			if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
+			{
+				LocatorHost = SpatialConstants::LOCATOR_HOST_CN;
+			}
+			else
+			{
+				LocatorHost = SpatialConstants::LOCATOR_HOST;
+			}
+		}
 		FParse::Value(CommandLine, TEXT("playerIdentityToken"), PlayerIdentityToken);
 		FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
 	}

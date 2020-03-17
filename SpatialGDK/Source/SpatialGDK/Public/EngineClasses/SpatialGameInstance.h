@@ -23,6 +23,9 @@ public:
 #if WITH_EDITOR
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
+	// Initializes the Spatial connection if Spatial networking is enabled, otherwise does nothing.
+	void TryConnectToSpatial();
+
 	virtual void StartGameInstance() override;
 
 	//~ Begin UObject Interface
@@ -34,6 +37,9 @@ public:
 
 	// The SpatialWorkerConnection must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
 	void CreateNewSpatialWorkerConnection();
+
+	// Destroying the SpatialWorkerConnection disconnects us from SpatialOS.
+	void DestroySpatialWorkerConnection();
 
 	FORCEINLINE USpatialWorkerConnection* GetSpatialWorkerConnection() { return SpatialConnection; }
 

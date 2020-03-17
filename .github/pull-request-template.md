@@ -1,7 +1,3 @@
-**Contributions**: We are not currently taking public contributions - see our [contributions](CONTRIBUTING.md) policy. However, we are accepting issues and we do want your [feedback](../README.md#give-us-feedback).
-
--------
-
 #### Description
 Describe your changes here.
 

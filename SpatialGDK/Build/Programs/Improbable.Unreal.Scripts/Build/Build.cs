@@ -178,6 +178,15 @@ exit /b !ERRORLEVEL!";
 
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
 
+                if (additionalUATArgs.Contains("-pak"))
+                {
+                    Console.WriteLine("Cannot force bSpatialNetworking with -pak argument.");
+                }
+                else
+                {
+                    ForceSpatialNetworkingInConfig(windowsNoEditorPath, baseGameName);
+                }
+
                 // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher.
                 // TO-DO: Remove this once LAUNCH-341 has been completed, and the _ is no longer necessary.
                 var oldExe = Path.Combine(windowsNoEditorPath, $"{gameName}.exe");
@@ -234,6 +243,16 @@ exit /b !ERRORLEVEL!";
                 });
 
                 var linuxSimulatedPlayerPath = Path.Combine(stagingDir, "LinuxNoEditor");
+
+                if (additionalUATArgs.Contains("-pak"))
+                {
+                    Console.WriteLine("Cannot force bSpatialNetworking with -pak argument.");
+                }
+                else
+                {
+                    ForceSpatialNetworkingInConfig(linuxSimulatedPlayerPath, baseGameName);
+                }
+
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerWorkerShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartSimulatedClient.sh"));
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerCoordinatorShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartCoordinator.sh"));
 
@@ -247,8 +266,8 @@ exit /b !ERRORLEVEL!";
                     {
                         "/I",
                         "/Y",
-                        workerCoordinatorPath,
-                        linuxSimulatedPlayerPath
+                        Quote(workerCoordinatorPath),
+                        Quote(linuxSimulatedPlayerPath)
                     });
                 }
                 else
@@ -299,6 +318,15 @@ exit /b !ERRORLEVEL!";
                 var assemblyPlatform = isLinux ? "Linux" : "Windows";
                 var serverPath = Path.Combine(stagingDir, assemblyPlatform + "Server");
 
+                if (additionalUATArgs.Contains("-pak"))
+                {
+                    Console.WriteLine("Cannot force bSpatialNetworking with -pak argument.");
+                }
+                else
+                {
+                    ForceSpatialNetworkingInConfig(serverPath, baseGameName);
+                }
+
                 if (isLinux)
                 {
                     // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
@@ -330,6 +358,20 @@ exit /b !ERRORLEVEL!";
         private static string Quote(string toQuote)
         {
             return $"\"{toQuote}\"";
+        }
+
+        private static void ForceSpatialNetworkingInConfig(string workerPath, string gameName)
+        {
+            var defaultGameIniPath = Path.Combine(workerPath, gameName, "Config", "DefaultGame.ini");
+
+            Console.WriteLine($"Forcing bSpatialNetworking to True in {defaultGameIniPath}");
+            string defaultGameIniOverrideText =
+@"
+; Overridden by Spatial Build Tool:
+[/Script/EngineSettings.GeneralProjectSettings]
+bSpatialNetworking=True
+";
+            File.AppendAllText(defaultGameIniPath, defaultGameIniOverrideText);
         }
     }
 }

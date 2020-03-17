@@ -43,45 +43,49 @@ public class SpatialGDK : ModuleRules
 
         var WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
 
-        string LibPrefix = "";
+        string LibPrefix = "improbable_";
         string ImportLibSuffix = "";
         string SharedLibSuffix = "";
         bool bAddDelayLoad = false;
 
-        switch (Target.Platform)
+        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
         {
-            case UnrealTargetPlatform.Win32:
-            case UnrealTargetPlatform.Win64:
-                ImportLibSuffix = ".lib";
-                SharedLibSuffix = ".dll";
-                bAddDelayLoad = true;
-                break;
-            case UnrealTargetPlatform.Mac:
-                LibPrefix = "lib";
-                ImportLibSuffix = SharedLibSuffix = ".dylib";
-                break;
-            case UnrealTargetPlatform.Linux:
-                LibPrefix = "lib";
-                ImportLibSuffix = SharedLibSuffix = ".so";
-                break;
-            case UnrealTargetPlatform.PS4:
-                LibPrefix = "lib";
-                ImportLibSuffix = "_stub.a";
-                SharedLibSuffix = ".prx";
-                bAddDelayLoad = true;
-                break;
-            case UnrealTargetPlatform.XboxOne:
-                ImportLibSuffix = ".lib";
-                SharedLibSuffix = ".dll";
-                // We don't set bAddDelayLoad = true here, because we get "unresolved external symbol __delayLoadHelper2".
-                // See: https://www.fmod.org/questions/question/deploy-issue-on-xboxone-with-unrealengine-4-14/
-                break;
-            case UnrealTargetPlatform.IOS:
-                LibPrefix = "lib";
-                ImportLibSuffix = SharedLibSuffix = "_static_fullylinked.a";
-                break;
-            default:
-                throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
+            ImportLibSuffix = ".lib";
+            SharedLibSuffix = ".dll";
+            bAddDelayLoad = true;
+        }
+        else if (Target.Platform == UnrealTargetPlatform.Mac)
+        {
+            LibPrefix = "libimprobable_";
+            ImportLibSuffix = SharedLibSuffix = ".dylib";
+        }
+        else if (Target.Platform == UnrealTargetPlatform.Linux)
+        {
+            LibPrefix = "libimprobable_";
+            ImportLibSuffix = SharedLibSuffix = ".so";
+        }
+        else if (Target.Platform == UnrealTargetPlatform.PS4)
+        {
+            LibPrefix = "libimprobable_";
+            ImportLibSuffix = "_stub.a";
+            SharedLibSuffix = ".prx";
+            bAddDelayLoad = true;
+        }
+        else if (Target.Platform == UnrealTargetPlatform.XboxOne)
+        {
+            ImportLibSuffix = ".lib";
+            SharedLibSuffix = ".dll";
+            // We don't set bAddDelayLoad = true here, because we get "unresolved external symbol __delayLoadHelper2".
+            // See: https://www.fmod.org/questions/question/deploy-issue-on-xboxone-with-unrealengine-4-14/
+        }
+        else if (Target.Platform == UnrealTargetPlatform.IOS)
+        {
+            LibPrefix = "libimprobable_";
+            ImportLibSuffix = SharedLibSuffix = "_static.a";
+        }
+        else
+        {
+            throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
         }
 
         string WorkerImportLib = System.String.Format("{0}worker{1}", LibPrefix, ImportLibSuffix);

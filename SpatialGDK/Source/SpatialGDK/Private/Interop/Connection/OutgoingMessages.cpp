@@ -11,28 +11,28 @@ void FEntityQueryRequest::TraverseConstraint(Worker_Constraint* Constraint)
 	{
 	case WORKER_CONSTRAINT_TYPE_AND:
 	{
-		TUniquePtr<Worker_Constraint[]> NewConstraints = MakeUnique<Worker_Constraint[]>(Constraint->and_constraint.constraint_count);
+		TUniquePtr<Worker_Constraint[]> NewConstraints = MakeUnique<Worker_Constraint[]>(Constraint->constraint.and_constraint.constraint_count);
 
-		for (unsigned int i = 0; i < Constraint->and_constraint.constraint_count; i++)
+		for (unsigned int i = 0; i < Constraint->constraint.and_constraint.constraint_count; i++)
 		{
-			NewConstraints[i] = Constraint->and_constraint.constraints[i];
+			NewConstraints[i] = Constraint->constraint.and_constraint.constraints[i];
 			TraverseConstraint(&NewConstraints[i]);
 		}
-		Constraint->and_constraint.constraints = NewConstraints.Get();
+		Constraint->constraint.and_constraint.constraints = NewConstraints.Get();
 
 		ConstraintStorage.Add(MoveTemp(NewConstraints));
 		break;
 	}
 	case WORKER_CONSTRAINT_TYPE_OR:
 	{
-		TUniquePtr<Worker_Constraint[]> NewConstraints = MakeUnique<Worker_Constraint[]>(Constraint->or_constraint.constraint_count);
+		TUniquePtr<Worker_Constraint[]> NewConstraints = MakeUnique<Worker_Constraint[]>(Constraint->constraint.or_constraint.constraint_count);
 
-		for (unsigned int i = 0; i < Constraint->or_constraint.constraint_count; i++)
+		for (unsigned int i = 0; i < Constraint->constraint.or_constraint.constraint_count; i++)
 		{
-			NewConstraints[i] = Constraint->or_constraint.constraints[i];
+			NewConstraints[i] = Constraint->constraint.or_constraint.constraints[i];
 			TraverseConstraint(&NewConstraints[i]);
 		}
-		Constraint->or_constraint.constraints = NewConstraints.Get();
+		Constraint->constraint.or_constraint.constraints = NewConstraints.Get();
 
 		ConstraintStorage.Add(MoveTemp(NewConstraints));
 		break;
@@ -41,10 +41,10 @@ void FEntityQueryRequest::TraverseConstraint(Worker_Constraint* Constraint)
 	{
 		TUniquePtr<Worker_Constraint[]> NewConstraint = MakeUnique<Worker_Constraint[]>(1);
 
-		NewConstraint[0] = *Constraint->not_constraint.constraint;
+		NewConstraint[0] = *Constraint->constraint.not_constraint.constraint;
 		TraverseConstraint(&NewConstraint[0]);
 
-		Constraint->not_constraint.constraint = NewConstraint.Get();
+		Constraint->constraint.not_constraint.constraint = NewConstraint.Get();
 
 		ConstraintStorage.Add(MoveTemp(NewConstraint));
 		break;

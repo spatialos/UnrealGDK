@@ -11,11 +11,17 @@ namespace Improbable.WorkerCoordinator
     class Authentication
     {
         private const string LOCATOR_HOST_NAME = "locator.improbable.io";
+        private const string LOCATOR_HOST_NAME_CN = "locator.spatialoschina.com";
         private const int LOCATOR_PORT = 444;
 
-        public static string GetDevelopmentPlayerIdentityToken(string devAuthToken, string clientName)
+        public static string GetLocatorHost(string region)
         {
-            var pitResponse = DevelopmentAuthentication.CreateDevelopmentPlayerIdentityTokenAsync("locator.improbable.io", 444,
+            return region == "CN" ? LOCATOR_HOST_NAME_CN : LOCATOR_HOST_NAME;
+        }
+
+        public static string GetDevelopmentPlayerIdentityToken(string devAuthToken, string clientName, string region)
+        {
+            var pitResponse = DevelopmentAuthentication.CreateDevelopmentPlayerIdentityTokenAsync(GetLocatorHost(region), LOCATOR_PORT,
                     new PlayerIdentityTokenRequest
                     {
                         DevelopmentAuthenticationToken = devAuthToken,
@@ -33,9 +39,9 @@ namespace Improbable.WorkerCoordinator
             return pitResponse.PlayerIdentityToken;
         }
 
-        public static List<LoginTokenDetails> GetDevelopmentLoginTokens(string workerType, string pit)
+        public static List<LoginTokenDetails> GetDevelopmentLoginTokens(string workerType, string pit, string region)
         {
-            var loginTokensResponse = DevelopmentAuthentication.CreateDevelopmentLoginTokensAsync(LOCATOR_HOST_NAME, LOCATOR_PORT,
+            var loginTokensResponse = DevelopmentAuthentication.CreateDevelopmentLoginTokensAsync(GetLocatorHost(region), LOCATOR_PORT,
                 new LoginTokensRequest
                 {
                     PlayerIdentityToken = pit,

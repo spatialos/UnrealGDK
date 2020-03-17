@@ -1,12 +1,16 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
-import "improbable/vector3.schema";
-
 type Rotator {
     float pitch = 1;
     float yaw = 2;
     float roll = 3;
+}
+
+type Vector3f {
+    float x = 1;
+    float y = 2;
+    float z = 3;
 }
 
 component SpawnData {
@@ -14,8 +18,8 @@ component SpawnData {
     // scale, and velocity, regardless of whether the actor replicates movement. In our case,
     // location is represented by Spatial position, and this component contains the rest.
     id = 9999;
-    improbable.Vector3f location = 1;
+    Vector3f location = 1;
     Rotator rotation = 2;
-    improbable.Vector3f scale = 3;
-    improbable.Vector3f velocity = 4;
+    Vector3f scale = 3;
+    Vector3f velocity = 4;
 }
