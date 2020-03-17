@@ -18,6 +18,17 @@
 DEFINE_LOG_CATEGORY(LogSpatialEditorSettings);
 #define LOCTEXT_NAMESPACE "USpatialGDKEditorSettings"
 
+void FSpatialLaunchConfigDescription::SetLevelEditorPlaySettingsWorkerTypes()
+{
+	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+
+	PlayInSettings->WorkerTypesToLaunch.Empty(ServerWorkers.Num());
+	for (const FWorkerTypeLaunchSection& WorkerLaunch : ServerWorkers)
+	{
+		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
+	}
+}
+
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, bShowSpatialServiceButton(false)
@@ -142,17 +153,6 @@ void USpatialGDKEditorSettings::SetRuntimeDevelopmentDeploymentToConnect()
 {
 	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
 	RuntimeSettings->DevelopmentDeploymentToConnect = DevelopmentDeploymentToConnect;
-}
-
-void FSpatialLaunchConfigDescription::SetLevelEditorPlaySettingsWorkerTypes()
-{
-	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-
-	PlayInSettings->WorkerTypesToLaunch.Empty(ServerWorkers.Num());
-	for (const FWorkerTypeLaunchSection& WorkerLaunch : ServerWorkers)
-	{
-		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
-	}
 }
 
 bool USpatialGDKEditorSettings::IsAssemblyNameValid(const FString& Name)
