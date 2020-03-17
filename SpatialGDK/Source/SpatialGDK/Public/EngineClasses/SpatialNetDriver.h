@@ -77,6 +77,9 @@ public:
 
 	virtual void OnOwnerUpdated(AActor* Actor);
 
+	void OnConnectionToSpatialOSSucceeded();
+	void OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
+
 	void OnConnectedToSpatialOS();
 
 #if !UE_BUILD_SHIPPING

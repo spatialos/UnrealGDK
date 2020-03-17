@@ -3,6 +3,7 @@
 #include "TestDefinitions.h"
 
 #include "LocalDeploymentManager.h"
+#include "SpatialCommandUtils.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
 #include "SpatialGDKEditorSettings.h"
@@ -35,8 +36,7 @@ namespace
 		FString BuildConfigArgs = TEXT("worker build build-config");
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
-		const FString SpatialExe(TEXT("spatial.exe"));
-		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialExe, BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
+		SpatialCommandUtils::ExecuteSpatialCommandAndReadOutput(BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode, false);
 
 		const int32 ExitCodeSuccess = 0;
 		return (ExitCode == ExitCodeSuccess);
@@ -91,7 +91,7 @@ bool FStartDeployment::Update()
 				return;
 			}
 
-			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, TEXT(""));
+			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, TEXT(""), FLocalDeploymentManager::LocalDeploymentCallback());
 		});
 	}
 

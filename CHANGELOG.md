@@ -4,7 +4,22 @@ All notable changes to the SpatialOS Game Development Kit for Unreal will be doc
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased-`x.y.z`] - 20xx-xx-xx
+## [Unreleased-`x.y.z`] - 2020-xx-xx
+
+## [`0.8.1-preview`] - 2020-03-16
+### Features:
+- **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
+- You can now choose which SpatialOS service region you want to use by adjusting the **Region where services are located** setting. You must use the service region that you're geographically located in.
+- Deployments can now be launched in China, when the **Region where services are located** is set to `CN`.
+- Updated the version of the local API service used by the UnrealGDK.
+- The Spatial output log will now be open by default.
+- The GDK now uses SpatialOS 14.5.0.
+
+### Bug fixes:
+- Replicated references to newly created dynamic subobjects will now be resolved correctly.
+- Fixed a bug that caused the local API service to memory leak.
+- Errors are now correctly reported when you try to launch a cloud deployment without an assembly.
+- The Start deployment button will no longer become greyed out when a `spatial auth login` process times out.
 
 ## [`0.8.0-preview`] - 2019-12-17
 
@@ -14,9 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 1. `git checkout 4.23-SpatialOSUnrealGDK-preview`
 1. `git pull`
 1. Download and install the `-v15 clang-8.0.1-based` toolchain from this [Unreal Engine Documentation page](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html).
+1. Navigate to the root of GDK repo and run `Setup.bat`.
 1. Run `Setup.bat`, which is located in the root directory of the `UnrealEngine` repository.
 1. Run `GenerateProjectFiles.bat`, which is in the same root directory.
-For more information, check the [Keep your GDK up to date](https://docs.improbable.io/unreal/preview/content/upgrading) SpatialOS documentation.
+
+For more information, check the [Keep your GDK up to date](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) SpatialOS documentation.
 
 
 ### Features:
@@ -47,7 +64,7 @@ Features listed in the internal section are not ready to use but, in the spirit 
 - We've added a partial loadbalancing framework. When this is completed in a future release, you will be able to control loadbalancing using server-workers.
 
 ## [`0.7.1-preview`] - 2019-12-06
-
+### Adapted from 0.6.3
 ### Bug fixes: 
 - The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
 
@@ -114,6 +131,20 @@ Features listed in the internal section are not ready to use but, in the spirit 
 - Muticast RPCs that are sent shortly after an actor is created are now correctly processed by all clients.
 - When replicating an actor, the owner's Spatial position will no longer be used if it isn't replicated.
 - Fixed a crash upon checking out an actor with a deleted static subobject.
+
+## [`0.6.4`] - 2019-12-13
+### Bug fixes:
+- The Inspector button in the SpatialOS GDK for Unreal toolbar now opens the correct URL.
+
+## [`0.6.3`] - 2019-12-05
+### Bug fixes:
+- The C Worker SDK now communicates on port 443 instead of 444. This change is intended to protect your cloud deployments from DDoS attacks.
+
+### Internal:
+Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
+- The GDK is now compatible with the `CN` launch region. When Improbable's online services are fully working in China, they will work with this version of the GDK. You will be able to create SpatialOS Deployments in China by specifying the `CN` region in the Deployment Launcher.
+- `Setup.bat` and `Setup.sh` both accept the `--china` flag, which will be required in order to run SpatialOS CLI commands in the `CN` region.
+- **SpatialOS GDK for Unreal** > **Editor Settings** now contains a **Region Settings** section. You will be required to set **Region where services are located** to `CN` in order to create SpatialOS Deployments in China.
 
 ## [`0.6.2`] - 2019-10-10
 

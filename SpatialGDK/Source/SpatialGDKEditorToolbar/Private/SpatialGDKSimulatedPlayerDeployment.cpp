@@ -2,16 +2,20 @@
 
 #include "SpatialGDKSimulatedPlayerDeployment.h"
 
+#include "Async/Async.h"
 #include "DesktopPlatformModule.h"
 #include "EditorDirectories.h"
 #include "EditorStyleSet.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
-#include "Templates/SharedPointer.h"
+#include "Runtime/Launch/Resources/Version.h"
+#include "SpatialCommandUtils.h"
+#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKEditorToolbar.h"
 #include "SpatialGDKServicesModule.h"
+#include "Templates/SharedPointer.h"
 #include "Textures/SlateIcon.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
@@ -27,6 +31,8 @@
 #include "Widgets/Text/STextBlock.h"
 
 #include "Internationalization/Regex.h"
+
+DEFINE_LOG_CATEGORY(LogSpatialGDKSimulatedPlayerDeployment);
 
 void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 {
@@ -502,14 +508,16 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		return FReply::Handled();
 	}
 
-	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
+	if (ToolbarPtr)
 	{
-		if (ToolbarPtr)
-		{
-			ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
-		}
+		ToolbarPtr->OnShowTaskStartNotification(TEXT("Starting cloud deployment..."));
+	}
 
-		SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
+	auto LaunchCloudDeployment = [this, ToolbarPtr]()
+	{
+		if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
+		{
+			SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
 			FSimpleDelegate::CreateLambda([]()
 			{
 				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
@@ -522,19 +530,37 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 			{
 				if (FSpatialGDKEditorToolbarModule* ToolbarPtr = FModuleManager::GetModulePtr<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar"))
 				{
-					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment.");
+					ToolbarPtr->OnShowFailedNotification("Failed to launch cloud deployment. See output logs for details.");
 				}
 			}));
 
-		return FReply::Handled();
-	}
+			return;
+		}
 
-	FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
-	Info.bUseSuccessFailIcons = true;
-	Info.ExpireDuration = 3.0f;
+		FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
+		Info.bUseSuccessFailIcons = true;
+		Info.ExpireDuration = 3.0f;
 
-	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-	NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+	};
+
+#if ENGINE_MINOR_VERSION <= 22
+	AttemptSpatialAuthResult = Async<bool>(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
+#else
+	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, []() { return SpatialCommandUtils::AttemptSpatialAuth(GetDefault<USpatialGDKSettings>()->IsRunningInChina()); },
+#endif
+		[this, LaunchCloudDeployment, ToolbarPtr]()
+	{
+		if (AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true)
+		{
+			LaunchCloudDeployment();
+		}
+		else
+		{
+			ToolbarPtr->OnShowTaskStartNotification(TEXT("Spatial auth failed attempting to launch cloud deployment."));
+		}
+	});
 
 	return FReply::Handled();
 }
@@ -577,7 +603,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 void SSpatialGDKSimulatedPlayerDeployment::OnCloudDocumentationClicked()
 {
 	FString WebError;
-	FPlatformProcess::LaunchURL(TEXT("https://docs.improbable.io/unreal/latest/content/cloud-deployment-workflow#build-server-worker-assembly"), TEXT(""), &WebError);
+	FPlatformProcess::LaunchURL(TEXT("https://documentation.improbable.io/gdk-for-unreal/docs/cloud-deployment-workflow#section-build-server-worker-assembly"), TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
 		FNotificationInfo Info(FText::FromString(WebError));

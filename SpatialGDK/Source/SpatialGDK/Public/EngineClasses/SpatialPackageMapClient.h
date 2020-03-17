@@ -14,7 +14,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 
-class USpatialClassInfoManager;
 class USpatialNetDriver;
 class UEntityPool;
 class FTimerManager;
@@ -62,10 +61,9 @@ public:
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
-private:
-	UPROPERTY()
-	USpatialClassInfoManager* ClassInfoManager;
+	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
+private:
 	UPROPERTY()
 	UEntityPool* EntityPool;
 

@@ -75,8 +75,9 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+	LocalDeploymentManager->PreInit(GetDefault<USpatialGDKSettings>()->IsRunningInChina());
+
 	LocalDeploymentManager->SetAutoDeploy(SpatialGDKEditorSettings->bAutoStartLocalDeployment);
-	LocalDeploymentManager->SetInChina(SpatialGDKEditorSettings->IsRunningInChina());
 
 	// Bind the play button delegate to starting a local spatial deployment.
 	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && SpatialGDKEditorSettings->bAutoStartLocalDeployment)
@@ -624,17 +625,20 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			return;
 		}
 
-		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
-		const bool bLocalDeploymentStarted = LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, GetOptionalExposedRuntimeIP());
+		FLocalDeploymentManager::LocalDeploymentCallback CallBack = [this](bool bSuccess)
+		{
+			if (bSuccess)
+			{
+				OnShowSuccessNotification(TEXT("Local deployment started!"));
+			}
+			else
+			{
+				OnShowFailedNotification(TEXT("Local deployment failed to start"));
+			}
+		};
 
-		if (bLocalDeploymentStarted)
-		{
-			OnShowSuccessNotification(TEXT("Local deployment started!"));
-		}
-		else
-		{
-			OnShowFailedNotification(TEXT("Local deployment failed to start"));
-		}
+		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
+		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags, SnapshotName, GetOptionalExposedRuntimeIP(), CallBack);
 	});
 }
 
