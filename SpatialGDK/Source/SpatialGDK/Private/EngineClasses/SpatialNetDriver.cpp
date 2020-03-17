@@ -1840,7 +1840,7 @@ namespace
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Error : Worker attribute does not contain workerId : %s"), *WorkerAttribute);
 			return {};
 		}
-		
+
 		return WorkerAttribute.RightChop(AttrOffset + WorkerIdAttr.Len());
 	}
 }
