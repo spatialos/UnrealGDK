@@ -3,9 +3,6 @@
 #include "SpatialGDKEditorSnapshotGenerator.h"
 
 #include "Engine/LevelScriptActor.h"
-#include "EngineClasses/SpatialActorChannel.h"
-#include "EngineClasses/SpatialNetConnection.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
 #include "Schema/SpawnData.h"

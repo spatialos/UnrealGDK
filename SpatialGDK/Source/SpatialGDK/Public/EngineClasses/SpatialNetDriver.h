@@ -114,6 +114,7 @@ public:
 	void RefreshActorDormancy(AActor* Actor, bool bMakeDormant);
 
 	void AddPendingDormantChannel(USpatialActorChannel* Channel);
+	void RemovePendingDormantChannel(USpatialActorChannel* Channel);
 	void RegisterDormantEntityId(Worker_EntityId EntityId);
 	void UnregisterDormantEntityId(Worker_EntityId EntityId);
 	bool IsDormantEntity(Worker_EntityId EntityId) const;
