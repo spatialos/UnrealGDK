@@ -169,37 +169,34 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 			continue;
 		}
 
-		if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-		{
-			EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-			WorkerRequirementSet ClientRequirementSet;
-			if (WorkerRequirementSet* RpcRequirementSet = Acl->ComponentWriteAcl.Find(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())))
-			{
-				ClientRequirementSet = *RpcRequirementSet;
-			}
-
-			TArray<Worker_ComponentId> ComponentIds;
-			Acl->ComponentWriteAcl.GetKeys(ComponentIds);
-			// Ensure that every component ID in ComponentPresence is set in the write ACL.
-			for (const auto& RequiredComponentId : ComponentPresenceComponent->ComponentList)
-			{
-				ComponentIds.AddUnique(RequiredComponentId);
-			}
-
-			PendingRequests.Push(
-				AclWriteAuthorityRequest{
-					EntityId,
-					*DestinationWorkerId,
-					Acl->ReadAcl,
-					ClientRequirementSet,
-					ComponentIds
-				});
-		}
-		else
+		if (!StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 		{
 			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("Failed to update the EntityACL to match the authority intent; this worker lost authority over the EntityACL since the request was queued."
 				" Source worker ID: %s. Entity ID %lld. Desination worker ID: %s."), *WorkerId, EntityId, **DestinationWorkerId);
+			CompletedRequests.Add(EntityId);
+			continue;
 		}
+
+		TArray<Worker_ComponentId> ComponentIds;
+
+		EntityAcl* Acl = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
+		Acl->ComponentWriteAcl.GetKeys(ComponentIds);
+
+		// Ensure that every component ID in ComponentPresence is set in the write ACL.
+		for (const auto& RequiredComponentId : ComponentPresenceComponent->ComponentList)
+		{
+			ComponentIds.AddUnique(RequiredComponentId);
+		}
+
+		PendingRequests.Push(
+			AclWriteAuthorityRequest{
+				EntityId,
+				*DestinationWorkerId,
+				Acl->ReadAcl,
+				{ { ComponentPresenceComponent->PossessingClientWorkerId } },
+				ComponentIds
+			});
+
 		CompletedRequests.Add(EntityId);
 	}
 

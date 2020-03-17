@@ -62,7 +62,7 @@ public:
 	bool bReliableSpatialConnection;
 
 	UPROPERTY()
-	FString WorkerAttribute;
+	FString OwningClientWorkerId;
 
 	class FTimerManager* TimerManager;
 

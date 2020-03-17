@@ -1874,7 +1874,7 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	// Get the worker attribute.
 	const TCHAR* WorkerAttributeOption = InUrl.GetOption(TEXT("workerAttribute"), nullptr);
 	check(WorkerAttributeOption);
-	SpatialConnection->ClientWorkerId = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
+	SpatialConnection->OwningClientWorkerId = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
 
 	// Register workerId and its connection.
 	if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(SpatialConnection->ClientWorkerId))
@@ -1917,9 +1917,9 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 
 void USpatialNetDriver::CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp)
 {
-	if (!ConnectionCleanedUp->ClientWorkerId.IsEmpty())
+	if (!ConnectionCleanedUp->OwningClientWorkerId.IsEmpty())
 	{
-		if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(*ConnectionCleanedUp->ClientWorkerId))
+		if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(*ConnectionCleanedUp->OwningClientWorkerId))
 		{
 			WorkerConnections.Remove(WorkerId.GetValue());
 		}

@@ -221,6 +221,11 @@ const Schema_FieldId COMPONENT_PRESENCE_COMPONENT_LIST_ID				 = 1;
 const Schema_FieldId COMPONENT_PRESENCE_COMPONENT_LIST_ID				 = 1;
 const Schema_FieldId COMPONENT_PRESENCE_POSSESSING_CLIENT_WORKER_ID		 = 2;
 
+// UnrealMetadata Field IDs.
+const Schema_FieldId UNREAL_METADATA_STABLY_NAMED_REF_ID				 = 1;
+const Schema_FieldId UNREAL_METADATA_CLASS_PATH_ID						 = 2;
+const Schema_FieldId UNREAL_METADATA_NET_STARTUP_ID						 = 3;
+
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
 

@@ -37,7 +37,6 @@ DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdate
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ServerProcessOwnershipChange"), STAT_ServerProcessOwnershipChange, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ClientProcessOwnershipChange"), STAT_ClientProcessOwnershipChange, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("GetOwnerWorkerAttribute"), STAT_GetOwnerWorkerAttribute, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("CallUpdateEntityACLs"), STAT_CallUpdateEntityACLs, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("OnUpdateEntityACLSuccess"), STAT_OnUpdateEntityACLSuccess, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("IsAuthoritativeServer"), STAT_IsAuthoritativeServer, STATGROUP_SpatialNet);
@@ -1084,7 +1083,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
 
-	SavedClientConnectionWorkerId = SpatialGDK::GetOwnerWorkerAttribute(InActor);
+	SavedClientConnectionWorkerId = SpatialGDK::GetOwningClientWorkerId(InActor);
 }
 
 bool USpatialActorChannel::TryResolveActor()
@@ -1300,15 +1299,24 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		}
 	}
 
-	if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
+	// If there is a valid client worker ID that owns the NetConnection of this Actor, then
+	// update ComponentPresence (and the EntityACL if authoritative).
+	if (const FString* NewClientConnectionWorkerId = SpatialGDK::GetOwningClientWorkerId(Actor))
 	{
+		check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
+		SpatialGDK::ComponentPresence* ComponentPresenceData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ComponentPresence>(EntityId);
+		ComponentPresence.PossessingClientWorkerId = NewClientConnectionWorkerId;
+		FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
+		Connection->SendComponentUpdate(EntityId, &Update);
+
+		if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+		{
+			UpdateEntityACLToNewOwner();
+		}
 	}
 
-	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		UpdateEntityACLToNewOwner();
-		UpdateInterestBucketComponentId();
-	}
+	// Changing owner can affect which interest bucket the Actor should be in so we need to update it.
+	UpdateInterestBucketComponentId();
 
 	for (AActor* Child : Actor->Children)
 	{
@@ -1321,14 +1329,8 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	}
 }
 
-void USpatialActorChannel::UpdateEntityACLToNewOwner()
+void USpatialActorChannel::UpdateEntityACLToNewOwner(const FString& NewClientConnectionWorkerId)
 {
-	FString NewClientConnectionWorkerId;
-	{
-		SCOPE_CYCLE_COUNTER(STAT_GetOwnerWorkerAttribute);
-		NewClientConnectionWorkerId = SpatialGDK::GetOwnerWorkerAttribute(Actor);
-	}
-
 	if (SavedClientConnectionWorkerId != NewClientConnectionWorkerId)
 	{
 		bool bSuccess = Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
