@@ -536,6 +536,18 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 
 	if (SpatialGDKRuntimeSettings->bEnableOffloading)
 	{
+		if (SpatialGDKRuntimeSettings->bEnableUnrealLoadBalancer)
+		{
+			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Offloading and the UnrealLoadBalancer are both turned on, this is not supported at the moment.\n\nDo you want to configure your project settings now?")));
+
+			if (Result == EAppReturnType::Yes)
+			{
+				FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
+			}
+
+			return false;
+		}
+
 		for (const TPair<FName, FActorGroupInfo>& ActorGroup : SpatialGDKRuntimeSettings->ActorGroups)
 		{
 			if (!SpatialGDKRuntimeSettings->ServerWorkerTypes.Contains(ActorGroup.Value.OwningWorkerType.WorkerTypeName))

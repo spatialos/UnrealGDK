@@ -214,6 +214,8 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	bInterestDirty = false;
 	bNetOwned = false;
+	bIsAuthClient = false;
+	bIsAuthServer = false;
 	LastPositionSinceUpdate = FVector::ZeroVector;
 	TimeWhenPositionLastUpdated = 0.0f;
 
@@ -608,8 +610,11 @@ int64 USpatialActorChannel::ReplicateActor()
 			bCreatedEntity = true;
 
 			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
-			Actor->Role = ROLE_SimulatedProxy;
-			Actor->RemoteRole = ROLE_Authority;
+			if (!USpatialStatics::IsSpatialOffloadingEnabled())
+			{
+				Actor->Role = ROLE_SimulatedProxy;
+				Actor->RemoteRole = ROLE_Authority;
+			}
 		}
 		else
 		{

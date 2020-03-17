@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "Utils/SpatialActorGroupManager.h"
 
 #include "SpatialGameInstance.generated.h"
 
@@ -60,8 +61,9 @@ public:
 
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
-
 	bool GetPreventAutoConnectWithLocator() const { return bPreventAutoConnectWithLocator; }
+
+	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
@@ -90,4 +92,6 @@ private:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
+	UFUNCTION()
+	void OnLevelInitializedNetworkActors(ULevel* Level, UWorld* OwningWorld);
 };
