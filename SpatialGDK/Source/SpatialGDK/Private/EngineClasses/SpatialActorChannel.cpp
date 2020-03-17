@@ -214,6 +214,8 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	bInterestDirty = false;
 	bNetOwned = false;
+	bIsAuthClient = false;
+	bIsAuthServer = false;
 	LastPositionSinceUpdate = FVector::ZeroVector;
 	TimeWhenPositionLastUpdated = 0.0f;
 
@@ -302,17 +304,22 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 
 int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 {
-	if (Reason != EChannelCloseReason::Dormancy)
-	{
-		DeleteEntityIfAuthoritative();
-		NetDriver->PackageMap->RemoveEntityActor(EntityId);
-	}
-	else
+	if (Reason == EChannelCloseReason::Dormancy)
 	{
 		// Closed for dormancy reasons, ensure we update the component state of this entity.
 		const bool bMakeDormant = true;
 		NetDriver->RefreshActorDormancy(Actor, bMakeDormant);
 		NetDriver->RegisterDormantEntityId(EntityId);
+	}
+	else if (Reason == EChannelCloseReason::Relevancy)
+	{
+		check(IsAuthoritativeServer());
+		// Do nothing except close actor channel - this should only get processed on auth server
+	}
+	else
+	{
+		DeleteEntityIfAuthoritative();
+		NetDriver->PackageMap->RemoveEntityActor(EntityId);
 	}
 
 	NetDriver->RemoveActorChannel(EntityId, *this);
@@ -527,12 +534,6 @@ int64 USpatialActorChannel::ReplicateActor()
 #if USE_NETWORK_PROFILER 
 	const uint32 ActorReplicateStartTime = GNetworkProfiler.IsTrackingEnabled() ? FPlatformTime::Cycles() : 0;
 #endif
-	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
-	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
-	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
-	{
-		PlayerController->SendClientAdjustment();
-	}
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -608,8 +609,11 @@ int64 USpatialActorChannel::ReplicateActor()
 			bCreatedEntity = true;
 
 			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
-			Actor->Role = ROLE_SimulatedProxy;
-			Actor->RemoteRole = ROLE_Authority;
+			if (!USpatialStatics::IsSpatialOffloadingEnabled())
+			{
+				Actor->Role = ROLE_SimulatedProxy;
+				Actor->RemoteRole = ROLE_Authority;
+			}
 		}
 		else
 		{
