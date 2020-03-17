@@ -75,6 +75,45 @@ struct ComponentPresence : Component
 		Schema_GetUint32List(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, ComponentList.GetData());
 	}
 
+	bool AddComponentDataIds(const TArray<FWorkerComponentData>& ComponentDatas)
+	{
+		TArray<Worker_ComponentId> ComponentIds;
+		ComponentIds.SetNum(ComponentDatas.Num());
+		for (const FWorkerComponentData& ComponentData : ComponentDatas)
+		{
+			ComponentIds.Add(ComponentData.component_id);
+		}
+
+		return AddComponentIds(ComponentIds);
+	}
+
+	bool AddComponentIds(const TArray<Worker_ComponentId>& ComponentsToAdd)
+	{
+		const int32 OldPresentComponentCount = ComponentList.Num();
+
+		for (auto& NewComponentId : ComponentsToAdd)
+		{
+			ComponentList.AddUnique(NewComponentId);
+		}
+
+		return OldPresentComponentCount != ComponentList.Num();
+	}
+
+	bool RemoveComponentIds(const TArray<Worker_ComponentId>& ComponentsToRemove)
+	{
+		const int32 OldPresentComponentCount = ComponentList.Num();
+
+		for (auto RequiredComponentIt = ComponentList.CreateIterator(); RequiredComponentIt; RequiredComponentIt++)
+		{
+			if (ComponentsToRemove.Contains(*RequiredComponentIt))
+			{
+				RequiredComponentIt.RemoveCurrent();
+			}
+		}
+
+		return OldPresentComponentCount != ComponentList.Num();
+	}
+
 	// List of component IDs that exist on an entity.
 	TArray<Worker_ComponentId> ComponentList;
 };
