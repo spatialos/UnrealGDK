@@ -168,22 +168,23 @@ FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 bool FSpatialGDKEditorLayoutDetails::TryConstructMobileCommandLineArgumentsFile(FString& CommandLineArgsFile)
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+    const UGeneralProjectSettings* GeneralProjectSettings = GetDefault<UGeneralProjectSettings>();
 	const FString ProjectName = FApp::GetProjectName();
 
 	// The project path is based on this: https://github.com/improbableio/UnrealEngine/blob/4.22-SpatialOSUnrealGDK-release/Engine/Source/Programs/AutomationTool/AutomationUtils/DeploymentContext.cs#L408
 	const FString MobileProjectPath = FString::Printf(TEXT("../../../%s/%s.uproject"), *ProjectName, *ProjectName);
 	FString TravelUrl;
 	FString SpatialOSOptions = FString::Printf(TEXT("-workerType %s"), *(SpatialGDKSettings->MobileWorkerType));
-	if (SpatialGDKSettings->bMobileConnectToLocalDeployment)
+	if (!GeneralProjectSettings->bCloudLauncher)
 	{
-		if (SpatialGDKSettings->MobileRuntimeIP.IsEmpty())
+		if (GeneralProjectSettings->MobileRuntimeIP.IsEmpty())
 		{
 			UE_LOG(LogSpatialGDKEditorLayoutDetails, Error, TEXT("The Runtime IP is currently not set. Please make sure to specify a Runtime IP."));
 			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("The Runtime IP is currently not set. Please make sure to specify a Runtime IP."))));
 			return false;
 		}
 
-		TravelUrl = SpatialGDKSettings->MobileRuntimeIP;
+		TravelUrl = GeneralProjectSettings->MobileRuntimeIP;
 	}
 	else
 	{

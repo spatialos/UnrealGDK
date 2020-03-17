@@ -365,12 +365,6 @@ private:
 	static bool IsManualWorkerConnectionSet(const FString& LaunchConfigPath, TArray<FString>& OutWorkersManuallyLaunched);
 
 public:
-	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Connect to a local deployment"))
-	bool bMobileConnectToLocalDeployment;
-
-	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (EditCondition = "bMobileConnectToLocalDeployment", DisplayName = "Runtime IP to local deployment"))
-	FString MobileRuntimeIP;
-
 	UPROPERTY(EditAnywhere, config, Category = "Mobile", meta = (DisplayName = "Mobile Client Worker Type"))
 	FString MobileWorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
 
