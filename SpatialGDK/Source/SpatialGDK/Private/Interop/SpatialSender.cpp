@@ -192,15 +192,13 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 
 	// Update the ComponentPresence component with the new component IDs. If this worker does not have EntityACL
 	// authority, this component is used to inform the enforcer of the component IDs to add to the EntityACL.
-	{
-		check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
+	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 
-		ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
-		ComponentPresenceData->AddComponentIds(NewComponentIds);
+	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
+	ComponentPresenceData->AddComponentIds(NewComponentIds);
 
-		FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-		Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
-	}
+	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
+	Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
 }
 
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
