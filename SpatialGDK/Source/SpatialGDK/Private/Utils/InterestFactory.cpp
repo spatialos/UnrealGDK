@@ -10,7 +10,7 @@
 #include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
 #include "Utils/Interest/NetCullDistanceInterest.h"
-#include "Utils/Interest/ResultTypes.h"
+#include "Utils/Interest/ResultTypeCreators.h"
 
 #include "Engine/World.h"
 #include "Engine/Classes/GameFramework/Actor.h"
@@ -35,10 +35,10 @@ InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager, U
 void InterestFactory::CreateAndCacheInterestState()
 {
 	ClientCheckoutRadiusConstraint = NetCullDistanceInterest::CreateCheckoutRadiusConstraints(ClassInfoManager);
-	ClientNonAuthInterestResultType = ResultTypes::CreateClientNonAuthInterestResultType(ClassInfoManager);
-	ClientAuthInterestResultType = ResultTypes::CreateClientAuthInterestResultType(ClassInfoManager);
-	ServerNonAuthInterestResultType = ResultTypes::CreateServerNonAuthInterestResultType(ClassInfoManager);
-	ServerAuthInterestResultType = ResultTypes::CreateServerAuthInterestResultType();
+	ClientNonAuthInterestResultType = ResultTypeCreators::CreateClientNonAuthInterestResultType(ClassInfoManager);
+	ClientAuthInterestResultType = ResultTypeCreators::CreateClientAuthInterestResultType(ClassInfoManager);
+	ServerNonAuthInterestResultType = ResultTypeCreators::CreateServerNonAuthInterestResultType(ClassInfoManager);
+	ServerAuthInterestResultType = ResultTypeCreators::CreateServerAuthInterestResultType();
 }
 
 Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const

@@ -3,10 +3,10 @@
 #include "Tests/TestDefinitions.h"
 #include "Mocks/SpatialClassInfoManagerMock.h"
 
-#include "Utils/Interest/ResultTypes.h"
+#include "Utils/Interest/ResultTypeCreators.h"
 
 #define RESULT_TYPES_TEST(TestName) \
-	GDK_TEST(Core, ResultTypes, TestName)
+	GDK_TEST(Core, ResultTypeCreators, TestName)
 
 // Sanity check tests for creating result types.
 // Run tests inside the SpatialGDK namespace in order to test static functions.
@@ -23,7 +23,7 @@ namespace SpatialGDK
 		// Ensure the mock won't be garbage collected
 		ClassInfoManager->AddToRoot();
 
-		// Initialise with fake generated components
+		// Initialize with fake generated components
 		ClassInfoManager->SetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data, DataComponentIds);
 		ClassInfoManager->SetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly, OwnerOnlyComponentIds);
 		ClassInfoManager->SetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Handover, HandoverComponentIds);
@@ -41,7 +41,7 @@ namespace SpatialGDK
 		ExpectedResultType.Append(DataComponentIds);
 		ExpectedResultType.Append(OwnerOnlyComponentIds);
 
-		TArray<Worker_ComponentId> ClientAuthResultType = ResultTypes::CreateClientAuthInterestResultType(ClassInfoManager);
+		TArray<Worker_ComponentId> ClientAuthResultType = ResultTypeCreators::CreateClientAuthInterestResultType(ClassInfoManager);
 
 		ExpectedResultType.Sort();
 		ClientAuthResultType.Sort();
@@ -60,7 +60,7 @@ namespace SpatialGDK
 		ExpectedResultType.Append(DataComponentIds);
 		ExpectedResultType.Append(OwnerOnlyComponentIds);
 
-		TArray<Worker_ComponentId> ClientNonAuthResultType = ResultTypes::CreateClientNonAuthInterestResultType(ClassInfoManager);
+		TArray<Worker_ComponentId> ClientNonAuthResultType = ResultTypeCreators::CreateClientNonAuthInterestResultType(ClassInfoManager);
 
 		ExpectedResultType.Sort();
 		ClientNonAuthResultType.Sort();
@@ -75,7 +75,7 @@ namespace SpatialGDK
 		TArray<Worker_ComponentId> ExpectedResultType;
 		ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST);
 
-		TArray<Worker_ComponentId> ServerAuthResultType = ResultTypes::CreateServerAuthInterestResultType();
+		TArray<Worker_ComponentId> ServerAuthResultType = ResultTypeCreators::CreateServerAuthInterestResultType();
 
 		ExpectedResultType.Sort();
 		ServerAuthResultType.Sort();
@@ -95,7 +95,7 @@ namespace SpatialGDK
 		ExpectedResultType.Append(OwnerOnlyComponentIds);
 		ExpectedResultType.Append(HandoverComponentIds);
 
-		TArray<Worker_ComponentId> ServerNonAuthResultType = ResultTypes::CreateServerNonAuthInterestResultType(ClassInfoManager);
+		TArray<Worker_ComponentId> ServerNonAuthResultType = ResultTypeCreators::CreateServerNonAuthInterestResultType(ClassInfoManager);
 
 		ExpectedResultType.Sort();
 		ServerNonAuthResultType.Sort();

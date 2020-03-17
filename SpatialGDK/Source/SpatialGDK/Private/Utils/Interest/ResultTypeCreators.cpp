@@ -1,35 +1,35 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Utils/Interest/ResultTypes.h"
+#include "Utils/Interest/ResultTypeCreators.h"
 
 #include "UObject/UObjectIterator.h"
 
 #include "SpatialGDKSettings.h"
 
-namespace SpatialGDK
+namespace
 {
 
-ResultType ResultTypes::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+SpatialGDK::ResultType ResultTypeCreators::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
-	ResultType ClientNonAuthResultType;
+	SpatialGDK::ResultType ClientNonAuthResultType;
 
 	// Add the required unreal components
 	ClientNonAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
 
-	// Add all data components- clients don't need to see handover or owner only components on other entities.
+	// Add all data components- clients shouldn't need to see handover or owner only components on other entities.
 	ClientNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
 
-	// In direct disagreement with the above comment, we add the owner only components as well.
+	// TODO(jacques): The above comment is correct in that they shouldn't need to, but right now they still do.
 	// This is because GDK workers currently make assumptions about information being available at the point of possession.
-	// TODO(jacques): fix (unr-2865)
+	// (ticket to fix: unr-2865 - would give a small bandwidth improvement for clients)
 	ClientNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
 
 	return ClientNonAuthResultType;
 }
 
-ResultType ResultTypes::CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+SpatialGDK::ResultType ResultTypeCreators::CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
-	ResultType ClientAuthResultType;
+	SpatialGDK::ResultType ClientAuthResultType;
 
 	// Add the required known components
 	ClientAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST);
@@ -42,9 +42,9 @@ ResultType ResultTypes::CreateClientAuthInterestResultType(USpatialClassInfoMana
 	return ClientAuthResultType;
 }
 
-ResultType ResultTypes::CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+SpatialGDK::ResultType ResultTypeCreators::CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
-	ResultType ServerNonAuthResultType;
+	SpatialGDK::ResultType ServerNonAuthResultType;
 
 	// Add the required unreal components
 	ServerNonAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST);
@@ -57,10 +57,10 @@ ResultType ResultTypes::CreateServerNonAuthInterestResultType(USpatialClassInfoM
 	return ServerNonAuthResultType;
 }
 
-ResultType ResultTypes::CreateServerAuthInterestResultType()
+SpatialGDK::ResultType ResultTypeCreators::CreateServerAuthInterestResultType()
 {
 	// Just the components that we won't have already checked out through authority
 	return SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST;
 }
 
-} // namespace SpatialGDK
+}
