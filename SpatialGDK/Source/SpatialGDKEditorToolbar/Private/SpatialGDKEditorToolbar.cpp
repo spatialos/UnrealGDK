@@ -599,7 +599,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
 		check(EditorWorld);
 
-		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(SpatialGDKServicesConstants::SpatialOSDirectory), FString::Printf(TEXT("%s_LocalLaunchConfig.json"), *EditorWorld->GetMapName()));
+		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_LocalLaunchConfig.json"), *EditorWorld->GetMapName()));
 
 		FSpatialLaunchConfigDescription LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 		if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
@@ -640,7 +640,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 				WorkerLaunchSection.bManualWorkerConnectionOnly = false;
 			}
 
-			FString CloudLaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(SpatialGDKServicesConstants::SpatialOSDirectory), FString::Printf(TEXT("%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
+			FString CloudLaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
 			GenerateDefaultLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription);
 		}
 	}
