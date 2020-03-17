@@ -2,8 +2,10 @@
 
 #pragma once
 
-#include "GameFramework/OnlineReplStructs.h"
 #include "Schema/PlayerSpawner.h"
+#include "SpatialCommonTypes.h"
+
+#include "GameFramework/OnlineReplStructs.h"
 #include "Templates/UniquePtr.h"
 #include "UObject/NoExportTypes.h"
 

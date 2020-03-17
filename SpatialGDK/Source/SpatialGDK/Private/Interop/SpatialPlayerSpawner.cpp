@@ -126,6 +126,10 @@ SpatialGDK::SpawnPlayerRequest USpatialPlayerSpawner::ObtainPlayerParams() const
 		// Send the player unique Id at login
 		UniqueId = LocalPlayer->GetPreferredUniqueNetId();
 	}
+	else
+	{
+		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Couldn't get LocalPlayer data from game instance when trying to spawn player."));
+	}
 
 	FName OnlinePlatformName = WorldContext->OwningGameInstance->GetOnlinePlatformName();
 

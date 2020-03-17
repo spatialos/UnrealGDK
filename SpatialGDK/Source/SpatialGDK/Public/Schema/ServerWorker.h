@@ -98,7 +98,7 @@ struct ServerWorker : Component
 		return CommandResponse;
 	}
 
-	static void CreateForwardPlayerSpawnSchemaRequest(Schema_CommandRequest* Request, FUnrealObjectRef PlayerStartObjectRef, const Schema_Object* OriginalPlayerSpawnRequest, const PhysicalWorkerName& ClientWorkerID)
+	static void CreateForwardPlayerSpawnSchemaRequest(Schema_CommandRequest* Request, const FUnrealObjectRef& PlayerStartObjectRef, const Schema_Object* OriginalPlayerSpawnRequest, const PhysicalWorkerName& ClientWorkerID)
 	{
 		Schema_Object* RequestFields = Schema_GetCommandRequestObject(Request);
 
