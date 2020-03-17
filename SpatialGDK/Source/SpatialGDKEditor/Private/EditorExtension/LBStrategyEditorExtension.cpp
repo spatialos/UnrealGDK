@@ -5,25 +5,27 @@
 
 namespace
 {
-	bool InheritFromClosest(UClass* Derived, UClass* PotentialBase, uint32& InOutPreviousDistance)
-	{
-		uint32 InheritanceDistance = 0;
-		for (const UStruct* TempStruct = Derived; TempStruct; TempStruct = TempStruct->GetSuperStruct())
-		{
-			if (TempStruct == PotentialBase)
-			{
-				break;
-			}
-			++InheritanceDistance;
-			if (InheritanceDistance > InOutPreviousDistance)
-			{
-				return false;
-			}
-		}
 
-		InOutPreviousDistance = InheritanceDistance;
-		return true;
+bool InheritFromClosest(UClass* Derived, UClass* PotentialBase, uint32& InOutPreviousDistance)
+{
+	uint32 InheritanceDistance = 0;
+	for (const UStruct* TempStruct = Derived; TempStruct; TempStruct = TempStruct->GetSuperStruct())
+	{
+		if (TempStruct == PotentialBase)
+		{
+			break;
+		}
+		++InheritanceDistance;
+		if (InheritanceDistance > InOutPreviousDistance)
+		{
+			return false;
+		}
 	}
+
+	InOutPreviousDistance = InheritanceDistance;
+	return true;
+}
+
 } // anonymous namespace
 
 bool FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(const UAbstractLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions)
@@ -54,7 +56,7 @@ bool FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(const UAbs
 	return false;
 }
 
-void FLBStrategyEditorExtensionManager::RegisterExtension(UClass* StrategyClass, TUniquePtr<FLBStrategyEditorExtensionInterface>&& StrategyExtension)
+void FLBStrategyEditorExtensionManager::RegisterExtension(UClass* StrategyClass, TUniquePtr<FLBStrategyEditorExtensionInterface> StrategyExtension)
 {
 	Extensions.Push(ExtensionArray::ElementType(StrategyClass, MoveTemp(StrategyExtension)));
 }

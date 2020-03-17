@@ -20,8 +20,8 @@ class FLBStrategyEditorExtensionTemplate : public FLBStrategyEditorExtensionInte
 {
 public:
 	using ExtendedStrategy = StrategyImpl;
-private:
 
+private:
 	bool GetDefaultLaunchConfiguration_Virtual(const UAbstractLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions) const override
 	{
 		return static_cast<const Implementation*>(this)->GetDefaultLaunchConfiguration(static_cast<const StrategyImpl*>(Strategy), OutConfiguration, OutWorldDimensions);
@@ -42,8 +42,7 @@ public:
 	void Cleanup();
 
 private:
-
-	void RegisterExtension(UClass* StrategyClass, TUniquePtr<FLBStrategyEditorExtensionInterface>&& StrategyExtension);
+	void RegisterExtension(UClass* StrategyClass, TUniquePtr<FLBStrategyEditorExtensionInterface> StrategyExtension);
 
 	using ExtensionArray = TArray<TPair<UClass*, TUniquePtr<FLBStrategyEditorExtensionInterface>>>;
 
