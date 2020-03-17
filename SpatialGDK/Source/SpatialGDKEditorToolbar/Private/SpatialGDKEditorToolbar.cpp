@@ -536,9 +536,11 @@ bool FSpatialGDKEditorToolbarModule::FillWorkerLaunchConfigFromWorldSettings(UWo
 		return false;
 	}
 
-	if (!FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(WorldSettings->LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), OutLaunchConfig, OutWorldDimension))
+	FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
+
+	if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(WorldSettings->LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), OutLaunchConfig, OutWorldDimension))
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not get the number of worker to launch for load balancing strategy %s"), WorldSettings->LoadBalanceStrategy->GetName());
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not get the number of worker to launch for load balancing strategy %s"), *WorldSettings->LoadBalanceStrategy->GetName());
 		return false;
 	}
 
@@ -593,6 +595,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		{
 			LocalDeploymentManager->SetRedeployRequired();
 		}
+
+		UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+		check(EditorWorld);
 
 		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(SpatialGDKServicesConstants::SpatialOSDirectory), FString::Printf(TEXT("%s_LocalLaunchConfig.json"), *EditorWorld->GetMapName()));
 
