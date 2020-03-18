@@ -153,6 +153,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 
 	// We collect component IDs related to the dynamic subobject being added to gain authority over.
 	TArray<Worker_ComponentId> NewComponentIds;
+	NewComponentIds.SetNum(SCHEMA_Count);
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
 		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
@@ -198,6 +199,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
 {
 	TArray<Worker_ComponentId> ComponentsToRemove;
+	ComponentsToRemove.SetNum(SCHEMA_Count);
 	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
 	{
 		if (SubobjectComponentId != SpatialConstants::INVALID_COMPONENT_ID)
@@ -643,7 +645,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
 }
 
-void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request)
+void USpatialSender::SetAclWriteAuthority(const SpatialLoadBa1lanceEnforcer::AclWriteAuthorityRequest& Request)
 {
 	check(NetDriver);
 	check(StaticComponentView->HasComponent(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
