@@ -184,6 +184,7 @@ SpatialDispatcher::FCallbackId SpatialDispatcher::OnAuthorityChange(Worker_Compo
 		Callback(Op->op.authority_change);
 	});
 }
+
 SpatialDispatcher::FCallbackId SpatialDispatcher::OnComponentUpdate(Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMPONENT_UPDATE, [Callback](const Worker_Op* Op)

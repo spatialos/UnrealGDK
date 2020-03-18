@@ -465,7 +465,17 @@ void UGlobalStateManager::SetDeploymentState()
 
 void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 {
-	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
+	// We should only be able to change whether we're accepting players if:
+	// - we're authoritative over the DeploymentMap which has the acceptingPlayers property,
+	// - we've called BeginPlay (so startup Actors can do initialization before any spawn requests are received),
+	// - we aren't duplicating the current state.
+	const bool bHasDeploymentMapAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
+	const bool bHasBegunPlay = NetDriver->GetWorld()->HasBegunPlay();
+	const bool bIsDuplicatingCurrentState = bAcceptingPlayers == bInAcceptingPlayers;
+	if (!bHasDeploymentMapAuthority || !bHasBegunPlay || bIsDuplicatingCurrentState)
+	{
+		return;
+	}
 
 	// Send the component update that we can now accept players.
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
@@ -474,14 +484,8 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	// Set the map URL on the GSM.
-	AddStringToSchema(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID, NetDriver->GetWorld()->URL.Map);
-
 	// Set the AcceptingPlayers state on the GSM
 	Schema_AddBool(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID, static_cast<uint8_t>(bInAcceptingPlayers));
-
-	// Set the schema hash for connecting workers to check against
-	Schema_AddUint32(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH, NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
 
 	// Component updates are short circuited so we set the updated state here and then send the component update.
 	bAcceptingPlayers = bInAcceptingPlayers;
@@ -633,13 +637,16 @@ void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
-	const bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-	if (bHasGSMAuthority)
+	const bool bHasStartupActorAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	if (bHasStartupActorAuthority)
 	{
 		SendCanBeginPlayUpdate(true);
 	}
 
-	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority
+	// This method has early exits internally to ensure the logic is only executed on the correct worker.
+	SetAcceptingPlayers(true);
+
+	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
 	if (bCanSpawnWithAuthority)
 	{
 		if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
