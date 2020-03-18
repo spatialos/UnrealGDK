@@ -397,20 +397,34 @@ bool USpatialConnectionManager::TrySetupConnectionConfigFromCommandLine(const FS
 
 void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType)
 {
-	if (URL.Host == SpatialConstants::LOCATOR_HOST && URL.HasOption(TEXT("locator")))
+	if (URL.HasOption(TEXT("locator")))
 	{
 		SetConnectionType(ESpatialConnectionType::Locator);
-		// TODO: UNR-2811 We might add a feature whereby we get the locator host from the URL option.
-		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorConfig.LocatorHost);
+		if (URL.Host == SpatialConstants::LOCATOR_HOST)
+		{
+			FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorConfig.LocatorHost);
+		}
+		else
+		{
+			LocatorConfig.LocatorHost = URL.Host;
+		}
+
 		LocatorConfig.PlayerIdentityToken = URL.GetOption(*SpatialConstants::URL_PLAYER_IDENTITY_OPTION, TEXT(""));
 		LocatorConfig.LoginToken = URL.GetOption(*SpatialConstants::URL_LOGIN_OPTION, TEXT(""));
 		LocatorConfig.WorkerType = SpatialWorkerType;
 	}
-	else if (URL.Host == SpatialConstants::LOCATOR_HOST && URL.HasOption(TEXT("devauth")))
+	else if (URL.HasOption(TEXT("devauth")))
 	{
 		SetConnectionType(ESpatialConnectionType::DevAuthFlow);
-		// TODO: UNR-2811 Also set the locator host of DevAuthConfig from URL.
-		FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), DevAuthConfig.LocatorHost);
+		if (URL.Host == SpatialConstants::LOCATOR_HOST)
+		{
+			FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), DevAuthConfig.LocatorHost);
+		}
+		else
+		{
+			DevAuthConfig.LocatorHost = URL.Host;
+		}
+
 		DevAuthConfig.DevelopmentAuthToken = URL.GetOption(*SpatialConstants::URL_DEV_AUTH_TOKEN_OPTION, TEXT(""));
 		DevAuthConfig.Deployment = URL.GetOption(*SpatialConstants::URL_TARGET_DEPLOYMENT_OPTION, TEXT(""));
 		DevAuthConfig.PlayerId = URL.GetOption(*SpatialConstants::URL_PLAYER_ID_OPTION, *SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
