@@ -22,6 +22,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Schema/ComponentPresence.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
@@ -1299,19 +1300,21 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		}
 	}
 
+	const FString NewClientConnectionWorkerId = SpatialGDK::GetOwningClientWorkerId(Actor);
+
 	// If there is a valid client worker ID that owns the NetConnection of this Actor, then
 	// update ComponentPresence (and the EntityACL if authoritative).
-	if (const FString* NewClientConnectionWorkerId = SpatialGDK::GetOwningClientWorkerId(Actor))
+	if (!NewClientConnectionWorkerId.IsEmpty())
 	{
 		check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 		SpatialGDK::ComponentPresence* ComponentPresenceData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ComponentPresence>(EntityId);
-		ComponentPresence.PossessingClientWorkerId = NewClientConnectionWorkerId;
+		ComponentPresenceData->PossessingClientWorkerId = NewClientConnectionWorkerId;
 		FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-		Connection->SendComponentUpdate(EntityId, &Update);
+		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 
 		if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 		{
-			UpdateEntityACLToNewOwner();
+			UpdateEntityACLToNewOwner(*NewClientConnectionWorkerId);
 		}
 	}
 

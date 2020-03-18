@@ -107,7 +107,7 @@ public:
 	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
 	void ProcessPositionUpdates();
 
-	bool UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute);
+	bool UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute);
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);

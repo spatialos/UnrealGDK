@@ -1877,7 +1877,7 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	SpatialConnection->OwningClientWorkerId = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
 
 	// Register workerId and its connection.
-	if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(SpatialConnection->ClientWorkerId))
+	if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(SpatialConnection->OwningClientWorkerId))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %s 's NetConnection created."), *WorkerId.GetValue());
 

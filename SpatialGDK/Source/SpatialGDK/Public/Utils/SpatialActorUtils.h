@@ -34,14 +34,14 @@ inline AActor* GetHierarchyRoot(const AActor* Actor)
 	return Owner;
 }
 
-inline const FString* GetOwningClientWorkerId(const AActor* Actor) const
+inline FString GetOwningClientWorkerId(const AActor* Actor)
 {
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
 	{
-		return &NetConnection->OwningClientWorkerId;
+		return NetConnection->OwningClientWorkerId;
 	}
 
-	return nullptr;
+	return FString();
 }
 
 inline FVector GetActorSpatialPosition(const AActor* InActor)

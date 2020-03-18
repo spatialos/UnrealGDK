@@ -188,12 +188,16 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 			ComponentIds.AddUnique(RequiredComponentId);
 		}
 
+		PhysicalWorkerName PossessingClientId = ComponentPresenceComponent->PossessingClientWorkerId.IsSet() ?
+			ComponentPresenceComponent->PossessingClientWorkerId.GetValue() :
+			FString();
+
 		PendingRequests.Push(
 			AclWriteAuthorityRequest{
 				EntityId,
 				*DestinationWorkerId,
 				Acl->ReadAcl,
-				{ { ComponentPresenceComponent->PossessingClientWorkerId } },
+				{ { PossessingClientId } },
 				ComponentIds
 			});
 

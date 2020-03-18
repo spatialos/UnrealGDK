@@ -31,9 +31,9 @@ struct ComponentPresence : Component
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 		CopyListFromComponentObject(ComponentObject);
-		if (Schema_GetBytesCount(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID) == 1)
+		if (Schema_GetBytesCount(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_POSSESSING_CLIENT_WORKER_ID) == 1)
 		{
-			PossessingClientWorkerId = GetObjectRefFromSchema(ComponentObject, 1);
+			PossessingClientWorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_POSSESSING_CLIENT_WORKER_ID);
 		}
 	}
 
@@ -56,7 +56,7 @@ struct ComponentPresence : Component
 
 		if (PossessingClientWorkerId.IsSet())
 		{
-			AddStringToSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID, *PossessingClientWorkerId)
+			AddStringToSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_POSSESSING_CLIENT_WORKER_ID, *PossessingClientWorkerId);
 		}
 
 		return Data;
@@ -79,11 +79,11 @@ struct ComponentPresence : Component
 
 		if (PossessingClientWorkerId.IsSet())
 		{
-			AddStringToSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID, *PossessingClientWorkerId)
+			AddStringToSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_POSSESSING_CLIENT_WORKER_ID, *PossessingClientWorkerId);
 		}
 		else
 		{
-			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID);
+			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::COMPONENT_PRESENCE_POSSESSING_CLIENT_WORKER_ID);
 		}
 
 		return Update;
@@ -94,11 +94,11 @@ struct ComponentPresence : Component
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 		CopyListFromComponentObject(ComponentObject);
 
-		if (Schema_GetBytesCount(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID) == 1)
+		if (Schema_GetBytesCount(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_POSSESSING_CLIENT_WORKER_ID) == 1)
 		{
-			PossessingClientWorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID);
+			PossessingClientWorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_POSSESSING_CLIENT_WORKER_ID);
 		}
-		else if (Schema_IsComponentUpdateFieldCleared(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_CLIENT_WORKER_ID))
+		else if (Schema_IsComponentUpdateFieldCleared(Update.schema_type, SpatialConstants::COMPONENT_PRESENCE_POSSESSING_CLIENT_WORKER_ID))
 		{
 			PossessingClientWorkerId = FString();
 		}

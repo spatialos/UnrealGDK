@@ -709,6 +709,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	SpawnData* SpawnDataComp = StaticComponentView->GetComponentData<SpawnData>(EntityId);
 	UnrealMetadata* UnrealMetadataComp = StaticComponentView->GetComponentData<UnrealMetadata>(EntityId);
+	ComponentPresence* ComponentPresenceComp = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 
 	// This function should only ever be called if we have received an unreal metadata component.
 	check(UnrealMetadataComp != nullptr);
@@ -768,7 +769,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp);
+	EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp, ComponentPresenceComp);
 
 	if (EntityActor == nullptr)
 	{
@@ -1069,7 +1070,7 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	check(PackageMap->GetObjectFromEntityId(EntityId) == nullptr);
 }
 
-AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp)
+AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp, SpatialGDK::ComponentPresence* ComponentPresenceData)
 {
 	if (UnrealMetadataComp->StablyNamedRef.IsSet())
 	{
@@ -1088,11 +1089,11 @@ AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp
 		}
 	}
 
-	return CreateActor(UnrealMetadataComp, SpawnDataComp);
+	return CreateActor(UnrealMetadataComp, SpawnDataComp, ComponentPresenceData);
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp)
+AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp, ComponentPresence* ComponentPresenceData)
 {
 	UClass* ActorClass = UnrealMetadataComp->GetNativeEntityClass();
 
@@ -1126,7 +1127,7 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 
 	if (bIsServer && bCreatingPlayerController)
 	{
-		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), UnrealMetadataComp->OwnerWorkerAttribute);
+		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), *ComponentPresenceData->PossessingClientWorkerId);
 	}
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.

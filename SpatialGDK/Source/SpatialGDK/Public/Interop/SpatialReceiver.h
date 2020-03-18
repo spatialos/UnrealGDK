@@ -10,6 +10,7 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialOSDispatcherInterface.h"
 #include "Interop/SpatialRPCService.h"
+#include "Schema/ComponentPresence.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/SpawnData.h"
@@ -99,8 +100,8 @@ private:
 	void ReceiveActor(Worker_EntityId EntityId);
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 
-	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
-	AActor* CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
+	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData, SpatialGDK::ComponentPresence* ComponentPresenceData);
+	AActor* CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData, SpatialGDK::ComponentPresence* ComponentPresenceData);
 
 	USpatialActorChannel* GetOrRecreateChannelForDomantActor(AActor* Actor, Worker_EntityId EntityID);
 	void ProcessRemoveComponent(const Worker_RemoveComponentOp& Op);

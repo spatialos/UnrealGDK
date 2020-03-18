@@ -76,7 +76,7 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(PlayerSpawnerData);
-	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
+	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components), {}).CreateComponentPresenceData());
 
 	SetEntityData(SpawnerEntity, Components);
 
@@ -174,7 +174,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
 	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
+	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components), {}).CreateComponentPresenceData());
 
 	SetEntityData(GSM, Components);
 
@@ -210,7 +210,7 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateVirtualWorkerTranslatorData());
 	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
+	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components), {}).CreateComponentPresenceData());
 
 	SetEntityData(VirtualWorkerTranslator, Components);
 
