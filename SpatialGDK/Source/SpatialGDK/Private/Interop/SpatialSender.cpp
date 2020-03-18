@@ -117,12 +117,12 @@ void USpatialSender::SendAddComponentForSubobject(USpatialActorChannel* Channel,
 	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
 
 	TArray<FWorkerComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
-	TrySendAddComponent(Channel->GetEntityId(), SubobjectDatas);
+	SendAddComponents(Channel->GetEntityId(), SubobjectDatas);
 
 	Channel->PendingDynamicSubobjects.Remove(TWeakObjectPtr<UObject>(Subobject));
 }
 
-void USpatialSender::TrySendAddComponent(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas)
+void USpatialSender::SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas)
 {
 	if (ComponentDatas.Num() == 0)
 	{
@@ -216,11 +216,11 @@ void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, c
 	PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
 }
 
-void USpatialSender::SendRemoveComponentForComponentId(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void USpatialSender::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
-	const bool bRemovedComponent = ComponentPresenceData->ComponentList.Remove(ComponentId) != 0;
+	ComponentPresenceData->ComponentList.Remove(ComponentId);
 	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
@@ -572,7 +572,7 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 		RemoveOp.component_id = OldComponent;
 		StaticComponentView->OnRemoveComponent(RemoveOp);
 
-		SendRemoveComponentForComponentId(EntityId, OldComponent);
+		SendRemoveComponent(EntityId, OldComponent);
 	}
 
 	if (NewComponent != SpatialConstants::INVALID_COMPONENT_ID)
@@ -585,7 +585,7 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 
 		StaticComponentView->OnAddComponent(AddOp);
 
-		TrySendAddComponent(EntityId, { ComponentFactory::CreateEmptyComponentData(NewComponent) });
+		SendAddComponents(EntityId, { ComponentFactory::CreateEmptyComponentData(NewComponent) });
 	}
 }
 
@@ -1292,7 +1292,7 @@ void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
 	Worker_AddComponentOp AddComponentOp{};
 	AddComponentOp.entity_id = EntityId;
 	AddComponentOp.data = Tombstone().CreateData();
-	TrySendAddComponent(EntityId, { AddComponentOp.data });
+	SendAddComponents(EntityId, { AddComponentOp.data });
 	StaticComponentView->OnAddComponent(AddComponentOp);
 
 #if WITH_EDITOR
