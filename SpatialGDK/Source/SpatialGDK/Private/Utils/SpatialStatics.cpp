@@ -175,10 +175,13 @@ void USpatialStatics::PrintTextSpatial(UObject* WorldContextObject, const FText 
 
 FString USpatialStatics::GetActorEntityIDString(const AActor* Actor)
 {
-	if (Actor != nullptr && const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Actor->GetNetDriver()))
+	if (Actor != nullptr)
 	{
-		const Worker_EntityId EntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
-		return FString::Printf(TEXT("%lld"), EntityId);
+		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Actor->GetNetDriver()))
+		{
+			const Worker_EntityId EntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
+			return FString::Printf(TEXT("%lld"), EntityId);
+		}
 	}
 
 	return FString();
