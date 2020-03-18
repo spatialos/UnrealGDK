@@ -97,7 +97,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 		});
 	}
 
-	FEditorDelegates::PostPIEStarted.AddLambda([this](bool bIsSimulatingInEditor)
+	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor)
 	{
 		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
