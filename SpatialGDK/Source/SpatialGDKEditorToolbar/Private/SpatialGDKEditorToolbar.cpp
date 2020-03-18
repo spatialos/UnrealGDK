@@ -43,9 +43,9 @@
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
-#include "SpatialWorldSettings.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "EditorExtension/LBStrategyEditorExtension.h"
-#include "AbstractLBStrategy.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialGDKEditorModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
