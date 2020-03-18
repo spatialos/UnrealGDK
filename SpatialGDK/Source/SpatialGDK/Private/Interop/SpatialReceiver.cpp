@@ -1470,7 +1470,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-		if (NetDriver->IsServer() && (LoadBalanceEnforcer != nullptr))
+		if (LoadBalanceEnforcer != nullptr)
 		{
 			LoadBalanceEnforcer->OnLoadBalancingComponentUpdated(Op);
 		}

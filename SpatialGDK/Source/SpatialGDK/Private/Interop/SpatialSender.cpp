@@ -153,6 +153,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 
 	// We collect component IDs related to the dynamic subobject being added to gain authority over.
 	TArray<Worker_ComponentId> NewComponentIds;
+	NewComponentIds.SetNum(SCHEMA_Count);
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
 		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
@@ -198,33 +199,32 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
 {
 	TArray<Worker_ComponentId> ComponentsToRemove;
+	ComponentsToRemove.SetNum(SCHEMA_Count);
 	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
 	{
 		if (SubobjectComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			NetDriver->Connection->SendRemoveComponent(EntityId, SubobjectComponentId);
 			ComponentsToRemove.Add(SubobjectComponentId);
 		}
 	}
 
-	// Update ComponentPresence.
+	SendRemoveComponents(ComponentsToRemove);
+
+	PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
+}
+
+void USpatialSender::SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds)
+{
 	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 	ComponentPresenceData->RemoveComponentIds(ComponentsToRemove);
 	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
-	PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
-}
 
-void USpatialSender::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
-{
-	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
-	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
-	ComponentPresenceData->ComponentList.Remove(ComponentId);
-	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-	Connection->SendComponentUpdate(EntityId, &Update);
-
-	Connection->SendRemoveComponent(EntityId, ComponentId);
+	for (auto ComponentId : ComponentIds)
+	{
+		Connection->SendRemoveComponent(EntityId, ComponentId);
+	}
 }
 
 // Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
@@ -645,16 +645,16 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
 }
 
-void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request)
+void USpatialSender::SetAclWriteAuthority(const SpatialLoadBa1lanceEnforcer::AclWriteAuthorityRequest& Request)
 {
 	check(NetDriver);
+	check(StaticComponentView->HasComponent(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID);
 
 	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *Request.OwningWorkerId);
 
 	const WorkerAttributeSet OwningServerWorkerAttributeSet = { WriteWorkerId };
 
 	EntityAcl* NewAcl = StaticComponentView->GetComponentData<EntityAcl>(Request.EntityId);
-
 	NewAcl->ReadAcl = Request.ReadAcl;
 
 	for (const Worker_ComponentId& ComponentId : Request.ComponentIds)

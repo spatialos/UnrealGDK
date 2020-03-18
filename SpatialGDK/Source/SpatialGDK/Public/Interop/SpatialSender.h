@@ -85,7 +85,7 @@ public:
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
 	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas);
 	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds);
 	void SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);

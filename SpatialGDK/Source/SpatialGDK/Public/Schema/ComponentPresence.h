@@ -42,9 +42,9 @@ struct ComponentPresence : Component
 		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		for (int32 i = 0; i < ComponentList.Num(); ++i)
+		for (const Worker_ComponentId& ComponentId : ComponentList)
 		{
-			Schema_AddUint32(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, ComponentList[i]);
+			Schema_AddUint32(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, ComponentId);
 		}
 
 		return Data;
@@ -89,7 +89,7 @@ struct ComponentPresence : Component
 
 	void AddComponentIds(const TArray<Worker_ComponentId>& ComponentsToAdd)
 	{
-		for (auto& NewComponentId : ComponentsToAdd)
+		for (const Worker_ComponentId& NewComponentId : ComponentsToAdd)
 		{
 			ComponentList.AddUnique(NewComponentId);
 		}
