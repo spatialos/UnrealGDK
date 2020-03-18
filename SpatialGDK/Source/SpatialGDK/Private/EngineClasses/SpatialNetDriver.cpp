@@ -98,9 +98,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	// This is a temporary measure until we can look into replication graph support, required due to UNR-832
-	checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
-
 	bConnectAsClient = bInitAsClient;
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
@@ -989,6 +986,11 @@ void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNet
 	const int NumConnections = 1;
 	GetNetworkObjectList().MarkDormant(Actor, NetConnection, NumConnections, this);
 
+	if (UReplicationDriver* RepDriver = GetReplicationDriver())
+	{
+		RepDriver->NotifyActorFullyDormantForConnection(Actor, NetConnection);
+	}
+
 	// Intentionally don't call Super::NotifyActorFullyDormantForConnection
 }
 
@@ -1473,7 +1475,13 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	{
 		return 0;
 	}
-	check(SpatialConnection && SpatialConnection->bReliableSpatialConnection);
+	check(SpatialConnection->bReliableSpatialConnection);
+
+	if (UReplicationDriver* RepDriver = GetReplicationDriver())
+	{
+		return RepDriver->ServerReplicateActors(DeltaSeconds);
+	}
+
 	check(World);
 
 	int32 Updated = 0;
@@ -1530,6 +1538,13 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		if (ClientConnection->ViewTarget != nullptr)
 		{
 			new(ConnectionViewers)FNetViewer(ClientConnection, DeltaSeconds);
+
+			// send ClientAdjustment if necessary
+			// we do this here so that we send a maximum of one per packet to that client; there is no value in stacking additional corrections
+			if (ClientConnection->PlayerController != nullptr)
+			{
+				ClientConnection->PlayerController->SendClientAdjustment();
+			}
 
 			if (ClientConnection->Children.Num() > 0)
 			{
@@ -2253,6 +2268,11 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 void USpatialNetDriver::AddPendingDormantChannel(USpatialActorChannel* Channel)
 {
 	PendingDormantChannels.Emplace(Channel);
+}
+
+void USpatialNetDriver::RemovePendingDormantChannel(USpatialActorChannel* Channel)
+{
+	PendingDormantChannels.Remove(Channel);
 }
 
 void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)

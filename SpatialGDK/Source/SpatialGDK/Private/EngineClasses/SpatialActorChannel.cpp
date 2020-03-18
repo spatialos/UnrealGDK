@@ -304,17 +304,22 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 
 int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 {
-	if (Reason != EChannelCloseReason::Dormancy)
-	{
-		DeleteEntityIfAuthoritative();
-		NetDriver->PackageMap->RemoveEntityActor(EntityId);
-	}
-	else
+	if (Reason == EChannelCloseReason::Dormancy)
 	{
 		// Closed for dormancy reasons, ensure we update the component state of this entity.
 		const bool bMakeDormant = true;
 		NetDriver->RefreshActorDormancy(Actor, bMakeDormant);
 		NetDriver->RegisterDormantEntityId(EntityId);
+	}
+	else if (Reason == EChannelCloseReason::Relevancy)
+	{
+		check(IsAuthoritativeServer());
+		// Do nothing except close actor channel - this should only get processed on auth server
+	}
+	else
+	{
+		DeleteEntityIfAuthoritative();
+		NetDriver->PackageMap->RemoveEntityActor(EntityId);
 	}
 
 	NetDriver->RemoveActorChannel(EntityId, *this);
@@ -529,12 +534,6 @@ int64 USpatialActorChannel::ReplicateActor()
 #if USE_NETWORK_PROFILER 
 	const uint32 ActorReplicateStartTime = GNetworkProfiler.IsTrackingEnabled() ? FPlatformTime::Cycles() : 0;
 #endif
-	// Epic does this at the net driver level, per connection. See UNetDriver::ServerReplicateActors().
-	// However, we have many player controllers sharing one connection, so we do it at the actor level before replication.
-	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
-	{
-		PlayerController->SendClientAdjustment();
-	}
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
