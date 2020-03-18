@@ -195,6 +195,10 @@ struct FSpatialLaunchConfigDescription
 		ServerWorkers.Add(UnrealWorkerDefaultSetting);
 	}
 
+
+	/** Set WorkerTypesToLaunch in level editor play settings. */
+	SPATIALGDKEDITOR_API void SetLevelEditorPlaySettingsWorkerTypes();
+
 	/** Deployment template. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	FString Template;
@@ -242,9 +246,6 @@ private:
 	/** Set DAT in runtime settings. */
 	void SetRuntimeUseDevelopmentAuthenticationFlow();
 	void SetRuntimeDevelopmentDeploymentToConnect();
-
-	/** Set WorkerTypesToLaunch in level editor play settings. */
-	void SetLevelEditorPlaySettingsWorkerTypes();
 
 public:
 

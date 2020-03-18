@@ -98,7 +98,7 @@ private:
 
 	void ShowFailedNotification(const FString& NotificationText);
 
-	bool ValidateGeneratedLaunchConfig() const;
+	bool FillWorkerLaunchConfigFromWorldSettings(UWorld& World, FWorkerTypeLaunchSection& OutLaunchConfig, FIntPoint& OutWorldDimension);
 
 	void GenerateSchema(bool bFullScan);
 
