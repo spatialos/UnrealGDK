@@ -75,7 +75,7 @@ struct ComponentPresence : Component
 		Schema_GetUint32List(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, ComponentList.GetData());
 	}
 
-	bool AddComponentDataIds(const TArray<FWorkerComponentData>& ComponentDatas)
+	void AddComponentDataIds(const TArray<FWorkerComponentData>& ComponentDatas)
 	{
 		TArray<Worker_ComponentId> ComponentIds;
 		ComponentIds.SetNum(ComponentDatas.Num());
@@ -84,34 +84,23 @@ struct ComponentPresence : Component
 			ComponentIds.Add(ComponentData.component_id);
 		}
 
-		return AddComponentIds(ComponentIds);
+		AddComponentIds(ComponentIds);
 	}
 
-	bool AddComponentIds(const TArray<Worker_ComponentId>& ComponentsToAdd)
+	void AddComponentIds(const TArray<Worker_ComponentId>& ComponentsToAdd)
 	{
-		const int32 OldPresentComponentCount = ComponentList.Num();
-
 		for (auto& NewComponentId : ComponentsToAdd)
 		{
 			ComponentList.AddUnique(NewComponentId);
 		}
-
-		return OldPresentComponentCount != ComponentList.Num();
 	}
 
-	bool RemoveComponentIds(const TArray<Worker_ComponentId>& ComponentsToRemove)
+	void RemoveComponentIds(const TArray<Worker_ComponentId>& ComponentsToRemove)
 	{
-		const int32 OldPresentComponentCount = ComponentList.Num();
-
-		for (auto RequiredComponentIt = ComponentList.CreateIterator(); RequiredComponentIt; RequiredComponentIt++)
+		ComponentList.RemoveAll([&](Worker_ComponentId PresentComponent)
 		{
-			if (ComponentsToRemove.Contains(*RequiredComponentIt))
-			{
-				RequiredComponentIt.RemoveCurrent();
-			}
-		}
-
-		return OldPresentComponentCount != ComponentList.Num();
+			return ComponentsToRemove.Contains(PresentComponent);
+		});
 	}
 
 	// List of component IDs that exist on an entity.
