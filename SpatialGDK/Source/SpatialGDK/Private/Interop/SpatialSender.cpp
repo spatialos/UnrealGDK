@@ -153,7 +153,6 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 
 	// We collect component IDs related to the dynamic subobject being added to gain authority over.
 	TArray<Worker_ComponentId> NewComponentIds;
-	NewComponentIds.SetNum(SCHEMA_Count);
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
 		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
