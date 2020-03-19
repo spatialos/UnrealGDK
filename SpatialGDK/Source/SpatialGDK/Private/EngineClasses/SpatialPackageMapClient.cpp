@@ -242,7 +242,7 @@ TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Wo
 	return GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, 0));
 }
 
-FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject* Object)
+FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(const UObject* Object)
 {
 	if (Object == nullptr)
 	{
