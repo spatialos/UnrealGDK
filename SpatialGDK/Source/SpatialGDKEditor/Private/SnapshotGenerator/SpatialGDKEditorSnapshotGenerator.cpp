@@ -31,6 +31,24 @@ using namespace SpatialGDK;
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
+void SetEntityData(Worker_Entity& Entity, const TArray<FWorkerComponentData>& Components)
+{
+	Entity.component_count = Components.Num();
+
+#if TRACE_LIB_ACTIVE
+	// We have to unpack these as Worker_ComponentData is not the same as FWorkerComponentData
+	TArray<Worker_ComponentData> UnpackedComponentData;
+	UnpackedComponentData.SetNum(Components.Num());
+	for (int i = 0, Num = Components.Num(); i < Num; i++)
+	{
+		UnpackedComponentData[i] = Components[i];
+	}
+	Entity.components = UnpackedComponentData.GetData();
+#else
+	Entity.components = Components.GetData();
+#endif
+}
+
 bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity SpawnerEntity;
@@ -58,8 +76,7 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(PlayerSpawnerData);
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
-	SpawnerEntity.component_count = Components.Num();
-	SpawnerEntity.components = Components.GetData();
+	SetEntityData(SpawnerEntity, Components);
 
 	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &SpawnerEntity);
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
@@ -157,8 +174,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
-	GSM.component_count = Components.Num();
-	GSM.components = Components.GetData();
+	SetEntityData(GSM, Components);
 
 	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &GSM);
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
@@ -194,8 +210,7 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(EntityAcl(CreateReadACLForAlwaysRelevantEntities(), ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
-	VirtualWorkerTranslator.component_count = Components.Num();
-	VirtualWorkerTranslator.components = Components.GetData();
+	SetEntityData(VirtualWorkerTranslator, Components);
 
 	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &VirtualWorkerTranslator);
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
