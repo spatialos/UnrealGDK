@@ -78,9 +78,12 @@ struct ComponentPresence : Component
 	void AddComponentDataIds(const TArray<FWorkerComponentData>& ComponentDatas)
 	{
 		TArray<Worker_ComponentId> ComponentIds;
-		ComponentIds.SetNum(ComponentDatas.Num());
 		for (const FWorkerComponentData& ComponentData : ComponentDatas)
 		{
+			if (ComponentData.component_id == 0)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Unknoasdfasdfao KCP."));
+			}
 			ComponentIds.Add(ComponentData.component_id);
 		}
 
