@@ -3,9 +3,37 @@
 #include "Utils/LaunchConfigEditor.h"
 
 #include "DesktopPlatformModule.h"
+#include "Editor.h"
 #include "Framework/Application/SlateApplication.h"
 #include "IDesktopPlatform.h"
+
+#include "SpatialGDKSettings.h"
+#include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
+#include "SpatialRuntimeLoadBalancingStrategies.h"
+
+void ULaunchConfigurationEditor::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
+	FillWorkerConfigurationFromCurrentMap(LaunchConfiguration.ServerWorkersMap, LaunchConfiguration.World.Dimensions);
+}
+
+void ULaunchConfigurationEditor::OnWorkerTypesChanged()
+{
+	LaunchConfiguration.OnWorkerTypesChanged();
+	for (TPair<FName, FWorkerTypeLaunchSection>& LaunchSection : LaunchConfiguration.ServerWorkersMap)
+	{
+		if (LaunchSection.Value.WorkerLoadBalancing == nullptr)
+		{
+			LaunchSection.Value.WorkerLoadBalancing = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<UAbstractRuntimeLoadBalancingStrategy>();
+		}
+	}
+	PostEditChange();
+}
 
 void ULaunchConfigurationEditor::SaveConfiguration()
 {
@@ -25,6 +53,11 @@ void ULaunchConfigurationEditor::SaveConfiguration()
 
 	if (bSaved && Filenames.Num() > 0)
 	{
-		GenerateDefaultLaunchConfig(Filenames[0], &LaunchConfiguration);
+		if (ValidateGeneratedLaunchConfig(LaunchConfiguration, LaunchConfiguration.ServerWorkersMap))
+		{
+			GenerateDefaultLaunchConfig(Filenames[0], &LaunchConfiguration, LaunchConfiguration.ServerWorkersMap);
+
+			OnConfigurationSaved.ExecuteIfBound(this, Filenames[0]);
+		}
 	}
 }

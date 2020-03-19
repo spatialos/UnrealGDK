@@ -47,16 +47,16 @@ namespace
 }
 
 // Rewrite of FPropertyEditorModule::CreateFloatingDetailsView to use the detail property view in a new window.
-void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& EditorName, UClass* ObjectClass)
+UTransientUObjectEditor* UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& EditorName, UClass* ObjectClass)
 {
 	if (!ObjectClass)
 	{
-		return;
+		return nullptr;
 	}
 
 	if (!ObjectClass->IsChildOf<UTransientUObjectEditor>())
 	{
-		return;
+		return nullptr;
 	}
 
 	UTransientUObjectEditor* ObjectInstance = NewObject<UTransientUObjectEditor>(GetTransientPackage(), ObjectClass);
@@ -157,4 +157,6 @@ void UTransientUObjectEditor::LaunchTransientUObjectEditor(const FString& Editor
 		NewSlateWindow->Resize(NewSlateWindow->GetDesiredSize());
 		return EActiveTimerReturnType::Stop;
 	}));
+
+	return ObjectInstance;
 }

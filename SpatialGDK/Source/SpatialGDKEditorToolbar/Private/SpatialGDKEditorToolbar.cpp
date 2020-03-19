@@ -33,6 +33,7 @@
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKSimulatedPlayerDeployment.h"
+#include "SpatialRuntimeLoadBalancingStrategies.h"
 #include "Utils/LaunchConfigEditor.h"
 
 #include "Editor/EditorEngine.h"
@@ -44,8 +45,6 @@
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "EditorExtension/LBStrategyEditorExtension.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialGDKEditorModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
@@ -521,33 +520,6 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 	});
 }
 
-bool FSpatialGDKEditorToolbarModule::FillWorkerLaunchConfigFromWorldSettings(UWorld& World, FWorkerTypeLaunchSection& OutLaunchConfig, FIntPoint& OutWorldDimension)
-{
-	const ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World.GetWorldSettings());
-
-	if (!WorldSettings)
-	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Missing SpatialWorldSettings on map %s"), *World.GetMapName());
-		return false;
-	}
-
-	if (!WorldSettings->LoadBalanceStrategy)
-	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Missing Load balancing strategy on map %s"), *World.GetMapName());
-		return false;
-	}
-
-	FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
-
-	if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(WorldSettings->LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), OutLaunchConfig, OutWorldDimension))
-	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not get the number of worker to launch for load balancing strategy %s"), *WorldSettings->LoadBalanceStrategy->GetName());
-		return false;
-	}
-
-	return true;
-}
-
 void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 {
 	// Don't try and start a local deployment if spatial networking is disabled.
@@ -603,46 +575,47 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_LocalLaunchConfig.json"), *EditorWorld->GetMapName()));
 
 		FSpatialLaunchConfigDescription LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
-		if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
+		USingleWorkerRuntimeStrategy* DefaultStrategy = USingleWorkerRuntimeStrategy::StaticClass()->GetDefaultObject<USingleWorkerRuntimeStrategy>();
+		UAbstractRuntimeLoadBalancingStrategy* LoadBalancingStrat = DefaultStrategy;
+
+		if (SpatialGDKSettings->bEnableUnrealLoadBalancer
+			&& GetLoadBalancingStrategyFromWorldSettings(*EditorWorld, LoadBalancingStrat, LaunchConfigDescription.World.Dimensions))
 		{
-			FIntPoint WorldDimensions;
-			FWorkerTypeLaunchSection WorkerLaunch;
-
-			if (FillWorkerLaunchConfigFromWorldSettings(*EditorWorld, WorkerLaunch, WorldDimensions))
-			{
-				LaunchConfigDescription.World.Dimensions = WorldDimensions;
-				LaunchConfigDescription.ServerWorkers.Empty(SpatialGDKSettings->ServerWorkerTypes.Num());
-
-				for (auto WorkerType : SpatialGDKSettings->ServerWorkerTypes)
-				{
-					LaunchConfigDescription.ServerWorkers.Add(WorkerLaunch);
-					LaunchConfigDescription.ServerWorkers.Last().WorkerTypeName = WorkerType;
-				}
-			}
+			LoadBalancingStrat->AddToRoot();
 		}
 
-		for (auto& WorkerLaunchSection : LaunchConfigDescription.ServerWorkers)
+		TMap<FName, FWorkerTypeLaunchSection> WorkersMap;
+
+		for (const TPair<FName, FWorkerTypeLaunchSection>& WorkerType : SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkersMap)
 		{
-			WorkerLaunchSection.bManualWorkerConnectionOnly = true;
+			FWorkerTypeLaunchSection Conf = WorkerType.Value;
+			Conf.WorkerLoadBalancing = LoadBalancingStrat;
+			Conf.bManualWorkerConnectionOnly = true;
+			WorkersMap.Add(WorkerType.Key, Conf);
 		}
 
-		if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription))
+		if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription, WorkersMap))
 		{
 			return;
 		}
 
-		GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription);
-		LaunchConfigDescription.SetLevelEditorPlaySettingsWorkerTypes();
+		GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription, WorkersMap);
+		SetLevelEditorPlaySettingsWorkerTypes(WorkersMap);
 
 		// Also create default launch config for cloud deployments.
 		{
-			for (auto& WorkerLaunchSection : LaunchConfigDescription.ServerWorkers)
+			for (auto& WorkerLaunchSection : WorkersMap)
 			{
-				WorkerLaunchSection.bManualWorkerConnectionOnly = false;
+				WorkerLaunchSection.Value.bManualWorkerConnectionOnly = false;
 			}
 
 			FString CloudLaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
-			GenerateDefaultLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription);
+			GenerateDefaultLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, WorkersMap);
+		}
+
+		if (LoadBalancingStrat != DefaultStrategy)
+		{
+			LoadBalancingStrat->RemoveFromRoot();
 		}
 	}
 	else

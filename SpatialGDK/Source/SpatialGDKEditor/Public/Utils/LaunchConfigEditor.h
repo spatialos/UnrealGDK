@@ -7,10 +7,24 @@
 
 #include "LaunchConfigEditor.generated.h"
 
-UCLASS()
+class ULaunchConfigurationEditor;
+
+DECLARE_DELEGATE_TwoParams(FOnSpatialOSLaunchConfigurationSaved, ULaunchConfigurationEditor*, const FString&)
+
+class UAbstractRuntimeLoadBalancingStrategy;
+
+UCLASS(Transient, CollapseCategories)
 class SPATIALGDKEDITOR_API ULaunchConfigurationEditor : public UTransientUObjectEditor
 {
 	GENERATED_BODY()
+
+public:
+	FOnSpatialOSLaunchConfigurationSaved OnConfigurationSaved;
+
+	void OnWorkerTypesChanged();
+
+protected:
+	void PostInitProperties() override;
 
 	UPROPERTY(EditAnywhere, Category = "Launch Configuration")
 	FSpatialLaunchConfigDescription LaunchConfiguration;
