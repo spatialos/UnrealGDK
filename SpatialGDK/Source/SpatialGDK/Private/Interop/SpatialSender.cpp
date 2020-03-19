@@ -81,7 +81,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
 
-	ComponentDatas.Add(ComponentPresence::CreateComponentPresenceData(EntityFactory::GetComponentPresenceList(ComponentDatas)));
+	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas)).CreateComponentPresenceData());
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
@@ -208,7 +208,7 @@ void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, c
 		}
 	}
 
-	SendRemoveComponents(ComponentsToRemove);
+	SendRemoveComponents(EntityId, ComponentsToRemove);
 
 	PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
 }
@@ -217,7 +217,7 @@ void USpatialSender::SendRemoveComponents(Worker_EntityId EntityId, TArray<Worke
 {
 	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
-	ComponentPresenceData->RemoveComponentIds(ComponentsToRemove);
+	ComponentPresenceData->RemoveComponentIds(ComponentIds);
 	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
@@ -572,7 +572,7 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 		RemoveOp.component_id = OldComponent;
 		StaticComponentView->OnRemoveComponent(RemoveOp);
 
-		SendRemoveComponent(EntityId, OldComponent);
+		SendRemoveComponents(EntityId, { OldComponent });
 	}
 
 	if (NewComponent != SpatialConstants::INVALID_COMPONENT_ID)
@@ -645,10 +645,10 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	NetDriver->LoadBalanceEnforcer->MaybeQueueAclAssignmentRequest(EntityId);
 }
 
-void USpatialSender::SetAclWriteAuthority(const SpatialLoadBa1lanceEnforcer::AclWriteAuthorityRequest& Request)
+void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request)
 {
 	check(NetDriver);
-	check(StaticComponentView->HasComponent(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID);
+	check(StaticComponentView->HasComponent(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
 
 	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *Request.OwningWorkerId);
 

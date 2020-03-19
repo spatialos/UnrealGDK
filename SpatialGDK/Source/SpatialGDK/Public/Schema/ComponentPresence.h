@@ -20,8 +20,8 @@ struct ComponentPresence : Component
 
 	ComponentPresence() = default;
 
-	ComponentPresence(TArray<Worker_ComponentId> InActorComponentList)
-		: ComponentList(InActorComponentList)
+	ComponentPresence(TArray<Worker_ComponentId>&& InActorComponentList)
+		: ComponentList(MoveTemp(InActorComponentList))
 	{}
 
 	ComponentPresence(const Worker_ComponentData& Data)
@@ -42,9 +42,9 @@ struct ComponentPresence : Component
 		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		for (const Worker_ComponentId& ComponentId : ComponentList)
+		for (const Worker_ComponentId& InComponentId : ComponentList)
 		{
-			Schema_AddUint32(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, ComponentId);
+			Schema_AddUint32(ComponentObject, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, InComponentId);
 		}
 
 		return Data;

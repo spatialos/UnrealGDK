@@ -2258,7 +2258,7 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 			Worker_RemoveComponentOp RemoveComponentOp{};
 			RemoveComponentOp.entity_id = EntityId;
 			RemoveComponentOp.component_id = SpatialConstants::DORMANT_COMPONENT_ID;
-			Sender->SendRemoveComponent(EntityId, { SpatialConstants::DORMANT_COMPONENT_ID });
+			Sender->SendRemoveComponents(EntityId, { SpatialConstants::DORMANT_COMPONENT_ID });
 			StaticComponentView->OnRemoveComponent(RemoveComponentOp);
 		}
 	}
