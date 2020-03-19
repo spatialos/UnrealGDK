@@ -27,7 +27,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 
 void USpatialWorkerConnection::FinishDestroy()
 {
-	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Destorying SpatialWorkerconnection."));
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Destroying SpatialWorkerconnection."));
 
 	DestroyConnection();
 

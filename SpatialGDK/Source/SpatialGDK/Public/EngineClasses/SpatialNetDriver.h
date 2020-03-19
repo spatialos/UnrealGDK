@@ -26,6 +26,7 @@
 
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
+class SpatialActorGroupManager;
 class UAbstractLBStrategy;
 class UEntityPool;
 class UGlobalStateManager;
@@ -113,6 +114,7 @@ public:
 	void RefreshActorDormancy(AActor* Actor, bool bMakeDormant);
 
 	void AddPendingDormantChannel(USpatialActorChannel* Channel);
+	void RemovePendingDormantChannel(USpatialActorChannel* Channel);
 	void RegisterDormantEntityId(Worker_EntityId EntityId);
 	void UnregisterDormantEntityId(Worker_EntityId EntityId);
 	bool IsDormantEntity(Worker_EntityId EntityId) const;
@@ -155,7 +157,7 @@ public:
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
 
-	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
+	SpatialActorGroupManager* ActorGroupManager;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
@@ -235,6 +237,8 @@ private:
 
 	UFUNCTION()
 	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
+
+	void OnActorSpawned(AActor* Actor);
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 

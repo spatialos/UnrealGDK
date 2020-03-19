@@ -149,10 +149,10 @@ void ASpatialDebugger::OnAuthorityGained()
 			for (int i = 0; i < LBStrategyRegions.Num(); i++)
 			{
 				const TPair<VirtualWorkerId, FBox2D>& LBStrategyRegion = LBStrategyRegions[i];
-				const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Get<0>());
+				const PhysicalWorkerName* WorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(LBStrategyRegion.Key);
 				FWorkerRegionInfo WorkerRegionInfo;
 				WorkerRegionInfo.Color = (WorkerName == nullptr) ? InvalidServerTintColor : SpatialGDK::GetColorForWorkerName(*WorkerName);
-				WorkerRegionInfo.Extents = LBStrategyRegion.Get<1>();
+				WorkerRegionInfo.Extents = LBStrategyRegion.Value;
 				WorkerRegions[i] = WorkerRegionInfo;
 			}
 		}

@@ -52,6 +52,10 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - SpatialPingComponent can now also report average ping measurements over a specified number of recent pings. You can specify the number of measurements recorded in `PingMeasurementsWindowSize` and get the measurement data by calling `GetAverageData`. There is also a delegate `OnRecordPing` that will be broadcast whenever a new ping measurement is recorded.
 - The Spatial Output Log window now displays deployment startup errors.
 - Added `bEnableClientQueriesOnServer` (defaulted false) which makes the same queries on the server as on clients if the unreal load balancer is enabled. Enable this to avoid clients seeing entities the server does not if the server's interest query has not been configured correctly.
+- The new Net Cull Distance client interest model is now enabled by default.
+- Added log warning when AddPendingRPC fails due to ControllerChannelNotListening.
+- When running with Offloading enabled, Actors will have local authority (ROLE_Authority) on servers for longer periods of time to allow more native Unreal functionality to work without problems.
+- When running with Offloading enabled, and trying to spawn Actors on a server which will not be the Actor Group owner for them, an error is logged and the Actor is deleted.
 
 ## Bug fixes:
 - Fixed a bug that caused the local API service to memory leak.
@@ -88,6 +92,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed a race where a client leaving the deployment could leave its actor behind on the server, to be cleaned up after a long timeout.
 - Fixed crash caused by state persisting across a transition from one deployment to another in SpatialGameInstance.
 - Fixed crash when starting + stopping PIE multiple times.
+- Fixed crash when shadow data was uninitialized when resolving unresolved objects.
 
 ### Internal:
 Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.

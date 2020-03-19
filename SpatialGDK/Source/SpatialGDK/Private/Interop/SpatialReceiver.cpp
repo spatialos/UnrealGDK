@@ -336,13 +336,14 @@ void USpatialReceiver::DropQueuedRemoveComponentOpsForEntity(Worker_EntityId Ent
 	}
 }
 
-USpatialActorChannel* USpatialReceiver::RecreateDormantSpatialChannel(AActor* Actor, Worker_EntityId EntityID)
+USpatialActorChannel* USpatialReceiver::GetOrRecreateChannelForDomantActor(AActor* Actor, Worker_EntityId EntityID)
 {
 	// Receive would normally create channel in ReceiveActor - this function is used to recreate the channel after waking up a dormant actor
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
 	check(!Channel->bCreatingNewEntity);
 	check(Channel->GetEntityId() == EntityID);
 
+	NetDriver->RemovePendingDormantChannel(Channel);
 	NetDriver->UnregisterDormantEntityId(EntityID);
 
 	return Channel;
@@ -366,7 +367,7 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 		FUnrealObjectRef ObjectRef(Op.entity_id, Op.component_id);
 		if (Op.component_id == SpatialConstants::DORMANT_COMPONENT_ID)
 		{
-			RecreateDormantSpatialChannel(Actor, Op.entity_id);
+			GetOrRecreateChannelForDomantActor(Actor, Op.entity_id);
 		}
 		else if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
@@ -808,9 +809,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 
 	// Set up actor channel.
-	USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
-
-	if (!Channel)
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	if (Channel == nullptr)
+	{
+		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
+	}
+  
+	if (Channel == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
 		EntityActor->Destroy(true);
@@ -824,11 +829,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
+	if (Channel->Actor == nullptr)
+	{
 #if ENGINE_MINOR_VERSION <= 22
-	Channel->SetChannelActor(EntityActor);
+		Channel->SetChannelActor(EntityActor);
 #else
-	Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
+		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
 #endif
+	}
+  
+	Channel->RefreshAuthority();
 
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
 
@@ -877,7 +887,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			FInBunch Bunch(NetDriver->ServerConnection);
 			EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 		}
-
 	}
 
 	// Taken from PostNetInit
@@ -950,7 +959,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		if (NetDriver->World)
+		if (NetDriver->GetWorld() != nullptr && !NetDriver->GetWorld()->IsPendingKillOrUnreachable())
 		{
 			for (UObject* SubObject : ActorChannel->CreateSubObjects)
 			{
@@ -1504,7 +1513,12 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		{
 			if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id)))
 			{
-				Channel = RecreateDormantSpatialChannel(Actor, Op.entity_id);
+				Channel = GetOrRecreateChannelForDomantActor(Actor, Op.entity_id);
+
+				// As we haven't removed the dormant component just yet, this might be a single replication update where the actor
+				// remains dormant. Add it back to pending dormancy so the local worker can clean up the channel. If we do process
+				// a dormant component removal later in this frame, we'll clear the channel from pending dormancy channel then.
+				NetDriver->AddPendingDormantChannel(Channel);
 			}
 			else
 			{
@@ -1665,13 +1679,12 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
 	{
-		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
-
-		// Op.caller_attribute_set has two attributes.
-		// 1. The attribute of the worker type
-		// 2. The attribute of the specific worker that sent the request
-		// We want to give authority to the specific worker, so we grab the second element from the attribute set.
-		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Payload, Op.caller_attribute_set.attributes[1], Op.request_id);
+		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequestOnServer(Op);
+		return;
+	}
+	else if (Op.request.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID && CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
+	{
+		NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(Op);
 		return;
 	}
 	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
@@ -1742,7 +1755,12 @@ void USpatialReceiver::OnCommandResponse(const Worker_CommandResponseOp& Op)
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandResponse);
 	if (Op.response.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
 	{
-		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponse(Op);
+		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponseOnClient(Op);
+		return;
+	}
+	else if (Op.response.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
+	{
+		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(Op);
 		return;
 	}
 
@@ -2103,12 +2121,10 @@ bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel& Channel)
 	return false;
 }
 
-
 void USpatialReceiver::ClearPendingRPCs(Worker_EntityId EntityId)
 {
 	IncomingRPCs.DropForEntity(EntityId);
 }
-
 
 void USpatialReceiver::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload InPayload)
 {
@@ -2219,6 +2235,10 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 
 		FRepLayout& RepLayout = DependentChannel->GetObjectRepLayout(ReplicatingObject);
 		FRepStateStaticBuffer& ShadowData = DependentChannel->GetObjectStaticBuffer(ReplicatingObject);
+		if (ShadowData.Num() == 0)
+		{
+			DependentChannel->ResetShadowData(RepLayout, ShadowData, ReplicatingObject);
+		}
 
 		ResolveObjectReferences(RepLayout, ReplicatingObject, *RepState, RepState->ReferenceMap, ShadowData.GetData(), (uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), RepNotifies, bSomeObjectsWereMapped);
 

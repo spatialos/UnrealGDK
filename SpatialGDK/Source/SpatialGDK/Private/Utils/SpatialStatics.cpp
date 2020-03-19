@@ -4,10 +4,12 @@
 
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "SpatialConstants.h"
+#include "EngineClasses/SpatialGameInstance.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/InspectionColors.h"
 #include "Utils/SpatialActorGroupManager.h"
@@ -23,10 +25,10 @@ SpatialActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* W
 {
 	if (const UWorld* World = WorldContext->GetWorld())
 	{
-		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+		if (const USpatialGameInstance* SpatialGameInstance = Cast<USpatialGameInstance>(World->GetGameInstance()))
 		{
-			check(SpatialNetDriver->ActorGroupManager.IsValid());
-			return SpatialNetDriver->ActorGroupManager.Get();
+			check(SpatialGameInstance->ActorGroupManager.IsValid());
+			return SpatialGameInstance->ActorGroupManager.Get();
 		}
 	}
 	return nullptr;
@@ -88,7 +90,13 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 		return false;
 	}
 
-	return IsActorGroupOwnerForClass(Actor, Actor->GetClass());
+	const AActor* EffectiveActor = Actor;
+	while (EffectiveActor->bUseNetOwnerActorGroup && EffectiveActor->GetOwner() != nullptr)
+	{
+		EffectiveActor = EffectiveActor->GetOwner();
+	}
+
+	return IsActorGroupOwnerForClass(EffectiveActor, EffectiveActor->GetClass());
 }
 
 bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
@@ -129,8 +137,13 @@ FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
 {
 	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(Actor))
 	{
-		UClass* ActorClass = Actor->GetClass();
-		return ActorGroupManager->GetActorGroupForClass(ActorClass);
+		const AActor* EffectiveActor = Actor;
+		while (EffectiveActor->bUseNetOwnerActorGroup && EffectiveActor->GetOwner() != nullptr)
+		{
+			EffectiveActor = EffectiveActor->GetOwner();
+		}
+
+		return ActorGroupManager->GetActorGroupForClass(EffectiveActor->GetClass());
 	}
 
 	return SpatialConstants::DefaultActorGroup;
@@ -158,4 +171,18 @@ void USpatialStatics::PrintStringSpatial(UObject* WorldContextObject, const FStr
 void USpatialStatics::PrintTextSpatial(UObject* WorldContextObject, const FText InText /*= INVTEXT("Hello")*/, bool bPrintToScreen /*= true*/, FLinearColor TextColor /*= FLinearColor(0.0, 0.66, 1.0)*/, float Duration /*= 2.f*/)
 {
 	PrintStringSpatial(WorldContextObject, InText.ToString(), bPrintToScreen, TextColor, Duration);
+}
+
+FString USpatialStatics::GetActorEntityIDString(const AActor* Actor)
+{
+	if (Actor != nullptr)
+	{
+		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Actor->GetNetDriver()))
+		{
+			const Worker_EntityId EntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
+			return FString::Printf(TEXT("%lld"), EntityId);
+		}
+	}
+
+	return FString();
 }

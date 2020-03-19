@@ -50,7 +50,7 @@ public:
 
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId& EntityId);
-	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
+	FUnrealObjectRef GetUnrealObjectRefFromObject(const UObject* Object);
 	virtual Worker_EntityId GetEntityIdFromObject(const UObject* Object) override;
 
 	AActor* GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef);

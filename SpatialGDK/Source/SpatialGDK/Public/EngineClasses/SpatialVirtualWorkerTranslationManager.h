@@ -49,7 +49,7 @@ private:
 
 	SpatialVirtualWorkerTranslator* Translator;
 
-	TMap<VirtualWorkerId, PhysicalWorkerName> VirtualToPhysicalWorkerMapping;
+	TMap<VirtualWorkerId, TPair<PhysicalWorkerName, Worker_EntityId>> VirtualToPhysicalWorkerMapping;
 	TMap<PhysicalWorkerName, VirtualWorkerId> PhysicalToVirtualWorkerMapping;
 	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
 
@@ -65,6 +65,6 @@ private:
 	void ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SendVirtualWorkerMappingUpdate();
 
-	void AssignWorker(const PhysicalWorkerName& WorkerId);
+	void AssignWorker(const PhysicalWorkerName& WorkerId, const Worker_EntityId& ServerWorkerEntityId);
 };
 

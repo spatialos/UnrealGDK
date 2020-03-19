@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialCommandUtils.h"
+#include "SpatialGDKServicesConstants.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialCommandUtils);
 
@@ -11,7 +12,7 @@ bool SpatialCommandUtils::AttemptSpatialAuth(bool bIsRunningInChina)
 	FString StdErr;
 	int32 ExitCode;
 
-	FPlatformProcess::ExecProcess(*FString(TEXT("spatial")), *SpatialInfoArgs, &ExitCode, &SpatialInfoResult, &StdErr);
+	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpatialExe, *SpatialInfoArgs, &ExitCode, &SpatialInfoResult, &StdErr);
 
 	bool bSuccess = ExitCode == 0;
 	if (!bSuccess)

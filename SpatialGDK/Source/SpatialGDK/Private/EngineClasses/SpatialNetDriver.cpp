@@ -40,6 +40,7 @@
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
+#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
@@ -97,14 +98,16 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	// This is a temporary measure until we can look into replication graph support, required due to UNR-832
-	checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
-
 	bConnectAsClient = bInitAsClient;
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
 	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
+
+	if (GetWorld() != nullptr)
+	{
+		GetWorld()->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateUObject(this, &USpatialNetDriver::OnActorSpawned));
+	}
 
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	// Copied from what the Engine does with UActorChannel
@@ -132,9 +135,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
-	// Initialize ActorGroupManager as it is a dependency of ClassInfoManager (see below)
-	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
-	ActorGroupManager->Init();
+	ActorGroupManager = GetGameInstance()->ActorGroupManager.Get();
 
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
 	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
@@ -144,7 +145,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 
 	// If it fails to load, don't attempt to connect to spatial.
-	if (!ClassInfoManager->TryInit(this, ActorGroupManager.Get()))
+	if (!ClassInfoManager->TryInit(this, ActorGroupManager))
 	{
 		Error = TEXT("Failed to load Spatial SchemaDatabase! Make sure that schema has been generated for your project");
 		return false;
@@ -576,7 +577,7 @@ void USpatialNetDriver::GSMQueryDelegateFunction(const Worker_EntityQueryRespons
 		return;
 	}
 	else if (bNewAcceptingPlayers != true ||
-			 QuerySessionId != SessionId)
+		QuerySessionId != SessionId)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("GlobalStateManager did not match expected state. Will retry query for GSM."));
 		RetryQueryGSM();
@@ -598,6 +599,26 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 
 	// Begin querying the state of the GSM so we know the state of AcceptingPlayers and SessionId.
 	GlobalStateManager->QueryGSM(QueryDelegate);
+}
+
+void USpatialNetDriver::OnActorSpawned(AActor* Actor)
+{
+	if (!Actor->GetIsReplicated() ||
+		Actor->GetLocalRole() != ROLE_Authority ||
+		Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) ||
+		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
+		USpatialStatics::IsActorGroupOwnerForActor(Actor))
+	{
+		// We only want to delete actors which are replicated and we somehow gain local authority over, while not the actor group owner.
+		return;
+	}
+
+	const FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker %s spawned replicated actor %s (owner: %s) but is not actor group owner for actor group %s. The actor will be destroyed in 0.01s"),
+		*WorkerType, *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), *USpatialStatics::GetActorGroupForActor(Actor).ToString());
+	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would complain if we destroyed it.
+	Actor->TearOff();
+	Actor->SetLifeSpan(0.01f);
 }
 
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
@@ -659,31 +680,19 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("OnLevelAddedToWorld: Level (%s) OwningWorld (%s) World (%s)"),
 		*GetNameSafe(LoadedLevel), *GetNameSafe(OwningWorld), *GetNameSafe(World));
 
-	// Callback got called on a World that's not associated with this NetDriver.
-	// Don't do anything.
-	if (OwningWorld != World)
+	if (OwningWorld != World
+		|| !IsServer()
+		|| GlobalStateManager == nullptr
+		|| USpatialStatics::IsSpatialOffloadingEnabled())
 	{
+		// If the world isn't our owning world, we are a client, or we loaded the levels
+		// before connecting to Spatial, or we are running with offloading, we return early.
 		return;
 	}
 
-	// Not necessary for clients
-	if (!IsServer())
-	{
-		return;
-	}
-
-	// Necessary for levels loaded before connecting to Spatial
-	if (GlobalStateManager == nullptr)
-	{
-		return;
-	}
-
-	// If load balancing disabled but this worker is GSM authoritative then make sure
-	// we set Role_Authority on Actors in the sublevel. Also, if load balancing is
-	// enabled and lb strategy says we should have authority over a loaded level Actor
-	// then also set Role_Authority on Actors in the sublevel.
 	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
 	const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+
 	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
 	{
 		// If load balancing is disabled and this worker is not GSM authoritative then exit early.
@@ -692,7 +701,7 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 
 	if (bLoadBalancingEnabled && !LoadBalanceStrategy->IsReady())
 	{
-		// Load balancer isn't ready, this should only occur when servers are loading composition levels on startup, before connecting to spatial
+		// Load balancer isn't ready, this should only occur when servers are loading composition levels on startup, before connecting to spatial.
 		return;
 	}
 
@@ -827,6 +836,8 @@ void USpatialNetDriver::BeginDestroy()
 		GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
 	}
 #endif
+
+	ActorGroupManager = nullptr;
 }
 
 void USpatialNetDriver::PostInitProperties()
@@ -974,6 +985,11 @@ void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNet
 	// Similar to NetDriver::NotifyActorFullyDormantForConnection, however we only care about a single connection
 	const int NumConnections = 1;
 	GetNetworkObjectList().MarkDormant(Actor, NetConnection, NumConnections, this);
+
+	if (UReplicationDriver* RepDriver = GetReplicationDriver())
+	{
+		RepDriver->NotifyActorFullyDormantForConnection(Actor, NetConnection);
+	}
 
 	// Intentionally don't call Super::NotifyActorFullyDormantForConnection
 }
@@ -1459,7 +1475,13 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	{
 		return 0;
 	}
-	check(SpatialConnection && SpatialConnection->bReliableSpatialConnection);
+	check(SpatialConnection->bReliableSpatialConnection);
+
+	if (UReplicationDriver* RepDriver = GetReplicationDriver())
+	{
+		return RepDriver->ServerReplicateActors(DeltaSeconds);
+	}
+
 	check(World);
 
 	int32 Updated = 0;
@@ -1516,6 +1538,13 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		if (ClientConnection->ViewTarget != nullptr)
 		{
 			new(ConnectionViewers)FNetViewer(ClientConnection, DeltaSeconds);
+
+			// send ClientAdjustment if necessary
+			// we do this here so that we send a maximum of one per packet to that client; there is no value in stacking additional corrections
+			if (ClientConnection->PlayerController != nullptr)
+			{
+				ClientConnection->PlayerController->SendClientAdjustment();
+			}
 
 			if (ClientConnection->Children.Num() > 0)
 			{
@@ -1603,7 +1632,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (LoadBalanceEnforcer.IsValid())
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
-			for(const auto& AclAssignmentRequest : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
+			for (const auto& AclAssignmentRequest : LoadBalanceEnforcer->ProcessQueuedAclAssignmentRequests())
 			{
 				Sender->SetAclWriteAuthority(AclAssignmentRequest);
 			}
@@ -2241,6 +2270,11 @@ void USpatialNetDriver::AddPendingDormantChannel(USpatialActorChannel* Channel)
 	PendingDormantChannels.Emplace(Channel);
 }
 
+void USpatialNetDriver::RemovePendingDormantChannel(USpatialActorChannel* Channel)
+{
+	PendingDormantChannels.Remove(Channel);
+}
+
 void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)
 {
 	// Register dormant entities when their actor channel has been closed, but their entity is still alive.
@@ -2297,14 +2331,7 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 
 	if (Channel != nullptr)
 	{
-		if (IsServer())
-		{
-			Channel->SetServerAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID));
-		}
-		else
-		{
-			Channel->SetClientAuthority(StaticComponentView->HasAuthority(EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
-		}
+		Channel->RefreshAuthority();
 	}
 
 	return Channel;
@@ -2358,7 +2385,7 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 
 	if (!bIsReadyToStart)
 	{
-	    return;
+		return;
 	}
 
 	for (Worker_OpList* OpList : QueuedStartupOpLists)
