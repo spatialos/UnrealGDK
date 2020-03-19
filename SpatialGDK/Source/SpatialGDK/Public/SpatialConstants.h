@@ -216,9 +216,6 @@ const Schema_FieldId FORWARD_SPAWN_PLAYER_RESPONSE_SUCCESS_ID			 = 1;
 
 // ComponentPresence Field IDs.
 const Schema_FieldId COMPONENT_PRESENCE_COMPONENT_LIST_ID				 = 1;
-
-// ComponentPresence Field IDs.
-const Schema_FieldId COMPONENT_PRESENCE_COMPONENT_LIST_ID				 = 1;
 const Schema_FieldId COMPONENT_PRESENCE_POSSESSING_CLIENT_WORKER_ID		 = 2;
 
 // UnrealMetadata Field IDs.
