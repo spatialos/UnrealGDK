@@ -214,6 +214,8 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 		else
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Handling SpawnPlayerRequest request locally. Client worker ID: %s."), *ClientWorkerId);
+			PassSpawnRequestToNetDriver(SpawnPlayerRequest, PlayerStartActor);
+			return;
 		}
 	}
 
