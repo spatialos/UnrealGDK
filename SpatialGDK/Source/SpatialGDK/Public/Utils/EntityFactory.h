@@ -32,7 +32,9 @@ public:
  
 	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs, uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);
- 
+
+	static TArray<Worker_ComponentId> GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas);
+
 private:
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;

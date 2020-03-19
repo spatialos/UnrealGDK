@@ -4,6 +4,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/WorkerRegion.h"
 #include "Schema/AuthorityIntent.h"
@@ -290,8 +291,7 @@ void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& Aut
 		{
 			// Some entities won't have debug info, so create it now.
 			SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, false);
-			FWorkerComponentData DebuggingData = NewDebuggingInfo.CreateSpatialDebuggingData();
-			NetDriver->Connection->SendAddComponent(AuthOp.entity_id, &DebuggingData);
+			NetDriver->Sender->SendAddComponents(AuthOp.entity_id, { NewDebuggingInfo.CreateSpatialDebuggingData() });
 			return;
 		}
 		else

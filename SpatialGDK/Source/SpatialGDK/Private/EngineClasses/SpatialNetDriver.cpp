@@ -2247,8 +2247,7 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 			Worker_AddComponentOp AddComponentOp{};
 			AddComponentOp.entity_id = EntityId;
 			AddComponentOp.data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID);
-			FWorkerComponentData Data{ AddComponentOp.data };
-			Connection->SendAddComponent(AddComponentOp.entity_id, &Data);
+			Sender->SendAddComponents(AddComponentOp.entity_id, { AddComponentOp.data });
 			StaticComponentView->OnAddComponent(AddComponentOp);
 		}
 	}
@@ -2259,7 +2258,7 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 			Worker_RemoveComponentOp RemoveComponentOp{};
 			RemoveComponentOp.entity_id = EntityId;
 			RemoveComponentOp.component_id = SpatialConstants::DORMANT_COMPONENT_ID;
-			Connection->SendRemoveComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
+			Sender->SendRemoveComponents(EntityId, { SpatialConstants::DORMANT_COMPONENT_ID });
 			StaticComponentView->OnRemoveComponent(RemoveComponentOp);
 		}
 	}

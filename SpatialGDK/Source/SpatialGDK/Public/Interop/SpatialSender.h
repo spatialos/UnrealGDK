@@ -82,8 +82,10 @@ public:
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
-	void SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
-	void SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info);
+	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
+	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas);
+	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
+	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds);
 	void SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent, const Worker_ComponentId NewComponent);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);

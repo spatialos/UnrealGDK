@@ -9,6 +9,7 @@
 #include "Interop/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AuthorityIntent.h"
+#include "Schema/ComponentPresence.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
@@ -17,6 +18,7 @@
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Schema/Tombstone.h"
+#include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InspectionColors.h"
@@ -119,6 +121,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 
 	if (SpatialSettings->UseRPCRingBuffer() && RPCService != nullptr)
 	{
@@ -408,6 +411,20 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 
 	return ComponentDatas;
+}
+
+// This method should be called once all the components besides ComponentPresence have been added to the
+// ComponentDatas list.
+TArray<Worker_ComponentId> EntityFactory::GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas)
+{
+	TArray<Worker_ComponentId> ComponentPresenceList;
+	ComponentPresenceList.SetNum(ComponentDatas.Num() + 1);
+	for (int i = 0; i < ComponentDatas.Num(); i++)
+	{
+		ComponentPresenceList[i] = ComponentDatas[i].component_id;
+	}
+	ComponentPresenceList[ComponentDatas.Num()] = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
+	return ComponentPresenceList;
 }
 
 TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AActor* Actor)
