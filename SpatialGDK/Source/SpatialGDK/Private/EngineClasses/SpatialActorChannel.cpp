@@ -699,7 +699,7 @@ int64 USpatialActorChannel::ReplicateActor()
 				{
 					OnSubobjectDeleted(ObjectRef, RepComp.Key());
 
-					Sender->SendRemoveComponent(EntityId, NetDriver->ClassInfoManager->GetClassInfoByComponentId(ObjectRef.Offset));
+					Sender->SendRemoveComponentForClassInfo(EntityId, NetDriver->ClassInfoManager->GetClassInfoByComponentId(ObjectRef.Offset));
 				}
 
 				RepComp.Value()->CleanUp();
@@ -791,7 +791,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	// Check to see if we already have authority over the subobject to be added
 	if (NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_Data]))
 	{
-		Sender->SendAddComponent(this, Object, *Info, ReplicationBytesWritten);
+		Sender->SendAddComponentForSubobject(this, Object, *Info, ReplicationBytesWritten);
 	}
 	else
 	{
