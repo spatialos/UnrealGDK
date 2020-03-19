@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 
+set -e -u -o pipefail
+if [[ -n "${DEBUG-}" ]]; then
+    set -x
+fi
+
 echo ${BUILDKITE_AGENT_META_DATA_OS}
 if [[ ${BUILDKITE_AGENT_META_DATA_OS} == darwin* ]]; then
-	./ci/cleanup.sh
+    ./ci/cleanup.sh
 elif [[ ${BUILDKITE_AGENT_META_DATA_OS} == linux* ]]; then
-	exit 0
+    echo "Running a linux agent, no need for any cleanup."
+    exit 0
 else
-	powershell ".\ci\cleanup.ps1"
+    powershell -noprofile -noninteractive -file "/ci/cleanup.ps1"
 fi

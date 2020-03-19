@@ -13,7 +13,7 @@ windows: &windows
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-03-11-114147-bk9341-57494374-d}" ## revert to new queue once windows baking issues have been resolved...
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-03-11-114147-bk9341-57494374-d}"
     - "boot_disk_size_gb=500"
   retry:
     automatic:
@@ -28,9 +28,9 @@ env:
   FASTBUILD_BROKERAGE_PATH: "\\\\fastbuild-brokerage.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba"
 
 steps:
-  - label: "build-${ENGINE_COMMIT_HASH}-${BUILD_PLATFORM}-${BUILD_TARGET}-${BUILD_STATE}"
-    command: powershell ./ci/setup-build-test-gdk.ps1
-    <<: *windows # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+  - <<: *windows # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    label: "build-${ENGINE_COMMIT_HASH}-${BUILD_PLATFORM}-${BUILD_TARGET}-${BUILD_STATE}"
+    command: "powershell ./ci/setup-build-test-gdk.ps1"
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
     env:

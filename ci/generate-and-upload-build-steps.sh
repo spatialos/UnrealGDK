@@ -2,10 +2,10 @@
 set -euo pipefail
 
 upload_build_configuration_step() {
-    export ENGINE_COMMIT_HASH=${1}
-    export BUILD_PLATFORM=${2}
-    export BUILD_TARGET=${3}
-    export BUILD_STATE=${4}
+    export ENGINE_COMMIT_HASH="${1}"
+    export BUILD_PLATFORM="${2}"
+    export BUILD_TARGET="${3}"
+    export BUILD_STATE="${4}"
     if [[ ${BUILD_PLATFORM} == "Mac" ]]; then
         buildkite-agent pipeline upload "ci/gdk_build_macos.template.steps.yaml"
     else
