@@ -188,10 +188,6 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequestOnServer(const Worker_Comma
 
 void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* SpawnPlayerRequest, const PhysicalWorkerName& ClientWorkerId)
 {
-	// We need to specifically extract the URL from the PlayerSpawn request for finding a PlayerStart.
-	const FURL Url = PlayerSpawner::ExtractUrlFromPlayerSpawnParams(SpawnPlayerRequest);
-	AActor* PlayerStartActor = NetDriver->GetWorld()->GetAuthGameMode()->FindPlayerStart(nullptr, Url.Portal);
-
 	// If load-balancing is enabled AND the strategy dictates that another worker should have authority over
 	// the chosen PlayerStart THEN the spawn request is forwarded to that worker to prevent an initial player
 	// migration. Immediate player migrations can still happen if
@@ -201,6 +197,10 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 	// during the lifetime of a deployment.
 	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
 	{
+		// We need to specifically extract the URL from the PlayerSpawn request for finding a PlayerStart.
+		const FURL Url = PlayerSpawner::ExtractUrlFromPlayerSpawnParams(SpawnPlayerRequest);
+		AActor* PlayerStartActor = NetDriver->GetWorld()->GetAuthGameMode()->FindPlayerStart(nullptr, Url.Portal);
+
 		check(NetDriver->LoadBalanceStrategy != nullptr);
 		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*PlayerStartActor))
 		{
@@ -214,10 +214,12 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 		else
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Handling SpawnPlayerRequest request locally. Client worker ID: %s."), *ClientWorkerId);
+			PassSpawnRequestToNetDriver(SpawnPlayerRequest, PlayerStartActor);
+			return;
 		}
 	}
 
-	PassSpawnRequestToNetDriver(SpawnPlayerRequest, PlayerStartActor);
+	PassSpawnRequestToNetDriver(SpawnPlayerRequest, nullptr);
 }
 
 void USpatialPlayerSpawner::PassSpawnRequestToNetDriver(Schema_Object* PlayerSpawnData, AActor* PlayerStart)

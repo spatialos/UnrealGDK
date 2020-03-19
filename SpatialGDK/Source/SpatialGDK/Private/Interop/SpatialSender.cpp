@@ -17,6 +17,7 @@
 #include "Net/NetworkProfiler.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
+#include "Schema/ComponentPresence.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
@@ -80,6 +81,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
 
+	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas)).CreateComponentPresenceData());
+
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
 
@@ -106,7 +109,7 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
 }
 
-void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo, uint32& OutBytesWritten)
+void USpatialSender::SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo, uint32& OutBytesWritten)
 {
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
@@ -114,29 +117,42 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
 
 	TArray<FWorkerComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
-
-	for (int i = 0; i < SubobjectDatas.Num(); i++)
-	{
-		FWorkerComponentData& ComponentData = SubobjectDatas[i];
-		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData);
-	}
+	SendAddComponents(Channel->GetEntityId(), SubobjectDatas);
 
 	Channel->PendingDynamicSubobjects.Remove(TWeakObjectPtr<UObject>(Subobject));
 }
 
+void USpatialSender::SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas)
+{
+	if (ComponentDatas.Num() == 0)
+	{
+		return;
+	}
+
+	// Update ComponentPresence.
+	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
+	ComponentPresence* Presence = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
+	Presence->AddComponentDataIds(ComponentDatas);
+	FWorkerComponentUpdate Update = Presence->CreateComponentPresenceUpdate();
+	Connection->SendComponentUpdate(EntityId, &Update);
+
+	for (FWorkerComponentData& ComponentData : ComponentDatas)
+	{
+		Connection->SendAddComponent(EntityId, &ComponentData);
+	}
+}
+
 void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info)
 {
-	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass());
-	const WorkerAttributeSet WorkerAttribute{ ActorInfo.WorkerType.ToString() };
-	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
-
-	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
+	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	TSharedRef<FPendingSubobjectAttachment> PendingSubobjectAttachment = MakeShared<FPendingSubobjectAttachment>();
 	PendingSubobjectAttachment->Subobject = Object;
 	PendingSubobjectAttachment->Channel = Channel;
 	PendingSubobjectAttachment->Info = Info;
 
+	// We collect component IDs related to the dynamic subobject being added to gain authority over.
+	TArray<Worker_ComponentId> NewComponentIds;
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
 		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
@@ -146,28 +162,68 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 			// adding the subobject.
 			PendingSubobjectAttachment->PendingAuthorityDelegations.Add(ComponentId);
 			Receiver->PendingEntitySubobjectDelegations.Add(
-				MakeTuple(static_cast<Worker_EntityId_Key>(Channel->GetEntityId()), ComponentId),
+				MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), ComponentId),
 				PendingSubobjectAttachment);
 
-			EntityACL->ComponentWriteAcl.Add(Info->SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
+			NewComponentIds.Add(ComponentId);
 		}
 	});
 
-	FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
+	// If this worker is EntityACL authoritative, we can directly update the component IDs to gain authority over.
+	if (StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+	{
+		const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass());
+		const WorkerAttributeSet WorkerAttribute = { ActorInfo.WorkerType.ToString() };
+		const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
+
+		EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
+		for (auto& ComponentId : NewComponentIds)
+		{
+			EntityACL->ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
+		}
+
+		FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
+		Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
+	}
+
+	// Update the ComponentPresence component with the new component IDs. If this worker does not have EntityACL
+	// authority, this component is used to inform the enforcer of the component IDs to add to the EntityACL.
+	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
+	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
+	ComponentPresenceData->AddComponentIds(NewComponentIds);
+	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
 	Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
 }
 
-void USpatialSender::SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info)
+void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
 {
+	TArray<Worker_ComponentId> ComponentsToRemove;
+	ComponentsToRemove.SetNum(SCHEMA_Count);
 	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
 	{
 		if (SubobjectComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			NetDriver->Connection->SendRemoveComponent(EntityId, SubobjectComponentId);
+			ComponentsToRemove.Add(SubobjectComponentId);
 		}
 	}
 
+	SendRemoveComponents(EntityId, ComponentsToRemove);
+
 	PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
+}
+
+void USpatialSender::SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds)
+{
+	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
+	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
+	ComponentPresenceData->RemoveComponentIds(ComponentIds);
+	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
+	Connection->SendComponentUpdate(EntityId, &Update);
+
+	for (auto ComponentId : ComponentIds)
+	{
+		Connection->SendRemoveComponent(EntityId, ComponentId);
+	}
 }
 
 // Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
@@ -181,6 +237,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, WorkerIdPermission);
+	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, WorkerIdPermission);
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreatePositionData());
@@ -191,6 +248,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in order
 	// to set the interest of the server worker according to the strategy.
 	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
+	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
@@ -513,7 +571,7 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 		RemoveOp.component_id = OldComponent;
 		StaticComponentView->OnRemoveComponent(RemoveOp);
 
-		Connection->SendRemoveComponent(EntityId, OldComponent);
+		SendRemoveComponents(EntityId, { OldComponent });
 	}
 
 	if (NewComponent != SpatialConstants::INVALID_COMPONENT_ID)
@@ -526,8 +584,7 @@ void USpatialSender::SendInterestBucketComponentChange(const Worker_EntityId Ent
 
 		StaticComponentView->OnAddComponent(AddOp);
 
-		FWorkerComponentData NewComponentData = ComponentFactory::CreateEmptyComponentData(NewComponent);
-		Connection->SendAddComponent(EntityId, &NewComponentData);
+		SendAddComponents(EntityId, { ComponentFactory::CreateEmptyComponentData(NewComponent) });
 	}
 }
 
@@ -590,36 +647,36 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request)
 {
 	check(NetDriver);
+	check(StaticComponentView->HasComponent(Request.EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
 
 	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), *Request.OwningWorkerId);
 
 	const WorkerAttributeSet OwningServerWorkerAttributeSet = { WriteWorkerId };
 
-	EntityAcl NewAcl;
-
-	NewAcl.ReadAcl = Request.ReadAcl;
+	EntityAcl* NewAcl = StaticComponentView->GetComponentData<EntityAcl>(Request.EntityId);
+	NewAcl->ReadAcl = Request.ReadAcl;
 
 	for (const Worker_ComponentId& ComponentId : Request.ComponentIds)
 	{
 		if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID
 			|| ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 		{
-			NewAcl.ComponentWriteAcl.Add(ComponentId, Request.ClientRequirementSet);
+			NewAcl->ComponentWriteAcl.Add(ComponentId, Request.ClientRequirementSet);
 			continue;
 		}
 
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
-			NewAcl.ComponentWriteAcl.Add(ComponentId, { SpatialConstants::GetLoadBalancerAttributeSet(GetDefault<USpatialGDKSettings>()->LoadBalancingWorkerType.WorkerTypeName) });
+			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::GetLoadBalancerAttributeSet(GetDefault<USpatialGDKSettings>()->LoadBalancingWorkerType.WorkerTypeName) });
 			continue;
 		}
 	
-		NewAcl.ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
+		NewAcl->ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
 	}
 
 	UE_LOG(LogSpatialLoadBalanceEnforcer, Verbose, TEXT("(%s) Setting Acl WriteAuth for entity %lld to %s"), *NetDriver->Connection->GetWorkerId(), Request.EntityId, *Request.OwningWorkerId);
 
-	FWorkerComponentUpdate Update = NewAcl.CreateEntityAclUpdate();
+	FWorkerComponentUpdate Update = NewAcl->CreateEntityAclUpdate();
 	NetDriver->Connection->SendComponentUpdate(Request.EntityId, &Update);
 }
 
@@ -1215,6 +1272,8 @@ void USpatialSender::CreateTombstoneEntity(AActor* Actor)
 
 	Components.Add(CreateLevelComponentData(Actor));
 
+	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
+
 	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
 
 	UE_LOG(LogSpatialSender, Log, TEXT("Creating tombstone entity for actor. "
@@ -1232,8 +1291,7 @@ void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
 	Worker_AddComponentOp AddComponentOp{};
 	AddComponentOp.entity_id = EntityId;
 	AddComponentOp.data = Tombstone().CreateData();
-	FWorkerComponentData ComponentData{ AddComponentOp.data };
-	Connection->SendAddComponent(EntityId, &ComponentData);
+	SendAddComponents(EntityId, { AddComponentOp.data });
 	StaticComponentView->OnAddComponent(AddComponentOp);
 
 #if WITH_EDITOR
