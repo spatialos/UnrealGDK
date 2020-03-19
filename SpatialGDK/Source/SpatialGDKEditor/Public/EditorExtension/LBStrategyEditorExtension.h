@@ -31,7 +31,7 @@ private:
 class FLBStrategyEditorExtensionManager
 {
 public:
-	SPATIALGDKEDITOR_API bool GetDefaultLaunchConfiguration(const UAbstractLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions);
+	SPATIALGDKEDITOR_API bool GetDefaultLaunchConfiguration(const UAbstractLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions) const;
 
 	template <typename Extension>
 	void RegisterExtension()

@@ -28,7 +28,7 @@ bool InheritFromClosest(UClass* Derived, UClass* PotentialBase, uint32& InOutPre
 
 } // anonymous namespace
 
-bool FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(const UAbstractLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions)
+bool FLBStrategyEditorExtensionManager::GetDefaultLaunchConfiguration(const UAbstractLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions) const
 {
 	if (!Strategy)
 	{

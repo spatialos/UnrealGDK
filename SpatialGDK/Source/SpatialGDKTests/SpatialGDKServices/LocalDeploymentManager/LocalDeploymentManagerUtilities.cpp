@@ -75,6 +75,7 @@ bool FStartDeployment::Update()
 			}
 
 			FSpatialLaunchConfigDescription LaunchConfigDescription(AutomationWorkerType);
+			LaunchConfigDescription.SetLevelEditorPlaySettingsWorkerTypes();
 
 			if (!GenerateDefaultLaunchConfig(LaunchConfig, &LaunchConfigDescription))
 			{
