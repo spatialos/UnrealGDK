@@ -31,13 +31,15 @@ using namespace SpatialGDK;
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
+TArray<Worker_ComponentData> UnpackedComponentData;
+
 void SetEntityData(Worker_Entity& Entity, const TArray<FWorkerComponentData>& Components)
 {
 	Entity.component_count = Components.Num();
 
 #if TRACE_LIB_ACTIVE
 	// We have to unpack these as Worker_ComponentData is not the same as FWorkerComponentData
-	TArray<Worker_ComponentData> UnpackedComponentData;
+	UnpackedComponentData.Empty();
 	UnpackedComponentData.SetNum(Components.Num());
 	for (int i = 0, Num = Components.Num(); i < Num; i++)
 	{
