@@ -1127,6 +1127,8 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 
 	if (bIsServer && bCreatingPlayerController)
 	{
+		// If we're spawning a PlayerController, there should definitely a net-owning client worker ID.
+		check(ComponentPresenceData->PossessingClientWorkerId.IsSet());
 		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), *ComponentPresenceData->PossessingClientWorkerId);
 	}
 

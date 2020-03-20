@@ -22,8 +22,8 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "Schema/ComponentPresence.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
+#include "Schema/ComponentPresence.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "SpatialConstants.h"
@@ -38,6 +38,7 @@ DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdate
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ServerProcessOwnershipChange"), STAT_ServerProcessOwnershipChange, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ClientProcessOwnershipChange"), STAT_ClientProcessOwnershipChange, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("GetOwnerWorkerAttribute"), STAT_GetOwnerWorkerAttribute, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("CallUpdateEntityACLs"), STAT_CallUpdateEntityACLs, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("OnUpdateEntityACLSuccess"), STAT_OnUpdateEntityACLSuccess, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("IsAuthoritativeServer"), STAT_IsAuthoritativeServer, STATGROUP_SpatialNet);
@@ -1301,7 +1302,11 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	}
 
 	// Changing an Actor's owner can affect its NetConnection, so we need to reevaluate this.
-	const FString NewClientConnectionWorkerId = SpatialGDK::GetOwningClientWorkerId(Actor);
+	FString NewClientConnectionWorkerId;
+	{
+		SCOPE_CYCLE_COUNTER(STAT_GetOwnerWorkerAttribute);
+		NewClientConnectionWorkerId = SpatialGDK::GetOwningClientWorkerId(Actor);
+	}
 
 	// Update the ComponentPresence component.
 	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));

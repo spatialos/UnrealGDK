@@ -1193,22 +1193,12 @@ void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FStrin
 // This function updates the authority of that component as the owning connection can change.
 bool USpatialSender::UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
 {
-	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
-	if (EntityACL == nullptr)
-	{
-		UE_LOG(LogSpatialSender, Error, TEXT("Trying to update EntityACL but data not present in StaticComponentView! Update will not be sent. Entity: %lld"), EntityId);
-		return false;
-	}
-
-	if (!StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		UE_LOG(LogSpatialSender, Error, TEXT("Trying to update EntityACL but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
-		return false;
-	}
+	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
 
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
+	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(EntityId);
 	EntityACL->ComponentWriteAcl.Add(SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()), OwningClientOnly);
 	EntityACL->ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
 	FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
