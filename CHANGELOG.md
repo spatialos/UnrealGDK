@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased-`x.y.z`] - 2020-xx-xx
 
 ### New Known Issues:
-- Some files that were included in Unreal Engine `4.23.x` [are not in](https://forums.unrealengine.com/unreal-engine/announcements-and-releases/1695917-unreal-engine-4-24-released?p=1715142#post1715142) `4.24.3`. This causes errors when you upgrade from `4.23.x` to `4.24.3`. You can resolve this issue by running `git restore .`.
+- After upgrading to 4.24.3 using git, you may be left in a state where several .isph and .ispc files are missing, producing [compile errors](https://forums.unrealengine.com/unreal-engine/announcements-and-releases/1695917-unreal-engine-4-24-released?p=1715142#post1715142). You can fix this by running `git restore .`.
 
 ### Breaking Changes:
 - Simulated Player worker configurations now require a dev auth token and deployment flag instead of a login token and player identity token. See the Example Project for an example of how to set this up.
