@@ -17,52 +17,60 @@ generate_build_configuration_steps () {
     # See https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html for possible configurations 
     ENGINE_COMMIT_HASH="${1}"
 
-    # if the BUILD_ALL_CONFIGURATIONS environment variable doesn't exist, then...
-    if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
-        echo "Building for subset of supported configurations. Generating the appropriate steps..."
-        
-        # Win64 Development Editor build configuration
-        upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development"
-
-        # Linux Development NoEditor build configuration
-        upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
-
-        # MacOS Development Editor build configuration
-        upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "UE4Editor" "Development"
-    else
-        echo "Building for all supported configurations. Generating the appropriate steps..."
-        
-        # Editor builds (Test and Shipping build states do not exist for the Editor build target)
-        for BUILD_STATE in "DebugGame" "Development"; do
-            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "${BUILD_STATE}"
-            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "UE4Editor" "${BUILD_STATE}"
-        done
-
-        # NoEditor, Client and Server builds
-        if [[ "${ENGINE_COMMIT_HASH}" == *"4.22"* ]]; then
-            # Prebuilt engines of native 4.22 and prior do not support Client and Server targets.
-            # We use prebuilt engines in CI, but have manually added two Server configurations:
-            for BUILD_STATE in "Development" "Shipping"; do
-                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "Server" "${BUILD_STATE}"
-            done
-
-            # NoEditor builds
-            for BUILD_PLATFORM in "Win64" "Linux"; do
-                for BUILD_STATE in "DebugGame" "Development" "Shipping"; do
-                    upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "${BUILD_PLATFORM}" "" "${BUILD_STATE}"
-                done
-            done
+    if [[ -n "${MAC_BUILD:-}" ]]; then
+        if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
+            # MacOS Development Editor build configuration
+            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "UE4Editor" "Development"
         else
-            # Generate all possible builds for non-Editor build targets
-            for BUILD_PLATFORM in "Win64" "Linux"; do
-                for BUILD_TARGET in "" "Client" "Server"; do
-                    for BUILD_STATE in "DebugGame" "Development" "Shipping"; do
-                        upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "${BUILD_PLATFORM}" "${BUILD_TARGET}" "${BUILD_STATE}"
-                    done
-                done
+            # Editor builds (Test and Shipping build states do not exist for the Editor build target)
+            for BUILD_STATE in "DebugGame" "Development"; do
+                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "UE4Editor" "${BUILD_STATE}"
             done
         fi
-    fi;
+    else
+        # if the BUILD_ALL_CONFIGURATIONS environment variable doesn't exist, then...
+        if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
+            echo "Building for subset of supported configurations. Generating the appropriate steps..."
+
+            # Win64 Development Editor build configuration
+            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "Development"
+
+            # Linux Development NoEditor build configuration
+            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
+        else
+            echo "Building for all supported configurations. Generating the appropriate steps..."
+
+            # Editor builds (Test and Shipping build states do not exist for the Editor build target)
+            for BUILD_STATE in "DebugGame" "Development"; do
+                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Win64" "Editor" "${BUILD_STATE}"
+            done
+
+            # NoEditor, Client and Server builds
+            if [[ "${ENGINE_COMMIT_HASH}" == *"4.22"* ]]; then
+                # Prebuilt engines of native 4.22 and prior do not support Client and Server targets.
+                # We use prebuilt engines in CI, but have manually added two Server configurations:
+                for BUILD_STATE in "Development" "Shipping"; do
+                    upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "Server" "${BUILD_STATE}"
+                done
+
+                # NoEditor builds
+                for BUILD_PLATFORM in "Win64" "Linux"; do
+                    for BUILD_STATE in "DebugGame" "Development" "Shipping"; do
+                        upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "${BUILD_PLATFORM}" "" "${BUILD_STATE}"
+                    done
+                done
+            else
+                # Generate all possible builds for non-Editor build targets
+                for BUILD_PLATFORM in "Win64" "Linux"; do
+                    for BUILD_TARGET in "" "Client" "Server"; do
+                        for BUILD_STATE in "DebugGame" "Development" "Shipping"; do
+                            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "${BUILD_PLATFORM}" "${BUILD_TARGET}" "${BUILD_STATE}"
+                        done
+                    done
+                done
+            fi
+        fi
+    fi
 }
 
 # This script generates steps for each engine version listed in unreal-engine.version, 

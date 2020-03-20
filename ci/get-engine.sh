@@ -40,7 +40,7 @@ pushd "$(dirname "$0")"
             fi
         popd
 
-        ## Create an UnrealEngine-Cache directory if it doesn't already exist
+        # Create an UnrealEngine-Cache directory if it doesn't already exist
         mkdir -p ${ENGINE_CACHE_DIRECTORY}
 
         pushd ${ENGINE_CACHE_DIRECTORY}

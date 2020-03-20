@@ -18,12 +18,12 @@ pushd "$(dirname "$0")"
 
     # Clone the testing project
     rm -rf "${TEST_REPO_PATH}"
-    echo "Downloading the testing project from ${TEST_REPO_URL}"
+    echo "Cloning the testing project from ${TEST_REPO_URL}"
     git clone \
         --branch "${TEST_REPO_BRANCH}" \
         "${TEST_REPO_URL}" \
         "${TEST_REPO_PATH}" \
-        --depth 1
+        --single-branch
 
     # The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
     # copying the plugin into the project's folder bypasses the issue
