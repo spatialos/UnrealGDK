@@ -1,8 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
-// The ComponentPresence component should be present on all entities that
-// should be load-balanced.
+// The ComponentPresence component should be present on all entities.
 component ComponentPresence {
     id = 9972;
 
