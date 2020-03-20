@@ -1300,27 +1300,27 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		}
 	}
 
+	// Changing an Actor's owner can affect its NetConnection, so we need to reevaluate this.
 	const FString NewClientConnectionWorkerId = SpatialGDK::GetOwningClientWorkerId(Actor);
 
-	// If there is a valid client worker ID that owns the NetConnection of this Actor, then
-	// update ComponentPresence (and the EntityACL if authoritative).
-	if (!NewClientConnectionWorkerId.IsEmpty())
-	{
-		check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
-		SpatialGDK::ComponentPresence* ComponentPresenceData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ComponentPresence>(EntityId);
-		ComponentPresenceData->PossessingClientWorkerId = NewClientConnectionWorkerId;
-		FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+	// Update the ComponentPresence component.
+	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
+	SpatialGDK::ComponentPresence* ComponentPresenceData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ComponentPresence>(EntityId);
+	ComponentPresenceData->PossessingClientWorkerId = NewClientConnectionWorkerId;
+	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
+	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 
-		if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-		{
-			UpdateEntityACLToNewOwner(*NewClientConnectionWorkerId);
-		}
+	// Update the EntityACL component (if authoritative).
+	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+	{
+		UpdateEntityACLToNewOwner(*NewClientConnectionWorkerId);
 	}
 
 	// Changing owner can affect which interest bucket the Actor should be in so we need to update it.
 	UpdateInterestBucketComponentId();
 
+	// Changes to NetConnection and InterestBucket for an Actor also affect all descendants which we
+	// need to iterate through.
 	for (AActor* Child : Actor->Children)
 	{
 		Worker_EntityId ChildEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Child);
