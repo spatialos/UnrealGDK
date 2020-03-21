@@ -19,7 +19,7 @@ macos: &macos
 steps:
   - <<: *macos # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     label: "build-${ENGINE_COMMIT_HASH}-${BUILD_PLATFORM}-${BUILD_TARGET}-${BUILD_STATE}"
-    command: ./ci/setup-build-gdk.sh
+    command: ./ci/setup-build-test-gdk.sh
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
     env:
