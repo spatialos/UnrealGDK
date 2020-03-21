@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-set -e -u -o pipefail
-if [[ -n "${DEBUG-}" ]]; then
-    set -x
-fi
-
 pushd "$(dirname "$0")"
 
     UNREAL_PATH="${1:-"$(pwd)/../UnrealEngine"}"
