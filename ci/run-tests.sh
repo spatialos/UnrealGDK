@@ -20,6 +20,7 @@ pushd "$(dirname "$0")"
     LOG_FILE_PATH="ci/${TEST_PROJECT_NAME}/${RESULTS_NAME}/tests.log"
     TEST_REPO_MAP="${TEST_PROJECT_NAME}/${RESULTS_NAME}"
     REPORT_OUTPUT_PATH="ci/${TEST_REPO_MAP}"
+    UNREAL_EDITOR_PATH="${UNREAL_PATH}/Engine/Binaries/Mac/UE4Editor.app/Contents/MacOS/UE4Editor"
 
     if [[ -n "${RUN_WITH_SPATIAL}" ]]; then
         echo "Generating snapshot and schema for testing project"
@@ -39,8 +40,8 @@ pushd "$(dirname "$0")"
     mkdir ${REPORT_OUTPUT_PATH}
 
     pushd "${UNREAL_PATH}"
-        "${UNREAL_PATH}/Engine/Binaries/Mac/UE4Editor.app/Contents/MacOS/UE4Editor" \
-            "${GDK_HOME}/../${UPROJECT_PATH}" \
+        "${UNREAL_EDITOR_PATH}" \
+            "${UPROJECT_PATH}" \
             "${TEST_REPO_MAP}"  \
             -execCmds="Automation RunTests ${TESTS_PATH}; Quit" \
             -TestExit="Automation Test Queue Empty" \
