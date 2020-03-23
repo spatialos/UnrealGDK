@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
-#include "WorkerView.h"
-#include "ConnectionHandlers/AbstractConnectionHandler.h"
+#include "SpatialView/WorkerView.h"
+#include "SpatialView/ConnectionHandlers/AbstractConnectionHandler.h"
 #include "Templates/UniquePtr.h"
 
 namespace SpatialGDK

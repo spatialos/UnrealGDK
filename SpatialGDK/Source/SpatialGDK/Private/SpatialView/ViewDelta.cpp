@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "ViewDelta.h"
-#include "OpList/ViewDeltaLegacyOpList.h"
+#include "SpatialView/ViewDelta.h"
+#include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 #include "Containers/StringConv.h"
 
 namespace SpatialGDK
