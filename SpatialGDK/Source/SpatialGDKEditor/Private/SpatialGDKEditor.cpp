@@ -6,6 +6,7 @@
 #include "SpatialGDKEditorCloudLauncher.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSnapshotGenerator.h"
+#include "SpatialGDKEditorPackageAssembly.h"
 
 #include "Editor.h"
 #include "FileHelpers.h"
@@ -313,6 +314,21 @@ void FSpatialGDKEditor::OnAssetLoaded(UObject* Asset)
 			World->UpdateWorldComponents(true, true);
 		}
 	}
+}
+
+void FSpatialGDKEditor::BuildServerAssembly()
+{
+	SpatialGDKBuildAssemblyServerWorker();
+}
+
+void FSpatialGDKEditor::BuildClientAssembly()
+{
+	SpatialGDKBuildAssemblyClientWorker();
+}
+
+void FSpatialGDKEditor::BuildSimulatedPlayerAssembly()
+{
+	SpatialGDKBuildAssemblySimulatedPlayerWorker();
 }
 
 #undef LOCTEXT_NAMESPACE
