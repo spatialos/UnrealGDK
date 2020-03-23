@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
-#include "AbstractOpList.h"
+#include "SpatialView/OpList/AbstractOpList.h"
 #include "UniquePtr.h"
 #include <improbable/c_worker.h>
 
