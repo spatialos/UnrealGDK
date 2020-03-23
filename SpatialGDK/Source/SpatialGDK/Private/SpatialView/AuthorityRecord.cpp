@@ -10,14 +10,16 @@ void AuthorityRecord::SetAuthority(Worker_EntityId EntityId, Worker_ComponentId 
 	switch (Authority)
 	{
 	case WORKER_AUTHORITY_NOT_AUTHORITATIVE:
-		if (AuthorityGained.RemoveSingle(Id) == 0)
+		// If the entity-component as recorded as authority-gained then remove it. 
+		// If not then ensure it's only recorded as authority lost.
+		if (!AuthorityGained.RemoveSingleSwap(Id))
 		{
-			AuthorityLossTemporary.RemoveSingle(Id);
+			AuthorityLossTemporary.RemoveSingleSwap(Id);
 			AuthorityLost.Push(Id);
 		}
 		break;
 	case WORKER_AUTHORITY_AUTHORITATIVE:
-		if (AuthorityLost.RemoveSingle(Id) > 0)
+		if (AuthorityLost.RemoveSingleSwap(Id))
 		{
 			AuthorityLossTemporary.Push(Id);
 		}
