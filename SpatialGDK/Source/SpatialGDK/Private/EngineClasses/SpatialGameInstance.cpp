@@ -218,8 +218,9 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 
 bool USpatialGameInstance::GetPreventAutoConnectWithLocator() const
 {
-	const UWorld* World = GetWorld();
-	if (World && World->IsServer())
+	// Need a more robust way of working out if we are the server
+	// World->IsServer() can not be used as on clients the NetDriver and DemoNetDriver on the world are both not setup yet and are null.
+	if (GetSpatialWorkerType() == SpatialConstants::DefaultServerWorkerType)
 	{
 		return false;
 	}
