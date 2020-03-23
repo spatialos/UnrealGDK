@@ -216,6 +216,17 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 	OnConnectionFailed.Broadcast(Reason);
 }
 
+bool USpatialGameInstance::GetPreventAutoConnectWithLocator() const
+{
+	const UWorld* World = GetWorld();
+	if (World && World->IsServer())
+	{
+		return false;
+	}
+
+	return bPreventAutoConnectWithLocator;
+}
+
 void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld)
 {
 	const FString WorkerType = GetSpatialWorkerType().ToString();
