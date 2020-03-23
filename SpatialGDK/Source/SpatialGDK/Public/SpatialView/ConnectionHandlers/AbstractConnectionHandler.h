@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
-#include "MessagesToSend.h"
-#include "OpList/AbstractOpList.h"
+#include "SpatialView/MessagesToSend.h"
+#include "SpatialView/OpList/AbstractOpList.h"
 #include "Templates/UniquePtr.h"
 #include <improbable/c_worker.h>
 
