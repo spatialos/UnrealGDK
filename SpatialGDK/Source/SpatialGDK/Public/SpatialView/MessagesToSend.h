@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
-#include "CommandMessages.h"
+#include "SpatialView/CommandMessages.h"
 #include "Containers/Array.h"
 
 namespace SpatialGDK
