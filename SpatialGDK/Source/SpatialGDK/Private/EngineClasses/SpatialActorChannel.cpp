@@ -1301,7 +1301,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		}
 	}
 
-	// Changing an Actor's owner can affect its NetConnection, so we need to reevaluate this.
+	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
 	FString NewClientConnectionWorkerId;
 	{
 		SCOPE_CYCLE_COUNTER(STAT_GetOwningClientWorkerId);

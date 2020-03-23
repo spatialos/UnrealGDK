@@ -188,6 +188,7 @@ TArray<SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest> SpatialLoadBalanceE
 			ComponentIds.AddUnique(RequiredComponentId);
 		}
 
+		// Get the client worker ID net-owning this Actor from the ComponentPresence.
 		PhysicalWorkerName PossessingClientId = ComponentPresenceComponent->PossessingClientWorkerId.IsSet() ?
 			ComponentPresenceComponent->PossessingClientWorkerId.GetValue() :
 			FString();

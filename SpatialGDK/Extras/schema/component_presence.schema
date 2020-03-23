@@ -7,7 +7,7 @@ component ComponentPresence {
 
     // The component_list is a list of component IDs that should be present on
     // this entity. This should be useful in future for deducing entity completeness
-    // without critical sections but is used currently just found enabling dynamic
+    // without critical sections but is used currently just for enabling dynamic
     // components in a multi-worker environment.
     list<uint32> component_list = 1;
 
