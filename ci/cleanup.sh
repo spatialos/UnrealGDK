@@ -5,7 +5,7 @@ pushd "$(dirname "$0")"
     UNREAL_PATH="${1:-"$(pwd)/../UnrealEngine"}"
     BUILD_PROJECT="${2:-NetworkTestProject}"
 
-    PROJECT_ABSOLUTE_PATH="$(pwd)/../${BUILD_PROJECT}"
+    PROJECT_ABSOLUTE_PATH="$(pwd)/../../${BUILD_PROJECT}"
     GDK_IN_TEST_REPO="${PROJECT_ABSOLUTE_PATH}/Game/Plugins/UnrealGDK"
 
     # Workaround for UNR-2156 and UNR-2076, where spatiald / runtime processes sometimes never close, or where runtimes are orphaned
