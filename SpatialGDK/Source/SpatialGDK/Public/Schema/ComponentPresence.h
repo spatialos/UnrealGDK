@@ -22,9 +22,9 @@ struct ComponentPresence : Component
 
 	ComponentPresence() = default;
 
-	ComponentPresence(TArray<Worker_ComponentId>&& InComponentList, TSchemaOption<PhysicalWorkerName> InPossessingClientWorkerId)
+	ComponentPresence(TArray<Worker_ComponentId>&& InComponentList, TSchemaOption<PhysicalWorkerName>&& InPossessingClientWorkerId)
 		: ComponentList(MoveTemp(InComponentList))
-		, PossessingClientWorkerId(InPossessingClientWorkerId)
+		, PossessingClientWorkerId(MoveTemp(InPossessingClientWorkerId))
 	{}
 
 	ComponentPresence(const Worker_ComponentData& Data)
