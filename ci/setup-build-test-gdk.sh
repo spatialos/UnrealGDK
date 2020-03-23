@@ -53,6 +53,7 @@ pushd "$(dirname "$0")"
         "${UNREAL_PATH}" \
         "${BUILD_HOME}" \
         "${TEST_PROJECT_NAME}" \
+        "${TEST_REPO_RELATIVE_UPROJECT_PATH}" \
         "FastTestResults" \
         "SpatialGDK+/Game/SpatialNetworkingMap" \
         "True"
@@ -63,6 +64,7 @@ pushd "$(dirname "$0")"
             "${UNREAL_PATH}" \
             "${BUILD_HOME}" \
             "${TEST_PROJECT_NAME}" \
+            "${TEST_REPO_RELATIVE_UPROJECT_PATH}" \
             "VanillaTestResults" \
             "ci/${TEST_REPO_MAP}" \
             "/Game/NetworkingMap" \

@@ -9,9 +9,10 @@ pushd "$(dirname "$0")"
     UNREAL_PATH="${1?Please enter the path to the Unreal Engine.}"
     BUILD_HOME="${2?Please enter the path to the parent folder from the GDK repo.}"
     TEST_PROJECT_NAME="${3?Please enter the name of the test project.}"
-    RESULTS_NAME="${4?Please enter the name of the results folder.}"
-    TESTS_PATH="${5:-SpatialGDK}"
-    RUN_WITH_SPATIAL="${6:-}"
+    TEST_REPO_RELATIVE_UPROJECT_PATH="${4?Please enter the relative path to the uporject path.}"
+    RESULTS_NAME="${5?Please enter the name of the results folder.}"
+    TESTS_PATH="${6:-SpatialGDK}"
+    RUN_WITH_SPATIAL="${7:-}"
     GDK_HOME="$(pwd)/.."
 
     TEST_REPO_PATH="${BUILD_HOME}/${TEST_PROJECT_NAME}"
@@ -49,7 +50,7 @@ pushd "$(dirname "$0")"
             -nosplash \
             -unattended \
             -nullRHI \
-            -OverrideSpatialNetworking=${RUN_WITH_SPATIAL}
+            -OverrideSpatialNetworking="${RUN_WITH_SPATIAL}"
     popd
 
     # TODO report tests
