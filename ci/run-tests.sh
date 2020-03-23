@@ -37,7 +37,7 @@ pushd "$(dirname "$0")"
         cp "${TEST_REPO_PATH}/spatial/snapshots/${TEST_REPO_MAP}.snapshot" "${TEST_REPO_PATH}/spatial/snapshots/default.snapshot" 
     fi
 
-    mkdir ${REPORT_OUTPUT_PATH}
+    mkdir "${REPORT_OUTPUT_PATH}"
 
     pushd "${UNREAL_PATH}"
         "${UNREAL_EDITOR_PATH}" \

@@ -22,18 +22,18 @@ pushd "$(dirname "$0")"
 
     # Allow overriding testing branch via environment variable
     if [[ -n "${TEST_REPO_BRANCH:-}" ]]; then
-        CHOSEN_TEST_REPO_BRANCH=${TEST_REPO_BRANCH}
+        CHOSEN_TEST_REPO_BRANCH="${TEST_REPO_BRANCH}"
     fi
 
     # Download Unreal Engine
     echo "--- get-unreal-engine"
-    ${GDK_HOME}/ci/get-engine.sh \
+    "${GDK_HOME}/ci/get-engine.sh" \
         "${UNREAL_PATH}" \
         "${GCS_PUBLISH_BUCKET}"
 
     # Run the required setup steps
     echo "--- setup-gdk"
-    ${GDK_HOME}/Setup.sh --mobile
+    "${GDK_HOME}/Setup.sh" --mobile
 
     # Build the testing project
     echo "--- build-project"

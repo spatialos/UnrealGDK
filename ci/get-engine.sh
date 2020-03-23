@@ -6,9 +6,10 @@ if [[ -n "${DEBUG-}" ]]; then
 fi
 
 pushd "$(dirname "$0")"
-    UNREAL_PATH="${1:-"$(pwd)/..../UnrealEngine"}"
+    # Unreal path is the path to the Engine directory. No symlinking for mac, because they seem to cause issues during the build. This should ultimately resolve to "/Users/buildkite-agent/builds/<agent name>/improbable//UnrealEngine".
+    UNREAL_PATH="${1:-"$(pwd)/../../UnrealEngine"}"
+    # THE GCS bucket that stores the built out Unreal Engine we want to retrieve
     GCS_PUBLISH_BUCKET="${2:-io-internal-infra-unreal-artifacts-production/UnrealEngine}"
-    ENGINE_CACHE_DIRECTORY="${3:-"$(pwd)/../UnrealEngine-Cache"}"
     GDK_HOME="$(pwd)/.."
 
     pushd "${GDK_HOME}"
@@ -40,15 +41,10 @@ pushd "$(dirname "$0")"
             fi
         popd
 
-        # Create an UnrealEngine-Cache directory if it doesn't already exist
-        mkdir -p ${ENGINE_CACHE_DIRECTORY}
-
-        pushd ${ENGINE_CACHE_DIRECTORY}
-            echo "--- download-unreal-engine"
-            ENGINE_GCS_PATH="gs://${GCS_PUBLISH_BUCKET}/${UNREAL_VERSION}.zip"
-            echo "Downloading Unreal Engine artifacts version ${UNREAL_VERSION} from ${ENGINE_GCS_PATH}"
-            gsutil cp -n "${ENGINE_GCS_PATH}" "${UNREAL_VERSION}".zip
-            7z x "${UNREAL_VERSION}".zip -o${UNREAL_PATH} -aos
-        popd
+        echo "--- download-unreal-engine"
+        ENGINE_GCS_PATH="gs://${GCS_PUBLISH_BUCKET}/${UNREAL_VERSION}.zip"
+        echo "Downloading Unreal Engine artifacts version ${UNREAL_VERSION} from ${ENGINE_GCS_PATH}"
+        gsutil cp -n "${ENGINE_GCS_PATH}" "${UNREAL_VERSION}".zip
+        7z x "${UNREAL_VERSION}".zip -o${UNREAL_PATH} -aos
     popd
 popd
