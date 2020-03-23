@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "WorkerView.h"
-#include "MessagesToSend.h"
+#include "SpatialView/WorkerView.h"
+#include "SpatialView/MessagesToSend.h"
 
 namespace SpatialGDK
 {
