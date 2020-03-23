@@ -10,6 +10,8 @@ struct FWorkerTypeLaunchSection;
 
 class FLBStrategyEditorExtensionInterface
 {
+public:
+	virtual ~FLBStrategyEditorExtensionInterface() {}
 private:
 	friend FLBStrategyEditorExtensionManager;
 	virtual bool GetDefaultLaunchConfiguration_Virtual(const UAbstractLBStrategy* Strategy, FWorkerTypeLaunchSection& OutConfiguration, FIntPoint& OutWorldDimensions) const = 0;
