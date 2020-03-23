@@ -8,6 +8,7 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/Docking/TabManager.h"
 #include "Misc/FileHelper.h"
+#include "SpatialCommandUtils.h"
 #include "SSpatialOutputLog.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
@@ -72,11 +73,11 @@ FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& A
 	return FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, AppendPath));
 }
 
-bool FSpatialGDKServicesModule::SpatialPreRunChecks()
+bool FSpatialGDKServicesModule::SpatialPreRunChecks(bool bIsInChina)
 {
 	FString SpatialExistenceCheckResult;
 	int32 ExitCode;
-	ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, TEXT("version"), SpatialGDKServicesConstants::SpatialOSDirectory, SpatialExistenceCheckResult, ExitCode);
+	SpatialCommandUtils::ExecuteSpatialCommandAndReadOutput(TEXT("version"), SpatialGDKServicesConstants::SpatialOSDirectory, SpatialExistenceCheckResult, ExitCode, bIsInChina);
 
 	if (ExitCode != 0)
 	{
