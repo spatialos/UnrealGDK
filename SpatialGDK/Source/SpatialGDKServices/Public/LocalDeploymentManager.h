@@ -18,9 +18,9 @@ class FLocalDeploymentManager
 public:
 	FLocalDeploymentManager();
 
-	void SPATIALGDKSERVICES_API Init(FString RuntimeIPToExpose);
+	void SPATIALGDKSERVICES_API PreInit(bool bChinaEnabled);
 
-	void SPATIALGDKSERVICES_API SetInChina(bool IsInChina);
+	void SPATIALGDKSERVICES_API Init(FString RuntimeIPToExpose);
 
 	void SPATIALGDKSERVICES_API RefreshServiceStatus();
 

@@ -22,7 +22,8 @@ public:
 	FLocalDeploymentManager* GetLocalDeploymentManager();
 
 	static FString GetSpatialGDKPluginDirectory(const FString& AppendPath = TEXT(""));
-	static bool SpatialPreRunChecks();
+	
+	static bool SpatialPreRunChecks(bool bIsInChina);
 
 	FORCEINLINE static FString GetProjectName()
 	{
