@@ -11,14 +11,6 @@ namespace SpatialGDK
  //  Recorded as gained.
  //  Recorded as lost.
  //  Recorded as lost-temporarily.
- //
- // The possible state transitions for a given entity-component are
- //  not recorded -> gained
- //  gained -> not recorded
- //
- //  not recorded -> lost
- //  lost -> lost-temporarily
- //  lost-temporarily -> lost
 class AuthorityRecord
 {
 public:
