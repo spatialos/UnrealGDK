@@ -13,7 +13,7 @@ pushd "$(dirname "$0")"
     #spatial service stop
     pkill -9 -f java
 
-    rm -f ${UNREAL_PATH}
-    rm -f ${GDK_IN_TEST_REPO}
+    rm -rf ${UNREAL_PATH}
+    rm -rf ${GDK_IN_TEST_REPO}
     rm -rf ${PROJECT_ABSOLUTE_PATH}
 popd
