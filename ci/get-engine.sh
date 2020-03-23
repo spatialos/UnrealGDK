@@ -36,7 +36,7 @@ pushd "$(dirname "$0")"
                 HEAD_POINTER_GCS_PATH="gs://${GCS_PUBLISH_BUCKET}/HEAD/mac-${VERSION_BRANCH}.version"
                 UNREAL_VERSION=$(gsutil cp "${HEAD_POINTER_GCS_PATH}" -) # the '-' at the end instructs gsutil to download the file and output the contents to stdout
             else
-                UNREAL_VERSION="${VERSION_DESCRIPTION}"
+                UNREAL_VERSION="Mac-${VERSION_DESCRIPTION}"
             fi
         popd
 
@@ -45,7 +45,7 @@ pushd "$(dirname "$0")"
 
         pushd ${ENGINE_CACHE_DIRECTORY}
             echo "--- download-unreal-engine"
-            ENGINE_GCS_PATH="gs://${GCS_PUBLISH_BUCKET}/Mac-${UNREAL_VERSION}.zip"
+            ENGINE_GCS_PATH="gs://${GCS_PUBLISH_BUCKET}/${UNREAL_VERSION}.zip"
             echo "Downloading Unreal Engine artifacts version ${UNREAL_VERSION} from ${ENGINE_GCS_PATH}"
             gsutil cp -n "${ENGINE_GCS_PATH}" "${UNREAL_VERSION}".zip
             7z x "${UNREAL_VERSION}".zip -o${UNREAL_PATH} -aos
