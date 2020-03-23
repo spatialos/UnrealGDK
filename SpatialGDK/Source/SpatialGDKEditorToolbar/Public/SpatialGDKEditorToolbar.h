@@ -85,8 +85,9 @@ private:
 	void ShowSimulatedPlayerDeploymentDialog();
 	void OpenLaunchConfigurationEditor();
 
-	void BuildServerAssembly();
-	void HandleServerAssemblyResult(FString, double);
+	void BuildServerWorker();
+	void BuildClientWorker();
+	void BuildSimulatedPlayerWorker();
 
 private:
 	bool CanExecuteSchemaGenerator() const;

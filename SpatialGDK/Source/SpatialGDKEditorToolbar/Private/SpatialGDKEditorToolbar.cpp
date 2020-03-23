@@ -230,10 +230,15 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction());
 
 	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().BuildServerAssemblyAction,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildServerAssembly),
+		FSpatialGDKEditorToolbarCommands::Get().BuildServerWorkerAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildServerWorker),
 		FCanExecuteAction());
-	
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().BuildClientWorkerAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildClientWorker),
+		FCanExecuteAction());
+
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartSpatialService,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked),
@@ -341,7 +346,8 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKDeploymentOptionsHeader", "Deployment Tools"));
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildServerAssemblyAction);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildServerWorkerAction);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildClientWorkerAction);
 	}
 	MenuBuilder.EndSection();
 
@@ -854,70 +860,85 @@ void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"));
 }
 
+static FString GetStagingDir()
+{
+	return FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial") / TEXT("build") / TEXT("unreal"));
+}
+
 static void HandleZipResult(FString, double)
 {
 
 }
 
-void FSpatialGDKEditorToolbarModule::HandleServerAssemblyResult(FString result, double)
+static void WriteStartWorkerScript()
+{
+	FString StagingDir = GetStagingDir();
+	FString OutputFile = StagingDir / TEXT("LinuxServer") / TEXT("StartWorker.sh");
+	FString ShellScript = FString::Printf(TEXT(
+		"#!/bin/bash\n"
+		"NEW_USER=unrealworker\n"
+		"WORKER_ID=$1\n"
+		"LOG_FILE=$2\n"
+		"shift 2\n"
+		"\n"
+		"# 2>/dev/null silences errors by redirecting stderr to the null device.This is done to prevent errors when a machine attempts to add the same user more than once.\n"
+		"mkdir -p /improbable/logs/UnrealWorker/\n"
+		"useradd $NEW_USER -m -d /improbable/logs/UnrealWorker 2>/dev/null\n"
+		"chown -R $NEW_USER:$NEW_USER $(pwd) 2>/dev/null\n"
+		"chmod -R o+rw /improbable/logs 2>/dev/null\n"
+		"\n"
+		"# Create log file in case it doesn't exist and redirect stdout and stderr to the file.\n"
+		"touch \"${LOG_FILE}\"\n"
+		"exec 1>>\"${LOG_FILE}\"\n"
+		"exec 2>&1\n"
+		"\n"
+		"SCRIPT=\"$(pwd)/%sServer.sh\"\n"
+		"\n"
+		"if [ ! -f $SCRIPT ]; then\n"
+		"	echo \"Expected to run ${SCRIPT} but file not found!\"\n"
+		"	exit 1\n"
+		"fi\n"
+		"\n"
+		"chmod +x $SCRIPT\n"
+		"echo \"Running ${SCRIPT} to start worker...\"\n"
+		"gosu $NEW_USER \"${SCRIPT}\" \"$@\"\n"), FApp::GetProjectName());
+	FFileHelper::SaveStringToFile(ShellScript, *OutputFile, FFileHelper::EEncodingOptions::ForceAnsi);
+}
+
+static void ZipWorker(const FString &WorkerName, const FString &ZipName)
+{
+	//write shell script and zip folder
+	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
+
+	FString SourcePath = FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial") / TEXT("build") / TEXT("unreal") / WorkerName);
+	FString AssemblyPath = FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial") / TEXT("build") / TEXT("assembly") / TEXT("worker") / ZipName);
+	FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" ZipUtils -add=\"%s\" -archive=\"%s\""),
+		*ProjectPath, *SourcePath, *AssemblyPath);
+
+	AsyncTask(ENamedThreads::GameThread, [CommandLine]() {
+		IUATHelperModule::Get().CreateUatTask(CommandLine,
+			LOCTEXT("ZipAssemblyDisplayName", "Spatial Cloud"),
+			LOCTEXT("ZipAssemblyDescription", "Zip Cloud Deployment Assembly"),
+			LOCTEXT("ZipAssemblyShortName", "Cloud Assembly"),
+			FEditorStyle::GetBrush(TEXT("MainFrame.CookContent")),
+			TFunction<void(FString, double)>(HandleZipResult)
+		);
+	});
+}
+
+static void HandleServerWorkerResult(FString result, double)
 {
 	if (result == TEXT("Completed"))
 	{
-		//write shell script and zip folder
-		FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
-		FString StagingDir = FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial") / TEXT("build") / TEXT("unreal"));
-		FString OutputFile = StagingDir / TEXT("LinuxServer") / TEXT("StartWorker.sh");
-		FString ShellScript = FString::Printf(TEXT(
-			"#!/bin/bash\n"
-			"NEW_USER=unrealworker\n"
-			"WORKER_ID=$1\n"
-			"LOG_FILE=$2\n"
-			"shift 2\n"
-			"\n"
-			"# 2>/dev/null silences errors by redirecting stderr to the null device.This is done to prevent errors when a machine attempts to add the same user more than once.\n"
-			"mkdir -p /improbable/logs/UnrealWorker/\n"
-			"useradd $NEW_USER -m -d /improbable/logs/UnrealWorker 2>/dev/null\n"
-			"chown -R $NEW_USER:$NEW_USER $(pwd) 2>/dev/null\n"
-			"chmod -R o+rw /improbable/logs 2>/dev/null\n"
-			"\n"
-			"# Create log file in case it doesn't exist and redirect stdout and stderr to the file.\n"
-			"touch \"${LOG_FILE}\"\n"
-			"exec 1>>\"${LOG_FILE}\"\n"
-			"exec 2>&1\n"
-			"\n"
-			"SCRIPT=\"$(pwd)/%sServer.sh\"\n"
-			"\n"
-			"if [ ! -f $SCRIPT ]; then\n"
-			"	echo \"Expected to run ${SCRIPT} but file not found!\"\n"
-			"	exit 1\n"
-			"fi\n"
-			"\n"
-			"chmod +x $SCRIPT\n"
-			"echo \"Running ${SCRIPT} to start worker...\"\n"
-			"gosu $NEW_USER \"${SCRIPT}\" \"$@\"\n"), FApp::GetProjectName());
-		FFileHelper::SaveStringToFile(ShellScript, *OutputFile, FFileHelper::EEncodingOptions::ForceAnsi);
-
-		FString SourcePath = FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial") / TEXT("build") / TEXT("unreal") / TEXT("LinuxServer"));
-		FString AssemblyPath = FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial") / TEXT("build") / TEXT("assembly") / TEXT("worker") / TEXT("UnrealWorker@Linux.zip"));
-		FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" ZipUtils -add=\"%s\" -archive=\"%s\""),
-			*ProjectPath, *SourcePath, *AssemblyPath);
-
-		AsyncTask(ENamedThreads::GameThread, [CommandLine]() {
-			IUATHelperModule::Get().CreateUatTask(CommandLine,
-				LOCTEXT("ZipAssemblyDisplayName", "Spatial Cloud"),
-				LOCTEXT("ZipAssemblyDescription", "Zip Cloud Deployment Assembly"),
-				LOCTEXT("ZipAssemblyShortName", "Cloud Assembly"),
-				FEditorStyle::GetBrush(TEXT("MainFrame.CookContent")),
-				TFunction<void(FString, double)>(HandleZipResult)
-			);
-		});
+		WriteStartWorkerScript();
+		ZipWorker(TEXT("LinuxServer"), TEXT("UnrealWorker@Linux.zip"));
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::BuildServerAssembly()
+void FSpatialGDKEditorToolbarModule::BuildServerWorker()
 {
 	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
-	FString StagingDir = FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial") / TEXT("build") / TEXT("unreal"));
+	FString StagingDir = GetStagingDir() / TEXT("LinuxServer");
 	FString OptionalParams;
 	FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" BuildCookRun -build -project=\"%s\" -nop4 -clientconfig=%s -serverconfig=%s -utf8output -cook -stage -package -unversioned -compressed -stagingdirectory=\"%s\"  -fileopenlog -SkipCookingEditorContent -server -serverplatform=%s -noclient -ue4exe=\"%s\" %s"),
 		*ProjectPath,
@@ -929,16 +950,54 @@ void FSpatialGDKEditorToolbarModule::BuildServerAssembly()
 		*FUnrealEdMisc::Get().GetExecutableForCommandlets(),
 		*OptionalParams
 	);
-	TFunction<void(FString, double)> ServerAssemblyResult([this](FString result, double d) { this->HandleServerAssemblyResult(result, d); });
+
 	IUATHelperModule::Get().CreateUatTask(CommandLine,
 		LOCTEXT("BuildAssemblyDisplayName", "Spatial Cloud"),
 		LOCTEXT("BuildAssemblyDescription", "Build Cloud Deployment Assembly"),
 		LOCTEXT("BuildAssemblyShortName", "Cloud Assembly"),
 		FEditorStyle::GetBrush(TEXT("MainFrame.CookContent")),
-		ServerAssemblyResult
+		TFunction<void(FString, double)>(HandleServerWorkerResult)
 	);
 }
 
+static void HandleClientWorkerResult(FString result, double)
+{
+	if (result == TEXT("Completed"))
+	{
+		ZipWorker(TEXT("WindowsNoEditor"), TEXT("UnrealClient@Windows.zip"));
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::BuildClientWorker()
+{
+	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
+	FString StagingDir = GetStagingDir() / TEXT("WindowsNoEditor");
+	FString OptionalParams;
+	FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" BuildCookRun -build -project=\"%s\" -nop4 -clientconfig=%s -serverconfig=%s -utf8output -cook -stage -package -unversioned -compressed -stagingdirectory=\"%s\"  -fileopenlog -SkipCookingEditorContent -platform=%s -targetplatform=%s -ue4exe=\"%s\" %s"),
+		*ProjectPath,
+		*ProjectPath,
+		TEXT("Development"),
+		TEXT("Development"),
+		*StagingDir,
+		TEXT("Win64"),
+		TEXT("Win64"),
+		*FUnrealEdMisc::Get().GetExecutableForCommandlets(),
+		*OptionalParams
+		);
+
+	IUATHelperModule::Get().CreateUatTask(CommandLine,
+		LOCTEXT("BuildAssemblyDisplayName", "Spatial Cloud"),
+		LOCTEXT("BuildAssemblyDescription", "Build Cloud Deployment Assembly"),
+		LOCTEXT("BuildAssemblyShortName", "Cloud Assembly"),
+		FEditorStyle::GetBrush(TEXT("MainFrame.CookContent")),
+		TFunction<void(FString, double)>(HandleClientWorkerResult)
+	);
+}
+
+void FSpatialGDKEditorToolbarModule::BuildSimulatedPlayerWorker()
+{
+
+}
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
