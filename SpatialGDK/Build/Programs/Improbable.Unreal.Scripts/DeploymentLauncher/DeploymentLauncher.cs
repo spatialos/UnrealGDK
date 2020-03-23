@@ -206,12 +206,19 @@ namespace Improbable
                 {
                     Console.WriteLine(
                         $"Unable to launch the deployment(s). This is likely because the project '{projectName}' or assembly '{assemblyName}' doesn't exist.");
-                    return 1;
+                }
+                else if (e.Status.StatusCode == Grpc.Core.StatusCode.ResourceExhausted)
+                {
+                    Console.WriteLine(
+                        $"Unable to launch the deployment(s). Cloud cluster resources exhausted, Detail: '{e.Status.Detail}'" );
                 }
                 else
                 {
-                    throw;
+                    Console.WriteLine(
+                        $"Unable to launch the deployment(s). Detail: '{e.Status.Detail}'");
                 }
+
+                return 1;
             }
 
             return 0;
@@ -385,6 +392,10 @@ namespace Improbable
                 });
 
             // Add worker flags to sim deployment JSON.
+            var regionFlag = new JObject();
+            regionFlag.Add("name", "simulated_players_region");
+            regionFlag.Add("value", regionCode);
+
             var devAuthTokenFlag = new JObject();
             devAuthTokenFlag.Add("name", "simulated_players_dev_auth_token");
             devAuthTokenFlag.Add("value", dat.TokenSecret);
