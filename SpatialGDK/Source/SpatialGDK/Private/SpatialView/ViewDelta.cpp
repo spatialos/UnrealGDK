@@ -22,6 +22,21 @@ const TArray<CreateEntityResponse>& ViewDelta::GetCreateEntityResponses() const
 	return CreateEntityResponses;
 }
 
+const TArray<EntityComponentId>& ViewDelta::GetAuthorityGained() const
+{
+	return AuthorityChanges.GetAuthorityGained();
+}
+
+const TArray<EntityComponentId>& ViewDelta::GetAuthorityLost() const
+{
+	return AuthorityChanges.GetAuthorityLost();
+}
+
+const TArray<EntityComponentId>& ViewDelta::GetAuthorityLostTemporarily() const
+{
+	return AuthorityChanges.GetAuthorityLostTemporarily();
+}
+
 TUniquePtr<AbstractOpList> ViewDelta::GenerateLegacyOpList() const
 {
 	// Todo - refactor individual op creation to an oplist type.

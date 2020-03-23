@@ -32,6 +32,21 @@ const TArray<CreateEntityResponse>& ViewCoordinator::GetCreateEntityResponses() 
 	return Delta->GetCreateEntityResponses();
 }
 
+const TArray<EntityComponentId>& ViewCoordinator::GetAuthorityGained() const
+{
+	return Delta->GetAuthorityGained();
+}
+
+const TArray<EntityComponentId>& ViewCoordinator::GetAuthorityLost() const
+{
+	return Delta->GetAuthorityLost();
+}
+
+const TArray<EntityComponentId>& ViewCoordinator::GetAuthorityLostTemporarily() const
+{
+	return Delta->GetAuthorityLostTemporarily();
+}
+
 TUniquePtr<AbstractOpList> ViewCoordinator::GenerateLegacyOpList() const
 {
 	return Delta->GenerateLegacyOpList();

@@ -19,6 +19,9 @@ public:
 	void SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority);
 
 	const TArray<CreateEntityResponse>& GetCreateEntityResponses() const;
+	const TArray<EntityComponentId>& GetAuthorityGained() const;
+	const TArray<EntityComponentId>& GetAuthorityLost() const;
+	const TArray<EntityComponentId>& GetAuthorityLostTemporarily() const;
 
 	// Returns an array of ops equivalent to the current state of the view delta.
 	// It is expected that Clear should be called between calls to GenerateLegacyOpList.
