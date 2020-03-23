@@ -349,7 +349,10 @@ bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FStrin
 			FDateTime SpotCreateEnd = FDateTime::Now();
 			FTimespan Span = SpotCreateEnd - SpotCreateStart;
 
-			OnDeploymentStart.Broadcast();
+			AsyncTask(ENamedThreads::GameThread, [this]
+			{
+				OnDeploymentStart.Broadcast();
+			});
 
 			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
 			bSuccess = true;
