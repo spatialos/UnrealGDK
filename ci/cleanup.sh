@@ -2,7 +2,7 @@
 
 pushd "$(dirname "$0")"
 
-    UNREAL_PATH="${1:-"$(pwd)/../UnrealEngine"}"
+    UNREAL_PATH="${1:-"$(pwd)/../../UnrealEngine"}"
     BUILD_PROJECT="${2:-NetworkTestProject}"
 
     PROJECT_ABSOLUTE_PATH="$(pwd)/../../${BUILD_PROJECT}"
