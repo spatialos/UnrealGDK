@@ -1,6 +1,6 @@
 #pragma once
 
-#include "TypeHash.h"
+#include "Templates/TypeHash.h"
 #include <improbable/c_worker.h>
 
 namespace SpatialGDK
