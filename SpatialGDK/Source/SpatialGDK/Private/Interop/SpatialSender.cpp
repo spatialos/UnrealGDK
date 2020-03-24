@@ -199,6 +199,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
 {
 	TArray<Worker_ComponentId> ComponentsToRemove;
+	ComponentsToRemove.Reserve(SCHEMA_Count);
 	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
 	{
 		if (SubobjectComponentId != SpatialConstants::INVALID_COMPONENT_ID)

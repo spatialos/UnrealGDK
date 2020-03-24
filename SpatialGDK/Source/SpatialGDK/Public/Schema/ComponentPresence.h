@@ -84,6 +84,7 @@ struct ComponentPresence : Component
 	void AddComponentDataIds(const TArray<FWorkerComponentData>& ComponentDatas)
 	{
 		TArray<Worker_ComponentId> ComponentIds;
+		ComponentIds.Reserve(ComponentDatas.Num());
 		for (const FWorkerComponentData& ComponentData : ComponentDatas)
 		{
 			ComponentIds.Add(ComponentData.component_id);
