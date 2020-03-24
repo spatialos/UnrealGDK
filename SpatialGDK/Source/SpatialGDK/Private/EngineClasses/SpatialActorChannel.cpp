@@ -1312,7 +1312,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	if (SavedClientConnectionWorkerId != NewClientConnectionWorkerId)
 	{
 		// Update the ComponentPresence component.
-		check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
+		check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
 		SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
 		NetOwningClientWorkerData->WorkerId = NewClientConnectionWorkerId;
 		FWorkerComponentUpdate Update = NetOwningClientWorkerData->CreateNetOwningClientWorkerUpdate();
