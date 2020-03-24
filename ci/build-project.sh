@@ -27,7 +27,7 @@ pushd "$(dirname "$0")"
     # The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
     # copying the plugin into the project's folder bypasses the issue
     mkdir -p "${TEST_REPO_PATH}/Game/Plugins"
-    ln -s  "${GDK_HOME}" "${TEST_REPO_PATH}/Game/Plugins/UnrealGDK"
+    cp -R "${GDK_HOME}" "${TEST_REPO_PATH}/Game/Plugins/UnrealGDK"
 
     # Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
     echo "\r\n[/Script/IntroTutorials.TutorialStateSettings]\r\nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)\r\n" >> "${UNREAL_PATH}/Engine/Config/BaseEditorSettings.ini"
