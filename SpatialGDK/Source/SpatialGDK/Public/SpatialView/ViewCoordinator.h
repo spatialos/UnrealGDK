@@ -17,6 +17,9 @@ public:
 	void FlushMessagesToSend();
 
 	const TArray<CreateEntityResponse>& GetCreateEntityResponses() const;
+	const TArray<EntityComponentId>& GetAuthorityGained() const;
+	const TArray<EntityComponentId>& GetAuthorityLost() const;
+	const TArray<EntityComponentId>& GetAuthorityLostTemporarily() const;
 
 	TUniquePtr<AbstractOpList> GenerateLegacyOpList() const;
 
