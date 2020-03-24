@@ -24,23 +24,6 @@
         "{{WorkerTypeName}}"
       ]
     },
-    "entity_interest": {
-      "range_entity_interest": {
-        "radius": 50
-      }
-    },
-    "streaming_query": [
-      {
-        "global_component_streaming_query": {
-          "component_name": "unreal.SingletonManager"
-        }
-      },
-      {
-        "global_component_streaming_query": {
-          "component_name": "unreal.Singleton"
-        }
-      }
-    ],
     "component_delivery": {
       "default": "RELIABLE_ORDERED",
       "checkout_all_initially": true
