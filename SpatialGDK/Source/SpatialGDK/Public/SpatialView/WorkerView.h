@@ -29,6 +29,7 @@ public:
 private:
 	void ProcessOp(const Worker_Op& Op);
 
+	void HandleAuthorityChange(const Worker_AuthorityChangeOp& AuthorityChange);
 	void HandleCreateEntityResponse(const Worker_CreateEntityResponseOp& Response);
 
 	TArray<TUniquePtr<AbstractOpList>> QueuedOps;
