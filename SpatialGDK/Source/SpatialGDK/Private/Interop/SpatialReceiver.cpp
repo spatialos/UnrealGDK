@@ -591,10 +591,16 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 					ActorChannel->bCreatedEntity = false;
 				}
 
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
+				// With load-balancing enabled, we set ROLE_SimulatedProxy and trigger OnAuthorityLost when we
+				// set AuthorityIntent to another worker.This conditional exists to dodge call OnAuthorityLost
+				// twice.
+				if (Actor->Role != ROLE_SimulatedProxy)
+				{
+					Actor->Role = ROLE_SimulatedProxy;
+					Actor->RemoteRole = ROLE_Authority;
 
-				Actor->OnAuthorityLost();
+					Actor->OnAuthorityLost();
+				}
 			}
 		}
 
