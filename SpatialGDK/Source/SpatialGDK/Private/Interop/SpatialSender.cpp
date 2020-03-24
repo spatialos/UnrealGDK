@@ -82,7 +82,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
 
-	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas), GetOwningClientWorkerId(Channel->Actor)).CreateComponentPresenceData());
+	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas)).CreateComponentPresenceData());
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
@@ -248,7 +248,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in order
 	// to set the interest of the server worker according to the strategy.
 	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
-	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components), {}).CreateComponentPresenceData());
+	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
@@ -1191,7 +1191,7 @@ void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FStrin
 
 // Authority over the ClientRPC Schema component and the Heartbeat component are dictated by the owning connection of a client.
 // This function updates the authority of that component as the owning connection can change.
-bool USpatialSender::UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
+void USpatialSender::UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
 {
 	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID));
 
@@ -1204,7 +1204,6 @@ bool USpatialSender::UpdateClientAuthoritativeComponentAclEntries(Worker_EntityI
 	FWorkerComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 
 	Connection->SendComponentUpdate(EntityId, &Update);
-	return true;
 }
 
 void USpatialSender::UpdateInterestComponent(AActor* Actor)
@@ -1262,7 +1261,7 @@ void USpatialSender::CreateTombstoneEntity(AActor* Actor)
 
 	Components.Add(CreateLevelComponentData(Actor));
 
-	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components), GetOwningClientWorkerId(Actor)).CreateComponentPresenceData());
+	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
 

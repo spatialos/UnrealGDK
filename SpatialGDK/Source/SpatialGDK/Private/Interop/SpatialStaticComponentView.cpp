@@ -10,6 +10,7 @@
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/MulticastRPCs.h"
+#include "Schema/NetOwningClientWorker.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerEndpoint.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
@@ -107,6 +108,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		break;
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ComponentPresence>(Op.data);
+		break;
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::NetOwningClientWorker>(Op.data);
 		break;
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.

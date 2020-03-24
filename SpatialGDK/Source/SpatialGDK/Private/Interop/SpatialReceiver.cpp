@@ -169,6 +169,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		if (LoadBalanceEnforcer != nullptr)
 		{
 			LoadBalanceEnforcer->OnLoadBalancingComponentAdded(Op);
@@ -709,7 +710,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	SpawnData* SpawnDataComp = StaticComponentView->GetComponentData<SpawnData>(EntityId);
 	UnrealMetadata* UnrealMetadataComp = StaticComponentView->GetComponentData<UnrealMetadata>(EntityId);
-	ComponentPresence* ComponentPresenceComp = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
+	NetOwningClientWorker* NetOwningClientWorkerComp = StaticComponentView->GetComponentData<NetOwningClientWorker>(EntityId);
 
 	// This function should only ever be called if we have received an unreal metadata component.
 	check(UnrealMetadataComp != nullptr);
@@ -769,7 +770,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp, ComponentPresenceComp);
+	EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp, NetOwningClientWorkerComp);
 
 	if (EntityActor == nullptr)
 	{
@@ -1070,7 +1071,7 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	check(PackageMap->GetObjectFromEntityId(EntityId) == nullptr);
 }
 
-AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp, SpatialGDK::ComponentPresence* ComponentPresenceData)
+AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp, NetOwningClientWorker* NetOwningClientWorkerComp)
 {
 	if (UnrealMetadataComp->StablyNamedRef.IsSet())
 	{
@@ -1089,11 +1090,11 @@ AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp
 		}
 	}
 
-	return CreateActor(UnrealMetadataComp, SpawnDataComp, ComponentPresenceData);
+	return CreateActor(UnrealMetadataComp, SpawnDataComp, NetOwningClientWorkerComp);
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp, ComponentPresence* ComponentPresenceData)
+AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp, NetOwningClientWorker* NetOwningClientWorkerComp)
 {
 	UClass* ActorClass = UnrealMetadataComp->GetNativeEntityClass();
 
@@ -1128,8 +1129,8 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 	if (bIsServer && bCreatingPlayerController)
 	{
 		// If we're spawning a PlayerController, it should definitely have a net-owning client worker ID.
-		check(ComponentPresenceData->PossessingClientWorkerId.IsSet());
-		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), *ComponentPresenceData->PossessingClientWorkerId);
+		check(NetOwningClientWorkerComp->WorkerId.IsSet());
+		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), *NetOwningClientWorkerComp->WorkerId);
 	}
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
@@ -1470,6 +1471,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		if (LoadBalanceEnforcer != nullptr)
 		{
 			LoadBalanceEnforcer->OnLoadBalancingComponentUpdated(Op);

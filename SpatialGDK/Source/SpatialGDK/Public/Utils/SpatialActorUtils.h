@@ -38,7 +38,7 @@ inline FString GetOwningClientWorkerId(const AActor* Actor)
 {
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
 	{
-		return NetConnection->OwningClientWorkerId;
+		return NetConnection->ConnectionOwningWorkerId;
 	}
 
 	return FString();

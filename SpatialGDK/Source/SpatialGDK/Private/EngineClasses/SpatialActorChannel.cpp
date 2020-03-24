@@ -24,6 +24,7 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/ComponentPresence.h"
+#include "Schema/NetOwningClientWorker.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "SpatialConstants.h"
@@ -38,7 +39,6 @@ DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdate
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ServerProcessOwnershipChange"), STAT_ServerProcessOwnershipChange, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ClientProcessOwnershipChange"), STAT_ClientProcessOwnershipChange, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("GetOwnerWorkerAttribute"), STAT_GetOwningClientWorkerId, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("CallUpdateEntityACLs"), STAT_CallUpdateEntityACLs, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("OnUpdateEntityACLSuccess"), STAT_OnUpdateEntityACLSuccess, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("IsAuthoritativeServer"), STAT_IsAuthoritativeServer, STATGROUP_SpatialNet);
@@ -222,6 +222,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 
 	PendingDynamicSubobjects.Empty();
 	SavedClientConnectionWorkerId.Empty();
+	SavedInterestBucketComponentID = SpatialConstants::INVALID_COMPONENT_ID;
 
 	FramesTillDormancyAllowed = 0;
 
@@ -1301,28 +1302,49 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		}
 	}
 
+	// We only want to iterate through child Actors if the connection-owning worker IR or interest bucket component ID
+	// for this Actor changes. This bool is used to keep track of whether we detect and changed, and used to exit
+	// early below.
+	bool bUpdatedThisActor = false;
+
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
-	FString NewClientConnectionWorkerId;
+	FString NewClientConnectionWorkerId = SpatialGDK::GetOwningClientWorkerId(Actor);
+	if (SavedClientConnectionWorkerId != NewClientConnectionWorkerId)
 	{
-		SCOPE_CYCLE_COUNTER(STAT_GetOwningClientWorkerId);
-		NewClientConnectionWorkerId = SpatialGDK::GetOwningClientWorkerId(Actor);
+		// Update the ComponentPresence component.
+		check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
+		SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
+		NetOwningClientWorkerData->WorkerId = NewClientConnectionWorkerId;
+		FWorkerComponentUpdate Update = NetOwningClientWorkerData->CreateNetOwningClientWorkerUpdate();
+		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+
+		// Update the EntityACL component (if authoritative).
+		if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
+		{
+			Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
+		}
+
+		SavedClientConnectionWorkerId = NewClientConnectionWorkerId;
+
+		bUpdatedThisActor = true;
 	}
-
-	// Update the ComponentPresence component.
-	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
-	SpatialGDK::ComponentPresence* ComponentPresenceData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ComponentPresence>(EntityId);
-	ComponentPresenceData->PossessingClientWorkerId = NewClientConnectionWorkerId;
-	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
-
-	// Update the EntityACL component (if authoritative).
-	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-	{
-		UpdateEntityACLToNewOwner(*NewClientConnectionWorkerId);
-	}
-
+	
 	// Changing owner can affect which interest bucket the Actor should be in so we need to update it.
-	UpdateInterestBucketComponentId();
+	Worker_ComponentId NewInterestBucketComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
+	if (SavedInterestBucketComponentID != NewInterestBucketComponentId)
+	{
+		Sender->SendInterestBucketComponentChange(EntityId, SavedInterestBucketComponentID, NewInterestBucketComponentId);
+
+		SavedInterestBucketComponentID = NewInterestBucketComponentId;
+
+		bUpdatedThisActor = true;
+	}
+
+	// If we haven't updated this Actor, skip attempting to update child Actors.
+	if (!bUpdatedThisActor)
+	{
+		return;
+	}
 
 	// Changes to NetConnection and InterestBucket for an Actor also affect all descendants which we
 	// need to iterate through.
@@ -1334,45 +1356,6 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		{
 			Channel->ServerProcessOwnershipChange();
 		}
-	}
-}
-
-void USpatialActorChannel::UpdateEntityACLToNewOwner(const FString& NewClientConnectionWorkerId)
-{
-	if (SavedClientConnectionWorkerId != NewClientConnectionWorkerId)
-	{
-		bool bSuccess = Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
-
-		if (bSuccess)
-		{
-			SavedClientConnectionWorkerId = NewClientConnectionWorkerId;
-		}
-	}
-}
-
-void USpatialActorChannel::UpdateInterestBucketComponentId()
-{
-	const Worker_ComponentId DesiredInterestComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
-
-	auto FindCurrentNCDComponent = [this]()
-	{
-		for (const auto ComponentId : NetDriver->ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
-		{
-			if (NetDriver->StaticComponentView->HasComponent(EntityId, ComponentId))
-			{
-				return ComponentId;
-			}
-		}
-		return SpatialConstants::INVALID_COMPONENT_ID;
-	};
-
-	const Worker_ComponentId CurrentInterestComponentId = NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID) ?
-		SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID :
-		FindCurrentNCDComponent();
-
-	if (CurrentInterestComponentId != DesiredInterestComponentId)
-	{
-		Sender->SendInterestBucketComponentChange(EntityId, CurrentInterestComponentId, DesiredInterestComponentId);
 	}
 }
 

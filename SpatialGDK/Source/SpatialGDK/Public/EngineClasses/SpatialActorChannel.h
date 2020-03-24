@@ -305,9 +305,6 @@ private:
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
 	
-	void UpdateEntityACLToNewOwner(const FString& NewClientConnectionWorkerId);
-	void UpdateInterestBucketComponentId();
-
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
 	bool bCreatedEntity;
@@ -333,6 +330,10 @@ private:
 	// Tracks the client worker ID corresponding to the owning connection.
 	// If no owning client connection exists, this will be an empty string.
 	FString SavedClientConnectionWorkerId;
+
+	// Used on the server
+	// Tracks the interest bucket component ID for the relevant Actor.
+	Worker_ComponentId SavedInterestBucketComponentID;
 
 	UPROPERTY(transient)
 	USpatialNetDriver* NetDriver;
