@@ -91,6 +91,9 @@ private:
 	void BuildSimulatedPlayerWorker();
 	void BuildAll();
 
+	void BuildAndUpload();
+	void UploadAssembly();
+
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;

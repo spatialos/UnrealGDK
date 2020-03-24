@@ -19,6 +19,8 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 	UI_COMMAND(BuildClientWorkerAction, "Build Client Worker", "Build Client Worker for Assembly", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(BuildSimulatedPlayerWorkerAction, "Build Simulated Player Worker", "Build Simulated Player Worker for Assembly", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(BuildAllAction, "Build Full Assembly", "Build all workers for Assembly", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(UploadAssemblyAction, "Upload Assembly", "Upload the Assembly", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(BuildAndUploadAction, "Build and Upload Assembly", "Build all workers and upload assembly", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StartSpatialService, "Start Service", "Starts the Spatial service daemon.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StopSpatialService, "Stop Service", "Stops the Spatial service daemon.", EUserInterfaceActionType::Button, FInputGesture());
 }

@@ -36,6 +36,9 @@ public:
 	TSharedPtr<FUICommandInfo> BuildSimulatedPlayerWorkerAction;
 	TSharedPtr<FUICommandInfo> BuildAllAction;
 
+	TSharedPtr<FUICommandInfo> UploadAssemblyAction;
+	TSharedPtr<FUICommandInfo> BuildAndUploadAction;
+
 	TSharedPtr<FUICommandInfo> StartSpatialService;
 	TSharedPtr<FUICommandInfo> StopSpatialService;
 };

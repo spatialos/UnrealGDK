@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Logging/LogMacros.h"
+#include "Misc/MonitoredProcess.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorPackageAssembly, Log, All);
 
@@ -18,6 +19,8 @@ public:
 	void BuildAll();
 	bool CanBuild() const;
 
+	void UploadAssembly(const FString &name, bool Force);
+
 private:
 	enum class EPackageAssemblyTarget
 	{
@@ -29,7 +32,13 @@ private:
 		ZIP_SERVER,
 		BUILD_SIMULATED_PLAYERS,
 		ZIP_SIMULATED_PLAYERS,
+		UPLOAD_ASSEMBLY,
 	} CurrentAssemblyTarget;
 
+	TUniquePtr<FMonitoredProcess> Upload;
+
 	void BuildNext();
+	void OnUploadCompleted(int32);
+	void OnUploadOutput(FString);
+	void OnUploadCanceled();
 };

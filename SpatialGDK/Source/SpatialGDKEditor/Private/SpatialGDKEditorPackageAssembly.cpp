@@ -9,6 +9,7 @@
 #include "Misc/FileHelper.h"
 #include "UnrealEdMisc.h"
 #include "EditorStyle.h"
+#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesModule.h"
 
@@ -151,7 +152,7 @@ static void Build(const FString& CommandLine, TFunction<void(FString, double)> F
 static FString GetServerBuildCommand(const FString& OptionalParams)
 {
 	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
-	FString StagingDir = GetStagingDir() / TEXT("LinuxServer");
+	FString StagingDir = GetStagingDir(); // / TEXT("LinuxServer");
 	FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" BuildCookRun -build -project=\"%s\" -nop4 -clientconfig=%s -serverconfig=%s -utf8output -cook -stage -package -unversioned -compressed -stagingdirectory=\"%s\"  -fileopenlog -SkipCookingEditorContent -server -serverplatform=%s -noclient -ue4exe=\"%s\" %s"),
 		*ProjectPath,
 		*ProjectPath,
@@ -168,7 +169,7 @@ static FString GetServerBuildCommand(const FString& OptionalParams)
 static FString GenSimulatedPlayerBuildCommand(const FString& OptionParams)
 {
 	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
-	FString StagingDir = GetStagingDir() / TEXT("LinuxNoEditor");
+	FString StagingDir = GetStagingDir(); // / TEXT("LinuxNoEditor");
 	FString OptionalParams;
 	FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" BuildCookRun -build -project=\"%s\" -nop4 -clientconfig=%s -serverconfig=%s -utf8output -cook -stage -package -unversioned -compressed -stagingdirectory=\"%s\"  -fileopenlog -SkipCookingEditorContent -platform=%s -targetplatform=%s -nullrhi -ue4exe=\"%s\" %s"),
 		*ProjectPath,
@@ -188,7 +189,7 @@ static FString GenSimulatedPlayerBuildCommand(const FString& OptionParams)
 static FString GenClientBuildCommand(const FString &OptionParams)
 {
 	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
-	FString StagingDir = GetStagingDir() / TEXT("WindowsNoEditor");
+	FString StagingDir = GetStagingDir(); // / TEXT("WindowsNoEditor");
 	FString OptionalParams;
 	FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" BuildCookRun -build -project=\"%s\" -nop4 -clientconfig=%s -serverconfig=%s -utf8output -cook -stage -package -unversioned -compressed -stagingdirectory=\"%s\"  -fileopenlog -SkipCookingEditorContent -platform=%s -targetplatform=%s -ue4exe=\"%s\" %s"),
 		*ProjectPath,
@@ -270,6 +271,23 @@ void FSpatialGDKPackageAssembly::BuildSimulatedPlayerWorker()
 	Build(GenClientBuildCommand(TEXT("")), BuildLambda);
 }
 
+void FSpatialGDKPackageAssembly::UploadAssembly(const FString &AssemblyName, bool force)
+{
+	if (!Upload)
+	{
+		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+		FString WorkingDir = FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial"));
+		FString Spatial(TEXT("spatial"));
+		FString Args = FString::Printf(TEXT("cloud upload %s %s %s --no_animation"), *AssemblyName, force ? TEXT("--force") : TEXT(""), SpatialGDKSettings->IsRunningInChina() ? TEXT("--environment=cn-production") : TEXT(""));
+		Upload.Reset(new FMonitoredProcess(Spatial, Args, WorkingDir, true));
+		Upload->OnCompleted().BindRaw(this, &FSpatialGDKPackageAssembly::OnUploadCompleted);
+		Upload->OnOutput().BindRaw(this, &FSpatialGDKPackageAssembly::OnUploadOutput);
+		Upload->OnCanceled().BindRaw(this, &FSpatialGDKPackageAssembly::OnUploadCanceled);
+		CurrentAssemblyTarget = EPackageAssemblyTarget::UPLOAD_ASSEMBLY;
+		Upload->Launch();
+	}
+}
+
 void FSpatialGDKPackageAssembly::BuildNext()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -336,5 +354,22 @@ bool FSpatialGDKPackageAssembly::CanBuild() const
 	return CurrentAssemblyTarget == EPackageAssemblyTarget::NONE;
 }
 
+void FSpatialGDKPackageAssembly::OnUploadCompleted(int32 Result)
+{
+	CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+	Upload.Reset(nullptr);
+}
+
+void FSpatialGDKPackageAssembly::OnUploadOutput(FString Output)
+{
+	UE_LOG(LogSpatialGDKEditorPackageAssembly, Display, TEXT("%s"), *Output);
+
+}
+
+void FSpatialGDKPackageAssembly::OnUploadCanceled()
+{
+	CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+	Upload.Reset(nullptr);
+}
 
 #undef LOCTEXT_NAMESPACE

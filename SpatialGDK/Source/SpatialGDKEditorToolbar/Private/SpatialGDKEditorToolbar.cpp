@@ -263,6 +263,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
 
 	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().UploadAssemblyAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UploadAssembly),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
+
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartSpatialService,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute),
@@ -373,6 +378,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildClientWorkerAction);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildSimulatedPlayerWorkerAction);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildAllAction);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().UploadAssemblyAction);
 	}
 	MenuBuilder.EndSection();
 
@@ -903,6 +909,17 @@ void FSpatialGDKEditorToolbarModule::BuildSimulatedPlayerWorker()
 void FSpatialGDKEditorToolbarModule::BuildAll()
 {
 	SpatialGDKPackageAssemblyInstance.Get().BuildAll();
+}
+
+void FSpatialGDKEditorToolbarModule::BuildAndUpload()
+{
+	//SpatialGDKPackageAssemblyInstance.Get().
+}
+
+void FSpatialGDKEditorToolbarModule::UploadAssembly()
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	SpatialGDKPackageAssemblyInstance.Get().UploadAssembly(SpatialGDKEditorSettings->GetAssemblyName(), true);
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
