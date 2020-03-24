@@ -3,6 +3,7 @@
 #pragma once
 #include "SpatialView/CommandMessages.h"
 #include "SpatialView/OpList/AbstractOpList.h"
+#include "SpatialView/AuthorityRecord.h"
 #include "Containers/Array.h"
 #include "Templates/UniquePtr.h"
 #include <improbable/c_worker.h>
@@ -15,7 +16,12 @@ class ViewDelta
 public:
 	void AddCreateEntityResponse(CreateEntityResponse Response);
 
+	void SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority);
+
 	const TArray<CreateEntityResponse>& GetCreateEntityResponses() const;
+	const TArray<EntityComponentId>& GetAuthorityGained() const;
+	const TArray<EntityComponentId>& GetAuthorityLost() const;
+	const TArray<EntityComponentId>& GetAuthorityLostTemporarily() const;
 
 	// Returns an array of ops equivalent to the current state of the view delta.
 	// It is expected that Clear should be called between calls to GenerateLegacyOpList.
@@ -25,7 +31,10 @@ public:
 	void Clear();
 
 private:
+	// todo wrap world command responses in their own record?
 	TArray<CreateEntityResponse> CreateEntityResponses;
+
+	AuthorityRecord AuthorityChanges;
 };
 
 }  // namespace SpatialGDK
