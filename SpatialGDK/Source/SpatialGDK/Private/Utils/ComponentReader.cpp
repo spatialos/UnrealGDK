@@ -109,7 +109,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	TArray<UProperty*> RepNotifies;
 
 	TArray<Schema_FieldId> InitialIds;
-	if (bIsInitialData)
+	if (UNLIKELY(bIsInitialData))
 	{
 		for (int32 HandleIndex = 0; HandleIndex < BaseHandleToCmdIndex.Num(); HandleIndex++)
 		{
