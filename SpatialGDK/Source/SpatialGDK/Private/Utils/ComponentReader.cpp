@@ -172,6 +172,25 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 	TArray<UProperty*> RepNotifies;
 
+	TArray<Schema_FieldId> InitialIds;
+	if (bIsInitialData)
+	{
+		for (int32 HandleIndex = 0; HandleIndex < BaseHandleToCmdIndex.Num(); HandleIndex++)
+		{
+			auto Parent = Parents[Cmds[BaseHandleToCmdIndex[HandleIndex].CmdIndex].ParentIndex];
+			for (int32 SchemaType = SCHEMA_Begin; SchemaType < SCHEMA_Count; SchemaType++)
+			{
+				if (ClassInfoManager->GetClassInfoByComponentId(ComponentId).SchemaComponents[SchemaType] != ComponentId) continue;
+				if (GetGroupFromCondition(Parent.Condition) == SchemaType)
+				{
+					InitialIds.Add(HandleIndex + 1);
+				}
+			}
+		}
+	}
+	const TArray<Schema_FieldId>& IdsToIterate = bIsInitialData ? InitialIds : UpdatedIds;
+
+	for (uint32 FieldId : IdsToIterate)
 	{
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
 		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
