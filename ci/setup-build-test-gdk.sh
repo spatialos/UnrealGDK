@@ -47,8 +47,8 @@ pushd "$(dirname "$0")"
         "${BUILD_HOME}/${TEST_PROJECT_NAME}" \
         "${GDK_HOME}" \
         "${BUILD_PLATFORM}" \
-        "${TEST_UPROJECT_NAME}${BUILD_STATE}" \
-        "${BUILD_TARGET}"
+        "${BUILD_STATE}" \
+        "${TEST_UPROJECT_NAME}${BUILD_TARGET}"
 
     echo "--- run-fast-tests"
     "${GDK_HOME}/ci/run-tests.sh" \
