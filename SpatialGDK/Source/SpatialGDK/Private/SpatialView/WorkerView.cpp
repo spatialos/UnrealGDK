@@ -75,6 +75,7 @@ void WorkerView::ProcessOp(const Worker_Op& Op)
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+		HandleAuthorityChange(Op.op.authority_change);
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
 		break;
@@ -83,6 +84,11 @@ void WorkerView::ProcessOp(const Worker_Op& Op)
 	case WORKER_OP_TYPE_COMMAND_RESPONSE:
 		break;
 	}
+}
+
+void WorkerView::HandleAuthorityChange(const Worker_AuthorityChangeOp& AuthorityChange)
+{
+	Delta.SetAuthority(AuthorityChange.entity_id, AuthorityChange.component_id, static_cast<Worker_Authority>(AuthorityChange.authority));
 }
 
 void WorkerView::HandleCreateEntityResponse(const Worker_CreateEntityResponseOp& Response)
