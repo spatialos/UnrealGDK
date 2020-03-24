@@ -113,10 +113,15 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	{
 		for (int32 HandleIndex = 0; HandleIndex < BaseHandleToCmdIndex.Num(); HandleIndex++)
 		{
-			auto Parent = Parents[Cmds[BaseHandleToCmdIndex[HandleIndex].CmdIndex].ParentIndex];
+			const FRepParentCmd& Parent = Parents[Cmds[BaseHandleToCmdIndex[HandleIndex].CmdIndex].ParentIndex];
+			const FClassInfo& ClassInfo = ClassInfoManager->GetClassInfoByComponentId(ComponentId);
+
 			for (int32 SchemaType = SCHEMA_Begin; SchemaType < SCHEMA_Count; SchemaType++)
 			{
-				if (ClassInfoManager->GetClassInfoByComponentId(ComponentId).SchemaComponents[SchemaType] != ComponentId) continue;
+				if (ClassInfo.SchemaComponents[SchemaType] != ComponentId)
+				{
+					continue;
+				}
 				if (GetGroupFromCondition(Parent.Condition) == SchemaType)
 				{
 					InitialIds.Add(HandleIndex + 1);
