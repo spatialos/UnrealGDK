@@ -23,7 +23,7 @@ namespace
 		}
 		else
 		{
-			return true;
+			return false;
 		}
 	}
 } // anonymous namespace
@@ -159,7 +159,7 @@ VIEWDELTA_TEST(GIVEN_non_default_CreateEntityResponse_added_WHEN_GeneratedLegacy
 	CreateEntityResponse Response{};
 	Response.RequestId = 1;
 	Response.StatusCode = WORKER_STATUS_CODE_SUCCESS;
-	Response.Message = "test";
+	Response.Message = TEXT("test");
 	Response.EntityId = 3;
 	Delta.AddCreateEntityResponse(Response);
 
