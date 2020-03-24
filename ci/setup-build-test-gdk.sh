@@ -13,8 +13,8 @@ pushd "$(dirname "$0")"
     BUILD_HOME="${3:-"$(pwd)/../.."}"
 
     UNREAL_PATH="${BUILD_HOME}/UnrealEngine"
+    TEST_UPROJECT_NAME="EngineNetTest"
     TEST_REPO_URL="git@github.com:improbable/UnrealGDKEngineNetTest.git"
-    TEST_REPO_RELATIVE_UPROJECT_PATH="Game/EngineNetTest.uproject"
     TEST_REPO_MAP="NetworkingMap"
     TEST_PROJECT_NAME="NetworkTestProject"
     CHOSEN_TEST_REPO_BRANCH="master"
@@ -36,25 +36,27 @@ pushd "$(dirname "$0")"
     "${GDK_HOME}/Setup.sh" --mobile
 
     # Build the testing project
+    UPROJECT_PATH="${BUILD_HOME}/${TEST_PROJECT_NAME}/Game/${TEST_UPROJECT_NAME}.uproject"
+
     echo "--- build-project"
     "${GDK_HOME}"/ci/build-project.sh \
         "${UNREAL_PATH}" \
         "${CHOSEN_TEST_REPO_BRANCH}" \
         "${TEST_REPO_URL}" \
-        "${BUILD_HOME}/${TEST_PROJECT_NAME}/${TEST_REPO_RELATIVE_UPROJECT_PATH}" \
+        "${UPROJECT_PATH}" \
         "${BUILD_HOME}/${TEST_PROJECT_NAME}" \
         "${GDK_HOME}" \
         "${BUILD_PLATFORM}" \
-        "${BUILD_STATE}" \
+        "${TEST_UPROJECT_NAME}${BUILD_STATE}" \
         "${BUILD_TARGET}"
 
     echo "--- run-fast-tests"
     "${GDK_HOME}/ci/run-tests.sh" \
         "${UNREAL_PATH}" \
-        "${BUILD_HOME}" \
         "${TEST_PROJECT_NAME}" \
-        "${TEST_REPO_RELATIVE_UPROJECT_PATH}" \
+        "${UPROJECT_PATH}" \
         "FastTestResults" \
+        "NetworkingMap" \
         "SpatialGDK+/Game/SpatialNetworkingMap" \
         "True"
 
@@ -62,12 +64,11 @@ pushd "$(dirname "$0")"
         echo "--- run-slow-networking-tests"
         "${GDK_HOME}/ci/run-tests.sh" \
             "${UNREAL_PATH}" \
-            "${BUILD_HOME}" \
             "${TEST_PROJECT_NAME}" \
-            "${TEST_REPO_RELATIVE_UPROJECT_PATH}" \
+            "${UPROJECT_PATH}" \
             "VanillaTestResults" \
-            "ci/${TEST_REPO_MAP}" \
-            "/Game/NetworkingMap" \
+            "NetworkingMap" \
+            "+/Game/NetworkingMap" \
             ""
     fi
 popd

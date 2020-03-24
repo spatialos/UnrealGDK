@@ -37,7 +37,7 @@ pushd "$(dirname "$0")"
                 HEAD_POINTER_GCS_PATH="gs://${GCS_PUBLISH_BUCKET}/HEAD/mac-${VERSION_BRANCH}.version"
                 UNREAL_VERSION=$(gsutil cp "${HEAD_POINTER_GCS_PATH}" -) # the '-' at the end instructs gsutil to download the file and output the contents to stdout
             else
-                UNREAL_VERSION="Mac-${VERSION_DESCRIPTION}"
+                UNREAL_VERSION="Mac-UnrealEngine-${VERSION_DESCRIPTION}"
             fi
         popd
 

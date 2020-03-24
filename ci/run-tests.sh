@@ -7,46 +7,44 @@ fi
 
 pushd "$(dirname "$0")"
     UNREAL_PATH="${1?Please enter the path to the Unreal Engine.}"
-    BUILD_HOME="${2?Please enter the path to the parent folder from the GDK repo.}"
-    TEST_PROJECT_NAME="${3?Please enter the name of the test project.}"
-    TEST_REPO_RELATIVE_UPROJECT_PATH="${4?Please enter the relative path to the uporject path.}"
-    RESULTS_NAME="${5?Please enter the name of the results folder.}"
+    TEST_PROJECT_NAME="${2?Please enter the name of the test project.}"
+    UPROJECT_PATH="${3?Please enter the absolute path to the uproject path.}"
+    RESULTS_NAME="${4?Please enter the name of the results folder.}"
+    TEST_REPO_MAP="${5?Please specify which map to test.}"
     TESTS_PATH="${6:-SpatialGDK}"
     RUN_WITH_SPATIAL="${7:-}"
+
     GDK_HOME="$(pwd)/.."
-
+    BUILD_HOME="$(pwd)/../.."
     TEST_REPO_PATH="${BUILD_HOME}/${TEST_PROJECT_NAME}"
-    UPROJECT_PATH="${BUILD_HOME}/${TEST_PROJECT_NAME}/${TEST_REPO_RELATIVE_UPROJECT_PATH}"
-    LOG_FILE_PATH="ci/${TEST_PROJECT_NAME}/${RESULTS_NAME}/tests.log"
-    TEST_REPO_MAP="${TEST_PROJECT_NAME}/${RESULTS_NAME}"
-    REPORT_OUTPUT_PATH="ci/${TEST_REPO_MAP}"
-    UNREAL_EDITOR_PATH="${UNREAL_PATH}/Engine/Binaries/Mac/UE4Editor.app/Contents/MacOS/UE4Editor"
-
-    if [[ -n "${RUN_WITH_SPATIAL}" ]]; then
-        echo "Generating snapshot and schema for testing project"
-        "${UNREAL_EDITOR_PATH}" \
-            "${UPROJECT_PATH}" \
-            -NoShaderCompile \
-            -nopause \
-            -nosplash \
-            -unattended \
-            -nullRHI \
-            -run=GenerateSchemaAndSnapshots \
-            -MapPaths="${TEST_REPO_MAP}"
-
-        cp "${TEST_REPO_PATH}/spatial/snapshots/${TEST_REPO_MAP}.snapshot" "${TEST_REPO_PATH}/spatial/snapshots/default.snapshot" 
-    fi
-
-    mkdir "${REPORT_OUTPUT_PATH}"
+    REPORT_OUTPUT_PATH="${GDK_HOME}/ci/${RESULTS_NAME}"
+    LOG_FILE_PATH="${REPORT_OUTPUT_PATH}/tests.log"
 
     pushd "${UNREAL_PATH}"
+        UNREAL_EDITOR_PATH="Engine/Binaries/Mac/UE4Editor.app/Contents/MacOS/UE4Editor"
+        if [[ -n "${RUN_WITH_SPATIAL}" ]]; then
+            echo "Generating snapshot and schema for testing project"
+            "${UNREAL_EDITOR_PATH}" \
+                "${UPROJECT_PATH}" \
+                -NoShaderCompile \
+                -nopause \
+                -nosplash \
+                -unattended \
+                -nullRHI \
+                -run=GenerateSchemaAndSnapshots \
+                -MapPaths="${TEST_REPO_MAP}"
+
+            cp "${TEST_REPO_PATH}/spatial/snapshots/${TEST_REPO_MAP}.snapshot" "${TEST_REPO_PATH}/spatial/snapshots/default.snapshot"
+        fi
+
+        mkdir "${REPORT_OUTPUT_PATH}"
         "${UNREAL_EDITOR_PATH}" \
             "${UPROJECT_PATH}" \
             "${TEST_REPO_MAP}"  \
             -execCmds="Automation RunTests ${TESTS_PATH}; Quit" \
             -TestExit="Automation Test Queue Empty" \
-            -ReportOutputPath="${GDK_HOME}/${REPORT_OUTPUT_PATH}" \
-            -ABSLOG="${GDK_HOME}/${LOG_FILE_PATH}" \
+            -ReportOutputPath="${REPORT_OUTPUT_PATH}" \
+            -ABSLOG="${LOG_FILE_PATH}" \
             -nopause \
             -nosplash \
             -unattended \

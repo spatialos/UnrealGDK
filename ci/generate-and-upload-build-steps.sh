@@ -20,11 +20,11 @@ generate_build_configuration_steps () {
     if [[ -n "${MAC_BUILD:-}" ]]; then
         if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
             # MacOS Development Editor build configuration
-            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "UE4Editor" "Development"
+            upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "Editor" "Development"
         else
             # Editor builds (Test and Shipping build states do not exist for the Editor build target)
             for BUILD_STATE in "DebugGame" "Development"; do
-                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "UE4Editor" "${BUILD_STATE}"
+                upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "Editor" "${BUILD_STATE}"
             done
         fi
     else
