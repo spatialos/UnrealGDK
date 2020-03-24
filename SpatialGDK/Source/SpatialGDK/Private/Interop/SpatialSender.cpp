@@ -130,7 +130,6 @@ void USpatialSender::SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerC
 	}
 
 	// Update ComponentPresence.
-	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 	ComponentPresence* Presence = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 	Presence->AddComponentDataIds(ComponentDatas);
 	FWorkerComponentUpdate Update = Presence->CreateComponentPresenceUpdate();
