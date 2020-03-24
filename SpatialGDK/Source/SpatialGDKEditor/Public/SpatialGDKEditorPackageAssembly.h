@@ -6,9 +6,30 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorPackageAssembly, Log, All);
 
-SPATIALGDKEDITOR_API bool SpatialGDKBuildAssemblyServerWorker();
 
-SPATIALGDKEDITOR_API bool SpatialGDKBuildAssemblyClientWorker();
+class SPATIALGDKEDITOR_API FSpatialGDKPackageAssembly : public TSharedFromThis<FSpatialGDKPackageAssembly>
+{
+public:
+	FSpatialGDKPackageAssembly();
 
-SPATIALGDKEDITOR_API bool SpatialGDKBuildAssemblySimulatedPlayerWorker();
+	void BuildServerWorker();
+	void BuildClientWorker();
+	void BuildSimulatedPlayerWorker();
+	void BuildAll();
+	bool CanBuild() const;
 
+private:
+	enum class EPackageAssemblyTarget
+	{
+		NONE = 0,
+		START_ALL,
+		BUILD_CLIENT,
+		ZIP_CLIENT,
+		BUILD_SERVER,
+		ZIP_SERVER,
+		BUILD_SIMULATED_PLAYERS,
+		ZIP_SIMULATED_PLAYERS,
+	} CurrentAssemblyTarget;
+
+	void BuildNext();
+};

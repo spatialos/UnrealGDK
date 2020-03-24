@@ -14,6 +14,7 @@
 
 class FMenuBuilder;
 class FSpatialGDKEditor;
+class FSpatialGDKPackageAssembly;
 class FToolBarBuilder;
 class FUICommandList;
 class SSpatialGDKSimulatedPlayerDeployment;
@@ -88,10 +89,12 @@ private:
 	void BuildServerWorker();
 	void BuildClientWorker();
 	void BuildSimulatedPlayerWorker();
+	void BuildAll();
 
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
+	bool CanBuildAnyWorker() const;
 
 	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
 	TSharedRef<SWidget> CreateLaunchDeploymentMenuContent();
@@ -128,6 +131,7 @@ private:
 
 	TFuture<bool> SchemaGeneratorResult;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
+	TSharedRef<FSpatialGDKPackageAssembly>SpatialGDKPackageAssemblyInstance;
 
 	TSharedPtr<SWindow> SimulatedPlayerDeploymentWindowPtr;
 	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;

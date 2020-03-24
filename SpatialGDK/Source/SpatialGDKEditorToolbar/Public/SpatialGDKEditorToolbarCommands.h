@@ -34,6 +34,7 @@ public:
 	TSharedPtr<FUICommandInfo> BuildServerWorkerAction;
 	TSharedPtr<FUICommandInfo> BuildClientWorkerAction;
 	TSharedPtr<FUICommandInfo> BuildSimulatedPlayerWorkerAction;
+	TSharedPtr<FUICommandInfo> BuildAllAction;
 
 	TSharedPtr<FUICommandInfo> StartSpatialService;
 	TSharedPtr<FUICommandInfo> StopSpatialService;

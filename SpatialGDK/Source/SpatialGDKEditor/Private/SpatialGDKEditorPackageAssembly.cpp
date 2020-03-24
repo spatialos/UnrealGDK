@@ -14,18 +14,20 @@
 
 #include "UATHelper/Public/IUATHelperModule.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialGDKEditorPackageAssembly);
+
 #define LOCTEXT_NAMESPACE "SpatialGDKEditorPackageAssembly"
 
-DEFINE_LOG_CATEGORY(LogSpatialGDKEditorPackageAssembly);
+
+
+FSpatialGDKPackageAssembly::FSpatialGDKPackageAssembly() : CurrentAssemblyTarget{ EPackageAssemblyTarget::NONE }
+{
+
+}
 
 static FString GetStagingDir()
 {
 	return FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial") / TEXT("build") / TEXT("unreal"));
-}
-
-static void HandleZipResult(FString, double)
-{
-
 }
 
 static void WriteStartWorkerScript()
@@ -63,7 +65,7 @@ static void WriteStartWorkerScript()
 	FFileHelper::SaveStringToFile(ShellScript, *OutputFile, FFileHelper::EEncodingOptions::ForceAnsi);
 }
 
-static void ZipWorker(const FString& WorkerName, const FString& ZipName)
+static void ZipWorker(const FString& WorkerName, const FString& ZipName, TFunction<void(FString,double)> Func)
 {
 	//write shell script and zip folder
 	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
@@ -73,31 +75,21 @@ static void ZipWorker(const FString& WorkerName, const FString& ZipName)
 	FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" ZipUtils -add=\"%s\" -archive=\"%s\""),
 		*ProjectPath, *SourcePath, *AssemblyPath);
 
-	AsyncTask(ENamedThreads::GameThread, [CommandLine]() {
+	AsyncTask(ENamedThreads::GameThread, [CommandLine, Func]() {
 		IUATHelperModule::Get().CreateUatTask(CommandLine,
 			LOCTEXT("ZipAssemblyDisplayName", "Spatial Cloud"),
 			LOCTEXT("ZipAssemblyDescription", "Zip Cloud Deployment Assembly"),
 			LOCTEXT("ZipAssemblyShortName", "Cloud Assembly"),
 			FEditorStyle::GetBrush(TEXT("MainFrame.CookContent")),
-			TFunction<void(FString, double)>(HandleZipResult)
+			TFunction<void(FString, double)>(Func)
 			);
 		});
 }
 
-static void HandleServerWorkerResult(FString result, double)
-{
-	if (result == TEXT("Completed"))
-	{
-		WriteStartWorkerScript();
-		ZipWorker(TEXT("LinuxServer"), TEXT("UnrealWorker@Linux.zip"));
-	}
-}
-
-void BuildServerWorker()
+static FString GetServerBuildCommand(const FString& OptionalParams)
 {
 	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
 	FString StagingDir = GetStagingDir() / TEXT("LinuxServer");
-	FString OptionalParams;
 	FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" BuildCookRun -build -project=\"%s\" -nop4 -clientconfig=%s -serverconfig=%s -utf8output -cook -stage -package -unversioned -compressed -stagingdirectory=\"%s\"  -fileopenlog -SkipCookingEditorContent -server -serverplatform=%s -noclient -ue4exe=\"%s\" %s"),
 		*ProjectPath,
 		*ProjectPath,
@@ -108,25 +100,24 @@ void BuildServerWorker()
 		*FUnrealEdMisc::Get().GetExecutableForCommandlets(),
 		*OptionalParams
 		);
+	return CommandLine;
+}
 
-	IUATHelperModule::Get().CreateUatTask(CommandLine,
+
+static void Build(const FString& CommandLine, TFunction<void(FString, double)> Func)
+{
+	AsyncTask(ENamedThreads::GameThread, [CommandLine, Func]() {
+		IUATHelperModule::Get().CreateUatTask(CommandLine,
 		LOCTEXT("BuildAssemblyDisplayName", "Spatial Cloud"),
 		LOCTEXT("BuildAssemblyDescription", "Build Cloud Deployment Assembly"),
 		LOCTEXT("BuildAssemblyShortName", "Cloud Assembly"),
 		FEditorStyle::GetBrush(TEXT("MainFrame.CookContent")),
-		TFunction<void(FString, double)>(HandleServerWorkerResult)
+		TFunction<void(FString, double)>(Func)
 		);
+	});
 }
 
-static void HandleClientWorkerResult(FString result, double)
-{
-	if (result == TEXT("Completed"))
-	{
-		ZipWorker(TEXT("WindowsNoEditor"), TEXT("UnrealClient@Windows.zip"));
-	}
-}
-
-void BuildClientWorker()
+static FString GenClientBuildCommand(const FString &OptionParams)
 {
 	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
 	FString StagingDir = GetStagingDir() / TEXT("WindowsNoEditor");
@@ -142,36 +133,98 @@ void BuildClientWorker()
 		*FUnrealEdMisc::Get().GetExecutableForCommandlets(),
 		*OptionalParams
 		);
-
-	IUATHelperModule::Get().CreateUatTask(CommandLine,
-		LOCTEXT("BuildAssemblyDisplayName", "Spatial Cloud"),
-		LOCTEXT("BuildAssemblyDescription", "Build Cloud Deployment Assembly"),
-		LOCTEXT("BuildAssemblyShortName", "Cloud Assembly"),
-		FEditorStyle::GetBrush(TEXT("MainFrame.CookContent")),
-		TFunction<void(FString, double)>(HandleClientWorkerResult)
-		);
+	return CommandLine;
 }
 
-void BuildSimulatedPlayerWorker()
+void FSpatialGDKPackageAssembly::BuildServerWorker()
+{
+	auto ZipLambda = [this](FString, double) { CurrentAssemblyTarget = EPackageAssemblyTarget::NONE; };
+	auto BuildLambda = [this, ZipLambda](FString Result, double) {
+		if (Result == TEXT("Completed"))
+		{
+			WriteStartWorkerScript();
+			ZipWorker(TEXT("LinuxServer"), TEXT("UnrealWorker@Linux.zip"), ZipLambda);
+		}
+		else
+		{
+			CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+		}
+	};
+	CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_SERVER;
+	Build(GetServerBuildCommand(TEXT("")), BuildLambda);
+}
+
+void FSpatialGDKPackageAssembly::BuildClientWorker()
+{
+	auto ZipLambda = [this](FString, double) { CurrentAssemblyTarget = EPackageAssemblyTarget::NONE; };
+	auto BuildLambda = [this, ZipLambda](FString Result, double) {
+		if (Result == TEXT("Completed"))
+		{
+			ZipWorker(TEXT("WindowsNoEditor"), TEXT("UnrealClient@Windows.zip"), ZipLambda);
+		}
+		else
+		{
+			CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+		}
+	};
+	CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_CLIENT;
+	Build(GenClientBuildCommand(TEXT("")), BuildLambda);
+}
+
+void FSpatialGDKPackageAssembly::BuildSimulatedPlayerWorker()
 {
 
 }
 
-bool SpatialGDKBuildAssemblyServerWorker()
+void FSpatialGDKPackageAssembly::BuildNext()
 {
-	BuildServerWorker();
-	return true;
+	auto lambda = [this](FString Result, double) {
+		if (Result == TEXT("Completed"))
+		{
+			BuildNext();
+		}
+		else
+		{
+			CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+		}
+	};
+	switch (CurrentAssemblyTarget)
+	{
+	case EPackageAssemblyTarget::START_ALL:
+		CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_CLIENT;
+		Build(GenClientBuildCommand(TEXT("")), lambda);
+		break;
+	case EPackageAssemblyTarget::BUILD_CLIENT:
+		CurrentAssemblyTarget = EPackageAssemblyTarget::ZIP_CLIENT;
+		ZipWorker(TEXT("WindowsNoEditor"), TEXT("UnrealClient@Windows.zip"), lambda);
+		break;
+	case EPackageAssemblyTarget::ZIP_CLIENT:
+		CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_SERVER;
+		Build(GetServerBuildCommand(TEXT("")), lambda);
+		break;
+	case EPackageAssemblyTarget::BUILD_SERVER:
+		CurrentAssemblyTarget = EPackageAssemblyTarget::ZIP_SERVER;
+		WriteStartWorkerScript();
+		ZipWorker(TEXT("LinuxServer"), TEXT("UnrealWorker@Linux.zip"), lambda);
+	default:
+		CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+		;
+	}
 }
 
-bool SpatialGDKBuildAssemblyClientWorker()
+void FSpatialGDKPackageAssembly::BuildAll()
 {
-	BuildClientWorker();
-	return true;
+	if (CurrentAssemblyTarget == EPackageAssemblyTarget::NONE)
+	{
+		CurrentAssemblyTarget = EPackageAssemblyTarget::START_ALL;
+		BuildNext();
+	}
 }
 
-bool SpatialGDKBuildAssemblySimulatedPlayerWorker()
+bool FSpatialGDKPackageAssembly::CanBuild() const
 {
-	return false;
+	return CurrentAssemblyTarget == EPackageAssemblyTarget::NONE;
 }
+
 
 #undef LOCTEXT_NAMESPACE

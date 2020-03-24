@@ -25,10 +25,6 @@ public:
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 	bool FullScanRequired();
 
-	void BuildServerAssembly();
-	void BuildClientAssembly();
-	void BuildSimulatedPlayerAssembly();
-
 private:
 	bool bSchemaGeneratorRunning;
 	TFuture<bool> SchemaGeneratorResult;

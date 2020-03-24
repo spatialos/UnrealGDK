@@ -316,19 +316,5 @@ void FSpatialGDKEditor::OnAssetLoaded(UObject* Asset)
 	}
 }
 
-void FSpatialGDKEditor::BuildServerAssembly()
-{
-	SpatialGDKBuildAssemblyServerWorker();
-}
-
-void FSpatialGDKEditor::BuildClientAssembly()
-{
-	SpatialGDKBuildAssemblyClientWorker();
-}
-
-void FSpatialGDKEditor::BuildSimulatedPlayerAssembly()
-{
-	SpatialGDKBuildAssemblySimulatedPlayerWorker();
-}
 
 #undef LOCTEXT_NAMESPACE

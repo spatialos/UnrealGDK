@@ -26,6 +26,7 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
+#include "SpatialGDKEditorPackageAssembly.h"
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSettings.h"
@@ -57,6 +58,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 : bStopSpatialOnExit(false)
 , bSchemaBuildError(false)
+, SpatialGDKPackageAssemblyInstance(MakeShared<FSpatialGDKPackageAssembly>(FSpatialGDKPackageAssembly()))
 {
 }
 
@@ -179,6 +181,11 @@ bool FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator() const
 	return SpatialGDKEditorInstance.IsValid() && !SpatialGDKEditorInstance.Get()->IsSchemaGeneratorRunning();
 }
 
+bool FSpatialGDKEditorToolbarModule::CanBuildAnyWorker() const
+{
+	return SpatialGDKPackageAssemblyInstance.Get().CanBuild();
+}
+
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> InPluginCommands)
 {
 	InPluginCommands->MapAction(
@@ -232,12 +239,17 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().BuildServerWorkerAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildServerWorker),
-		FCanExecuteAction());
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().BuildClientWorkerAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildClientWorker),
-		FCanExecuteAction());
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().BuildAllAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildAll),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartSpatialService,
@@ -348,6 +360,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildServerWorkerAction);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildClientWorkerAction);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildAllAction);
 	}
 	MenuBuilder.EndSection();
 
@@ -860,103 +873,20 @@ void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"));
 }
 
-//static FString GetStagingDir()
-//{
-//	return FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial") / TEXT("build") / TEXT("unreal"));
-//}
-//
-//static void HandleZipResult(FString, double)
-//{
-//
-//}
-//
-//static void WriteStartWorkerScript()
-//{
-//	FString StagingDir = GetStagingDir();
-//	FString OutputFile = StagingDir / TEXT("LinuxServer") / TEXT("StartWorker.sh");
-//	FString ShellScript = FString::Printf(TEXT(
-//		"#!/bin/bash\n"
-//		"NEW_USER=unrealworker\n"
-//		"WORKER_ID=$1\n"
-//		"LOG_FILE=$2\n"
-//		"shift 2\n"
-//		"\n"
-//		"# 2>/dev/null silences errors by redirecting stderr to the null device.This is done to prevent errors when a machine attempts to add the same user more than once.\n"
-//		"mkdir -p /improbable/logs/UnrealWorker/\n"
-//		"useradd $NEW_USER -m -d /improbable/logs/UnrealWorker 2>/dev/null\n"
-//		"chown -R $NEW_USER:$NEW_USER $(pwd) 2>/dev/null\n"
-//		"chmod -R o+rw /improbable/logs 2>/dev/null\n"
-//		"\n"
-//		"# Create log file in case it doesn't exist and redirect stdout and stderr to the file.\n"
-//		"touch \"${LOG_FILE}\"\n"
-//		"exec 1>>\"${LOG_FILE}\"\n"
-//		"exec 2>&1\n"
-//		"\n"
-//		"SCRIPT=\"$(pwd)/%sServer.sh\"\n"
-//		"\n"
-//		"if [ ! -f $SCRIPT ]; then\n"
-//		"	echo \"Expected to run ${SCRIPT} but file not found!\"\n"
-//		"	exit 1\n"
-//		"fi\n"
-//		"\n"
-//		"chmod +x $SCRIPT\n"
-//		"echo \"Running ${SCRIPT} to start worker...\"\n"
-//		"gosu $NEW_USER \"${SCRIPT}\" \"$@\"\n"), FApp::GetProjectName());
-//	FFileHelper::SaveStringToFile(ShellScript, *OutputFile, FFileHelper::EEncodingOptions::ForceAnsi);
-//}
-//
-//static void ZipWorker(const FString &WorkerName, const FString &ZipName)
-//{
-//	//write shell script and zip folder
-//	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
-//
-//	FString SourcePath = FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial") / TEXT("build") / TEXT("unreal") / WorkerName);
-//	FString AssemblyPath = FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial") / TEXT("build") / TEXT("assembly") / TEXT("worker") / ZipName);
-//	FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" ZipUtils -add=\"%s\" -archive=\"%s\""),
-//		*ProjectPath, *SourcePath, *AssemblyPath);
-//
-//	AsyncTask(ENamedThreads::GameThread, [CommandLine]() {
-//		IUATHelperModule::Get().CreateUatTask(CommandLine,
-//			LOCTEXT("ZipAssemblyDisplayName", "Spatial Cloud"),
-//			LOCTEXT("ZipAssemblyDescription", "Zip Cloud Deployment Assembly"),
-//			LOCTEXT("ZipAssemblyShortName", "Cloud Assembly"),
-//			FEditorStyle::GetBrush(TEXT("MainFrame.CookContent")),
-//			TFunction<void(FString, double)>(HandleZipResult)
-//		);
-//	});
-//}
-//
-//static void HandleServerWorkerResult(FString result, double)
-//{
-//	if (result == TEXT("Completed"))
-//	{
-//		WriteStartWorkerScript();
-//		ZipWorker(TEXT("LinuxServer"), TEXT("UnrealWorker@Linux.zip"));
-//	}
-//}
-
 void FSpatialGDKEditorToolbarModule::BuildServerWorker()
 {
-	SpatialGDKEditorInstance->BuildServerAssembly();
+	SpatialGDKPackageAssemblyInstance.Get().BuildServerWorker();
 }
-
-//static void HandleClientWorkerResult(FString result, double)
-//{
-//	if (result == TEXT("Completed"))
-//	{
-//		ZipWorker(TEXT("WindowsNoEditor"), TEXT("UnrealClient@Windows.zip"));
-//	}
-//}
 
 void FSpatialGDKEditorToolbarModule::BuildClientWorker()
 {
-	SpatialGDKEditorInstance->BuildClientAssembly();
+	SpatialGDKPackageAssemblyInstance.Get().BuildClientWorker();
 }
 
-//void FSpatialGDKEditorToolbarModule::BuildSimulatedPlayerWorker()
-//{
-//
-//}
+void FSpatialGDKEditorToolbarModule::BuildAll()
+{
+	SpatialGDKPackageAssemblyInstance.Get().BuildAll();
+}
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
