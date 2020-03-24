@@ -186,6 +186,12 @@ bool FSpatialGDKEditorToolbarModule::CanBuildAnyWorker() const
 	return SpatialGDKPackageAssemblyInstance.Get().CanBuild();
 }
 
+bool FSpatialGDKEditorToolbarModule::CanBuildSimulatedPlayerWorker() const
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->IsSimulatedPlayersEnabled() && CanBuildAnyWorker();
+}
+
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> InPluginCommands)
 {
 	InPluginCommands->MapAction(
@@ -245,6 +251,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FSpatialGDKEditorToolbarCommands::Get().BuildClientWorkerAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildClientWorker),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().BuildSimulatedPlayerWorkerAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildSimulatedPlayerWorker),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildSimulatedPlayerWorker));
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().BuildAllAction,
@@ -360,6 +371,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildServerWorkerAction);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildClientWorkerAction);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildSimulatedPlayerWorkerAction);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildAllAction);
 	}
 	MenuBuilder.EndSection();
@@ -881,6 +893,11 @@ void FSpatialGDKEditorToolbarModule::BuildServerWorker()
 void FSpatialGDKEditorToolbarModule::BuildClientWorker()
 {
 	SpatialGDKPackageAssemblyInstance.Get().BuildClientWorker();
+}
+
+void FSpatialGDKEditorToolbarModule::BuildSimulatedPlayerWorker()
+{
+	SpatialGDKPackageAssemblyInstance.Get().BuildSimulatedPlayerWorker();
 }
 
 void FSpatialGDKEditorToolbarModule::BuildAll()

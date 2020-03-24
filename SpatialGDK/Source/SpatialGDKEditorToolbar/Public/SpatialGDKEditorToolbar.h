@@ -95,6 +95,7 @@ private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
 	bool CanBuildAnyWorker() const;
+	bool CanBuildSimulatedPlayerWorker() const;
 
 	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
 	TSharedRef<SWidget> CreateLaunchDeploymentMenuContent();
