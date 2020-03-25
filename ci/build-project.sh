@@ -14,7 +14,7 @@ pushd "$(dirname "$0")"
     GDK_HOME="${6?Please enter the path to the GDK for Unreal repo.}"
     BUILD_PLATFORM="${7?Please enter the build platform for your Unreal build.}"
     BUILD_STATE="${8?Please enter the build state for your Unreal build.}"
-    BUILD_TARGET="${9? Please enter the build target for your Unreal build.}"
+    BUILD_TARGET="${9?Please enter the build target for your Unreal build.}"
 
     # Clone the testing project
     echo "Cloning the testing project from ${TEST_REPO_URL}"

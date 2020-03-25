@@ -6,9 +6,10 @@ if [[ -n "${DEBUG-}" ]]; then
 fi
 
 pushd "$(dirname "$0")"
-    # Unreal path is the path to the Engine directory. No symlinking for mac, because they seem to cause issues during the build. This should ultimately resolve to "/Users/buildkite-agent/builds/<agent name>/improbable//UnrealEngine".
+    # Unreal path is the path to the Engine directory. No symlinking for mac, because they seem to cause issues during the build. 
+    #This should ultimately resolve to "/Users/buildkite-agent/builds/<agent name>/improbable/UnrealEngine".
     UNREAL_PATH="${1:-"$(pwd)/../../UnrealEngine"}"
-    # THE GCS bucket that stores the built out Unreal Engine we want to retrieve
+    # The GCS bucket that stores the built out Unreal Engine we want to retrieve
     GCS_PUBLISH_BUCKET="${2:-io-internal-infra-unreal-artifacts-production/UnrealEngine}"
     GDK_HOME="$(pwd)/.."
 

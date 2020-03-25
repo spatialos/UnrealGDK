@@ -6,11 +6,16 @@ upload_build_configuration_step() {
     export BUILD_PLATFORM="${2}"
     export BUILD_TARGET="${3}"
     export BUILD_STATE="${4}"
+
     if [[ ${BUILD_PLATFORM} == "Mac" ]]; then
-        buildkite-agent pipeline upload "ci/gdk_build_macos.template.steps.yaml"
+        export BUILD_COMMAND="./ci/setup-build-test-gdk.sh"
+        REPLACE_STRING="s|BUILDKITE_AGENT_PLACEHOLDER|macos|g;"
     else
-        buildkite-agent pipeline upload "ci/gdk_build_win.template.steps.yaml"
+        export BUILD_COMMAND="powershell ./ci/setup-build-test-gdk.ps1"
+        REPLACE_STRING="s|BUILDKITE_AGENT_PLACEHOLDER|windows|g;"
     fi
+
+    buildkite-agent pipeline upload "ci/gdk_build.template.steps.yaml"
 }
 
 generate_build_configuration_steps () {

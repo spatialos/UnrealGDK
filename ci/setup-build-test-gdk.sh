@@ -17,13 +17,8 @@ pushd "$(dirname "$0")"
     TEST_REPO_URL="git@github.com:improbable/UnrealGDKEngineNetTest.git"
     TEST_REPO_MAP="NetworkingMap"
     TEST_PROJECT_NAME="NetworkTestProject"
-    CHOSEN_TEST_REPO_BRANCH="master"
+    CHOSEN_TEST_REPO_BRANCH="${TEST_REPO_BRANCH:-master}" 
     SLOW_NETWORKING_TESTS=false
-
-    # Allow overriding testing branch via environment variable
-    if [[ -n "${TEST_REPO_BRANCH:-}" ]]; then
-        CHOSEN_TEST_REPO_BRANCH="${TEST_REPO_BRANCH}"
-    fi
 
     # Download Unreal Engine
     echo "--- get-unreal-engine"
