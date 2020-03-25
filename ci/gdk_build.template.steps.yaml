@@ -22,7 +22,7 @@ windows: &windows
   plugins:
     - ca-johnson/taskkill#v4.1: ~
 
-  macos: &macos
+macos: &macos
   agents:
     - "capable_of_building=gdk-for-unreal"
     - "environment=production"
@@ -42,7 +42,7 @@ env:
 steps:
   - <<: *BUILDKITE_AGENT_PLACEHOLDER
     label: "build-${ENGINE_COMMIT_HASH}-${BUILD_PLATFORM}-${BUILD_TARGET}-${BUILD_STATE}"
-    command: "${COMMAND}"
+    command: "${BUILD_COMMAND}"
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
       - "ci/FastTestResults/*"
