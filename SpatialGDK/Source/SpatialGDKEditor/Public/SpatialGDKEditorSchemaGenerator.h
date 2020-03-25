@@ -12,6 +12,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSchemaGenerator, Log, All);
 
+struct SchemaGeneratorData;
+
 namespace SpatialGDKEditor
 {
 namespace Schema
@@ -22,23 +24,25 @@ SPATIALGDKEDITOR_API TSet<UClass*> GetAllSupportedClasses(const TArray<UObject*>
 
 SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchema();
 
-SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
+SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(SchemaGeneratorData& Data, TSet<UClass*> Classes,
+															 FString SchemaOutputPath = "");
 
-SPATIALGDKEDITOR_API void SpatialGDKSanitizeGeneratedSchema();
+SPATIALGDKEDITOR_API void SpatialGDKSanitizeGeneratedSchema(SchemaGeneratorData& Data);
 
-SPATIALGDKEDITOR_API void GenerateSchemaForSublevels();
+SPATIALGDKEDITOR_API void GenerateSchemaForSublevels(SchemaGeneratorData& Data);
 
-SPATIALGDKEDITOR_API void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap<FName, FName>& LevelNamesToPaths);
+SPATIALGDKEDITOR_API void GenerateSchemaForSublevels(SchemaGeneratorData& Data, const FString& SchemaOutputPath,
+													 const TMultiMap<FName, FName>& LevelNamesToPaths);
 
-SPATIALGDKEDITOR_API void GenerateSchemaForRPCEndpoints();
+SPATIALGDKEDITOR_API void GenerateSchemaForRPCEndpoints(SchemaGeneratorData& Data);
 
-SPATIALGDKEDITOR_API void GenerateSchemaForRPCEndpoints(const FString& SchemaOutputPath);
+SPATIALGDKEDITOR_API void GenerateSchemaForRPCEndpoints(SchemaGeneratorData& Data, const FString& SchemaOutputPath);
 
-SPATIALGDKEDITOR_API void GenerateSchemaForNCDs();
+SPATIALGDKEDITOR_API void GenerateSchemaForNCDs(SchemaGeneratorData& Data);
 
-SPATIALGDKEDITOR_API void GenerateSchemaForNCDs(const FString& SchemaOutputPath);
+SPATIALGDKEDITOR_API void GenerateSchemaForNCDs(SchemaGeneratorData& Data, const FString& SchemaOutputPath);
 
-SPATIALGDKEDITOR_API bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName);
+SPATIALGDKEDITOR_API bool LoadGeneratorStateFromSchemaDatabase(SchemaGeneratorData& Data, const FString& FileName);
 
 SPATIALGDKEDITOR_API bool IsAssetReadOnly(const FString& FileName);
 
@@ -46,13 +50,13 @@ SPATIALGDKEDITOR_API bool GeneratedSchemaDatabaseExists();
 
 SPATIALGDKEDITOR_API FSpatialGDKEditor::ESchemaDatabaseValidationResult ValidateSchemaDatabase();
 
-SPATIALGDKEDITOR_API USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath);
+SPATIALGDKEDITOR_API USchemaDatabase* InitialiseSchemaDatabase(SchemaGeneratorData& Data, const FString& PackagePath);
 
 SPATIALGDKEDITOR_API bool SaveSchemaDatabase(USchemaDatabase* SchemaDatabase);
 
 SPATIALGDKEDITOR_API bool DeleteSchemaDatabase(const FString& PackagePath);
 
-SPATIALGDKEDITOR_API void ResetSchemaGeneratorState();
+// SPATIALGDKEDITOR_API void ResetSchemaGeneratorState(SchemaGeneratorData& Data);
 
 SPATIALGDKEDITOR_API void ResetSchemaGeneratorStateAndCleanupFolders();
 
@@ -65,7 +69,7 @@ SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyD
 
 SPATIALGDKEDITOR_API bool RunSchemaCompiler();
 
-SPATIALGDKEDITOR_API void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase,
+SPATIALGDKEDITOR_API void WriteServerAuthorityComponentSet(SchemaGeneratorData& Data, const USchemaDatabase* SchemaDatabase,
 														   TArray<Worker_ComponentId>& ServerAuthoritativeComponentIds);
 
 SPATIALGDKEDITOR_API void WriteClientAuthorityComponentSet();

@@ -137,7 +137,7 @@ void FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method, TFunction
 		return;
 	}
 
-	if (Method == FullAssetScan)
+	if (0 && Method == FullAssetScan)
 	{
 		if (!CheckAutomationToolsUpToDate())
 		{
@@ -194,10 +194,10 @@ void FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method, TFunction
 
 		RemoveEditorAssetLoadedCallback();
 
-		if (!Schema::LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
-		{
-			Schema::ResetSchemaGeneratorStateAndCleanupFolders();
-		}
+		// if (!Schema::LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
+		//{
+		//	Schema::ResetSchemaGeneratorStateAndCleanupFolders();
+		//}
 
 		// If running from an open editor then compile all dirty blueprints
 		TArray<UBlueprint*> ErroredBlueprints;
@@ -250,8 +250,8 @@ FSpatialGDKEditor::ESchemaDatabaseValidationResult FSpatialGDKEditor::ValidateSc
 	return SpatialGDKEditor::Schema::ValidateSchemaDatabase();
 }
 
-#include "SchemaGenerator/Cache/AssetContentCacheDCCPlugin.h"
 #include "DerivedDataCache/Public/DerivedDataCacheInterface.h"
+#include "SchemaGenerator/Cache/AssetContentCacheDCCPlugin.h"
 
 FAssetContentIdentifierCache s_IDCache;
 

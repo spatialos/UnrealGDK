@@ -28,6 +28,86 @@ FString GetEnumDataType(const GDK_PROPERTY(EnumProperty) * EnumProperty)
 	return DataType;
 }
 
+FString PropertyToSchemaType(const GDK_PROPERTY(Property) * Property)
+{
+	FString DataType;
+
+	if (Property->IsA(GDK_PROPERTY(StructProperty)::StaticClass()))
+	{
+		const GDK_PROPERTY(StructProperty)* StructProp = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Property);
+		UScriptStruct* Struct = StructProp->Struct;
+		DataType = TEXT("bytes");
+	}
+	else if (Property->IsA(GDK_PROPERTY(BoolProperty)::StaticClass()))
+	{
+		DataType = TEXT("bool");
+	}
+	else if (Property->IsA(GDK_PROPERTY(FloatProperty)::StaticClass()))
+	{
+		DataType = TEXT("float");
+	}
+	else if (Property->IsA(GDK_PROPERTY(DoubleProperty)::StaticClass()))
+	{
+		DataType = TEXT("double");
+	}
+	else if (Property->IsA(GDK_PROPERTY(Int8Property)::StaticClass()))
+	{
+		DataType = TEXT("int32");
+	}
+	else if (Property->IsA(GDK_PROPERTY(Int16Property)::StaticClass()))
+	{
+		DataType = TEXT("int32");
+	}
+	else if (Property->IsA(GDK_PROPERTY(IntProperty)::StaticClass()))
+	{
+		DataType = TEXT("int32");
+	}
+	else if (Property->IsA(GDK_PROPERTY(Int64Property)::StaticClass()))
+	{
+		DataType = TEXT("int64");
+	}
+	else if (Property->IsA(GDK_PROPERTY(ByteProperty)::StaticClass()))
+	{
+		DataType = TEXT("uint32"); // uint8 not supported in schema.
+	}
+	else if (Property->IsA(GDK_PROPERTY(UInt16Property)::StaticClass()))
+	{
+		DataType = TEXT("uint32");
+	}
+	else if (Property->IsA(GDK_PROPERTY(UInt32Property)::StaticClass()))
+	{
+		DataType = TEXT("uint32");
+	}
+	else if (Property->IsA(GDK_PROPERTY(UInt64Property)::StaticClass()))
+	{
+		DataType = TEXT("uint64");
+	}
+	else if (Property->IsA(GDK_PROPERTY(NameProperty)::StaticClass()) || Property->IsA(GDK_PROPERTY(StrProperty)::StaticClass())
+			 || Property->IsA(GDK_PROPERTY(TextProperty)::StaticClass()))
+	{
+		DataType = TEXT("string");
+	}
+	else if (Property->IsA(GDK_PROPERTY(ObjectPropertyBase)::StaticClass()))
+	{
+		DataType = TEXT("UnrealObjectRef");
+	}
+	else if (Property->IsA(GDK_PROPERTY(ArrayProperty)::StaticClass()))
+	{
+		DataType = PropertyToSchemaType(GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property)->Inner);
+		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
+	}
+	else if (Property->IsA(GDK_PROPERTY(EnumProperty)::StaticClass()))
+	{
+		DataType = GetEnumDataType(GDK_CASTFIELD<GDK_PROPERTY(EnumProperty)>(Property));
+	}
+	else
+	{
+		DataType = TEXT("bytes");
+	}
+
+	return DataType;
+}
+
 FString UnrealNameToSchemaName(const FString& UnrealName, bool bWarnAboutRename /* = false */)
 {
 	FString Sanitized = AlphanumericSanitization(UnrealName);
@@ -71,24 +151,25 @@ FString UnrealNameToSchemaComponentName(const FString& UnrealName)
 	return SchemaTypeName;
 }
 
-FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UClass* Class)
+FString SchemaReplicatedDataName(TMap<FString, FString> const& ClassPathToSchemaName, EReplicatedPropertyGroup Group,
+								 FString const& ClassPath)
 {
-	return FString::Printf(TEXT("%s%s"), *UnrealNameToSchemaComponentName(ClassPathToSchemaName[Class->GetPathName()]),
+	return FString::Printf(TEXT("%s%s"), *UnrealNameToSchemaComponentName(ClassPathToSchemaName[ClassPath]),
 						   *GetReplicatedPropertyGroupName(Group));
 }
 
-FString SchemaHandoverDataName(UClass* Class)
+FString SchemaHandoverDataName(TMap<FString, FString> const& ClassPathToSchemaName, FString const& ClassPath)
 {
-	return FString::Printf(TEXT("%sHandover"), *UnrealNameToSchemaComponentName(ClassPathToSchemaName[Class->GetPathName()]));
+	return FString::Printf(TEXT("%sHandover"), *UnrealNameToSchemaComponentName(ClassPathToSchemaName[ClassPath]));
 }
 
-FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
+FString SchemaFieldName(const TSharedPtr<FUnrealOfflineProperty> Property)
 {
 	// Transform the property chain into a chain of names.
 	TArray<FString> ChainNames;
-	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString {
-		FString PropName = Property->Property->GetName().ToLower();
-		if (Property->Property->ArrayDim > 1)
+	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealOfflineProperty>& Property) -> FString {
+		FString PropName = Property->PropertyName.ToLower();
+		if (Property->ArrayDim > 1)
 		{
 			PropName.Append(FString::FromInt(Property->StaticArrayIndex));
 		}

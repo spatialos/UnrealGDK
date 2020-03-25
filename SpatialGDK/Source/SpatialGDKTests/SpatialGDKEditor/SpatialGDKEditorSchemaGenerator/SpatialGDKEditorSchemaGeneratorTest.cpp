@@ -19,6 +19,8 @@
 
 #define SCHEMA_GENERATOR_TEST(TestName) GDK_TEST(SpatialGDKEditor, SchemaGenerator, TestName)
 
+#if 0
+
 namespace
 {
 const FString SchemaOutputFolder = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("Tests/"));
@@ -1052,3 +1054,5 @@ SCHEMA_GENERATOR_TEST(GIVEN_no_schema_exists_WHEN_generating_schema_for_rpc_endp
 }
 
 #undef LOCTEXT_NAMESPACE
+
+#endif

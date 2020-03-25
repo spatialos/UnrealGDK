@@ -5,16 +5,14 @@
 
 #include "SchemaGenerator/SchemaGenerator.h"
 #include "SchemaGenerator/Utils/ComponentIdGenerator.h"
-#include "SchemaGenerator/Utils/CodeWriter.h"
+#include "Utils/CodeWriter.h"
 
 #include "GameFramework/Actor.h"
-#include "Serialization/MemoryWriter.h"
 #include "Serialization/MemoryReader.h"
-
-
+#include "Serialization/MemoryWriter.h"
 
 FSchemaClassCache::FSchemaClassCache(UClass* Class)
-	:ClassToInspect(Class)
+	: ClassToInspect(Class)
 {
 	check(Class);
 }
@@ -58,11 +56,11 @@ FString FSchemaClassCache::GetDebugContextString() const
 }
 namespace SpatialGDKEditor
 {
-	namespace Schema
-	{
-		bool IsSupportedClass(const UClass* SupportedClass);
-	}
+namespace Schema
+{
+bool IsSupportedClass(const UClass* SupportedClass);
 }
+} // namespace SpatialGDKEditor
 
 bool FSchemaClassCache::Build(TArray<uint8>& OutData)
 {
@@ -74,17 +72,16 @@ bool FSchemaClassCache::Build(TArray<uint8>& OutData)
 	{
 		FComponentIdGenerator DummyGenerator(0x70000000);
 		TArray<TSharedPtr<FUnrealType>> TypeInfos;
-		TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(ClassToInspect, 0, 0); 
+		TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(ClassToInspect, 0, 0);
 		TypeInfos.Add(TypeInfo);
-		VisitAllObjects(TypeInfo, [&](TSharedPtr<FUnrealType> TypeNode)
-		{
+		VisitAllObjects(TypeInfo, [&](TSharedPtr<FUnrealType> TypeNode) {
 			if (UClass* NestedClass = Cast<UClass>(TypeNode->Type))
 			{
-				if (!SchemaGeneratedClasses.Contains(NestedClass) && SpatialGDKEditor::Schema::IsSupportedClass(NestedClass))
-				{
-					TypeInfos.Add(CreateUnrealTypeInfo(NestedClass, 0, 0));
-					SchemaGeneratedClasses.Add(NestedClass);
-				}
+				// if (!SchemaGeneratedClasses.Contains(NestedClass) && SpatialGDKEditor::Schema::IsSupportedClass(NestedClass))
+				//{
+				//	TypeInfos.Add(CreateUnrealTypeInfo(NestedClass, 0, 0));
+				//	SchemaGeneratedClasses.Add(NestedClass);
+				//}
 			}
 			return true;
 		});
@@ -94,7 +91,7 @@ bool FSchemaClassCache::Build(TArray<uint8>& OutData)
 			FCodeWriter ActorWriter;
 			FCodeWriter SubobjectsWriter;
 
-			GenerateActorSchema(DummyGenerator, ClassToInspect, TypeInfo, ActorWriter, SubobjectsWriter);
+			// GenerateActorSchema(DummyGenerator, ClassToInspect, TypeInfo, ActorWriter, SubobjectsWriter);
 
 			if (!ActorWriter.GetOutput().IsEmpty())
 			{
@@ -125,9 +122,9 @@ bool FSchemaClassCache::Build(TArray<uint8>& OutData)
 		{
 			FCodeWriter Writer;
 
-			GenerateSubobjectSchema(DummyGenerator, ClassToInspect, TypeInfo, Writer);
+			// GenerateSubobjectSchema(DummyGenerator, ClassToInspect, TypeInfo, Writer);
 
-			if(!Writer.GetOutput().IsEmpty())
+			if (!Writer.GetOutput().IsEmpty())
 			{
 				OutputType Type = OutputType::Subobject;
 				Ar << (int32&)Type;
