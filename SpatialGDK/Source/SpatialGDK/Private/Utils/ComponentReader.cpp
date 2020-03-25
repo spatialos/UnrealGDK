@@ -173,23 +173,21 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	TArray<UProperty*> RepNotifies;
 
 	TArray<Schema_FieldId> InitialIds;
-	if (UNLIKELY(bIsInitialData))
+	// If we are applying initial data, they must have come from a ComponentData (as it currently stands).
+	// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
+	// However, we still want to apply this empty data, so we need to reconstruct the full
+	// list of field IDs for that component type (Data, OwnerOnly).
+	if (bIsInitialData)
 	{
+		const FClassInfo& ClassInfo = ClassInfoManager->GetClassInfoByComponentId(ComponentId);
+
+		int32 SchemaType = ClassInfoManager->GetCategoryByComponentId(ComponentId);
 		for (int32 HandleIndex = 0; HandleIndex < BaseHandleToCmdIndex.Num(); HandleIndex++)
 		{
 			const FRepParentCmd& Parent = Parents[Cmds[BaseHandleToCmdIndex[HandleIndex].CmdIndex].ParentIndex];
-			const FClassInfo& ClassInfo = ClassInfoManager->GetClassInfoByComponentId(ComponentId);
-
-			for (int32 SchemaType = SCHEMA_Begin; SchemaType < SCHEMA_Count; SchemaType++)
+			if (GetGroupFromCondition(Parent.Condition) == SchemaType)
 			{
-				if (ClassInfo.SchemaComponents[SchemaType] != ComponentId)
-				{
-					continue;
-				}
-				if (GetGroupFromCondition(Parent.Condition) == SchemaType)
-				{
-					InitialIds.Add(HandleIndex + 1);
-				}
+				InitialIds.Add(HandleIndex + 1);
 			}
 		}
 	}
