@@ -45,25 +45,26 @@ pushd "$(dirname "$0")"
         "${BUILD_STATE}" \
         "${TEST_UPROJECT_NAME}${BUILD_TARGET}"
 
-    echo "--- run-fast-tests"
-    "${GDK_HOME}/ci/run-tests.sh" \
-        "${UNREAL_PATH}" \
-        "${TEST_PROJECT_NAME}" \
-        "${UPROJECT_PATH}" \
-        "FastTestResults" \
-        "NetworkingMap" \
-        "SpatialGDK+/Game/SpatialNetworkingMap" \
-        "True"
+    # TODO UNR-3164 - re-enable tests after we made sure they work for Mac
+    # echo "--- run-fast-tests"
+    # "${GDK_HOME}/ci/run-tests.sh" \
+    #     "${UNREAL_PATH}" \
+    #     "${TEST_PROJECT_NAME}" \
+    #     "${UPROJECT_PATH}" \
+    #     "FastTestResults" \
+    #     "NetworkingMap" \
+    #     "SpatialGDK+/Game/SpatialNetworkingMap" \
+    #     "True"
 
-    if [[ -n "${SLOW_NETWORKING_TESTS}" ]]; then
-        echo "--- run-slow-networking-tests"
-        "${GDK_HOME}/ci/run-tests.sh" \
-            "${UNREAL_PATH}" \
-            "${TEST_PROJECT_NAME}" \
-            "${UPROJECT_PATH}" \
-            "VanillaTestResults" \
-            "NetworkingMap" \
-            "+/Game/NetworkingMap" \
-            ""
-    fi
+    # if [[ -n "${SLOW_NETWORKING_TESTS}" ]]; then
+    #     echo "--- run-slow-networking-tests"
+    #     "${GDK_HOME}/ci/run-tests.sh" \
+    #         "${UNREAL_PATH}" \
+    #         "${TEST_PROJECT_NAME}" \
+    #         "${UPROJECT_PATH}" \
+    #         "VanillaTestResults" \
+    #         "NetworkingMap" \
+    #         "+/Game/NetworkingMap" \
+    #         ""
+    # fi
 popd
