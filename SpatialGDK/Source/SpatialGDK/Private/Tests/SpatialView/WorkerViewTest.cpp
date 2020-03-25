@@ -3,7 +3,7 @@
 #include "Tests/TestDefinitions.h"
 
 #include "SpatialView/WorkerView.h"
-#include "OpList/ViewDeltaLegacyOpList.h"
+#include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 
 #define WORKERVIEW_TEST(TestName) \
 	GDK_TEST(Core, WorkerView, TestName)
