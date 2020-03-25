@@ -124,7 +124,7 @@ void USpatialGameInstance::TryConnectToSpatial()
 		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
 		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
 		// If a developer wants to use the Launcher and NOT automatically connect they will have to set the `PreventAutoConnectWithLocator` flag to true.
-		if (!bPreventAutoConnectWithLocator)
+		if (!bPreventAutoConnectWithCommandLineArgs)
 		{
 			// Initialize a locator configuration which will parse command line arguments.
 			FLocatorConfig LocatorConfig;
@@ -144,6 +144,16 @@ void USpatialGameInstance::TryConnectToSpatial()
 
 void USpatialGameInstance::StartGameInstance()
 {
+	const TCHAR* CommandLine = FCommandLine::Get();
+	if (FParse::Param(CommandLine, TEXT("bPreventAutoConnectWithCommandLineArgs")))
+	{
+		bPreventAutoConnectWithCommandLineArgs = true;
+	}
+	else
+	{
+		FParse::Bool(CommandLine, TEXT("-bPreventAutoConnectWithCommandLineArgs="), bPreventAutoConnectWithCommandLineArgs);
+	}
+
 	TryConnectToSpatial();
 
 	Super::StartGameInstance();
@@ -214,18 +224,6 @@ void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 	SpatialLatencyTracer->ResetWorkerId();
 #endif
 	OnConnectionFailed.Broadcast(Reason);
-}
-
-bool USpatialGameInstance::GetPreventAutoConnectWithLocator() const
-{
-	// Need a more robust way of working out if we are the server
-	// World->IsServer() can not be used as on clients the NetDriver and DemoNetDriver on the world are both not setup yet and are null.
-	if (GetSpatialWorkerType() == SpatialConstants::DefaultServerWorkerType)
-	{
-		return false;
-	}
-
-	return bPreventAutoConnectWithLocator;
 }
 
 void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld)

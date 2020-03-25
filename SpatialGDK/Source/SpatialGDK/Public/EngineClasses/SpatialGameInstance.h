@@ -61,7 +61,7 @@ public:
 
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
-	bool GetPreventAutoConnectWithLocator() const;
+	bool GetPreventAutoConnectWithCommandLineArgs() const { return bPreventAutoConnectWithCommandLineArgs; };
 
 	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
 
@@ -77,9 +77,9 @@ private:
 
 	bool bFirstConnectionToSpatialOSAttempted = false;
 
+	// Read from command line
 	// If this flag is set to true standalone clients will not attempt to connect to a deployment automatically if a 'loginToken' exists in arguments.
-	UPROPERTY(Config)
-	bool bPreventAutoConnectWithLocator;
+	bool bPreventAutoConnectWithCommandLineArgs;
 
 	UPROPERTY()
 	USpatialLatencyTracer* SpatialLatencyTracer = nullptr;

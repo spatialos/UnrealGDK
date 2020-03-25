@@ -242,7 +242,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
 
 	FString SpatialWorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
-	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted() && !GameInstance->GetPreventAutoConnectWithLocator())
+	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted() && !GameInstance->GetPreventAutoConnectWithCommandLineArgs())
 	{
 		GameInstance->SetFirstConnectionToSpatialOSAttempted();
 		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
