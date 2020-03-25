@@ -28,7 +28,8 @@ public:
 	void BuildAll();
 	bool CanBuild() const;
 
-	void UploadAssembly(const FString &name, bool Force);
+	void UploadAssembly(const FString &AssemblyName, bool Force);
+	void BuildAllAndUpload(const FString &AssemblyName, bool Force);
 
 	FSpatialGDKPackageAssemblyStatus OnPackageAssemblyStatus;
 
@@ -47,6 +48,16 @@ private:
 	} CurrentAssemblyTarget;
 
 	TUniquePtr<FMonitoredProcess> Upload;
+
+	struct UploadAfterBuildDetails
+	{
+		FString AssemblyName;
+		bool bForce;
+		UploadAfterBuildDetails(const FString& Name, bool Force);
+		void Upload(FSpatialGDKPackageAssembly& PackageAssembly);
+	};
+
+	TUniquePtr<UploadAfterBuildDetails> UploadAfterBuildPtr;
 
 	void BuildNext();
 	void OnUploadCompleted(int32);

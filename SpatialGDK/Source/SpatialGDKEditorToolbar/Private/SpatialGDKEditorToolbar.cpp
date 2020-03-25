@@ -266,6 +266,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
 
 	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().BuildAndUploadAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildAndUpload),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
+
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().UploadAssemblyAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UploadAssembly),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
@@ -377,10 +382,14 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKDeploymentOptionsHeader", "Deployment Tools"));
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
+		MenuBuilder.AddMenuSeparator();
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildAndUploadAction);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildAllAction);
+		MenuBuilder.AddMenuSeparator();
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildServerWorkerAction);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildClientWorkerAction);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildSimulatedPlayerWorkerAction);
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildAllAction);
+		MenuBuilder.AddMenuSeparator();
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().UploadAssemblyAction);
 	}
 	MenuBuilder.EndSection();
@@ -916,7 +925,8 @@ void FSpatialGDKEditorToolbarModule::BuildAll()
 
 void FSpatialGDKEditorToolbarModule::BuildAndUpload()
 {
-	//SpatialGDKPackageAssemblyInstance.Get().
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	SpatialGDKPackageAssemblyInstance.Get().BuildAllAndUpload(SpatialGDKEditorSettings->GetAssemblyName(), true);
 }
 
 void FSpatialGDKEditorToolbarModule::UploadAssembly()

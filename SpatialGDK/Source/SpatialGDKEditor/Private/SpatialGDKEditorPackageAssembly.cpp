@@ -284,6 +284,10 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString &AssemblyName, boo
 		FString NotificationMessage = FString::Printf(TEXT("Uploading Assembly to Project: %s"), *FSpatialGDKServicesModule::GetProjectName());
 		OnPackageAssemblyStatus.ExecuteIfBound(NotificationMessage, EPackageAssemblyStatus::STARTED);
 	}
+	if (UploadAfterBuildPtr)
+	{
+		UploadAfterBuildPtr.Reset(nullptr);
+	}
 }
 
 void FSpatialGDKPackageAssembly::BuildNext()
@@ -317,11 +321,16 @@ void FSpatialGDKPackageAssembly::BuildNext()
 		CurrentAssemblyTarget = EPackageAssemblyTarget::ZIP_SERVER;
 		WriteStartWorkerScript();
 		ZipWorker(TEXT("LinuxServer"), TEXT("UnrealWorker@Linux.zip"), lambda);
+		break;
 	case EPackageAssemblyTarget::ZIP_SERVER:
 		if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
 		{
 			CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_SIMULATED_PLAYERS;
 			Build(GenSimulatedPlayerBuildCommand(TEXT("")), lambda);
+		}
+		else if (UploadAfterBuildPtr)
+		{
+			UploadAfterBuildPtr->Upload(*this);
 		}
 		else
 		{
@@ -332,6 +341,16 @@ void FSpatialGDKPackageAssembly::BuildNext()
 		CurrentAssemblyTarget = EPackageAssemblyTarget::ZIP_SIMULATED_PLAYERS;
 		AddFilesForSimulatedPlayer();
 		ZipWorker(TEXT("LinuxNoEditor"), TEXT("UnrealSimulatedPlayer@Linux.zip"), lambda);
+	case EPackageAssemblyTarget::ZIP_SIMULATED_PLAYERS:
+		if (UploadAfterBuildPtr)
+		{
+			UploadAfterBuildPtr->Upload(*this);
+		}
+		else
+		{
+			CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+		}
+		break;
 	default:
 		CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
 		;
@@ -344,6 +363,15 @@ void FSpatialGDKPackageAssembly::BuildAll()
 	{
 		CurrentAssemblyTarget = EPackageAssemblyTarget::START_ALL;
 		BuildNext();
+	}
+}
+
+void FSpatialGDKPackageAssembly::BuildAllAndUpload(const FString& AssemblyName, bool Force)
+{
+	if (!UploadAfterBuildPtr)
+	{
+		UploadAfterBuildPtr.Reset(new UploadAfterBuildDetails(AssemblyName, Force));
+		BuildAll();
 	}
 }
 
@@ -379,6 +407,16 @@ void FSpatialGDKPackageAssembly::OnUploadCanceled()
 	FString NotificationMessage = FString::Printf(TEXT("Canceled Assembly Upload to Project: %s"), *FSpatialGDKServicesModule::GetProjectName());
 	OnPackageAssemblyStatus.ExecuteIfBound(NotificationMessage, EPackageAssemblyStatus::CANCELED);
 	Upload.Reset(nullptr);
+}
+
+FSpatialGDKPackageAssembly::UploadAfterBuildDetails::UploadAfterBuildDetails(const FString& Name, bool Force) : AssemblyName(Name), bForce(Force)
+{
+
+}
+
+void FSpatialGDKPackageAssembly::UploadAfterBuildDetails::Upload(FSpatialGDKPackageAssembly &PackageAssembly)
+{
+	PackageAssembly.UploadAssembly(AssemblyName, bForce);
 }
 
 #undef LOCTEXT_NAMESPACE
