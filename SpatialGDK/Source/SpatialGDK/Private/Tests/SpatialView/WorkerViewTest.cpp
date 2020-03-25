@@ -2,7 +2,7 @@
 
 #include "Tests/TestDefinitions.h"
 
-#include "WorkerView.h"
+#include "SpatialView/WorkerView.h"
 #include "OpList/ViewDeltaLegacyOpList.h"
 
 #define WORKERVIEW_TEST(TestName) \
