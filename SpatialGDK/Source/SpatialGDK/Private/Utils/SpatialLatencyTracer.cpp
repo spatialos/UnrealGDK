@@ -16,7 +16,6 @@ DEFINE_LOG_CATEGORY(LogSpatialLatencyTracing);
 DECLARE_CYCLE_STAT(TEXT("ContinueLatencyTraceRPC_Internal"), STAT_ContinueLatencyTraceRPC_Internal, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("BeginLatencyTraceRPC_Internal"), STAT_BeginLatencyTraceRPC_Internal, STATGROUP_SpatialNet);
 
-
 namespace
 {
 	// Stream for piping trace lib output to UE output
@@ -215,7 +214,7 @@ void USpatialLatencyTracer::WriteToLatencyTrace(const TraceKey Key, const FStrin
 	}
 }
 
-void USpatialLatencyTracer::WriteAndEndTraceIfRemove(const TraceKey Key, const FString& TraceDesc)
+void USpatialLatencyTracer::WriteAndEndTraceIfRemote(const TraceKey Key, const FString& TraceDesc)
 {
 	FScopeLock Lock(&Mutex);
 
@@ -349,19 +348,19 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
 	{
 		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
-		WriteAndEndTraceIfRemove(ComponentUpdate->Update.Trace, TEXT("Sent componentUpdate to Worker SDK"));
+		WriteAndEndTraceIfRemote(ComponentUpdate->Update.Trace, TEXT("Sent componentUpdate to Worker SDK"));
 	}
 	else if (Message->Type == SpatialGDK::EOutgoingMessageType::AddComponent)
 	{
 		const SpatialGDK::FAddComponent* ComponentAdd = static_cast<const SpatialGDK::FAddComponent*>(Message);
-		WriteAndEndTraceIfRemove(ComponentAdd->Data.Trace, TEXT("Sent componentAdd to Worker SDK"));
+		WriteAndEndTraceIfRemote(ComponentAdd->Data.Trace, TEXT("Sent componentAdd to Worker SDK"));
 	}
 	else if (Message->Type == SpatialGDK::EOutgoingMessageType::CreateEntityRequest)
 	{
 		const SpatialGDK::FCreateEntityRequest* CreateEntityRequest = static_cast<const SpatialGDK::FCreateEntityRequest*>(Message);
 		for (auto& Component : CreateEntityRequest->Components)
 		{
-			WriteAndEndTraceIfRemove(Component.Trace, TEXT("Sent createEntityRequest to Worker SDK"));
+			WriteAndEndTraceIfRemote(Component.Trace, TEXT("Sent createEntityRequest to Worker SDK"));
 		}
 	}
 }
@@ -437,7 +436,7 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 	// If we're not doing any further tracking, end the trace
 	if (!bInternalTracking)
 	{
-		WriteAndEndTraceIfRemove(Key, TEXT("End of native tracing"));
+		WriteAndEndTraceIfRemote(Key, TEXT("End of native tracing"));
 	}
 
 	return true;

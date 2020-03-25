@@ -109,6 +109,14 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialConnectionManager();
 	}
+#if TRACE_LIB_ACTIVE
+	else
+	{
+		// Setup native worker name
+		FString WorkerName = FString::Printf(TEXT("N:%s:%s"), *Params.SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Short));
+		SpatialLatencyTracer->SetWorkerId(WorkerName);
+	}
+#endif
 
 	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 }
@@ -140,6 +148,14 @@ void USpatialGameInstance::TryConnectToSpatial()
 			}
 		}
 	}
+#if TRACE_LIB_ACTIVE
+	else
+	{
+		// Setup native worker name
+		FString WorkerName = FString::Printf(TEXT("N:%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Short));
+		SpatialLatencyTracer->SetWorkerId(WorkerName);
+	}
+#endif
 }
 
 void USpatialGameInstance::StartGameInstance()
