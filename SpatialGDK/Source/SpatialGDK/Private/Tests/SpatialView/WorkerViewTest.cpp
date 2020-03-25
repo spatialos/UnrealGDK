@@ -22,15 +22,6 @@ namespace
 
 } // anonymous namespace
 
-WORKERVIEW_TEST(GIVEN_empty_WorkerView_WHEN_GenerateViewDelta_called_THEN_ViewDelta_returned)
-{
-	WorkerView View;
-	const ViewDelta* Delta = View.GenerateViewDelta();
-
-	TestTrue("Valid ViewDelta returned", Delta != nullptr);
-	return true;
-}
-
 WORKERVIEW_TEST(GIVEN_WorkerView_with_one_CreateEntityRequest_WHEN_FlushLocalChanges_called_THEN_one_CreateEntityRequest_returned)
 {
 	// GIVEN
@@ -77,7 +68,6 @@ WORKERVIEW_TEST(GIVEN_WorkerView_with_one_op_enqued_WHEN_GenerateViewDelta_calle
 	auto ViewDelta = View.GenerateViewDelta();
 
 	// THEN
-	// TODO(Alex): should it be using LegacyOpList?
 	TestTrue("ViewDelta has one op", ViewDelta->GenerateLegacyOpList()->GetCount() == 1);
 
 	return true;
@@ -98,7 +88,6 @@ WORKERVIEW_TEST(GIVEN_WorkerView_with_multiple_ops_engued_WHEN_GenerateViewDelta
 	auto ViewDelta = View.GenerateViewDelta();
 
 	// THEN
-	// TODO(Alex): should it be using LegacyOpList?
 	TestTrue("ViewDelta has multiple ops", ViewDelta->GenerateLegacyOpList()->GetCount() > 1);
 
 	return true;
