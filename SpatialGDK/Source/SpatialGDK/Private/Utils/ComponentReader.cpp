@@ -108,11 +108,11 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 	TArray<UProperty*> RepNotifies;
 
-	TArray<Schema_FieldId> InitialIds;
 	// If we are applying initial data, they must have come from a ComponentData (as it currently stands).
 	// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
 	// However, we still want to apply this empty data, so we need to reconstruct the full
 	// list of field IDs for that component type (Data, OwnerOnly).
+	TArray<Schema_FieldId> InitialIds;
 	if (bIsInitialData)
 	{
 		const FClassInfo& ClassInfo = ClassInfoManager->GetClassInfoByComponentId(ComponentId);
