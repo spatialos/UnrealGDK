@@ -7,6 +7,15 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorPackageAssembly, Log, All);
 
+enum class EPackageAssemblyStatus
+{
+	CANCELED = -1,
+	STARTED = 0,
+	COMPLETED = 1,
+	FAILED = 2,
+};
+
+DECLARE_DELEGATE_TwoParams(FSpatialGDKPackageAssemblyStatus, FString, EPackageAssemblyStatus);
 
 class SPATIALGDKEDITOR_API FSpatialGDKPackageAssembly : public TSharedFromThis<FSpatialGDKPackageAssembly>
 {
@@ -20,6 +29,8 @@ public:
 	bool CanBuild() const;
 
 	void UploadAssembly(const FString &name, bool Force);
+
+	FSpatialGDKPackageAssemblyStatus OnPackageAssemblyStatus;
 
 private:
 	enum class EPackageAssemblyTarget

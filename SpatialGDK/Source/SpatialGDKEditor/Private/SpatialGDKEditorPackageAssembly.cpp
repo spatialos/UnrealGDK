@@ -10,6 +10,7 @@
 #include "UnrealEdMisc.h"
 #include "EditorStyle.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialGDKEditorModule.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesModule.h"
 
@@ -152,13 +153,12 @@ static void Build(const FString& CommandLine, TFunction<void(FString, double)> F
 static FString GetServerBuildCommand(const FString& OptionalParams)
 {
 	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
-	FString StagingDir = GetStagingDir(); // / TEXT("LinuxServer");
 	FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" BuildCookRun -build -project=\"%s\" -nop4 -clientconfig=%s -serverconfig=%s -utf8output -cook -stage -package -unversioned -compressed -stagingdirectory=\"%s\"  -fileopenlog -SkipCookingEditorContent -server -serverplatform=%s -noclient -ue4exe=\"%s\" %s"),
 		*ProjectPath,
 		*ProjectPath,
 		TEXT("Development"),
 		TEXT("Development"),
-		*StagingDir,
+		*GetStagingDir(),
 		TEXT("Linux"),
 		*FUnrealEdMisc::Get().GetExecutableForCommandlets(),
 		*OptionalParams
@@ -166,17 +166,15 @@ static FString GetServerBuildCommand(const FString& OptionalParams)
 	return CommandLine;
 }
 
-static FString GenSimulatedPlayerBuildCommand(const FString& OptionParams)
+static FString GenSimulatedPlayerBuildCommand(const FString& OptionalParams)
 {
 	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
-	FString StagingDir = GetStagingDir(); // / TEXT("LinuxNoEditor");
-	FString OptionalParams;
 	FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" BuildCookRun -build -project=\"%s\" -nop4 -clientconfig=%s -serverconfig=%s -utf8output -cook -stage -package -unversioned -compressed -stagingdirectory=\"%s\"  -fileopenlog -SkipCookingEditorContent -platform=%s -targetplatform=%s -nullrhi -ue4exe=\"%s\" %s"),
 		*ProjectPath,
 		*ProjectPath,
 		TEXT("Development"),
 		TEXT("Development"),
-		*StagingDir,
+		*GetStagingDir(),
 		TEXT("Linux"),
 		TEXT("Linux"),
 		*FUnrealEdMisc::Get().GetExecutableForCommandlets(),
@@ -186,17 +184,15 @@ static FString GenSimulatedPlayerBuildCommand(const FString& OptionParams)
 
 }
 
-static FString GenClientBuildCommand(const FString &OptionParams)
+static FString GenClientBuildCommand(const FString &OptionalParams)
 {
 	FString ProjectPath = FPaths::IsProjectFilePathSet() ? FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName() / FApp::GetProjectName() + TEXT(".uproject");
-	FString StagingDir = GetStagingDir(); // / TEXT("WindowsNoEditor");
-	FString OptionalParams;
 	FString CommandLine = FString::Printf(TEXT("-ScriptsForProject=\"%s\" BuildCookRun -build -project=\"%s\" -nop4 -clientconfig=%s -serverconfig=%s -utf8output -cook -stage -package -unversioned -compressed -stagingdirectory=\"%s\"  -fileopenlog -SkipCookingEditorContent -platform=%s -targetplatform=%s -ue4exe=\"%s\" %s"),
 		*ProjectPath,
 		*ProjectPath,
 		TEXT("Development"),
 		TEXT("Development"),
-		*StagingDir,
+		*GetStagingDir(),
 		TEXT("Win64"),
 		TEXT("Win64"),
 		*FUnrealEdMisc::Get().GetExecutableForCommandlets(),
@@ -285,6 +281,8 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString &AssemblyName, boo
 		Upload->OnCanceled().BindRaw(this, &FSpatialGDKPackageAssembly::OnUploadCanceled);
 		CurrentAssemblyTarget = EPackageAssemblyTarget::UPLOAD_ASSEMBLY;
 		Upload->Launch();
+		FString NotificationMessage = FString::Printf(TEXT("Uploading Assembly to Project: %s"), *FSpatialGDKServicesModule::GetProjectName());
+		OnPackageAssemblyStatus.ExecuteIfBound(NotificationMessage, EPackageAssemblyStatus::STARTED);
 	}
 }
 
@@ -357,18 +355,29 @@ bool FSpatialGDKPackageAssembly::CanBuild() const
 void FSpatialGDKPackageAssembly::OnUploadCompleted(int32 Result)
 {
 	CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+	if (Result == 0)
+	{
+		FString NotificationMessage = FString::Printf(TEXT("Assembly Successfully uploaded to Project: %s"), *FSpatialGDKServicesModule::GetProjectName());
+		OnPackageAssemblyStatus.ExecuteIfBound(NotificationMessage, EPackageAssemblyStatus::COMPLETED);
+	}
+	else
+	{
+		FString NotificationMessage = FString::Printf(TEXT("Failed Assembly Upload to Project: %s"), *FSpatialGDKServicesModule::GetProjectName());
+		OnPackageAssemblyStatus.ExecuteIfBound(NotificationMessage, EPackageAssemblyStatus::FAILED);
+	}
 	Upload.Reset(nullptr);
 }
 
 void FSpatialGDKPackageAssembly::OnUploadOutput(FString Output)
 {
 	UE_LOG(LogSpatialGDKEditorPackageAssembly, Display, TEXT("%s"), *Output);
-
 }
 
 void FSpatialGDKPackageAssembly::OnUploadCanceled()
 {
 	CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+	FString NotificationMessage = FString::Printf(TEXT("Canceled Assembly Upload to Project: %s"), *FSpatialGDKServicesModule::GetProjectName());
+	OnPackageAssemblyStatus.ExecuteIfBound(NotificationMessage, EPackageAssemblyStatus::CANCELED);
 	Upload.Reset(nullptr);
 }
 

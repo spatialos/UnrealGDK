@@ -82,6 +82,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionFailSound->AddToRoot();
 	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
 
+	SpatialGDKPackageAssemblyInstance->OnPackageAssemblyStatus.BindRaw(this, &FSpatialGDKEditorToolbarModule::HandleOnPackageAssemblyStatus);
+
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
@@ -127,6 +129,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
 {
 	FCoreUObjectDelegates::OnObjectPropertyChanged.Remove(OnPropertyChangedDelegateHandle);
+	SpatialGDKPackageAssemblyInstance->OnPackageAssemblyStatus.Unbind();
 
 	if (ExecutionStartSound != nullptr)
 	{
@@ -920,6 +923,25 @@ void FSpatialGDKEditorToolbarModule::UploadAssembly()
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	SpatialGDKPackageAssemblyInstance.Get().UploadAssembly(SpatialGDKEditorSettings->GetAssemblyName(), true);
+}
+
+void FSpatialGDKEditorToolbarModule::HandleOnPackageAssemblyStatus(FString NotificationText, EPackageAssemblyStatus Status)
+{
+	switch (Status)
+	{
+	case EPackageAssemblyStatus::STARTED:
+		OnShowTaskStartNotification(NotificationText);
+		break;
+	case EPackageAssemblyStatus::COMPLETED:
+		OnShowSuccessNotification(NotificationText);
+		break;
+	case EPackageAssemblyStatus::FAILED:
+	case EPackageAssemblyStatus::CANCELED:
+		OnShowFailedNotification(NotificationText);
+		break;
+	default:
+		;
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)

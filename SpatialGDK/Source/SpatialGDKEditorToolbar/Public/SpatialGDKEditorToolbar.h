@@ -21,6 +21,7 @@ class SSpatialGDKSimulatedPlayerDeployment;
 class SWindow;
 class USoundBase;
 
+enum class EPackageAssemblyStatus;
 struct FWorkerTypeLaunchSection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
@@ -99,6 +100,7 @@ private:
 	bool CanExecuteSnapshotGenerator() const;
 	bool CanBuildAnyWorker() const;
 	bool CanBuildSimulatedPlayerWorker() const;
+	void HandleOnPackageAssemblyStatus(FString, EPackageAssemblyStatus);
 
 	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
 	TSharedRef<SWidget> CreateLaunchDeploymentMenuContent();
