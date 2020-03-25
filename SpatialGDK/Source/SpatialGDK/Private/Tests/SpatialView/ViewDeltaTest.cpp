@@ -9,29 +9,6 @@
 
 using namespace SpatialGDK; 
 
-#pragma optimize("", off)
-
-namespace
-{
-	//bool CompareOps(Worker_Op Op1, CreateEntityResponse Op2)
-	bool CompareOps(const Worker_Op& Op1, const CreateEntityResponse& Op2)
-	{
-		FString Str = Op2.Message;
-		if (Op1.op_type == WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE &&
-			Op1.op.create_entity_response.request_id == Op2.RequestId &&
-			Op1.op.create_entity_response.status_code == Op2.StatusCode &&
-			//FString(Op1.op.create_entity_response.message) == Op2.Message &&
-			Op1.op.create_entity_response.entity_id == Op2.EntityId)
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-} // anonymous namespace
-
 VIEWDELTA_TEST(GIVEN_ViewDelta_with_multiple_CreateEntityResponse_added_WHEN_GetCreateEntityResponse_called_THEN_multiple_CreateEntityResponses_returned)
 {
 	// GIVEN
