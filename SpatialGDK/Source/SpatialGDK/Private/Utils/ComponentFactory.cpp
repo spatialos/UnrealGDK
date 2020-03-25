@@ -82,7 +82,7 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 					if (*OutLatencyTraceId != InvalidTraceKey)
 					{
 						UE_LOG(LogComponentFactory, Warning, TEXT("%s property trace being dropped because too many active on this actor (%s)"), *Cmd.Property->GetName(), *Object->GetName());
-						LatencyTracer->EndLatencyTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
+						LatencyTracer->WriteAndEndTraceIfRemove(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
 					}
 					*OutLatencyTraceId = PropertyKey;
 				}
@@ -169,7 +169,7 @@ uint32 ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject
 			if (*OutLatencyTraceId != InvalidTraceKey)
 			{
 				UE_LOG(LogComponentFactory, Warning, TEXT("%s handover trace being dropped because too many active on this actor (%s)"), *PropertyInfo.Property->GetName(), *Object->GetName());
-				LatencyTracer->EndLatencyTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
+				LatencyTracer->WriteAndEndTraceIfRemove(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"));
 			}
 			*OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, PropertyInfo.Property);
 		}
