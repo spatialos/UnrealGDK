@@ -16,9 +16,10 @@ struct SPATIALGDK_API FSpatialLatencyPayload
 
 	FSpatialLatencyPayload() {}
 
-	FSpatialLatencyPayload(TArray<uint8>&& TraceBytes, TArray<uint8>&& SpanBytes)
+	FSpatialLatencyPayload(TArray<uint8>&& TraceBytes, TArray<uint8>&& SpanBytes, TraceKey InKey)
 		: TraceId(MoveTemp(TraceBytes))
 		, SpanId(MoveTemp(SpanBytes))
+		, Key(InKey)
 	{}
 
 	UPROPERTY()

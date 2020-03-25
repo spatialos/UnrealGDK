@@ -107,10 +107,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool EndLatencyTrace(UObject* WorldContextObject, const FSpatialLatencyPayload& LatencyPayLoad);
 
-	// Returns if we're in the receiving section of a network trace. If this is true, it's valid to continue or end it.
-	//UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	//static bool IsLatencyTraceActive(UObject* WorldContextObject);
-
 	// Returns a previously saved payload from ContinueLatencyTraceKeyed
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static FSpatialLatencyPayload RetrievePayload(UObject* WorldContextObject, const AActor* Actor, const FString& Tag);
@@ -125,14 +121,11 @@ public:
 	TraceKey RetrievePendingTrace(const UObject* Obj, const UProperty* Property);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const FString& Tag);
 
-	//void MarkActiveLatencyTrace(const TraceKey Key);
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);
 	void EndLatencyTrace(const TraceKey Key, const FString& TraceDesc);
 
 	void WriteTraceToSchemaObject(const TraceKey Key, Schema_Object* Obj, const Schema_FieldId FieldId);
 	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId);
-
-	TraceKey ReadTraceFromSpatialPayload(const FSpatialLatencyPayload& payload);
 
 	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
 	void ResetWorkerId();
@@ -153,27 +146,17 @@ private:
 
 	FSpatialLatencyPayload RetrievePayload_Internal(const UObject* Actor, const FString& Key);
 
-	//bool IsLatencyTraceActive_Internal();
-
-	bool CreateNewTraceEntry(const AActor* Actor, const FString& Target, const ETraceType::Type Type, const TraceKey Key);
+	bool AddTrackingInfo(const AActor* Actor, const FString& Target, const ETraceType::Type Type, const TraceKey Key);
 
 	TraceKey GenerateNewTraceKey();
-	//TraceSpan* GetActiveTrace();
-	TraceSpan* GetActiveTraceOrReadPayload(const FSpatialLatencyPayload& Payload, TraceKey& OutKey);
-	bool ResolveKeyInLatencyPayload(FSpatialLatencyPayload& Payload);
+	void ResolveKeyInLatencyPayload(FSpatialLatencyPayload& Payload);
 
 	void WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc);
 	FString FormatMessage(const FString& Message) const;
 
-	void ClearTrackingInformation();
-
 	FString WorkerId;
 	FString MessagePrefix;
 
-	// This is used to track if there is an active trace within a currently processing network call. The user is
-	// able to hook into this active trace, and `continue` it to another network relevant call. If so, the
-	// ActiveTrace will be moved to another tracked trace.
-	//TraceKey ActiveTraceKey;
 	TraceKey NextTraceKey = 1;
 
 	FCriticalSection Mutex; // This mutex is to protect modifications to the containers below
@@ -184,9 +167,6 @@ private:
 	TMap<TraceKey, TraceSpan> TraceMap;
 
 	TSet<TraceKey> RootTraces;
-	TArray<TraceSpan> TracesOnWire;
-
-	TMap<FSpatialLatencyPayload, TraceKey> PayloadToTraceKeys;
 
 public:
 
