@@ -1660,7 +1660,25 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverHandleRPC);
 	if (!GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() || RPCService == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::HandleRPC: Received component update on ring buffer component but ring buffers not enabled! Entity: %lld, Component: %d"), Op.entity_id, Op.update.component_id);
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Received component update on ring buffer component but ring buffers not enabled! Entity: %lld, Component: %d"), Op.entity_id, Op.update.component_id);
+		return;
+	}
+
+	const TWeakObjectPtr<UObject> ActorReceivingRpc = PackageMap->GetObjectFromEntityId(Op.entity_id);
+	if (!ActorReceivingRpc.IsValid())
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Entity receiving ring buffer RPC does not exist in PackageMap! Entity: %lld, Component: %d"), Op.entity_id, Op.update.component_id);
+		return;
+	}
+
+	// When migrating an Actor to another worker, we preemptively change the role to SimulatedProxy when updating authority intent.
+	// This causes the engine to print errors when we try and processed received RPCs while not authoritative. Instead, we early
+	// exit here, and the RPC will be processed by the server that receives authority.
+	const bool bIsServerRpc = Op.update.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
+	const bool bActorRoleIsSimulatedProxy = Cast<AActor>(ActorReceivingRpc.Get())->Role == ROLE_SimulatedProxy;
+	if (bIsServerRpc && bActorRoleIsSimulatedProxy)
+	{
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Will not process server RPC, Actor role changed to SimulatedProxy. This happens on migration. Entity: %lld"), Op.entity_id);
 		return;
 	}
 
