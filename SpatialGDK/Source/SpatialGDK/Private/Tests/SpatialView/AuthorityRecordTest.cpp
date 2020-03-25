@@ -2,7 +2,7 @@
 
 #include "Tests/TestDefinitions.h"
 
-#include "AuthorityRecord.h"
+#include "SpatialView/AuthorityRecord.h"
 
 #define AUTHORITYRECORD_TEST(TestName) \
 	GDK_TEST(Core, AuthorityRecord, TestName)
