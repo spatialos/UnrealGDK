@@ -15,7 +15,7 @@ upload_build_configuration_step() {
         REPLACE_STRING="s|BUILDKITE_AGENT_PLACEHOLDER|windows|g;"
     fi
 
-    buildkite-agent pipeline upload "ci/gdk_build.template.steps.yaml"
+    sed "$REPLACE_STRING" "ci/gdk_build.template.steps.yaml" | buildkite-agent pipeline upload
 }
 
 generate_build_configuration_steps () {
