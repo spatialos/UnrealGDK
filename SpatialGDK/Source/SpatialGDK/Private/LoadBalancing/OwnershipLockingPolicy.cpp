@@ -19,7 +19,7 @@ bool UOwnershipLockingPolicy::CanAcquireLock(const AActor* Actor) const
 		return false;
 	}
 
-	return Actor->Role == ROLE_Authority
+	return Actor->Role == ROLE_Authority;
 }
 
 ActorLockToken UOwnershipLockingPolicy::AcquireLock(AActor* Actor, FString DebugString)

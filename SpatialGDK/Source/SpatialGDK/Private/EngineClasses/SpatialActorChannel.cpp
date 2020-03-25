@@ -613,14 +613,12 @@ int64 USpatialActorChannel::ReplicateActor()
 			if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
 			{
 				const UAbstractLBStrategy* LBStrategy = NetDriver->LoadBalanceStrategy;
-				const VirtualWorkerId TargetVirtualWorker = LBStrategy->WhoShouldHaveAuthority(Actor);
-				const bool bSpawningEntityOnAnotherWorker = SpatialGDKSettings->bEnableUnrealLoadBalancer && LBStrategy->LocalVirtualWorkerId != TargetVirtualWorker;
-				if (bSpawningEntityOnAnotherWorker)
+				if (!LBStrategy->ShouldHaveAuthority(*Actor))
 				{
 					Actor->Role = ROLE_SimulatedProxy;
 					Actor->RemoteRole = ROLE_Authority;
 
-					UE_LOG(LogSpatialActorChannel, Log, TEXT("Spawning Actor that will immediately become authoritative on a different worker. Actor: %s. Target virtual worker: %d"), *Actor->GetName(), TargetVirtualWorker);
+					UE_LOG(LogSpatialActorChannel, Log, TEXT("Spawning Actor that will immediately become authoritative on a different worker. Actor: %s. Target virtual worker: %d"), *Actor->GetName(), LBStrategy->WhoShouldHaveAuthority(*Actor));
 				}
 			}
 		}

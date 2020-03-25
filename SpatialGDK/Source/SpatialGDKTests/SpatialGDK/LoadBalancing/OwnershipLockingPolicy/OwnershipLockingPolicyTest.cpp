@@ -110,10 +110,10 @@ bool FWaitForActor::Update()
 	return (IsValid(Actor) && Actor->IsActorInitialized() && Actor->HasActorBegunPlay());
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSetActorRole, ENetRole, Role);
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FSetActorRole, TSharedPtr<TestData>, Data, FName, Handle, ENetRole, Role);
 bool FSetActorRole::Update()
 {
-	AActor* TestActor = TestActors[Handle];
+	AActor* TestActor = Data->TestActors[Handle];
 	TestActor->Role = Role;
 	return true;
 }
@@ -333,7 +333,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLocked_is_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData()
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
