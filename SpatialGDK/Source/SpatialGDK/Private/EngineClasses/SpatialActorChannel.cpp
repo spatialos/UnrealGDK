@@ -221,7 +221,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	TimeWhenPositionLastUpdated = 0.0f;
 
 	PendingDynamicSubobjects.Empty();
-	SavedClientConnectionWorkerId.Empty();
+	SavedConnectionOwningWorkerId.Empty();
 	SavedInterestBucketComponentID = SpatialConstants::INVALID_COMPONENT_ID;
 
 	FramesTillDormancyAllowed = 0;
@@ -1086,7 +1086,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
 
-	SavedClientConnectionWorkerId = SpatialGDK::GetOwningClientWorkerId(InActor);
+	SavedConnectionOwningWorkerId = SpatialGDK::GetConnectionOwningWorkerId(InActor);
 }
 
 bool USpatialActorChannel::TryResolveActor()
@@ -1308,8 +1308,8 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	bool bUpdatedThisActor = false;
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
-	FString NewClientConnectionWorkerId = SpatialGDK::GetOwningClientWorkerId(Actor);
-	if (SavedClientConnectionWorkerId != NewClientConnectionWorkerId)
+	FString NewClientConnectionWorkerId = SpatialGDK::GetConnectionOwningWorkerId(Actor);
+	if (SavedConnectionOwningWorkerId != NewClientConnectionWorkerId)
 	{
 		// Update the ComponentPresence component.
 		check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
@@ -1324,7 +1324,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 			Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
 		}
 
-		SavedClientConnectionWorkerId = NewClientConnectionWorkerId;
+		SavedConnectionOwningWorkerId = NewClientConnectionWorkerId;
 
 		bUpdatedThisActor = true;
 	}

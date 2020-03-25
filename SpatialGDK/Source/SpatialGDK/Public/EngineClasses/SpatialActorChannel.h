@@ -329,7 +329,7 @@ private:
 	// Used on the server
 	// Tracks the client worker ID corresponding to the owning connection.
 	// If no owning client connection exists, this will be an empty string.
-	FString SavedClientConnectionWorkerId;
+	FString SavedConnectionOwningWorkerId;
 
 	// Used on the server
 	// Tracks the interest bucket component ID for the relevant Actor.
