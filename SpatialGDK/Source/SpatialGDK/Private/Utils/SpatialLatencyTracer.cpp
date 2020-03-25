@@ -17,15 +17,6 @@ DECLARE_CYCLE_STAT(TEXT("ContinueLatencyTraceRPC_Internal"), STAT_ContinueLatenc
 DECLARE_CYCLE_STAT(TEXT("BeginLatencyTraceRPC_Internal"), STAT_BeginLatencyTraceRPC_Internal, STATGROUP_SpatialNet);
 
 
-void PrintTrace(const improbable::trace::SpanContext& TraceContext, FString Prefix)
-{
-	auto t = TraceContext.trace_id();
-	auto s = TraceContext.span_id();
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *Prefix);
-	UE_LOG(LogTemp, Warning, TEXT("Trace %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d"), t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], t[8], t[9], t[10], t[11], t[12], t[13], t[14], t[15]);
-	UE_LOG(LogTemp, Warning, TEXT("Span %d %d %d %d %d %d %d %d"), s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]);
-}
-
 namespace
 {
 	// Stream for piping trace lib output to UE output
@@ -105,34 +96,34 @@ bool USpatialLatencyTracer::BeginLatencyTrace(UObject* WorldContextObject, const
 	return false;
 }
 
-bool USpatialLatencyTracer::ContinueLatencyTraceRPC(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayload)
+bool USpatialLatencyTracer::ContinueLatencyTraceRPC(UObject* WorldContextObject, const AActor* Actor, const FString& FunctionName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload)
 {
 #if TRACE_LIB_ACTIVE
 	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
 	{
-		return Tracer->ContinueLatencyTrace_Internal(Actor, FunctionName, ETraceType::RPC, TraceDesc, LatencyPayload, OutLatencyPayload);
+		return Tracer->ContinueLatencyTrace_Internal(Actor, FunctionName, ETraceType::RPC, TraceDesc, LatencyPayload, OutContinuedLatencyPayload);
 	}
 #endif // TRACE_LIB_ACTIVE
 	return false;
 }
 
-bool USpatialLatencyTracer::ContinueLatencyTraceProperty(UObject* WorldContextObject, const AActor* Actor, const FString& PropertyName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayload)
+bool USpatialLatencyTracer::ContinueLatencyTraceProperty(UObject* WorldContextObject, const AActor* Actor, const FString& PropertyName, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload)
 {
 #if TRACE_LIB_ACTIVE
 	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
 	{
-		return Tracer->ContinueLatencyTrace_Internal(Actor, PropertyName, ETraceType::Property, TraceDesc, LatencyPayload, OutLatencyPayload);
+		return Tracer->ContinueLatencyTrace_Internal(Actor, PropertyName, ETraceType::Property, TraceDesc, LatencyPayload, OutContinuedLatencyPayload);
 	}
 #endif // TRACE_LIB_ACTIVE
 	return false;
 }
 
-bool USpatialLatencyTracer::ContinueLatencyTraceTagged(UObject* WorldContextObject, const AActor* Actor, const FString& Tag, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutLatencyPayload)
+bool USpatialLatencyTracer::ContinueLatencyTraceTagged(UObject* WorldContextObject, const AActor* Actor, const FString& Tag, const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload)
 {
 #if TRACE_LIB_ACTIVE
 	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
 	{
-		return Tracer->ContinueLatencyTrace_Internal(Actor, Tag, ETraceType::Tagged, TraceDesc, LatencyPayload, OutLatencyPayload);
+		return Tracer->ContinueLatencyTrace_Internal(Actor, Tag, ETraceType::Tagged, TraceDesc, LatencyPayload, OutContinuedLatencyPayload);
 	}
 #endif // TRACE_LIB_ACTIVE
 	return false;
@@ -251,7 +242,6 @@ void USpatialLatencyTracer::WriteTraceToSchemaObject(const TraceKey Key, Schema_
 		const improbable::trace::SpanContext& TraceContext = Trace->context();
 		improbable::trace::TraceId _TraceId = TraceContext.trace_id();
 		improbable::trace::SpanId _SpanId = TraceContext.span_id();
-		//PrintTrace(TraceContext, FormatMessage(TEXT("Write to schema")));
 
 		SpatialGDK::AddBytesToSchema(TraceObj, SpatialConstants::UNREAL_RPC_TRACE_ID, &_TraceId[0], _TraceId.size());
 		SpatialGDK::AddBytesToSchema(TraceObj, SpatialConstants::UNREAL_RPC_SPAN_ID, &_SpanId[0], _SpanId.size());
@@ -270,7 +260,6 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, co
 		const uint8* SpanBytes = Schema_GetBytes(TraceData, SpatialConstants::UNREAL_RPC_SPAN_ID);
 
 		improbable::trace::SpanContext DestContext = ReadSpanContext(TraceBytes, SpanBytes);
-		//PrintTrace(DestContext, FormatMessage(TEXT("ReadTraceFromSchemaObject")));
 
 		TraceKey Key = InvalidTraceKey;
 
@@ -387,7 +376,6 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc,
 
 	// Construct payload data from trace
 	const improbable::trace::SpanContext& TraceContext = NewTrace.context();
-	//PrintTrace(TraceContext, FormatMessage(TEXT("Begin trace")));
 
 	{
 		TArray<uint8> TraceBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.trace_id()[0], sizeof(improbable::trace::TraceId));
@@ -458,13 +446,13 @@ bool USpatialLatencyTracer::EndLatencyTrace_Internal(const FSpatialLatencyPayloa
 	FScopeLock Lock(&Mutex);
 
 	// Create temp payload to resolve key
-	FSpatialLatencyPayload NonConstLatencyPayload = LatencyPayload;
-	if (NonConstLatencyPayload.Key == InvalidTraceKey)
+	FSpatialLatencyPayload LocalLatencyPayload = LatencyPayload;
+	if (LocalLatencyPayload.Key == InvalidTraceKey)
 	{
-		ResolveKeyInLatencyPayload(NonConstLatencyPayload);
+		ResolveKeyInLatencyPayload(LocalLatencyPayload);
 	}
 
-	const TraceKey Key = NonConstLatencyPayload.Key;
+	const TraceKey Key = LocalLatencyPayload.Key;
 	const TraceSpan* ActiveTrace = TraceMap.Find(Key);
 	if (ActiveTrace == nullptr)
 	{
@@ -473,7 +461,6 @@ bool USpatialLatencyTracer::EndLatencyTrace_Internal(const FSpatialLatencyPayloa
 	}
 
 	WriteKeyFrameToTrace(ActiveTrace, TEXT("End Trace"));
-	//PrintTrace(ActiveTrace->context(), FormatMessage(TEXT("End trace")));
 
 	ActiveTrace->End();
 

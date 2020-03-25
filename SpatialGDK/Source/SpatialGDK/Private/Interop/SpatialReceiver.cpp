@@ -1918,20 +1918,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		bApplyWithUnresolvedRefs = true;
 	}
 
-// #if TRACE_LIB_ACTIVE
-// 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(TargetObject);
-// 	Tracer->MarkActiveLatencyTrace(Params.Payload.Trace);
-// #endif
-
 	ERPCResult Result = ApplyRPCInternal(TargetObject, Function, Params.Payload, FString{}, bApplyWithUnresolvedRefs);
-
-// #if TRACE_LIB_ACTIVE
-// 	if (Result == ERPCResult::Success)
-// 	{
-// 		Tracer->EndLatencyTrace(Params.Payload.Trace, TEXT("Unhandled trace - automatically ended"));
-// 	}
-// 	Tracer->MarkActiveLatencyTrace(InvalidTraceKey);
-// #endif
 
 	return FRPCErrorInfo{ TargetObject, Function, Result };
 }
