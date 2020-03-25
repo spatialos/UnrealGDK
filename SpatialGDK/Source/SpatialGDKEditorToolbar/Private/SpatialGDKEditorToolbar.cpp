@@ -186,7 +186,7 @@ bool FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator() const
 
 bool FSpatialGDKEditorToolbarModule::CanBuildAnyWorker() const
 {
-	return SpatialGDKPackageAssemblyInstance.Get().CanBuild();
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && SpatialGDKPackageAssemblyInstance.Get().CanBuild();
 }
 
 bool FSpatialGDKEditorToolbarModule::CanBuildSimulatedPlayerWorker() const

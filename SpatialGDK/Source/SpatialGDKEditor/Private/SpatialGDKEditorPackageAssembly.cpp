@@ -301,6 +301,10 @@ void FSpatialGDKPackageAssembly::BuildNext()
 		else
 		{
 			CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
+			if (UploadAfterBuildPtr)
+			{
+				UploadAfterBuildPtr.Reset(nullptr);
+			}
 		}
 	};
 	switch (CurrentAssemblyTarget)
