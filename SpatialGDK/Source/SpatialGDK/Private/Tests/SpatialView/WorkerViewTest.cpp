@@ -58,7 +58,6 @@ WORKERVIEW_TEST(GIVEN_WorkerView_with_one_op_enqued_WHEN_GenerateViewDelta_calle
 {
 	// GIVEN
 	WorkerView View;
-	// TODO(Alex): what type should it be
 	TArray<Worker_Op> Ops;
 	Ops.Push(CreateEmptyCreateEntityResponseOp());
 	auto OpList = MakeUnique<ViewDeltaLegacyOpList>(Ops);
@@ -77,7 +76,6 @@ WORKERVIEW_TEST(GIVEN_WorkerView_with_multiple_ops_engued_WHEN_GenerateViewDelta
 {
 	// GIVEN
 	WorkerView View;
-	// TODO(Alex): what type should it be
 	TArray<Worker_Op> Ops;
 	Ops.Push(CreateEmptyCreateEntityResponseOp());
 	Ops.Push(CreateEmptyCreateEntityResponseOp());
