@@ -1,12 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialPackageMapClientMock.h"
-#include "SpatialStaticComponentViewMock.h"
-#include "SpatialVirtualWorkerTranslatorMock.h"
-
-#include "EngineClasses/AbstractSpatialPackageMapClient.h"
-#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "Tests/TestDefinitions.h"
@@ -15,6 +8,7 @@
 #include "Containers/Map.h"
 #include "Containers/UnrealString.h"
 #include "Engine/Engine.h"
+#include "Engine/EngineTypes.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/DefaultPawn.h"
 #include "Improbable/SpatialEngineDelegates.h"
@@ -36,9 +30,6 @@ struct TestData
 	TMap<FName, AActor*> TestActors;
 	TMap<AActor*, TArray<LockingTokenAndDebugString>> TestActorToLockingTokenAndDebugStrings;
 	UOwnershipLockingPolicy* LockingPolicy;
-	USpatialStaticComponentView* StaticComponentView;
-	UAbstractSpatialPackageMapClient* PackageMap;
-	AbstractVirtualWorkerTranslator* VirtualWorkerTranslator;
 	SpatialDelegates::FAcquireLockDelegate AcquireLockDelegate;
 	SpatialDelegates::FReleaseLockDelegate ReleaseLockDelegate;
 };
@@ -48,30 +39,16 @@ struct TestDataDeleter
 	void operator()(TestData* Data) const noexcept
 	{
 		Data->LockingPolicy->RemoveFromRoot();
-		Data->StaticComponentView->RemoveFromRoot();
-		Data->PackageMap->RemoveFromRoot();
 		delete Data;
 	}
 };
 
-TSharedPtr<TestData> MakeNewTestData(Worker_EntityId EntityId, Worker_Authority EntityAuthority, VirtualWorkerId VirtWorkerId)
+TSharedPtr<TestData> MakeNewTestData()
 {
 	TSharedPtr<TestData> Data(new TestData, TestDataDeleter());
-	USpatialStaticComponentViewMock* StaticComponentView = NewObject<USpatialStaticComponentViewMock>();
-	StaticComponentView->Init(EntityId, EntityAuthority, VirtWorkerId);
-
-	Data->StaticComponentView = StaticComponentView;
-	Data->StaticComponentView->AddToRoot();
-
-	USpatialPackageMapClientMock* PackageMap = NewObject<USpatialPackageMapClientMock>();
-	PackageMap->Init(EntityId);
-	Data->PackageMap = PackageMap;
-	Data->PackageMap->AddToRoot();
-
-	Data->VirtualWorkerTranslator = new USpatialVirtualWorkerTranslatorMock(VirtWorkerId);
 
 	Data->LockingPolicy = NewObject<UOwnershipLockingPolicy>();
-	Data->LockingPolicy->Init(Data->StaticComponentView, Data->PackageMap, Data->VirtualWorkerTranslator, Data->AcquireLockDelegate, Data->ReleaseLockDelegate);
+	Data->LockingPolicy->Init(Data->AcquireLockDelegate, Data->ReleaseLockDelegate);
 	Data->LockingPolicy->AddToRoot();
 
 	return Data;
@@ -131,6 +108,14 @@ bool FWaitForActor::Update()
 {
 	AActor* Actor = Data->TestActors[Handle];
 	return (IsValid(Actor) && Actor->IsActorInitialized() && Actor->HasActorBegunPlay());
+}
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FSetActorRole, ENetRole, Role);
+bool FSetActorRole::Update()
+{
+	AActor* TestActor = TestActors[Handle];
+	TestActor->Role = Role;
+	return true;
 }
 
 DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FDestroyActor, TSharedPtr<TestData>, Data, FName, Handle);
@@ -313,7 +298,7 @@ void SpawnABCDHierarchy(FAutomationTestBase* Test, TSharedPtr<TestData> Data)
 	//     /
 	//    C
 
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "A"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "A"), ROLE_Authority);
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "B"));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "C"));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "D"));
@@ -348,7 +333,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLocked_is_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(SpatialConstants::INVALID_ENTITY_ID, WORKER_AUTHORITY_NOT_AUTHORITATIVE, SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
+	TSharedPtr<TestData> Data = MakeNewTestData()
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
@@ -364,7 +349,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_is_called
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
@@ -379,11 +364,12 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_NOT_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetActorRole(Data, "Actor", ROLE_SimulatedProxy));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "First lock", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 
@@ -394,7 +380,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
@@ -413,7 +399,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_twice_WHEN_the_locked_Ac
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
@@ -433,7 +419,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Is
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
@@ -451,7 +437,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_twice_W
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
@@ -473,7 +459,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Re
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
@@ -492,7 +478,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Ac
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
@@ -514,7 +500,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hier
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -541,7 +527,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hier
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -568,7 +554,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hier
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -595,7 +581,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_on_mult
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -632,7 +618,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -656,7 +642,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -680,7 +666,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -704,7 +690,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -724,12 +710,11 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 	return true;
 }
 
-
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -753,7 +738,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -779,7 +764,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -809,7 +794,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -837,7 +822,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -863,7 +848,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -891,7 +876,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -921,7 +906,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -947,7 +932,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_h
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -977,7 +962,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_h
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 
@@ -1007,7 +992,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
@@ -1022,7 +1007,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_exec
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
@@ -1040,7 +1025,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_delegates_are_exec
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
@@ -1062,7 +1047,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLockDelegate_and_ReleaseLockDelegate_ar
 {
 	AutomationOpenMap("/Engine/Maps/Entry");
 
-	TSharedPtr<TestData> Data = MakeNewTestData(1, Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE, 1);
+	TSharedPtr<TestData> Data = MakeNewTestData();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));

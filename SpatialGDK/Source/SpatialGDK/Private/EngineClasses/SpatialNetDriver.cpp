@@ -886,7 +886,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 		{
 			const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
 
-			// It is safe to chek that we aren't destroying a singleton actor on a server if there is a valid entity ID and this is not a client.
+			// It is safe to check that we aren't destroying a singleton actor on a server if there is a valid entity ID and this is not a client.
 			if (ThisActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && EntityId != SpatialConstants::INVALID_ENTITY_ID)
 			{
 				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Removed a singleton actor on a server. This should never happen. "

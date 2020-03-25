@@ -2,8 +2,6 @@
 
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 
-#include "EngineClasses/AbstractSpatialPackageMapClient.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Component.h"
 #include "Utils/SpatialActorUtils.h"
@@ -21,31 +19,7 @@ bool UOwnershipLockingPolicy::CanAcquireLock(const AActor* Actor) const
 		return false;
 	}
 
-	check(PackageMap.IsValid());
-	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
-	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("Failed to lock actor without corresponding entity ID. Actor: %s"), *Actor->GetName());
-		return false;
-	}
-
-	check(StaticComponentView.IsValid());
-	const bool bHasAuthority = StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
-	if (!bHasAuthority)
-	{
-		UE_LOG(LogOwnershipLockingPolicy, Warning, TEXT("Can not lock actor migration. Do not have authority. Actor: %s"), *Actor->GetName());
-		return false;
-	}
-
-	check(VirtualWorkerTranslator != nullptr);
-	const bool bHasAuthorityIntent = VirtualWorkerTranslator->GetLocalVirtualWorkerId() ==
-		StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(EntityId)->VirtualWorkerId;
-	if (!bHasAuthorityIntent)
-	{
-		UE_LOG(LogOwnershipLockingPolicy, Warning, TEXT("Can not lock actor migration. Authority intent does not match this worker. Actor: %s"), *Actor->GetName());
-		return false;
-	}
-	return true;
+	return Actor->Role == ROLE_Authority
 }
 
 ActorLockToken UOwnershipLockingPolicy::AcquireLock(AActor* Actor, FString DebugString)
