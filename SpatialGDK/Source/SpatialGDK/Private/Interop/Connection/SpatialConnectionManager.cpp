@@ -335,6 +335,13 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 
 		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection]
 		{
+			if (!WeakSpatialConnectionManager.IsValid())
+			{
+				// The game instance was destroyed before the connection finished, so just clean up the connection.
+				Worker_Connection_Destroy(NewCAPIWorkerConnection);
+				return;
+			}
+
 			USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
 
 			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))

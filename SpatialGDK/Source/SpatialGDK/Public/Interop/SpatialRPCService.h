@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "Schema/RPCPayload.h"
+#include "SpatialView/EntityComponentId.h"
 #include "Utils/RPCRingBuffer.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -38,27 +39,6 @@ struct EntityRPCType
 	friend uint32 GetTypeHash(EntityRPCType Value)
 	{
 		return HashCombine(::GetTypeHash(static_cast<int64>(Value.EntityId)), ::GetTypeHash(static_cast<uint32>(Value.Type)));
-	}
-};
-
-struct EntityComponentId
-{
-	EntityComponentId(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
-		: EntityId(EntityId)
-		, ComponentId(ComponentId)
-	{}
-
-	Worker_EntityId EntityId;
-	Worker_ComponentId ComponentId;
-
-	friend bool operator==(const EntityComponentId& Lhs, const EntityComponentId& Rhs)
-	{
-		return Lhs.EntityId == Rhs.EntityId && Lhs.ComponentId == Rhs.ComponentId;
-	}
-
-	friend uint32 GetTypeHash(EntityComponentId Value)
-	{
-		return HashCombine(::GetTypeHash(static_cast<int64>(Value.EntityId)), ::GetTypeHash(static_cast<uint32>(Value.ComponentId)));
 	}
 };
 
