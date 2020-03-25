@@ -23,7 +23,6 @@
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
-#include "Schema/ComponentPresence.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
@@ -1311,7 +1310,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	FString NewClientConnectionWorkerId = SpatialGDK::GetConnectionOwningWorkerId(Actor);
 	if (SavedConnectionOwningWorkerId != NewClientConnectionWorkerId)
 	{
-		// Update the ComponentPresence component.
+		// Update the NetOwningClientWorker component.
 		check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
 		SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
 		NetOwningClientWorkerData->WorkerId = NewClientConnectionWorkerId;
