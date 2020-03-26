@@ -846,6 +846,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 		"debug_metrics.schema",
 		"global_state_manager.schema",
 		"heartbeat.schema",
+		"net_owning_client_worker.schema",
 		"not_streamed.schema",
 		"relevant.schema",
 		"rpc_components.schema",
