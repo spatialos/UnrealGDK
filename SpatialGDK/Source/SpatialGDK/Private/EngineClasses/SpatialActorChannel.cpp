@@ -730,6 +730,8 @@ int64 USpatialActorChannel::ReplicateActor()
 				// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy 
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
+
+				Actor->OnAuthorityLost();
 			}
 			else
 			{
