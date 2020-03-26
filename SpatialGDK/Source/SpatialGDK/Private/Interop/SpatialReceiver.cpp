@@ -1669,8 +1669,7 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 	// to print errors if the role isn't Authority. Instead, we exit here, and the RPC will be processed by the server that receives
 	// authority.
 	const bool bIsServerRpc = Op.update.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
-	const bool bHaveServerEndpointAuthority = StaticComponentView->HasAuthority(Op.entity_id, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
-	if (bIsServerRpc && bHaveServerEndpointAuthority)
+	if (bIsServerRpc && StaticComponentView->HasAuthority(Op.entity_id, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID))
 	{
 		const TWeakObjectPtr<UObject> ActorReceivingRPC = PackageMap->GetObjectFromEntityId(Op.entity_id);
 		if (!ActorReceivingRPC.IsValid())
