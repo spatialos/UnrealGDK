@@ -13,7 +13,7 @@ common: &common
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-03-24-174018-bk9870-3919099a-d}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-03-03-102720-bk8971-dd78adbb}"
     - "boot_disk_size_gb=500"
   retry:
     automatic:
