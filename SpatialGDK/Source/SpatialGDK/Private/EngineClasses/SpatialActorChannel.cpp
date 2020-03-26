@@ -609,11 +609,17 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			bCreatedEntity = true;
 
-			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
-			if (!USpatialStatics::IsSpatialOffloadingEnabled())
+			// If we're not offloading AND either load balancing isn't enabled or it is and we're spawning an Actor that we know
+			// will be load-balanced to another worker then preemptively set the role to SimulatedProxy.
+			if (!USpatialStatics::IsSpatialOffloadingEnabled() && (!SpatialGDKSettings->bEnableUnrealLoadBalancer || !NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
 			{
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
+
+				if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
+				{
+					UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Spawning Actor that will immediately become authoritative on a different worker. Actor: %s. Target virtual worker: %d"), *Actor->GetName(), NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
+				}
 			}
 		}
 		else
