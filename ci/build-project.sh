@@ -22,7 +22,8 @@ pushd "$(dirname "$0")"
         --branch "${TEST_REPO_BRANCH}" \
         "${TEST_REPO_URL}" \
         "${TEST_REPO_PATH}" \
-        --single-branch
+        --single-branch \
+        --depth 1
 
     # The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
     # copying the plugin into the project's folder bypasses the issue

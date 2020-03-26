@@ -1,8 +1,16 @@
 ---
+# This is designed to trap and retry failures because agent lost
+# connection. Agent exits with -1 in this case.
 agent_transients: &agent_transients
-  # This is designed to trap and retry failures because agent lost
-  # connection. Agent exits with -1 in this case.
   exit_status: -1
+  limit: 3
+# BK system error
+bk_system_error: &bk_system_error
+  exit_status: 255
+  limit: 3
+# job was interrupted by a signal (e.g. ctrl+c etc)
+bk_interrupted_by_signal: &bk_interrupted_by_signal
+  exit_status: 15
   limit: 3
 
 script_runner: &script_runner
@@ -30,6 +38,8 @@ windows: &windows
   retry:
     automatic:
       - <<: *agent_transients
+      - <<: *bk_system_error
+      - <<: *bk_interrupted_by_signal
   timeout_in_minutes: 60
   plugins:
     - ca-johnson/taskkill#v4.1: ~
