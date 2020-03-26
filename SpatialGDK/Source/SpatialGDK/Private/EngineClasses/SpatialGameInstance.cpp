@@ -112,7 +112,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 #if TRACE_LIB_ACTIVE
 	else
 	{
-		// Setup native worker name
+		// In native, setup worker name here as we don't get a HandleOnConnected() callback
 		FString WorkerName = FString::Printf(TEXT("N:%s:%s"), *Params.SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Short));
 		SpatialLatencyTracer->SetWorkerId(WorkerName);
 	}
@@ -151,7 +151,7 @@ void USpatialGameInstance::TryConnectToSpatial()
 #if TRACE_LIB_ACTIVE
 	else
 	{
-		// Setup native worker name
+		// In native, setup worker name here as we don't get a HandleOnConnected() callback
 		FString WorkerName = FString::Printf(TEXT("N:%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Short));
 		SpatialLatencyTracer->SetWorkerId(WorkerName);
 	}

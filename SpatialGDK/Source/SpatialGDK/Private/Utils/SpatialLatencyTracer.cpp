@@ -431,12 +431,12 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 		}
 	}
 
-	WriteKeyFrameToTrace(ActiveTrace, FString::Printf(TEXT("Continue trace (%s) %s : %s"), *TraceDesc, *UEnum::GetValueAsString(Type), *Target));
+	WriteKeyFrameToTrace(ActiveTrace, FString::Printf(TEXT("Continue [%s] %s - %s"), *TraceDesc, *UEnum::GetValueAsString(Type), *Target));
 
 	// If we're not doing any further tracking, end the trace
 	if (!bInternalTracking)
 	{
-		WriteAndEndTraceIfRemote(Key, TEXT("End of native tracing"));
+		WriteAndEndTraceIfRemote(Key, TEXT("Native - End of Tracking"));
 	}
 
 	return true;
@@ -461,7 +461,7 @@ bool USpatialLatencyTracer::EndLatencyTrace_Internal(const FSpatialLatencyPayloa
 		return false;
 	}
 
-	WriteKeyFrameToTrace(ActiveTrace, TEXT("End Trace"));
+	WriteKeyFrameToTrace(ActiveTrace, TEXT("End"));
 
 	ActiveTrace->End();
 
@@ -569,7 +569,7 @@ void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const F
 
 FString USpatialLatencyTracer::FormatMessage(const FString& Message) const
 {
-	return FString::Printf(TEXT("%s(%s) : %s"), *MessagePrefix, *WorkerId.Left(18), *Message);
+	return FString::Printf(TEXT("%s(%s) : %s"), *Message, *MessagePrefix, *WorkerId.Left(18) );
 }
 
 #endif // TRACE_LIB_ACTIVE
