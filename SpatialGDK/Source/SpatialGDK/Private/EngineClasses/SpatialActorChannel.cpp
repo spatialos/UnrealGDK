@@ -1301,9 +1301,8 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		}
 	}
 
-	// We only want to iterate through child Actors if the connection-owning worker IR or interest bucket component ID
-	// for this Actor changes. This bool is used to keep track of whether we detect and changed, and used to exit
-	// early below.
+	// We only want to iterate through child Actors if the connection-owning worker ID or interest bucket component ID
+	// for this Actor changes. This bool is used to keep track of whether it has changed, and used to exit early below.
 	bool bUpdatedThisActor = false;
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.

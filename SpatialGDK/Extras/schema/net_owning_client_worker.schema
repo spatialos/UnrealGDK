@@ -10,6 +10,6 @@ component NetOwningClientWorker {
     // simulating worker when the Actor or subobject becomes net-owned by 
     // a client connection. The enforcer uses this value to update the 
     // EntityACL entry for the client RPC endpoint (and Heartbeat component, 
-    //if present).
+    // if present).
     option<string> worker_id = 1;
 }
