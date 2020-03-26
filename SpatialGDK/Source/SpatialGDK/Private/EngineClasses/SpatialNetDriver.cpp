@@ -1840,7 +1840,7 @@ namespace
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Error : Worker attribute does not contain workerId : %s"), *WorkerAttribute);
 			return {};
 		}
-		
+
 		return WorkerAttribute.RightChop(AttrOffset + WorkerIdAttr.Len());
 	}
 }
@@ -1874,10 +1874,10 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	// Get the worker attribute.
 	const TCHAR* WorkerAttributeOption = InUrl.GetOption(TEXT("workerAttribute"), nullptr);
 	check(WorkerAttributeOption);
-	SpatialConnection->WorkerAttribute = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
+	SpatialConnection->ConnectionOwningWorkerId = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
 
 	// Register workerId and its connection.
-	if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(SpatialConnection->WorkerAttribute))
+	if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(SpatialConnection->ConnectionOwningWorkerId))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %s 's NetConnection created."), *WorkerId.GetValue());
 
@@ -1917,9 +1917,9 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 
 void USpatialNetDriver::CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp)
 {
-	if (!ConnectionCleanedUp->WorkerAttribute.IsEmpty())
+	if (!ConnectionCleanedUp->ConnectionOwningWorkerId.IsEmpty())
 	{
-		if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(*ConnectionCleanedUp->WorkerAttribute))
+		if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(*ConnectionCleanedUp->ConnectionOwningWorkerId))
 		{
 			WorkerConnections.Remove(WorkerId.GetValue());
 		}
@@ -1983,15 +1983,15 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 }
 
 // This function is called for server workers who received the PC over the wire
-void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerController, const FString& WorkerAttribute)
+void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerController, const FString& ClientWorkerId)
 {
 	check(PlayerController != nullptr);
-	checkf(!WorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
+	checkf(!ClientWorkerId.IsEmpty(), TEXT("A player controller entity must have an owning client worker ID."));
 
 	PlayerController->SetFlags(GetFlags() | RF_Transient);
 
 	FString URLString = FURL().ToString();
-	URLString += TEXT("?workerAttribute=") + WorkerAttribute;
+	URLString += TEXT("?workerAttribute=") + ClientWorkerId;
 
 	// We create a connection here so that any code that searches for owning connection, etc on the server
 	// resolves ownership correctly
