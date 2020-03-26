@@ -298,7 +298,7 @@ void SpawnABCDHierarchy(FAutomationTestBase* Test, TSharedPtr<TestData> Data)
 	//     /
 	//    C
 
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "A"), ROLE_Authority);
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "A"));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "B"));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "C"));
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "D"));

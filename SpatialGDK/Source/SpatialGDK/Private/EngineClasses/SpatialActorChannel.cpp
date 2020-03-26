@@ -617,7 +617,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 				if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
 				{
-					UE_LOG(LogSpatialActorChannel, Log, TEXT("Spawning Actor that will immediately become authoritative on a different worker. Actor: %s. Target virtual worker: %d"), *Actor->GetName(), LBStrategy->WhoShouldHaveAuthority(*Actor));
+					UE_LOG(LogSpatialActorChannel, Log, TEXT("Spawning Actor that will immediately become authoritative on a different worker. Actor: %s. Target virtual worker: %d"), *Actor->GetName(), NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
 				}
 			}
 		}
