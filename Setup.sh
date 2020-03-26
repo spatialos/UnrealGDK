@@ -111,7 +111,7 @@ if [[ -d "${SPATIAL_DIR}" ]]; then
     cp -R "${BINARIES_DIR}/Programs/schema/." "${SCHEMA_STD_COPY_DIR}"
 
     echo "Copying schemas to ${SCHEMA_COPY_DIR}"
-    cp -R SpatialGDK/Extras/schema/* "${SCHEMA_COPY_DIR}"
+    cp -R SpatialGDK/Extras/schema/. "${SCHEMA_COPY_DIR}"
 fi
 
 popd
