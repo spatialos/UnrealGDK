@@ -4,6 +4,8 @@
 
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
+#include "Misc/Guid.h"
+
 #if WITH_EDITOR
 #include "Editor/EditorEngine.h"
 #include "Settings/LevelEditorPlaySettings.h"
