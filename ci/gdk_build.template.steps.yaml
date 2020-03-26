@@ -1,10 +1,20 @@
+---
+# This is designed to trap and retry failures because agent lost
+# connection. Agent exits with -1 in this case.
 agent_transients: &agent_transients
-  # This is designed to trap and retry failures because agent lost
-  # connection. Agent exits with -1 in this case.
   exit_status: -1
   limit: 3
+# BK system error
+bk_system_error: &bk_system_error
+  exit_status: 255
+  limit: 3
+# job was interrupted by a signal (e.g. ctrl+c etc)
+bk_interrupted_by_signal: &bk_interrupted_by_signal
+  exit_status: 15
+  limit: 3
 
-common: &common
+
+windows: &windows
   agents:
     - "agent_count=1"
     - "capable_of_building=gdk-for-unreal"
@@ -13,14 +23,30 @@ common: &common
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-03-24-174018-bk9870-3919099a-d}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-03-03-102720-bk8971-dd78adbb}"
     - "boot_disk_size_gb=500"
   retry:
     automatic:
       - <<: *agent_transients
+      - <<: *bk_system_error
+      - <<: *bk_interrupted_by_signal
   timeout_in_minutes: 120
   plugins:
     - ca-johnson/taskkill#v4.1: ~
+
+macos: &macos
+  agents:
+    - "capable_of_building=gdk-for-unreal"
+    - "environment=production"
+    - "permission_set=builder"
+    - "platform=macos"
+    - "queue=${DARWIN_BUILDER_QUEUE:-v4-9c6ee0ef-d}"
+  timeout_in_minutes: 120
+  retry:
+    automatic:
+      - <<: *agent_transients
+      - <<: *bk_system_error
+      - <<: *bk_interrupted_by_signal
 
 env:
   FASTBUILD_CACHE_PATH: "\\\\gdk-for-unreal-cache.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba\\fastbuild"
@@ -28,11 +54,13 @@ env:
   FASTBUILD_BROKERAGE_PATH: "\\\\fastbuild-brokerage.${CI_ENVIRONMENT}-intinf-eu1.i8e.io\\samba"
 
 steps:
-  - label: "build-${ENGINE_COMMIT_HASH}-${BUILD_PLATFORM}-${BUILD_TARGET}-${BUILD_STATE}"
-    command: "powershell ./ci/setup-build-test-gdk.ps1"
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+  - <<: *BUILDKITE_AGENT_PLACEHOLDER
+    label: "build-${ENGINE_COMMIT_HASH}-${BUILD_PLATFORM}-${BUILD_TARGET}-${BUILD_STATE}"
+    command: "${BUILD_COMMAND}"
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "ci/FastTestResults/*"
+      - "ci/VanillaTestResults/*"
     env:
       ENGINE_COMMIT_HASH: "${ENGINE_COMMIT_HASH}"
       BUILD_PLATFORM: "${BUILD_PLATFORM}"

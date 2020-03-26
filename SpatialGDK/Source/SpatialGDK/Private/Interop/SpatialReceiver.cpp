@@ -169,6 +169,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		if (LoadBalanceEnforcer != nullptr)
 		{
 			LoadBalanceEnforcer->OnLoadBalancingComponentAdded(Op);
@@ -591,10 +592,16 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 					ActorChannel->bCreatedEntity = false;
 				}
 
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
+				// With load-balancing enabled, we set ROLE_SimulatedProxy and trigger OnAuthorityLost when we
+				// set AuthorityIntent to another worker.This conditional exists to dodge call OnAuthorityLost
+				// twice.
+				if (Actor->Role != ROLE_SimulatedProxy)
+				{
+					Actor->Role = ROLE_SimulatedProxy;
+					Actor->RemoteRole = ROLE_Authority;
 
-				Actor->OnAuthorityLost();
+					Actor->OnAuthorityLost();
+				}
 			}
 		}
 
@@ -619,24 +626,21 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			PendingEntitySubobjectDelegations.Remove(EntityComponentPair);
 		}
 	}
-	else
+	else if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 	{
-		if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 		{
-			if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+			// Soft handover isn't supported currently.
+			if (Op.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 			{
-				// Soft handover isn't supported currently.
-				if (Op.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
-				{
-					ActorChannel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
-				}
+				ActorChannel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
 			}
+		}
 
-			// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
-			if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
-			{
-				Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
-			}
+		// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
+		if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
+		{
+			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
 	}
 
@@ -712,6 +716,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	SpawnData* SpawnDataComp = StaticComponentView->GetComponentData<SpawnData>(EntityId);
 	UnrealMetadata* UnrealMetadataComp = StaticComponentView->GetComponentData<UnrealMetadata>(EntityId);
+	NetOwningClientWorker* NetOwningClientWorkerComp = StaticComponentView->GetComponentData<NetOwningClientWorker>(EntityId);
 
 	// This function should only ever be called if we have received an unreal metadata component.
 	check(UnrealMetadataComp != nullptr);
@@ -771,7 +776,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp);
+	EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp, NetOwningClientWorkerComp);
 
 	if (EntityActor == nullptr)
 	{
@@ -815,7 +820,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	{
 		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
 	}
-  
+
 	if (Channel == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
@@ -838,7 +843,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
 #endif
 	}
-  
+
 	Channel->RefreshAuthority();
 
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
@@ -1072,7 +1077,7 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	check(PackageMap->GetObjectFromEntityId(EntityId) == nullptr);
 }
 
-AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp)
+AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp, NetOwningClientWorker* NetOwningClientWorkerComp)
 {
 	if (UnrealMetadataComp->StablyNamedRef.IsSet())
 	{
@@ -1091,11 +1096,11 @@ AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp
 		}
 	}
 
-	return CreateActor(UnrealMetadataComp, SpawnDataComp);
+	return CreateActor(UnrealMetadataComp, SpawnDataComp, NetOwningClientWorkerComp);
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp)
+AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp, NetOwningClientWorker* NetOwningClientWorkerComp)
 {
 	UClass* ActorClass = UnrealMetadataComp->GetNativeEntityClass();
 
@@ -1129,7 +1134,9 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 
 	if (bIsServer && bCreatingPlayerController)
 	{
-		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), UnrealMetadataComp->OwnerWorkerAttribute);
+		// If we're spawning a PlayerController, it should definitely have a net-owning client worker ID.
+		check(NetOwningClientWorkerComp->WorkerId.IsSet());
+		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), *NetOwningClientWorkerComp->WorkerId);
 	}
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
@@ -1470,6 +1477,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		return;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
+	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		if (LoadBalanceEnforcer != nullptr)
 		{
 			LoadBalanceEnforcer->OnLoadBalancingComponentUpdated(Op);
