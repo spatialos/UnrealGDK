@@ -2,17 +2,17 @@
 
 #include "EngineClasses/SpatialNetConnection.h"
 
-#include "TimerManager.h"
-
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "GameFramework/PlayerController.h"
-#include "GameFramework/Pawn.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/Pawn.h"
+#include "TimerManager.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 
