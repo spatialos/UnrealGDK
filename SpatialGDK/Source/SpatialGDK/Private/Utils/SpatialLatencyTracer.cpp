@@ -569,7 +569,7 @@ void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const F
 
 FString USpatialLatencyTracer::FormatMessage(const FString& Message) const
 {
-	return FString::Printf(TEXT("%s(%s) : %s"), *Message, *MessagePrefix, *WorkerId.Left(18) );
+	return FString::Printf(TEXT("%s(%s) : %s"), *MessagePrefix, *WorkerId.Left(18), *Message);
 }
 
 #endif // TRACE_LIB_ACTIVE
