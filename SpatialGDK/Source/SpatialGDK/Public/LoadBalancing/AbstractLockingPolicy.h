@@ -2,9 +2,6 @@
 
 #pragma once
 
-#include "EngineClasses/AbstractSpatialPackageMapClient.h"
-#include "EngineClasses/AbstractVirtualWorkerTranslator.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "SpatialConstants.h"
 
 #include "GameFramework/Actor.h"
@@ -20,14 +17,8 @@ class SPATIALGDK_API UAbstractLockingPolicy : public UObject
 	GENERATED_BODY()
 
 public:
-	virtual void Init(USpatialStaticComponentView* InStaticComponentView, UAbstractSpatialPackageMapClient* InPackageMap,
-		AbstractVirtualWorkerTranslator* InVirtualWorkerTranslator, SpatialDelegates::FAcquireLockDelegate& AcquireLockDelegate,
-		SpatialDelegates::FReleaseLockDelegate& ReleaseLockDelegate)
+	virtual void Init(SpatialDelegates::FAcquireLockDelegate& AcquireLockDelegate, SpatialDelegates::FReleaseLockDelegate& ReleaseLockDelegate)
 	{
-		StaticComponentView = InStaticComponentView;
-		PackageMap = InPackageMap;
-		VirtualWorkerTranslator = InVirtualWorkerTranslator;
-
 		AcquireLockDelegate.BindUObject(this, &UAbstractLockingPolicy::AcquireLockFromDelegate);
 		ReleaseLockDelegate.BindUObject(this, &UAbstractLockingPolicy::ReleaseLockFromDelegate);
 	};
@@ -35,11 +26,6 @@ public:
 	virtual bool ReleaseLock(const ActorLockToken Token) PURE_VIRTUAL(UAbstractLockingPolicy::ReleaseLock, return false;);
 	virtual bool IsLocked(const AActor* Actor) const PURE_VIRTUAL(UAbstractLockingPolicy::IsLocked, return false;);
 	virtual void OnOwnerUpdated(const AActor* Actor, const AActor* OldOwner) PURE_VIRTUAL(UAbstractLockingPolicy::OnOwnerUpdated, return;);
-
-protected:
-	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
-	TWeakObjectPtr<UAbstractSpatialPackageMapClient> PackageMap;
-	AbstractVirtualWorkerTranslator* VirtualWorkerTranslator;
 
 private:
 	virtual bool AcquireLockFromDelegate(AActor* ActorToLock, const FString& DelegateLockIdentifier) PURE_VIRTUAL(UAbstractLockingPolicy::AcquireLockFromDelegate, return false;);
