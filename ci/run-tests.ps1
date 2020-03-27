@@ -59,7 +59,8 @@ $cmd_args_list = @( `
     "-nosplash", # No splash screen
     "-unattended", # Disable anything requiring user feedback
     "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
-    "-OverrideSpatialNetworking=$run_with_spatial" # A parameter to switch beetween different networking implementations
+    "-OverrideSpatialNetworking=$run_with_spatial", # A parameter to switch beetween different networking implementations
+    "-AllowSoftwareRendering" # D3D SDK workaround
 )
 
 Write-Output "Running $($ue_path_absolute) $($cmd_args_list)"
