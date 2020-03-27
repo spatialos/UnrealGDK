@@ -6,6 +6,7 @@ public class SpatialGDKServices : ModuleRules
 {
 	public SpatialGDKServices(ReadOnlyTargetRules Target) : base(Target)
 	{
+		bLegacyPublicIncludePaths = false;
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 #pragma warning disable 0618
 		bFasterWithoutUnity = true;             // Deprecated in 4.24, replace with bUseUnity = false; once we drop support for 4.23

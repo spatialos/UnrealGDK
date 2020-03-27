@@ -8,8 +8,10 @@
 #include "Utils/SchemaUtils.h"
 
 #include "Containers/Array.h"
+#include "Templates/UnrealTemplate.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 namespace SpatialGDK
 {
@@ -20,9 +22,8 @@ struct ComponentPresence : Component
 
 	ComponentPresence() = default;
 
-	ComponentPresence(TArray<Worker_ComponentId>&& InActorComponentList)
-		: ComponentList(MoveTemp(InActorComponentList))
-	{}
+	ComponentPresence(TArray<Worker_ComponentId>&& InComponentList)
+		: ComponentList(MoveTemp(InComponentList)) {}
 
 	ComponentPresence(const Worker_ComponentData& Data)
 	{
@@ -52,6 +53,11 @@ struct ComponentPresence : Component
 
 	Worker_ComponentUpdate CreateComponentPresenceUpdate()
 	{
+		return CreateComponentPresenceUpdate(ComponentList);
+	}
+
+	static Worker_ComponentUpdate CreateComponentPresenceUpdate(const TArray<Worker_ComponentId>& ComponentList)
+	{
 		Worker_ComponentUpdate Update = {};
 		Update.component_id = ComponentId;
 		Update.schema_type = Schema_CreateComponentUpdate();
@@ -78,12 +84,9 @@ struct ComponentPresence : Component
 	void AddComponentDataIds(const TArray<FWorkerComponentData>& ComponentDatas)
 	{
 		TArray<Worker_ComponentId> ComponentIds;
+		ComponentIds.Reserve(ComponentDatas.Num());
 		for (const FWorkerComponentData& ComponentData : ComponentDatas)
 		{
-			if (ComponentData.component_id == 0)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Unknoasdfasdfao KCP."));
-			}
 			ComponentIds.Add(ComponentData.component_id);
 		}
 

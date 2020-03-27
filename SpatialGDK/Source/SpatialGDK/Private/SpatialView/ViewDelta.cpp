@@ -101,6 +101,7 @@ TUniquePtr<AbstractOpList> ViewDelta::GenerateLegacyOpList() const
 		Op.op_type = WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE;
 		Op.op.create_entity_response.request_id = Response.RequestId;
 		Op.op.create_entity_response.status_code = Response.StatusCode;
+		// TODO: UNR-3163 - the string is located on a stack and gets corrupted
 		Op.op.create_entity_response.message = TCHAR_TO_UTF8(Response.Message.GetCharArray().GetData());
 		Op.op.create_entity_response.entity_id = Response.EntityId;
 		OpList.Push(Op);
