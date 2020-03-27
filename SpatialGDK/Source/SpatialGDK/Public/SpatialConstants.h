@@ -117,6 +117,7 @@ const Worker_ComponentId SPATIAL_DEBUGGING_COMPONENT_ID					= 9975;
 const Worker_ComponentId SERVER_WORKER_COMPONENT_ID						= 9974;
 const Worker_ComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9973;
 const Worker_ComponentId COMPONENT_PRESENCE_COMPONENT_ID				= 9972;
+const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID			= 9971;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -216,6 +217,14 @@ const Schema_FieldId FORWARD_SPAWN_PLAYER_RESPONSE_SUCCESS_ID			 = 1;
 
 // ComponentPresence Field IDs.
 const Schema_FieldId COMPONENT_PRESENCE_COMPONENT_LIST_ID				 = 1;
+
+// NetOwningClientWorker Field IDs.
+const Schema_FieldId NET_OWNING_CLIENT_WORKER_FIELD_ID					 = 1;
+
+// UnrealMetadata Field IDs.
+const Schema_FieldId UNREAL_METADATA_STABLY_NAMED_REF_ID				 = 1;
+const Schema_FieldId UNREAL_METADATA_CLASS_PATH_ID						 = 2;
+const Schema_FieldId UNREAL_METADATA_NET_STARTUP_ID						 = 3;
 
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
@@ -322,7 +331,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 	RPCS_ON_ENTITY_CREATION_ID,
 	TOMBSTONE_COMPONENT_ID,
 	DORMANT_COMPONENT_ID,
-	COMPONENT_PRESENCE_COMPONENT_ID,
+	NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
 
 	// Multicast RPCs
 	MULTICAST_RPCS_COMPONENT_ID,
