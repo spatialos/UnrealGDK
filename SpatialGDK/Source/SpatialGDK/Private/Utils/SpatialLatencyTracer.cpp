@@ -55,6 +55,7 @@ USpatialLatencyTracer::USpatialLatencyTracer()
 {
 #if TRACE_LIB_ACTIVE
 	ResetWorkerId();
+	FParse::Value(FCommandLine::Get(), TEXT("tracePrefix"), MessagePrefix);
 #endif
 }
 
