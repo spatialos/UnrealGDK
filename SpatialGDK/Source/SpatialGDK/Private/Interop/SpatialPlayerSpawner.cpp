@@ -291,7 +291,7 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 
 	FUnrealObjectRef PlayerStartRef = GetObjectRefFromSchema(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_START_ACTOR_ID);
 
-	bool bUnresolvedRef;
+	bool bUnresolvedRef = false;
 	if (AActor* PlayerStart = Cast<AActor>(FUnrealObjectRef::ToObjectPtr(PlayerStartRef, NetDriver->PackageMap, bUnresolvedRef)))
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Received ForwardPlayerSpawn request. Client worker ID: %s. PlayerStart: %s"), *ClientWorkerId, *PlayerStart->GetName());
@@ -314,7 +314,7 @@ void USpatialPlayerSpawner::ReceiveForwardPlayerSpawnResponse(const Worker_Comma
 		if (bForwardingSucceeding)
 		{
 			// If forwarding the player spawn request succeeded, clean up our outgoing request map.
-			UE_LOG(LogSpatialPlayerSpawner, Display, TEXT("Forwarding player spawn suceeded"));
+			UE_LOG(LogSpatialPlayerSpawner, Display, TEXT("Forwarding player spawn succeeded"));
 			OutgoingForwardPlayerSpawnRequests.Remove(Op.request_id);
 		}
 		else
