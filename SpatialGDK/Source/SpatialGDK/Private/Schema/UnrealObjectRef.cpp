@@ -19,20 +19,20 @@ UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpati
 	}
 	else
 	{
-		if (ObjectRef.bUseSingletonClassPath)
-		{
-			// This is a singleton ref, which means it's just the UnrealObjectRef of the singleton class, with this boolean set.
-			// Unset it to get the original UnrealObjectRef of its singleton class, and look it up in the PackageMap.
-			FUnrealObjectRef SingletonClassRef = ObjectRef;
-			SingletonClassRef.bUseSingletonClassPath = false;
+		//if (ObjectRef.bUseSingletonClassPath)
+		//{
+		//	// This is a singleton ref, which means it's just the UnrealObjectRef of the singleton class, with this boolean set.
+		//	// Unset it to get the original UnrealObjectRef of its singleton class, and look it up in the PackageMap.
+		//	FUnrealObjectRef SingletonClassRef = ObjectRef;
+		//	SingletonClassRef.bUseSingletonClassPath = false;
 
-			UObject* Value = PackageMap->GetSingletonByClassRef(SingletonClassRef);
-			if (Value == nullptr)
-			{
-				bOutUnresolved = true;
-			}
-			return Value;
-		}
+		//	UObject* Value = PackageMap->GetSingletonByClassRef(SingletonClassRef);
+		//	if (Value == nullptr)
+		//	{
+		//		bOutUnresolved = true;
+		//	}
+		//	return Value;
+		//}
 
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 		if (NetGUID.IsValid())
@@ -122,14 +122,14 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 				}
 
 				// If this is a singleton that hasn't been resolved yet, send its class path instead.
-				if (ObjectValue->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-				{
-					ObjectRef = GetSingletonClassRef(ObjectValue, PackageMap);
-					if (ObjectRef.IsValid())
-					{
-						return ObjectRef;
-					}
-				}
+				//if (ObjectValue->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+				//{
+				//	ObjectRef = GetSingletonClassRef(ObjectValue, PackageMap);
+				//	if (ObjectRef.IsValid())
+				//	{
+				//		return ObjectRef;
+				//	}
+				//}
 
 				// Check if the object is a newly referenced dynamic subobject, in which case we can create the object ref if we have the entity id of the parent actor.
 				if (!ObjectValue->IsA<AActor>())
@@ -194,12 +194,12 @@ FSoftObjectPath FUnrealObjectRef::ToSoftObjectPath(const FUnrealObjectRef& Objec
 	return FSoftObjectPath(MoveTemp(FullPackagePath));
 }
 
-FUnrealObjectRef FUnrealObjectRef::GetSingletonClassRef(UObject* SingletonObject, USpatialPackageMapClient* PackageMap)
-{
-	FUnrealObjectRef ClassObjectRef = FromObjectPtr(SingletonObject->GetClass(), PackageMap);
-	if (ClassObjectRef.IsValid())
-	{
-		ClassObjectRef.bUseSingletonClassPath = true;
-	}
-	return ClassObjectRef;
-}
+//FUnrealObjectRef FUnrealObjectRef::GetSingletonClassRef(UObject* SingletonObject, USpatialPackageMapClient* PackageMap)
+//{
+//	FUnrealObjectRef ClassObjectRef = FromObjectPtr(SingletonObject->GetClass(), PackageMap);
+//	if (ClassObjectRef.IsValid())
+//	{
+//		ClassObjectRef.bUseSingletonClassPath = true;
+//	}
+//	return ClassObjectRef;
+//}

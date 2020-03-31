@@ -83,19 +83,19 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
 }
 
-Worker_ComponentData CreateSingletonManagerData()
-{
-	StringToEntityMap SingletonNameToEntityId;
-
-	Worker_ComponentData Data{};
-	Data.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
-	Data.schema_type = Schema_CreateComponentData();
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-	AddStringToEntityMapToSchema(ComponentObject, 1, SingletonNameToEntityId);
-
-	return Data;
-}
+//Worker_ComponentData CreateSingletonManagerData()
+//{
+//	StringToEntityMap SingletonNameToEntityId;
+//
+//	Worker_ComponentData Data{};
+//	Data.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
+//	Data.schema_type = Schema_CreateComponentData();
+//	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+//
+//	AddStringToEntityMapToSchema(ComponentObject, 1, SingletonNameToEntityId);
+//
+//	return Data;
+//}
 
 Worker_ComponentData CreateDeploymentData()
 {
@@ -158,7 +158,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	//ComponentWriteAcl.Add(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
@@ -167,7 +167,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
-	Components.Add(CreateSingletonManagerData());
+	//Components.Add(CreateSingletonManagerData());
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());

@@ -15,7 +15,7 @@
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/RPCPayload.h"
-#include "Schema/Singleton.h"
+//#include "Schema/Singleton.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Schema/Tombstone.h"
@@ -223,7 +223,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	// Actors with bNetLoadOnClient=false also need a StablyNamedObjectRef for linking in the case of loading from a snapshot or the server crashes and restarts.
 	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
 	TSchemaOption<bool> bNetStartup;
-	if (Actor->HasAnyFlags(RF_WasLoaded) || Actor->bNetStartup)
+	if (Actor->HasAnyFlags(RF_WasLoaded) || Actor->bNetStartup || Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		// Since we've already received the EntityId for this Actor. It is guaranteed to be resolved
 		// with the package map by this point
@@ -278,10 +278,10 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentWriteAcl.Add(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	}
 
-	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	{
-		ComponentDatas.Add(Singleton().CreateSingletonData());
-	}
+	//if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	//{
+	//	ComponentDatas.Add(Singleton().CreateSingletonData());
+	//}
 
 	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{

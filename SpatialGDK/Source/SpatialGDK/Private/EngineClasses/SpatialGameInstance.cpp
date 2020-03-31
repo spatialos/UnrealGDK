@@ -25,14 +25,14 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
-bool USpatialGameInstance::HasSpatialNetDriver() const
+const USpatialNetDriver* USpatialGameInstance::GetSpatialNetDriver() const
 {
-	bool bHasSpatialNetDriver = false;
+	UNetDriver* NetDriver = nullptr;
 
 	if (WorldContext != nullptr)
 	{
 		UWorld* World = GetWorld();
-		UNetDriver * NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
+		NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
 		bool bShouldDestroyNetDriver = false;
 
 		if (NetDriver == nullptr)
@@ -53,25 +53,27 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 			NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
 		}
 
-		if (NetDriver != nullptr)
+		if (NetDriver != nullptr && bShouldDestroyNetDriver)
 		{
-			bHasSpatialNetDriver = NetDriver->IsA<USpatialNetDriver>();
-
-			if (bShouldDestroyNetDriver)
-			{
-				GEngine->DestroyNamedNetDriver(World, NAME_PendingNetDriver);
-			}
+			GEngine->DestroyNamedNetDriver(World, NAME_PendingNetDriver);
 		}
 	}
 
-	if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && !bHasSpatialNetDriver)
+	if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && (NetDriver == nullptr || !NetDriver->IsA<USpatialNetDriver>()))
 	{
 		UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
-										  "Please make sure you set up the net driver definitions as specified in the porting "
-										  "guide and that you don't override the main net driver."));
+			"Please make sure you set up the net driver definitions as specified in the porting "
+			"guide and that you don't override the main net driver."));
+		return nullptr;
 	}
 
-	return bHasSpatialNetDriver;
+	return Cast<USpatialNetDriver>(NetDriver);
+}
+
+
+bool USpatialGameInstance::HasSpatialNetDriver() const
+{
+	return GetSpatialNetDriver() != nullptr;
 }
 
 void USpatialGameInstance::CreateNewSpatialConnectionManager()
@@ -277,6 +279,17 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 				}
 			}
 		}
+		//else if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+		//{
+		//	if (Actor->GetIsReplicated())
+		//	{
+		//		const USpatialNetDriver* NetDriver = GetSpatialNetDriver();
+		//		check(NetDriver != nullptr);
+		//		const bool bRoleAuthoritative = NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+		//		Actor->Role = bRoleAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
+		//		Actor->RemoteRole = bRoleAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
+		//	}
+		//}
 		else
 		{
 			if (Actor->GetIsReplicated())

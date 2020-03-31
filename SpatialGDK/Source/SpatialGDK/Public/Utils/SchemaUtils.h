@@ -129,10 +129,10 @@ inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const
 	{
 		AddObjectRefToSchema(ObjectRefObject, UNREAL_OBJECT_REF_OUTER_ID, *ObjectRef.Outer);
 	}
-	if (ObjectRef.bUseSingletonClassPath)
-	{
-		Schema_AddBool(ObjectRefObject, UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID, ObjectRef.bUseSingletonClassPath);
-	}
+	//if (ObjectRef.bUseSingletonClassPath)
+	//{
+	//	Schema_AddBool(ObjectRefObject, UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID, ObjectRef.bUseSingletonClassPath);
+	//}
 }
 
 FUnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id);
@@ -159,10 +159,10 @@ inline FUnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_F
 	{
 		ObjectRef.Outer = GetObjectRefFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_OUTER_ID);
 	}
-	if (Schema_GetBoolCount(ObjectRefObject, UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID) > 0)
-	{
-		ObjectRef.bUseSingletonClassPath = GetBoolFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID);
-	}
+	//if (Schema_GetBoolCount(ObjectRefObject, UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID) > 0)
+	//{
+	//	ObjectRef.bUseSingletonClassPath = GetBoolFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID);
+	//}
 
 	return ObjectRef;
 }

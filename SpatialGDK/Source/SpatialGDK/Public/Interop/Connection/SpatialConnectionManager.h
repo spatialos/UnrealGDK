@@ -31,6 +31,7 @@ public:
 	void DestroyConnection();
 	
 	using LoginTokenResponseCallback = TFunction<bool(const Worker_Alpha_LoginTokensResponse*)>;
+	using LoginTokenResponseCallback = TFunction<bool(const Worker_Alpha_LoginTokensResponse*)>;
     
     /// Register a callback using this function.
     /// It will be triggered when receiving login tokens using the development authentication flow inside SpatialWorkerConnection.

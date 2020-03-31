@@ -648,7 +648,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			// If we're not offloading AND either load balancing isn't enabled or it is and we're spawning an Actor that we know
 			// will be load-balanced to another worker then preemptively set the role to SimulatedProxy.
-			if (!USpatialStatics::IsSpatialOffloadingEnabled() && (!SpatialGDKSettings->bEnableUnrealLoadBalancer || !NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
+			if (!USpatialStatics::IsSpatialOffloadingEnabled() && !(SpatialGDKSettings->bEnableUnrealLoadBalancer && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
 			{
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
@@ -1165,11 +1165,11 @@ bool USpatialActorChannel::TryResolveActor()
 		return false;
 	}
 
-	// If a Singleton was created, update the GSM with the proper Id.
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	{
-		NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), EntityId);
-	}
+	//// If a Singleton was created, update the GSM with the proper Id.
+	//if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	//{
+	//	NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), EntityId);
+	//}
 
 	// Inform USpatialNetDriver of this new actor channel/entity pairing
 	NetDriver->AddActorChannel(EntityId, this);

@@ -8,8 +8,9 @@
 
 #include "SpatialGameInstance.generated.h"
 
-class USpatialLatencyTracer;
 class USpatialConnectionManager;
+class USpatialLatencyTracer;
+class USpatialNetDriver;
 class UGlobalStateManager;
 class USpatialStaticComponentView;
 
@@ -75,6 +76,7 @@ protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.
 	bool HasSpatialNetDriver() const;
+	const USpatialNetDriver* GetSpatialNetDriver() const;
 
 private:
 	// SpatialConnection is stored here for persistence between map travels.
