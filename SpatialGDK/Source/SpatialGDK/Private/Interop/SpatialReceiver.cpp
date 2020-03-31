@@ -1012,6 +1012,12 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	{
 		// Force APlayerController::DestroyNetworkActorHandled to return false
 		PC->Player = nullptr;
+		
+		if (!NetDriver->IsServer())
+		{
+			GEngine->BroadcastNetworkFailure(NetDriver->GetWorld(), NetDriver, ENetworkFailure::ConnectionLost, 
+							 TEXT("PlayerController %s deleted. Server believes we have been timed out."), *PC->GetName());
+		}
 	}
 
 	// Workaround for camera loss on handover: prevent UnPossess() (non-authoritative destruction of pawn, while being authoritative over the controller)
