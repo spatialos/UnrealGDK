@@ -62,6 +62,7 @@ steps:
       - "ci/FastTestResults/*"
       - "ci/VanillaTestResults/*"
     env:
+      BUILD_ALL_CONFIGURATIONS: "${BUILD_ALL_CONFIGURATIONS}"
       ENGINE_COMMIT_HASH: "${ENGINE_COMMIT_HASH}"
       BUILD_PLATFORM: "${BUILD_PLATFORM}"
       BUILD_TARGET: "${BUILD_TARGET}"
