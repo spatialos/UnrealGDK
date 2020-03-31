@@ -46,6 +46,7 @@ $tests = @()
 # If building all configurations, use the test gyms, since the network testing project only compiles for the Editor configs
 if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
     $test_repo_url = "git@github.com:spatialos/UnrealGDKTestGyms.git"
+    $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject"
     $test_repo_map = "EmptyGym"
     $test_project_name = "GDKTestGyms"
 
