@@ -4,10 +4,15 @@ All notable changes to the SpatialOS Game Development Kit for Unreal will be doc
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+**Note**: Since GDK for Unreal v0.8.0, the changelog is published in both English and Chinese. The Chinese version of each changelog is shown after its English version.<br>
+**注意**：自虚幻引擎开发套件 v0.8.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
+
 ## [Unreleased-`x.y.z`] - 2020-xx-xx
 
-## [`0.8.1`] - 2020-03-17
-### Adapted from 0.8.1-preview
+## [`0.8.1`] - 2020-03-17 
+
+### English version
+### Adapted from 0.8.1-preview 
 ### Features:
 - **SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** has been moved to **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings**.
 - You can now choose which SpatialOS service region you want to use by adjusting the **Region where services are located** setting. You must use the service region that you're geographically located in.
@@ -21,6 +26,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug that caused the local API service to memory leak.
 - Errors are now correctly reported when you try to launch a cloud deployment without an assembly.
 - The Start deployment button will no longer become greyed out when a `spatial auth login` process times out.
+------
+### 中文版本
+### 引用 0.8.1-preview 版本
+### 功能介绍:
+- **UI 路径变更**：**SpatialOS GDK for Unreal** > **Editor Settings** > **Region Settings** 移动到 **SpatialOS GDK for Unreal** > **Runtime Settings** > **Region Settings** 路径。
+- **新增 SpatialOS 服务地区选项**：通过调整 **Region where services are located** 设置，您可以选择想要使用的 SpatialOS 服务地区。您选择的服务地区必须是您所处的地理位置。
+- **新增中国地区部署**：通过将 **Region where services are located** 设置为 `CN`，您可以在中国启动游戏部署。
+- **本地 API 服务版本**：虚幻引擎开发套件使用的本地 API 服务版本更新。
+- **SpatialOS 输出日志**：SpatialOS 输出日志默认开启。
+- 虚幻引擎开发套件现已使用 **SpatialOS 14.5.0** 版本。
+
+### 问题修复:
+
+- 修复对新创建的动态子对象的重复引用问题。
+- 修复导致本地 API 服务内存泄漏的问题。
+- 在没有程序集的情况下启动云部署时发生的错误，现已正确上报。
+- 当 `spatial auth login` 进程超时，启动部署的按钮 (Start) 不再显示为灰色。
+
 
 ## [`0.8.1-preview`] - 2020-03-16
 ### Features:
@@ -38,6 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Start deployment button will no longer become greyed out when a `spatial auth login` process times out.
 
 ## [`0.8.0-preview`] - 2019-12-17
+
+### English version
 
 ### Breaking Changes:
 - This is the last GDK version to support Unreal Engine 4.22. You will need to upgrade your project to use Unreal Engine 4.23 (`4.23-SpatialOSUnrealGDK-preview`) in order to continue receiving GDK releases and support.
@@ -78,6 +103,49 @@ For more information, check the [Keep your GDK up to date](https://documentation
 ### Internal:
 Features listed in the internal section are not ready to use but, in the spirit of open development, we detail every change we make to the GDK.
 - We've added a partial loadbalancing framework. When this is completed in a future release, you will be able to control loadbalancing using server-workers.
+------
+
+### 中文版本
+### 重大变化:
+- 这是最后支持虚幻引擎 4.22 版本的 GDK 版本。您需要升级您的项目来使用虚幻引擎 4.23 (`4.23-SpatialOSUnrealGDK-preview`)以便继续获取 GDK 发布和支持。
+- 要升级到虚幻引擎 4.23 版本，您必须完成以下步骤：<br>
+        1. `git checkout 4.23-SpatialOSUnrealGDK-preview`<br>
+        2. `git pull`<br>
+        3. 下载并安装 `-v15 clang-8.0.1-based` 工具链。详情参见 [虚幻引擎文档](https://docs.unrealengine.com/zh-CN/Platforms/Linux/GettingStarted/index.html)。<br>
+        4. 打开 GDK 的根目录，运行 `Setup.bat`。<br>
+        5. 运行 `Setup.bat`, 该程序位于 `UnrealEngine` 仓库的根目录。<br>
+        6. 在同样的根目录中，运行 `GenerateProjectFiles.bat`。
+
+更多信息，查看 [使 GDK 保持更新](https://documentation.improbable.io/gdk-for-unreal/lang-zh_CN/docs/keep-your-gdk-up-to-date) 文档。
+
+
+### 功能介绍:
+- 您可以在虚幻引擎客户端的控制台调用 `SpatialToggleMetricsDisplay` 来查看指标。您必须在客户端开启 `bEnableMetricsDisplay` 来使用该功能。
+- 默认情况下，模块化udp网络栈现在使用压缩。
+- 通过关闭默认 rpc 打包来减少网络延迟。如果需要默认情况下启用它，则可以通过编辑`SpatialGDKSettings.ini`来重新启用它。
+- 当您开始本地部署时，GDK 会检查运行时所需的端口。如果该端口正在被使用，则会提示您终止该进程。
+- 您可以使用可配置的 Actor 组件 `SpatialPingComponent` 来测量从玩家控制器到当前对其具有管辖权的服务端 worker 的往返 ping。您可以通过 `GetPing()`或存储在 `PlayerState` 中的移动平均值来访问组件获取最新的 ping 值。
+- 通过 `AllowUnresolvedParameters` 函数标记，您可以禁用因使用未解析的参数处理 RPC 时触发的警告。您可以使用蓝图或通过向 `UFUNCTION` 宏添加标签来启用此标志。
+- 改进关于实体创建的日志输出。
+- 现已支持虚幻引擎 `4.23.1`。您可以在 [此处](https://github.com/improbableio/UnrealEngine/tree/4.23-SpatialOSUnrealGDK-preview) 找到虚幻引擎分支的 `4.23.1` 版本。
+- 在示例项目中，默认的副本持续时间从5分钟增加到120分钟，因此您不必在进行游戏测试时重新部署。
+- 在示例项目中，默认的游戏大厅计时器从15秒减少到3秒，因此您不必等待游戏测试开始。
+- 添加编辑器内公开特定 IP 地址的本地运行时支持。它提供的功能与 SpatialOS CLI 中的 `--runtime_ip` 选项相同。
+- SpatialOS 网络在构建的程序集中始终开启。
+
+### 问题修复:
+- 修复可能导致为关卡分段生成的模式语言中名称冲突的错误。
+- 降低模式语言生成过程中的名称冲突级别：由 Warning (警告) 到 Display (显示)。
+- 在客户端上删除静态子对象后对其进行复制不再导致客户端附加新的动态子对象。
+- 修复请求超时后实体池预留停止的问题。
+- 如果项目路径中有空格，为 `SimulatedPlayer` 运行 `BuildWorker.bat` 不再失败。
+- 修复使用过期模式语言启动 PIE 时发生崩溃的问题。
+- 修复使用无效的程序集名称或部署名称启动云部署不会显示有用的错误消息的问题。
+
+### 内部:
+内部部分中列出的功能尚未准备就绪，但本着开放式开发的精神，我们详细介绍了对 GDK 所做的所有更改。
+- 我们添加了部分负载均衡框架。在未来的版本中完成此框架后，您将可以使用服务端 worker 来控制负载均衡。
+
 
 ## [`0.7.1-preview`] - 2019-12-06
 ### Adapted from 0.6.3
