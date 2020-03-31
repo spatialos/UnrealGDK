@@ -86,6 +86,7 @@ try {
     Wait-Process -Timeout 1800 -InputObject $run_tests_proc
 }
 catch {
+    Stop-Process -Force -InputObject $run_tests_proc # kill the dangling process
     buildkite-agent artifact upload "$log_file_path" # If the tests timed out, upload the log and throw an error
     throw $_
 }
