@@ -102,7 +102,7 @@ public:
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName);
-	void PostSpawnPlayerController(APlayerController* PlayerController, const FString& WorkerAttribute);
+	void PostSpawnPlayerController(APlayerController* PlayerController, const FString& ConnectionOwningWorkerId);
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId, USpatialActorChannel& Channel);

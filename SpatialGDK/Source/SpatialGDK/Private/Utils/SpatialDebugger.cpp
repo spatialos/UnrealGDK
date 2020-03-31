@@ -318,7 +318,6 @@ void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, Vir
 	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 }
 
-
 void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName)
 {
 	SCOPE_CYCLE_COUNTER(STAT_DrawTag);
