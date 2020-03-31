@@ -116,7 +116,7 @@ Schema_FieldId GetInitiallyPresentMulticastRPCsCountFieldId()
 	return 1 + MaxRingBufferSize + 1;
 }
 
-bool ShouldQueueOverflowed(ERPCType Type)
+bool ShouldQueueRPCType(const ERPCType Type)
 {
 	switch (Type)
 	{

@@ -55,7 +55,7 @@ Schema_FieldId GetAckFieldId(ERPCType Type);
 
 Schema_FieldId GetInitiallyPresentMulticastRPCsCountFieldId();
 
-bool ShouldQueueOverflowed(ERPCType Type);
+bool ShouldQueueRPCType(const ERPCType Type);
 
 void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer);
 void ReadAckFromSchema(const Schema_Object* SchemaObject, ERPCType Type, uint64& OutAck);

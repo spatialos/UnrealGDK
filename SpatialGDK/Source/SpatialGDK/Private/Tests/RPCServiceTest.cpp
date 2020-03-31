@@ -277,7 +277,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_client_
 	}
 
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientReliable, SimplePayload);
-	TestTrue("Push RPC returned expected results", (Result == SpatialGDK::EPushRPCResult::QueueOverflowed));
+	TestTrue("Push RPC returned expected results", (Result == SpatialGDK::EPushRPCResult::Overflowed));
 	return true;
 }
 
@@ -293,7 +293,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_overflow_client_
 	}
 
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload);
-	TestTrue("Push RPC returned expected results", (Result == SpatialGDK::EPushRPCResult::DropOverflowed));
+	TestTrue("Push RPC returned expected results", (Result == SpatialGDK::EPushRPCResult::Overflowed));
 	return true;
 }
 
@@ -309,7 +309,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_overflow_client_
 	}
 
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerReliable, SimplePayload);
-	TestTrue("Push RPC returned expected results", (Result == SpatialGDK::EPushRPCResult::QueueOverflowed));
+	TestTrue("Push RPC returned expected results", (Result == SpatialGDK::EPushRPCResult::Overflowed));
 	return true;
 }
 
@@ -325,7 +325,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_overflow_client_
 	}
 
 	SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload);
-	TestTrue("Push RPC returned expected results", (Result == SpatialGDK::EPushRPCResult::DropOverflowed));
+	TestTrue("Push RPC returned expected results", (Result == SpatialGDK::EPushRPCResult::Overflowed));
 	return true;
 }
 

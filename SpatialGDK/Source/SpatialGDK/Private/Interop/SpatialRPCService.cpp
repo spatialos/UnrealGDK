@@ -15,6 +15,7 @@ namespace SpatialGDK
 SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View)
 	: ExtractRPCCallback(ExtractRPCCallback)
 	, View(View)
+	, FailureOutcomesToQueue(EPushRPCResult::None)
 {
 }
 
@@ -22,18 +23,19 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 {
 	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
-	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && OverflowedRPCs.Contains(EntityType))
+	if (QueuedRPCs.Contains(EntityType))
 	{
 		// Already has queued RPCs of this type, queue until those are pushed.
-		AddOverflowedRPC(EntityType, MoveTemp(Payload));
-		return EPushRPCResult::QueueOverflowed;
+		AddQueuedRPC(EntityType, MoveTemp(Payload));
+		return PushRPCResultUtils::MakeFailureResultCode(EPushRPCResult::AlreadyQueued, Type, FailureOutcomesToQueue);
 	}
 
-	EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload));
+	const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload));
+	VALIDATE_RPC_PUSH_RESULT(Result);
 
-	if (Result == EPushRPCResult::QueueOverflowed)
+	if (PushRPCResultUtils::GetFailureAction(Result) == EPushRPCResult::Queue)
 	{
-		AddOverflowedRPC(EntityType, MoveTemp(Payload));
+		AddQueuedRPC(EntityType, MoveTemp(Payload));
 	}
 
 	return Result;
@@ -52,7 +54,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	{
 		if (!View->HasAuthority(EntityId, RingBufferComponentId))
 		{
-			return EPushRPCResult::NoRingBufferAuthority;
+			return PushRPCResultUtils::MakeFailureResultCode(EPushRPCResult::NoRingBufferAuthority, Type, FailureOutcomesToQueue);
 		}
 
 		EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponent));
@@ -67,7 +69,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 			// We shouldn't have authority over the component that has the acks.
 			if (View->HasAuthority(EntityId, RPCRingBufferUtils::GetAckComponentId(Type)))
 			{
-				return EPushRPCResult::HasAckAuthority;
+				return PushRPCResultUtils::MakeFailureResultCode(EPushRPCResult::HasAckAuthority, Type, FailureOutcomesToQueue);
 			}
 
 			LastAckedRPCId = GetAckFromView(EntityId, Type);
@@ -85,83 +87,75 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	uint64 NewRPCId = LastSentRPCIds.FindRef(EntityType) + 1;
 
 	// Check capacity.
-	if (LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) >= NewRPCId)
+	if (LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) < NewRPCId)
 	{
-		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, Payload);
+		return PushRPCResultUtils::MakeFailureResultCode(EPushRPCResult::Overflowed, Type, FailureOutcomesToQueue);
+	}
 
-		LastSentRPCIds.Add(EntityType, NewRPCId);
-	}
-	else
-	{
-		// Overflowed
-		if (RPCRingBufferUtils::ShouldQueueOverflowed(Type))
-		{
-			return EPushRPCResult::QueueOverflowed;
-		}
-		else
-		{
-			return EPushRPCResult::DropOverflowed;
-		}
-	}
+	RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, Payload);
+	LastSentRPCIds.Add(EntityType, NewRPCId);
 
 	return EPushRPCResult::Success;
 }
 
-void SpatialRPCService::PushOverflowedRPCs()
+void SpatialRPCService::PushQueuedRPCs()
 {
-	for (auto It = OverflowedRPCs.CreateIterator(); It; ++It)
+	for (auto It = QueuedRPCs.CreateIterator(); It; ++It)
 	{
 		Worker_EntityId EntityId = It.Key().EntityId;
 		ERPCType Type = It.Key().Type;
-		TArray<RPCPayload>& OverflowedRPCArray = It.Value();
+		TArray<RPCPayload>& QueuedRPCArray = It.Value();
 
 		int NumProcessed = 0;
 		bool bShouldDrop = false;
-		for (RPCPayload& Payload : OverflowedRPCArray)
+		for (RPCPayload& Payload : QueuedRPCArray)
 		{
-			EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload));
+			const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload));
+			const EPushRPCResult Outcome = PushRPCResultUtils::GetOutcome(Result);
 
-			switch (Result)
+			VALIDATE_RPC_PUSH_RESULT(Result);
+
+			bShouldDrop |= PushRPCResultUtils::GetFailureAction(Result) == EPushRPCResult::Drop;
+
+			switch (Outcome)
 			{
 			case EPushRPCResult::Success:
 				NumProcessed++;
 				break;
-			case EPushRPCResult::DropOverflowed:
-				checkf(false, TEXT("Shouldn't be able to drop on overflow for RPC type that was previously queued."));
+			case EPushRPCResult::Overflowed:
+				checkf(!bShouldDrop, TEXT("Shouldn't be able to drop on Overflow for RPC type that was previously queued. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
 				break;
 			case EPushRPCResult::HasAckAuthority:
-				UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::PushOverflowedRPCs: Gained authority over ack component for RPC type that was overflowed. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
-				bShouldDrop = true;
+				UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::PushQueuedRPCs: Gained authority over ack component for RPC type that was queued. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
 				break;
 			case EPushRPCResult::NoRingBufferAuthority:
-				UE_LOG(LogSpatialRPCService, Warning, TEXT("SpatialRPCService::PushOverflowedRPCs: Lost authority over ring buffer component for RPC type that was overflowed. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
-				bShouldDrop = true;
+				checkf(!bShouldDrop, TEXT("Shouldn't be able to drop on NoRingBufferAuthority for RPC type that was previously queued. Entity: %lld, RPC type: %s"), EntityId, *SpatialConstants::RPCTypeToString(Type));
 				break;
 			}
 
-			// This includes the valid case of RPCs still overflowing (EPushRPCResult::QueueOverflowed), as well as the error cases.
-			if (Result != EPushRPCResult::Success)
+			// This includes the valid case of RPCs still overflowing (EPushRPCResult::Overflowed), as well as the error cases.
+			if (Outcome != EPushRPCResult::Success)
 			{
 				break;
 			}
 		}
 
-		if (NumProcessed == OverflowedRPCArray.Num() || bShouldDrop)
+		if (NumProcessed == QueuedRPCArray.Num() || bShouldDrop)
 		{
 			It.RemoveCurrent();
 		}
 		else
 		{
-			OverflowedRPCArray.RemoveAt(0, NumProcessed);
+			QueuedRPCArray.RemoveAt(0, NumProcessed);
 		}
 	}
 }
 
-void SpatialRPCService::ClearOverflowedRPCs(Worker_EntityId EntityId)
+void SpatialRPCService::ClearQueuedRPCs(Worker_EntityId EntityId)
 {
 	for (uint8 RPCType = static_cast<uint8>(ERPCType::ClientReliable); RPCType <= static_cast<uint8>(ERPCType::NetMulticast); RPCType++)
 	{
-		OverflowedRPCs.Remove(EntityRPCType(EntityId, static_cast<ERPCType>(RPCType)));
+		QueuedRPCs.Remove(EntityRPCType(EntityId, static_cast<ERPCType>(RPCType)));
 	}
 }
 
@@ -330,7 +324,7 @@ void SpatialRPCService::OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
-		ClearOverflowedRPCs(EntityId);
+		ClearQueuedRPCs(EntityId);
 		break;
 	}
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
@@ -339,7 +333,7 @@ void SpatialRPCService::OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
 		LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
-		ClearOverflowedRPCs(EntityId);
+		ClearQueuedRPCs(EntityId);
 		break;
 	}
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
@@ -426,9 +420,9 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 	}
 }
 
-void SpatialRPCService::AddOverflowedRPC(EntityRPCType EntityType, RPCPayload&& Payload)
+void SpatialRPCService::AddQueuedRPC(EntityRPCType EntityType, RPCPayload&& Payload)
 {
-	OverflowedRPCs.FindOrAdd(EntityType).Add(MoveTemp(Payload));
+	QueuedRPCs.FindOrAdd(EntityType).Add(MoveTemp(Payload));
 }
 
 uint64 SpatialRPCService::GetAckFromView(Worker_EntityId EntityId, ERPCType Type)
@@ -474,6 +468,11 @@ const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId Entity
 	return DummyBuffer;
 }
 
+void SpatialRPCService::SetRPCFailureOutcomesToQueue(const EPushRPCResult FailureOutcomes)
+{
+	FailureOutcomesToQueue = FailureOutcomes;
+}
+
 Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair)
 {
 	Schema_ComponentUpdate** ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
@@ -492,6 +491,36 @@ Schema_ComponentData* SpatialRPCService::GetOrCreateComponentData(EntityComponen
 		ComponentDataPtr = &PendingRPCsOnEntityCreation.Add(EntityComponentIdPair, Schema_CreateComponentData());
 	}
 	return *ComponentDataPtr;
+}
+
+namespace PushRPCResultUtils
+{
+
+bool IsAnyFlagSet(const EPushRPCResult Result, const EPushRPCResult Flags)
+{
+	return (Result & Flags) != EPushRPCResult::None;
+}
+
+EPushRPCResult GetFailureAction(const EPushRPCResult Result)
+{
+	return Result & EPushRPCResult::AllFailureActions;
+}
+
+EPushRPCResult GetOutcome(const EPushRPCResult Result)
+{
+	return Result & EPushRPCResult::AllOutcomes;
+}
+
+EPushRPCResult MakeFailureResultCode(const EPushRPCResult Result, const ERPCType Type, const EPushRPCResult FailureOutcomesToQueue)
+{
+	return Result | (ShouldQueueRPC(Result, Type, FailureOutcomesToQueue) ? EPushRPCResult::Queue : EPushRPCResult::Drop);
+}
+
+bool ShouldQueueRPC(const EPushRPCResult Result, const ERPCType Type, const EPushRPCResult FailureOutcomesToQueue)
+{
+	return IsAnyFlagSet(Result, FailureOutcomesToQueue) && RPCRingBufferUtils::ShouldQueueRPCType(Type);
+}
+
 }
 
 } // namespace SpatialGDK

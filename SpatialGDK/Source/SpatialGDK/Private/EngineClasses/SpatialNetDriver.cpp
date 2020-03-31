@@ -388,6 +388,15 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	if (SpatialSettings->UseRPCRingBuffer())
 	{
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView);
+
+		SpatialGDK::EPushRPCResult RPCFailureOutcomesToQueue = SpatialGDK::EPushRPCResult::Overflowed | SpatialGDK::EPushRPCResult::AlreadyQueued;
+		// Clients and single server deployments can also safely queue RPCs that fail because of NoRingBufferAuthority, since authority over the relevant endpoint is guaranteed to be received
+		if (!IsServer() || !(SpatialSettings->bEnableUnrealLoadBalancer || SpatialSettings->bEnableOffloading))
+		{
+			RPCFailureOutcomesToQueue |= SpatialGDK::EPushRPCResult::NoRingBufferAuthority;
+		}
+
+		RPCService->SetRPCFailureOutcomesToQueue(RPCFailureOutcomesToQueue);
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
