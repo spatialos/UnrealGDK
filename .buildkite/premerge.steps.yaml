@@ -34,7 +34,7 @@ windows: &windows
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-03-24-174018-bk9870-3919099a-d}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-03-26-102432-bk9951-8afe0ffb}"
   retry:
     automatic:
       - <<: *agent_transients
