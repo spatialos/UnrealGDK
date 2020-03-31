@@ -41,10 +41,10 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 
 EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, RPCPayload&& Payload)
 {
-	Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
+	const Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
 
-	EntityComponentId EntityComponent = EntityComponentId(EntityId, RingBufferComponentId);
-	EntityRPCType EntityType = EntityRPCType(EntityId, Type);
+	const EntityComponentId EntityComponent = { EntityId, RingBufferComponentId };
+	const EntityRPCType EntityType = EntityRPCType(EntityId, Type);
 
 	Schema_Object* EndpointObject;
 	uint64 LastAckedRPCId;
@@ -194,7 +194,7 @@ TArray<Worker_ComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation
 
 	for (Worker_ComponentId EndpointComponentId : EndpointComponentIds)
 	{
-		EntityComponentId EntityComponent = EntityComponentId(EntityId, EndpointComponentId);
+		const EntityComponentId EntityComponent = { EntityId, EndpointComponentId };
 
 		Worker_ComponentData& Component = Components.AddZeroed_GetRef();
 		Component.component_id = EndpointComponentId;
@@ -304,7 +304,7 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 			LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::NetMulticast), Component->InitiallyPresentMulticastRPCsCount);
 
 			RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::NetMulticast);
-			Schema_Object* SchemaObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentId(EntityId, ComponentId)));
+			Schema_Object* SchemaObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }));
 			Schema_AddUint64(SchemaObject, Descriptor.LastSentRPCFieldId, Component->InitiallyPresentMulticastRPCsCount);
 		}
 		else
@@ -417,7 +417,7 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 		else
 		{
 			LastAckedRPCIds[EntityTypePair] = LastProcessedRPCId;
-			EntityComponentId EntityComponentPair = EntityComponentId(EntityId, RPCRingBufferUtils::GetAckComponentId(Type));
+			const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
 
 			Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair));
 

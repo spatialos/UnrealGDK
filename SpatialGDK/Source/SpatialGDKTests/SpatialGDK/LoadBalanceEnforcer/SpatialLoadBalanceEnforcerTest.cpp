@@ -46,6 +46,10 @@ void AddEntityToStaticComponentView(USpatialStaticComponentView& StaticComponent
 		EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
 		AuthorityIntentAuthority);
 
+	TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(StaticComponentView,
+		EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
+		AuthorityIntentAuthority);
+
 	if (Id != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 	{
 		StaticComponentView.GetComponentData<SpatialGDK::AuthorityIntent>(EntityId)->VirtualWorkerId = Id;
