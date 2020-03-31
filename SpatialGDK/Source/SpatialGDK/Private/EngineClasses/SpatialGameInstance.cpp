@@ -4,6 +4,8 @@
 
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
+#include "Misc/Guid.h"
+
 #if WITH_EDITOR
 #include "Editor/EditorEngine.h"
 #include "Settings/LevelEditorPlaySettings.h"
@@ -109,6 +111,14 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialConnectionManager();
 	}
+#if TRACE_LIB_ACTIVE
+	else
+	{
+		// In native, setup worker name here as we don't get a HandleOnConnected() callback
+		FString WorkerName = FString::Printf(TEXT("%s:%s"), *Params.SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+		SpatialLatencyTracer->SetWorkerId(WorkerName);
+	}
+#endif
 
 	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 }
@@ -137,6 +147,14 @@ void USpatialGameInstance::TryConnectToSpatial()
 			FCommandLine::Set(*NewCommandLineArgs);
 		}
 	}
+#if TRACE_LIB_ACTIVE
+	else
+	{
+		// In native, setup worker name here as we don't get a HandleOnConnected() callback
+		FString WorkerName = FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+		SpatialLatencyTracer->SetWorkerId(WorkerName);
+	}
+#endif
 }
 
 void USpatialGameInstance::StartGameInstance()

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Containers/Array.h"
 #include "Hash/CityHash.h"
+#include "SpatialCommonTypes.h"
 
 #include "SpatialLatencyPayload.generated.h"
 
@@ -15,9 +16,10 @@ struct SPATIALGDK_API FSpatialLatencyPayload
 
 	FSpatialLatencyPayload() {}
 
-	FSpatialLatencyPayload(TArray<uint8>&& TraceBytes, TArray<uint8>&& SpanBytes)
+	FSpatialLatencyPayload(TArray<uint8>&& TraceBytes, TArray<uint8>&& SpanBytes, TraceKey InKey)
 		: TraceId(MoveTemp(TraceBytes))
 		, SpanId(MoveTemp(SpanBytes))
+		, Key(InKey)
 	{}
 
 	UPROPERTY()
@@ -25,6 +27,9 @@ struct SPATIALGDK_API FSpatialLatencyPayload
 
 	UPROPERTY()
 	TArray<uint8> SpanId;
+
+	UPROPERTY(NotReplicated)
+	int32 Key = InvalidTraceKey;
 
 	// Required for TMap hash
 	bool operator == (const FSpatialLatencyPayload& Other) const
