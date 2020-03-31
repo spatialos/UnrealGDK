@@ -63,6 +63,15 @@ generate_build_configuration_steps () {
             for BUILD_STATE in "DebugGame" "Development"; do
                 upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Mac" "Editor" "${BUILD_STATE}"
             done
+
+            # Generate all possible builds for non-Editor build targets
+            for BUILD_PLATFORM in "Win64" "Linux"; do
+                for BUILD_TARGET in "" "Client" "Server"; do
+                    for BUILD_STATE in "DebugGame" "Development" "Shipping"; do
+                        upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "${BUILD_PLATFORM}" "${BUILD_TARGET}" "${BUILD_STATE}"
+                    done
+                done
+            done
         fi
 
     fi
