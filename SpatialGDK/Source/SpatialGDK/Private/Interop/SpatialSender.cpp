@@ -860,7 +860,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 				break;
 			case EPushRPCResult::AlreadyQueued:
 				check(bQueued);
-				UE_LOG(LogSpatialSender, Warning, TEXT("USpatialSender::SendRPCInternal: Queueing RPC because this entity already has RPCs of the same type queued.  Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+				UE_LOG(LogSpatialSender, Log, TEXT("USpatialSender::SendRPCInternal: Queueing RPC because this entity already has RPCs of the same type queued.  Actor: %s, entity: %lld, function: %s"), *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 				break;
 			}
 
