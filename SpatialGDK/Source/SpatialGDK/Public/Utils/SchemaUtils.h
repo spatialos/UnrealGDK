@@ -129,10 +129,6 @@ inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const
 	{
 		AddObjectRefToSchema(ObjectRefObject, UNREAL_OBJECT_REF_OUTER_ID, *ObjectRef.Outer);
 	}
-	//if (ObjectRef.bUseSingletonClassPath)
-	//{
-	//	Schema_AddBool(ObjectRefObject, UNREAL_OBJECT_REF_USE_SINGLETON_CLASS_PATH_ID, ObjectRef.bUseSingletonClassPath);
-	//}
 }
 
 FUnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id);

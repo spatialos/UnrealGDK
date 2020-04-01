@@ -58,7 +58,6 @@ struct SPATIALGDK_API FUnrealObjectRef
 			((!Path && !Other.Path) || (Path && Other.Path && Path->Equals(*Other.Path))) &&
 			((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer));
 			// Intentionally don't compare bNoLoadOnClient since it does not affect equality.
-			//bUseSingletonClassPath == Other.bUseSingletonClassPath;
 	}
 
 	FORCEINLINE bool operator!=(const FUnrealObjectRef& Other) const
@@ -75,7 +74,6 @@ struct SPATIALGDK_API FUnrealObjectRef
 	static FSoftObjectPath ToSoftObjectPath(const FUnrealObjectRef& ObjectRef);
 	static FUnrealObjectRef FromObjectPtr(UObject* ObjectValue, USpatialPackageMapClient* PackageMap);
 	static FUnrealObjectRef FromSoftObjectPath(const FSoftObjectPath& ObjectPath);
-	//static FUnrealObjectRef GetSingletonClassRef(UObject* SingletonObject, USpatialPackageMapClient* PackageMap);
 
 	static const FUnrealObjectRef NULL_OBJECT_REF;
 	static const FUnrealObjectRef UNRESOLVED_OBJECT_REF;
@@ -85,7 +83,6 @@ struct SPATIALGDK_API FUnrealObjectRef
 	SpatialGDK::TSchemaOption<FString> Path;
 	SpatialGDK::TSchemaOption<FUnrealObjectRef> Outer;
 	bool bNoLoadOnClient = false;
-	//bool bUseSingletonClassPath = false;
 };
 
 inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
@@ -96,7 +93,6 @@ inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Path);
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Outer);
 	// Intentionally don't hash bNoLoadOnClient.
-	//Result = (Result * 977u) + GetTypeHash(ObjectRef.bUseSingletonClassPath ? 1 : 0);
 	return Result;
 }
 

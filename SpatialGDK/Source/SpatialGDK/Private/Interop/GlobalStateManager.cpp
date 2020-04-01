@@ -335,7 +335,6 @@ void UGlobalStateManager::ResetGSM()
 {
 	UE_LOG(LogGlobalStateManager, Display, TEXT("GlobalStateManager not accepting players and resetting BeginPlay lifecycle properties. Session restarting."));
 
-	//SingletonNameToEntityId.Empty();
 	SetAcceptingPlayers(false);
 
 	// Reset the BeginPlay flag so Startup Actors are properly managed.

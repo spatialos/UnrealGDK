@@ -28,18 +28,11 @@ class SPATIALGDK_API UGlobalStateManager : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver);
 
-	//void ApplySingletonManagerData(const Worker_ComponentData& Data);
 	void ApplyDeploymentMapData(const Worker_ComponentData& Data);
 	void ApplyStartupActorManagerData(const Worker_ComponentData& Data);
 
-	//void ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update);
 	void ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update);
 	void ApplyStartupActorManagerUpdate(const Worker_ComponentUpdate& Update);
-
-	//bool IsSingletonEntity(Worker_EntityId EntityId) const;
-	//void LinkAllExistingSingletonActors();
-	//void ExecuteInitialSingletonActorReplication();
-	//void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
 
 	DECLARE_DELEGATE_OneParam(QueryDelegate, const Worker_EntityQueryResponseOp&);
 	void QueryGSM(const QueryDelegate& Callback);
@@ -69,14 +62,7 @@ public:
 
 	bool IsReady() const;
 
-	//USpatialActorChannel* AddSingleton(AActor* SingletonActor);
-	//void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
-	//void RemoveSingletonInstance(const AActor* SingletonActor);
-
 	Worker_EntityId GlobalStateManagerEntityId;
-
-	// Singleton Manager Component
-	//StringToEntityMap SingletonNameToEntityId;
 
 private:
 	// Deployment Map Component

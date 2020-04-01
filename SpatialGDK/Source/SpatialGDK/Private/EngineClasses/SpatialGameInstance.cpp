@@ -25,14 +25,14 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
-const USpatialNetDriver* USpatialGameInstance::GetSpatialNetDriver() const
+bool USpatialGameInstance::HasSpatialNetDriver() const
 {
-	UNetDriver* NetDriver = nullptr;
+	bool bHasSpatialNetDriver = false;
 
 	if (WorldContext != nullptr)
 	{
 		UWorld* World = GetWorld();
-		NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
+		UNetDriver * NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
 		bool bShouldDestroyNetDriver = false;
 
 		if (NetDriver == nullptr)
@@ -53,27 +53,25 @@ const USpatialNetDriver* USpatialGameInstance::GetSpatialNetDriver() const
 			NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
 		}
 
-		if (NetDriver != nullptr && bShouldDestroyNetDriver)
+		if (NetDriver != nullptr)
 		{
-			GEngine->DestroyNamedNetDriver(World, NAME_PendingNetDriver);
+			bHasSpatialNetDriver = NetDriver->IsA<USpatialNetDriver>();
+
+			if (bShouldDestroyNetDriver)
+			{
+				GEngine->DestroyNamedNetDriver(World, NAME_PendingNetDriver);
+			}
 		}
 	}
 
-	if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && (NetDriver == nullptr || !NetDriver->IsA<USpatialNetDriver>()))
+	if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && !bHasSpatialNetDriver)
 	{
 		UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
-			"Please make sure you set up the net driver definitions as specified in the porting "
-			"guide and that you don't override the main net driver."));
-		return nullptr;
+										  "Please make sure you set up the net driver definitions as specified in the porting "
+										  "guide and that you don't override the main net driver."));
 	}
 
-	return Cast<USpatialNetDriver>(NetDriver);
-}
-
-
-bool USpatialGameInstance::HasSpatialNetDriver() const
-{
-	return GetSpatialNetDriver() != nullptr;
+	return bHasSpatialNetDriver;
 }
 
 void USpatialGameInstance::CreateNewSpatialConnectionManager()

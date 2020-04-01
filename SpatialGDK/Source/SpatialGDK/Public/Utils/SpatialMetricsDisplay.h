@@ -30,7 +30,7 @@ struct FWorkerStats
 	}
 };
 
-UCLASS(SpatialType)
+UCLASS(SpatialType=Singleton)
 class SPATIALGDK_API ASpatialMetricsDisplay :
 	public AInfo
 {
