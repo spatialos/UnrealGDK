@@ -130,20 +130,24 @@ FProcHandle SpatialCommandUtils::LocalWorkerReplace(const FString& ServicePort, 
 {
 	FString Command = TEXT("worker build build-config");
 
-	if (!ServicePort.IsEmpty())
+	if (ServicePort.IsEmpty())
 	{
-		Command.Append(FString::Printf(TEXT(" --local_service_grpc_port %s"), *ServicePort));
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Calling LocalWorkerReplace with no ServicePort"));
 	}
 
-	if (!OldWorker.IsEmpty())
+	if (OldWorker.IsEmpty())
 	{
-		Command.Append(FString::Printf(TEXT(" --existing_worker_id %s"), *OldWorker));
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Calling LocalWorkerReplace with no OldWorker"));
 	}
 
-	if (!NewWorker.IsEmpty())
+	if (NewWorker.IsEmpty())
 	{
-		Command.Append(FString::Printf(TEXT(" --replacing_worker_id %s"), *NewWorker));
+		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Calling LocalWorkerReplace with no NewWorker"));
 	}
+
+	Command.Append(FString::Printf(TEXT(" --local_service_grpc_port %s"), *ServicePort));
+	Command.Append(FString::Printf(TEXT(" --existing_worker_id %s"), *OldWorker));
+	Command.Append(FString::Printf(TEXT(" --replacing_worker_id %s"), *NewWorker));
 
 	return FPlatformProcess::CreateProc(*SpatialGDKServicesConstants::SpatialExe, *Command, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, OutProcessID, PriorityModifier, OptionalWorkingDirectory, PipeWriteChild, PipeReadChild);
 }
