@@ -111,8 +111,6 @@ private:
 	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair);
 	Schema_ComponentData* GetOrCreateComponentData(EntityComponentId EntityComponentIdPair);
 
-	bool ShouldQueueRPC(const EPushRPCResult Result, const ERPCType Type) const;
-
 private:
 	ExtractRPCDelegate ExtractRPCCallback;
 	const USpatialStaticComponentView* View;
