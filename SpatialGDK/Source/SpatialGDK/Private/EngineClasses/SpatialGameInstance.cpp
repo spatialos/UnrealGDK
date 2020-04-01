@@ -279,17 +279,6 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 				}
 			}
 		}
-		//else if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
-		//{
-		//	if (Actor->GetIsReplicated())
-		//	{
-		//		const USpatialNetDriver* NetDriver = GetSpatialNetDriver();
-		//		check(NetDriver != nullptr);
-		//		const bool bRoleAuthoritative = NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
-		//		Actor->Role = bRoleAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
-		//		Actor->RemoteRole = bRoleAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
-		//	}
-		//}
 		else
 		{
 			if (Actor->GetIsReplicated())

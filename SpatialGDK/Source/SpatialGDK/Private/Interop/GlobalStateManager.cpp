@@ -61,12 +61,6 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	bCanSpawnWithAuthority = false;
 }
 
-//void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& Data)
-//{
-//	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-//	SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
-//}
-
 void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
@@ -115,16 +109,6 @@ void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
 	bHasSentReadyForVirtualWorkerAssignment = true;
 	NetDriver->Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &Update);
 }
-
-//void UGlobalStateManager::ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update)
-//{
-//	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
-//
-//	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID) > 0)
-//	{
-//		SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
-//	}
-//}
 
 void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update)
 {
@@ -239,209 +223,6 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentU
 	bCanSpawnWithAuthority = true;
 }
 
-//void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActorClass)
-//{
-//	const Worker_EntityId* SingletonEntityIdPtr = SingletonNameToEntityId.Find(SingletonActorClass->GetPathName());
-//	if (SingletonEntityIdPtr == nullptr)
-//	{
-//		// No entry in SingletonNameToEntityId for this singleton class type
-//		UE_LOG(LogGlobalStateManager, Verbose, TEXT("LinkExistingSingletonActor %s failed to find entry"), *SingletonActorClass->GetName());
-//		return;
-//	}
-//
-//	const Worker_EntityId SingletonEntityId = *SingletonEntityIdPtr;
-//	if (SingletonEntityId == SpatialConstants::INVALID_ENTITY_ID)
-//	{
-//		// Singleton Entity hasn't been created yet
-//		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor %s entity id is invalid"), *SingletonActorClass->GetName());
-//		return;
-//	}
-//
-//	TPair<AActor*, USpatialActorChannel*>* ActorChannelPair = SingletonClassPathToActorChannels.Find(SingletonActorClass->GetPathName());
-//	if (ActorChannelPair == nullptr)
-//	{
-//		// Dynamically spawn singleton actor if we have queued up data - ala USpatialReceiver::ReceiveActor - JIRA: 735
-//
-//		// No local actor has registered itself as replicatible on this worker
-//		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor no actor registered for class %s"), *SingletonActorClass->GetName());
-//		return;
-//	}
-//
-//	AActor* SingletonActor = ActorChannelPair->Key;
-//	USpatialActorChannel*& Channel = ActorChannelPair->Value;
-//
-//	if (Channel != nullptr)
-//	{
-//		// Channel has already been setup
-//		UE_LOG(LogGlobalStateManager, Verbose, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup for %s"), *SingletonActorClass->GetName());
-//		return;
-//	}
-//
-//	// If we have previously queued up data for this entity, apply it - UNR-734
-//
-//	// We're now ready to start replicating this actor, create a channel
-//	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
-//
-//	Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
-//
-//	if (StaticComponentView->HasAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID))
-//	{
-//		SingletonActor->Role = ROLE_Authority;
-//		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
-//	}
-//	else
-//	{
-//		SingletonActor->Role = ROLE_SimulatedProxy;
-//		SingletonActor->RemoteRole = ROLE_Authority;
-//	}
-//
-//	// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
-//	NetDriver->PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId);
-//
-//#if ENGINE_MINOR_VERSION <= 22
-//	Channel->SetChannelActor(SingletonActor);
-//#else
-//	Channel->SetChannelActor(SingletonActor, ESetChannelActorFlags::None);
-//#endif
-//
-//	UE_LOG(LogGlobalStateManager, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
-//}
-
-//void UGlobalStateManager::LinkAllExistingSingletonActors()
-//{
-//	// Early out for clients as they receive Singleton Actors via the normal Unreal replicated actor flow
-//	if (!NetDriver->IsServer())
-//	{
-//		return;
-//	}
-//
-//	for (const auto& Pair : SingletonNameToEntityId)
-//	{
-//		UClass* SingletonActorClass = LoadObject<UClass>(nullptr, *Pair.Key);
-//		if (SingletonActorClass == nullptr)
-//		{
-//			UE_LOG(LogGlobalStateManager, Error, TEXT("Failed to find Singleton Actor Class: %s"), *Pair.Key);
-//			continue;
-//		}
-//
-//		LinkExistingSingletonActor(SingletonActorClass);
-//	}
-//}
-
-//USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
-//{
-//	check(SingletonActor->GetIsReplicated());
-//
-//	UClass* SingletonActorClass = SingletonActor->GetClass();
-//
-//	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = SingletonClassPathToActorChannels.FindOrAdd(SingletonActorClass->GetPathName());
-//	USpatialActorChannel*& Channel = ActorChannelPair.Value;
-//	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
-//	ActorChannelPair.Key = SingletonActor;
-//
-//	// Just return the channel if it's already been setup
-//	if (Channel != nullptr)
-//	{
-//		UE_LOG(LogGlobalStateManager, Log, TEXT("AddSingleton called when channel already setup: %s"), *SingletonActor->GetName());
-//		return Channel;
-//	}
-//
-//	bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
-//	if (bHasGSMAuthority)
-//	{
-//		// We have control over the GSM, so can safely setup a new channel and let it allocate an entity id
-//		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
-//		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
-//
-//		// If entity id already exists for this singleton, set the actor to it
-//		// Otherwise SetChannelActor will issue a new entity id request
-//		if (const Worker_EntityId* SingletonEntityId = SingletonNameToEntityId.Find(SingletonActorClass->GetPathName()))
-//		{
-//			check(NetDriver->PackageMap->GetObjectFromEntityId(*SingletonEntityId) == nullptr);
-//			NetDriver->PackageMap->ResolveEntityActor(SingletonActor, *SingletonEntityId);
-//			if (!StaticComponentView->HasAuthority(*SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID))
-//			{
-//				SingletonActor->Role = ROLE_SimulatedProxy;
-//				SingletonActor->RemoteRole = ROLE_Authority;
-//			}
-//		}
-//
-//#if ENGINE_MINOR_VERSION <= 22
-//		Channel->SetChannelActor(SingletonActor);
-//#else
-//		Channel->SetChannelActor(SingletonActor, ESetChannelActorFlags::None);
-//#endif
-//		UE_LOG(LogGlobalStateManager, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActorClass->GetName());
-//	}
-//	else
-//	{
-//		// We don't have control over the GSM, but we may have received the entity id for this singleton already
-//		LinkExistingSingletonActor(SingletonActorClass);
-//	}
-//
-//	return Channel;
-//}
-
-//void UGlobalStateManager::RemoveSingletonInstance(const AActor* SingletonActor)
-//{
-//	check(SingletonActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton));
-//
-//	SingletonClassPathToActorChannels.Remove(SingletonActor->GetClass()->GetPathName());
-//}
-
-//void UGlobalStateManager::RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel)
-//{
-//	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = SingletonClassPathToActorChannels.FindOrAdd(SingletonActor->GetClass()->GetPathName());
-//
-//	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
-//	check(ActorChannelPair.Value == nullptr || ActorChannelPair.Value == SingletonChannel);
-//
-//	ActorChannelPair.Key = SingletonActor;
-//	ActorChannelPair.Value = SingletonChannel;
-//}
-
-//void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
-//{
-//	for (auto& ClassToActorChannel : SingletonClassPathToActorChannels)
-//	{
-//		auto& ActorChannelPair = ClassToActorChannel.Value;
-//		AddSingleton(ActorChannelPair.Key);
-//	}
-//}
-
-//void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId)
-//{
-//	Worker_EntityId& EntityId = SingletonNameToEntityId.FindOrAdd(ClassName);
-//	EntityId = SingletonEntityId;
-//
-//	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID))
-//	{
-//		UE_LOG(LogGlobalStateManager, Warning, TEXT("UpdateSingletonEntityId: no authority over the GSM! Update will not be sent. Singleton class: %s, entity: %lld"), *ClassName, SingletonEntityId);
-//		return;
-//	}
-//
-//	FWorkerComponentUpdate Update = {};
-//	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
-//	Update.schema_type = Schema_CreateComponentUpdate();
-//	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
-//
-//	AddStringToEntityMapToSchema(UpdateObject, 1, SingletonNameToEntityId);
-//
-//	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
-//}
-
-//bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId) const
-//{
-//	for (const auto& Pair : SingletonNameToEntityId)
-//	{
-//		if (Pair.Value == EntityId)
-//		{
-//			return true;
-//		}
-//	}
-//	return false;
-//}
-
 void UGlobalStateManager::SetDeploymentState()
 {
 	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
@@ -513,11 +294,6 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 			SetAcceptingPlayers(true);
 			break;
 		}
-		//case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-		//{
-		//	ExecuteInitialSingletonActorReplication();
-		//	break;
-		//}
 		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		{
 			// The bCanSpawnWithAuthority member determines whether a server-side worker
@@ -557,21 +333,13 @@ bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId)
 
 void UGlobalStateManager::ResetGSM()
 {
-	UE_LOG(LogGlobalStateManager, Display, TEXT("GlobalStateManager singletons are being reset. Session restarting."));
+	UE_LOG(LogGlobalStateManager, Display, TEXT("GlobalStateManager not accepting players and resetting BeginPlay lifecycle properties. Session restarting."));
 
 	//SingletonNameToEntityId.Empty();
 	SetAcceptingPlayers(false);
 
 	// Reset the BeginPlay flag so Startup Actors are properly managed.
 	SendCanBeginPlayUpdate(false);
-
-	// Reset the Singleton map so Singletons are recreated.
-	//FWorkerComponentUpdate Update = {};
-	//Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
-	//Update.schema_type = Schema_CreateComponentUpdate();
-	//Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
-
-	//NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
 void UGlobalStateManager::BeginDestroy()
@@ -586,14 +354,6 @@ void UGlobalStateManager::BeginDestroy()
 		{
 			// Reset the BeginPlay flag so Startup Actors are properly managed.
 			SendCanBeginPlayUpdate(false);
-
-			// Reset the Singleton map so Singletons are recreated.
-			//FWorkerComponentUpdate Update = {};
-			//Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
-			//Update.schema_type = Schema_CreateComponentUpdate();
-			//Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
-
-			//NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 		}
 	}
 #endif

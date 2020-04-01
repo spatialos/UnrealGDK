@@ -1165,12 +1165,6 @@ bool USpatialActorChannel::TryResolveActor()
 		return false;
 	}
 
-	//// If a Singleton was created, update the GSM with the proper Id.
-	//if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	//{
-	//	NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), EntityId);
-	//}
-
 	// Inform USpatialNetDriver of this new actor channel/entity pairing
 	NetDriver->AddActorChannel(EntityId, this);
 

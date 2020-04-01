@@ -887,14 +887,6 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	RepChangedPropertyTrackerMap.Remove(ThisActor);
 
 	const bool bIsServer = ServerConnection == nullptr;
-
-	// Remove the record of destroyed singletons.
-	//if (ThisActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	//{
-	//	// We check for this not being a server below to make sure we don't call this incorrectly in single process PIE sessions.
-	//	GlobalStateManager->RemoveSingletonInstance(ThisActor);
-	//}
-
 	if (bIsServer)
 	{
 		// Check if this is a dormant entity, and if so retire the entity
@@ -903,11 +895,11 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 			const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
 
 			// It is safe to check that we aren't destroying a singleton actor on a server if there is a valid entity ID and this is not a client.
-			//if (ThisActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && EntityId != SpatialConstants::INVALID_ENTITY_ID)
-			//{
-			//	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Removed a singleton actor on a server. This should never happen. "
-			//		"Actor: %s."), *ThisActor->GetName());
-			//}
+			if (ThisActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && EntityId != SpatialConstants::INVALID_ENTITY_ID)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Removed a singleton actor on a server. This should never happen. "
+					"Actor: %s."), *ThisActor->GetName());
+			}
 
 			// If the actor is an initially dormant startup actor that has not been replicated.
 			if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && ThisActor->GetIsReplicated() && ThisActor->HasAuthority())

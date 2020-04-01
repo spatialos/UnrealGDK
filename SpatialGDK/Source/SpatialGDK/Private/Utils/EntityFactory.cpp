@@ -15,7 +15,7 @@
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/RPCPayload.h"
-//#include "Schema/Singleton.h"
+#include "Schema/Singleton.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Schema/Tombstone.h"
@@ -278,10 +278,10 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentWriteAcl.Add(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	}
 
-	//if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	//{
-	//	ComponentDatas.Add(Singleton().CreateSingletonData());
-	//}
+	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		ComponentDatas.Add(Singleton().CreateSingletonData());
+	}
 
 	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{

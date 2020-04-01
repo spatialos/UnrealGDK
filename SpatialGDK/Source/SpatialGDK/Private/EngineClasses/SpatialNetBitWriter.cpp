@@ -37,7 +37,6 @@ void FSpatialNetBitWriter::SerializeObjectRef(FUnrealObjectRef& ObjectRef)
 	}
 
 	SerializeBits(&ObjectRef.bNoLoadOnClient, 1);
-	//SerializeBits(&ObjectRef.bUseSingletonClassPath, 1);
 }
 
 FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)

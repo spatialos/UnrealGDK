@@ -112,12 +112,6 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 		return NetGUID;
 	}
 
-	//if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	//{
-	//	// Singletons will always go through GlobalStateManager first.
-	//	return NetGUID;
-	//}
-
 	// Resolve as an entity if it is an unregistered actor
 	if (Actor->Role == ROLE_Authority && GetEntityIdFromObject(Actor) == SpatialConstants::INVALID_ENTITY_ID)
 	{
@@ -264,35 +258,6 @@ Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* O
 	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
 	return GetUnrealObjectRefFromNetGUID(NetGUID).Entity;
 }
-
-//AActor* USpatialPackageMapClient::GetSingletonByClassRef(const FUnrealObjectRef& SingletonClassRef)
-//{
-//	if (UClass* SingletonClass = Cast<UClass>(GetObjectFromUnrealObjectRef(SingletonClassRef)))
-//	{
-//		TArray<AActor*> FoundActors;
-//		// USpatialPackageMapClient is an inner object of UNetConnection,
-//		// which in turn contains a NetDriver and gets the UWorld it references
-//		UGameplayStatics::GetAllActorsOfClass(this, SingletonClass, FoundActors);
-//
-//		// There should be only one singleton actor per class
-//		if (FoundActors.Num() == 1)
-//		{
-//			return FoundActors[0];
-//		}
-//
-//		FString FullPath;
-//		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
-//		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("GetSingletonByClassRef: Found %d actors for singleton class: %s"), FoundActors.Num(), *FullPath);
-//		return nullptr;
-//	}
-//	else
-//	{
-//		FString FullPath;
-//		SpatialGDK::GetFullPathFromUnrealObjectReference(SingletonClassRef, FullPath);
-//		UE_LOG(LogSpatialPackageMap, Warning, TEXT("GetSingletonByClassRef: Can't resolve singleton class: %s"), *FullPath);
-//		return nullptr;
-//	}
-//}
 
 bool USpatialPackageMapClient::CanClientLoadObject(UObject* Object)
 {

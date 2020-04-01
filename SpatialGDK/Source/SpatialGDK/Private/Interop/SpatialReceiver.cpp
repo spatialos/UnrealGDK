@@ -150,7 +150,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
-	//case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
@@ -200,10 +199,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			RPCService->OnCheckoutMulticastRPCComponentOnEntity(Op.entity_id);
 		}
 		return;
-	//case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-	//	GlobalStateManager->ApplySingletonManagerData(Op.data);
-	//	GlobalStateManager->LinkAllExistingSingletonActors();
-	//	return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		GlobalStateManager->ApplyDeploymentMapData(Op.data);
 		return;
@@ -941,11 +936,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		EntityActor->DispatchBeginPlay();
 	}
 
-	//if (EntityActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	//{
-	//	GlobalStateManager->RegisterSingletonChannel(EntityActor, Channel);
-	//}
-
 	EntityActor->UpdateOverlaps();
 
 	if (StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
@@ -1063,10 +1053,10 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		}
 	}
 
-	//if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	//{
-	//	return;
-	//}
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		return;
+	}
 
 	DestroyActor(Actor, EntityId);
 }
@@ -1145,16 +1135,6 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 		UE_LOG(LogSpatialReceiver, Error, TEXT("Could not load class %s when spawning entity!"), *UnrealMetadataComp->ClassPath);
 		return nullptr;
 	}
-
-	const bool bIsServer = NetDriver->IsServer();
-
-	// We can delete this, singletons are now caught in the UnrealMetadataComp->StablyNamedRef.IsSet() check in TryGetOrCreateActor
-	// 
-	// Initial Singleton Actor replication is handled with GlobalStateManager::LinkExistingSingletonActors
-	//if (bIsServer && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	//{
-	//	return FindSingletonActor(ActorClass);
-	//}
 
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
@@ -1498,10 +1478,6 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
 		OnHeartbeatComponentUpdate(Op);
 		return;
-	//case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-	//	GlobalStateManager->ApplySingletonManagerUpdate(Op.update);
-	//	GlobalStateManager->LinkAllExistingSingletonActors();
-	//	return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);
 		return;
@@ -2088,20 +2064,6 @@ TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Wo
 	return Channel;
 }
 
-//AActor* USpatialReceiver::FindSingletonActor(UClass* SingletonClass)
-//{
-//	TArray<AActor*> FoundActors;
-//	UGameplayStatics::GetAllActorsOfClass(NetDriver->World, SingletonClass, FoundActors);
-//
-//	// There should be only one singleton actor per class
-//	if (FoundActors.Num() == 1)
-//	{
-//		return FoundActors[0];
-//	}
-//
-//	return nullptr;
-//}
-
 void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(Worker_EntityId EntityId, RPCsOnEntityCreation& QueuedRPCs)
 {
 	for (auto& RPC : QueuedRPCs.RPCs)
@@ -2179,16 +2141,7 @@ void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealOb
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
 	ResolveIncomingOperations(Object, ObjectRef);
-	//if (Object->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && !Object->IsFullNameStableForNetworking())
-	//{
-	//	// When resolving a singleton, also resolve using class path (in case any properties
-	//	// were set from a server that hasn't resolved the singleton yet)
-	//	FUnrealObjectRef ClassObjectRef = FUnrealObjectRef::GetSingletonClassRef(Object, PackageMap);
-	//	if (ClassObjectRef.IsValid())
-	//	{
-	//		ResolveIncomingOperations(Object, ClassObjectRef);
-	//	}
-	//}
+
 	// TODO: UNR-1650 We're trying to resolve all queues, which introduces more overhead.
 	IncomingRPCs.ProcessRPCs();
 }
