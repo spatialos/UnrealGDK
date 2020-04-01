@@ -374,7 +374,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 #if !UE_BUILD_SHIPPING
-	// If metrics display is enabled, spawn an Actor to replicate the information to each client.
+	// If metrics display is enabled, spawn a singleton Actor to replicate the information to each client.
 	if (IsServer())
 	{
 		if (SpatialSettings->bEnableMetricsDisplay)
