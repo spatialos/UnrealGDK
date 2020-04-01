@@ -185,13 +185,14 @@ public:
 	void TrackTombstone(const Worker_EntityId EntityId);
 #endif
 
+private:
+
 	// If this flag is set to true standalone clients will not attempt to connect to a deployment automatically if connection config command line arguments exists.
 	UPROPERTY(Config)
 	bool bPreventAutoConnectWithCommandLineArgs;
 
 	bool GetPreventAutoConnectWithCommandLineArgs() const { return bConnectAsClient && bPreventAutoConnectWithCommandLineArgs; };
 
-private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
