@@ -204,6 +204,15 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection")
 	FString DefaultReceptionistHost;
 
+private:
+	/** Will stop a non editor client auto connecting via command line args to a cloud deployment */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
+	bool bPreventClientCloudDeploymentAutoConnect;
+
+public:
+
+	bool GetPreventClientCloudDeploymentAutoConnect(bool bIsClient) const { return bIsClient && bPreventClientCloudDeploymentAutoConnect; };
+
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
