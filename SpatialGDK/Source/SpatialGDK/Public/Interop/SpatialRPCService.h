@@ -21,8 +21,8 @@ DECLARE_DELEGATE_RetVal_ThreeParams(bool, ExtractRPCDelegate, Worker_EntityId, E
 namespace SpatialGDK
 {
 // The RPC must have either succeeded with no subsequent action to take, or failed with an indicator of the action to take
-#define VALIDATE_RPC_PUSH_RESULT(Result) (PushRPCResultUtils::GetOutcome(Result) == EPushRPCResult::Success && !PushRPCResultUtils::IsAnyFlagSet(Result, EPushRPCResult::AllFailureActions)) || \
-(PushRPCResultUtils::IsAnyFlagSet(Result, EPushRPCResult::AllFailureOutcomes) && PushRPCResultUtils::IsAnyFlagSet(Result, EPushRPCResult::AllFailureActions))
+#define VALIDATE_RPC_PUSH_RESULT(Result) check((PushRPCResultUtils::GetOutcome(Result) == EPushRPCResult::Success && !PushRPCResultUtils::IsAnyFlagSet(Result, EPushRPCResult::AllFailureActions)) || \
+(PushRPCResultUtils::IsAnyFlagSet(Result, EPushRPCResult::AllFailureOutcomes) && PushRPCResultUtils::IsAnyFlagSet(Result, EPushRPCResult::AllFailureActions)))
 
 struct EntityRPCType
 {
