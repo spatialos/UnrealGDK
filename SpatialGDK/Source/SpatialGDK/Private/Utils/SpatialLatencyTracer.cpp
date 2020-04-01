@@ -172,7 +172,7 @@ USpatialLatencyTracer* USpatialLatencyTracer::GetTracer(UObject* WorldContextObj
 bool USpatialLatencyTracer::IsValidKey(const TraceKey Key)
 {
 	FScopeLock Lock(&Mutex);
-	return TraceMap.Find(Key);
+	return (TraceMap.Find(Key) != nullptr);
 }
 
 TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const UFunction* Function)
