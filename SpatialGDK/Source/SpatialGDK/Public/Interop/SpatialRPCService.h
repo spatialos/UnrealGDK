@@ -92,7 +92,8 @@ public:
 	void OnEndpointAuthorityGained(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
-	void SetRPCFailureOutcomesToQueue(const EPushRPCResult FailureOutcomes);
+	// This is specifically for whether or not we should queue RPCs on the sender
+	void SetPushRPCFailureOutcomesToQueue(const EPushRPCResult FailureOutcomes);
 
 private:
 	// For now, we should drop overflowed RPCs when entity crosses the boundary.
@@ -127,7 +128,7 @@ private:
 	TMap<EntityComponentId, Schema_ComponentUpdate*> PendingComponentUpdatesToSend;
 	TMap<EntityRPCType, TArray<RPCPayload>> QueuedRPCs;
 
-	EPushRPCResult FailureOutcomesToQueue;
+	EPushRPCResult PushRPCFailureOutcomesToQueue;
 };
 
 namespace PushRPCResultUtils

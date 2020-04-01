@@ -15,7 +15,7 @@ namespace SpatialGDK
 SpatialRPCService::SpatialRPCService(ExtractRPCDelegate ExtractRPCCallback, const USpatialStaticComponentView* View)
 	: ExtractRPCCallback(ExtractRPCCallback)
 	, View(View)
-	, FailureOutcomesToQueue(EPushRPCResult::None)
+	, PushRPCFailureOutcomesToQueue(EPushRPCResult::None)
 {
 }
 
@@ -27,7 +27,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	{
 		// Already has queued RPCs of this type, queue until those are pushed.
 		AddQueuedRPC(EntityType, MoveTemp(Payload));
-		return PushRPCResultUtils::MakeFailureResultCode(EPushRPCResult::AlreadyQueued, Type, FailureOutcomesToQueue);
+		return PushRPCResultUtils::MakeFailureResultCode(EPushRPCResult::AlreadyQueued, Type, PushRPCFailureOutcomesToQueue);
 	}
 
 	const EPushRPCResult Result = PushRPCInternal(EntityId, Type, MoveTemp(Payload));
@@ -54,7 +54,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	{
 		if (!View->HasAuthority(EntityId, RingBufferComponentId))
 		{
-			return PushRPCResultUtils::MakeFailureResultCode(EPushRPCResult::NoRingBufferAuthority, Type, FailureOutcomesToQueue);
+			return PushRPCResultUtils::MakeFailureResultCode(EPushRPCResult::NoRingBufferAuthority, Type, PushRPCFailureOutcomesToQueue);
 		}
 
 		EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponent));
@@ -69,7 +69,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 			// We shouldn't have authority over the component that has the acks.
 			if (View->HasAuthority(EntityId, RPCRingBufferUtils::GetAckComponentId(Type)))
 			{
-				return PushRPCResultUtils::MakeFailureResultCode(EPushRPCResult::HasAckAuthority, Type, FailureOutcomesToQueue);
+				return PushRPCResultUtils::MakeFailureResultCode(EPushRPCResult::HasAckAuthority, Type, PushRPCFailureOutcomesToQueue);
 			}
 
 			LastAckedRPCId = GetAckFromView(EntityId, Type);
@@ -89,7 +89,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 	// Check capacity.
 	if (LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) < NewRPCId)
 	{
-		return PushRPCResultUtils::MakeFailureResultCode(EPushRPCResult::Overflowed, Type, FailureOutcomesToQueue);
+		return PushRPCResultUtils::MakeFailureResultCode(EPushRPCResult::Overflowed, Type, PushRPCFailureOutcomesToQueue);
 	}
 
 	RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, Payload);
@@ -468,9 +468,9 @@ const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId Entity
 	return DummyBuffer;
 }
 
-void SpatialRPCService::SetRPCFailureOutcomesToQueue(const EPushRPCResult FailureOutcomes)
+void SpatialRPCService::SetPushRPCFailureOutcomesToQueue(const EPushRPCResult FailureOutcomes)
 {
-	FailureOutcomesToQueue = FailureOutcomes;
+	PushRPCFailureOutcomesToQueue = FailureOutcomes;
 }
 
 Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair)

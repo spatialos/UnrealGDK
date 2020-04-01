@@ -389,14 +389,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	{
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView);
 
-		SpatialGDK::EPushRPCResult RPCFailureOutcomesToQueue = SpatialGDK::EPushRPCResult::Overflowed | SpatialGDK::EPushRPCResult::AlreadyQueued;
-		// Clients and single server deployments can also safely queue RPCs that fail because of NoRingBufferAuthority, since authority over the relevant endpoint is guaranteed to be received
+		SpatialGDK::EPushRPCResult PushRPCFailureOutcomesToQueue = SpatialGDK::EPushRPCResult::Overflowed | SpatialGDK::EPushRPCResult::AlreadyQueued;
+		// Clients and single server deployments can also safely queue (on the sender) RPCs that fail because of NoRingBufferAuthority, since authority over the relevant endpoint is guaranteed to be received
 		if (!IsServer() || !(SpatialSettings->bEnableUnrealLoadBalancer || SpatialSettings->bEnableOffloading))
 		{
-			RPCFailureOutcomesToQueue |= SpatialGDK::EPushRPCResult::NoRingBufferAuthority;
+			PushRPCFailureOutcomesToQueue |= SpatialGDK::EPushRPCResult::NoRingBufferAuthority;
 		}
 
-		RPCService->SetRPCFailureOutcomesToQueue(RPCFailureOutcomesToQueue);
+		RPCService->SetPushRPCFailureOutcomesToQueue(PushRPCFailureOutcomesToQueue);
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
