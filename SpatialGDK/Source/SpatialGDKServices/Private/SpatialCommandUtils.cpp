@@ -49,13 +49,13 @@ bool SpatialCommandUtils::AttemptSpatialAuth(bool bIsRunningInChina)
 	bool bSuccess = OutExitCode == 0;
 	if (!bSuccess)
 	{
-		UE_LOG(LogSpatialCommandUtils, Warning, TEXT("Spatial auth login failed. Error Code: %d, Error Message: %s"), OutExitCode, *OutStdOut);
+		UE_LOG(LogSpatialCommandUtils, Warning, TEXT("Spatial auth login failed. Error Code: %d, StdOut Message: %s, StdErr Message: %s"), OutExitCode, *OutStdOut, *OutStdErr);
 	}
 
 	return bSuccess;
 }
 
-bool SpatialCommandUtils::StartSpatialService(FString Version, FString RuntimeIP, bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode)
+bool SpatialCommandUtils::StartSpatialService(const FString& Version, const FString& RuntimeIP, bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode)
 {
 	FString Command = TEXT("service start");
 
@@ -126,7 +126,7 @@ bool SpatialCommandUtils::BuildWorkerConfig(bool bIsRunningInChina, const FStrin
 	return bSuccess;
 }
 
-FProcHandle SpatialCommandUtils::LocalWorkerReplace(FString ServicePort, FString OldWorker, FString NewWorker, bool bIsRunningInChina, bool bLaunchDetached, bool bLaunchHidden, bool bLaunchReallyHidden, uint32* OutProcessID, int32 PriorityModifier, const TCHAR* OptionalWorkingDirectory, void* PipeWriteChild, void * PipeReadChild)
+FProcHandle SpatialCommandUtils::LocalWorkerReplace(const FString& ServicePort, const FString& OldWorker, const FString& NewWorker, bool bIsRunningInChina, bool bLaunchDetached, bool bLaunchHidden, bool bLaunchReallyHidden, uint32* OutProcessID, int32 PriorityModifier, const TCHAR* OptionalWorkingDirectory, void* PipeWriteChild, void* PipeReadChild)
 {
 	FString Command = TEXT("worker build build-config");
 

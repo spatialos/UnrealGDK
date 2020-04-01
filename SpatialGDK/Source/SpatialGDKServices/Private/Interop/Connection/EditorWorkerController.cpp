@@ -68,10 +68,8 @@ struct EditorWorkerController
 	FProcHandle ReplaceWorker(const FString& OldWorker, const FString& NewWorker)
 	{
 		uint32 ProcessID = 0;
-		FProcHandle ProcHandle = SpatialCommandUtils::LocalWorkerReplace(*ServicePort, *OldWorker, *NewWorker, false, false, true, true, &ProcessID, 2 /*PriorityModifier*/,
-				nullptr, nullptr, nullptr);
-
-		return ProcHandle;
+		return SpatialCommandUtils::LocalWorkerReplace(*ServicePort, *OldWorker, *NewWorker, false, false, true, true, &ProcessID, 2 /*PriorityModifier*/,
+			nullptr, nullptr, nullptr);
 	}
 
 	void BlockUntilWorkerReady(int32 WorkerIdx)
