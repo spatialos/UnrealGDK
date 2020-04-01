@@ -50,7 +50,7 @@ if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
     $test_repo_map = "EmptyGym"
     $test_project_name = "GDKTestGyms"
 
-    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK", "", $True)
+    $tests += [TestSuite]::new("$test_repo_url", "$test_repo_branch", "$test_repo_relative_uproject_path", "$test_repo_map", "$test_project_name", "TestResults", "SpatialGDK", "bEnableUnrealLoadBalancer=false", $True)
 }
 else{
     if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
