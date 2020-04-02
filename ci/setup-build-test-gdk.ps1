@@ -3,7 +3,7 @@ param(
 	[string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production/UnrealEngine",
 	[string] $msbuild_exe = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe",
 	[string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build. Should ultimately resolve to "C:\b\<number>\".
-	[string] $unreal_path = "$build_home\UnrealEngine"
+	[string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine"
 )
 
 class TestSuite {
@@ -65,7 +65,7 @@ Foreach ($test in $tests) {
 
 # Download Unreal Engine
 Start-Event "get-unreal-engine" "command"
-& $PSScriptRoot"\get-engine.ps1" -unreal_path "$unreal_path"
+& $PSScriptRoot"\get-engine.ps1" -unreal_path "$unreal_engine_symlink_dir"
 Finish-Event "get-unreal-engine" "command"
 
 # Run the required setup steps
@@ -106,7 +106,7 @@ Foreach ($test in $tests) {
 		# Build the testing project
 		Start-Event "build-project" "command"
 		& $PSScriptRoot"\build-project.ps1" `
-			-unreal_path "$unreal_path" `
+			-unreal_path "$unreal_engine_symlink_dir" `
 			-test_repo_branch "$test_repo_branch" `
 			-test_repo_url "$test_repo_url" `
 			-test_repo_uproject_path "$build_home\$test_project_name\$test_repo_relative_uproject_path" `
@@ -125,7 +125,7 @@ Foreach ($test in $tests) {
 	if ($env:BUILD_PLATFORM -eq "Win64" -And $env:BUILD_TARGET -eq "Editor" -And $env:BUILD_STATE -eq "Development") {
 		Start-Event "test-gdk" "command"
 		& $PSScriptRoot"\run-tests.ps1" `
-			-unreal_editor_path "$unreal_path\Engine\Binaries\Win64\UE4Editor.exe" `
+			-unreal_editor_path "$unreal_engine_symlink_dir\Engine\Binaries\Win64\UE4Editor.exe" `
 			-uproject_path "$build_home\$test_project_name\$test_repo_relative_uproject_path" `
 			-test_repo_path "$build_home\$test_project_name" `
 			-log_file_path "$PSScriptRoot\$test_project_name\$test_results_dir\tests.log" `
