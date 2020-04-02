@@ -592,8 +592,8 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 					ActorChannel->bCreatedEntity = false;
 				}
 
-				// With load-balancing enabled, we set ROLE_SimulatedProxy and trigger OnAuthorityLost when we
-				// set AuthorityIntent to another worker.This conditional exists to dodge call OnAuthorityLost
+				// With load-balancing enabled, we already set ROLE_SimulatedProxy and trigger OnAuthorityLost when we
+				// set AuthorityIntent to another worker. This conditional exists to dodge calling OnAuthorityLost
 				// twice.
 				if (Actor->Role != ROLE_SimulatedProxy)
 				{
@@ -899,9 +899,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 	{
 		// Whenever we receive an actor over the wire, the expectation is that it is not in an authoritative
-		// state.  This is because it should already have had authoritative BeginPlay() called.  If we have
-		// authority here, we are calling BeginPlay() with authority on this actor a 2nd time, which is always incorrect.
-		check(!EntityActor->HasAuthority());
+		// state. This is because it should already have had authoritative BeginPlay() called. The Actor role
+		// can be authority here if a PendingAddComponent processed above set the role. Calling BeginPlay()
+		// with authority a 2nd time globally is always incorrect, so we set role to SimulatedProxy and let
+		// the processing of authority ops (later in the LeaveCriticalSection flow) take care of setting
+		// authority correctly.
+		if (EntityActor->HasAuthority())
+		{
+			EntityActor->Role = ROLE_SimulatedProxy;
+			EntityActor->RemoteRole = ROLE_Authority;
+		}
 		EntityActor->DispatchBeginPlay();
 	}
 
@@ -1362,7 +1369,7 @@ struct USpatialReceiver::RepStateUpdateHelper
 			{
 				ObjectRepState->UpdateRefToRepStateMap(Receiver.ObjectRefToRepStateMap);
 
-				if (ObjectRepState->ReferencedObj.Num() == 0)
+				if (ObjectRepState->ReferencedObj.Num( ) == 0)
 				{
 					Channel.ObjectReferenceMap.Remove(ObjectPtr);
 				}
