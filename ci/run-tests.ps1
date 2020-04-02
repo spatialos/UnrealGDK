@@ -6,7 +6,7 @@ param(
     [string] $test_repo_map,
     [string] $report_output_path,
     [string] $tests_path = "SpatialGDK",
-    [string] $additional_gdk_options,
+    [string] $additional_gdk_options = "",
     [bool]   $run_with_spatial = $False
 )
 
@@ -60,7 +60,6 @@ Foreach($additional_gdk_option in $additional_gdk_options_arr) {
         $additional_gdk_options += $additional_gdk_option
     }
 }
-$additional_gdk_options =
 
 $cmd_args_list = @( `
     "`"$uproject_path_absolute`"", # We need some project to run tests in, but for unit tests the exact project shouldn't matter
