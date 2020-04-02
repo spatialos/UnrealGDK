@@ -51,7 +51,7 @@ $output_dir_absolute = Force-ResolvePath $output_dir
 
 $additional_gdk_options_arr = $additional_gdk_options.Split(";")
 $additional_gdk_options = ""
-foreach($additional_gdk_option in $additional_gdk_options_arr) {
+Foreach($additional_gdk_option in $additional_gdk_options_arr) {
     if($additional_gdk_options -eq "") {
         $additional_gdk_options += $additional_gdk_option
     }
