@@ -457,6 +457,13 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 			}
 		}
 	}
+
+	if (!NetDriver->IsServer() && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE &&
+		(Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID ||
+			Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY))
+	{
+		PlayerController->NotifyServerOfClientStreamingLevelVisibilities();
+	}
 }
 
 void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
@@ -510,6 +517,43 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 			}
 
 			Sender->SendRequestToClearRPCsOnEntityCreation(Op.entity_id);
+		}
+	}
+
+	if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID ||
+		Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID ||
+		Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+	{
+		if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
+		{
+			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+			{
+				RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
+				if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+				{
+					RPCService->ExtractRPCsForEntity(Op.entity_id, Op.component_id);
+				}
+			}
+			else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+			{
+				RPCService->OnEndpointAuthorityLost(Op.entity_id, Op.component_id);
+			}
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::HandleActorAuthority: Gained authority over ring buffer endpoint but ring buffers not enabled! Entity: %lld, Component: %d"), Op.entity_id, Op.component_id);
+		}
+	}
+
+	if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
+		{
+			Sender->SendClientEndpointReadyUpdate(Op.entity_id);
+		}
+		if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
+		{
+			Sender->SendServerEndpointReadyUpdate(Op.entity_id);
 		}
 	}
 
@@ -641,43 +685,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
 		{
 			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
-		}
-	}
-
-	if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID ||
-		Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID ||
-		Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
-	{
-		if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
-		{
-			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
-			{
-				RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
-				if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
-				{
-					RPCService->ExtractRPCsForEntity(Op.entity_id, Op.component_id);
-				}
-			}
-			else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
-			{
-				RPCService->OnEndpointAuthorityLost(Op.entity_id, Op.component_id);
-			}
-		}
-		else
-		{
-			UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::HandleActorAuthority: Gained authority over ring buffer endpoint but ring buffers not enabled! Entity: %lld, Component: %d"), Op.entity_id, Op.component_id);
-		}
-	}
-
-	if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
-	{
-		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
-		{
-			Sender->SendClientEndpointReadyUpdate(Op.entity_id);
-		}
-		if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
-		{
-			Sender->SendServerEndpointReadyUpdate(Op.entity_id);
 		}
 	}
 }
