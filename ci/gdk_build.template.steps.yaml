@@ -59,8 +59,6 @@ steps:
     command: "${BUILD_COMMAND}"
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
-      - "ci/FastTestResults/*"
-      - "ci/VanillaTestResults/*"
     env:
       BUILD_ALL_CONFIGURATIONS: "${BUILD_ALL_CONFIGURATIONS}"
       ENGINE_COMMIT_HASH: "${ENGINE_COMMIT_HASH}"

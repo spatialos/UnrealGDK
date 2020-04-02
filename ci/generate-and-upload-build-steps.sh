@@ -22,7 +22,12 @@ upload_build_configuration_step() {
 generate_build_configuration_steps () {
     # See https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html for possible configurations 
     ENGINE_COMMIT_HASH="${1}"
-    export MACHINE_TYPE_ENVVAR="quad-high-cpu"
+
+    if [[ -z "${NIGHTLY_BUILD+x}" ]]; then
+        export MACHINE_TYPE_ENVVAR="quad-high-cpu"
+    else
+        export MACHINE_TYPE_ENVVAR="single-high-cpu" # nightly builds run on smaller nodes
+    fi
 
     if [[ -z "${MAC_BUILD:-}" ]]; then
         # if the BUILD_ALL_CONFIGURATIONS environment variable doesn't exist, then...
