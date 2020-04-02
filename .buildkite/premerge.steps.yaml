@@ -78,6 +78,6 @@ steps:
     <<: *script_runner
   
   - label: "slack-notify"
-    if: build.env("SLACK_NOTIFY") == "true" || build.branch == "master"
+    if: (build.env("SLACK_NOTIFY") == "true" || build.branch == "master") && build.env("SLACK_NOTIFY") != "false"
     commands: "powershell ./ci/build-and-send-slack-notification.ps1"
     <<: *windows
