@@ -22,6 +22,7 @@ upload_build_configuration_step() {
 generate_build_configuration_steps () {
     # See https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html for possible configurations 
     ENGINE_COMMIT_HASH="${1}"
+    export MACHINE_TYPE_ENVVAR="quad-high-cpu"
 
     if [[ -z "${MAC_BUILD:-}" ]]; then
         # if the BUILD_ALL_CONFIGURATIONS environment variable doesn't exist, then...
@@ -48,6 +49,8 @@ generate_build_configuration_steps () {
             upload_build_configuration_step "${ENGINE_COMMIT_HASH}" "Linux" "" "Development"
         else
             echo "Building for all supported configurations. Generating the appropriate steps..."
+
+            export MACHINE_TYPE_ENVVAR="single-high-cpu" # run the weekly with smaller nodes, since this is not time-critical
 
             # Editor builds (Test and Shipping build states do not exist for the Editor build target)
             for BUILD_STATE in "DebugGame" "Development"; do
