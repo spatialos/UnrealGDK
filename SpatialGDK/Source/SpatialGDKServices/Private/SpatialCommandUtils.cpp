@@ -126,28 +126,17 @@ bool SpatialCommandUtils::BuildWorkerConfig(bool bIsRunningInChina, const FStrin
 	return bSuccess;
 }
 
-FProcHandle SpatialCommandUtils::LocalWorkerReplace(const FString& ServicePort, const FString& OldWorker, const FString& NewWorker, bool bIsRunningInChina, bool bLaunchDetached, bool bLaunchHidden, bool bLaunchReallyHidden, uint32* OutProcessID, int32 PriorityModifier, const TCHAR* OptionalWorkingDirectory, void* PipeWriteChild, void* PipeReadChild)
+FProcHandle SpatialCommandUtils::LocalWorkerReplace(const FString& ServicePort, const FString& OldWorker, const FString& NewWorker, bool bIsRunningInChina, uint32* OutProcessID)
 {
+	check(!ServicePort.IsEmpty());
+	check(!OldWorker.IsEmpty());
+	check(!NewWorker.IsEmpty());
+
 	FString Command = TEXT("worker build build-config");
-
-	if (ServicePort.IsEmpty())
-	{
-		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Calling LocalWorkerReplace with no ServicePort"));
-	}
-
-	if (OldWorker.IsEmpty())
-	{
-		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Calling LocalWorkerReplace with no OldWorker"));
-	}
-
-	if (NewWorker.IsEmpty())
-	{
-		UE_LOG(LogSpatialCommandUtils, Error, TEXT("Calling LocalWorkerReplace with no NewWorker"));
-	}
-
 	Command.Append(FString::Printf(TEXT(" --local_service_grpc_port %s"), *ServicePort));
 	Command.Append(FString::Printf(TEXT(" --existing_worker_id %s"), *OldWorker));
 	Command.Append(FString::Printf(TEXT(" --replacing_worker_id %s"), *NewWorker));
 
-	return FPlatformProcess::CreateProc(*SpatialGDKServicesConstants::SpatialExe, *Command, bLaunchDetached, bLaunchHidden, bLaunchReallyHidden, OutProcessID, PriorityModifier, OptionalWorkingDirectory, PipeWriteChild, PipeReadChild);
+	return FPlatformProcess::CreateProc(*SpatialGDKServicesConstants::SpatialExe, *Command, false, true, true, OutProcessID, 2 /*PriorityModifier*/,
+		nullptr, nullptr, nullptr);
 }
