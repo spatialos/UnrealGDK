@@ -1,0 +1,104 @@
+---
+common: &common
+  agents:
+    - "capable_of_building=gdk-for-unity"
+    - "environment=production"
+    - "permission_set=builder"
+    - "platform=linux"  # if you need a different platform, configure this: macos|linux|windows.
+    - "queue=v3-1568738590-4881a8663c5d900a-------z"
+    - "scaler_version=2"
+  timeout_in_minutes: 60 # TODO(ENG-548): reduce timeout once agent-cold-start is optimised.
+  retry:
+    automatic:
+        # This is designed to trap and retry failures because agent lost connection. Agent exits with -1 in this case.
+      - exit_status: -1
+        limit: 3
+
+steps:
+
+  - block: Configure the release preparation
+    prompt: Fill out the parameters for the release you want.
+    fields:
+      - text: Release version
+        key: release-version
+        required: true
+        hint: The version to create an RC for. E.g. - 0.2.3 or 1.0.1.
+
+  # Will upload metadata with the PR link.
+  - label: Prepare GDK for Unity release
+    command: ci/prepare-release.sh gdk-for-unity
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+
+  - wait
+
+  - label: "Add step for triggering release QA"
+    command: ci/generate-release-qa-trigger.sh gdk-for-unity | buildkite-agent pipeline upload
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+
+  - block: Unblock GDK for Unity release
+
+  - label: Release GDK for Unity
+    command: ci/release.sh gdk-for-unity
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    
+  - wait
+
+  - label: Publish GDK for Unity packages
+    command: ci/publish-packages.sh
+    <<: *common
+
+  - wait
+
+  # Will upload metadata with the PR link.
+  - label: Prepare FPS Starter Project release
+    command: ci/prepare-release.sh gdk-for-unity-fps-starter-project
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+
+  - wait
+
+  - label: "Add step for triggering release QA"
+    command: ci/generate-release-qa-trigger.sh gdk-for-unity-fps-starter-project | buildkite-agent pipeline upload
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+
+  - block: Unblock FPS Starter Project release
+
+  - label: Release FPS Starter Project
+    command: ci/release.sh gdk-for-unity-fps-starter-project
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+
+  - wait  
+
+  # Will upload metadata with the PR link.
+  - label: Prepare Blank Project release
+    command: ci/prepare-release.sh gdk-for-unity-blank-project
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+
+  - wait
+
+  - label: "Add step for triggering release QA"
+    command: ci/generate-release-qa-trigger.sh gdk-for-unity-blank-project | buildkite-agent pipeline upload
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+
+  - block: Unblock Blank Project release
+
+  - label: Release Blank Project
+    command: ci/release.sh gdk-for-unity-blank-project
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.

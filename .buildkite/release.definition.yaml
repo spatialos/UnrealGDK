@@ -1,0 +1,11 @@
+agent_queue_id: trigger-pipelines
+description: UnrealGDK release pipeline
+github:
+  branch_configuration: []
+  default_branch: master
+  pull_request_branch_filter_configuration: []
+teams:
+- name: Everyone
+  permission: READ_ONLY
+- name: gbu/develop/unreal
+  permission: MANAGE_BUILD_AND_READ
