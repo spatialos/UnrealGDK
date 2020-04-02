@@ -898,12 +898,10 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	// Taken from PostNetInit
 	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 	{
-		// Whenever we receive an actor over the wire, the expectation is that it is not in an authoritative
-		// state. This is because it should already have had authoritative BeginPlay() called. The Actor role
-		// can be authority here if a PendingAddComponent processed above set the role. Calling BeginPlay()
-		// with authority a 2nd time globally is always incorrect, so we set role to SimulatedProxy and let
-		// the processing of authority ops (later in the LeaveCriticalSection flow) take care of setting
-		// authority correctly.
+		// The Actor role can be authority here if a PendingAddComponent processed above set the role.
+		// Calling BeginPlay() with authority a 2nd time globally is always incorrect, so we set role
+		// to SimulatedProxy and let the processing of authority ops (later in the LeaveCriticalSection
+		// flow) take care of setting roles correctly.
 		if (EntityActor->HasAuthority())
 		{
 			EntityActor->Role = ROLE_SimulatedProxy;
