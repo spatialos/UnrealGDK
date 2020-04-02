@@ -1367,7 +1367,7 @@ struct USpatialReceiver::RepStateUpdateHelper
 			{
 				ObjectRepState->UpdateRefToRepStateMap(Receiver.ObjectRefToRepStateMap);
 
-				if (ObjectRepState->ReferencedObj.Num( ) == 0)
+				if (ObjectRepState->ReferencedObj.Num() == 0)
 				{
 					Channel.ObjectReferenceMap.Remove(ObjectPtr);
 				}
