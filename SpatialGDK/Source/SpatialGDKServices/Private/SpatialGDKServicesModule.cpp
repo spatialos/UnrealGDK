@@ -77,9 +77,9 @@ bool FSpatialGDKServicesModule::SpatialPreRunChecks(bool bIsInChina)
 {
 	FString SpatialExistenceCheckResult;
 	int32 ExitCode;
-	SpatialCommandUtils::ExecuteSpatialCommandAndReadOutput(TEXT("version"), SpatialGDKServicesConstants::SpatialOSDirectory, SpatialExistenceCheckResult, ExitCode, bIsInChina);
+	bool bSuccess = SpatialCommandUtils::SpatialVersion(bIsInChina, SpatialGDKServicesConstants::SpatialOSDirectory, SpatialExistenceCheckResult, ExitCode);
 
-	if (ExitCode != 0)
+	if (!bSuccess)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("%s does not exist on this machine! Please make sure Spatial is installed before trying to start a local deployment. %s"), *SpatialGDKServicesConstants::SpatialExe, *SpatialExistenceCheckResult);
 		return false;
