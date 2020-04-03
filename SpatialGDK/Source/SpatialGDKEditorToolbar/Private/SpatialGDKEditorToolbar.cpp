@@ -911,8 +911,15 @@ bool FSpatialGDKEditorToolbarModule::IsSchemaGenerated() const
 
 FString FSpatialGDKEditorToolbarModule::GetOptionalExposedRuntimeIP() const
 {
-	const UGeneralProjectSettings* GeneralProjectSettings = GetDefault<UGeneralProjectSettings>();
-	return GeneralProjectSettings->bEnableSpatialLocalLauncher ? GeneralProjectSettings->SpatialLocalDeploymentRuntimeIP : "";
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (SpatialGDKEditorSettings->bExposeRuntimeIP)
+	{
+		return SpatialGDKEditorSettings->ExposedRuntimeIP;
+	}
+	else
+	{
+		return TEXT("");
+	}
 }
 
 #undef LOCTEXT_NAMESPACE
