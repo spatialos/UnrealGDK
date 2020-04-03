@@ -785,7 +785,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 			if (UActorComponent* ActorComponent = Cast<UActorComponent>(TargetObject))
 			{
-				OutgoingOnCreateEntityRPCs.FindOrAdd(ActorComponent->GetOuter()).RPCs.Add(Payload);
+				OutgoingOnCreateEntityRPCs.FindOrAdd(Channel->Actor).RPCs.Add(Payload);
 			}
 			else
 			{
