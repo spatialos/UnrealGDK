@@ -84,13 +84,13 @@ public:
 
 	// Front-end exposed, allows users to register, start, continue, and end traces
 
-	// Call with your google project id. This must be called before latency trace calls are made
+	// Call with your google project id. This must be called before latency trace calls are made.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static void RegisterProject(UObject* WorldContextObject, const FString& ProjectId);
 
-	// Set a prefix to be used for all span names. Resulting uploaded span names are of the format "PREFIX(WORKER_ID) : USER_SPECIFIED_NAME".
+	// Set metadata string to be included in all span names. Resulting uploaded span names are of the format "USER_SPECIFIED_NAME (METADATA : WORKER_ID)".
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool SetMessagePrefix(UObject* WorldContextObject, const FString& NewMessagePrefix);
+	static bool SetTraceMetadata(UObject* WorldContextObject, const FString& NewTraceMetadata);
 
 	// Start a latency trace. This will start the latency timer and return you a LatencyPayload object. This payload can then be "continued" via a ContinueLatencyTrace call.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
@@ -164,7 +164,7 @@ private:
 	FString FormatMessage(const FString& Message) const;
 
 	FString WorkerId;
-	FString MessagePrefix;
+	FString TraceMetadata;
 
 	TraceKey NextTraceKey = 1;
 
