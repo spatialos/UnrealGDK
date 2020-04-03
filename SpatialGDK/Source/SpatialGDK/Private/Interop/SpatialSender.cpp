@@ -783,7 +783,14 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		{
 			check(NetDriver->IsServer());
 
-			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Payload);
+			if (UActorComponent* ActorComponent = Cast<UActorComponent>(TargetObject))
+			{
+				OutgoingOnCreateEntityRPCs.FindOrAdd(ActorComponent->GetOuter()).RPCs.Add(Payload);
+			}
+			else
+			{
+				OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Payload);
+			}
 #if !UE_BUILD_SHIPPING
 			TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
