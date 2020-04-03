@@ -242,11 +242,19 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
 
 	FString SpatialWorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
-	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted() && !GameInstance->GetPreventAutoConnectWithLocator())
+
+	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
 	{
 		GameInstance->SetFirstConnectionToSpatialOSAttempted();
-		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
+		if (GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect(bConnectAsClient))
 		{
+			// If first time connecting but the bGetPreventClientCloudDeploymentAutoConnect flag is set then use input URL to setup connection config.
+			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
+		}
+		// Otherwise, try using command line arguments to setup connection config.
+		else if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
+		{
+			// If the command line arguments can not be used, use the input URL to setup connection config.
 			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
 		}
 	}
