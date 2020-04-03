@@ -66,7 +66,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableUnrealLoadBalancer(false)
 	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(false)
-	, DefaultRPCRingBufferSize(8)
+	, DefaultRPCRingBufferSize(32)
 	, MaxRPCRingBufferSize(32)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
 	, bTcpNoDelay(false)
@@ -198,3 +198,12 @@ float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) cons
 
 	return RPCQueueWarningDefaultTimeout;
 }
+
+bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect(bool bIsClient) const
+{
+#if WITH_EDITOR
+	return false;
+#else
+	return bIsClient && bPreventClientCloudDeploymentAutoConnect;
+#endif
+};
