@@ -87,7 +87,6 @@ public:
 private:
 	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();
-	//void LinkExistingSingletonActor(const UClass* SingletonClass);
 
 	void BecomeAuthoritativeOverAllActors();
 	void BecomeAuthoritativeOverActorsBasedOnLBStrategy();
