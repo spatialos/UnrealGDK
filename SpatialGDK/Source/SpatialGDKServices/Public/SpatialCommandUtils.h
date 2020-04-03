@@ -10,11 +10,11 @@ class SpatialCommandUtils
 {
 public:
 
-	SPATIALGDKSERVICES_API static void ExecuteSpatialCommandAndReadOutput(FString Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode, bool bIsRunningInChina);
-
-	SPATIALGDKSERVICES_API static void ExecuteSpatialCommand(FString Arguments, int32* OutReturnCode, FString* OutStdOut, FString* OutStdEr, bool bIsRunningInChina);
-
-	SPATIALGDKSERVICES_API static FProcHandle CreateSpatialProcess(FString Arguments, bool bLaunchDetached, bool bLaunchHidden, bool bLaunchReallyHidden, uint32* OutProcessID, int32 PriorityModifier, const TCHAR* OptionalWorkingDirectory, void* PipeWriteChild, void * PipeReadChild, bool bIsRunningInChina);
-
+	SPATIALGDKSERVICES_API static bool SpatialVersion(bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode);
 	SPATIALGDKSERVICES_API static bool AttemptSpatialAuth(bool bIsRunningInChina);
+	SPATIALGDKSERVICES_API static bool StartSpatialService(const FString& Version, const FString& RuntimeIP, bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode);
+	SPATIALGDKSERVICES_API static bool StopSpatialService(bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode);
+	SPATIALGDKSERVICES_API static bool BuildWorkerConfig(bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode);
+	SPATIALGDKSERVICES_API static FProcHandle LocalWorkerReplace(const FString& ServicePort, const FString& OldWorker, const FString& NewWorker, bool bIsRunningInChina, uint32* OutProcessID);
+
 };
