@@ -133,21 +133,18 @@ void USpatialGameInstance::TryConnectToSpatial()
 
 		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
 		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
-		// If a developer wants to use the Launcher and NOT automatically connect they will have to set the `PreventAutoConnectWithLocator` flag to true.
-		if (!bPreventAutoConnectWithLocator)
+
+		// Initialize a locator configuration which will parse command line arguments.
+		FLocatorConfig LocatorConfig;
+		if (LocatorConfig.TryLoadCommandLineArgs())
 		{
-			// Initialize a locator configuration which will parse command line arguments.
-			FLocatorConfig LocatorConfig;
-			if (LocatorConfig.TryLoadCommandLineArgs())
-			{
-				// Modify the commandline args to have a Host IP to force a NetDriver to be used.
-				const TCHAR* CommandLineArgs = FCommandLine::Get();
+			// Modify the commandline args to have a Host IP to force a NetDriver to be used.
+			const TCHAR* CommandLineArgs = FCommandLine::Get();
 
-				FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
-				NewCommandLineArgs.Append(FString(CommandLineArgs));
+			FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
+			NewCommandLineArgs.Append(FString(CommandLineArgs));
 
-				FCommandLine::Set(*NewCommandLineArgs);
-			}
+			FCommandLine::Set(*NewCommandLineArgs);
 		}
 	}
 #if TRACE_LIB_ACTIVE

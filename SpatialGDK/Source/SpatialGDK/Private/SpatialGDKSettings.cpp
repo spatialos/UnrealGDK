@@ -198,3 +198,12 @@ float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) cons
 
 	return RPCQueueWarningDefaultTimeout;
 }
+
+bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect(bool bIsClient) const
+{
+#if WITH_EDITOR
+	return false;
+#else
+	return bIsClient && bPreventClientCloudDeploymentAutoConnect;
+#endif
+};
