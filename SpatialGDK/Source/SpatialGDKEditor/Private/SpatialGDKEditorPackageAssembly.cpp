@@ -267,14 +267,14 @@ void FSpatialGDKPackageAssembly::BuildSimulatedPlayerWorker()
 	Build(GenClientBuildCommand(TEXT("")), BuildLambda);
 }
 
-void FSpatialGDKPackageAssembly::UploadAssembly(const FString &AssemblyName, bool force)
+void FSpatialGDKPackageAssembly::UploadAssembly(const FString &AssemblyName, bool Force)
 {
 	if (!Upload)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 		FString WorkingDir = FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial"));
 		FString Spatial(TEXT("spatial"));
-		FString Args = FString::Printf(TEXT("cloud upload %s %s %s --no_animation"), *AssemblyName, force ? TEXT("--force") : TEXT(""), SpatialGDKSettings->IsRunningInChina() ? TEXT("--environment=cn-production") : TEXT(""));
+		FString Args = FString::Printf(TEXT("cloud upload %s %s %s --no_animation"), *AssemblyName, Force ? TEXT("--force") : TEXT(""), SpatialGDKSettings->IsRunningInChina() ? TEXT("--environment=cn-production") : TEXT(""));
 		Upload.Reset(new FMonitoredProcess(Spatial, Args, WorkingDir, true));
 		Upload->OnCompleted().BindRaw(this, &FSpatialGDKPackageAssembly::OnUploadCompleted);
 		Upload->OnOutput().BindRaw(this, &FSpatialGDKPackageAssembly::OnUploadOutput);
@@ -293,7 +293,7 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString &AssemblyName, boo
 void FSpatialGDKPackageAssembly::BuildNext()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	auto lambda = [this](FString Result, double) {
+	auto OnStepCompleted = [this](FString Result, double) {
 		if (Result == TEXT("Completed"))
 		{
 			BuildNext();
@@ -311,26 +311,26 @@ void FSpatialGDKPackageAssembly::BuildNext()
 	{
 	case EPackageAssemblyTarget::START_ALL:
 		CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_CLIENT;
-		Build(GenClientBuildCommand(TEXT("")), lambda);
+		Build(GenClientBuildCommand(TEXT("")), OnStepCompleted);
 		break;
 	case EPackageAssemblyTarget::BUILD_CLIENT:
 		CurrentAssemblyTarget = EPackageAssemblyTarget::ZIP_CLIENT;
-		ZipWorker(TEXT("WindowsNoEditor"), TEXT("UnrealClient@Windows.zip"), lambda);
+		ZipWorker(TEXT("WindowsNoEditor"), TEXT("UnrealClient@Windows.zip"), OnStepCompleted);
 		break;
 	case EPackageAssemblyTarget::ZIP_CLIENT:
 		CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_SERVER;
-		Build(GetServerBuildCommand(TEXT("")), lambda);
+		Build(GetServerBuildCommand(TEXT("")), OnStepCompleted);
 		break;
 	case EPackageAssemblyTarget::BUILD_SERVER:
 		CurrentAssemblyTarget = EPackageAssemblyTarget::ZIP_SERVER;
 		WriteStartWorkerScript();
-		ZipWorker(TEXT("LinuxServer"), TEXT("UnrealWorker@Linux.zip"), lambda);
+		ZipWorker(TEXT("LinuxServer"), TEXT("UnrealWorker@Linux.zip"), OnStepCompleted);
 		break;
 	case EPackageAssemblyTarget::ZIP_SERVER:
 		if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
 		{
 			CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_SIMULATED_PLAYERS;
-			Build(GenSimulatedPlayerBuildCommand(TEXT("")), lambda);
+			Build(GenSimulatedPlayerBuildCommand(TEXT("")), OnStepCompleted);
 		}
 		else if (UploadAfterBuildPtr)
 		{
@@ -344,7 +344,7 @@ void FSpatialGDKPackageAssembly::BuildNext()
 	case EPackageAssemblyTarget::BUILD_SIMULATED_PLAYERS:
 		CurrentAssemblyTarget = EPackageAssemblyTarget::ZIP_SIMULATED_PLAYERS;
 		AddFilesForSimulatedPlayer();
-		ZipWorker(TEXT("LinuxNoEditor"), TEXT("UnrealSimulatedPlayer@Linux.zip"), lambda);
+		ZipWorker(TEXT("LinuxNoEditor"), TEXT("UnrealSimulatedPlayer@Linux.zip"), OnStepCompleted);
 	case EPackageAssemblyTarget::ZIP_SIMULATED_PLAYERS:
 		if (UploadAfterBuildPtr)
 		{
