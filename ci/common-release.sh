@@ -12,7 +12,7 @@ function setupReleaseTool() {
         --environment=production \
         --buildkite-org=improbable \
         --secret-type=github-personal-access-token \
-        --secret-name=unity-gdk/github-bot-personal-access-token \
+        --secret-name=ci/improbable/gdk-for-unreal-bot-github-personal-access-token \
         --field="token" \
         --write-to="${SECRETS_DIR}/github_token"
 
@@ -20,7 +20,7 @@ function setupReleaseTool() {
         --environment=production \
         --buildkite-org=improbable \
         --secret-type=ssh-key \
-        --secret-name=unity-gdk/github-bot-ssh-key \
+        --secret-name=ci/improbable/gdk-for-unreal-bot-ssh-key \
         --field="privateKey" \
         --write-to="${SECRETS_DIR}/id_rsa"
 
