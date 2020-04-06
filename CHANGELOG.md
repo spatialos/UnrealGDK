@@ -64,6 +64,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - When running with Offloading enabled, and trying to spawn Actors on a server which will not be the Actor Group owner for them, an error is logged and the Actor is deleted.
 - Use the SpatialOS runtime version 14.5.0 by default.
 - Config setting bPreventAutoConnectWithLocator has been renamed to bPreventClientCloudDeploymentAutoConnect. It has been moved to GDK Setting. If using this feature please update enable the setting in GDK Settings.
+- USpatialMetrics::WorkerMetricsRecieved was made static.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
