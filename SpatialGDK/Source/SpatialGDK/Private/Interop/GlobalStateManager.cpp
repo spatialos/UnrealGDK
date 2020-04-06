@@ -296,6 +296,15 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 		}
 		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		{
+			// We have functionality we want to occur on only one server at the start of a
+			// fresh deployment (not loaded from snapshot). This will be true if this worker
+			// is GSM authoritative AND the can_begin_play SpatialOS component property is
+			// false.
+			if (!bCanBeginPlay)
+			{
+				NetDriver->OnFreshDeploymentGSMAuthority();
+			}
+
 			// The bCanSpawnWithAuthority member determines whether a server-side worker
 			// should consider calling BeginPlay on startup Actors if the load-balancing
 			// strategy dictates that the worker should have authority over the Actor

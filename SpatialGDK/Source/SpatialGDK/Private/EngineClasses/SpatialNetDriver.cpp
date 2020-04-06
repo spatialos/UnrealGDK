@@ -35,7 +35,6 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Schema/Singleton.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityPool.h"
 #include "Utils/ErrorCodeRemapping.h"
@@ -373,21 +372,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-#if !UE_BUILD_SHIPPING
-	// If metrics display is enabled, spawn a singleton Actor to replicate the information to each client.
-	if (IsServer())
-	{
-		if (SpatialSettings->bEnableMetricsDisplay)
-		{
-			SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
-		}
-
-		if (SpatialSettings->SpatialDebugger != nullptr)
-		{
-			SpatialDebugger = GetWorld()->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger);
-		}
-	}
-#endif
 
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
@@ -462,7 +446,6 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
 	}
 }
-
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 {
@@ -623,7 +606,6 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 {
 	if (!Actor->GetIsReplicated() ||
 		Actor->GetLocalRole() != ROLE_Authority ||
-		Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
 		USpatialStatics::IsActorGroupOwnerForActor(Actor))
 	{
@@ -895,13 +877,6 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 		if (PackageMap != nullptr && World != nullptr)
 		{
 			const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
-
-			// It is safe to check that we aren't destroying a singleton actor on a server if there is a valid entity ID and this is not a client.
-			if (ThisActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && EntityId != SpatialConstants::INVALID_ENTITY_ID)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Removed a singleton actor on a server. This should never happen. "
-					"Actor: %s."), *ThisActor->GetName());
-			}
 
 			// If the actor is an initially dormant startup actor that has not been replicated.
 			if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && ThisActor->GetIsReplicated() && ThisActor->HasAuthority())
@@ -2561,7 +2536,6 @@ void USpatialNetDriver::SelectiveProcessOps(TArray<Worker_Op*> FoundOps)
 }
 
 // This should only be called once on each client, in the SpatialMetricsDisplay constructor after the class is replicated to each client.
-// This is enforced by the fact that the class is a Singleton spawned on servers by the SpatialNetDriver.
 void USpatialNetDriver::SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay)
 {
 	check(SpatialMetricsDisplay == nullptr);
@@ -2576,7 +2550,6 @@ void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 #endif
 
 // This should only be called once on each client, in the SpatialDebugger constructor after the class is replicated to each client.
-// This is enforced by the fact that the class is a Singleton spawned on servers by the SpatialNetDriver.
 void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
 {
 	check(!IsServer());
@@ -2610,4 +2583,22 @@ void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
 {
 	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
 	VirtualWorkerTranslationManager->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+}
+
+// This method should be called exactly once during fresh deployments (not loaded from snapshots).
+// This is because we only want to spawn the metrics display and debugger once.
+void USpatialNetDriver::OnFreshDeploymentGSMAuthority()
+{
+#if !UE_BUILD_SHIPPING
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialSettings->bEnableMetricsDisplay)
+	{
+		SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
+	}
+
+	if (SpatialSettings->SpatialDebugger != nullptr)
+	{
+		SpatialDebugger = GetWorld()->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger);
+	}
+#endif
 }

@@ -111,6 +111,4 @@ private:
 	USpatialReceiver* Receiver;
 
 	FDelegateHandle PrePIEEndedHandle;
-
-	TMap<FString, TPair<AActor*, USpatialActorChannel*>> SingletonClassPathToActorChannels;
 };

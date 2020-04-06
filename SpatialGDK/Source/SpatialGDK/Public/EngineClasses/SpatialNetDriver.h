@@ -185,6 +185,8 @@ public:
 	void TrackTombstone(const Worker_EntityId EntityId);
 #endif
 
+	void OnFreshDeploymentGSMAuthority();
+
 private:
 
 	TUniquePtr<SpatialDispatcher> Dispatcher;
