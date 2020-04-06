@@ -28,10 +28,9 @@ VOLUME /var/cloudsmith_credentials
 ENV IMPROBABLE_CONFIG_DIR "/var/spatial_oauth/"
 ENV CLOUDSMITH_CONFIG_DIR "/var/cloudsmith_credentials"
 
-# Copy gdk-for-unity and our entrypoint script into the container.
+# Copy UnrealGDK and our entrypoint script into the container.
 WORKDIR /usr/src/
-COPY gdk-for-unity ./gdk-for-unity
-COPY ./ci/docker/publish-packages-entrypoint.sh ./entrypoint.sh
+COPY UnrealGDK ./UnrealGDK
 RUN ["chmod", "+x", "./entrypoint.sh"]
 
 ENTRYPOINT ["./entrypoint.sh"]
