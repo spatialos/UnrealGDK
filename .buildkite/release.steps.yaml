@@ -5,9 +5,11 @@ common: &common
     - "environment=production"
     - "permission_set=builder"
     - "platform=linux"  # if you need a different platform, configure this: macos|linux|windows.
-    - "queue=v3-1568738590-4881a8663c5d900a-------z"
+    - "queue=${CI_LINUX_BUILDER_QUEUE:-v4-2019-12-12-bk5225-daecba805768d787}"
     - "scaler_version=2"
-  timeout_in_minutes: 60 # TODO(ENG-548): reduce timeout once agent-cold-start is optimised.
+    - "working_hours_time_zone=london"
+
+  timeout_in_minutes: 20
   retry:
     automatic:
         # This is designed to trap and retry failures because agent lost connection. Agent exits with -1 in this case.
@@ -22,7 +24,7 @@ steps:
       - text: Release version
         key: release-version
         required: true
-        hint: The version to create an RC for. E.g. - 0.2.3 or 1.0.1.
+        hint: The component release version you want to create a release candidate for, e.g. - 0.1.2 or 1.0.1.
 
   # Will upload metadata with the PR link.
   - label: Prepare UnrealGDK release
