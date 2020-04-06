@@ -27,8 +27,8 @@ setupReleaseTool
 mkdir -p ./logs
 
 echo "--- Preparing ${REPO} @ ${RELEASE_VERSION} :package:"
-if [[ "${REPO}" != "gdk-for-unity" ]]; then
-	PIN_HASH="$(buildkite-agent meta-data get gdk-for-unity-hash)"
+if [[ "${REPO}" != "UnrealGDK" ]]; then
+	PIN_HASH="$(buildkite-agent meta-data get UnrealGDK-hash)"
 	PIN_ARG="--update-pinned-gdk=${PIN_HASH}"
 else
 	PIN_ARG=""
