@@ -13,31 +13,33 @@
 
 namespace SpatialGDK
 {
-	struct Singleton : Component
+
+struct Singleton : Component
+{
+	static const Worker_ComponentId ComponentId = SpatialConstants::SINGLETON_COMPONENT_ID;
+
+	Singleton() = default;
+	Singleton(const Worker_ComponentData& Data)
 	{
-		static const Worker_ComponentId ComponentId = SpatialConstants::SINGLETON_COMPONENT_ID;
+	}
 
-		Singleton() = default;
-		Singleton(const Worker_ComponentData& Data)
-		{
-		}
+	FORCEINLINE Worker_ComponentData CreateSingletonData()
+	{
+		Worker_ComponentData Data = {};
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData();
 
-		FORCEINLINE Worker_ComponentData CreateSingletonData()
-		{
-			Worker_ComponentData Data = {};
-			Data.component_id = ComponentId;
-			Data.schema_type = Schema_CreateComponentData();
+		return Data;
+	}
 
-			return Data;
-		}
+	static bool ShouldHaveLocalWorkerAuthority(AActor* SingletonActor, UAbstractLBStrategy* LBStrategy, USpatialStaticComponentView* ComponentView)
+	{
+		const bool bLoadBalancerEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
+		// We should check here because if we're calling this before GSM entity data is received it will effectively be giving a false negative.
+		check(ComponentView->HasComponent(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
+		const bool bHasGSMAuthority = ComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+		return (bLoadBalancerEnabled && LBStrategy->ShouldHaveAuthority(*SingletonActor)) || (!bLoadBalancerEnabled && bHasGSMAuthority);
+	}
+};
 
-		static bool ShouldHaveLocalWorkerAuthority(AActor* SingletonActor, UAbstractLBStrategy* LBStrategy, USpatialStaticComponentView* ComponentView)
-		{
-			const bool bLoadBalancerEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
-			// We should check here because if we're calling this before GSM entity data is received it will effectively be giving a false negative.
-			check(ComponentView->HasComponent(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
-			const bool bHasGSMAuthority = ComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-			return (bLoadBalancerEnabled && LBStrategy->ShouldHaveAuthority(*SingletonActor)) || (!bLoadBalancerEnabled && bHasGSMAuthority);
-		}
-	};
 } // namespace SpatialGDK

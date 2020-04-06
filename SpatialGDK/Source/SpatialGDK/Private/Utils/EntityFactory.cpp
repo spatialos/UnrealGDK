@@ -217,7 +217,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		});
 	}
 
-	// We want to have a stably named ref if this is an Actor placed in the world.
+	// We want to have a stably named ref if this is an Actor placed in the world or is a singleton.
 	// We use this to indicate if a new Actor should be created, or to link a pre-existing Actor when receiving an AddEntityOp.
 	// Previously, IsFullNameStableForNetworking was used but this was only true if bNetLoadOnClient=true.
 	// Actors with bNetLoadOnClient=false also need a StablyNamedObjectRef for linking in the case of loading from a snapshot or the server crashes and restarts.

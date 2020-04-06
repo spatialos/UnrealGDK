@@ -2310,31 +2310,20 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 	USpatialNetConnection* NetConnection = GetSpatialOSNetConnection();
 	check(NetConnection != nullptr);
 
-	USpatialActorChannel* Channel = nullptr;
-
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && !SpatialGDK::Singleton::ShouldHaveLocalWorkerAuthority(Actor, LoadBalanceStrategy, StaticComponentView))
-	{
-		return Channel;
-	}
-
-	Channel = static_cast<USpatialActorChannel*>(NetConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
+	USpatialActorChannel* Channel = static_cast<USpatialActorChannel*>(NetConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
 	if (Channel == nullptr)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Failed to create a channel for actor %s."), *GetNameSafe(Actor));
-	}
-	else
-	{
-#if ENGINE_MINOR_VERSION <= 22
-		Channel->SetChannelActor(Actor);
-#else
-		Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
-#endif
+		return Channel;
 	}
 
-	if (Channel != nullptr)
-	{
-		Channel->RefreshAuthority();
-	}
+#if ENGINE_MINOR_VERSION <= 22
+	Channel->SetChannelActor(Actor);
+#else
+	Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
+#endif
+
+	Channel->RefreshAuthority();
 
 	return Channel;
 }

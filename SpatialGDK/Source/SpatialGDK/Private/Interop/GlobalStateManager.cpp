@@ -321,7 +321,6 @@ bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId)
 {
 	switch (ComponentId)
 	{
-		//case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
