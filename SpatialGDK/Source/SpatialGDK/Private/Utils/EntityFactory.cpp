@@ -323,23 +323,13 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentDatas.Add(ServerRPCEndpointLegacy().CreateRPCEndpointData());
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY));
 
-		auto SendQueuedRPCs = [&](UObject* Object)
+		if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
 		{
-			if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Object))
+			if (QueuedRPCs->HasRPCPayloadData())
 			{
-				if (QueuedRPCs->HasRPCPayloadData())
-				{
-					ComponentDatas.Add(QueuedRPCs->CreateRPCPayloadData());
-				}
-				OutgoingOnCreateEntityRPCs.Remove(Object);
+				ComponentDatas.Add(QueuedRPCs->CreateRPCPayloadData());
 			}
-		};
-		SendQueuedRPCs(Actor);
-
-		// RPCs called on actor components
-		for (auto& Component : Actor->GetComponents())
-		{
-			SendQueuedRPCs(Component);
+			OutgoingOnCreateEntityRPCs.Remove(Actor);
 		}
 	}
 
