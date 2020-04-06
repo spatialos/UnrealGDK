@@ -508,7 +508,7 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 		uint32 ServerHash = GlobalStateManager->GetSchemaHash();
 		if (ClassInfoManager->SchemaDatabase->SchemaDescriptorHash != ServerHash) // Are we running with the same schema hash as the server?
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Your clients Spatial schema does match the servers, this may cause problems. Client hash: '%u' Server hash: '%u'"), ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"), ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
 		}
 
 		UWorld* CurrentWorld = GetWorld();
