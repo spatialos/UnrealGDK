@@ -373,7 +373,7 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc,
 	SCOPE_CYCLE_COUNTER(STAT_BeginLatencyTraceRPC_Internal);
 	FScopeLock Lock(&Mutex);
 
-	FString SpanMsg = FormatMessage(TraceDesc);
+	FString SpanMsg = FormatMessage(TraceDesc, true);
 	TraceSpan NewTrace = improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*SpanMsg), nullptr);
 
 	// Construct payload data from trace
@@ -568,14 +568,15 @@ void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const F
 	}
 }
 
-FString USpatialLatencyTracer::FormatMessage(const FString& Message) const
+FString USpatialLatencyTracer::FormatMessage(const FString& Message, bool firstSpan = false) const
 {
-	if (TraceMetadata.IsEmpty()) {
-		return FString::Printf(TEXT("%s (%s)"), *Message, *WorkerId.Left(18));
+	if (firstSpan)
+	{
+		return FString::Printf(TEXT("%s (%s : %s)"), *Message, *TraceMetadata, *WorkerId.Left(18));
 	}
 	else
 	{
-		return FString::Printf(TEXT("%s (%s : %s)"), *Message, *TraceMetadata, *WorkerId.Left(18));
+		return FString::Printf(TEXT("%s (%s)"), *Message, *WorkerId.Left(18));
 	}
 }
 
