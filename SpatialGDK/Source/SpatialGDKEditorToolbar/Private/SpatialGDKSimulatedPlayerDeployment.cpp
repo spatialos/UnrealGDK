@@ -9,8 +9,11 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
+#include "Editor/GameProjectGeneration/Public/GameProjectGenerationModule.h"
 #include "HAL/PlatformFilemanager.h"
+#include "InstalledPlatformInfo.h"
 #include "Misc/MessageDialog.h"
+#include "UnrealEd/Classes/Settings/ProjectPackagingSettings.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "SpatialCommandUtils.h"
 #include "SpatialGDKSettings.h"
@@ -67,35 +70,35 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 						.Padding(1.0f)
 						[
 							SNew(SVerticalBox)
-							// Build explanation set
-							+ SVerticalBox::Slot()
-							.AutoHeight()
-							.Padding(2.0f)
-							.VAlign(VAlign_Center)
-							[
-								SNew(SWrapBox)
-								.UseAllottedWidth(true)
-								+ SWrapBox::Slot()
-								.VAlign(VAlign_Bottom)
-								[
-									SNew(STextBlock)
-									.AutoWrapText(true)
-									.Text(FText::FromString(FString(TEXT("NOTE: You can set default values in the SpatialOS settings under \"Cloud\"."))))
-								]
-								+ SWrapBox::Slot()
-								.VAlign(VAlign_Bottom)
-								[
-									SNew(STextBlock)
-									.AutoWrapText(true)
-								.Text(FText::FromString(FString(TEXT("The assembly has to be built and uploaded manually. Follow the docs "))))
-								]
-								+ SWrapBox::Slot()
-								[
-									SNew(SHyperlink)
-									.Text(FText::FromString(FString(TEXT("here."))))
-									.OnNavigate(this, &SSpatialGDKSimulatedPlayerDeployment::OnCloudDocumentationClicked)
-								]
-							]
+							//// Build explanation set
+							//+ SVerticalBox::Slot()
+							//.AutoHeight()
+							//.Padding(2.0f)
+							//.VAlign(VAlign_Center)
+							//[
+							//	SNew(SWrapBox)
+							//	.UseAllottedWidth(true)
+							//	+ SWrapBox::Slot()
+							//	.VAlign(VAlign_Bottom)
+							//	[
+							//		SNew(STextBlock)
+							//		.AutoWrapText(true)
+							//		.Text(FText::FromString(FString(TEXT("NOTE: You can set default values in the SpatialOS settings under \"Cloud\"."))))
+							//	]
+							//	+ SWrapBox::Slot()
+							//	.VAlign(VAlign_Bottom)
+							//	[
+							//		SNew(STextBlock)
+							//		.AutoWrapText(true)
+							//	.Text(FText::FromString(FString(TEXT("The assembly has to be built and uploaded manually. Follow the docs "))))
+							//	]
+							//	+ SWrapBox::Slot()
+							//	[
+							//		SNew(SHyperlink)
+							//		.Text(FText::FromString(FString(TEXT("here."))))
+							//		.OnNavigate(this, &SSpatialGDKSimulatedPlayerDeployment::OnCloudDocumentationClicked)
+							//	]
+							//]
 							// Separator
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -447,6 +450,52 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									]
 								]
 							]
+							// Separator
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							.VAlign(VAlign_Center)
+							[
+								SNew(SSeparator)
+							]
+							// Explanation text
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							.VAlign(VAlign_Center)
+							.HAlign(HAlign_Center)
+							[
+								SNew(STextBlock)
+								.Text(FText::FromString(FString(TEXT("Build and Upload Assembly"))))
+							]
+							// Windows Build Platform (Win32 or Win64)
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Region"))))
+									.ToolTipText(FText::FromString(FString(TEXT("The region in which the deployment will be deployed."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SComboButton)
+									.OnGetMenuContent(this, &SSpatialGDKSimulatedPlayerDeployment::OnGetPrimaryDeploymentRegionCode)
+									.ContentPadding(FMargin(2.0f, 2.0f))
+									.ButtonContent()
+									[
+										SNew(STextBlock)
+										.Text_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetPrimaryRegionCode)
+									]
+								]
+							]
+
+//
 						]
 					]
 				]
@@ -732,4 +781,59 @@ FText SSpatialGDKSimulatedPlayerDeployment::GetSpatialOSRuntimeVersionToUseText(
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString& RuntimeVersion = SpatialGDKSettings->bUseGDKPinnedRuntimeVersion ? SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion : SpatialGDKSettings->CloudRuntimeVersion;
 	return FText::FromString(RuntimeVersion);
+}
+
+namespace
+{
+	//Windows Platforms
+	const FString Win64(TEXT("Win64"));
+	const FString Win32(TEXT("Win32"));
+}
+
+TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildWindowsPlatform()
+{
+	FMenuBuilder MenuBuilder(true, NULL);
+
+	MenuBuilder.AddMenuEntry(FText::FromString(Win64), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked, Win64))
+	);
+
+	MenuBuilder.AddMenuEntry(FText::FromString(Win32), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked, Win32))
+	);
+
+	return MenuBuilder.MakeWidget();
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked(FString WindowsPlatform)
+{
+	//TODO set build details
+}
+
+
+TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildConfiguration()
+{
+	FMenuBuilder MenuBuilder(true, NULL);
+	EProjectType ProjectType = FGameProjectGenerationModule::Get().ProjectHasCodeFiles() ? EProjectType::Code : EProjectType::Content;
+
+	TArray<EProjectPackagingBuildConfigurations> PackagingConfigurations = UProjectPackagingSettings::GetValidPackageConfigurations();
+	for (EProjectPackagingBuildConfigurations PackagingConfiguration : PackagingConfigurations)
+	{
+		const UProjectPackagingSettings::FConfigurationInfo& Info = UProjectPackagingSettings::ConfigurationInfo[(int)PackagingConfiguration];
+		if (FInstalledPlatformInfo::Get().IsValid(TOptional<EBuildTargetType>(), TOptional<FString>(), Info.Configuration, ProjectType, EInstalledPlatformState::Downloaded))
+		{
+			MenuBuilder.AddMenuEntry(
+				Info.Name,
+				Info.ToolTip,
+				FSlateIcon(),
+				FUIAction(	FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Info.Name.ToString()))
+			);
+		}
+	}
+	return MenuBuilder.MakeWidget();
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked(FString Configuration)
+{
+
 }
