@@ -49,6 +49,8 @@ if (Test-Path env:GDK_SETTINGS) {
 $tests = @()
 
 # If building all configurations, use the test gyms, since the network testing project only compiles for the Editor configs
+# There are basically two situations here: either we are trying to run tests, in which case we use EngineNetTest
+# Or, we try different build targets, in which case we use UnrealGDKTestGyms
 if (Test-Path env:BUILD_ALL_CONFIGURATIONS) {
     $test_repo_url = "git@github.com:spatialos/UnrealGDKTestGyms.git"
     $test_repo_relative_uproject_path = "Game\GDKTestGyms.uproject"

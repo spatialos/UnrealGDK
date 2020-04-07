@@ -19,7 +19,7 @@ windows: &windows
     - "agent_count=1"
     - "capable_of_building=gdk-for-unreal"
     - "environment=production"
-    - "machine_type=${MACHINE_TYPE_ENVVAR}"
+    - "machine_type=${BK_MACHINE_TYPE}"
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"

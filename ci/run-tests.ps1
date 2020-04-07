@@ -51,14 +51,11 @@ $output_dir_absolute = Force-ResolvePath $output_dir
 
 $additional_gdk_options_arr = $additional_gdk_options.Split(";")
 $additional_gdk_options = ""
-Foreach($additional_gdk_option in $additional_gdk_options_arr) {
-    if($additional_gdk_options -eq "") {
-        $additional_gdk_options += $additional_gdk_option
+Foreach ($additional_gdk_option in $additional_gdk_options_arr) {
+    if ($additional_gdk_options -neq "") {
+        $additional_gdk_options += ","
     }
-    else{
-        $additional_gdk_options += ",[/Script/SpatialGDK.SpatialGDKSettings]:"
-        $additional_gdk_options += $additional_gdk_option
-    }
+    $additional_gdk_options += "[/Script/SpatialGDK.SpatialGDKSettings]:$additional_gdk_option"
 }
 
 $cmd_args_list = @( `
@@ -73,7 +70,7 @@ $cmd_args_list = @( `
     "-unattended", # Disable anything requiring user feedback
     "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
     "-stdout", # Print to output
-    "-ini:SpatialGDKSettings:[/Script/SpatialGDK.SpatialGDKSettings]:$additional_gdk_options" # Pass changes to configuration files from above
+    "-ini:SpatialGDKSettings:$additional_gdk_options" # Pass changes to configuration files from above
     "-OverrideSpatialNetworking=$run_with_spatial" # A parameter to switch beetween different networking implementations
 )
 

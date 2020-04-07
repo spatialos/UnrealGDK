@@ -24,9 +24,9 @@ generate_build_configuration_steps () {
     ENGINE_COMMIT_HASH="${1}"
 
     if [[ -z "${NIGHTLY_BUILD+x}" ]]; then
-        export MACHINE_TYPE_ENVVAR="quad-high-cpu"
+        export BK_MACHINE_TYPE="quad-high-cpu"
     else
-        export MACHINE_TYPE_ENVVAR="single-high-cpu" # nightly builds run on smaller nodes
+        export BK_MACHINE_TYPE="single-high-cpu" # nightly builds run on smaller nodes
     fi
 
     if [[ -z "${MAC_BUILD:-}" ]]; then
@@ -55,7 +55,7 @@ generate_build_configuration_steps () {
         else
             echo "Building for all supported configurations. Generating the appropriate steps..."
 
-            export MACHINE_TYPE_ENVVAR="single-high-cpu" # run the weekly with smaller nodes, since this is not time-critical
+            export BK_MACHINE_TYPE="single-high-cpu" # run the weekly with smaller nodes, since this is not time-critical
 
             # Editor builds (Test and Shipping build states do not exist for the Editor build target)
             for BUILD_STATE in "DebugGame" "Development"; do
