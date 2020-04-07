@@ -293,6 +293,176 @@ void USpatialConnectionManager::ConnectToReceptionist(uint32 PlayInEditorID)
 	FinishConnecting(ConnectionFuture);
 }
 
+FString LocatorParametersToString(const Worker_LocatorParameters& Params)
+{
+	return FString::Printf(TEXT(R"({
+	project_name: "%s",
+	credentials_type: WORKER_LOCATOR_PLAYER_IDENTITY_CREDENTIALS,
+	player_identity: {
+		player_identity_token: "%s",
+		login_token: "%s"
+	}
+})"),
+		UTF8_TO_TCHAR(Params.project_name),
+		UTF8_TO_TCHAR(Params.player_identity.player_identity_token),
+		UTF8_TO_TCHAR(Params.player_identity.login_token)
+	);
+}
+
+FString ConnectionTypeToString(uint8_t Type)
+{
+	switch (Type)
+	{
+	case WORKER_NETWORK_CONNECTION_TYPE_TCP:
+		return TEXT("WORKER_NETWORK_CONNECTION_TYPE_TCP");
+	case WORKER_NETWORK_CONNECTION_TYPE_RAKNET:
+		return TEXT("WORKER_NETWORK_CONNECTION_TYPE_RAKNET");
+	case WORKER_NETWORK_CONNECTION_TYPE_KCP:
+		return TEXT("WORKER_NETWORK_CONNECTION_TYPE_KCP");
+	case WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP:
+		return TEXT("WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP");
+	case WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP:
+		return TEXT("WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP");
+	}
+	return TEXT("");
+}
+
+FString SecurityTypeToString(uint8_t Type)
+{
+	switch (Type)
+	{
+	case WORKER_NETWORK_SECURITY_TYPE_INSECURE:
+		return TEXT("WORKER_NETWORK_SECURITY_TYPE_INSECURE");
+	case WORKER_NETWORK_SECURITY_TYPE_TLS:
+		return TEXT("WORKER_NETWORK_SECURITY_TYPE_TLS");
+	}
+	return TEXT("");
+}
+
+FString KcpTransportParametersToString(const Worker_KcpTransportParameters& Params)
+{
+	return FString::Printf(TEXT(R"({
+				flush_interval_millis: %u,
+				fast_retransmission: %s,
+				early_retransmission: %s,
+				disable_congestion_control: %s,
+				min_rto_millis: %u
+			})"),
+		Params.flush_interval_millis,
+		Params.fast_retransmission ? TEXT("true") : TEXT("false"),
+		Params.early_retransmission ? TEXT("true") : TEXT("false"),
+		Params.disable_congestion_control ? TEXT("true") : TEXT("false"),
+		Params.min_rto_millis
+	);
+}
+
+FString ErasureCodecParametersToString(const Worker_ErasureCodecParameters& Params)
+{
+	return FString::Printf(TEXT(R"({
+				original_packet_count: %u,
+				recovery_packet_count: %u,
+				window_size: %u
+			})"),
+		Params.original_packet_count,
+		Params.recovery_packet_count,
+		Params.window_size
+	);
+}
+
+FString HeartbeatParametersToString(const Worker_HeartbeatParameters& Params)
+{
+	return FString::Printf(TEXT(R"({
+				interval_millis: %llu,
+				timeout_millis: %llu
+			})"),
+		Params.interval_millis,
+		Params.timeout_millis
+	);
+}
+
+FString CompressionParametersToString(const Worker_CompressionParameters& Params)
+{
+	return TEXT("{}");
+}
+
+FString FlowControlParametersToString(const Worker_FlowControlParameters& Params)
+{
+	return FString::Printf(TEXT(R"({
+				downstream_window_size_bytes: %u,
+				upstream_window_size_bytes: %u
+			})"),
+		Params.downstream_window_size_bytes,
+		Params.upstream_window_size_bytes
+	);
+}
+
+FString ModularKcpNetworkParametersToString(const Worker_ModularKcpNetworkParameters& Params)
+{
+	return FString::Printf(TEXT(R"({
+			security_type: %s,
+			multiplex_level: %u,
+			downstream_kcp: %s,
+			upstream_kcp: %s,
+			downstream_erasure_codec: %s,
+			upstream_erasure_codec: %s,
+			downstream_heartbeat: %s,
+			upstream_heartbeat: %s,
+			downstream_compression: %s,
+			upstream_compression: %s,
+			flow_control: %s
+		})"),
+		*SecurityTypeToString(Params.security_type),
+		Params.multiplex_level,
+		*KcpTransportParametersToString(Params.downstream_kcp),
+		*KcpTransportParametersToString(Params.upstream_kcp),
+		Params.downstream_erasure_codec ? *ErasureCodecParametersToString(*Params.downstream_erasure_codec) : TEXT("null"),
+		Params.upstream_erasure_codec ? *ErasureCodecParametersToString(*Params.upstream_erasure_codec) : TEXT("null"),
+		Params.downstream_heartbeat ? *HeartbeatParametersToString(*Params.downstream_heartbeat) : TEXT("null"),
+		Params.upstream_heartbeat ? *HeartbeatParametersToString(*Params.upstream_heartbeat) : TEXT("null"),
+		Params.downstream_compression ? *CompressionParametersToString(*Params.downstream_compression) : TEXT("null"),
+		Params.upstream_compression ? *CompressionParametersToString(*Params.upstream_compression) : TEXT("null"),
+		Params.flow_control ? *FlowControlParametersToString(*Params.flow_control) : TEXT("null")
+	);
+}
+
+FString NetworkParametersToString(const Worker_NetworkParameters& Params)
+{
+	return FString::Printf(TEXT(R"({
+		use_external_ip: %s,
+		connection_type: %s,
+		modular_kcp: %s,
+		connection_timeout_millis: %llu,
+		default_command_timeout_millis: %u
+	})"),
+		Params.use_external_ip ? TEXT("true") : TEXT("false"),
+		*ConnectionTypeToString(Params.connection_type),
+		*ModularKcpNetworkParametersToString(Params.modular_kcp),
+		Params.connection_timeout_millis,
+		Params.default_command_timeout_millis
+	);
+}
+
+FString ConnectionParametersToString(const Worker_ConnectionParameters& Params)
+{
+	return FString::Printf(TEXT(R"({
+	worker_type: "%s",
+	network: %s,
+	send_queue_capacity: %u,
+	receive_queue_capacity: %u,
+	log_message_queue_capacity: %u,
+	built_in_metrics_report_period_millis: %u,
+	enable_dynamic_components: %s
+})"),
+		UTF8_TO_TCHAR(Params.worker_type),
+		*NetworkParametersToString(Params.network),
+		Params.send_queue_capacity,
+		Params.receive_queue_capacity,
+		Params.log_message_queue_capacity,
+		Params.built_in_metrics_report_period_millis,
+		Params.enable_dynamic_components ? TEXT("true") : TEXT("false")
+	);
+}
+
 void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig)
 {
 	if (InLocatorConfig == nullptr)
@@ -319,6 +489,8 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 	// Connect to the locator on the default port(0 will choose the default)
 	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*InLocatorConfig->LocatorHost), SpatialConstants::LOCATOR_PORT, &LocatorParams);
 
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Connecting to locator, host: %s, port: %u, LocatorParameters: %s, ConnectionParameters: %s"),
+		*InLocatorConfig->LocatorHost, SpatialConstants::LOCATOR_PORT, *LocatorParametersToString(LocatorParams), *ConnectionParametersToString(ConnectionConfig.Params));
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionConfig.Params);
 
 	FinishConnecting(ConnectionFuture);
