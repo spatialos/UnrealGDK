@@ -161,7 +161,7 @@ private:
 	void ResolveKeyInLatencyPayload(FSpatialLatencyPayload& Payload);
 
 	void WriteKeyFrameToTrace(const TraceSpan* Trace, const FString& TraceDesc);
-	FString FormatMessage(const FString& Message, bool firstSpan = false) const;
+	FString FormatMessage(const FString& Message, bool bIncludeMetadata = false) const;
 
 	FString WorkerId;
 	FString TraceMetadata;
