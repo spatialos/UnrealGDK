@@ -2098,12 +2098,8 @@ AActor* USpatialReceiver::FindSingletonActor(UClass* SingletonClass)
 
 void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPCsOnEntityCreation& QueuedRPCs)
 {
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
 	for (auto& RPC : QueuedRPCs.RPCs)
 	{
-		UFunction* Function = Info.RPCs[RPC.Index];
-		const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(Actor, Function);
 		const FUnrealObjectRef ObjectRef(PackageMap->GetEntityIdFromObject(Actor), RPC.Offset);
 		check(ObjectRef.Entity != SpatialConstants::INVALID_ENTITY_ID);
 
