@@ -2104,7 +2104,7 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPC
 	{
 		UFunction* Function = Info.RPCs[RPC.Index];
 		const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(Actor, Function);
-		const FUnrealObjectRef ObjectRef(PackageMap->GetEntityIdFromObject(Actor), RPC.Offset);;
+		const FUnrealObjectRef ObjectRef(PackageMap->GetEntityIdFromObject(Actor), RPC.Offset);
 
 		ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(RPC));
 	}
