@@ -725,6 +725,13 @@ int64 USpatialActorChannel::ReplicateActor()
 			const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
 			if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 			{
+				// Update Actor SpawnData location for when new worker receives authority to prevent hysteresis.
+				SpatialGDK::SpawnData* ActorSpawnData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpawnData>(EntityId);
+				check(ActorSpawnData != nullptr);
+				ActorSpawnData->Location = Actor->GetActorLocation();
+				FWorkerComponentUpdate SpawnDataUpdate = ActorSpawnData->CreateSpawnDataUpdate();
+				NetDriver->Connection->SendComponentUpdate(EntityId, &SpawnDataUpdate);
+
 				Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
 
 				// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy 

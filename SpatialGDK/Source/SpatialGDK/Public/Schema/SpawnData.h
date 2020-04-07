@@ -53,6 +53,21 @@ struct SpawnData : Component
 		return Data;
 	}
 
+	Worker_ComponentUpdate CreateSpawnDataUpdate()
+	{
+		Worker_ComponentUpdate Update = {};
+		Update.component_id = ComponentId;
+		Update.schema_type = Schema_CreateComponentUpdate();
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+		AddVectorToSchema(ComponentObject, 1, Location);
+		AddRotatorToSchema(ComponentObject, 2, Rotation);
+		AddVectorToSchema(ComponentObject, 3, Scale);
+		AddVectorToSchema(ComponentObject, 4, Velocity);
+
+		return Update;
+	}
+
 	FVector Location;
 	FRotator Rotation;
 	FVector Scale;
