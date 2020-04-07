@@ -14,19 +14,41 @@
 
 using namespace SpatialGDK;
 
-namespace {
-
-	bool AreEquivalent(const std::vector<EntityComponentData>& lhs,
-		const std::vector<EntityComponentData>& rhs) {
-		return std::is_permutation(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
-			CompareEntityComponentData);
+namespace
+{
+	bool AreEquivalent(const TArray<EntityComponentData>& lhs,
+		const std::vector<EntityComponentData>& rhs)
+	{
+		if (lhs.Num() == rhs.size())
+		{
+			for (int i = 0; i < lhs.Num(); i++)
+			{
+				if (!CompareEntityComponentData(lhs[i], rhs[i]))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 
-	bool AreEquivalent(const std::vector<EntityComponentId>& lhs,
-		const std::vector<EntityComponentId>& rhs) {
-		return std::is_permutation(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+	bool AreEquivalent(const TArray<EntityComponentId>& lhs,
+		const std::vector<EntityComponentId>& rhs)
+	{
+		if (lhs.Num() == rhs.size())
+		{
+			for (int i = 0; i < lhs.Num(); i++)
+			{
+				if (!(lhs[i] == rhs[i]))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
 	}
-
 }  // anonymous namespace
 
 ENTITYCOMPONENTRECORD_TEST(CanAddComponent)
@@ -43,10 +65,8 @@ ENTITYCOMPONENTRECORD_TEST(CanAddComponent)
 	EntityComponentRecord storage;
 	storage.AddComponent(kTestEntityId, std::move(testData));
 
-	//TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	//TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
-	//TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	//TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -61,8 +81,8 @@ ENTITYCOMPONENTRECORD_TEST(CanRemoveComponent)
 	const std::vector<EntityComponentId> expectedComponentsRemoved = { kEntityComponentId };
 
 	//TestTrue("", removed);
-	//TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	//TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 
 	return true;
 }
@@ -84,8 +104,8 @@ ENTITYCOMPONENTRECORD_TEST(CanAddThenRemoveComponent)
 
 	//TestTrue("", added);
 	//TestFalse("", removed);
-	//TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	//TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -107,8 +127,8 @@ ENTITYCOMPONENTRECORD_TEST(CanRemoveThenAddComponent)
 
 	//TestTrue("", removed);
 	//TestFalse("", added);
-	//TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	//TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -133,8 +153,8 @@ ENTITYCOMPONENTRECORD_TEST(CanApplyUpdateToComponentAdded)
 
 	//TestTrue("", added);
 	//TestTrue("", updated);
-	//TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	//TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -153,8 +173,8 @@ ENTITYCOMPONENTRECORD_TEST(CanNotApplyUpdateIfNoComponentAdded)
 	storage.AddUpdate(kTestEntityId, MoveTemp(testUpdate));
 
 	//TestFalse("", updated);
-	//TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	//TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -179,8 +199,8 @@ ENTITYCOMPONENTRECORD_TEST(CanApplyCompleteUpdateToComponentAdded)
 
 	//TestTrue("", added);
 	//TestTrue("", updated);
-	//TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	//TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -199,8 +219,8 @@ ENTITYCOMPONENTRECORD_TEST(CanNotApplyCompleteUpdateIfNoComponentAdded)
 	 storage.AddComponentAsUpdate(kTestEntityId, std::move(testUpdate));
 
 	//TestFalse("", updated);
-	//TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	//TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -224,10 +244,10 @@ ENTITYCOMPONENTRECORD_TEST(CanRemoveEntity)
 	storage.AddComponent(kEntityIdToRemove, std::move(firstDataToRemove));
 	storage.AddComponent(kEntityIdToRemove, std::move(secondDataToRemove));
 	storage.AddComponent(kEntityIdToKeep, std::move(dataToKeep));
-	// TODO(Alex): ?
-	//storage.RemoveEntity(kEntityIdToRemove);
+	storage.RemoveComponent(kEntityIdToRemove, kFirstComponentId);
+	storage.RemoveComponent(kEntityIdToRemove, kSecondComponentId);
 
-	//TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	//TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
