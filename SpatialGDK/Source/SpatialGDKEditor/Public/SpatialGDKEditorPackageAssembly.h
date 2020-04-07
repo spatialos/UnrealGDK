@@ -4,63 +4,51 @@
 
 #include "Logging/LogMacros.h"
 #include "Misc/MonitoredProcess.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorPackageAssembly, Log, All);
-
-enum class EPackageAssemblyStatus
-{
-	CANCELED = -1,
-	STARTED = 0,
-	COMPLETED = 1,
-	FAILED = 2,
-};
-
-DECLARE_DELEGATE_TwoParams(FSpatialGDKPackageAssemblyStatus, FString, EPackageAssemblyStatus);
 
 class SPATIALGDKEDITOR_API FSpatialGDKPackageAssembly : public TSharedFromThis<FSpatialGDKPackageAssembly>
 {
 public:
 	FSpatialGDKPackageAssembly();
 
-	void BuildServerWorker();
-	void BuildClientWorker();
-	void BuildSimulatedPlayerWorker();
-	void BuildAll();
 	bool CanBuild() const;
 
-	void UploadAssembly(const FString &AssemblyName, bool Force);
-	void BuildAllAndUpload(const FString &AssemblyName, bool Force);
-
-	FSpatialGDKPackageAssemblyStatus OnPackageAssemblyStatus;
-
+	void BuildAllAndUpload(const FString &AssemblyName, const FString& WindowsPlatform, const FString& Configuration, const FString& AdditionalArgs, bool Force);
+	
 private:
 	enum class EPackageAssemblyTarget
 	{
 		NONE = 0,
 		START_ALL,
 		BUILD_CLIENT,
-		ZIP_CLIENT,
 		BUILD_SERVER,
-		ZIP_SERVER,
 		BUILD_SIMULATED_PLAYERS,
-		ZIP_SIMULATED_PLAYERS,
 		UPLOAD_ASSEMBLY,
 	} CurrentAssemblyTarget;
 
-	TUniquePtr<FMonitoredProcess> Upload;
+	TSharedPtr<FMonitoredProcess> PackageAssemblyTask;
+	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 
-	struct UploadAfterBuildDetails
+	struct AssemblyDetails
 	{
 		FString AssemblyName;
+		FString Configuration;
 		bool bForce;
-		UploadAfterBuildDetails(const FString& Name, bool Force);
+		AssemblyDetails(const FString& Name, const FString& Config, bool Force);
 		void Upload(FSpatialGDKPackageAssembly& PackageAssembly);
 	};
 
-	TUniquePtr<UploadAfterBuildDetails> UploadAfterBuildPtr;
+	TUniquePtr<AssemblyDetails> AssemblyDetailsPtr;
 
-	void BuildNext();
-	void OnUploadCompleted(int32);
-	void OnUploadOutput(FString);
-	void OnUploadCanceled();
+	void BuildAssembly(const FString& ProjectName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs);
+	void UploadAssembly(const FString& AssemblyName, bool Force);
+
+	void ShowTaskStartedNotification(const FString& NotificationText);
+	void ShowTaskEndedNotification(const FString& NotificationText, SNotificationItem::ECompletionState CompletionState);
+	void HandleCancelButtonClicked();
+	void OnTaskCompleted(int32);
+	void OnTaskOutput(FString);
+	void OnTaskCanceled();
 };

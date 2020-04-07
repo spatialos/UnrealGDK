@@ -31,12 +31,6 @@ public:
 	TSharedPtr<FUICommandInfo> OpenSimulatedPlayerConfigurationWindowAction;
 	TSharedPtr<FUICommandInfo> OpenLaunchConfigurationEditorAction;
 
-	TSharedPtr<FUICommandInfo> BuildServerWorkerAction;
-	TSharedPtr<FUICommandInfo> BuildClientWorkerAction;
-	TSharedPtr<FUICommandInfo> BuildSimulatedPlayerWorkerAction;
-	TSharedPtr<FUICommandInfo> BuildAllAction;
-
-	TSharedPtr<FUICommandInfo> UploadAssemblyAction;
 	TSharedPtr<FUICommandInfo> BuildAndUploadAction;
 
 	TSharedPtr<FUICommandInfo> StartSpatialService;

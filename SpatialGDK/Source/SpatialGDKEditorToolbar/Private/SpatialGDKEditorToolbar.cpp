@@ -82,8 +82,6 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionFailSound->AddToRoot();
 	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
 
-	SpatialGDKPackageAssemblyInstance->OnPackageAssemblyStatus.BindRaw(this, &FSpatialGDKEditorToolbarModule::HandleOnPackageAssemblyStatus);
-
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
@@ -129,7 +127,6 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
 {
 	FCoreUObjectDelegates::OnObjectPropertyChanged.Remove(OnPropertyChangedDelegateHandle);
-	SpatialGDKPackageAssemblyInstance->OnPackageAssemblyStatus.Unbind();
 
 	if (ExecutionStartSound != nullptr)
 	{
@@ -189,12 +186,6 @@ bool FSpatialGDKEditorToolbarModule::CanBuildAnyWorker() const
 	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && SpatialGDKPackageAssemblyInstance.Get().CanBuild();
 }
 
-bool FSpatialGDKEditorToolbarModule::CanBuildSimulatedPlayerWorker() const
-{
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return SpatialGDKSettings->IsSimulatedPlayersEnabled() && CanBuildAnyWorker();
-}
-
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> InPluginCommands)
 {
 	InPluginCommands->MapAction(
@@ -246,33 +237,8 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction());
 
 	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().BuildServerWorkerAction,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildServerWorker),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
-
-	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().BuildClientWorkerAction,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildClientWorker),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
-
-	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().BuildSimulatedPlayerWorkerAction,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildSimulatedPlayerWorker),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildSimulatedPlayerWorker));
-
-	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().BuildAllAction,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildAll),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
-
-	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().BuildAndUploadAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildAndUpload),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
-
-	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().UploadAssemblyAction,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::UploadAssembly),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
 
 	InPluginCommands->MapAction(
@@ -384,13 +350,6 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
 		MenuBuilder.AddMenuSeparator();
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildAndUploadAction);
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildAllAction);
-		MenuBuilder.AddMenuSeparator();
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildServerWorkerAction);
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildClientWorkerAction);
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildSimulatedPlayerWorkerAction);
-		MenuBuilder.AddMenuSeparator();
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().UploadAssemblyAction);
 	}
 	MenuBuilder.EndSection();
 
@@ -903,55 +862,10 @@ void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"));
 }
 
-void FSpatialGDKEditorToolbarModule::BuildServerWorker()
-{
-	SpatialGDKPackageAssemblyInstance.Get().BuildServerWorker();
-}
-
-void FSpatialGDKEditorToolbarModule::BuildClientWorker()
-{
-	SpatialGDKPackageAssemblyInstance.Get().BuildClientWorker();
-}
-
-void FSpatialGDKEditorToolbarModule::BuildSimulatedPlayerWorker()
-{
-	SpatialGDKPackageAssemblyInstance.Get().BuildSimulatedPlayerWorker();
-}
-
-void FSpatialGDKEditorToolbarModule::BuildAll()
-{
-	SpatialGDKPackageAssemblyInstance.Get().BuildAll();
-}
-
 void FSpatialGDKEditorToolbarModule::BuildAndUpload()
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	SpatialGDKPackageAssemblyInstance.Get().BuildAllAndUpload(SpatialGDKEditorSettings->GetAssemblyName(), true);
-}
-
-void FSpatialGDKEditorToolbarModule::UploadAssembly()
-{
-	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	SpatialGDKPackageAssemblyInstance.Get().UploadAssembly(SpatialGDKEditorSettings->GetAssemblyName(), true);
-}
-
-void FSpatialGDKEditorToolbarModule::HandleOnPackageAssemblyStatus(FString NotificationText, EPackageAssemblyStatus Status)
-{
-	switch (Status)
-	{
-	case EPackageAssemblyStatus::STARTED:
-		OnShowTaskStartNotification(NotificationText);
-		break;
-	case EPackageAssemblyStatus::COMPLETED:
-		OnShowSuccessNotification(NotificationText);
-		break;
-	case EPackageAssemblyStatus::FAILED:
-	case EPackageAssemblyStatus::CANCELED:
-		OnShowFailedNotification(NotificationText);
-		break;
-	default:
-		;
-	}
+	SpatialGDKPackageAssemblyInstance.Get().BuildAllAndUpload(SpatialGDKEditorSettings->GetAssemblyName(), TEXT("Win64"), TEXT("Development"), TEXT(""), true);
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
