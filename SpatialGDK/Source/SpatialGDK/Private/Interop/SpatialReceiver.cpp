@@ -506,7 +506,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			if (QueuedRPCs->HasRPCPayloadData())
 			{
-				ProcessQueuedActorRPCsOnEntityCreation(Actor, *QueuedRPCs);
+				ProcessQueuedActorRPCsOnEntityCreation(Op.entity_id, *QueuedRPCs);
 			}
 
 			Sender->SendRequestToClearRPCsOnEntityCreation(Op.entity_id);
@@ -2096,12 +2096,11 @@ AActor* USpatialReceiver::FindSingletonActor(UClass* SingletonClass)
 	return nullptr;
 }
 
-void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPCsOnEntityCreation& QueuedRPCs)
+void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(Worker_EntityId EntityId, RPCsOnEntityCreation& QueuedRPCs)
 {
 	for (auto& RPC : QueuedRPCs.RPCs)
 	{
-		const FUnrealObjectRef ObjectRef(PackageMap->GetEntityIdFromObject(Actor), RPC.Offset);
-
+		const FUnrealObjectRef ObjectRef(EntityId, RPC.Offset);
 		ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(RPC));
 	}
 }
