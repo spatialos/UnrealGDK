@@ -17,14 +17,36 @@ common: &common
         limit: 3
 
 steps:
-
-  - block: Configure the release preparation
-    prompt: Fill out the parameters for the release you want.
+  # TODO: I've added engine-version & preview keys. I need to call these using "buildkite-agent meta-data get" where required.
+  - block: Configure your release.
+    prompt: Fill out these details for your release.
     fields:
-      - text: Release version
-        key: release-version
+      - text: UnrealGDK component release version
+        key: gdk-version
         required: true
-        hint: The component release version you want to create a release candidate for, e.g. - 0.1.2 or 1.0.1.
+        hint: The UnrealGDK component release version you want to create a release candidate for, e.g. - 0.1.2 or 1.0.1.
+        
+      - select: "Unreal Engine version(s)"
+        key: "engine-version"
+        hint: "The Unreal Engine versions you want to create a release candidate for, e.g. - 4.24-SpatialOSUnrealGDK"
+        required: true
+        multiple: true
+        default:
+          - "4.24-SpatialOSUnrealGDK"
+          - "4.23-SpatialOSUnrealGDK"
+        options:
+          - label: "4.24-SpatialOSUnrealGDK"
+            value: "4.24-SpatialOSUnrealGDK"
+          - label: "4.23-SpatialOSUnrealGDK"
+            value: "4.23-SpatialOSUnrealGDK"
+
+      - select: "Preview release?"
+        key: "preview"
+        hint: "If this is a preview release, press the preview button."
+        required: false
+        options:
+          - label: "preview"
+            value: "preview"
 
   # Stage 1: Prepare the release candidates
 
