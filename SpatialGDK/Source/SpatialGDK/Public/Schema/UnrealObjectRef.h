@@ -56,8 +56,9 @@ struct SPATIALGDK_API FUnrealObjectRef
 		return Entity == Other.Entity &&
 			Offset == Other.Offset &&
 			((!Path && !Other.Path) || (Path && Other.Path && Path->Equals(*Other.Path))) &&
-			((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer));
+			((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer)) &&
 			// Intentionally don't compare bNoLoadOnClient since it does not affect equality.
+			bUseClassPathToLoadObject == Other.bUseClassPathToLoadObject;
 	}
 
 	FORCEINLINE bool operator!=(const FUnrealObjectRef& Other) const
@@ -74,6 +75,8 @@ struct SPATIALGDK_API FUnrealObjectRef
 	static FSoftObjectPath ToSoftObjectPath(const FUnrealObjectRef& ObjectRef);
 	static FUnrealObjectRef FromObjectPtr(UObject* ObjectValue, USpatialPackageMapClient* PackageMap);
 	static FUnrealObjectRef FromSoftObjectPath(const FSoftObjectPath& ObjectPath);
+	static FUnrealObjectRef GetRefFromObjectClassPath(UObject* Object, USpatialPackageMapClient* PackageMap);
+	static bool ShouldLoadObjectFromClassPath(UObject* Object);
 
 	static const FUnrealObjectRef NULL_OBJECT_REF;
 	static const FUnrealObjectRef UNRESOLVED_OBJECT_REF;
@@ -83,6 +86,12 @@ struct SPATIALGDK_API FUnrealObjectRef
 	SpatialGDK::TSchemaOption<FString> Path;
 	SpatialGDK::TSchemaOption<FUnrealObjectRef> Outer;
 	bool bNoLoadOnClient = false;
+	// If this field is set to true, we are saying that the Actor will exist at most once on the given worker.
+	// In addition, if we receive information for an Actor of the same class over the network, then this data
+	// should be applied to this Actor we've already spawned (where another worker created the entity). This
+	// information is important for the object ref, since it means we can identify the correct Actor to apply
+	// the replicated data to on each worker via the class path (since only 1 Actor should exist for this class).
+	bool bUseClassPathToLoadObject = false;
 };
 
 inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
@@ -93,6 +102,7 @@ inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Path);
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Outer);
 	// Intentionally don't hash bNoLoadOnClient.
+	Result = (Result * 977u) + GetTypeHash(ObjectRef.bUseClassPathToLoadObject ? 1 : 0);
 	return Result;
 }
 

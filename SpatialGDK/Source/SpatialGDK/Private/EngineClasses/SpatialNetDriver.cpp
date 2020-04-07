@@ -372,6 +372,21 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+#if !UE_BUILD_SHIPPING
+	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client
+	if (IsServer())
+	{
+		if (SpatialSettings->bEnableMetricsDisplay)
+		{
+			SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
+		}
+
+		if (SpatialSettings->SpatialDebugger != nullptr)
+		{
+			SpatialDebugger = GetWorld()->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger);
+		}
+	}
+#endif
 
 	if (SpatialSettings->bEnableUnrealLoadBalancer)
 	{
@@ -2583,22 +2598,4 @@ void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
 {
 	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
 	VirtualWorkerTranslationManager->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
-}
-
-// This method should be called exactly once during fresh deployments (not loaded from snapshots).
-// This is because we only want to spawn the metrics display and debugger once.
-void USpatialNetDriver::OnFreshDeploymentGSMAuthority()
-{
-#if !UE_BUILD_SHIPPING
-	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialSettings->bEnableMetricsDisplay)
-	{
-		SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
-	}
-
-	if (SpatialSettings->SpatialDebugger != nullptr)
-	{
-		SpatialDebugger = GetWorld()->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger);
-	}
-#endif
 }

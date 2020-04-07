@@ -152,6 +152,7 @@ const Schema_FieldId UNREAL_OBJECT_REF_OFFSET_ID						= 2;
 const Schema_FieldId UNREAL_OBJECT_REF_PATH_ID							= 3;
 const Schema_FieldId UNREAL_OBJECT_REF_NO_LOAD_ON_CLIENT_ID				= 4;
 const Schema_FieldId UNREAL_OBJECT_REF_OUTER_ID							= 5;
+const Schema_FieldId UNREAL_OBJECT_REF_USE_CLASS_PATH_TO_LOAD_ID		= 6;
 
 // UnrealRPCPayload Field IDs
 const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID						= 1;

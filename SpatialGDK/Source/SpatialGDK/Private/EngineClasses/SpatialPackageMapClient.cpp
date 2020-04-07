@@ -265,6 +265,35 @@ bool USpatialPackageMapClient::CanClientLoadObject(UObject* Object)
 	return GuidCache->CanClientLoadObject(Object, NetGUID);
 }
 
+AActor* USpatialPackageMapClient::GetUniqueActorInstanceByClassRef(const FUnrealObjectRef& UniqueObjectClassRef)
+{
+	if (UClass* UniqueObjectClass = Cast<UClass>(GetObjectFromUnrealObjectRef(UniqueObjectClassRef)))
+	{
+		TArray<AActor*> FoundActors;
+		// USpatialPackageMapClient is an inner object of UNetConnection,
+		// which in turn contains a NetDriver and gets the UWorld it references
+		UGameplayStatics::GetAllActorsOfClass(this, UniqueObjectClass, FoundActors);
+
+		// There should be only one Actor per class
+		if (FoundActors.Num() == 1)
+		{
+			return FoundActors[0];
+		}
+
+		FString FullPath;
+		SpatialGDK::GetFullPathFromUnrealObjectReference(UniqueObjectClassRef, FullPath);
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Found %d Actors for class: %s. There should only be one."), FoundActors.Num(), *FullPath);
+		return nullptr;
+	}
+	else
+	{
+		FString FullPath;
+		SpatialGDK::GetFullPathFromUnrealObjectReference(UniqueObjectClassRef, FullPath);
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Can't resolve unique object class: %s"), *FullPath);
+		return nullptr;
+	}
+}
+
 bool USpatialPackageMapClient::IsEntityPoolReady() const
 {
 	return (EntityPool != nullptr) && (EntityPool->IsReady());

@@ -5,6 +5,12 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
+#include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialMetricsDisplay.h"
+
+#include "Engine/LevelScriptActor.h"
+#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameStateBase.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealObjectRef, Log, All);
 
@@ -19,6 +25,22 @@ UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpati
 	}
 	else
 	{
+		if (ObjectRef.bUseClassPathToLoadObject)
+		{
+
+			FUnrealObjectRef ClassRef = ObjectRef;
+			ClassRef.bUseClassPathToLoadObject = false;
+
+			UObject* Value = PackageMap->GetUniqueActorInstanceByClassRef(ClassRef);
+			if (Value == nullptr)
+			{
+				// This could happen if we no longer spawn all of these Actors before starting replication.
+				UE_LOG(LogUnrealObjectRef, Warning, TEXT("Could not load object reference by class path: %s"), **ClassRef.Path);
+				bOutUnresolved = true;
+			}
+			return Value;
+		}
+
 		FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 		if (NetGUID.IsValid())
 		{
@@ -106,6 +128,17 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 					}
 				}
 
+				// If this is am Actor that should exist once per Worker (e.g. GameMode, GameState) and hasn't been resolved yet,
+				// send its class path instead.
+				if (ShouldLoadObjectFromClassPath(ObjectValue))
+				{
+					ObjectRef = GetRefFromObjectClassPath(ObjectValue, PackageMap);
+					if (ObjectRef.IsValid())
+					{
+						return ObjectRef;
+					}
+				}
+
 				// Check if the object is a newly referenced dynamic subobject, in which case we can create the object ref if we have the entity id of the parent actor.
 				if (!ObjectValue->IsA<AActor>())
 				{
@@ -167,4 +200,23 @@ FSoftObjectPath FUnrealObjectRef::ToSoftObjectPath(const FUnrealObjectRef& Objec
 	}
 
 	return FSoftObjectPath(MoveTemp(FullPackagePath));
+}
+
+bool FUnrealObjectRef::ShouldLoadObjectFromClassPath(UObject* Object)
+{
+	return Object->IsA(AGameStateBase::StaticClass())
+		|| Object->IsA(AGameModeBase::StaticClass())
+		|| Object->IsA(ALevelScriptActor::StaticClass())
+		|| Object->IsA(ASpatialMetricsDisplay::StaticClass())
+		|| Object->IsA(ASpatialDebugger::StaticClass());
+}
+
+FUnrealObjectRef FUnrealObjectRef::GetRefFromObjectClassPath(UObject* Object, USpatialPackageMapClient* PackageMap)
+{
+	FUnrealObjectRef ClassObjectRef = FromObjectPtr(Object->GetClass(), PackageMap);
+	if (ClassObjectRef.IsValid())
+	{
+		ClassObjectRef.bUseClassPathToLoadObject = true;
+	}
+	return ClassObjectRef;
 }

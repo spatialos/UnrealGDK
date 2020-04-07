@@ -132,7 +132,6 @@ public:
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
 private:
-
 	void LoadIcons();
 
 	// FOnEntityAdded/FOnEntityRemoved Delegates

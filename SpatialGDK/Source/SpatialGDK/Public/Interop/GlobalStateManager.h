@@ -89,7 +89,7 @@ private:
 	void SendSessionIdUpdate();
 
 	void BecomeAuthoritativeOverAllActors();
-	void BecomeAuthoritativeOverActorsBasedOnLBStrategy();
+	void SetAllActorRolesBasedOnLBStrategy();
 	void SendCanBeginPlayUpdate(const bool bInCanBeginPlay);
 
 #if WITH_EDITOR
