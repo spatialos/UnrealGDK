@@ -2101,7 +2101,6 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPC
 	for (auto& RPC : QueuedRPCs.RPCs)
 	{
 		const FUnrealObjectRef ObjectRef(PackageMap->GetEntityIdFromObject(Actor), RPC.Offset);
-		check(ObjectRef.Entity != SpatialConstants::INVALID_ENTITY_ID);
 
 		ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(RPC));
 	}
