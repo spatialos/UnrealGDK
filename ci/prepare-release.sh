@@ -17,9 +17,9 @@ fi
 
 cd "$(dirname "$0")/../"
 
-source ci/common.sh
+source ci/common-release.sh
 
-REPO="${1}"
+REPO="${1}" # REPO = the first argument passed to the script when it was run.
 RELEASE_VERSION="$(buildkite-agent meta-data get release-version)"
 
 setupReleaseTool

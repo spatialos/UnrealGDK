@@ -17,7 +17,7 @@ fi
 
 cd "$(dirname "$0")/../"
 
-source ci/common.sh
+source ci/common-release.sh
 
 REPO="${1}"
 RELEASE_VERSION="$(buildkite-agent meta-data get release-version)"
