@@ -74,6 +74,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, UdpServerDownstreamUpdateIntervalMS(1)
 	, UdpClientUpstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
+	, bExplicitFlushIntervals(false)
+	, ExplicitMinimumFlush(1)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
 	, RPCQueueWarningDefaultTimeout(2.0f)
