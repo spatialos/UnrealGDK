@@ -99,6 +99,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed crash caused by state persisting across a transition from one deployment to another in SpatialGameInstance.
 - Fixed crash when starting + stopping PIE multiple times.
 - Fixed crash when shadow data was uninitialized when resolving unresolved objects.
+- Fixed sending component RPCs on a recently created actor.
 
 ### External contributors:
 @DW-Sebastien
