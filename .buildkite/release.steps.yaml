@@ -26,50 +26,55 @@ steps:
         required: true
         hint: The component release version you want to create a release candidate for, e.g. - 0.1.2 or 1.0.1.
 
-  # Will upload metadata with the PR link.
-  - label: Prepare UnrealGDK release
-    command: ci/prepare-release.sh gdk-for-unreal
+  # Stage 1: Prepare the release candidates
+
+  # There is one prepare step for each repo we release.
+  # Prepare steps create a PR and upload metadata but do not release anything.
+  - label: Prepare the UnrealGDK release
+    command: ci/prepare-release.sh UnrealGDK
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+
+  - label: Prepare UnrealGDKExampleProject release
+    command: ci/prepare-release.sh UnrealGDKExampleProject
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+
+  - label: Prepare UnrealGDKTestGyms release
+    command: ci/prepare-release.sh UnrealGDKTestGyms
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    retry:
+      manual:
+        permit_on_passed: true
+
+  # TODO: Re-write prepare-release.sh to work with our Engine branching strategy and multiple engines.
+  - label: Prepare UnrealEngine release
+    command: ci/prepare-release.sh UnrealEngine
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     retry:
       manual:
         permit_on_passed: true
 
   - wait
-
+  # Stage 2: Run all tests against the release candidates.
+  # TODO: Work out what generate-release-qa-trigger.sh does and re-write it to run all tests across all four repos.
   - label: "Add step for triggering release QA"
-    command: ci/generate-release-qa-trigger.sh gdk-for-unreal | buildkite-agent pipeline upload
+    command: ci/generate-release-qa-trigger.sh UnrealGDK | buildkite-agent pipeline upload
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     retry:
       manual:
         permit_on_passed: true
 
+  # Stage 3: Promote the release candiates to preview and/or relase branches.
+
+  # Block steps require a human to click a button, this is a safety precaution.
   - block: Unblock UnrealGDK release
 
+  # TODO: Re-write release.sh to function across all four repos.
   - label: Release UnrealGDK
-    command: ci/release.sh gdk-for-unreal
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
-    
-  - wait
-
-  # Will upload metadata with the PR link.
-  - label: Prepare FPS Starter Project release
-    command: ci/prepare-release.sh gdk-for-unreal
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
-    retry:
-      manual:
-        permit_on_passed: true
-
-  - wait
-
-  - label: "Add step for triggering release QA"
-    command: ci/generate-release-qa-trigger.sh gdk-for-unreal | buildkite-agent pipeline upload
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
-    retry:
-      manual:
-        permit_on_passed: true
-
-  - block: Unblock FPS Starter Project release
-
-  - label: Release FPS Starter Project
-    command: ci/release.sh gdk-for-unreal
+    command: ci/release.sh UnrealGDK
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
