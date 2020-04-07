@@ -568,9 +568,9 @@ void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const F
 	}
 }
 
-FString USpatialLatencyTracer::FormatMessage(const FString& Message, bool firstSpan) const
+FString USpatialLatencyTracer::FormatMessage(const FString& Message, bool bIncludeMetadata) const
 {
-	if (firstSpan)
+	if (bIncludeMetadata)
 	{
 		return FString::Printf(TEXT("%s (%s : %s)"), *Message, *TraceMetadata, *WorkerId.Left(18));
 	}
