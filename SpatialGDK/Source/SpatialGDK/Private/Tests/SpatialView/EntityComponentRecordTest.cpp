@@ -80,9 +80,9 @@ ENTITYCOMPONENTRECORD_TEST(CanRemoveComponent)
 	const std::vector<EntityComponentData> expectedComponentsAdded = {};
 	const std::vector<EntityComponentId> expectedComponentsRemoved = { kEntityComponentId };
 
-	//TestTrue("", removed);
-	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	//TestTrue(TEXT(""), removed);
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 
 	return true;
 }
@@ -102,10 +102,10 @@ ENTITYCOMPONENTRECORD_TEST(CanAddThenRemoveComponent)
 	storage.AddComponent(kTestEntityId, std::move(testData));
 	storage.RemoveComponent(kTestEntityId, kTestComponentId);
 
-	//TestTrue("", added);
-	//TestFalse("", removed);
-	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	//TestTrue(TEXT(""), added);
+	//TestFalse(TEXT(""), removed);
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -125,10 +125,10 @@ ENTITYCOMPONENTRECORD_TEST(CanRemoveThenAddComponent)
 	storage.RemoveComponent(kTestEntityId, kTestComponentId);
 	storage.AddComponent(kTestEntityId, std::move(testData));
 
-	//TestTrue("", removed);
-	//TestFalse("", added);
-	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	//TestTrue(TEXT(""), removed);
+	//TestFalse(TEXT(""), added);
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -151,10 +151,10 @@ ENTITYCOMPONENTRECORD_TEST(CanApplyUpdateToComponentAdded)
 	storage.AddComponent(kTestEntityId, std::move(testData));
 	storage.AddUpdate(kTestEntityId, MoveTemp(testUpdate));
 
-	//TestTrue("", added);
-	//TestTrue("", updated);
-	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	//TestTrue(TEXT(""), added);
+	//TestTrue(TEXT(""), updated);
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -172,9 +172,9 @@ ENTITYCOMPONENTRECORD_TEST(CanNotApplyUpdateIfNoComponentAdded)
 	EntityComponentRecord storage;
 	storage.AddUpdate(kTestEntityId, MoveTemp(testUpdate));
 
-	//TestFalse("", updated);
-	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	//TestFalse(TEXT(""), updated);
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -197,10 +197,10 @@ ENTITYCOMPONENTRECORD_TEST(CanApplyCompleteUpdateToComponentAdded)
 	storage.AddComponent(kTestEntityId, std::move(testData));
 	storage.AddComponentAsUpdate(kTestEntityId, std::move(testUpdate));
 
-	//TestTrue("", added);
-	//TestTrue("", updated);
-	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	//TestTrue(TEXT(""), added);
+	//TestTrue(TEXT(""), updated);
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -218,9 +218,9 @@ ENTITYCOMPONENTRECORD_TEST(CanNotApplyCompleteUpdateIfNoComponentAdded)
 	EntityComponentRecord storage;
 	 storage.AddComponentAsUpdate(kTestEntityId, std::move(testUpdate));
 
-	//TestFalse("", updated);
-	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	//TestFalse(TEXT(""), updated);
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
 
@@ -247,7 +247,7 @@ ENTITYCOMPONENTRECORD_TEST(CanRemoveEntity)
 	storage.RemoveComponent(kEntityIdToRemove, kFirstComponentId);
 	storage.RemoveComponent(kEntityIdToRemove, kSecondComponentId);
 
-	TestTrue("", AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
-	TestTrue("", AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsAdded(), expectedComponentsAdded));
+	TestTrue(TEXT(""), AreEquivalent(storage.GetComponentsRemoved(), expectedComponentsRemoved));
 	return true;
 }
