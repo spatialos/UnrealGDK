@@ -88,6 +88,27 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 	SendingRepState->HistoryStart = SendingRepState->HistoryStart % MaxSendingChangeHistory;
 	SendingRepState->HistoryEnd = SendingRepState->HistoryStart + NewHistoryCount;
 }
+
+void ForceReplicateOnActorHierarchy(USpatialNetDriver* NetDriver, AActor* RootActor, const AActor* OriginalActor)
+{
+	if (RootActor->GetIsReplicated())
+	{
+		//RootActor->ForceNetUpdate();
+		if (RootActor != OriginalActor)
+		{
+			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(NetDriver->PackageMap->GetEntityIdFromObject(RootActor)))
+			{
+				Channel->ReplicateActor();
+			}
+		}
+	}
+
+	for (AActor* Child : RootActor->Children)
+	{
+		ForceReplicateOnActorHierarchy(NetDriver, Child, OriginalActor);
+	}
+}
+
 } // end anonymous namespace
 
 bool FSpatialObjectRepState::MoveMappedObjectToUnmapped_r(const FUnrealObjectRef& ObjRef, FObjectReferencesMap& ObjectReferencesMap)
@@ -721,7 +742,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
 		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))
-		{		
+		{
 			const VirtualWorkerId NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor);
 			if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 			{
@@ -730,6 +751,12 @@ int64 USpatialActorChannel::ReplicateActor()
 				// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy 
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
+
+				AActor* NetOwner = const_cast<AActor*>(Actor->GetNetOwner());
+				if (NetOwner)
+				{
+					ForceReplicateOnActorHierarchy(NetDriver, NetOwner, Actor);
+				}
 
 				Actor->OnAuthorityLost();
 			}
