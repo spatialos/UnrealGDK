@@ -61,9 +61,6 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 
 	ParentWindowPtr = InArgs._ParentWindow;
 	SpatialGDKEditorPtr = InArgs._SpatialGDKEditor;
-	AssemblyConfiguration = Development;
-	AssemblyWindowsPlatform = Win64;
-	bForceAssemblyOverwrite = true;
 
 	ChildSlot
 		[
@@ -447,7 +444,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.ButtonContent()
 									[
 										SNew(STextBlock)
-										.Text(FText::FromString(TEXT("Win64")))
+										.Text_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetAssemblyWindowsPlatform)
 									]
 								]
 							]
@@ -473,7 +470,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.ButtonContent()
 									[
 										SNew(STextBlock)
-										.Text(FText::FromString(TEXT("Development")))
+										.Text_UObject(SpatialGDKSettings, &USpatialGDKEditorSettings::GetAssemblyBuildConfiguration)
 									]
 								]
 							]
@@ -856,7 +853,8 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildWindowsPlatf
 
 void SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked(FString WindowsPlatform)
 {
-	AssemblyWindowsPlatform = WindowsPlatform;
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetAssemblyWindowsPlatform(WindowsPlatform);
 }
 
 
@@ -865,19 +863,19 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildConfiguratio
 	FMenuBuilder MenuBuilder(true, NULL);
 
 	MenuBuilder.AddMenuEntry(FText::FromString(Debug), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked, Debug))
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Debug))
 	);
 
 	MenuBuilder.AddMenuEntry(FText::FromString(DebugGame), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked, DebugGame))
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, DebugGame))
 	);
 
 	MenuBuilder.AddMenuEntry(FText::FromString(Development), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked, Development))
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Development))
 	);
 
 	MenuBuilder.AddMenuEntry(FText::FromString(Shipping), TAttribute<FText>(), FSlateIcon(),
-		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked, Shipping))
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Shipping))
 	);
 
 	return MenuBuilder.MakeWidget();
@@ -885,7 +883,8 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildConfiguratio
 
 void SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked(FString Configuration)
 {
-	AssemblyConfiguration = Configuration;
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->SetAssemblyBuildConfiguration(Configuration);
 }
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnBuildAndUploadClicked()
@@ -893,7 +892,13 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnBuildAndUploadClicked()
 	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
 		const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorSharedPtr->GetPackageAssemblyRef();
-		PackageAssembly->BuildAllAndUpload(SpatialGDKEditorSettings->GetAssemblyName(), AssemblyWindowsPlatform, AssemblyConfiguration, TEXT(""), bForceAssemblyOverwrite);
+		PackageAssembly->BuildAllAndUpload(
+			SpatialGDKEditorSettings->GetAssemblyName(),
+			SpatialGDKEditorSettings->AssemblyWindowsPlatform,
+			SpatialGDKEditorSettings->AssemblyBuildConfiguration,
+			TEXT(""),
+			SpatialGDKEditorSettings->bForceAssemblyOverwrite
+		);
 	}
 	return FReply::Handled();
 }
@@ -910,10 +915,12 @@ bool SSpatialGDKSimulatedPlayerDeployment::CanBuildAndUpload() const
 
 ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::ForceAssemblyOverwrite() const
 {
-	return bForceAssemblyOverwrite ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	return SpatialGDKSettings->bForceAssemblyOverwrite ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnCheckedForceAssemblyOverwrite(ECheckBoxState NewCheckedState)
 {
-	bForceAssemblyOverwrite = NewCheckedState == ECheckBoxState::Checked;
+	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKSettings->bForceAssemblyOverwrite = NewCheckedState == ECheckBoxState::Checked;
 }

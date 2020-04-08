@@ -223,6 +223,17 @@ void USpatialGDKEditorSettings::SetPrimaryRegionCode(const ERegionCode::Type Reg
 	PrimaryDeploymentRegionCode = RegionCode;
 }
 
+void USpatialGDKEditorSettings::SetAssemblyWindowsPlatform(const FString& Platform)
+{
+	AssemblyWindowsPlatform = Platform;
+	SaveConfig();
+}
+
+void USpatialGDKEditorSettings::SetAssemblyBuildConfiguration(const FString& Configuration)
+{
+	AssemblyBuildConfiguration = Configuration;
+}
+
 void USpatialGDKEditorSettings::SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode)
 {
 	SimulatedPlayerDeploymentRegionCode = RegionCode;

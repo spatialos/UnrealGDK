@@ -334,6 +334,16 @@ private:
 	const FString SimulatedPlayerLaunchConfigPath;
 
 public:
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Windows Build Type"))
+		FString AssemblyWindowsPlatform;
+
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Build Configuration"))
+		FString AssemblyBuildConfiguration;
+
+	UPROPERTY(EditAnywhere, config, Category = "Assembly", meta = (DisplayName = "Force Assembly Overwrite"))
+		bool bForceAssemblyOverwrite;
+
+public:
 	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 		bool bUseDevelopmentAuthenticationFlow;
@@ -481,6 +491,18 @@ public:
 		UEnum* Region = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
 
 		return Region->GetDisplayNameTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
+	}
+
+	void SetAssemblyWindowsPlatform(const FString& Platform);
+	FORCEINLINE FText GetAssemblyWindowsPlatform() const
+	{
+		return FText::FromString(AssemblyWindowsPlatform);
+	}
+
+	void SetAssemblyBuildConfiguration(const FString& Configuration);
+	FORCEINLINE FText GetAssemblyBuildConfiguration() const
+	{
+		return FText::FromString(AssemblyBuildConfiguration);
 	}
 
 	void SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode);

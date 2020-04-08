@@ -104,9 +104,6 @@ private:
 	void OnWindowsPlatformPicked(FString WindowsPlatform);
 	TSharedRef<SWidget> OnGetBuildConfiguration();
 	void OnBuildConfigurationPicked(FString Configuration);
-	FString AssemblyWindowsPlatform;
-	FString AssemblyConfiguration;
-	bool bForceAssemblyOverwrite;
 
 	FReply OnBuildAndUploadClicked();
 	bool CanBuildAndUpload() const;
