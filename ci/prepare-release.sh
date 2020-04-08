@@ -11,7 +11,7 @@ if [[ -n "${DEBUG-}" ]]; then
 fi
 
 if [[ -z "$BUILDKITE" ]]; then
-  echo "This script is only to be run on Improbable CI."
+  echo "This script is only intended to be run on Improbable CI."
   exit 1
 fi
 
