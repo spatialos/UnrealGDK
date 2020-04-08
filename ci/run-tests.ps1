@@ -52,7 +52,7 @@ $output_dir_absolute = Force-ResolvePath $output_dir
 $additional_gdk_options_arr = $additional_gdk_options.Split(";")
 $additional_gdk_options = ""
 Foreach ($additional_gdk_option in $additional_gdk_options_arr) {
-    if ($additional_gdk_options -neq "") {
+    if ($additional_gdk_options -ne "") {
         $additional_gdk_options += ","
     }
     $additional_gdk_options += "[/Script/SpatialGDK.SpatialGDKSettings]:$additional_gdk_option"
