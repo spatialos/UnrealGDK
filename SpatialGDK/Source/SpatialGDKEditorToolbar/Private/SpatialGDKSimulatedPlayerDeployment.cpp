@@ -87,43 +87,6 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 						.Padding(1.0f)
 						[
 							SNew(SVerticalBox)
-							//// Build explanation set
-							//+ SVerticalBox::Slot()
-							//.AutoHeight()
-							//.Padding(2.0f)
-							//.VAlign(VAlign_Center)
-							//[
-							//	SNew(SWrapBox)
-							//	.UseAllottedWidth(true)
-							//	+ SWrapBox::Slot()
-							//	.VAlign(VAlign_Bottom)
-							//	[
-							//		SNew(STextBlock)
-							//		.AutoWrapText(true)
-							//		.Text(FText::FromString(FString(TEXT("NOTE: You can set default values in the SpatialOS settings under \"Cloud\"."))))
-							//	]
-							//	+ SWrapBox::Slot()
-							//	.VAlign(VAlign_Bottom)
-							//	[
-							//		SNew(STextBlock)
-							//		.AutoWrapText(true)
-							//	.Text(FText::FromString(FString(TEXT("The assembly has to be built and uploaded manually. Follow the docs "))))
-							//	]
-							//	+ SWrapBox::Slot()
-							//	[
-							//		SNew(SHyperlink)
-							//		.Text(FText::FromString(FString(TEXT("here."))))
-							//		.OnNavigate(this, &SSpatialGDKSimulatedPlayerDeployment::OnCloudDocumentationClicked)
-							//	]
-							//]
-							// Separator
-							+ SVerticalBox::Slot()
-							.AutoHeight()
-							.Padding(2.0f)
-							.VAlign(VAlign_Center)
-							[
-								SNew(SSeparator)
-							]
 							// Project 
 							+ SVerticalBox::Slot()
 							.AutoHeight()
