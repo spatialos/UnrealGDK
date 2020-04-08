@@ -17,7 +17,9 @@ common: &common
         limit: 3
 
 steps:
-  # TODO: I've added engine-version & preview keys. I need to call these using "buildkite-agent meta-data get" where required.
+  # Stage 0: Tell Buildkite what you want to release.
+
+  # TODO: I've modified gdk-version and added engine-version & preview. I need to call these keys using "buildkite-agent meta-data get" where required.
   - block: Configure your release.
     prompt: Fill out these details for your release.
     fields:
@@ -31,6 +33,7 @@ steps:
         hint: "The Unreal Engine versions you want to create a release candidate for, e.g. - 4.24-SpatialOSUnrealGDK"
         required: true
         multiple: true
+        # TODO: Note in the WIP Maintainers Guide (UNR-2648) that you have to update these defaults and optione when you introduce a new engine branch. Even better, have a regex pull these branches by recognising the format.
         default:
           - "4.24-SpatialOSUnrealGDK"
           - "4.23-SpatialOSUnrealGDK"
@@ -48,7 +51,7 @@ steps:
           - label: "preview"
             value: "preview"
 
-  # Stage 1: Prepare the release candidates
+  # Stage 1: Prepare the release candidates.
 
   # There is one prepare step for each repo we release.
   # Prepare steps create a PR and upload metadata but do not release anything.
