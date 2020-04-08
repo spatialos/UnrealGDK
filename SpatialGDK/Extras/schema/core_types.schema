@@ -15,6 +15,7 @@ type UnrealObjectRef {
     // Actors such as the game state, game mode and level script Actors (formerly
     // known as Singletons) can be referred to by their class path in the case of an
     // authoritative server that hasn't checked the singleton entity yet. This bool
-    // will differentiate that from their class pointer.
+    // will indicate that non-auth servers should try to load such Actors from
+    // their package map.
     option<bool> use_class_path_to_load_object = 6;
 }
