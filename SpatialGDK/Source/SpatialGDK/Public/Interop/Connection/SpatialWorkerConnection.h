@@ -5,7 +5,7 @@
 #include "Containers/Queue.h"
 #include "HAL/Runnable.h"
 #include "HAL/ThreadSafeBool.h"
-
+#include "HAL/Event.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialCommonTypes.h"
@@ -17,6 +17,14 @@
 #include "SpatialWorkerConnection.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
+
+struct FEventDeleter
+{
+	void operator()(FEvent* Event) const
+	{
+		FPlatformProcess::ReturnSynchEventToPool(Event);
+	}
+};
 
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable, public SpatialOSWorkerInterface
@@ -55,7 +63,7 @@ public:
 
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
-	void Flush(bool bForce = false);
+	void Flush();
 
 private:
 	void CacheWorkerAttributes();
@@ -77,7 +85,7 @@ private:
 
 	FRunnableThread* OpsProcessingThread;
 	FThreadSafeBool KeepRunning = true;
-	float OpsUpdateInterval;
+	float OpsUpdateIntervalMs;
 
 	TQueue<Worker_OpList*> OpListQueue;
 	TQueue<TUniquePtr<SpatialGDK::FOutgoingMessage>> OutgoingMessagesQueue;
@@ -85,5 +93,5 @@ private:
 	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
 	Worker_RequestId NextRequestId = 0;
 
-	uint64_t LastFlushTime; // Last time Flush() was called, only used when explicit flushing is enabled. 
+	TUniquePtr<FEvent, FEventDeleter> WorkerFlushEvent; // Event used for syncronising the worker API submission thread.
 };

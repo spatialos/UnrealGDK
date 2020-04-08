@@ -302,9 +302,9 @@ public:
 	UPROPERTY(Config)
 	bool bExplicitFlushIntervals;
 
-	/** When explicitly flushing, what is the smallest interval to flush on. */
+	/** When explicitly flushing, whether to flush immediately after an RPC. Higher bandwidth but lower latency on RPC calls. */
 	UPROPERTY(Config)
-	uint32 ExplicitMinimumFlush;
+	bool bFlushWorkerSubmissionAfterRPC;
 
 	/** Do async loading for new classes when checking out entities. */
 	UPROPERTY(Config)

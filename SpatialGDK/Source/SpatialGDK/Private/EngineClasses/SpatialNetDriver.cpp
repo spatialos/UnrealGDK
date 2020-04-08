@@ -1821,7 +1821,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	if (SpatialGDKSettings->bExplicitFlushIntervals && Connection != nullptr)
 	{
-		Connection->Flush(true);
+		Connection->Flush();
 	}
 }
 

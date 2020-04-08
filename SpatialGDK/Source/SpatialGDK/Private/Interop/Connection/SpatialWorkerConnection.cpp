@@ -5,6 +5,11 @@
 #include "Async/Async.h"
 #include "SpatialGDKSettings.h"
 
+//#define METRICS
+#ifdef METRICS
+#include <chrono>
+#endif
+
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
@@ -55,6 +60,8 @@ void USpatialWorkerConnection::DestroyConnection()
 
 	NextRequestId = 0;
 	KeepRunning.AtomicSet(true);
+
+	WorkerFlushEvent = nullptr;
 }
 
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
@@ -169,7 +176,7 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 bool USpatialWorkerConnection::Init()
 {
-	OpsUpdateInterval = 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
+	OpsUpdateIntervalMs = 1000.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
 
 	return true;
 }
@@ -179,9 +186,20 @@ uint32 USpatialWorkerConnection::Run()
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	check(!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread);
 
+	FTimespan WaitTime = FTimespan::FromMicroseconds(OpsUpdateIntervalMs*1000); // Microseconds to allow for fractional ms
 	while (KeepRunning)
 	{
-		FPlatformProcess::Sleep(OpsUpdateInterval);
+#ifdef METRICS
+		auto tp = std::chrono::high_resolution_clock::now();
+#endif
+		WorkerFlushEvent->Wait(WaitTime);
+#ifdef METRICS
+		auto tpNow = std::chrono::high_resolution_clock::now();
+		auto ns = (tpNow - tp).count();
+		float ms = ns / 1000000.0;
+		//UE_LOG(LogSpatialWorkerConnection, Log, TEXT("slept for %.8f"), ms);
+#endif
+
 		QueueLatestOpList();
 		ProcessOutgoingMessages();
 	}
@@ -198,7 +216,7 @@ void USpatialWorkerConnection::InitializeOpsProcessingThread()
 {
 	check(IsInGameThread());
 
-	LastFlushTime = 0;
+	WorkerFlushEvent.Reset(FGenericPlatformProcess::GetSynchEventFromPool());
 
 	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
 	check(OpsProcessingThread);
@@ -219,6 +237,9 @@ void USpatialWorkerConnection::QueueLatestOpList()
 
 void USpatialWorkerConnection::ProcessOutgoingMessages()
 {
+#ifdef METRICS
+	auto tp = std::chrono::high_resolution_clock::now();
+#endif
 	while (!OutgoingMessagesQueue.IsEmpty())
 	{
 		TUniquePtr<FOutgoingMessage> OutgoingMessage;
@@ -412,9 +433,6 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			Worker_Connection_SendMetrics(WorkerConnection, &WorkerMetrics);
 			break;
 		}
-		case EOutgoingMessageType::Flush:
-			Flush(true);
-			break;
 		default:
 		{
 			checkNoEntry();
@@ -422,18 +440,22 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		}
 		}
 	}
-	Flush();
-}
-
-void USpatialWorkerConnection::Flush(bool bForce /* = false */)
-{
-	uint64_t TimeNow = FDateTime::UtcNow().GetTicks(); // Flush shouldn't be called so much this becomes a problem, a tick is 100 nanoseconds
-	constexpr uint64_t MILLISECOND_TO_100_NANOSECOND = 10000;
-	//if (bForce || (TimeNow - LastFlushTime) > GetDefault<USpatialGDKSettings>()->ExplicitMinimumFlush*MILLISECOND_TO_100_NANOSECOND)
+#ifdef METRICS
+	auto tpEnd = std::chrono::high_resolution_clock::now();
+	auto ns = (tpEnd - tp).count();
+	float ms = ns / 1000000.0;
+	//UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Work took %.8f"), ms);
+#endif
+	// Flush worker API calls              
+	if (GetDefault<USpatialGDKSettings>()->bExplicitFlushIntervals)
 	{
-		LastFlushTime = TimeNow;
 		Worker_Connection_Alpha_Flush(WorkerConnection);
 	}
+}
+
+void USpatialWorkerConnection::Flush()
+{
+	WorkerFlushEvent->Trigger();
 }
 
 template <typename T, typename... ArgsType>

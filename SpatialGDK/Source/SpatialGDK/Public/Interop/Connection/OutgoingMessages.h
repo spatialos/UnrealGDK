@@ -32,8 +32,7 @@ enum class EOutgoingMessageType : int32
 	LogMessage,
 	ComponentInterest,
 	EntityQueryRequest,
-	Metrics,
-	Flush
+	Metrics
 };
 
 struct FOutgoingMessage
@@ -197,14 +196,6 @@ struct FEntityQueryRequest : FOutgoingMessage
 	TArray<TUniquePtr<Worker_Constraint[]>> ConstraintStorage;
 	TArray<Worker_ComponentId> ComponentIdStorage;
 };
-
-struct FFlushRequest : FOutgoingMessage
-{
-	FFlushRequest()
-		: FOutgoingMessage(EOutgoingMessageType::Flush)
-	{
-	}
-}; 
 
 /** Parameters for a gauge metric. */
 struct GaugeMetric
