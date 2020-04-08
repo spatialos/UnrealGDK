@@ -66,6 +66,9 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - When running with Offloading enabled, Actors will have local authority (ROLE_Authority) on servers for longer periods of time to allow more native Unreal functionality to work without problems.
 - When running with Offloading enabled, and trying to spawn Actors on a server which will not be the Actor Group owner for them, an error is logged and the Actor is deleted.
 - Use the SpatialOS runtime version 14.5.0 by default.
+- Config setting bPreventAutoConnectWithLocator has been renamed to bPreventClientCloudDeploymentAutoConnect. It has been moved to GDK Setting. If using this feature please update enable the setting in GDK Settings.
+- USpatialMetrics::WorkerMetricsRecieved was made static.
+- Added the ability to connect to a local deployment when launching on a device by checking "Connect to a local deployment" and specifying the local IP of your computer in the Launch dropdown.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
@@ -100,6 +103,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Fixed crash caused by state persisting across a transition from one deployment to another in SpatialGameInstance.
 - Fixed crash when starting + stopping PIE multiple times.
 - Fixed crash when shadow data was uninitialized when resolving unresolved objects.
+- Fixed sending component RPCs on a recently created actor.
 
 ### External contributors:
 @DW-Sebastien

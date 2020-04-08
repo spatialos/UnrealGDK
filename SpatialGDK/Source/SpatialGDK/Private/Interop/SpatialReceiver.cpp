@@ -506,7 +506,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			if (QueuedRPCs->HasRPCPayloadData())
 			{
-				ProcessQueuedActorRPCsOnEntityCreation(Actor, *QueuedRPCs);
+				ProcessQueuedActorRPCsOnEntityCreation(Op.entity_id, *QueuedRPCs);
 			}
 
 			Sender->SendRequestToClearRPCsOnEntityCreation(Op.entity_id);
@@ -561,7 +561,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 						// The following check will return false on non-authoritative servers if the Pawn hasn't been received yet.
 						if (APawn* PawnFromPlayerState = PlayerState->GetPawn())
 						{
-							if (PawnFromPlayerState->IsPlayerControlled())
+							if (PawnFromPlayerState->IsPlayerControlled() && PawnFromPlayerState->HasAuthority())
 							{
 								PawnFromPlayerState->RemoteRole = ROLE_AutonomousProxy;
 							}
@@ -592,8 +592,8 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 					ActorChannel->bCreatedEntity = false;
 				}
 
-				// With load-balancing enabled, we set ROLE_SimulatedProxy and trigger OnAuthorityLost when we
-				// set AuthorityIntent to another worker.This conditional exists to dodge call OnAuthorityLost
+				// With load-balancing enabled, we already set ROLE_SimulatedProxy and trigger OnAuthorityLost when we
+				// set AuthorityIntent to another worker. This conditional exists to dodge calling OnAuthorityLost
 				// twice.
 				if (Actor->Role != ROLE_SimulatedProxy)
 				{
@@ -814,6 +814,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
+	if (!PackageMap->ResolveEntityActor(EntityActor, EntityId))
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to resolve entity actor when receiving entity %lld. The actor (%s) will not be spawned."), EntityId, *EntityActor->GetName());
+		EntityActor->Destroy(true);
+		return;
+	}
+
 	// Set up actor channel.
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
 	if (Channel == nullptr)
@@ -823,15 +830,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (Channel == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor (%s) will not be spawned."), EntityId, *EntityActor->GetName());
 		EntityActor->Destroy(true);
-		return;
-	}
-
-	if (!PackageMap->ResolveEntityActor(EntityActor, EntityId))
-	{
-		EntityActor->Destroy(true);
-		Channel->Close(EChannelCloseReason::Destroyed);
 		return;
 	}
 
@@ -898,10 +898,15 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	// Taken from PostNetInit
 	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 	{
-		// Whenever we receive an actor over the wire, the expectation is that it is not in an authoritative
-		// state.  This is because it should already have had authoritative BeginPlay() called.  If we have
-		// authority here, we are calling BeginPlay() with authority on this actor a 2nd time, which is always incorrect.
-		check(!EntityActor->HasAuthority());
+		// The Actor role can be authority here if a PendingAddComponent processed above set the role.
+		// Calling BeginPlay() with authority a 2nd time globally is always incorrect, so we set role
+		// to SimulatedProxy and let the processing of authority ops (later in the LeaveCriticalSection
+		// flow) take care of setting roles correctly.
+		if (EntityActor->HasAuthority())
+		{
+			EntityActor->Role = ROLE_SimulatedProxy;
+			EntityActor->RemoteRole = ROLE_Authority;
+		}
 		EntityActor->DispatchBeginPlay();
 	}
 
@@ -2091,17 +2096,11 @@ AActor* USpatialReceiver::FindSingletonActor(UClass* SingletonClass)
 	return nullptr;
 }
 
-void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPCsOnEntityCreation& QueuedRPCs)
+void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(Worker_EntityId EntityId, RPCsOnEntityCreation& QueuedRPCs)
 {
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
 	for (auto& RPC : QueuedRPCs.RPCs)
 	{
-		UFunction* Function = Info.RPCs[RPC.Index];
-		const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(Actor, Function);
-		const FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor);
-		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
-
+		const FUnrealObjectRef ObjectRef(EntityId, RPC.Offset);
 		ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(RPC));
 	}
 }
