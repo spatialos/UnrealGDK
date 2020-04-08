@@ -17,6 +17,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSimulatedPlayerDeployment, Log, All);
 
 class SWindow;
 
+
 enum class ECheckBoxState : uint8;
 
 class SSpatialGDKSimulatedPlayerDeployment : public SCompoundWidget
@@ -103,6 +104,15 @@ private:
 	void OnWindowsPlatformPicked(FString WindowsPlatform);
 	TSharedRef<SWidget> OnGetBuildConfiguration();
 	void OnBuildConfigurationPicked(FString Configuration);
+	FString AssemblyWindowsPlatform;
+	FString AssemblyConfiguration;
+	bool bForceAssemblyOverwrite;
+
+	FReply OnBuildAndUploadClicked();
+	bool CanBuildAndUpload() const;
+
+	ECheckBoxState ForceAssemblyOverwrite() const;
+	void OnCheckedForceAssemblyOverwrite(ECheckBoxState NewCheckedState);
 
 	ECheckBoxState IsSimulatedPlayersEnabled() const;
 	ECheckBoxState IsUsingGDKPinnedRuntimeVersion() const;
@@ -111,4 +121,5 @@ private:
 
 	/** Delegate to determine the 'Launch Deployment' button enabled state */
 	bool IsDeploymentConfigurationValid() const;
+
 };

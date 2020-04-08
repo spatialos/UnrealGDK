@@ -58,7 +58,6 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 : bStopSpatialOnExit(false)
 , bSchemaBuildError(false)
-, SpatialGDKPackageAssemblyInstance(MakeShared<FSpatialGDKPackageAssembly>(FSpatialGDKPackageAssembly()))
 {
 }
 
@@ -181,11 +180,6 @@ bool FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator() const
 	return SpatialGDKEditorInstance.IsValid() && !SpatialGDKEditorInstance.Get()->IsSchemaGeneratorRunning();
 }
 
-bool FSpatialGDKEditorToolbarModule::CanBuildAnyWorker() const
-{
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && SpatialGDKPackageAssemblyInstance.Get().CanBuild();
-}
-
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> InPluginCommands)
 {
 	InPluginCommands->MapAction(
@@ -235,11 +229,6 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor),
 		FCanExecuteAction());
-
-	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().BuildAndUploadAction,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::BuildAndUpload),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanBuildAnyWorker));
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartSpatialService,
@@ -348,8 +337,6 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateLaunchDeploymentMenuCo
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKDeploymentOptionsHeader", "Deployment Tools"));
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction);
-		MenuBuilder.AddMenuSeparator();
-		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().BuildAndUploadAction);
 	}
 	MenuBuilder.EndSection();
 
@@ -860,12 +847,6 @@ void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
 void FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor()
 {
 	ULaunchConfigurationEditor::LaunchTransientUObjectEditor<ULaunchConfigurationEditor>(TEXT("Launch Configuration Editor"));
-}
-
-void FSpatialGDKEditorToolbarModule::BuildAndUpload()
-{
-	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	SpatialGDKPackageAssemblyInstance.Get().BuildAllAndUpload(SpatialGDKEditorSettings->GetAssemblyName(), TEXT("Win64"), TEXT("Development"), TEXT(""), true);
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)

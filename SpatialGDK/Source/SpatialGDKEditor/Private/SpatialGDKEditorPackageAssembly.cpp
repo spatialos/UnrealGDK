@@ -96,7 +96,7 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 Result)
 		case EPackageAssemblyTarget::BUILD_CLIENT:
 			CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_SERVER;
 			AsyncTask(ENamedThreads::GameThread, [this]() {
-				this->BuildAssembly(FString::Printf(TEXT("%sServer"), FApp::GetProjectName), Linux, AssemblyDetailsPtr->Configuration, TEXT(""));
+				this->BuildAssembly(FString::Printf(TEXT("%sServer"), FApp::GetProjectName()), Linux, AssemblyDetailsPtr->Configuration, TEXT(""));
 				});
 			break;
 		case EPackageAssemblyTarget::BUILD_SERVER:
