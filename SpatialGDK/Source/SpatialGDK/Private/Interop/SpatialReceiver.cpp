@@ -506,7 +506,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 		{
 			if (QueuedRPCs->HasRPCPayloadData())
 			{
-				ProcessQueuedActorRPCsOnEntityCreation(Actor, *QueuedRPCs);
+				ProcessQueuedActorRPCsOnEntityCreation(Op.entity_id, *QueuedRPCs);
 			}
 
 			Sender->SendRequestToClearRPCsOnEntityCreation(Op.entity_id);
@@ -814,6 +814,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
+	if (!PackageMap->ResolveEntityActor(EntityActor, EntityId))
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to resolve entity actor when receiving entity %lld. The actor (%s) will not be spawned."), EntityId, *EntityActor->GetName());
+		EntityActor->Destroy(true);
+		return;
+	}
+
 	// Set up actor channel.
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
 	if (Channel == nullptr)
@@ -823,15 +830,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (Channel == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor (%s) will not be spawned."), EntityId, *EntityActor->GetName());
 		EntityActor->Destroy(true);
-		return;
-	}
-
-	if (!PackageMap->ResolveEntityActor(EntityActor, EntityId))
-	{
-		EntityActor->Destroy(true);
-		Channel->Close(EChannelCloseReason::Destroyed);
 		return;
 	}
 
@@ -2096,17 +2096,11 @@ AActor* USpatialReceiver::FindSingletonActor(UClass* SingletonClass)
 	return nullptr;
 }
 
-void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPCsOnEntityCreation& QueuedRPCs)
+void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(Worker_EntityId EntityId, RPCsOnEntityCreation& QueuedRPCs)
 {
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
 	for (auto& RPC : QueuedRPCs.RPCs)
 	{
-		UFunction* Function = Info.RPCs[RPC.Index];
-		const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(Actor, Function);
-		const FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor);
-		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
-
+		const FUnrealObjectRef ObjectRef(EntityId, RPC.Offset);
 		ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(RPC));
 	}
 }
