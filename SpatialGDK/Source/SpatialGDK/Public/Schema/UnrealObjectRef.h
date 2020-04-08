@@ -87,8 +87,8 @@ struct SPATIALGDK_API FUnrealObjectRef
 	SpatialGDK::TSchemaOption<FUnrealObjectRef> Outer;
 	bool bNoLoadOnClient = false;
 	// If this field is set to true, we are saying that the Actor will exist at most once on the given worker.
-	// In addition, if we receive information for an Actor of the same class over the network, then this data
-	// should be applied to this Actor we've already spawned (where another worker created the entity). This
+	// In addition, if we receive information for an Actor of this class over the network, then this data
+	// should be applied to the Actor we've already spawned (where another worker created the entity). This
 	// information is important for the object ref, since it means we can identify the correct Actor to apply
 	// the replicated data to on each worker via the class path (since only 1 Actor should exist for this class).
 	bool bUseClassPathToLoadObject = false;
