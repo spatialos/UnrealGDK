@@ -64,6 +64,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Use the SpatialOS runtime version 14.5.0 by default.
 - Config setting `bPreventAutoConnectWithLocator` has been renamed to `bPreventClientCloudDeploymentAutoConnect`. It has been moved to GDK Setting. If using this feature please update enable the setting in GDK Settings.
 - USpatialMetrics::WorkerMetricsRecieved was made static.
+- Added the ability to connect to a local deployment when launching on a device by checking "Connect to a local deployment" and specifying the local IP of your computer in the Launch dropdown.
 - The Spatial GDK now default enables RPC Ring Buffers, and the legacy RPC mode will be removed in a subsequent release.
 - Removed `bPackRPCs` property has been removed, and the flag `--OverrideRPCPacking` has been removed.
 
