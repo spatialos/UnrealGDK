@@ -55,6 +55,7 @@ public:
 
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
+	void Flush(bool bForce = false);
 
 private:
 	void CacheWorkerAttributes();
@@ -70,7 +71,6 @@ private:
 	template <typename T, typename... ArgsType>
 	void QueueOutgoingMessage(ArgsType&&... Args);
 
-private:
 	Worker_Connection* WorkerConnection;
 
 	TArray<FString> CachedWorkerAttributes;
@@ -84,4 +84,6 @@ private:
 
 	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
 	Worker_RequestId NextRequestId = 0;
+
+	uint64_t LastFlushTime; // Last time Flush() was called, only used when explicit flushing is enabled. 
 };

@@ -63,7 +63,14 @@ struct FConnectionConfig
 
 		TcpNoDelay = (SpatialGDKSettings->bTcpNoDelay ? 1 : 0);
 
-		UdpUpstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientUpstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerUpstreamUpdateIntervalMS);
+		if (SpatialGDKSettings->bExplicitFlushIntervals) // Explicit flush intervals, ticked at a minimum of the frame rate.
+		{
+			UdpUpstreamIntervalMS = 255; 
+		}
+		else
+		{
+			UdpUpstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientUpstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerUpstreamUpdateIntervalMS);
+		}
 		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS : SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 	}
 

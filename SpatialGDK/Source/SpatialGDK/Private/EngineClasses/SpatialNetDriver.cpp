@@ -1818,6 +1818,11 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	// Super::TickFlush() will not call ReplicateActors() because Spatial connections have InternalAck set to true.
 	// In our case, our Spatial actor interop is triggered through ReplicateActors() so we want to call it regardless.
 	Super::TickFlush(DeltaTime);
+
+	if (SpatialGDKSettings->bExplicitFlushIntervals && Connection != nullptr)
+	{
+		Connection->Flush(true);
+	}
 }
 
 USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const

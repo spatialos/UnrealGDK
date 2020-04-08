@@ -198,6 +198,8 @@ void USpatialWorkerConnection::InitializeOpsProcessingThread()
 {
 	check(IsInGameThread());
 
+	LastFlushTime = 0;
+
 	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
 	check(OpsProcessingThread);
 }
@@ -410,12 +412,27 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			Worker_Connection_SendMetrics(WorkerConnection, &WorkerMetrics);
 			break;
 		}
+		case EOutgoingMessageType::Flush:
+			Flush(true);
+			break;
 		default:
 		{
 			checkNoEntry();
 			break;
 		}
 		}
+	}
+	Flush();
+}
+
+void USpatialWorkerConnection::Flush(bool bForce /* = false */)
+{
+	uint64_t TimeNow = FDateTime::UtcNow().GetTicks(); // Flush shouldn't be called so much this becomes a problem, a tick is 100 nanoseconds
+	constexpr uint64_t MILLISECOND_TO_100_NANOSECOND = 10000;
+	//if (bForce || (TimeNow - LastFlushTime) > GetDefault<USpatialGDKSettings>()->ExplicitMinimumFlush*MILLISECOND_TO_100_NANOSECOND)
+	{
+		LastFlushTime = TimeNow;
+		Worker_Connection_Alpha_Flush(WorkerConnection);
 	}
 }
 

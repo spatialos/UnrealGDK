@@ -108,6 +108,7 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"), bEnableNetCullDistanceFrequency);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"), bUseIsActorRelevantForConnection);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideExplicitFlushIntervals"), TEXT("Explicit upstream flush intervals"), bExplicitFlushIntervals);
 
 	if (bEnableUnrealLoadBalancer)
 	{
