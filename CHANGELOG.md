@@ -66,7 +66,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - USpatialMetrics::WorkerMetricsRecieved was made static.
 - Added the ability to connect to a local deployment when launching on a device by checking "Connect to a local deployment" and specifying the local IP of your computer in the Launch dropdown.
 - The Spatial GDK now default enables RPC Ring Buffers, and the legacy RPC mode will be removed in a subsequent release.
-- Removed `bPackRPCs` property has been removed, and the flag `--OverrideRPCPacking` has been removed.
+- The `bPackRPCs` property has been removed, and the flag `--OverrideRPCPacking` has been removed.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
