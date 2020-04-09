@@ -20,5 +20,3 @@ public:
 private:
 	TMap<ESchemaComponentType, TArray<Worker_ComponentId>> ComponentTypeToIds;
 };
-
-

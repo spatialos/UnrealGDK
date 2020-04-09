@@ -11,13 +11,22 @@
 // Sanity check tests for creating result types.
 namespace
 {
+	struct ClassInfoManagerDeleter
+	{
+		void operator()(USpatialClassInfoManagerMock* ClassInfoManager) const
+		{
+			ClassInfoManager->RemoveFromRoot();
+		}
+	};
+
 	TArray<Worker_ComponentId> DataComponentIds = { 1, 2 };
 	TArray<Worker_ComponentId> OwnerOnlyComponentIds = { 3, 4 };
 	TArray<Worker_ComponentId> HandoverComponentIds = { 5, 6 };
 
-	USpatialClassInfoManagerMock* CreateAndPopulateMockClassInfoManager()
+	TSharedPtr<USpatialClassInfoManagerMock> CreateAndPopulateMockClassInfoManager()
 	{
-		USpatialClassInfoManagerMock* ClassInfoManager = NewObject<USpatialClassInfoManagerMock>();
+		TSharedPtr<USpatialClassInfoManagerMock> ClassInfoManager(NewObject<USpatialClassInfoManagerMock>(), ClassInfoManagerDeleter());
+		ClassInfoManager->AddToRoot();
 
 		// Initialize with fake generated components
 		ClassInfoManager->SetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data, DataComponentIds);
@@ -31,7 +40,7 @@ namespace
 RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_client_auth_result_type_THEN_gets_correct_components)
 {
 	// GIVEN
-	USpatialClassInfoManagerMock* ClassInfoManager = CreateAndPopulateMockClassInfoManager();
+	TSharedPtr<USpatialClassInfoManagerMock> ClassInfoManager = CreateAndPopulateMockClassInfoManager();
 
 	TArray<Worker_ComponentId> ExpectedResultType;
 	ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST);
@@ -40,7 +49,7 @@ RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_client_auth_result_type_TH
 	ExpectedResultType.Append(OwnerOnlyComponentIds);
 
 	// WHEN
-	TArray<Worker_ComponentId> ClientAuthResultType = CreateClientAuthInterestResultType(ClassInfoManager);
+	TArray<Worker_ComponentId> ClientAuthResultType = CreateClientAuthInterestResultType(ClassInfoManager.Get());
 
 	ExpectedResultType.Sort();
 	ClientAuthResultType.Sort();
@@ -54,7 +63,7 @@ RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_client_auth_result_type_TH
 RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_client_non_auth_result_type_THEN_gets_correct_components)
 {
 	// GIVEN
-	USpatialClassInfoManagerMock* ClassInfoManager = CreateAndPopulateMockClassInfoManager();
+	TSharedPtr<USpatialClassInfoManagerMock> ClassInfoManager = CreateAndPopulateMockClassInfoManager();
 
 	TArray<Worker_ComponentId> ExpectedResultType;
 	ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
@@ -62,7 +71,7 @@ RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_client_non_auth_result_typ
 	ExpectedResultType.Append(OwnerOnlyComponentIds);
 
 	// WHEN
-	TArray<Worker_ComponentId> ClientNonAuthResultType = CreateClientNonAuthInterestResultType(ClassInfoManager);
+	TArray<Worker_ComponentId> ClientNonAuthResultType = CreateClientNonAuthInterestResultType(ClassInfoManager.Get());
 
 	ExpectedResultType.Sort();
 	ClientNonAuthResultType.Sort();
@@ -94,7 +103,7 @@ RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_server_auth_result_type_TH
 RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_server_non_auth_result_type_THEN_gets_correct_components)
 {
 	// GIVEN
-	USpatialClassInfoManagerMock* ClassInfoManager = CreateAndPopulateMockClassInfoManager();
+	TSharedPtr<USpatialClassInfoManagerMock> ClassInfoManager = CreateAndPopulateMockClassInfoManager();
 
 	TArray<Worker_ComponentId> ExpectedResultType;
 	ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST);
@@ -103,7 +112,7 @@ RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_server_non_auth_result_typ
 	ExpectedResultType.Append(HandoverComponentIds);
 
 	// WHEN
-	TArray<Worker_ComponentId> ServerNonAuthResultType = CreateServerNonAuthInterestResultType(ClassInfoManager);
+	TArray<Worker_ComponentId> ServerNonAuthResultType = CreateServerNonAuthInterestResultType(ClassInfoManager.Get());
 
 	ExpectedResultType.Sort();
 	ServerNonAuthResultType.Sort();
