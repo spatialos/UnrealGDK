@@ -1610,7 +1610,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 		if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 		{
-			Connection->QueueLatestOpList();
+			Connection->QueueLatestOpList(0);
 		}
 
 		TArray<Worker_OpList*> OpLists = Connection->GetOpList();

@@ -5,7 +5,7 @@
 #include "Async/Async.h"
 #include "SpatialGDKSettings.h"
 
-//#define METRICS
+#define METRICS
 #ifdef METRICS
 #include <chrono>
 #endif
@@ -186,21 +186,23 @@ uint32 USpatialWorkerConnection::Run()
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	check(!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread);
 
-	FTimespan WaitTime = FTimespan::FromMicroseconds(OpsUpdateIntervalMs*1000); // Microseconds to allow for fractional ms
+	float waitMs = 1000.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
+	FTimespan WaitTime = FTimespan::FromMicroseconds(60*1000); // Microseconds to allow for fractional ms
 	while (KeepRunning)
 	{
 #ifdef METRICS
 		auto tp = std::chrono::high_resolution_clock::now();
 #endif
-		WorkerFlushEvent->Wait(WaitTime);
+		//FPlatformProcess::Sleep(1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate);
+		//WorkerFlushEvent->Wait(WaitTime);
+		QueueLatestOpList(waitMs);
 #ifdef METRICS
 		auto tpNow = std::chrono::high_resolution_clock::now();
 		auto ns = (tpNow - tp).count();
 		float ms = ns / 1000000.0;
-		//UE_LOG(LogSpatialWorkerConnection, Log, TEXT("slept for %.8f"), ms);
+		UE_LOG(LogSpatialWorkerConnection, Log, TEXT("slept for %.8f"), ms);
 #endif
 
-		QueueLatestOpList();
 		ProcessOutgoingMessages();
 	}
 
@@ -218,13 +220,13 @@ void USpatialWorkerConnection::InitializeOpsProcessingThread()
 
 	WorkerFlushEvent.Reset(FGenericPlatformProcess::GetSynchEventFromPool());
 
-	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
+	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0, TPri_TimeCritical);
 	check(OpsProcessingThread);
 }
 
-void USpatialWorkerConnection::QueueLatestOpList()
+void USpatialWorkerConnection::QueueLatestOpList(uint32_t WaitTime)
 {
-	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
+	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, WaitTime);
 	if (OpList->op_count > 0)
 	{
 		OpListQueue.Enqueue(OpList);
