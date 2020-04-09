@@ -837,12 +837,13 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 		if (SpatialGDKSettings->UseRPCRingBuffer() && RPCService != nullptr)
 		{
 			EPushRPCResult Result = RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload);
-#if !UE_BUILD_SHIPPING
 			if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)
 			{
+				FlushRPCService();
+#if !UE_BUILD_SHIPPING
 				TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
-			}
 #endif // !UE_BUILD_SHIPPING
+			}
 
 			switch (Result)
 			{
