@@ -123,7 +123,8 @@ FReply FSpatialGDKEditorLayoutDetails::GenerateDevAuthToken()
 
 	FString AuthResult;
 	FString DevAuthTokenResult;
-	if (!CreateDevAuthTokenResult.TrimEnd().Split(TEXT("\n"), &AuthResult, &DevAuthTokenResult, ESearchCase::IgnoreCase, ESearchDir::FromEnd) || DevAuthTokenResult.IsEmpty())
+	bool bFoundNewline = CreateDevAuthTokenResult.TrimEnd().Split(TEXT("\n"), &AuthResult, &DevAuthTokenResult, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+	if (!bFoundNewline || DevAuthTokenResult.IsEmpty())
 	{
 		// This is necessary because depending on whether you are already authenticated against spatial, it will either return two json structs or one.
 		DevAuthTokenResult = CreateDevAuthTokenResult;
