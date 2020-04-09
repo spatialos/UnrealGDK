@@ -55,7 +55,7 @@ USpatialLatencyTracer::USpatialLatencyTracer()
 {
 #if TRACE_LIB_ACTIVE
 	ResetWorkerId();
-	FParse::Value(FCommandLine::Get(), TEXT("tracePrefix"), MessagePrefix);
+	FParse::Value(FCommandLine::Get(), TEXT("traceMetadata"), TraceMetadata);
 #endif
 }
 
@@ -73,12 +73,12 @@ void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const F
 #endif // TRACE_LIB_ACTIVE
 }
 
-bool USpatialLatencyTracer::SetMessagePrefix(UObject* WorldContextObject, const FString& NewMessagePrefix)
+bool USpatialLatencyTracer::SetTraceMetadata(UObject* WorldContextObject, const FString& NewTraceMetadata)
 {
 #if TRACE_LIB_ACTIVE
 	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
 	{
-		Tracer->MessagePrefix = NewMessagePrefix;
+		Tracer->TraceMetadata = NewTraceMetadata;
 		return true;
 	}
 #endif // TRACE_LIB_ACTIVE
@@ -373,7 +373,7 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc,
 	SCOPE_CYCLE_COUNTER(STAT_BeginLatencyTraceRPC_Internal);
 	FScopeLock Lock(&Mutex);
 
-	FString SpanMsg = FormatMessage(TraceDesc);
+	FString SpanMsg = FormatMessage(TraceDesc, true);
 	TraceSpan NewTrace = improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*SpanMsg), nullptr);
 
 	// Construct payload data from trace
@@ -568,9 +568,16 @@ void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const F
 	}
 }
 
-FString USpatialLatencyTracer::FormatMessage(const FString& Message) const
+FString USpatialLatencyTracer::FormatMessage(const FString& Message, bool bIncludeMetadata) const
 {
-	return FString::Printf(TEXT("%s(%s) : %s"), *MessagePrefix, *WorkerId.Left(18), *Message);
+	if (bIncludeMetadata)
+	{
+		return FString::Printf(TEXT("%s (%s : %s)"), *Message, *TraceMetadata, *WorkerId.Left(18));
+	}
+	else
+	{
+		return FString::Printf(TEXT("%s (%s)"), *Message, *WorkerId.Left(18));
+	}
 }
 
 #endif // TRACE_LIB_ACTIVE
