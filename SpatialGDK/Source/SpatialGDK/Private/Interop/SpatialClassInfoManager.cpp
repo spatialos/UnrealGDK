@@ -17,6 +17,8 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Utils/SpatialActorGroupManager.h"
 #include "Utils/RepLayoutUtils.h"
 
@@ -138,13 +140,12 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
 	}
 
-	const bool bEnableHandover = GetDefault<USpatialGDKSettings>()->bEnableHandover;
-
+	const bool bTrackHandoverProperties = ShouldTrackHandoverProperties();
 	for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
 		UProperty* Property = *PropertyIt;
 
-		if (bEnableHandover && (Property->PropertyFlags & CPF_Handover))
+		if (bTrackHandoverProperties && (Property->PropertyFlags & CPF_Handover))
 		{
 			for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
 			{
@@ -184,22 +185,22 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
 {
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-	{
-		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
-
-		if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
 		{
-			return;
-		}
+			Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
 
-		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			Info->SchemaComponents[Type] = ComponentId;
-			ComponentToClassInfoMap.Add(ComponentId, Info);
-			ComponentToOffsetMap.Add(ComponentId, 0);
-			ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
-		}
-	});
+			if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
+			{
+				return;
+			}
+
+			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+			{
+				Info->SchemaComponents[Type] = ComponentId;
+				ComponentToClassInfoMap.Add(ComponentId, Info);
+				ComponentToOffsetMap.Add(ComponentId, 0);
+				ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
+			}
+		});
 
 	for (auto& SubobjectClassDataPair : SchemaDatabase->ActorClassPathToSchema[ClassPath].SubobjectData)
 	{
@@ -220,21 +221,21 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 		ActorSubobjectInfo->SubobjectName = SubobjectSchemaData.Name;
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-		{
-			if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
 			{
-				return;
-			}
+				if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
+				{
+					return;
+				}
 
-			Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
-			if (ComponentId != 0)
-			{
-				ActorSubobjectInfo->SchemaComponents[Type] = ComponentId;
-				ComponentToClassInfoMap.Add(ComponentId, ActorSubobjectInfo);
-				ComponentToOffsetMap.Add(ComponentId, Offset);
-				ComponentToCategoryMap.Add(ComponentId, ESchemaComponentType(Type));
-			}
-		});
+				Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
+				if (ComponentId != 0)
+				{
+					ActorSubobjectInfo->SchemaComponents[Type] = ComponentId;
+					ComponentToClassInfoMap.Add(ComponentId, ActorSubobjectInfo);
+					ComponentToOffsetMap.Add(ComponentId, Offset);
+					ComponentToCategoryMap.Add(ComponentId, ESchemaComponentType(Type));
+				}
+			});
 
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
 	}
@@ -263,20 +264,33 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 		check(Offset != SpatialConstants::INVALID_COMPONENT_ID);
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-		{
-			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
-
-			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 			{
-				SpecificDynamicSubobjectInfo->SchemaComponents[Type] = ComponentId;
-				ComponentToClassInfoMap.Add(ComponentId, SpecificDynamicSubobjectInfo);
-				ComponentToOffsetMap.Add(ComponentId, Offset);
-				ComponentToCategoryMap.Add(ComponentId, ESchemaComponentType(Type));
-			}
-		});
+				Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
+
+				if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+				{
+					SpecificDynamicSubobjectInfo->SchemaComponents[Type] = ComponentId;
+					ComponentToClassInfoMap.Add(ComponentId, SpecificDynamicSubobjectInfo);
+					ComponentToOffsetMap.Add(ComponentId, Offset);
+					ComponentToCategoryMap.Add(ComponentId, ESchemaComponentType(Type));
+				}
+			});
 
 		Info->DynamicSubobjectInfo.Add(SpecificDynamicSubobjectInfo);
 	}
+}
+
+bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
+{
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings->bEnableUnrealLoadBalancer)
+	{
+		if (const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy)
+		{
+			return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
+		}
+	}
+	return Settings->bEnableHandover;
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
@@ -301,7 +315,7 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* 
 	{
 		CreateClassInfoForClass(Class);
 	}
-	
+
 	return ClassInfoMap[Class].Get();
 }
 

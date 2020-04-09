@@ -107,14 +107,6 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"), bUseIsActorRelevantForConnection);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
 
-	if (bEnableUnrealLoadBalancer)
-	{
-		if (bEnableHandover == false)
-		{
-			UE_LOG(LogSpatialGDKSettings, Warning, TEXT("Unreal load balancing is enabled, but handover is disabled."));
-		}
-	}
-
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
 	PlayInSettings->bEnableOffloading = bEnableOffloading;
