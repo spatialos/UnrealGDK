@@ -6,10 +6,7 @@
 
 #include "SpatialGDKSettings.h"
 
-namespace
-{
-
-SpatialGDK::ResultType ResultTypeCreators::CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+SpatialGDK::ResultType CreateClientNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
 	SpatialGDK::ResultType ClientNonAuthResultType;
 
@@ -27,7 +24,7 @@ SpatialGDK::ResultType ResultTypeCreators::CreateClientNonAuthInterestResultType
 	return ClientNonAuthResultType;
 }
 
-SpatialGDK::ResultType ResultTypeCreators::CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+SpatialGDK::ResultType CreateClientAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
 	SpatialGDK::ResultType ClientAuthResultType;
 
@@ -42,7 +39,7 @@ SpatialGDK::ResultType ResultTypeCreators::CreateClientAuthInterestResultType(US
 	return ClientAuthResultType;
 }
 
-SpatialGDK::ResultType ResultTypeCreators::CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
+SpatialGDK::ResultType CreateServerNonAuthInterestResultType(USpatialClassInfoManager* ClassInfoManager)
 {
 	SpatialGDK::ResultType ServerNonAuthResultType;
 
@@ -57,10 +54,8 @@ SpatialGDK::ResultType ResultTypeCreators::CreateServerNonAuthInterestResultType
 	return ServerNonAuthResultType;
 }
 
-SpatialGDK::ResultType ResultTypeCreators::CreateServerAuthInterestResultType()
+SpatialGDK::ResultType CreateServerAuthInterestResultType()
 {
 	// Just the components that we won't have already checked out through authority
 	return SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST;
-}
-
 }

@@ -35,10 +35,10 @@ InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager, U
 void InterestFactory::CreateAndCacheInterestState()
 {
 	ClientCheckoutRadiusConstraint = NetCullDistanceInterest::CreateCheckoutRadiusConstraints(ClassInfoManager);
-	ClientNonAuthInterestResultType = ResultTypeCreators::CreateClientNonAuthInterestResultType(ClassInfoManager);
-	ClientAuthInterestResultType = ResultTypeCreators::CreateClientAuthInterestResultType(ClassInfoManager);
-	ServerNonAuthInterestResultType = ResultTypeCreators::CreateServerNonAuthInterestResultType(ClassInfoManager);
-	ServerAuthInterestResultType = ResultTypeCreators::CreateServerAuthInterestResultType();
+	ClientNonAuthInterestResultType = CreateClientNonAuthInterestResultType(ClassInfoManager);
+	ClientAuthInterestResultType = CreateClientAuthInterestResultType(ClassInfoManager);
+	ServerNonAuthInterestResultType = CreateServerNonAuthInterestResultType(ClassInfoManager);
+	ServerAuthInterestResultType = CreateServerAuthInterestResultType();
 }
 
 Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const

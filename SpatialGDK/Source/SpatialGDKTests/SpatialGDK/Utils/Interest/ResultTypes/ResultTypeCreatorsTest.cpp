@@ -9,8 +9,7 @@
 	GDK_TEST(Core, ResultTypeCreators, TestName)
 
 // Sanity check tests for creating result types.
-// Run tests inside the SpatialGDK namespace in order to test static functions.
-namespace SpatialGDK
+namespace
 {
 	TArray<Worker_ComponentId> DataComponentIds = { 1, 2 };
 	TArray<Worker_ComponentId> OwnerOnlyComponentIds = { 3, 4 };
@@ -20,9 +19,6 @@ namespace SpatialGDK
 	{
 		USpatialClassInfoManagerMock* ClassInfoManager = NewObject<USpatialClassInfoManagerMock>();
 
-		// Ensure the mock won't be garbage collected
-		ClassInfoManager->AddToRoot();
-
 		// Initialize with fake generated components
 		ClassInfoManager->SetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data, DataComponentIds);
 		ClassInfoManager->SetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly, OwnerOnlyComponentIds);
@@ -30,79 +26,92 @@ namespace SpatialGDK
 
 		return ClassInfoManager;
 	}
-
-	RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_client_auth_result_type_THEN_gets_correct_components)
-	{
-		USpatialClassInfoManagerMock* ClassInfoManager = CreateAndPopulateMockClassInfoManager();
-
-		TArray<Worker_ComponentId> ExpectedResultType;
-		ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST);
-		ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
-		ExpectedResultType.Append(DataComponentIds);
-		ExpectedResultType.Append(OwnerOnlyComponentIds);
-
-		TArray<Worker_ComponentId> ClientAuthResultType = ResultTypeCreators::CreateClientAuthInterestResultType(ClassInfoManager);
-
-		ExpectedResultType.Sort();
-		ClientAuthResultType.Sort();
-
-		TestEqual("Expected and actual result types are equal", ClientAuthResultType, ExpectedResultType);
-
-		return true;
-	}
-
-	RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_client_non_auth_result_type_THEN_gets_correct_components)
-	{
-		USpatialClassInfoManagerMock* ClassInfoManager = CreateAndPopulateMockClassInfoManager();
-
-		TArray<Worker_ComponentId> ExpectedResultType;
-		ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
-		ExpectedResultType.Append(DataComponentIds);
-		ExpectedResultType.Append(OwnerOnlyComponentIds);
-
-		TArray<Worker_ComponentId> ClientNonAuthResultType = ResultTypeCreators::CreateClientNonAuthInterestResultType(ClassInfoManager);
-
-		ExpectedResultType.Sort();
-		ClientNonAuthResultType.Sort();
-
-		TestEqual("Expected and actual result types are equal", ClientNonAuthResultType, ExpectedResultType);
-
-		return true;
-	}
-
-	RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_server_auth_result_type_THEN_gets_correct_components)
-	{
-		TArray<Worker_ComponentId> ExpectedResultType;
-		ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST);
-
-		TArray<Worker_ComponentId> ServerAuthResultType = ResultTypeCreators::CreateServerAuthInterestResultType();
-
-		ExpectedResultType.Sort();
-		ServerAuthResultType.Sort();
-
-		TestEqual("Expected and actual result types are equal", ServerAuthResultType, ExpectedResultType);
-
-		return true;
-	}
-
-	RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_server_non_auth_result_type_THEN_gets_correct_components)
-	{
-		USpatialClassInfoManagerMock* ClassInfoManager = CreateAndPopulateMockClassInfoManager();
-
-		TArray<Worker_ComponentId> ExpectedResultType;
-		ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST);
-		ExpectedResultType.Append(DataComponentIds);
-		ExpectedResultType.Append(OwnerOnlyComponentIds);
-		ExpectedResultType.Append(HandoverComponentIds);
-
-		TArray<Worker_ComponentId> ServerNonAuthResultType = ResultTypeCreators::CreateServerNonAuthInterestResultType(ClassInfoManager);
-
-		ExpectedResultType.Sort();
-		ServerNonAuthResultType.Sort();
-
-		TestEqual("Expected and actual result types are equal", ServerNonAuthResultType, ExpectedResultType);
-
-		return true;
-	}
 }
+
+RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_client_auth_result_type_THEN_gets_correct_components)
+{
+	// GIVEN
+	USpatialClassInfoManagerMock* ClassInfoManager = CreateAndPopulateMockClassInfoManager();
+
+	TArray<Worker_ComponentId> ExpectedResultType;
+	ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST);
+	ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
+	ExpectedResultType.Append(DataComponentIds);
+	ExpectedResultType.Append(OwnerOnlyComponentIds);
+
+	// WHEN
+	TArray<Worker_ComponentId> ClientAuthResultType = CreateClientAuthInterestResultType(ClassInfoManager);
+
+	ExpectedResultType.Sort();
+	ClientAuthResultType.Sort();
+
+	// THEN
+	TestEqual("Expected and actual result types are equal", ClientAuthResultType, ExpectedResultType);
+
+	return true;
+}
+
+RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_client_non_auth_result_type_THEN_gets_correct_components)
+{
+	// GIVEN
+	USpatialClassInfoManagerMock* ClassInfoManager = CreateAndPopulateMockClassInfoManager();
+
+	TArray<Worker_ComponentId> ExpectedResultType;
+	ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
+	ExpectedResultType.Append(DataComponentIds);
+	ExpectedResultType.Append(OwnerOnlyComponentIds);
+
+	// WHEN
+	TArray<Worker_ComponentId> ClientNonAuthResultType = CreateClientNonAuthInterestResultType(ClassInfoManager);
+
+	ExpectedResultType.Sort();
+	ClientNonAuthResultType.Sort();
+
+	// THEN
+	TestEqual("Expected and actual result types are equal", ClientNonAuthResultType, ExpectedResultType);
+
+	return true;
+}
+
+RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_server_auth_result_type_THEN_gets_correct_components)
+{
+	// GIVEN
+	TArray<Worker_ComponentId> ExpectedResultType;
+	ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST);
+
+	// WHEN
+	TArray<Worker_ComponentId> ServerAuthResultType = CreateServerAuthInterestResultType();
+
+	ExpectedResultType.Sort();
+	ServerAuthResultType.Sort();
+
+	// THEN
+	TestEqual("Expected and actual result types are equal", ServerAuthResultType, ExpectedResultType);
+
+	return true;
+}
+
+RESULT_TYPES_TEST(GIVEN_class_info_manager_WHEN_build_server_non_auth_result_type_THEN_gets_correct_components)
+{
+	// GIVEN
+	USpatialClassInfoManagerMock* ClassInfoManager = CreateAndPopulateMockClassInfoManager();
+
+	TArray<Worker_ComponentId> ExpectedResultType;
+	ExpectedResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST);
+	ExpectedResultType.Append(DataComponentIds);
+	ExpectedResultType.Append(OwnerOnlyComponentIds);
+	ExpectedResultType.Append(HandoverComponentIds);
+
+	// WHEN
+	TArray<Worker_ComponentId> ServerNonAuthResultType = CreateServerNonAuthInterestResultType(ClassInfoManager);
+
+	ExpectedResultType.Sort();
+	ServerNonAuthResultType.Sort();
+
+	// THEN
+	TestEqual("Expected and actual result types are equal", ServerNonAuthResultType, ExpectedResultType);
+
+	return true;
+}
+
 

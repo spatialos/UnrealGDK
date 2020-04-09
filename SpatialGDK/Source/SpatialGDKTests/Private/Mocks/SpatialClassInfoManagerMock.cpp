@@ -4,7 +4,7 @@
 
 void USpatialClassInfoManagerMock::SetComponentIdsForComponentType(ESchemaComponentType ComponentType, TArray<Worker_ComponentId> ComponentIds)
 {
-	ComponentTypeToIds.Add(ComponentType, ComponentIds);
+	ComponentTypeToIds.Add(ComponentType, MoveTemp(ComponentIds));
 }
 
 const TArray<Worker_ComponentId>& USpatialClassInfoManagerMock::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const
