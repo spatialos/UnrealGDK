@@ -861,16 +861,21 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	// Apply initial replicated properties.
 	// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
 	// Potentially we could split out the initial actor state and the initial component state
-	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+	for (auto PendingAddComponentIt = PendingAddComponents.CreateIterator(); PendingAddComponentIt; PendingAddComponentIt++)
 	{
-		if (ClassInfoManager->IsGeneratedQBIMarkerComponent(PendingAddComponent.ComponentId))
+		if (ClassInfoManager->IsGeneratedQBIMarkerComponent(PendingAddComponentIt->ComponentId))
+		{
+			continue;
+		}
+		if (ClassInfoManager->IsSublevelComponent(PendingAddComponentIt->ComponentId))
 		{
 			continue;
 		}
 
-		if (PendingAddComponent.EntityId == EntityId)
+		if (PendingAddComponentIt->EntityId == EntityId)
 		{
-			ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponent.Data->ComponentData, *Channel, ActorClassInfo, ObjectsToResolvePendingOpsFor);
+			ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponentIt->Data->ComponentData, Channel, ActorClassInfo, ObjectsToResolvePendingOpsFor);
+			PendingAddComponentIt.RemoveCurrent();
 		}
 	}
 
