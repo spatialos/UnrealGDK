@@ -89,6 +89,10 @@ void USpatialReceiver::LeaveCriticalSection()
 
 	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 	{
+		if (ClassInfoManager->IsSublevelComponent(PendingAddComponent.ComponentId))
+		{
+			continue;
+		}
 		HandleIndividualAddComponent_Internal(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
 	}
 
@@ -995,7 +999,7 @@ void USpatialReceiver::HandleIndividualAddComponent_Internal(Worker_EntityId Ent
 	bool bIsDynamicSubobject = !ActorClassInfo.SubobjectInfo.Contains(Offset);
 	if (!bIsDynamicSubobject)
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Tried to apply component data on add component for a static subobject that's been deleted, will skip. Entity: %lld, Component: %d, Actor: %s"), EntityId, ComponentId, *Actor->GetPathName());
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Tried to apply component data on add component for a static subobject that's been deleted, will skip. Entity: %lld, Component: %d, Actor: %s"), EntityId, ComponentId, *Actor->GetPathName());
 		return;
 	}
 
