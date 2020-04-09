@@ -89,6 +89,10 @@ void USpatialReceiver::LeaveCriticalSection()
 
 	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 	{
+		if (StaticComponentView->GetComponentData<UnrealMetadata>(PendingAddComponent.EntityId) == nullptr)
+		{
+			continue;
+		}
 		if (ClassInfoManager->IsSublevelComponent(PendingAddComponent.ComponentId))
 		{
 			continue;
