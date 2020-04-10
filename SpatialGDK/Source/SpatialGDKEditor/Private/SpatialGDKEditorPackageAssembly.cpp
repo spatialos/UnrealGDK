@@ -60,7 +60,7 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString &AssemblyName, boo
 	PackageAssemblyTask->OnCanceled().BindRaw(this, &FSpatialGDKPackageAssembly::OnTaskCanceled);
 	PackageAssemblyTask->Launch();
 	FString NotificationMessage = FString::Printf(TEXT("Uploading Assembly to Project: %s"), *FSpatialGDKServicesModule::GetProjectName());
-	if (AssemblyDetailsPtr)
+	if (AssemblyDetailsPtr.IsValid())
 	{
 		AssemblyDetailsPtr.Reset(nullptr);
 	}

@@ -6,7 +6,6 @@
 #include "SpatialGDKEditorCloudLauncher.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSnapshotGenerator.h"
-#include "SpatialGDKEditorPackageAssembly.h"
 
 #include "Editor.h"
 #include "FileHelpers.h"
