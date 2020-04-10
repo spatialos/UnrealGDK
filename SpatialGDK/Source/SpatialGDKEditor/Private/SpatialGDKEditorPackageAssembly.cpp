@@ -2,19 +2,17 @@
 
 #include "SpatialGDKEditorPackageAssembly.h"
 
-#include "CoreMinimal.h"
-
 #include "Async/Async.h"
+#include "Framework/Notifications/NotificationManager.h"
 #include "Misc/App.h"
 #include "Misc/FileHelper.h"
-#include "UnrealEdMisc.h"
-#include "EditorStyle.h"
-#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorModule.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
-#include "Framework/Notifications/NotificationManager.h"
-#include "UATHelper/Public/IUATHelperModule.h"
+#include "SpatialGDKSettings.h"
+#include "UnrealEdMisc.h"
+
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorPackageAssembly);
 
@@ -55,9 +53,8 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString &AssemblyName, boo
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	FString WorkingDir = FPaths::ConvertRelativePathToFull((FPaths::IsProjectFilePathSet() ? FPaths::GetPath(FPaths::GetProjectFilePath()) : FPaths::RootDir() / FApp::GetProjectName()) / TEXT("..") / TEXT("spatial"));
-	FString Spatial(TEXT("spatial"));
 	FString Args = FString::Printf(TEXT("cloud upload %s %s %s --no_animation"), *AssemblyName, Force ? TEXT("--force") : TEXT(""), SpatialGDKSettings->IsRunningInChina() ? TEXT("--environment=cn-production") : TEXT(""));
-	PackageAssemblyTask = MakeShareable(new FMonitoredProcess(Spatial, Args, WorkingDir, true));
+	PackageAssemblyTask = MakeShareable(new FMonitoredProcess(SpatialGDKServicesConstants::SpatialExe, Args, WorkingDir, true));
 	PackageAssemblyTask->OnCompleted().BindRaw(this, &FSpatialGDKPackageAssembly::OnTaskCompleted);
 	PackageAssemblyTask->OnOutput().BindRaw(this, &FSpatialGDKPackageAssembly::OnTaskOutput);
 	PackageAssemblyTask->OnCanceled().BindRaw(this, &FSpatialGDKPackageAssembly::OnTaskCanceled);
@@ -71,7 +68,7 @@ void FSpatialGDKPackageAssembly::UploadAssembly(const FString &AssemblyName, boo
 
 void FSpatialGDKPackageAssembly::BuildAllAndUpload(const FString& AssemblyName, const FString& WindowsPlatform, const FString& Configuration, const FString& AdditionalArgs, bool Force)
 {
-	if (!AssemblyDetailsPtr && CurrentAssemblyTarget == EPackageAssemblyTarget::NONE)
+	if (AssemblyDetailsPtr == nullptr && CurrentAssemblyTarget == EPackageAssemblyTarget::NONE)
 	{
 		AssemblyDetailsPtr.Reset(new AssemblyDetails(AssemblyName, Configuration, Force));
 		CurrentAssemblyTarget = EPackageAssemblyTarget::BUILD_CLIENT;

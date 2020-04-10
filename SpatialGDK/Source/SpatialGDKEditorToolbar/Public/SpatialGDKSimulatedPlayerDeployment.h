@@ -17,7 +17,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSimulatedPlayerDeployment, Log, All);
 
 class SWindow;
 
-
 enum class ECheckBoxState : uint8;
 
 class SSpatialGDKSimulatedPlayerDeployment : public SCompoundWidget

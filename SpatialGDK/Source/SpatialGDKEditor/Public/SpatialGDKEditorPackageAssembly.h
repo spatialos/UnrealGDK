@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Logging/LogMacros.h"
 #include "Misc/MonitoredProcess.h"
 #include "Widgets/Notifications/SNotificationList.h"
