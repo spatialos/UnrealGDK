@@ -1021,7 +1021,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		if (!NetDriver->IsServer())
 		{
 			GEngine->BroadcastNetworkFailure(NetDriver->GetWorld(), NetDriver, ENetworkFailure::ConnectionLost, 
-							 TEXT("PlayerController %s deleted. Server believes we have been timed out."), *PC->GetName());
+							 FString::Printf(TEXT("PlayerController %s deleted. Server believes we have been timed out."), *PC->GetName()));
 		}
 	}
 
