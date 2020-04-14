@@ -136,6 +136,21 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	}
 
+	// Remove all RemoveComponentOps have already been received that have the same entityId and componentId.
+	for (int32 i = 0; i < QueuedRemoveComponentOps.Num();)
+	{
+		const Worker_RemoveComponentOp& RemoveComponentOp = QueuedRemoveComponentOps[i];
+		if (RemoveComponentOp.entity_id == Op.entity_id &&
+			RemoveComponentOp.component_id == Op.data.component_id)
+		{
+			QueuedRemoveComponentOps.RemoveAt(i);
+		}
+		else
+		{
+			++i;
+		}
+	}
+
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::METADATA_COMPONENT_ID:
