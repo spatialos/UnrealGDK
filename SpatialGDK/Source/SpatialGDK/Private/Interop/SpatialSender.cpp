@@ -490,10 +490,7 @@ void USpatialSender::FlushRPCService()
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update);
 		}
 
-		if (GetDefault<USpatialGDKSettings>()->bFlushWorkerSubmissionAfterRPC)
-		{
-			NetDriver->Connection->MaybeFlush();
-		}
+		NetDriver->Connection->MaybeFlush();
 	}
 }
 
@@ -935,10 +932,8 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 			TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
 
-			if (GetDefault<USpatialGDKSettings>()->bFlushWorkerSubmissionAfterRPC)
-			{
-				NetDriver->Connection->MaybeFlush();
-			}
+			NetDriver->Connection->MaybeFlush();
+
 			return ERPCResult::Success;
 		}
 	}

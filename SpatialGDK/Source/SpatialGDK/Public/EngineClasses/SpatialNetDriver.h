@@ -81,6 +81,8 @@ public:
 	virtual void OnOwnerUpdated(AActor* Actor, AActor* OldOwner) override;
 	// End UNetDriver interface.
 
+	void FetchWorkerOps();
+
 	void OnConnectionToSpatialOSSucceeded();
 	void OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
 
