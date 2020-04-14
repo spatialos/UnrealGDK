@@ -41,8 +41,8 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added `bEnableNetCullDistanceInterest` (defaulted true) to enable client interest to be exposed through component tagging. This functionality has closer parity to native unreal client interest.
 - Added `bEnableNetCullDistanceFrequency` (defaulted false) to enable client interest queries to use frequency. This functionality is configured using `InterestRangeFrequencyPairs` and `FullFrequencyNetCullDistanceRatio`.
 - Added support for Android.
-- Introduced feature flag `bEnableResultTypes` (defaulted true). This configures Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
-- Dynamic interest overrides are disabled if the `bEnableResultTypes` flag is set to true. 
+- Introduced feature flag `bEnableResultTypes` (defaulted true). This configures Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game.
+- Dynamic interest overrides are disabled if the `bEnableResultTypes` flag is set to true.
 - Moved Dev Auth settings from runtime settings to editor settings.
 - Added the option to use the development authentication flow using the command line.
 - Added a button to generate the Development Authentication Token inside the Unreal Editor. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Cloud Connection**.
@@ -67,6 +67,7 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Added the ability to connect to a local deployment when launching on a device by checking "Connect to a local deployment" and specifying the local IP of your computer in the Launch dropdown.
 - The Spatial GDK now default enables RPC Ring Buffers, and the legacy RPC mode will be removed in a subsequent release.
 - The `bPackRPCs` property has been removed, and the flag `--OverrideRPCPacking` has been removed.
+- Handover properties will be automatically replicated when required for load balancing. `bEnableHandover` is off by default.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
