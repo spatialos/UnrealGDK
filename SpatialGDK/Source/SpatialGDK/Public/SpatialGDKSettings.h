@@ -107,7 +107,7 @@ public:
 	float HeartbeatTimeoutWithEditorSeconds;
 
 	/**
-	 * Specifies the maximum number of Actors replicated per tick.
+	 * Specifies the maximum number of Actors replicated per tick. Not respected when using the Replication Graph.
 	 * Default: `0` per tick  (no limit)
 	 * (If you set the value to ` 0`, the SpatialOS Runtime replicates every Actor per tick; this forms a large SpatialOS  world, affecting the performance of both game clients and server-worker instances.)
 	 * You can use the `stat Spatial` flag when you run project builds to find the number of calls to `ReplicateActor`, and then use this number for reference.
@@ -116,7 +116,7 @@ public:
 	uint32 ActorReplicationRateLimit;
 
 	/** 
-	* Specifies the maximum number of entities created by the SpatialOS Runtime per tick. 
+	* Specifies the maximum number of entities created by the SpatialOS Runtime per tick. Not respected when using the Replication Graph.
 	* (The SpatialOS Runtime handles entity creation separately from Actor replication to ensure it can handle entity creation requests under load.)
 	* Note: if you set the value to 0, there is no limit to the number of entities created per tick. However, too many entities created at the same time might overload the SpatialOS Runtime, which can negatively affect your game.
 	* Default: `0` per tick  (no limit)
@@ -125,7 +125,7 @@ public:
 	uint32 EntityCreationRateLimit;
 
 	/**
-	 * When enabled, only entities which are in the net relevancy range of player controllers will be replicated to SpatialOS.
+	 * When enabled, only entities which are in the net relevancy range of player controllers will be replicated to SpatialOS. Not respected when using the Replication Graph.
 	 * This should only be used in single server configurations. The state of the world in the inspector will no longer be up to date.
 	 */
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Only Replicate Net Relevant Actors"))
@@ -142,7 +142,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication")
 	bool bEnableHandover;
 
-	/** Maximum NetCullDistanceSquared value used in Spatial networking. Set to 0.0 to disable. This is temporary and will be removed when the runtime issue is resolved.*/
+	/**
+	 * Maximum NetCullDistanceSquared value used in Spatial networking. Not respected when using the Replication Graph.
+	 * Set to 0.0 to disable. This is temporary and will be removed when the runtime issue is resolved.
+	 */
 	UPROPERTY(EditAnywhere, config, Category = "Replication")
 	float MaxNetCullDistanceSquared;
 
@@ -190,19 +193,25 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (DisplayName = "Maximum Dynamically Attached Subobjects Per Class"))
 	uint32 MaxDynamicallyAttachedSubobjectsPerClass;
 
-	/** EXPERIMENTAL - Adds granular result types for queries.
-	Granular here means specifically the required Unreal components for spawning other actors and all data type components.
-	Needs testing thoroughly before making default. May be replaced by component set result types instead. */
+	/**
+	* Adds granular result types for queries.
+	* Granular here means specifically the required Unreal components for spawning other actors and all data type components.
+	*/
 	UPROPERTY(config)
 	bool bEnableResultTypes;
-
-	/** Pack RPCs sent during the same frame into a single update. */
-	UPROPERTY(config)
-	bool bPackRPCs;
 
 	/** The receptionist host to use if no 'receptionistHost' argument is passed to the command line. */
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection")
 	FString DefaultReceptionistHost;
+
+private:
+	/** Will stop a non editor client auto connecting via command line args to a cloud deployment */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
+	bool bPreventClientCloudDeploymentAutoConnect;
+
+public:
+
+	bool GetPreventClientCloudDeploymentAutoConnect(bool bIsClient) const;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;

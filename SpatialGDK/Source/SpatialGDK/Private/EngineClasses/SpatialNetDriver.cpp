@@ -242,11 +242,19 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
 
 	FString SpatialWorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
-	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted() && !GameInstance->GetPreventAutoConnectWithLocator())
+
+	if (!GameInstance->GetFirstConnectionToSpatialOSAttempted())
 	{
 		GameInstance->SetFirstConnectionToSpatialOSAttempted();
-		if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
+		if (GetDefault<USpatialGDKSettings>()->GetPreventClientCloudDeploymentAutoConnect(bConnectAsClient))
 		{
+			// If first time connecting but the bGetPreventClientCloudDeploymentAutoConnect flag is set then use input URL to setup connection config.
+			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
+		}
+		// Otherwise, try using command line arguments to setup connection config.
+		else if (!ConnectionManager->TrySetupConnectionConfigFromCommandLine(SpatialWorkerType))
+		{
+			// If the command line arguments can not be used, use the input URL to setup connection config.
 			ConnectionManager->SetupConnectionConfigFromURL(URL, SpatialWorkerType);
 		}
 	}
@@ -500,7 +508,7 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 		uint32 ServerHash = GlobalStateManager->GetSchemaHash();
 		if (ClassInfoManager->SchemaDatabase->SchemaDescriptorHash != ServerHash) // Are we running with the same schema hash as the server?
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Your clients Spatial schema does match the servers, this may cause problems. Client hash: '%u' Server hash: '%u'"), ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"), ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
 		}
 
 		UWorld* CurrentWorld = GetWorld();
@@ -1783,11 +1791,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		}
 
 #endif // WITH_SERVER_CODE
-	}
-
-	if (SpatialGDKSettings->bPackRPCs && Sender != nullptr)
-	{
-		Sender->FlushPackedRPCs();
 	}
 
 	if (SpatialGDKSettings->UseRPCRingBuffer() && Sender != nullptr)

@@ -447,7 +447,13 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 	else
 	{
 		SetConnectionType(ESpatialConnectionType::Receptionist);
-		ReceptionistConfig.SetReceptionistHost(URL.Host);
+
+		// If we have a non-empty host then use this to connect. If not - use the default configured in FReceptionistConfig initialisation.
+		if (!URL.Host.IsEmpty())
+		{
+			ReceptionistConfig.SetReceptionistHost(URL.Host);
+		}
+
 		ReceptionistConfig.WorkerType = SpatialWorkerType;
 
 		const TCHAR* UseExternalIpForBridge = TEXT("useExternalIpForBridge");
