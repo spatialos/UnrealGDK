@@ -44,7 +44,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EntityCreationRateLimit(0)
 	, bUseIsActorRelevantForConnection(false)
 	, OpsUpdateRate(1000.0f)
-	, bEnableHandover(true)
+	, bEnableHandover(false)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
 	, QueuedIncomingRPCWaitTime(1.0f)
 	, QueuedOutgoingRPCWaitTime(1.0f)
