@@ -282,10 +282,16 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 
 bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 {
+	if (!NetDriver->IsServer())
+	{
+		return false;
+	}
+
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	if (Settings->bEnableUnrealLoadBalancer)
 	{
-		if (const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy)
+		const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
+		if (ensure(Strategy != nullptr))
 		{
 			return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
 		}
