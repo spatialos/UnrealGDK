@@ -460,14 +460,14 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 void USpatialWorkerConnection::MaybeFlush()
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings->bFlushWorkerSubmissionAfterRPC)
+	if (Settings->bRunSpatialWorkerConnectionOnGameThread)
+	{
+		ProcessOutgoingMessages();
+	}
+	else
 	{
 		std::unique_lock<std::mutex> Lock(WorkerFlushMutex);
 		WorkerFlushCV.notify_one();
-	}
-	else if(Settings->bRunSpatialWorkerConnectionOnGameThread)
-	{
-		ProcessOutgoingMessages();
 	}
 }
 
