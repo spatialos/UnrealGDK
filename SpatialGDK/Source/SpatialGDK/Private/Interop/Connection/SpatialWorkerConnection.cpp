@@ -5,11 +5,6 @@
 #include "Async/Async.h"
 #include "SpatialGDKSettings.h"
 
-#define METRICS
-#ifdef METRICS
-#include <chrono>
-#endif
-
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
@@ -190,22 +185,15 @@ uint32 USpatialWorkerConnection::Run()
 	//FTimespan WaitTime = FTimespan::FromMicroseconds(60*1000); // Microseconds to allow for fractional ms
 	while (KeepRunning)
 	{
-#ifdef METRICS
-		auto tp = std::chrono::high_resolution_clock::now();
-#endif
 		QueueLatestOpList(0);
 		//FPlatformProcess::Sleep(1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate);
 		//WorkerFlushEvent->Wait(WaitTime);
-		std::unique_lock<std::mutex> Lock(WorkerFlushMutex);
-		WorkerFlushCV.wait_for(Lock, std::chrono::microseconds((long long)waitMs*1000));
+		{
+			std::unique_lock<std::mutex> Lock(WorkerFlushMutex);
+			WorkerFlushCV.wait_for(Lock, std::chrono::microseconds((long long)waitMs * 1000));
+		}
 
 		//QueueLatestOpList(waitMs);
-#ifdef METRICS
-		auto tpNow = std::chrono::high_resolution_clock::now();
-		auto ns = (tpNow - tp).count();
-		float ms = ns / 1000000.0;
-		UE_LOG(LogSpatialWorkerConnection, Log, TEXT("slept for %.8f"), ms);
-#endif
 
 		ProcessOutgoingMessages();
 	}
@@ -241,9 +229,6 @@ void USpatialWorkerConnection::QueueLatestOpList(uint32_t WaitTime)
 
 void USpatialWorkerConnection::ProcessOutgoingMessages()
 {
-#ifdef METRICS
-	auto tp = std::chrono::high_resolution_clock::now();
-#endif
 	while (!OutgoingMessagesQueue.IsEmpty())
 	{
 		TUniquePtr<FOutgoingMessage> OutgoingMessage;
@@ -444,14 +429,9 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		}
 		}
 	}
-#ifdef METRICS
-	auto tpEnd = std::chrono::high_resolution_clock::now();
-	auto ns = (tpEnd - tp).count();
-	float ms = ns / 1000000.0;
-	//UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Work took %.8f"), ms);
-#endif
+
 	// Flush worker API calls              
-	if (GetDefault<USpatialGDKSettings>()->bExplicitFlushIntervals)
+	if (GetDefault<USpatialGDKSettings>()->bWorkerFlushAfterAPICalls)
 	{
 		Worker_Connection_Alpha_Flush(WorkerConnection);
 	}

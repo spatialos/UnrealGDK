@@ -74,8 +74,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, UdpServerDownstreamUpdateIntervalMS(1)
 	, UdpClientUpstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
-	, bExplicitFlushIntervals(false)
-	, bFlushWorkerSubmissionAfterRPC(false)
+	, bWorkerFlushAfterAPICalls(false)
+	, bWorkerFlushAfterRPC(false)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
 	, RPCQueueWarningDefaultTimeout(2.0f)
@@ -108,7 +108,7 @@ void USpatialGDKSettings::PostInitProperties()
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"), bEnableNetCullDistanceFrequency);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideActorRelevantForConnection"), TEXT("Actor relevant for connection"), bUseIsActorRelevantForConnection);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideBatchSpatialPositionUpdates"), TEXT("Batch spatial position updates"), bBatchSpatialPositionUpdates);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideExplicitFlushIntervals"), TEXT("Explicit upstream flush intervals"), bExplicitFlushIntervals);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideExplicitFlushIntervals"), TEXT("Explicit upstream flush intervals"), bWorkerFlushAfterAPICalls);
 
 	if (bEnableUnrealLoadBalancer)
 	{

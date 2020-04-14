@@ -1613,7 +1613,8 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
 
-	if (GetDefault<USpatialGDKSettings>()->bRunSpatialWorkerConnectionOnGameThread)
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
 	{
 		FetchWorkerOps();
 	}
@@ -1639,7 +1640,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			}
 		}
 
-		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
+		if (SpatialMetrics != nullptr && SpatialGDKSettings->bEnableMetrics)
 		{
 			SpatialMetrics->TickMetrics(Time);
 		}
