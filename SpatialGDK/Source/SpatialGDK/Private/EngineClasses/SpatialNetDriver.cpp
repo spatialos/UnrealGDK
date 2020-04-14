@@ -187,11 +187,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	InitiateConnectionToSpatialOS(URL);
 
-	if (GetDefault<USpatialGDKSettings>()->bRunSpatialWorkerConnectionOnGameThread)
-	{
-		FCoreDelegates::OnBeginFrame.AddUObject(this, &USpatialNetDriver::FetchWorkerOps);
-	}
-
 	return true;
 }
 
@@ -286,7 +281,10 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 void USpatialNetDriver::FetchWorkerOps()
 {
-	Connection->QueueLatestOpList(0);
+	if (Connection)
+	{
+		Connection->QueueLatestOpList(0);
+	}
 }
 
 void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
@@ -1615,14 +1613,13 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
 
+	if (GetDefault<USpatialGDKSettings>()->bRunSpatialWorkerConnectionOnGameThread)
+	{
+		FetchWorkerOps();
+	}
+
 	if (Connection != nullptr)
 	{
-		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-		if (SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)
-		{
-			Connection->QueueLatestOpList(0);
-		}
-
 		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
 
 		// Servers will queue ops at startup until we've extracted necessary information from the op stream
@@ -1642,7 +1639,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			}
 		}
 
-		if (SpatialMetrics != nullptr && SpatialGDKSettings->bEnableMetrics)
+		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
 		{
 			SpatialMetrics->TickMetrics(Time);
 		}
