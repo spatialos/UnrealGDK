@@ -344,8 +344,10 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 		return Channel;
 	}
 
+	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
 	bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
-	if (bHasGSMAuthority)
+	const bool bShouldHaveSingletonAuthority = (!bLoadBalancingEnabled && bHasGSMAuthority) || (bLoadBalancingEnabled && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*SingletonActor));
+	if (bShouldHaveSingletonAuthority)
 	{
 		// We have control over the GSM, so can safely setup a new channel and let it allocate an entity id
 		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
@@ -357,11 +359,6 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 		{
 			check(NetDriver->PackageMap->GetObjectFromEntityId(*SingletonEntityId) == nullptr);
 			NetDriver->PackageMap->ResolveEntityActor(SingletonActor, *SingletonEntityId);
-			if (!StaticComponentView->HasAuthority(*SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID))
-			{
-				SingletonActor->Role = ROLE_SimulatedProxy;
-				SingletonActor->RemoteRole = ROLE_Authority;
-			}
 		}
 
 #if ENGINE_MINOR_VERSION <= 22
@@ -626,10 +623,11 @@ void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 		AActor* Actor = *It;
 		if (Actor != nullptr && !Actor->IsPendingKill())
 		{
-			if (Actor->GetIsReplicated() && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
+			if (Actor->GetIsReplicated())
 			{
-				Actor->Role = ROLE_Authority;
-				Actor->RemoteRole = ROLE_SimulatedProxy;
+				const bool bAuthoritative = NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+				Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
+				Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 			}
 		}
 	}
