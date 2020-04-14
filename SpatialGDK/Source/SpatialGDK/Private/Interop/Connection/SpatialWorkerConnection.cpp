@@ -193,9 +193,11 @@ uint32 USpatialWorkerConnection::Run()
 #ifdef METRICS
 		auto tp = std::chrono::high_resolution_clock::now();
 #endif
+		QueueLatestOpList(0);
 		//FPlatformProcess::Sleep(1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate);
-		//WorkerFlushEvent->Wait(WaitTime);
-		QueueLatestOpList(waitMs);
+		WorkerFlushEvent->Wait(WaitTime);
+
+		//QueueLatestOpList(waitMs);
 #ifdef METRICS
 		auto tpNow = std::chrono::high_resolution_clock::now();
 		auto ns = (tpNow - tp).count();
