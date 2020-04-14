@@ -185,7 +185,6 @@ private:
 	};
 
 	void HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op);
-
 	// END TODO
 
 	void RemoveRedundantRemoveComponentOps(const Worker_AddComponentOp& Op);
