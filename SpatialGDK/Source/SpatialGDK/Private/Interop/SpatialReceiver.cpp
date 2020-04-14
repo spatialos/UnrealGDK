@@ -1020,6 +1020,9 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		
 		if (!NetDriver->IsServer())
 		{
+			// The client's PlayerController can be deleted while the client is still conneted to the deployment when the server 
+			// is no longer receiving heartbeats from the client. When this happens, we call BroadcastNetworkFailure to allow the client
+			// to handle heartbeating failure. Once the heartbeat component is removed with UNR-3006, this call can be removed.
 			GEngine->BroadcastNetworkFailure(NetDriver->GetWorld(), NetDriver, ENetworkFailure::ConnectionLost, 
 							 FString::Printf(TEXT("PlayerController %s deleted. Server believes we have been timed out."), *PC->GetName()));
 		}
