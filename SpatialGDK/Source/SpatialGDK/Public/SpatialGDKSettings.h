@@ -300,7 +300,7 @@ public:
 
 	/** Explicit flush intervals instead of relying on a flush interval. Flush is triggered by events such as RPCs. */
 	UPROPERTY(Config)
-	bool bWorkerFlushAfterAPICalls;
+	bool bWorkerFlushAfterSend;
 
 	/** When explicitly flushing, whether to flush immediately after an RPC. Higher bandwidth but lower latency on RPC calls. */
 	UPROPERTY(Config)

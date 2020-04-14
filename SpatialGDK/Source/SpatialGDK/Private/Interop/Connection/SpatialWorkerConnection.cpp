@@ -431,7 +431,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 	}
 
 	// Flush worker API calls              
-	if (GetDefault<USpatialGDKSettings>()->bWorkerFlushAfterAPICalls)
+	if (GetDefault<USpatialGDKSettings>()->bWorkerFlushAfterSend)
 	{
 		Worker_Connection_Alpha_Flush(WorkerConnection);
 	}

@@ -63,7 +63,7 @@ struct FConnectionConfig
 
 		TcpNoDelay = (SpatialGDKSettings->bTcpNoDelay ? 1 : 0);
 
-		if (SpatialGDKSettings->bWorkerFlushAfterAPICalls) // Explicit flush intervals, ticked at a minimum of the frame rate.
+		if (SpatialGDKSettings->bWorkerFlushAfterSend) // Explicit flush intervals, ticked at a minimum of the frame rate.
 		{
 			UdpUpstreamIntervalMS = 255; 
 		}
