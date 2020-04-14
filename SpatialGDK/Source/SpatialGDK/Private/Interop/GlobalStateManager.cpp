@@ -649,7 +649,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
 	if (bCanSpawnWithAuthority)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+		if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
 		{
 			BecomeAuthoritativeOverActorsBasedOnLBStrategy();
 		}

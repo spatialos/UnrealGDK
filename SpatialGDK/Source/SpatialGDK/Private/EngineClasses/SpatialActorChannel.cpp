@@ -611,12 +611,12 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			// If we're not offloading AND either load balancing isn't enabled or it is and we're spawning an Actor that we know
 			// will be load-balanced to another worker then preemptively set the role to SimulatedProxy.
-			if (!USpatialStatics::IsSpatialOffloadingEnabled() && (!SpatialGDKSettings->bEnableUnrealLoadBalancer || !NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
+			if (!USpatialStatics::IsSpatialOffloadingEnabled() && (!SpatialGDKSettings->bEnableMultiWorker || !NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
 			{
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;
 
-				if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
+				if (SpatialGDKSettings->bEnableMultiWorker)
 				{
 					UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Spawning Actor that will immediately become authoritative on a different worker. Actor: %s. Target virtual worker: %d"), *Actor->GetName(), NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Actor));
 				}
@@ -717,7 +717,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	// TODO: the 'bWroteSomethingImportant' check causes problems for actors that need to transition in groups (ex. Character, PlayerController, PlayerState),
 	// so disabling it for now.  Figure out a way to deal with this to recover the perf lost by calling ShouldChangeAuthority() frequently. [UNR-2387]
-	if (SpatialGDKSettings->bEnableUnrealLoadBalancer &&
+	if (SpatialGDKSettings->bEnableMultiWorker &&
 		NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
 		if (!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor) && !NetDriver->LockingPolicy->IsLocked(Actor))

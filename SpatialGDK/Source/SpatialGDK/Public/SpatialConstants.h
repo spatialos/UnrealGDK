@@ -388,13 +388,13 @@ inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
 	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 }
 
-inline WorkerAttributeSet GetLoadBalancerAttributeSet(FName LoadBalancingWorkerType)
+inline WorkerAttributeSet GetLoadBalancerAttributeSet(FName DefaultWorkerType)
 {
-	if (LoadBalancingWorkerType == "")
+	if (DefaultWorkerType == "")
 	{
 		return { DefaultServerWorkerType.ToString() };
 	}
-	return { LoadBalancingWorkerType.ToString() };
+	return { DefaultWorkerType.ToString() };
 }
 
 } // ::SpatialConstants

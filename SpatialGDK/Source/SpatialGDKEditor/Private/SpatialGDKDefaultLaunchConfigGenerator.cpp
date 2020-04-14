@@ -234,9 +234,9 @@ bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& Launch
 		return false;
 	}
 
-	if (SpatialGDKRuntimeSettings->bEnableOffloading)
+	if (SpatialGDKRuntimeSettings->bEnableMultiWorker)
 	{
-		for (const TPair<FName, FActorGroupInfo>& ActorGroup : SpatialGDKRuntimeSettings->ActorGroups)
+		for (const TPair<FName, FLayerInfo>& ActorGroup : SpatialGDKRuntimeSettings->WorkerLayers)
 		{
 			if (!SpatialGDKRuntimeSettings->ServerWorkerTypes.Contains(ActorGroup.Value.OwningWorkerType.WorkerTypeName))
 			{

@@ -388,7 +388,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif
 
-	if (SpatialSettings->bEnableUnrealLoadBalancer)
+	if (SpatialSettings->bEnableMultiWorker)
 	{
 		CreateAndInitializeLoadBalancingClasses();
 	}
@@ -698,7 +698,7 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		return;
 	}
 
-	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
+	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableMultiWorker;
 	const bool bHaveGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 
 	if (!bLoadBalancingEnabled && !bHaveGSMAuthority)
@@ -2367,7 +2367,7 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 
 		if (bIsReadyToStart)
 		{
-			if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+			if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
 			{
 				// We know at this point that we have all the information to set the worker's interest query.
 				Sender->UpdateServerWorkerEntityInterestAndPosition();

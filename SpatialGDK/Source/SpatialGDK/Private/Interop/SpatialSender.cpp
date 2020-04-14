@@ -631,7 +631,7 @@ void USpatialSender::SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclW
 
 		if (ComponentId == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 		{
-			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::GetLoadBalancerAttributeSet(GetDefault<USpatialGDKSettings>()->LoadBalancingWorkerType.WorkerTypeName) });
+			NewAcl->ComponentWriteAcl.Add(ComponentId, { SpatialConstants::GetLoadBalancerAttributeSet(GetDefault<USpatialGDKSettings>()->DefaultWorkerType.WorkerTypeName) });
 			continue;
 		}
 
@@ -703,7 +703,7 @@ bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_Enti
 {
 	bool WillHaveAuthorityOverActor = true;
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
+	if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
 	{
 		if (!USpatialStatics::IsActorGroupOwnerForActor(TargetActor))
 		{
@@ -711,7 +711,7 @@ bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_Enti
 		}
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
 	{
 		if (NetDriver->VirtualWorkerTranslator != nullptr)
 		{

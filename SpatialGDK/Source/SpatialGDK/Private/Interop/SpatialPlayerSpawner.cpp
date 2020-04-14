@@ -195,7 +195,7 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 	// Player States or,
 	// 2) the load-balancing strategy can change the authoritative virtual worker ID for a PlayerStart Actor
 	// during the lifetime of a deployment.
-	if (GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer)
+	if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
 	{
 		// We need to specifically extract the URL from the PlayerSpawn request for finding a PlayerStart.
 		const FURL Url = PlayerSpawner::ExtractUrlFromPlayerSpawnParams(SpawnPlayerRequest);

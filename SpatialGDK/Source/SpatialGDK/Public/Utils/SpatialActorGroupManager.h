@@ -26,7 +26,7 @@ struct FWorkerType
 };
 
 USTRUCT()
-struct FActorGroupInfo
+struct FLayerInfo
 {
 	GENERATED_BODY()
 
@@ -42,7 +42,7 @@ struct FActorGroupInfo
 	UPROPERTY(EditAnywhere, Category = "SpatialGDK")
 	TSet<TSoftClassPtr<AActor>> ActorClasses;
 	
-	FActorGroupInfo() : Name(NAME_None), OwningWorkerType()
+	FLayerInfo() : Name(NAME_None), OwningWorkerType()
 	{
 	}
 };

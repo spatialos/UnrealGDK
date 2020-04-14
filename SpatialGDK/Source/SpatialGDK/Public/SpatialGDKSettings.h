@@ -216,21 +216,17 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings", meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
-	/** Single server worker type to launch when offloading is disabled, fallback server worker type when offloading is enabled (owns all actor classes by default). */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
+	/** Default Worker Type. TODO(harkness):Remove */
+	UPROPERTY(EditAnywhere, Config, Category = "Multi Worker")
 	FWorkerType DefaultWorkerType;
 
-	/** Enable running different server worker types to split the simulation by Actor Groups. Can be overridden with command line argument OverrideSpatialOffloading. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
-	bool bEnableOffloading;
+	/** Enable running multiple workers to simulate the game world. */
+	UPROPERTY(EditAnywhere, Config, Category = "Multi Worker")
+	bool bEnableMultiWorker;
 
-	/** Actor Group configuration. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
-	TMap<FName, FActorGroupInfo> ActorGroups;
-
-	/** Available server worker types. */
-	UPROPERTY(Config)
-	TSet<FName> ServerWorkerTypes;
+	/** Worker Type configuration. */
+	UPROPERTY(EditAnywhere, Config, Category = "Multi Worker", meta = (EditCondition = "bEnableMultiWorker"))
+	TMap<FName, FLayerInfo> WorkerLayers;
 
 	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
 	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
@@ -238,14 +234,6 @@ public:
 
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
-
-	/** EXPERIMENTAL: Disable runtime load balancing and use a worker to do it instead. */
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing")
-	bool bEnableUnrealLoadBalancer;
-
-	/** EXPERIMENTAL: Worker type to assign for load balancing. */
-	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (EditCondition = "bEnableUnrealLoadBalancer"))
-	FWorkerType LoadBalancingWorkerType;
 
 	/** EXPERIMENTAL: Run SpatialWorkerConnection on Game Thread. */
 	UPROPERTY(Config)

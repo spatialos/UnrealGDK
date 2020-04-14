@@ -603,7 +603,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), FString::Printf(TEXT("Improbable/%s_LocalLaunchConfig.json"), *EditorWorld->GetMapName()));
 
 		FSpatialLaunchConfigDescription LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
-		if (SpatialGDKSettings->bEnableUnrealLoadBalancer)
+		if (SpatialGDKSettings->bEnableMultiWorker)
 		{
 			FIntPoint WorldDimensions;
 			FWorkerTypeLaunchSection WorkerLaunch;
