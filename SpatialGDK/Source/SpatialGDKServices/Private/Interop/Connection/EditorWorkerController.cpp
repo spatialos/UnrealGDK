@@ -67,16 +67,8 @@ struct EditorWorkerController
 
 	FProcHandle ReplaceWorker(const FString& OldWorker, const FString& NewWorker)
 	{
-		const FString CmdArgs = FString::Printf(
-			TEXT("local worker replace "
-				"--local_service_grpc_port %s "
-				"--existing_worker_id %s "
-				"--replacing_worker_id %s"), *ServicePort, *OldWorker, *NewWorker);
 		uint32 ProcessID = 0;
-		FProcHandle ProcHandle = SpatialCommandUtils::CreateSpatialProcess(CmdArgs, false, true, true, &ProcessID, 2 /*PriorityModifier*/,
-				nullptr, nullptr, nullptr, false);
-
-		return ProcHandle;
+		return SpatialCommandUtils::LocalWorkerReplace(*ServicePort, *OldWorker, *NewWorker, false, &ProcessID);
 	}
 
 	void BlockUntilWorkerReady(int32 WorkerIdx)
