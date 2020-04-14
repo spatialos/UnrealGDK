@@ -127,7 +127,7 @@ void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
 void USpatialReceiver::RemoveRedundantRemoveComponentOps(const Worker_AddComponentOp& Op)
 {
 	int32 RemovedOps = 0;
-	for (int32 i = 0; i < QueuedRemoveComponentOps.Num();)
+	for (int32 i = QueuedRemoveComponentOps.Num() - 1; i >= 0; --i)
 	{
 		const Worker_RemoveComponentOp& RemoveComponentOp = QueuedRemoveComponentOps[i];
 		if (RemoveComponentOp.entity_id == Op.entity_id &&
@@ -136,15 +136,11 @@ void USpatialReceiver::RemoveRedundantRemoveComponentOps(const Worker_AddCompone
 			QueuedRemoveComponentOps.RemoveAt(i);
 			RemovedOps++;
 		}
-		else
-		{
-			++i;
-		}
 	}
 
 	if (RemovedOps >= 2)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing more than one RemoveComponentOp. Entity %d, Component %d "), Op.entity_id, Op.data.component_id);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing more than one RemoveComponentOp. Entity %d, Component %d"), Op.entity_id, Op.data.component_id);
 	}
 }
 
