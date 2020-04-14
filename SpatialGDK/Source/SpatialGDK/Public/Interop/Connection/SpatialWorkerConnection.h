@@ -14,6 +14,9 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include <condition_variable>
+#include <mutex>
+
 #include "SpatialWorkerConnection.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
@@ -63,7 +66,7 @@ public:
 
 	void QueueLatestOpList(uint32_t WaitTime);
 	void ProcessOutgoingMessages();
-	void Flush();
+	void MaybeFlush();
 
 private:
 	void CacheWorkerAttributes();
@@ -93,5 +96,6 @@ private:
 	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
 	Worker_RequestId NextRequestId = 0;
 
-	TUniquePtr<FEvent, FEventDeleter> WorkerFlushEvent; // Event used for syncronising the worker API submission thread.
+	std::mutex WorkerFlushMutex;
+	std::condition_variable WorkerFlushCV; // Event used for syncronising the worker API submission thread.
 };

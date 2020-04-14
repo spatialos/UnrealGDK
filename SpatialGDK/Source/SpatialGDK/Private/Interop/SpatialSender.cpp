@@ -492,7 +492,7 @@ void USpatialSender::FlushRPCService()
 
 		if (GetDefault<USpatialGDKSettings>()->bFlushWorkerSubmissionAfterRPC)
 		{
-			NetDriver->Connection->Flush();
+			NetDriver->Connection->MaybeFlush();
 		}
 	}
 }
@@ -937,7 +937,7 @@ ERPCResult USpatialSender::SendRPCInternal(UObject* TargetObject, UFunction* Fun
 
 			if (GetDefault<USpatialGDKSettings>()->bFlushWorkerSubmissionAfterRPC)
 			{
-				NetDriver->Connection->Flush();
+				NetDriver->Connection->MaybeFlush();
 			}
 			return ERPCResult::Success;
 		}

@@ -61,7 +61,7 @@ void USpatialWorkerConnection::DestroyConnection()
 	NextRequestId = 0;
 	KeepRunning.AtomicSet(true);
 
-	WorkerFlushEvent = nullptr;
+	//WorkerFlushEvent = nullptr;
 }
 
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
@@ -187,7 +187,7 @@ uint32 USpatialWorkerConnection::Run()
 	check(!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread);
 
 	float waitMs = 1000.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
-	FTimespan WaitTime = FTimespan::FromMicroseconds(60*1000); // Microseconds to allow for fractional ms
+	//FTimespan WaitTime = FTimespan::FromMicroseconds(60*1000); // Microseconds to allow for fractional ms
 	while (KeepRunning)
 	{
 #ifdef METRICS
@@ -195,7 +195,9 @@ uint32 USpatialWorkerConnection::Run()
 #endif
 		QueueLatestOpList(0);
 		//FPlatformProcess::Sleep(1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate);
-		WorkerFlushEvent->Wait(WaitTime);
+		//WorkerFlushEvent->Wait(WaitTime);
+		std::unique_lock<std::mutex> Lock(WorkerFlushMutex);
+		WorkerFlushCV.wait_for(Lock, std::chrono::microseconds((long long)waitMs*1000));
 
 		//QueueLatestOpList(waitMs);
 #ifdef METRICS
@@ -219,8 +221,6 @@ void USpatialWorkerConnection::Stop()
 void USpatialWorkerConnection::InitializeOpsProcessingThread()
 {
 	check(IsInGameThread());
-
-	WorkerFlushEvent.Reset(FGenericPlatformProcess::GetSynchEventFromPool());
 
 	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0, TPri_TimeCritical);
 	check(OpsProcessingThread);
@@ -457,9 +457,18 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 	}
 }
 
-void USpatialWorkerConnection::Flush()
+void USpatialWorkerConnection::MaybeFlush()
 {
-	WorkerFlushEvent->Trigger();
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings->bFlushWorkerSubmissionAfterRPC)
+	{
+		std::unique_lock<std::mutex> Lock(WorkerFlushMutex);
+		WorkerFlushCV.notify_one();
+	}
+	else if(Settings->bRunSpatialWorkerConnectionOnGameThread)
+	{
+		ProcessOutgoingMessages();
+	}
 }
 
 template <typename T, typename... ArgsType>
