@@ -124,6 +124,30 @@ void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddEntity: %lld"), Op.entity_id);
 }
 
+void USpatialReceiver::RemoveRedundantRemoveComponentOps(const Worker_AddComponentOp& Op)
+{
+	int32 RemovedOps = 0;
+	for (int32 i = 0; i < QueuedRemoveComponentOps.Num();)
+	{
+		const Worker_RemoveComponentOp& RemoveComponentOp = QueuedRemoveComponentOps[i];
+		if (RemoveComponentOp.entity_id == Op.entity_id &&
+			RemoveComponentOp.component_id == Op.data.component_id)
+		{
+			QueuedRemoveComponentOps.RemoveAt(i);
+			RemovedOps++;
+		}
+		else
+		{
+			++i;
+		}
+	}
+
+	if (RemovedOps >= 2)
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing more than one RemoveComponentOp. Entity %d, Component %d "), Op.entity_id, Op.data.component_id);
+	}
+}
+
 void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverAddComponent);
@@ -136,20 +160,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	}
 
-	// Remove all RemoveComponentOps have already been received that have the same entityId and componentId.
-	for (int32 i = 0; i < QueuedRemoveComponentOps.Num();)
-	{
-		const Worker_RemoveComponentOp& RemoveComponentOp = QueuedRemoveComponentOps[i];
-		if (RemoveComponentOp.entity_id == Op.entity_id &&
-			RemoveComponentOp.component_id == Op.data.component_id)
-		{
-			QueuedRemoveComponentOps.RemoveAt(i);
-		}
-		else
-		{
-			++i;
-		}
-	}
+	// Remove all RemoveComponentOps that have already been received and have the same entityId and componentId as the AddComponentOp.
+	RemoveRedundantRemoveComponentOps(Op);
 
 	switch (Op.data.component_id)
 	{
