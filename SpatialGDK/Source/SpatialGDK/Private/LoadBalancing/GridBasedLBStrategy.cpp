@@ -75,6 +75,11 @@ bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to relinquish authority for Actor %s."), *AActor::GetDebugName(&Actor));
 		return false;
 	}
+	// Temp zoning singleton fix, singletons should never migrate, so ShouldHaveAuthority can always return true.
+	if (Actor.GetClass()->HasAllSpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		return true;
+	}
 
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 	return IsInside(WorkerCells[LocalVirtualWorkerId - 1], Actor2DLocation);
@@ -88,11 +93,9 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
-	// Temp fix - if we have singleton auth, let's not migrate it.
-	if (Actor.GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	{
-		return true;
-	}
+	// Temp zoning singleton fix, singletons should never migrate, so ShouldHaveAuthority should always return true,
+	// and so WhoShouldHaveAuthority should never be called.
+	check(!Actor.GetClass()->HasAllSpatialClassFlags(SPATIALCLASS_Singleton));
 
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 

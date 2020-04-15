@@ -88,7 +88,9 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 		const UAbstractLBStrategy* LBStrategy = NetDriver->LoadBalanceStrategy;
 		check(LBStrategy != nullptr);
-		IntendedVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Actor);
+		IntendedVirtualWorkerId = Actor->GetClass()->HasAllSpatialClassFlags(SPATIALCLASS_Singleton) ?
+			LBStrategy->LocalVirtualWorkerId :
+			LBStrategy->WhoShouldHaveAuthority(*Actor);
 		if (IntendedVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
 			UE_LOG(LogEntityFactory, Error, TEXT("Load balancing strategy provided invalid virtual worker ID to spawn actor with. Actor: %s. Strategy: %s"), *Actor->GetName(), *LBStrategy->GetName());
