@@ -136,6 +136,13 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	}
 
+	// Remove all RemoveComponentOps that have already been received and have the same entityId and componentId as the AddComponentOp.
+	// TODO: This can probably be removed when spatial view is added.
+	QueuedRemoveComponentOps.RemoveAll([&Op](const Worker_RemoveComponentOp& RemoveComponentOp) {
+		return RemoveComponentOp.entity_id == Op.entity_id &&
+			RemoveComponentOp.component_id == Op.data.component_id;
+	});
+
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::METADATA_COMPONENT_ID:
@@ -844,8 +851,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 #endif
 	}
 
-	Channel->RefreshAuthority();
-
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
 
 	// Apply initial replicated properties.
@@ -1017,6 +1022,15 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	{
 		// Force APlayerController::DestroyNetworkActorHandled to return false
 		PC->Player = nullptr;
+		
+		if (!NetDriver->IsServer())
+		{
+			// The client's PlayerController can be deleted while the client is still conneted to the deployment when the server 
+			// is no longer receiving heartbeats from the client. When this happens, we call BroadcastNetworkFailure to allow the client
+			// to handle heartbeating failure. Once the heartbeat component is removed with UNR-3006, this call can be removed.
+			GEngine->BroadcastNetworkFailure(NetDriver->GetWorld(), NetDriver, ENetworkFailure::ConnectionLost, 
+							 FString::Printf(TEXT("PlayerController %s deleted. Server believes we have been timed out."), *PC->GetName()));
+		}
 	}
 
 	// Workaround for camera loss on handover: prevent UnPossess() (non-authoritative destruction of pawn, while being authoritative over the controller)
