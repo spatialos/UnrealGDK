@@ -720,5 +720,6 @@ bool SSpatialGDKSimulatedPlayerDeployment::IsUsingCustomRuntimeVersion() const
 FText SSpatialGDKSimulatedPlayerDeployment::GetSpatialOSRuntimeVersionToUseText() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	return FText::FromString(SpatialGDKSettings->GetSpatialOSRuntimeVersionForCloud());
+	FString RuntimeVersion = SpatialGDKSettings->bUseGDKPinnedRuntimeVersion ? SpatialGDKServicesConstants::SpatialOSRuntimePinnedVersion : SpatialGDKSettings->CloudRuntimeVersion;
+	return FText::FromString(RuntimeVersion);
 }
