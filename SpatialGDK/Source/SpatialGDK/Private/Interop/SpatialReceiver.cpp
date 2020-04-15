@@ -851,8 +851,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 #endif
 	}
 
-	Channel->RefreshAuthority();
-
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
 
 	// Apply initial replicated properties.
