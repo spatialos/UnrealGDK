@@ -51,6 +51,7 @@ namespace
 	const FString Debug(TEXT("Debug"));
 	const FString DebugGame(TEXT("DebugGame"));
 	const FString Development(TEXT("Development"));
+	const FString Test(TEXT("Test"));
 	const FString Shipping(TEXT("Shipping"));
 }
 
@@ -548,7 +549,6 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									]
 								]
 							]
-				//
 						]
 					]
 				]
@@ -874,6 +874,10 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildConfiguratio
 		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Development))
 	);
 
+	MenuBuilder.AddMenuEntry(FText::FromString(Test), TAttribute<FText>(), FSlateIcon(),
+		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Test))
+	);
+
 	MenuBuilder.AddMenuEntry(FText::FromString(Shipping), TAttribute<FText>(), FSlateIcon(),
 		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Shipping))
 	);
@@ -889,7 +893,8 @@ void SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked(FString Co
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnBuildAndUploadClicked()
 {
-	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
+	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
+	{
 		const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorSharedPtr->GetPackageAssemblyRef();
 		PackageAssembly->BuildAllAndUpload(
@@ -906,7 +911,8 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnBuildAndUploadClicked()
 bool SSpatialGDKSimulatedPlayerDeployment::CanBuildAndUpload() const
 {
 	bool bEnable{ false };
-	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
+	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
+	{
 		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorSharedPtr->GetPackageAssemblyRef();
 		bEnable = PackageAssembly->CanBuild();
 	}
@@ -923,4 +929,5 @@ void SSpatialGDKSimulatedPlayerDeployment::OnCheckedForceAssemblyOverwrite(EChec
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKSettings->bForceAssemblyOverwrite = NewCheckedState == ECheckBoxState::Checked;
+	SpatialGDKSettings->SaveConfig();
 }

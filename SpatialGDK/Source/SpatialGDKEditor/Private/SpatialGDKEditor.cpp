@@ -29,10 +29,9 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 FSpatialGDKEditor::FSpatialGDKEditor()
 	: bSchemaGeneratorRunning(false)
-	, SpatialGDKPackageAssemblyInstance(MakeShared<FSpatialGDKPackageAssembly>(FSpatialGDKPackageAssembly()))
+	, SpatialGDKPackageAssemblyInstance(MakeShared<FSpatialGDKPackageAssembly>())
 {
 }
-
 
 bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 {

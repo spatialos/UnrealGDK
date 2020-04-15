@@ -13,7 +13,6 @@
 #include "SpatialGDKSettings.h"
 #include "UnrealEdMisc.h"
 
-
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorPackageAssembly);
 
 #define LOCTEXT_NAMESPACE "SpatialGDKEditorPackageAssembly"
@@ -25,7 +24,8 @@ namespace
 }
 
 
-FSpatialGDKPackageAssembly::FSpatialGDKPackageAssembly() : CurrentAssemblyTarget{ EPackageAssemblyTarget::NONE }
+FSpatialGDKPackageAssembly::FSpatialGDKPackageAssembly()
+	: CurrentAssemblyTarget( EPackageAssemblyTarget::NONE )
 {
 
 }
@@ -120,6 +120,7 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 Result)
 			break;
 		case EPackageAssemblyTarget::UPLOAD_ASSEMBLY:
 			{
+				CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
 				FString NotificationMessage = FString::Printf(TEXT("Assembly Successfully uploaded to Project: %s"), *FSpatialGDKServicesModule::GetProjectName());
 				AsyncTask(ENamedThreads::GameThread, [this]() { this->ShowTaskEndedNotification(TEXT("Assembly Failed"), SNotificationItem::CS_Success);	});
 			}
