@@ -53,7 +53,8 @@ public:
 	*/
 	virtual FVector GetWorkerEntityPosition() const { return FVector::ZeroVector; }
 
+	VirtualWorkerId LocalVirtualWorkerId;
+
 protected:
 
-	VirtualWorkerId LocalVirtualWorkerId;
 };
