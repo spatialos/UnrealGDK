@@ -117,5 +117,4 @@ private:
 
 	/** Delegate to determine the 'Launch Deployment' button enabled state */
 	bool IsDeploymentConfigurationValid() const;
-
 };

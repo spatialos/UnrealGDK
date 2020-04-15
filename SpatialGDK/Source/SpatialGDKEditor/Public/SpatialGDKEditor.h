@@ -40,5 +40,4 @@ private:
 	void RemoveEditorAssetLoadedCallback();
 
 	TSharedRef<FSpatialGDKPackageAssembly>SpatialGDKPackageAssemblyInstance;
-
 };

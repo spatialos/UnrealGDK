@@ -232,6 +232,7 @@ void USpatialGDKEditorSettings::SetAssemblyWindowsPlatform(const FString& Platfo
 void USpatialGDKEditorSettings::SetAssemblyBuildConfiguration(const FString& Configuration)
 {
 	AssemblyBuildConfiguration = Configuration;
+	SaveConfig();
 }
 
 void USpatialGDKEditorSettings::SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode)

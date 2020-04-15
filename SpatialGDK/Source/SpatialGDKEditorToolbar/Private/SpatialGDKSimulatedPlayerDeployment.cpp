@@ -838,7 +838,7 @@ FText SSpatialGDKSimulatedPlayerDeployment::GetSpatialOSRuntimeVersionToUseText(
 
 TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildWindowsPlatform()
 {
-	FMenuBuilder MenuBuilder(true, NULL);
+	FMenuBuilder MenuBuilder(true, nullptr);
 
 	MenuBuilder.AddMenuEntry(FText::FromString(Win64), TAttribute<FText>(), FSlateIcon(),
 		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked, Win64))
@@ -857,10 +857,9 @@ void SSpatialGDKSimulatedPlayerDeployment::OnWindowsPlatformPicked(FString Windo
 	SpatialGDKSettings->SetAssemblyWindowsPlatform(WindowsPlatform);
 }
 
-
 TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetBuildConfiguration()
 {
-	FMenuBuilder MenuBuilder(true, NULL);
+	FMenuBuilder MenuBuilder(true, nullptr);
 
 	MenuBuilder.AddMenuEntry(FText::FromString(Debug), TAttribute<FText>(), FSlateIcon(),
 		FUIAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnBuildConfigurationPicked, Debug))
@@ -910,7 +909,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnBuildAndUploadClicked()
 
 bool SSpatialGDKSimulatedPlayerDeployment::CanBuildAndUpload() const
 {
-	bool bEnable{ false };
+	bool bEnable = false;
 	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin())
 	{
 		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorSharedPtr->GetPackageAssemblyRef();

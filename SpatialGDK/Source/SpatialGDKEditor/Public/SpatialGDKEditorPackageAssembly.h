@@ -16,13 +16,12 @@ public:
 
 	bool CanBuild() const;
 
-	void BuildAllAndUpload(const FString &AssemblyName, const FString& WindowsPlatform, const FString& Configuration, const FString& AdditionalArgs, bool Force);
+	void BuildAllAndUpload(const FString &AssemblyName, const FString& WindowsPlatform, const FString& Configuration, const FString& AdditionalArgs, bool bForce);
 	
 private:
 	enum class EPackageAssemblyTarget
 	{
 		NONE = 0,
-		START_ALL,
 		BUILD_CLIENT,
 		BUILD_SERVER,
 		BUILD_SIMULATED_PLAYERS,
@@ -34,11 +33,11 @@ private:
 
 	struct AssemblyDetails
 	{
+		AssemblyDetails(const FString& Name, const FString& Config, bool bForce);
+		void Upload(FSpatialGDKPackageAssembly& PackageAssembly);
 		FString AssemblyName;
 		FString Configuration;
 		bool bForce;
-		AssemblyDetails(const FString& Name, const FString& Config, bool Force);
-		void Upload(FSpatialGDKPackageAssembly& PackageAssembly);
 	};
 
 	TUniquePtr<AssemblyDetails> AssemblyDetailsPtr;
