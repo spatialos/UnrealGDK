@@ -88,6 +88,12 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
+	// Temp fix - if we have singleton auth, let's not migrate it.
+	if (Actor.GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		return true;
+	}
+
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 
 	for (int i = 0; i < WorkerCells.Num(); i++)

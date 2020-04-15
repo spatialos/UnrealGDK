@@ -282,7 +282,8 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 
 	Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
 
-	if (StaticComponentView->HasAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID))
+	const bool bIsGSMAuthoritative = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	if (bIsGSMAuthoritative)
 	{
 		SingletonActor->Role = ROLE_Authority;
 		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
@@ -344,10 +345,8 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 		return Channel;
 	}
 
-	const bool bLoadBalancingEnabled = GetDefault<USpatialGDKSettings>()->bEnableUnrealLoadBalancer;
 	bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
-	const bool bShouldHaveSingletonAuthority = (!bLoadBalancingEnabled && bHasGSMAuthority) || (bLoadBalancingEnabled && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*SingletonActor));
-	if (bShouldHaveSingletonAuthority)
+	if (bHasGSMAuthority)
 	{
 		// We have control over the GSM, so can safely setup a new channel and let it allocate an entity id
 		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
@@ -618,6 +617,7 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 
 void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 {
+	const bool bHasGSMAuthority = StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
 	{
 		AActor* Actor = *It;
@@ -625,7 +625,9 @@ void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 		{
 			if (Actor->GetIsReplicated())
 			{
-				const bool bAuthoritative = NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+				const bool bAuthoritative = Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) ?
+					bHasGSMAuthority :
+					NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
 				Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
 				Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 			}
