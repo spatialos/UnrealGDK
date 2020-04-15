@@ -27,6 +27,10 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty)
 
 FString UnrealNameToSchemaName(const FString& UnrealName)
 {
+	if (UnrealName.IsValidIndex(0) && FChar::IsDigit(UnrealName[0]))
+	{
+		return "ZZ" + AlphanumericSanitization(UnrealName);
+	}
 	return AlphanumericSanitization(UnrealName);
 }
 

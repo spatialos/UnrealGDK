@@ -70,15 +70,14 @@ void AddPotentialNameCollision(const FString& DesiredSchemaName, const FString& 
 	PotentialSchemaNameCollisions.FindOrAdd(DesiredSchemaName).Add(FString::Printf(TEXT("%s(%s)"), *ClassPath, *GeneratedSchemaName));
 }
 
-void OnStatusOutput(FString Message)
+void OnStatusOutput(const FString& Message)
 {
 	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("%s"), *Message);
 }
 
-void GenerateCompleteSchemaFromClass(FString SchemaPath, FComponentIdGenerator& IdGenerator, TSharedPtr<FUnrealType> TypeInfo)
+void GenerateCompleteSchemaFromClass(const FString& SchemaPath, FComponentIdGenerator& IdGenerator, TSharedPtr<FUnrealType> TypeInfo)
 {
 	UClass* Class = Cast<UClass>(TypeInfo->Type);
-	FString SchemaFilename = UnrealNameToSchemaName(Class->GetName());
 
 	if (Class->IsChildOf<AActor>())
 	{
@@ -90,7 +89,7 @@ void GenerateCompleteSchemaFromClass(FString SchemaPath, FComponentIdGenerator& 
 	}
 }
 
-bool CheckSchemaNameValidity(FString Name, FString Identifier, FString Category)
+bool CheckSchemaNameValidity(const FString& Name, const FString& Identifier, const FString& Category)
 {
 	if (Name.IsEmpty())
 	{
@@ -105,6 +104,14 @@ bool CheckSchemaNameValidity(FString Name, FString Identifier, FString Category)
 	}
 
 	return true;
+}
+
+void CheckWarnAboutRename(const FString& Name, const FString& Identifier, const FString& Path, const FString& Category)
+{
+	if (FChar::IsDigit(Identifier[0]))
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s %s (%s) starts with a digit so its schema name was changed to %s instead."), *Category, *Identifier, *Path, *Name);
+	}
 }
 
 void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuccess)
@@ -203,6 +210,10 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 		{
 			bSuccess = false;
 		}
+		else
+		{
+			CheckWarnAboutRename(SchemaName, ClassName, ClassPath, TEXT("Class"));
+		}
 
 		FString DesiredSchemaName = SchemaName;
 
@@ -256,7 +267,7 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 	}
 }
 
-void WriteLevelComponent(FCodeWriter& Writer, FString LevelName, Worker_ComponentId ComponentId, FString ClassPath)
+void WriteLevelComponent(FCodeWriter& Writer, const FString& LevelName, Worker_ComponentId ComponentId, const FString& ClassPath)
 {
 	Writer.PrintNewLine();
 	Writer.Printf("// {0}", *ClassPath);
@@ -326,7 +337,7 @@ void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap
 					LevelPathToComponentId.Add(LevelPaths[i].ToString(), ComponentId);
 				}
 				WriteLevelComponent(Writer, FString::Printf(TEXT("%sInd%d"), *LevelNameString, i), ComponentId, LevelPaths[i].ToString());
-				
+
 			}
 		}
 		else
@@ -609,7 +620,7 @@ void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& Co
 
 	FString GDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
 	FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema"));
-	
+
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
 	RefreshSchemaFiles(*GDKSchemaCopyDir);
@@ -716,7 +727,7 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 	return true;
 }
 
-bool IsAssetReadOnly(FString FileName)
+bool IsAssetReadOnly(const FString& FileName)
 {
 	FString RelativeFileName = FPaths::Combine(FPaths::ProjectContentDir(), FileName);
 	RelativeFileName = FPaths::SetExtension(RelativeFileName, FPackageName::GetAssetPackageExtension());
@@ -768,7 +779,7 @@ bool DeleteSchemaDatabase(const FString& PackagePath)
 bool GeneratedSchemaDatabaseExists()
 {
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	
+
 	return PlatformFile.FileExists(*RelativeSchemaDatabaseFilePath);
 }
 
@@ -905,7 +916,7 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
-	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH)) // This requires RunSchemaCompiler to run first 
+	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH)) // This requires RunSchemaCompiler to run first
 	{
 		return false;
 	}
@@ -920,7 +931,7 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 	{
 		return A.GetPathName() < B.GetPathName();
 	});
-	
+
 	// Generate Type Info structs for all classes
 	TArray<TSharedPtr<FUnrealType>> TypeInfos;
 
