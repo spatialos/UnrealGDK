@@ -106,14 +106,6 @@ bool CheckSchemaNameValidity(const FString& Name, const FString& Identifier, con
 	return true;
 }
 
-void CheckWarnAboutRename(const FString& Name, const FString& Identifier, const FString& Path, const FString& Category)
-{
-	if (FChar::IsDigit(Identifier[0]))
-	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s %s (%s) starts with a digit so its schema name was changed to %s instead."), *Category, *Identifier, *Path, *Name);
-	}
-}
-
 void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuccess)
 {
 	// Check Replicated data.
@@ -204,15 +196,11 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 		check(Class);
 		const FString& ClassName = Class->GetName();
 		const FString& ClassPath = Class->GetPathName();
-		FString SchemaName = UnrealNameToSchemaName(ClassName);
+		FString SchemaName = UnrealNameToSchemaName(ClassName, true);
 
 		if (!CheckSchemaNameValidity(SchemaName, ClassPath, TEXT("Class")))
 		{
 			bSuccess = false;
-		}
-		else
-		{
-			CheckWarnAboutRename(SchemaName, ClassName, ClassPath, TEXT("Class"));
 		}
 
 		FString DesiredSchemaName = SchemaName;

@@ -4,6 +4,7 @@
 
 #include "Algo/Transform.h"
 #include "Internationalization/Regex.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
 
 // Regex pattern matcher to match alphanumeric characters.
 const FRegexPattern AlphanumericPattern(TEXT("[A-Za-z0-9]"));
@@ -25,13 +26,19 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty)
 	return DataType;
 }
 
-FString UnrealNameToSchemaName(const FString& UnrealName)
+FString UnrealNameToSchemaName(const FString& UnrealName, bool bWarnAboutRename /* = false */)
 {
-	if (UnrealName.IsValidIndex(0) && FChar::IsDigit(UnrealName[0]))
+	FString Sanitized = AlphanumericSanitization(UnrealName);
+	if (Sanitized.IsValidIndex(0) && FChar::IsDigit(Sanitized[0]))
 	{
-		return "ZZ" + AlphanumericSanitization(UnrealName);
+		FString Result = "ZZ" + Sanitized;
+		if (bWarnAboutRename)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s starts with a digit (potentially after removing non-alphanumeric characters), so its schema name was changed to %s instead."), *UnrealName, *Result);
+		}
+		return Result;
 	}
-	return AlphanumericSanitization(UnrealName);
+	return Sanitized;
 }
 
 FString AlphanumericSanitization(const FString& InString)
