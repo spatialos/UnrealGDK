@@ -187,8 +187,6 @@ private:
 	void HandleQueuedOpForAsyncLoad(QueuedOpForAsyncLoad& Op);
 	// END TODO
 
-	void RemoveRedundantRemoveComponentOps(const Worker_AddComponentOp& Op);
-
 public:
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 

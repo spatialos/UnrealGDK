@@ -124,19 +124,6 @@ void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddEntity: %lld"), Op.entity_id);
 }
 
-void USpatialReceiver::RemoveRedundantRemoveComponentOps(const Worker_AddComponentOp& Op)
-{
-	int32 RemovedOps = QueuedRemoveComponentOps.RemoveAll([&Op](const Worker_RemoveComponentOp& RemoveComponentOp) {
-		return RemoveComponentOp.entity_id == Op.entity_id &&
-			RemoveComponentOp.component_id == Op.data.component_id;
-	});
-
-	if (RemovedOps >= 2)
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing more than one RemoveComponentOp. Entity %d, Component %d"), Op.entity_id, Op.data.component_id);
-	}
-}
-
 void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverAddComponent);
@@ -151,7 +138,10 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 
 	// Remove all RemoveComponentOps that have already been received and have the same entityId and componentId as the AddComponentOp.
 	// TODO: This can probably be removed when spatial view is added.
-	RemoveRedundantRemoveComponentOps(Op);
+	QueuedRemoveComponentOps.RemoveAll([&Op](const Worker_RemoveComponentOp& RemoveComponentOp) {
+		return RemoveComponentOp.entity_id == Op.entity_id &&
+			RemoveComponentOp.component_id == Op.data.component_id;
+	});
 
 	switch (Op.data.component_id)
 	{
