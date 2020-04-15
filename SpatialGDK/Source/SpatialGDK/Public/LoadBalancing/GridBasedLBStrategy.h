@@ -46,7 +46,10 @@ public:
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const override;
 
 	virtual FVector GetWorkerEntityPosition() const override;
-/* End UAbstractLBStrategy Interface */
+
+	virtual uint8 GetMinimumRequiredWorkers() const override;
+	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
+	/* End UAbstractLBStrategy Interface */
 
 	LBStrategyRegions GetLBStrategyRegions() const;
 

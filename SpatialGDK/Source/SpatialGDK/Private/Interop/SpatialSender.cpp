@@ -702,22 +702,12 @@ bool USpatialSender::WillHaveAuthorityOverActor(AActor* TargetActor, Worker_Enti
 
 	if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
 	{
-		if (!USpatialStatics::IsLayerOwnerForActor(TargetActor))
+		check(NetDriver->VirtualWorkerTranslator != nullptr);
+		if (const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(TargetEntity))
 		{
-			WillHaveAuthorityOverActor = false;
-		}
-	}
-
-	if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
-	{
-		if (NetDriver->VirtualWorkerTranslator != nullptr)
-		{
-			if (const SpatialGDK::AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(TargetEntity))
+			if (AuthorityIntentComponent->VirtualWorkerId != NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId())
 			{
-				if (AuthorityIntentComponent->VirtualWorkerId != NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId())
-				{
-					WillHaveAuthorityOverActor = false;
-				}
+				WillHaveAuthorityOverActor = false;
 			}
 		}
 	}

@@ -60,7 +60,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, ServicesRegion(EServicesRegion::Default)
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
 	, bEnableMultiWorker(false)
-	, MaxWorkersToLaunch(1)
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
 	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(true)

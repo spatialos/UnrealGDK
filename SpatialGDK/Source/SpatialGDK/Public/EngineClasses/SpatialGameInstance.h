@@ -11,7 +11,6 @@
 class USpatialLatencyTracer;
 class USpatialConnectionManager;
 class UGlobalStateManager;
-class ULayeredLBStrategy;
 class USpatialStaticComponentView;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
@@ -62,9 +61,6 @@ public:
 
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
-
-	UPROPERTY()
-	ULayeredLBStrategy* LayeredLoadBalanceStrategy;
 
 	TUniquePtr<SpatialLayerManager> LayerManager;
 

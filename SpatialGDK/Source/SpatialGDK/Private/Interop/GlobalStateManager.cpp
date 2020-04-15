@@ -98,8 +98,11 @@ void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
 	// AddComponent. This is important for handling startup Actors correctly in a zoned
 	// environment.
 	const bool bHasReceivedStartupActorData = StaticComponentView->HasComponent(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
-	const bool bWorkerEntityCreated = NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID;
-	if (bHasSentReadyForVirtualWorkerAssignment || !bHasReceivedStartupActorData || !bWorkerEntityCreated)
+// 	const bool bWorkerEntityCreated = NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID;
+	const bool bWorkerEntityReady = NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID &&
+		StaticComponentView->HasComponent(NetDriver->WorkerEntityId, SpatialConstants::SERVER_WORKER_COMPONENT_ID) &&
+		StaticComponentView->HasAuthority(NetDriver->WorkerEntityId, SpatialConstants::SERVER_WORKER_COMPONENT_ID);
+	if (bHasSentReadyForVirtualWorkerAssignment || !bHasReceivedStartupActorData || !bWorkerEntityReady)
 	{
 		return;
 	}
@@ -597,28 +600,6 @@ void UGlobalStateManager::BeginDestroy()
 #endif
 }
 
-void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
-{
-	// This logic is not used in offloading.
-	if (USpatialStatics::IsSpatialOffloadingEnabled())
-	{
-		return;
-	}
-
-	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
-	{
-		AActor* Actor = *It;
-		if (Actor != nullptr && !Actor->IsPendingKill())
-		{
-			if (Actor->GetIsReplicated())
-			{
-				Actor->Role = ROLE_Authority;
-				Actor->RemoteRole = ROLE_SimulatedProxy;
-			}
-		}
-	}
-}
-
 void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 {
 	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
@@ -626,10 +607,13 @@ void UGlobalStateManager::BecomeAuthoritativeOverActorsBasedOnLBStrategy()
 		AActor* Actor = *It;
 		if (Actor != nullptr && !Actor->IsPendingKill())
 		{
-			if (Actor->GetIsReplicated() && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
+			if (Actor->GetIsReplicated())
 			{
-				Actor->Role = ROLE_Authority;
-				Actor->RemoteRole = ROLE_SimulatedProxy;
+				if (NetDriver->LoadBalanceStrategy == nullptr || NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
+				{
+					Actor->Role = ROLE_Authority;
+					Actor->RemoteRole = ROLE_SimulatedProxy;
+				}
 			}
 		}
 	}
@@ -649,14 +633,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
 	if (bCanSpawnWithAuthority)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bEnableMultiWorker)
-		{
-			BecomeAuthoritativeOverActorsBasedOnLBStrategy();
-		}
-		else
-		{
-			BecomeAuthoritativeOverAllActors();
-		}
+		BecomeAuthoritativeOverActorsBasedOnLBStrategy();
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();

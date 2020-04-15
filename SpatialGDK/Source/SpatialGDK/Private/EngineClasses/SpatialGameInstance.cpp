@@ -17,7 +17,6 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
-#include "LoadBalancing/LayeredLBStrategy.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
@@ -202,8 +201,6 @@ void USpatialGameInstance::Init()
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
 	FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
-
-	LayeredLoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
 
 	LayerManager = MakeUnique<SpatialLayerManager>();
 	LayerManager->Init();

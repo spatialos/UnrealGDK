@@ -151,11 +151,11 @@ public:
 	UPROPERTY()
 	ASpatialDebugger* SpatialDebugger;
 	UPROPERTY()
-	UAbstractLBStrategy* LoadBalanceStrategy;
-	UPROPERTY()
 	UAbstractLockingPolicy* LockingPolicy;
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
+	UPROPERTY()
+	UAbstractLBStrategy* LoadBalanceStrategy;
 
 	SpatialLayerManager* LayerManager;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;

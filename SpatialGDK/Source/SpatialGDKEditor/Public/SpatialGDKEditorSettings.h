@@ -116,9 +116,7 @@ struct FWorkerTypeLaunchSection
 		, MaxConnectionCapacityLimit(0)
 		, bLoginRateLimitEnabled(false)
 		, LoginRateLimit()
-		, Columns(1)
-		, Rows(1)
-		, NumEditorInstances(1)
+ 		, NumEditorInstances(1)
 		, bManualWorkerConnectionOnly(true)
 	{
 	}
@@ -142,14 +140,6 @@ struct FWorkerTypeLaunchSection
 	/** Login rate limiting configuration. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "bLoginRateLimitEnabled"))
 	FLoginRateLimitSection LoginRateLimit;
-
-	/** Number of columns in the rectangle grid load balancing config. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Rectangle grid column count", ClampMin = "1", UIMin = "1"))
-	int32 Columns;
-
-	/** Number of rows in the rectangle grid load balancing config. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Rectangle grid row count", ClampMin = "1", UIMin = "1"))
-	int32 Rows;
 
 	/** Number of instances to launch when playing in editor. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Instances to launch in editor", ClampMin = "0", UIMin = "0"))
@@ -175,8 +165,6 @@ struct FSpatialLaunchConfigDescription
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
 		UnrealWorkerDefaultSetting.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
-		UnrealWorkerDefaultSetting.Rows = 1;
-		UnrealWorkerDefaultSetting.Columns = 1;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
 
 		ServerWorkers.Add(UnrealWorkerDefaultSetting);
@@ -188,8 +176,6 @@ struct FSpatialLaunchConfigDescription
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
 		UnrealWorkerDefaultSetting.WorkerTypeName = WorkerTypeName;
-		UnrealWorkerDefaultSetting.Rows = 1;
-		UnrealWorkerDefaultSetting.Columns = 1;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
 
 		ServerWorkers.Add(UnrealWorkerDefaultSetting);

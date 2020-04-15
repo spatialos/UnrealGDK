@@ -38,8 +38,8 @@ public:
 		SpatialOSWorkerInterface* InConnection,
 		SpatialVirtualWorkerTranslator* InTranslator);
 
-	void AddVirtualWorkerIds(const TSet<VirtualWorkerId>& InVirtualWorkerIds);
-
+	void SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers);
+	
 	// The translation manager only cares about changes to the authority of the translation mapping.
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 

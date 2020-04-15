@@ -16,8 +16,6 @@ bool FGridLBStrategyEditorExtension::GetDefaultLaunchConfiguration(const UGridBa
 {
 	const UGridBasedLBStrategy_Spy* StrategySpy = static_cast<const UGridBasedLBStrategy_Spy*>(Strategy);
 
-	OutConfiguration.Rows = StrategySpy->Rows;
-	OutConfiguration.Columns = StrategySpy->Cols;
 	OutConfiguration.NumEditorInstances = StrategySpy->Rows * StrategySpy->Cols;
 
 	// Convert from cm to m.

@@ -25,11 +25,6 @@ void UGridBasedLBStrategy::Init()
 
 	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("GridBasedLBStrategy initialized with Rows = %d and Cols = %d."), Rows, Cols);
 
-	for (uint32 i = 1; i <= Rows * Cols; i++)
-	{
-		VirtualWorkerIds.Add(i);
-	}
-
 	const float WorldWidthMin = -(WorldWidth / 2.f);
 	const float WorldHeightMin = -(WorldHeight / 2.f);
 
@@ -54,6 +49,7 @@ void UGridBasedLBStrategy::Init()
 			FVector2D Max(XMax, YMax);
 			FBox2D Cell(Min, Max);
 			WorkerCells.Add(Cell);
+
 
 			XMin = XMax;
 		}
@@ -94,7 +90,16 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 	{
 		if (IsInside(WorkerCells[i], Actor2DLocation))
 		{
-			return VirtualWorkerIds[i];
+			if (i >= VirtualWorkerIds.Num())
+			{
+				UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy index position %d is out of range of the number of allocated VirtualWorkerIds which is %d."), i, VirtualWorkerIds.Num());
+				return 0;
+			}
+			else
+			{
+				UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Actor: %s, grid %d, worker %d for position %f, %f"), *AActor::GetDebugName(&Actor), i, VirtualWorkerIds[i], Actor2DLocation.X, Actor2DLocation.Y);
+				return VirtualWorkerIds[i];
+			}
 		}
 	}
 
@@ -125,6 +130,22 @@ FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
 	check(IsReady());
 	const FVector2D Centre = WorkerCells[LocalVirtualWorkerId - 1].GetCenter();
 	return FVector{ Centre.X, Centre.Y, 0.f };
+}
+
+uint8 UGridBasedLBStrategy::GetMinimumRequiredWorkers() const
+{
+	return Rows * Cols;
+}
+
+void UGridBasedLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId)
+{
+	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Setting VirtualWorkerIds %d to %d"), FirstVirtualWorkerId, LastVirtualWorkerId);
+	VirtualWorkerId CurrentVirtualWorkerId = FirstVirtualWorkerId;
+	for (uint32 i = 1; i <= Rows * Cols; i++)
+	{
+		VirtualWorkerIds.Add(CurrentVirtualWorkerId);
+		CurrentVirtualWorkerId++;
+	}
 }
 
 bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location)

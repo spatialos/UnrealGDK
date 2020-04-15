@@ -531,7 +531,7 @@ bool FSpatialGDKEditorToolbarModule::FillWorkerLaunchConfigFromWorldSettings(UWo
 		return false;
 	}
 
-	if (!WorldSettings->LoadBalanceStrategy)
+	if (!WorldSettings->DefaultLoadBalanceStrategy)
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Missing Load balancing strategy on map %s"), *World.GetMapName());
 		return false;
@@ -539,11 +539,11 @@ bool FSpatialGDKEditorToolbarModule::FillWorkerLaunchConfigFromWorldSettings(UWo
 
 	FSpatialGDKEditorModule& EditorModule = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor");
 
-	if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(WorldSettings->LoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), OutLaunchConfig, OutWorldDimension))
-	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not get the number of worker to launch for load balancing strategy %s"), *WorldSettings->LoadBalanceStrategy->GetName());
-		return false;
-	}
+// 	if (!EditorModule.GetLBStrategyExtensionManager().GetDefaultLaunchConfiguration(WorldSettings->DefaultLoadBalanceStrategy->GetDefaultObject<UAbstractLBStrategy>(), OutLaunchConfig, OutWorldDimension))
+// 	{
+// 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not get the number of worker to launch for load balancing strategy %s"), *WorldSettings->DefaultLoadBalanceStrategy->GetName());
+// 		return false;
+// 	}
 
 	return true;
 }
@@ -608,17 +608,17 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			FIntPoint WorldDimensions;
 			FWorkerTypeLaunchSection WorkerLaunch;
 
-			if (FillWorkerLaunchConfigFromWorldSettings(*EditorWorld, WorkerLaunch, WorldDimensions))
-			{
-				LaunchConfigDescription.World.Dimensions = WorldDimensions;
-				LaunchConfigDescription.ServerWorkers.Empty(SpatialGDKSettings->WorkerLayers.Num());
-
-				for (auto Layer : SpatialGDKSettings->WorkerLayers)
-				{
-					LaunchConfigDescription.ServerWorkers.Add(WorkerLaunch);
-					LaunchConfigDescription.ServerWorkers.Last().WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
-				}
-			}
+// 			if (FillWorkerLaunchConfigFromWorldSettings(*EditorWorld, WorkerLaunch, WorldDimensions))
+// 			{
+// 				LaunchConfigDescription.World.Dimensions = WorldDimensions;
+// 				LaunchConfigDescription.ServerWorkers.Empty(SpatialGDKSettings->WorkerLayers.Num());
+// 
+// 				for (auto Layer : SpatialGDKSettings->WorkerLayers)
+// 				{
+// 					LaunchConfigDescription.ServerWorkers.Add(WorkerLaunch);
+// 					LaunchConfigDescription.ServerWorkers.Last().WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
+// 				}
+// 			}
 		}
 
 		for (auto& WorkerLaunchSection : LaunchConfigDescription.ServerWorkers)

@@ -402,6 +402,12 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 	// This way systems that depend on having non-stale state can function correctly.
 	StaticComponentView->OnAuthorityChange(Op);
 
+	if (Op.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		GlobalStateManager->TrySendWorkerReadyToBeginPlay();
+		return;
+	}
+
 	if (Op.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID && LoadBalanceEnforcer != nullptr)
 	{
 		LoadBalanceEnforcer->OnAclAuthorityChanged(Op);

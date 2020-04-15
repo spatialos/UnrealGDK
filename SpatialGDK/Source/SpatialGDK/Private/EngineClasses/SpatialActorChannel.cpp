@@ -611,7 +611,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			// If we're not offloading AND either load balancing isn't enabled or it is and we're spawning an Actor that we know
 			// will be load-balanced to another worker then preemptively set the role to SimulatedProxy.
-			if (!USpatialStatics::IsSpatialOffloadingEnabled() && (!SpatialGDKSettings->bEnableMultiWorker || !NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
+			if (SpatialGDKSettings->bEnableMultiWorker && !NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor))
 			{
 				Actor->Role = ROLE_SimulatedProxy;
 				Actor->RemoteRole = ROLE_Authority;

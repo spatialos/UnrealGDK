@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Utils/LayerInfo.h"
 #include "Utils/SpatialLayerManager.h"
 
 #include "CoreMinimal.h"
@@ -223,10 +224,6 @@ public:
 	/** Enable running multiple workers to simulate the game world. */
 	UPROPERTY(EditAnywhere, Config, Category = "Multi Worker")
 	bool bEnableMultiWorker;
-
-	/** The maximum number of workers to launch. These will be allocated to the load balancing strategies of the layers. Fewer workers might be launched than specified. */
-	UPROPERTY(EditAnywhere, Config, Category = "Multi Worker", meta = (EditCondition = "bEnableMultiWorker"))
-	uint32 MaxWorkersToLaunch;
 
 	/** Worker Type configuration. */
 	UPROPERTY(EditAnywhere, Config, Category = "Multi Worker", meta = (EditCondition = "bEnableMultiWorker"))

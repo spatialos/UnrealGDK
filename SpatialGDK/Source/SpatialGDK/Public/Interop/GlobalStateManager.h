@@ -103,7 +103,6 @@ private:
 	void SendSessionIdUpdate();
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 
-	void BecomeAuthoritativeOverAllActors();
 	void BecomeAuthoritativeOverActorsBasedOnLBStrategy();
 	void SendCanBeginPlayUpdate(const bool bInCanBeginPlay);
 

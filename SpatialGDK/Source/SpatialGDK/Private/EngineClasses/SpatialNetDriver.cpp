@@ -31,7 +31,7 @@
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "LoadBalancing/GridBasedLBStrategy.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -420,44 +420,37 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 {
-	const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
 	if (IsServer())
 	{
-		if (WorldSettings == nullptr || WorldSettings->LoadBalanceStrategy == nullptr)
-		{
-			if (WorldSettings == nullptr)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, WorldSettings should inherit from SpatialWorldSettings to get the load balancing strategy. Using a 1x1 grid."));
-			}
-			else
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a LoadBalancing strategy set. Using a 1x1 grid."));
-			}
-			LoadBalanceStrategy = NewObject<UGridBasedLBStrategy>(this);
-		}
-		else
-		{
-			LoadBalanceStrategy = NewObject<UAbstractLBStrategy>(this, WorldSettings->LoadBalanceStrategy);
-		}
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Creating LoadBalancing classes"));
+
+		const ASpatialWorldSettings* WorldSettings = GetWorld() ? Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings()) : nullptr;
+
+		LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
 		LoadBalanceStrategy->Init();
-	}
+		const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
-	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
+		// Tell the strategy that there will be enough workers for now. In the future if we allow dynamic worker counts, we'll need to change this.
+		LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
 
-	if (IsServer())
-	{
+		VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
+
 		LoadBalanceEnforcer = MakeUnique<SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), StaticComponentView, VirtualWorkerTranslator.Get());
 
-		if (WorldSettings == nullptr || WorldSettings->LockingPolicy == nullptr)
+		if (WorldSettings == nullptr || WorldSettings->DefaultLockingPolicy == nullptr)
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If EnableUnrealLoadBalancer is set, there must be a Locking Policy set. Using default policy."));
 			LockingPolicy = NewObject<UOwnershipLockingPolicy>(this);
 		}
 		else
 		{
-			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->LockingPolicy);
+			LockingPolicy = NewObject<UAbstractLockingPolicy>(this, WorldSettings->DefaultLockingPolicy);
 		}
 		LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);
+	}
+	else
+	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("LoadBalancing isn't enabled on clients."));
 	}
 }
 
@@ -615,18 +608,19 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 		Actor->GetLocalRole() != ROLE_Authority ||
 		Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
-		USpatialStatics::IsLayerOwnerForActor(Actor))
+		(Actor != nullptr && LoadBalanceStrategy != nullptr && LoadBalanceStrategy->ShouldHaveAuthority(*Actor)))
 	{
 		// We only want to delete actors which are replicated and we somehow gain local authority over, while not the actor group owner.
 		return;
 	}
 
-	const FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker %s spawned replicated actor %s (owner: %s) but is not actor group owner for actor group %s. The actor will be destroyed in 0.01s"),
-		*WorkerType, *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), *USpatialStatics::GetLayerForActor(Actor).ToString());
-	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would complain if we destroyed it.
-	Actor->TearOff();
-	Actor->SetLifeSpan(0.01f);
+	// This is commented out because otherwise the Locking Player Controller got deleted early and then thrash between workers.
+// 	const FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
+// 	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker %s spawned replicated actor %s (owner: %s) but is not actor group owner for actor group %s. The actor will be destroyed in 0.01s"),
+// 		*WorkerType, *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), *USpatialStatics::GetLayerForActor(Actor).ToString());
+// 	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would complain if we destroyed it.
+// 	Actor->TearOff();
+// 	Actor->SetLifeSpan(0.01f);
 }
 
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
@@ -2417,12 +2411,32 @@ bool USpatialNetDriver::FindAndDispatchStartupOpsServer(const TArray<Worker_OpLi
 
 	// CreateEntityResponseOps are needed for non-GSM-authoritative server workers sending an update
 	// to the Runtime indicating that the worker is ready to begin play.
-	Worker_Op* CreateEntityResponseOp = nullptr;
-	FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE, &CreateEntityResponseOp);
-
-	if (CreateEntityResponseOp != nullptr)
+// 	Worker_Op* CreateEntityResponseOp = nullptr;
+// 	FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE, &CreateEntityResponseOp);
+// 
+// 	if (CreateEntityResponseOp != nullptr)
+// 	{
+// 		FoundOps.Add(CreateEntityResponseOp);
+// 	}
 	{
-		FoundOps.Add(CreateEntityResponseOp);
+		Worker_Op* CreateEntityResponseOp = nullptr;
+		FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE, &CreateEntityResponseOp);
+		Worker_Op* AddComponentOp = nullptr;
+		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::SERVER_WORKER_COMPONENT_ID, &AddComponentOp);
+		Worker_Op* AuthorityChangedOp = nullptr;
+		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::SERVER_WORKER_COMPONENT_ID, &AuthorityChangedOp);
+		if (CreateEntityResponseOp != nullptr)
+		{
+			FoundOps.Add(CreateEntityResponseOp);
+		}
+		if (AddComponentOp != nullptr)
+		{
+			FoundOps.Add(AddComponentOp);
+		}
+		if (AuthorityChangedOp != nullptr)
+		{
+			FoundOps.Add(AuthorityChangedOp);
+		}
 	}
 
 	// Search for entity id reservation response and process it.  The entity id reservation
@@ -2601,6 +2615,9 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 // for the TranslationManager, otherwise the manager will never be instantiated.
 void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
 {
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Initializing the VirtualWorkerTranslationManager."));
 	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
-	VirtualWorkerTranslationManager->AddVirtualWorkerIds(LoadBalanceStrategy->GetVirtualWorkerIds());
+
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	VirtualWorkerTranslationManager->SetNumberOfVirtualWorkers(LoadBalanceStrategy->GetMinimumRequiredWorkers());
 }

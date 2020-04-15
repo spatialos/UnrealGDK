@@ -85,13 +85,13 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunc
 	return true;
 }
 
-bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerType, const int32 Columns, const int32 Rows, const bool ManualWorkerConnectionOnly)
+bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerType, const int32 NumEditorInstances, const bool ManualWorkerConnectionOnly)
 {
 	Writer->WriteObjectStart();
 		Writer->WriteValue(TEXT("layer"), *WorkerType.ToString());
 		Writer->WriteObjectStart("rectangle_grid");
-			Writer->WriteValue(TEXT("cols"), Columns);
-			Writer->WriteValue(TEXT("rows"), Rows);
+			Writer->WriteValue(TEXT("cols"), NumEditorInstances);
+			Writer->WriteValue(TEXT("rows"), 1);
 		Writer->WriteObjectEnd();
 		Writer->WriteObjectStart(TEXT("options"));
 			Writer->WriteValue(TEXT("manual_worker_connection_only"), ManualWorkerConnectionOnly);
@@ -141,7 +141,7 @@ bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath, const FSpatial
 			Writer->WriteArrayStart("layer_configurations");
 			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
 			{
-				WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.bManualWorkerConnectionOnly);
+				WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.NumEditorInstances, Worker.bManualWorkerConnectionOnly);
 			}
 			Writer->WriteArrayEnd();
 			Writer->WriteObjectEnd(); // Load balancing section end
@@ -192,52 +192,20 @@ bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& Launch
 		}
 	}
 
-	if (!SpatialGDKRuntimeSettings->bEnableHandover && LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
-	{
-		return (Section.Rows * Section.Columns) > 1;
-	}))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Property handover is disabled and a zoned deployment is specified.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
-
-		if (Result == EAppReturnType::Yes)
-		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
-		}
-
-		return false;
-	}
-
-	if (LaunchConfigDesc.ServerWorkers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Section)
-	{
-		return (Section.Rows * Section.Columns) < Section.NumEditorInstances;
-	}))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Attempting to launch too many servers for load balance configuration.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
-
-		if (Result == EAppReturnType::Yes)
-		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
-		}
-
-		return false;
-	}
-
 	if (SpatialGDKRuntimeSettings->bEnableMultiWorker)
 	{
-// 		for (const TPair<FName, FLayerInfo>& Layer : SpatialGDKRuntimeSettings->WorkerLayers)
-// 		{
-// 			if (!SpatialGDKRuntimeSettings->ServerWorkerTypes.Contains(Layer.Value.OwningWorkerType.WorkerTypeName))
-// 			{
-// 				const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("Actor Group '%s' has an invalid Owning Worker Type, please choose a valid worker type.\n\nDo you want to configure your project settings now?"), *Layer.Key.ToString())));
-// 
-// 				if (Result == EAppReturnType::Yes)
-// 				{
-// 					FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
-// 				}
-// 
-// 				return false;
-// 			}
-// 		}
+		if (!SpatialGDKRuntimeSettings->bEnableHandover)
+		{
+			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Property handover is disabled and a zoned deployment is specified.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
+
+			if (Result == EAppReturnType::Yes)
+			{
+				FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
+			}
+
+			return false;
+		}
+		// TODO(harkness): Put in a check that enough workers are configured.
 	}
 
 	return true;
