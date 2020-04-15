@@ -1017,6 +1017,15 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	{
 		// Force APlayerController::DestroyNetworkActorHandled to return false
 		PC->Player = nullptr;
+		
+		if (!NetDriver->IsServer())
+		{
+			// The client's PlayerController can be deleted while the client is still conneted to the deployment when the server 
+			// is no longer receiving heartbeats from the client. When this happens, we call BroadcastNetworkFailure to allow the client
+			// to handle heartbeating failure. Once the heartbeat component is removed with UNR-3006, this call can be removed.
+			GEngine->BroadcastNetworkFailure(NetDriver->GetWorld(), NetDriver, ENetworkFailure::ConnectionLost, 
+							 FString::Printf(TEXT("PlayerController %s deleted. Server believes we have been timed out."), *PC->GetName()));
+		}
 	}
 
 	// Workaround for camera loss on handover: prevent UnPossess() (non-authoritative destruction of pawn, while being authoritative over the controller)
@@ -1618,20 +1627,13 @@ void USpatialReceiver::HandleRPCLegacy(const Worker_ComponentUpdateOp& Op)
 		}
 	}
 
-	// Always process unpacked RPCs since some cannot be packed.
-	ProcessRPCEventField(EntityId, Op, RPCEndpointComponentId, /* bPacked */ false);
-
-	if (GetDefault<USpatialGDKSettings>()->bPackRPCs)
-	{
-		// Only process packed RPCs if packing is enabled
-		ProcessRPCEventField(EntityId, Op, RPCEndpointComponentId, /* bPacked */ true);
-	}
+	ProcessRPCEventField(EntityId, Op, RPCEndpointComponentId);
 }
 
-void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp& Op, Worker_ComponentId RPCEndpointComponentId, bool bPacked)
+void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp& Op, Worker_ComponentId RPCEndpointComponentId)
 {
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
-	const Schema_FieldId EventId = bPacked ? SpatialConstants::UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID : SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID;
+	const Schema_FieldId EventId = SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID;
 	uint32 EventCount = Schema_GetObjectCount(EventsObject, EventId);
 
 	for (uint32 i = 0; i < EventCount; i++)
@@ -1641,24 +1643,6 @@ void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Work
 		RPCPayload Payload(EventData);
 
 		FUnrealObjectRef ObjectRef(EntityId, Payload.Offset);
-
-		if (bPacked)
-		{
-			// When packing unreliable RPCs into one update, they also always go through the PlayerController.
-			// This means we need to retrieve the actual target Entity ID from the payload.
-			if (Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY ||
-				Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
-			{
-				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
-
-				// In a zoned multiworker scenario we might not have gained authority over the current entity in this bundle in time
-				// before processing so don't ApplyRPCs to an entity that we don't have authority over.
-				if (!StaticComponentView->HasAuthority(ObjectRef.Entity, RPCEndpointComponentId))
-				{
-					continue;
-				}
-			}
-		}
 
 		if (UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{

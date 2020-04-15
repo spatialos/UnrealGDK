@@ -164,8 +164,8 @@ Worker_ComponentData GetComponentDataOnEntityCreationFromRPCService(SpatialGDK::
 	Worker_ComponentId ExpectedUpdateComponentId = SpatialGDK::RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
 	TArray<Worker_ComponentData> ComponentDataArray = RPCService.GetRPCComponentsOnEntityCreation(EntityID);
 
-	const Worker_ComponentData* ComponentData = ComponentDataArray.FindByPredicate([ExpectedUpdateComponentId](const Worker_ComponentData& ComponentData) {
-		return ComponentData.component_id == ExpectedUpdateComponentId;
+	const Worker_ComponentData* ComponentData = ComponentDataArray.FindByPredicate([ExpectedUpdateComponentId](const Worker_ComponentData& CompData) {
+		return CompData.component_id == ExpectedUpdateComponentId;
 	});
 
 	if (ComponentData == nullptr)
@@ -481,8 +481,8 @@ RPC_SERVICE_TEST(GIVEN_receiving_an_rpc_WHEN_return_false_from_extract_callback_
 	TArray<SpatialGDK::SpatialRPCService::UpdateToSend> UpdateToSendArray = RPCService.GetRPCsAndAcksToSend();
 
 	bool bTestPassed = false;
-	SpatialGDK::SpatialRPCService::UpdateToSend* Update = UpdateToSendArray.FindByPredicate([](const SpatialGDK::SpatialRPCService::UpdateToSend& Update) {
-		return (Update.Update.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
+	SpatialGDK::SpatialRPCService::UpdateToSend* Update = UpdateToSendArray.FindByPredicate([](const SpatialGDK::SpatialRPCService::UpdateToSend& UpdateToSend) {
+		return (UpdateToSend.Update.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
 	});
 
 	if (Update != nullptr)

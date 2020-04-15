@@ -38,11 +38,11 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Entries in the SchemaDatabase are now sorted to improve efficiancy when browsing the asset in the editor. (DW-Sebastien)
 - Load Balancing Strategies and Locking Strategies can be set per-level using SpatialWorldSettings.
 - Batch Spatial Position Updates now defaults to false.
-- Dynamic interest overrides are disabled if the `bEnableClientResultTypes` flag is set to true. 
-- Added `bEnableNetCullDistanceInterest` (defaulted false) to enable client interest to be exposed through component tagging. This functionality has closer parity to native unreal client interest.
+- Added `bEnableNetCullDistanceInterest` (defaulted true) to enable client interest to be exposed through component tagging. This functionality has closer parity to native unreal client interest.
 - Added `bEnableNetCullDistanceFrequency` (defaulted false) to enable client interest queries to use frequency. This functionality is configured using `InterestRangeFrequencyPairs` and `FullFrequencyNetCullDistanceRatio`.
 - Added support for Android.
-- Introduced experimental feature flag `bEnableResultTypes`, defaulting false. Flip this to true for Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
+- Introduced feature flag `bEnableResultTypes` (defaulted true). This configures Interest queries to only include the set of components required to run. Should give bandwidth savings depending on your game. 
+- Dynamic interest overrides are disabled if the `bEnableResultTypes` flag is set to true. 
 - Moved Dev Auth settings from runtime settings to editor settings.
 - Added the option to use the development authentication flow using the command line.
 - Added a button to generate the Development Authentication Token inside the Unreal Editor. To use it, navigate to **Edit** > **Project Setting** > **SpatialOS GDK for Unreal** > **Editor Settings** > **Cloud Connection**.
@@ -58,14 +58,15 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - SpatialPingComponent can now also report average ping measurements over a specified number of recent pings. You can specify the number of measurements recorded in `PingMeasurementsWindowSize` and get the measurement data by calling `GetAverageData`. There is also a delegate `OnRecordPing` that will be broadcast whenever a new ping measurement is recorded.
 - The Spatial Output Log window now displays deployment startup errors.
 - Added `bEnableClientQueriesOnServer` (defaulted false) which makes the same queries on the server as on clients if the unreal load balancer is enabled. Enable this to avoid clients seeing entities the server does not if the server's interest query has not been configured correctly.
-- The new Net Cull Distance client interest model is now enabled by default.
 - Added log warning when AddPendingRPC fails due to ControllerChannelNotListening.
 - When running with Offloading enabled, Actors will have local authority (ROLE_Authority) on servers for longer periods of time to allow more native Unreal functionality to work without problems.
 - When running with Offloading enabled, and trying to spawn Actors on a server which will not be the Actor Group owner for them, an error is logged and the Actor is deleted.
 - Use the SpatialOS runtime version 14.5.0 by default.
-- Config setting bPreventAutoConnectWithLocator has been renamed to bPreventClientCloudDeploymentAutoConnect. It has been moved to GDK Setting. If using this feature please update enable the setting in GDK Settings.
+- Config setting `bPreventAutoConnectWithLocator` has been renamed to `bPreventClientCloudDeploymentAutoConnect`. It has been moved to GDK Setting. If using this feature please update enable the setting in GDK Settings.
 - USpatialMetrics::WorkerMetricsRecieved was made static.
 - Added the ability to connect to a local deployment when launching on a device by checking "Connect to a local deployment" and specifying the local IP of your computer in the Launch dropdown.
+- The Spatial GDK now default enables RPC Ring Buffers, and the legacy RPC mode will be removed in a subsequent release.
+- The `bPackRPCs` property has been removed, and the flag `--OverrideRPCPacking` has been removed.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
