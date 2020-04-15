@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "Utils/SpatialActorGroupManager.h"
+#include "Utils/SpatialLayerManager.h"
 
 #include "SpatialGameInstance.generated.h"
 
 class USpatialLatencyTracer;
 class USpatialConnectionManager;
 class UGlobalStateManager;
+class ULayeredLBStrategy;
 class USpatialStaticComponentView;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
@@ -62,7 +63,10 @@ public:
 	void SetFirstConnectionToSpatialOSAttempted() { bFirstConnectionToSpatialOSAttempted = true; };
 	bool GetFirstConnectionToSpatialOSAttempted() const { return bFirstConnectionToSpatialOSAttempted; };
 
-	TUniquePtr<SpatialActorGroupManager> ActorGroupManager;
+	UPROPERTY()
+	ULayeredLBStrategy* LayeredLoadBalanceStrategy;
+
+	TUniquePtr<SpatialLayerManager> LayerManager;
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.

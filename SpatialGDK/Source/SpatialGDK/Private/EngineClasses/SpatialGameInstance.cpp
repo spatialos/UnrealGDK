@@ -17,6 +17,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
@@ -202,10 +203,10 @@ void USpatialGameInstance::Init()
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
 	FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
 
-	ActorGroupManager = MakeUnique<SpatialActorGroupManager>();
-	ActorGroupManager->Init();
+	LayeredLoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
 
-	checkf(!(GetDefault<USpatialGDKSettings>()->bEnableMultiWorker && USpatialStatics::IsSpatialOffloadingEnabled()), TEXT("Offloading and the Unreal Load Balancer are enabled at the same time, this is currently not supported. Please change your project settings."));
+	LayerManager = MakeUnique<SpatialLayerManager>();
+	LayerManager->Init();
 }
 
 void USpatialGameInstance::HandleOnConnected()
@@ -256,7 +257,7 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 
 		if (USpatialStatics::IsSpatialOffloadingEnabled())
 		{
-			if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
+			if (!USpatialStatics::IsLayerOwnerForActor(Actor))
 			{
 				if (!Actor->bNetLoadOnNonAuthServer)
 				{

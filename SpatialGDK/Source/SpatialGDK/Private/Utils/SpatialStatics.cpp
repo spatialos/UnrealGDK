@@ -12,7 +12,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/InspectionColors.h"
-#include "Utils/SpatialActorGroupManager.h"
+#include "Utils/SpatialLayerManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
 
@@ -21,14 +21,14 @@ bool USpatialStatics::IsSpatialNetworkingEnabled()
     return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
-SpatialActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* WorldContext)
+SpatialLayerManager* USpatialStatics::GetLayerManager(const UObject* WorldContext)
 {
 	if (const UWorld* World = WorldContext->GetWorld())
 	{
 		if (const USpatialGameInstance* SpatialGameInstance = Cast<USpatialGameInstance>(World->GetGameInstance()))
 		{
-			check(SpatialGameInstance->ActorGroupManager.IsValid());
-			return SpatialGameInstance->ActorGroupManager.Get();
+			check(SpatialGameInstance->LayerManager.IsValid());
+			return SpatialGameInstance->LayerManager.Get();
 		}
 	}
 	return nullptr;
@@ -83,7 +83,7 @@ bool USpatialStatics::IsSpatialOffloadingEnabled()
     return IsSpatialNetworkingEnabled() && GetDefault<USpatialGDKSettings>()->bEnableMultiWorker;
 }
 
-bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
+bool USpatialStatics::IsLayerOwnerForActor(const AActor* Actor)
 {
 	if (Actor == nullptr)
 	{
@@ -96,14 +96,14 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 		EffectiveActor = EffectiveActor->GetOwner();
 	}
 
-	return IsActorGroupOwnerForClass(EffectiveActor, EffectiveActor->GetClass());
+	return IsLayerOwnerForClass(EffectiveActor, EffectiveActor->GetClass());
 }
 
-bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
+bool USpatialStatics::IsLayerOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
 {
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	if (SpatialLayerManager* LayerManager = GetLayerManager(WorldContextObject))
 	{
-		const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
+		const FName ClassWorkerType = LayerManager->GetWorkerTypeForClass(ActorClass);
 		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
 		return ClassWorkerType == CurrentWorkerType;
 	}
@@ -116,13 +116,13 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 	return false;
 }
 
-bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup)
+bool USpatialStatics::IsLayerOwner(const UObject* WorldContextObject, const FName Layer)
 {
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	if (SpatialLayerManager* LayerManager = GetLayerManager(WorldContextObject))
 	{
-		const FName ActorGroupWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(ActorGroup);
+		const FName LayerWorkerType = LayerManager->GetWorkerTypeForLayer(Layer);
 		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
-		return ActorGroupWorkerType == CurrentWorkerType;
+		return LayerWorkerType == CurrentWorkerType;
 	}
 
 	if (const UWorld* World = WorldContextObject->GetWorld())
@@ -133,9 +133,9 @@ bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const
 	return false;
 }
 
-FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
+FName USpatialStatics::GetLayerForActor(const AActor* Actor)
 {
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(Actor))
+	if (SpatialLayerManager* LayerManager = GetLayerManager(Actor))
 	{
 		const AActor* EffectiveActor = Actor;
 		while (EffectiveActor->bUseNetOwnerActorGroup && EffectiveActor->GetOwner() != nullptr)
@@ -143,20 +143,20 @@ FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
 			EffectiveActor = EffectiveActor->GetOwner();
 		}
 
-		return ActorGroupManager->GetActorGroupForClass(EffectiveActor->GetClass());
+		return LayerManager->GetLayerForClass(EffectiveActor->GetClass());
 	}
 
-	return SpatialConstants::DefaultActorGroup;
+	return SpatialConstants::DefaultLayer;
 }
 
-FName USpatialStatics::GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
+FName USpatialStatics::GetLayerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
 {
-	if (SpatialActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	if (SpatialLayerManager* LayerManager = GetLayerManager(WorldContextObject))
 	{
-		return ActorGroupManager->GetActorGroupForClass(ActorClass);
+		return LayerManager->GetLayerForClass(ActorClass);
 	}
 
-	return SpatialConstants::DefaultActorGroup;
+	return SpatialConstants::DefaultLayer;
 }
 
 void USpatialStatics::PrintStringSpatial(UObject* WorldContextObject, const FString& InString /*= FString(TEXT("Hello"))*/, bool bPrintToScreen /*= true*/, FLinearColor TextColor /*= FLinearColor(0.0, 0.66, 1.0)*/, float Duration /*= 2.f*/)

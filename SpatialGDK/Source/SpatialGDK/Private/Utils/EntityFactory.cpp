@@ -24,7 +24,6 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/InspectionColors.h"
 #include "Utils/InterestFactory.h"
-#include "Utils/SpatialActorGroupManager.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 
@@ -35,11 +34,10 @@ DEFINE_LOG_CATEGORY(LogEntityFactory);
 namespace SpatialGDK
 {
 
-EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialActorGroupManager* InActorGroupManager, SpatialRPCService* InRPCService)
+EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService)
 	: NetDriver(InNetDriver)
 	, PackageMap(InPackageMap)
 	, ClassInfoManager(InClassInfoManager)
-	, ActorGroupManager(InActorGroupManager)
 	, RPCService(InRPCService)
 { }
 
@@ -59,33 +57,25 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { OwningClientAttributeSet };
 	WorkerRequirementSet OwningClientOnlyRequirementSet = { OwningClientAttributeSet };
 
-	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->ServerWorkerTypes)
-	{
-		WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
-		AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
-		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
-		AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
-	}
+	const FName& WorkerType = GetDefault<USpatialGDKSettings>()->DefaultWorkerType.WorkerTypeName;
+	WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
+
+	AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
+	AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
+	AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
-	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-
-	const FName AclAuthoritativeWorkerType = SpatialSettings->bEnableMultiWorker ?
-		ActorGroupManager->GetWorkerTypeForActorGroup(USpatialStatics::GetActorGroupForActor(Actor)) :
-		Info.WorkerType;
-
+	const FName AclAuthoritativeWorkerType = SpatialConstants::DefaultServerWorkerType;
 	WorkerAttributeSet WorkerAttributeOrSpecificWorker{ AclAuthoritativeWorkerType.ToString() };
+
 	VirtualWorkerId IntendedVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 
 	// Add Load Balancer Attribute if we are using the load balancer.
 	if (SpatialSettings->bEnableMultiWorker)
 	{
-		AnyServerRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->DefaultWorkerType.WorkerTypeName));
-		AnyServerOrClientRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->DefaultWorkerType.WorkerTypeName));
-		AnyServerOrOwningClientRequirementSet.Add(SpatialConstants::GetLoadBalancerAttributeSet(SpatialSettings->DefaultWorkerType.WorkerTypeName));
-
 		const UAbstractLBStrategy* LBStrategy = NetDriver->LoadBalanceStrategy;
 		check(LBStrategy != nullptr);
 		IntendedVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Actor);
@@ -440,13 +430,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	WorkerRequirementSet AnyServerRequirementSet;
 	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
 
-	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->ServerWorkerTypes)
-	{
-		WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
+	const FName& WorkerType = GetDefault<USpatialGDKSettings>()->DefaultWorkerType.WorkerTypeName;
+	WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
 
-		AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
-		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
-	}
+	AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
+	AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
+	// AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
 
 	// Add Zoning Attribute if we are using the load balancer.
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();

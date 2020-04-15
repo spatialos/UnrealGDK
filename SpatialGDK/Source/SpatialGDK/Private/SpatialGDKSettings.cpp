@@ -60,9 +60,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, ServicesRegion(EServicesRegion::Default)
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
 	, bEnableMultiWorker(false)
-	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
+	, MaxWorkersToLaunch(1)
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
-	, bEnableMultiWorker(false)
 	, bRunSpatialWorkerConnectionOnGameThread(false)
 	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
@@ -107,7 +106,7 @@ void USpatialGDKSettings::PostInitProperties()
 
 #if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-	PlayInSettings->bEnableMultiWorker = bEnableMultiWorker;
+	// PlayInSettings->bEnableMultiWorker = bEnableMultiWorker;
 	PlayInSettings->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
 #endif
 }
@@ -122,7 +121,7 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bEnableMultiWorker))
 	{
-		GetMutableDefault<ULevelEditorPlaySettings>()->bEnableMultiWorker = bEnableMultiWorker;
+		// GetMutableDefault<ULevelEditorPlaySettings>()->bEnableMultiWorker = bEnableMultiWorker;
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultWorkerType))
 	{

@@ -611,12 +611,12 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			if (FillWorkerLaunchConfigFromWorldSettings(*EditorWorld, WorkerLaunch, WorldDimensions))
 			{
 				LaunchConfigDescription.World.Dimensions = WorldDimensions;
-				LaunchConfigDescription.ServerWorkers.Empty(SpatialGDKSettings->ServerWorkerTypes.Num());
+				LaunchConfigDescription.ServerWorkers.Empty(SpatialGDKSettings->WorkerLayers.Num());
 
-				for (auto WorkerType : SpatialGDKSettings->ServerWorkerTypes)
+				for (auto Layer : SpatialGDKSettings->WorkerLayers)
 				{
 					LaunchConfigDescription.ServerWorkers.Add(WorkerLaunch);
-					LaunchConfigDescription.ServerWorkers.Last().WorkerTypeName = WorkerType;
+					LaunchConfigDescription.ServerWorkers.Last().WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 				}
 			}
 		}

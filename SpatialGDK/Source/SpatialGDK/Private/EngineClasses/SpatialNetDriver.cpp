@@ -40,7 +40,7 @@
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/OpUtils.h"
-#include "Utils/SpatialActorGroupManager.h"
+#include "Utils/SpatialLayerManager.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
@@ -135,7 +135,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
-	ActorGroupManager = GetGameInstance()->ActorGroupManager.Get();
+	LayerManager = GetGameInstance()->LayerManager.Get();
 
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
 	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
@@ -145,7 +145,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 
 	// If it fails to load, don't attempt to connect to spatial.
-	if (!ClassInfoManager->TryInit(this, ActorGroupManager))
+	if (!ClassInfoManager->TryInit(this))
 	{
 		Error = TEXT("Failed to load Spatial SchemaDatabase! Make sure that schema has been generated for your project");
 		return false;
@@ -615,7 +615,7 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 		Actor->GetLocalRole() != ROLE_Authority ||
 		Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) ||
 		!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) ||
-		USpatialStatics::IsActorGroupOwnerForActor(Actor))
+		USpatialStatics::IsLayerOwnerForActor(Actor))
 	{
 		// We only want to delete actors which are replicated and we somehow gain local authority over, while not the actor group owner.
 		return;
@@ -623,7 +623,7 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 
 	const FString WorkerType = GetGameInstance()->GetSpatialWorkerType().ToString();
 	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker %s spawned replicated actor %s (owner: %s) but is not actor group owner for actor group %s. The actor will be destroyed in 0.01s"),
-		*WorkerType, *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), *USpatialStatics::GetActorGroupForActor(Actor).ToString());
+		*WorkerType, *GetNameSafe(Actor), *GetNameSafe(Actor->GetOwner()), *USpatialStatics::GetLayerForActor(Actor).ToString());
 	// We tear off, because otherwise SetLifeSpan fails, we SetLifeSpan because we are just about to spawn the Actor and Unreal would complain if we destroyed it.
 	Actor->TearOff();
 	Actor->SetLifeSpan(0.01f);
@@ -845,7 +845,7 @@ void USpatialNetDriver::BeginDestroy()
 	}
 #endif
 
-	ActorGroupManager = nullptr;
+	LayerManager = nullptr;
 }
 
 void USpatialNetDriver::PostInitProperties()

@@ -13,7 +13,7 @@
 #include "SpatialStatics.generated.h"
 
 class AActor;
-class SpatialActorGroupManager;
+class SpatialLayerManager;
 
 // This log category will always log to the spatial runtime and thus also be printed in the SpatialOutput.
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatial, Log, All);
@@ -42,33 +42,33 @@ public:
 	 * Equivalent to World->GetNetMode() != NM_Client when Spatial Networking is disabled.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading")
-	static bool IsActorGroupOwnerForActor(const AActor* Actor);
+	static bool IsLayerOwnerForActor(const AActor* Actor);
 
 	/**
 	 * Returns true if the current Worker Type owns the Actor Group this Actor Class belongs to.
 	 * Equivalent to World->GetNetMode() != NM_Client when Spatial Networking is disabled.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading", meta = (WorldContext = "WorldContextObject"))
-	static bool IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass);
+	static bool IsLayerOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass);
 
 	/**
 	 * Returns true if the current Worker Type owns this Actor Group.
 	 * Equivalent to World->GetNetMode() != NM_Client when Spatial Networking is disabled.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading", meta = (WorldContext = "WorldContextObject"))
-	static bool IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup);
+	static bool IsLayerOwner(const UObject* WorldContextObject, const FName Layer);
 
 	/**
-	 * Returns the ActorGroup this Actor belongs to.
+	 * Returns the Layer this Actor belongs to.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading")
-	static FName GetActorGroupForActor(const AActor* Actor);
+	static FName GetLayerForActor(const AActor* Actor);
 
 	/**
-	 * Returns the ActorGroup this Actor Class belongs to.
+	 * Returns the Layer this Actor Class belongs to.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading", meta = (WorldContext = "WorldContextObject"))
-	static FName GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass);
+	static FName GetLayerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass);
 
 	/**
 	 * Functionally the same as the native Unreal PrintString but also logs to the spatial runtime.
@@ -129,6 +129,6 @@ public:
 
 private:
 
-	static SpatialActorGroupManager* GetActorGroupManager(const UObject* WorldContext);
+	static SpatialLayerManager* GetLayerManager(const UObject* WorldContext);
 	static FName GetCurrentWorkerType(const UObject* WorldContext);
 };

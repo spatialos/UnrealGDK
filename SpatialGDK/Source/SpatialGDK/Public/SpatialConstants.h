@@ -230,7 +230,7 @@ const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 const float FORWARD_PLAYER_SPAWN_COMMAND_WAIT_SECONDS = 0.2f;
 
-const FName DefaultActorGroup = FName(TEXT("Default"));
+const FName DefaultLayer = FName(TEXT("Default"));
 
 const VirtualWorkerId INVALID_VIRTUAL_WORKER_ID = 0;
 const ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;

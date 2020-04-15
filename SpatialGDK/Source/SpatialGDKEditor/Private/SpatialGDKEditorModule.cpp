@@ -10,7 +10,6 @@
 #include "ISettingsContainer.h"
 #include "ISettingsSection.h"
 #include "PropertyEditor/Public/PropertyEditorModule.h"
-#include "WorkerTypeCustomization.h"
 
 #include "EditorExtension/GridLBStrategyEditorExtension.h"
 
@@ -70,7 +69,6 @@ void FSpatialGDKEditorModule::RegisterSettings()
 	}
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	PropertyModule.RegisterCustomPropertyTypeLayout("WorkerType", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerTypeCustomization::MakeInstance));
 	PropertyModule.RegisterCustomClassLayout(USpatialGDKEditorSettings::StaticClass()->GetFName(), FOnGetDetailCustomizationInstance::CreateStatic(&FSpatialGDKEditorLayoutDetails::MakeInstance));
 }
 
