@@ -157,6 +157,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	}
 
 	// Remove all RemoveComponentOps that have already been received and have the same entityId and componentId as the AddComponentOp.
+	// TODO: This can probably be removed when spatial view is added.
 	RemoveRedundantRemoveComponentOps(Op);
 
 	switch (Op.data.component_id)
