@@ -90,9 +90,9 @@ bool FSpatialGDKPackageAssembly::CanBuild() const
 	return CurrentAssemblyTarget == EPackageAssemblyTarget::NONE;
 }
 
-void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 Result)
+void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 TaskResult)
 {
-	if (Result == 0)
+	if (TaskResult == 0)
 	{
 		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 		switch (CurrentAssemblyTarget)
@@ -133,7 +133,7 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 Result)
 			{
 				CurrentAssemblyTarget = EPackageAssemblyTarget::NONE;
 				FString NotificationMessage = FString::Printf(TEXT("Assembly successfully uploaded to project: %s"), *FSpatialGDKServicesModule::GetProjectName());
-				AsyncTask(ENamedThreads::GameThread, [this]() { this->ShowTaskEndedNotification(TEXT("Assembly Failed"), SNotificationItem::CS_Success);	});
+				AsyncTask(ENamedThreads::GameThread, [this]() { this->ShowTaskEndedNotification(TEXT("Assembly Failed"), SNotificationItem::CS_Success); });
 			}
 			break;
 		default:
@@ -148,9 +148,9 @@ void FSpatialGDKPackageAssembly::OnTaskCompleted(int32 Result)
 	}
 }
 
-void FSpatialGDKPackageAssembly::OnTaskOutput(FString Output)
+void FSpatialGDKPackageAssembly::OnTaskOutput(FString Message)
 {
-	UE_LOG(LogSpatialGDKEditorPackageAssembly, Display, TEXT("%s"), *Output);
+	UE_LOG(LogSpatialGDKEditorPackageAssembly, Display, TEXT("%s"), *Message);
 }
 
 void FSpatialGDKPackageAssembly::OnTaskCanceled()
@@ -172,7 +172,7 @@ FSpatialGDKPackageAssembly::AssemblyDetails::AssemblyDetails(const FString& Name
 
 }
 
-void FSpatialGDKPackageAssembly::AssemblyDetails::Upload(FSpatialGDKPackageAssembly &PackageAssembly)
+void FSpatialGDKPackageAssembly::AssemblyDetails::Upload(FSpatialGDKPackageAssembly& PackageAssembly)
 {
 	PackageAssembly.UploadAssembly(AssemblyName, bForce);
 }

@@ -43,12 +43,12 @@ private:
 	TUniquePtr<AssemblyDetails> AssemblyDetailsPtr;
 
 	void BuildAssembly(const FString& ProjectName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs);
-	void UploadAssembly(const FString& AssemblyName, bool Force);
+	void UploadAssembly(const FString& AssemblyName, bool bForce);
 
 	void ShowTaskStartedNotification(const FString& NotificationText);
 	void ShowTaskEndedNotification(const FString& NotificationText, SNotificationItem::ECompletionState CompletionState);
 	void HandleCancelButtonClicked();
-	void OnTaskCompleted(int32);
-	void OnTaskOutput(FString);
+	void OnTaskCompleted(int32 TaskResult);
+	void OnTaskOutput(FString Message);
 	void OnTaskCanceled();
 };
