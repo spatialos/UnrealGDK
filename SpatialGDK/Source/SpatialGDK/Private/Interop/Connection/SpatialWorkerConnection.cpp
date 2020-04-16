@@ -16,7 +16,8 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 	CacheWorkerAttributes();
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	ThreadWaitCondition.Emplace(SpatialGDKSettings->bWorkerFlushAfterRPC, OpsUpdateInterval);
+	bool bCanWake = SpatialGDKSettings->bWorkerFlushAfterRPC;
+	ThreadWaitCondition.Emplace(bCanWake, OpsUpdateInterval);
 	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)  
 	{
 		if (OpsProcessingThread == nullptr)
