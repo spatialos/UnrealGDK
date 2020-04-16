@@ -31,10 +31,10 @@ FString UnrealNameToSchemaName(const FString& UnrealName, bool bWarnAboutRename 
 	FString Sanitized = AlphanumericSanitization(UnrealName);
 	if (Sanitized.IsValidIndex(0) && FChar::IsDigit(Sanitized[0]))
 	{
-		FString Result = "ZZ" + Sanitized;
+		FString Result = TEXT("ZZ") + Sanitized;
 		if (bWarnAboutRename)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s starts with a digit (potentially after removing non-alphanumeric characters), so its schema name was changed to %s instead."), *UnrealName, *Result);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s starts with a digit (potentially after removing non-alphanumeric characters), so its schema name was changed to %s instead. To remove this warning, rename your asset."), *UnrealName, *Result);
 		}
 		return Result;
 	}
