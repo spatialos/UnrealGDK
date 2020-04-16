@@ -6,9 +6,6 @@
 
 #include "EntityComponentTestUtils.h"
 
-// TODO(Alex): remove std include
-#include <vector>
-
 #define ENTITYCOMPONENTUPDATERECORD_TEST(TestName) \
 	GDK_TEST(Core, EntityComponentUpdateRecord, TestName)
 
@@ -19,10 +16,10 @@ namespace
 	// TODO(Alex): templatize?
 	// TODO(Alex): add is_permutation?
 	bool CompareUpdates(const TArray<EntityComponentUpdate>& lhs,
-		const std::vector<EntityComponentUpdate>& rhs)
+		const TArray<EntityComponentUpdate>& rhs)
 	{
 		// TODO: invert if
-		if (lhs.Num() == rhs.size())
+		if (lhs.Num() == rhs.Num())
 		{
 			for (int i = 0; i < lhs.Num(); i++)
 			{
@@ -37,9 +34,9 @@ namespace
 	}
 
 	bool CompareCompleteUpdates(const TArray<EntityComponentCompleteUpdate>& lhs,
-		const std::vector<EntityComponentCompleteUpdate>& rhs)
+		const TArray<EntityComponentCompleteUpdate>& rhs)
 	{
-		if (lhs.Num() == rhs.size())
+		if (lhs.Num() == rhs.Num())
 		{
 			for (int i = 0; i < lhs.Num(); i++)
 			{
@@ -53,18 +50,6 @@ namespace
 		return false;
 	}
 
-	//bool CompareEvents(const TArray<EntityComponentUpdate>& lhs,
-	//	const std::vector<EntityComponentUpdate>& rhs)
-	//{
-	//	return true;
-	//}
-
-	//bool CompareEvents(const TArray<EntityComponentCompleteUpdate>& lhs,
-	//	const std::vector<EntityComponentCompleteUpdate>& rhs)
-	//{
-	//	return true;
-	//}
-
 }  // anonymous namespace
 
 ENTITYCOMPONENTUPDATERECORD_TEST(CanAddUpdate)
@@ -75,17 +60,16 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanAddUpdate)
 
   auto testUpdate = CreateTestComponentUpdate(kTestComponentId, kTestValue);
 
-  const auto expectedUpdates =
-      CreateVector<EntityComponentUpdate>(EntityComponentUpdate{kTestEntityId, testUpdate.DeepCopy()});
-  const std::vector<EntityComponentCompleteUpdate> expectedCompleteUpdates = {};
-  const std::vector<EntityComponentUpdate> expectedEvents = {};
+  TArray<EntityComponentUpdate> expectedUpdates;
+  expectedUpdates.Push(EntityComponentUpdate{ kTestEntityId, testUpdate.DeepCopy() });
+  const TArray<EntityComponentCompleteUpdate> expectedCompleteUpdates = {};
+  const TArray<EntityComponentUpdate> expectedEvents = {};
 
   EntityComponentUpdateRecord storage;
-  storage.AddComponentUpdate(kTestEntityId, std::move(testUpdate));
+  storage.AddComponentUpdate(kTestEntityId, MoveTemp(testUpdate));
 
   TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
   TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
-  //TestTrue(TEXT(""), CompareEvents(storage.GetEvents(), expectedEvents));
 
   return true;
 }
@@ -100,18 +84,17 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanMergeUpdate)
   auto firstUpdate = CreateTestComponentUpdate(kTestComponentId, kTestValue);
   auto secondUpdate = CreateTestComponentUpdate(kTestComponentId, kTestUpdateValue);
 
-  const auto expectedUpdates = CreateVector<EntityComponentUpdate>(
-      EntityComponentUpdate{kTestEntityId, secondUpdate.DeepCopy()});
-  const std::vector<EntityComponentCompleteUpdate> expectedCompleteUpdates = {};
-  const std::vector<EntityComponentUpdate> expectedEvents = {};
+  TArray<EntityComponentUpdate> expectedUpdates;
+  expectedUpdates.Push(EntityComponentUpdate{ kTestEntityId, secondUpdate.DeepCopy() });
+  const TArray<EntityComponentCompleteUpdate> expectedCompleteUpdates = {};
+  const TArray<EntityComponentUpdate> expectedEvents = {};
 
   EntityComponentUpdateRecord storage;
-  storage.AddComponentUpdate(kTestEntityId, std::move(firstUpdate));
-  storage.AddComponentUpdate(kTestEntityId, std::move(secondUpdate));
+  storage.AddComponentUpdate(kTestEntityId, MoveTemp(firstUpdate));
+  storage.AddComponentUpdate(kTestEntityId, MoveTemp(secondUpdate));
 
   TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
   TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
-  //TestTrue(TEXT(""), CompareEvents(storage.GetEvents(), expectedEvents));
 
   return true;
 }
@@ -124,16 +107,16 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanAddCompleteUpdate)
 
   auto data = CreateTestComponentData(kTestComponentId, kTestValue);
 
-  const auto expectedCompleteUpdates = CreateVector<EntityComponentCompleteUpdate>(EntityComponentCompleteUpdate{ kTestEntityId, data.DeepCopy(), ComponentUpdate(kTestComponentId) });
-  const std::vector<EntityComponentUpdate> expectedUpdates = {};
-  const std::vector<EntityComponentUpdate> expectedEvents = {};
+  TArray<EntityComponentCompleteUpdate> expectedCompleteUpdates;
+  expectedCompleteUpdates.Push(EntityComponentCompleteUpdate{ kTestEntityId, data.DeepCopy(), ComponentUpdate(kTestComponentId) });
+  const TArray<EntityComponentUpdate> expectedUpdates = {};
+  const TArray<EntityComponentUpdate> expectedEvents = {};
 
   EntityComponentUpdateRecord storage;
-  storage.AddComponentDataAsUpdate(kTestEntityId, std::move(data));
+  storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(data));
 
   TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
   TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
-  //TestTrue(TEXT(""), CompareEvents(storage.GetEvents(), expectedEvents));
 
   return true;
 }
@@ -147,22 +130,21 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanMergeCompleteUpdate)
   const double kUpdateValue = 7333;
 
   auto update = CreateTestComponentUpdate(kTestComponentId, kTestValue);
-  //AddTestEvent(&update, kEventValue);
+  AddTestEvent(&update, kEventValue);
   auto completeUpdate = CreateTestComponentData(kTestComponentId, kUpdateValue);
 
-  std::vector<EntityComponentUpdate> expectedUpdates = {};
-  const auto expectedCompleteUpdates =
-	  CreateVector<EntityComponentCompleteUpdate>(EntityComponentCompleteUpdate{ kTestEntityId, completeUpdate.DeepCopy(), update.DeepCopy() });
-  const auto expectedEvents =
-      CreateVector<EntityComponentUpdate>(EntityComponentUpdate{kTestEntityId, update.DeepCopy()});
+  const TArray<EntityComponentUpdate> expectedUpdates = {};
+  TArray<EntityComponentCompleteUpdate> expectedCompleteUpdates;
+  expectedCompleteUpdates.Push({ kTestEntityId, completeUpdate.DeepCopy(), update.DeepCopy() });
+  TArray<EntityComponentUpdate> expectedEvents;
+  expectedEvents.Push(EntityComponentUpdate{ kTestEntityId, update.DeepCopy() });
 
   EntityComponentUpdateRecord storage;
-  storage.AddComponentUpdate(kTestEntityId, std::move(update));
-  storage.AddComponentDataAsUpdate(kTestEntityId, std::move(completeUpdate));
+  storage.AddComponentUpdate(kTestEntityId, MoveTemp(update));
+  storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(completeUpdate));
 
   TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
   TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
-  //TestTrue(TEXT(""), CompareEvents(storage.GetEvents(), expectedEvents));
 
   return true;
 }
@@ -184,18 +166,17 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanMergeOntoACompleteUpdate)
   auto expectedEvent = CreateTestComponentEvent(kTestComponentId, kEventValue);
   AddTestEvent(&expectedEvent, kEventValue);
 
-  std::vector<EntityComponentUpdate> expectedUpdates{};
-  const auto expectedCompleteUpdates = CreateVector<EntityComponentCompleteUpdate>(
-	  EntityComponentCompleteUpdate{ kTestEntityId, std::move(expectedCompleteUpdate), std::move(expectedEvent) });
+  const TArray<EntityComponentUpdate> expectedUpdates{};
+  TArray<EntityComponentCompleteUpdate> expectedCompleteUpdates;
+  expectedCompleteUpdates.Push(EntityComponentCompleteUpdate{ kTestEntityId, MoveTemp(expectedCompleteUpdate), MoveTemp(expectedEvent) });
 
   EntityComponentUpdateRecord storage;
-  storage.AddComponentDataAsUpdate(kTestEntityId, std::move(completeUpdate));
-  storage.AddComponentUpdate(kTestEntityId, std::move(update));
-  storage.AddComponentUpdate(kTestEntityId, std::move(additionalEvent));
+  storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(completeUpdate));
+  storage.AddComponentUpdate(kTestEntityId, MoveTemp(update));
+  storage.AddComponentUpdate(kTestEntityId, MoveTemp(additionalEvent));
 
   TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
   TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
-  //TestTrue(TEXT(""), CompareEvents(storage.GetEvents(), expectedEvents));
 
   return true;
 }
@@ -214,21 +195,20 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanRemoveComponentWithCompleteUpdate)
 
   auto updateToKeep = CreateTestComponentUpdate(kComponentIdToKeep, kUpdateValue);
 
-  const auto expectedUpdates = CreateVector<EntityComponentUpdate>(
-      EntityComponentUpdate{kTestEntityId, updateToKeep.DeepCopy()});
-  std::vector<EntityComponentCompleteUpdate> expectedCompleteUpdates = {};
-  std::vector<EntityComponentUpdate> expectedEvents = {};
+  TArray<EntityComponentUpdate> expectedUpdates;
+  expectedUpdates.Push(EntityComponentUpdate{ kTestEntityId, updateToKeep.DeepCopy() });
+  const TArray<EntityComponentCompleteUpdate> expectedCompleteUpdates = {};
+  const TArray<EntityComponentUpdate> expectedEvents = {};
 
   EntityComponentUpdateRecord storage;
-  storage.AddComponentDataAsUpdate(kTestEntityId, std::move(completeUpdateToRemove));
-  storage.AddComponentUpdate(kTestEntityId, std::move(eventToRemove));
-  storage.AddComponentUpdate(kTestEntityId, std::move(updateToKeep));
+  storage.AddComponentDataAsUpdate(kTestEntityId, MoveTemp(completeUpdateToRemove));
+  storage.AddComponentUpdate(kTestEntityId, MoveTemp(eventToRemove));
+  storage.AddComponentUpdate(kTestEntityId, MoveTemp(updateToKeep));
 
   storage.RemoveComponent(kTestEntityId, kComponentIdToRemove);
 
   TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
   TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
-  //TestTrue(TEXT(""), CompareEvents(storage.GetEvents(), expectedEvents));
 
   return true;
 }
@@ -241,18 +221,17 @@ ENTITYCOMPONENTUPDATERECORD_TEST(CanRemoveComponent_Update)
 
   auto update = CreateTestComponentUpdate(kComponentIdToRemove, kUpdateValue);
 
-  std::vector<EntityComponentUpdate> expectedUpdates = {};
-  std::vector<EntityComponentCompleteUpdate> expectedCompleteUpdates = {};
-  std::vector<EntityComponentUpdate> expectedEvents = {};
+  const TArray<EntityComponentUpdate> expectedUpdates = {};
+  const TArray<EntityComponentCompleteUpdate> expectedCompleteUpdates = {};
+  const TArray<EntityComponentUpdate> expectedEvents = {};
 
   EntityComponentUpdateRecord storage;
-  storage.AddComponentUpdate(kTestEntityId, std::move(update));
+  storage.AddComponentUpdate(kTestEntityId, MoveTemp(update));
 
   storage.RemoveComponent(kTestEntityId, kComponentIdToRemove);
 
   TestTrue(TEXT(""), CompareUpdates(storage.GetUpdates(), expectedUpdates));
   TestTrue(TEXT(""), CompareCompleteUpdates(storage.GetCompleteUpdates(), expectedCompleteUpdates));
-  //TestTrue(TEXT(""), CompareEvents(storage.GetEvents(), expectedEvents));
 
   return true;
 }
