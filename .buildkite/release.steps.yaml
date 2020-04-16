@@ -30,9 +30,10 @@ steps:
         
       - select: "Unreal Engine version(s)"
         key: "engine-version"
-        hint: "The Unreal Engine versions you want to create a release candidate for, e.g. - 4.24-SpatialOSUnrealGDK"
+        hint: "The Unreal Engine version(s) you want to branch a release candidate from, e.g. - 4.24-SpatialOSUnrealGDK"
         required: true
         multiple: true
+        # When multiple options are selected, they are delimited in the meta-data field by a line break (\n). prepare=release.sh then turns this into a list of comma seperated values.
         # TODO: Note in the WIP Maintainers Guide (UNR-2648) that you have to update these defaults and optione when you introduce a new engine branch. Even better, have a regex pull these branches by recognising the format.
         default:
           - "4.24-SpatialOSUnrealGDK"
