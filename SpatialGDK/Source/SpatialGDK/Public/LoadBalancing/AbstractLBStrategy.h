@@ -49,7 +49,7 @@ public:
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const PURE_VIRTUAL(UAbstractLBStrategy::GetWorkerInterestQueryConstraint, return {};)
 
 	/** True if this load balancing strategy requires handover data to be transmitted. */
-	virtual bool RequiresHandoverData() const { return false; }
+	virtual bool RequiresHandoverData() const PURE_VIRTUAL(UAbstractLBStrategy::RequiresHandover, return false;)
 
 	/**
 	* Get a logical worker entity position for this strategy. For example, the centre of a grid square in a grid-based strategy. Optional- otherwise returns the origin.
