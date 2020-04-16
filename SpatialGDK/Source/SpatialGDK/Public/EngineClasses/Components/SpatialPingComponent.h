@@ -23,6 +23,10 @@ struct FSpatialPingAverageData
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
 	float LastMeasurementsWindowMax;
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
+	float LastMeasurementsWindow50thPercentile;
+	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
+	float LastMeasurementsWindow90thPercentile;
+	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
 	int WindowSize;
 
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)

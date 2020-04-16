@@ -14,20 +14,11 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-#include <condition_variable>
-#include <mutex>
+#include "Interop/Connection/WorkerConnectionCoordinator.h"
 
 #include "SpatialWorkerConnection.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
-
-struct FEventDeleter
-{
-	void operator()(FEvent* Event) const
-	{
-		FPlatformProcess::ReturnSynchEventToPool(Event);
-	}
-};
 
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable, public SpatialOSWorkerInterface
@@ -96,6 +87,5 @@ private:
 	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
 	Worker_RequestId NextRequestId = 0;
 
-	std::mutex WorkerFlushMutex;
-	std::condition_variable WorkerFlushCV; // Event used for syncronising the worker API submission thread.
+	TOptional<WorkerConnectionCoordinator> ThreadWaitCondition;
 };

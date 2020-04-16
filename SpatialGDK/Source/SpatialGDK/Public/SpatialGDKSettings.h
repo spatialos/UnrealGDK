@@ -306,6 +306,10 @@ public:
 	UPROPERTY(Config)
 	bool bWorkerFlushAfterRPC;
 
+	/** Use higher priority for worker send/receive thread to ensure scheduling is fast. */
+	UPROPERTY(Config)
+	bool bWorkerSendHighPriority;
+
 	/** Do async loading for new classes when checking out entities. */
 	UPROPERTY(Config)
 	bool bAsyncLoadNewClassesOnEntityCheckout;

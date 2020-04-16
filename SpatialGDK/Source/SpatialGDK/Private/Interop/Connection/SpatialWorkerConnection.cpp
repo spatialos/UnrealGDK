@@ -15,7 +15,8 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 
 	CacheWorkerAttributes();
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();    
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	ThreadWaitCondition.Emplace(SpatialGDKSettings->bWorkerFlushAfterRPC, 1.0f / SpatialGDKSettings->OpsUpdateRate);
 	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)  
 	{
 		if (OpsProcessingThread == nullptr)
@@ -43,6 +44,8 @@ void USpatialWorkerConnection::DestroyConnection()
 		OpsProcessingThread = nullptr;
 	}
 
+	ThreadWaitCondition.Reset();
+
 	if (WorkerConnection)
 	{
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerConnection = WorkerConnection]
@@ -55,8 +58,6 @@ void USpatialWorkerConnection::DestroyConnection()
 
 	NextRequestId = 0;
 	KeepRunning.AtomicSet(true);
-
-	//WorkerFlushEvent = nullptr;
 }
 
 TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
@@ -181,20 +182,10 @@ uint32 USpatialWorkerConnection::Run()
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	check(!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread);
 
-	float waitMs = 1000.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
-	//FTimespan WaitTime = FTimespan::FromMicroseconds(60*1000); // Microseconds to allow for fractional ms
 	while (KeepRunning)
 	{
+		ThreadWaitCondition->Wait();
 		QueueLatestOpList(0);
-		//FPlatformProcess::Sleep(1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate);
-		//WorkerFlushEvent->Wait(WaitTime);
-		{
-			std::unique_lock<std::mutex> Lock(WorkerFlushMutex);
-			WorkerFlushCV.wait_for(Lock, std::chrono::microseconds((long long)waitMs * 1000));
-		}
-
-		//QueueLatestOpList(waitMs);
-
 		ProcessOutgoingMessages();
 	}
 
@@ -210,7 +201,8 @@ void USpatialWorkerConnection::InitializeOpsProcessingThread()
 {
 	check(IsInGameThread());
 
-	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0, TPri_TimeCritical);
+	EThreadPriority Priority = GetDefault<USpatialGDKSettings>()->bWorkerSendHighPriority ? TPri_AboveNormal : TPri_Normal;
+	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0, Priority);
 	check(OpsProcessingThread);
 }
 
@@ -448,8 +440,10 @@ void USpatialWorkerConnection::MaybeFlush()
 		}
 		else
 		{
-			std::unique_lock<std::mutex> Lock(WorkerFlushMutex);
-			WorkerFlushCV.notify_one();
+			//std::unique_lock<std::mutex> Lock(WorkerFlushMutex);
+			//WorkerFlushCV.notify_one();
+			//Event->Trigger();
+			//Sem.Signal();
 		}
 	}
 }
