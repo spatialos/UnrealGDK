@@ -283,7 +283,7 @@ void USpatialNetDriver::FetchWorkerOps()
 {
 	if (Connection)
 	{
-		Connection->QueueLatestOpList(0);
+		Connection->QueueLatestOpList();
 	}
 }
 
