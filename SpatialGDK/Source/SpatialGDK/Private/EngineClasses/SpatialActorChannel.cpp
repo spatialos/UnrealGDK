@@ -781,12 +781,6 @@ int64 USpatialActorChannel::ReplicateActor()
 			{
 				if (NewAuthVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 				{
-					if (auto* Character = Cast<ACharacter>(Actor))
-					{
-						FVector Location = Actor->GetActorLocation();
-						UE_LOG(LogSpatialActorChannel, Display, TEXT("[UGH] Migrating actor %s at (%f,%f,%f)"), *Actor->GetName(), Location.X, Location.Y, Location.Z);
-					}
-
 					Sender->SendAuthorityIntentUpdate(*Actor, NewAuthVirtualWorkerId);
 
 					// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy 

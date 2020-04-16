@@ -369,6 +369,6 @@ private:
 	// Band-aid until we get Actor Sets.
 	// Record when an actor got authority from a zoning transition.
 	// If an actor whose position depends on other in the same ownership hierarchy arrives before the others, it could report a position different
-	// from the position it is migrating to. So we prevent the actor from migrating immediately after to leave some time for the other actors it depends on to arrive.
+	// from the position it is migrating to. So we prevent the actor from migrating immediately after, we leave some time for the other actors it depends on to arrive.
 	uint64 AuthorityTimestamp;
 };
