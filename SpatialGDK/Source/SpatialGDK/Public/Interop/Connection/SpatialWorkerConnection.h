@@ -79,7 +79,7 @@ private:
 
 	FRunnableThread* OpsProcessingThread;
 	FThreadSafeBool KeepRunning = true;
-	float OpsUpdateIntervalMs;
+	float OpsUpdateInterval;
 
 	TQueue<Worker_OpList*> OpListQueue;
 	TQueue<TUniquePtr<SpatialGDK::FOutgoingMessage>> OutgoingMessagesQueue;

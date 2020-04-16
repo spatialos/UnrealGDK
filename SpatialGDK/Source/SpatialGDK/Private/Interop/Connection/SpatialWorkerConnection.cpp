@@ -16,7 +16,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 	CacheWorkerAttributes();
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	ThreadWaitCondition.Emplace(SpatialGDKSettings->bWorkerFlushAfterRPC, 1.0f / SpatialGDKSettings->OpsUpdateRate);
+	ThreadWaitCondition.Emplace(SpatialGDKSettings->bWorkerFlushAfterRPC, OpsUpdateInterval);
 	if (!SpatialGDKSettings->bRunSpatialWorkerConnectionOnGameThread)  
 	{
 		if (OpsProcessingThread == nullptr)
@@ -172,7 +172,7 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 bool USpatialWorkerConnection::Init()
 {
-	OpsUpdateIntervalMs = 1000.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
+	OpsUpdateInterval = 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
 
 	return true;
 }
