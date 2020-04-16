@@ -66,6 +66,9 @@ Usage: `DeploymentLauncher createsim <project-name> <assembly-name> <target-depl
 - Config setting bPreventAutoConnectWithLocator has been renamed to bPreventClientCloudDeploymentAutoConnect. It has been moved to GDK Setting. If using this feature please update enable the setting in GDK Settings.
 - USpatialMetrics::WorkerMetricsRecieved was made static.
 - Added the ability to connect to a local deployment when launching on a device by checking "Connect to a local deployment" and specifying the local IP of your computer in the Launch dropdown.
+- Added setting `bWorkerFlushAfterSend` (defaulted true) which schedules the worker flush after the GDK worker queue has been executed.
+- Added setting `bWorkerFlushAfterRPC` (defaulted false) which wakes the GDK worker queue to allow for lower latencies.
+- Added setting `bWorkerSendHighPriority` (defaulted false) which sets the GDK worker thread priority higher than normal.
 
 ## Bug fixes:
 - Fixed a bug that caused queued RPCs to spam logs when an entity is deleted.
