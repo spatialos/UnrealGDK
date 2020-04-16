@@ -77,4 +77,6 @@ Foreach ($attachment in $attachments) {
 # ConverTo-Json requires a finite depth value to prevent potential non-termination due to ciruclar references (default is 2)
 $json_request = $json_message | ConvertTo-Json -Depth 16
 
-Invoke-WebRequest -UseBasicParsing -URI "$slack_webhook_url" -ContentType "application/json" -Method POST -Body "$json_request"
+if (-Not $all_steps_passed) { # Only report failing builds for now
+    Invoke-WebRequest -UseBasicParsing -URI "$slack_webhook_url" -ContentType "application/json" -Method POST -Body "$json_request"
+}
