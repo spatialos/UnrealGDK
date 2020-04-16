@@ -138,7 +138,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "SpatialOS Network Update Rate"))
 	float OpsUpdateRate;
 
-	/** Replicate handover properties between servers, required for zoned worker deployments.*/
+	/** Replicate handover properties between servers, required for zoned worker deployments. If Unreal Load Balancing is enabled, this will be set based on the load balancing strategy.*/
 	UPROPERTY(EditAnywhere, config, Category = "Replication")
 	bool bEnableHandover;
 
